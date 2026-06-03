@@ -6,16 +6,20 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-05-25 ~ 2026-06-03
-- 运行时间：2026-06-03 09:35:57 UTC
+- 最新运行日期：2026-05-05 ~ 2026-06-03
+- 运行时间：2026-06-03 09:47:42 UTC
 - 运行状态：成功
-- 本次总论文数：17
-- 精读区：6
-- 速读区：11
+- 本次总论文数：16
+- 精读区：0
+- 速读区：16
 
 ### 今日简报（AI）
-今日精读与速读共17篇，聚焦AI-RAN信道预测与资源高效语义通信两大方向。最值得关注的是物理引导深度学习实现跨频带信道预测（9.0分）和递归视觉Transformer动态调整机制（9.0分）。建议普通读者优先精读这两篇，把握AI与无线通信融合的前沿解决方案。
-- 详情：[/20260525-20260603/README](/20260525-20260603/README)
+今天速读了16篇论文，精选3篇高分研究，涵盖信道预测、近场通信与扩散解码。
+
+其中《ChannelKAN》和《近场通信阵列几何框架》分别提出混合CNN-KAN架构优化多尺度信道预测和深度学习通用估计算法，值得优先关注。
+
+建议深入阅读这三篇9分论文，重点对比其信道建模与神经网络设计思路，可拓展至实际通信系统验证。
+- 详情：[/20260505-20260603/README](/20260505-20260603/README)
 
 ### 精读区论文标签
 1. [Practical Cross-Band Channel Prediction for AI-RAN via Physics-Guided Deep Unfolding](/20260525-20260603/2605.31279v1-practical-cross-band-channel-prediction-for-ai-ran-via-physics-guided-deep-unfolding)  
@@ -38,39 +42,54 @@
    evidence：深度去噪用于OTFS信道估计
 
 ### 速读区论文标签
-1. [Low-Overhead Receiver Design for Data-Dependent Superimposed Training via Deep Learning](/20260525-20260603/2605.29995v1-low-overhead-receiver-design-for-data-dependent-superimposed-training-via-deep-learning)  
+1. [ChannelKAN: Multi-Scale Dual-Domain Channel Prediction via Hybrid CNN-KAN Architecture](/20260505-20260603/2605.12553v1-channelkan-multi-scale-dual-domain-channel-prediction-via-hybrid-cnn-kan-architecture)  
+   标签：评分：9.0/10、query:channel-nn
+   evidence：混合CNN-KAN架构用于信道预测，采用Kolmogorov-Arnold网络
+2. [A Framework of Near-Field Communication with Different Array Geometries: Analysis, Optimization, and General Channel Estimation Algorithms Based on Deep Learning](/20260505-20260603/2605.17690v1-a-framework-of-near-field-communication-with-different-array-geometries-analysis-optimization-and-general-channel-estimation-algorithms-based-on-deep-learning)  
+   标签：评分：9.0/10、query:channel-nn
+   evidence：基于深度学习的近场XL-MIMO信道估计，适应多种阵列几何
+3. [Variational Diffusion Channel Decoder](/20260505-20260603/2605.18902v1-variational-diffusion-channel-decoder)  
+   标签：评分：9.0/10、query:channel-nn
+   evidence：高效变分扩散信道解码器，融合置信传播实现均衡
+4. [SPA-MAE: A Physics-Guided CSI Foundation Model for Wireless Physical Layer](/20260505-20260603/2605.19849v1-spa-mae-a-physics-guided-csi-foundation-model-for-wireless-physical-layer)  
+   标签：评分：9.0/10、query:channel-nn
+   evidence：物理引导的无线信道状态信息基础模型
+5. [PilotWiMAE: Pilot-Native Representation Learning for Wireless Channels](/20260505-20260603/2605.22856v1-pilotwimae-pilot-native-representation-learning-for-wireless-channels)  
+   标签：评分：9.0/10、query:channel-nn
+   evidence：基于导频观测的无线信道自监督表示学习，使用分解注意力
+6. [ComHymba: Low-Complexity Domain-Informed Foundation Model for Wireless Communications](/20260505-20260603/2605.23468v1-comhymba-low-complexity-domain-informed-foundation-model-for-wireless-communications)  
+   标签：评分：9.0/10、query:channel-nn
+   evidence：低复杂度领域知识融合基础模型用于CSI；用于信道建模的高效神经网络架构
+7. [Deep Machine Learning in MIMO Communication Systems](/20260505-20260603/2605.25458v1-deep-machine-learning-in-mimo-communication-systems)  
+   标签：评分：9.0/10、query:channel-nn
+   evidence：基于自编码器的MIMO收发机联合优化信道建模与均衡
+8. [Low-Overhead Receiver Design for Data-Dependent Superimposed Training via Deep Learning](/20260505-20260603/2605.29995v1-low-overhead-receiver-design-for-data-dependent-superimposed-training-via-deep-learning)  
+   标签：评分：9.0/10、query:channel-nn
+   evidence：基于深度学习的叠加训练接收机设计，实现非迭代导频数据解耦
+9. [SpikeWFM: Spiking-Aided Wireless Foundation Model for Robust Channel Prediction](/20260505-20260603/2606.00120v1-spikewfm-spiking-aided-wireless-foundation-model-for-robust-channel-prediction)  
+   标签：评分：9.0/10、query:channel-nn
+   evidence：尖峰辅助无线基础模型用于鲁棒信道预测
+10. [RFPrompt: Prompt-Based Expert Adaptation of the Large Wireless Model for Modulation Classification](/20260505-20260603/2605.03279v1-rfprompt-prompt-based-expert-adaptation-of-the-large-wireless-model-for-modulation-classification)  
    标签：评分：8.0/10、query:channel-nn
-   evidence：基于深度学习的低开销接收机设计用于通信系统
-2. [From Waves to Graphs: A Ray-Tracing-Inspired Neural Radio Propagation Model](/20260525-20260603/2605.30525v1-from-waves-to-graphs-a-ray-tracing-inspired-neural-radio-propagation-model)  
+   evidence：基于提示的无线基础模型适配用于自动调制分类
+11. [Adaptive Data Harvesting for Efficient Neural Network Learning with Universal Constraints](/20260505-20260603/2605.09707v1-adaptive-data-harvesting-for-efficient-neural-network-learning-with-universal-constraints)  
    标签：评分：8.0/10、query:channel-nn
-   evidence：神经无线电传播模型用于信道建模
-3. [Distributed MoE-based Uplink Detection for Cell-Free Communication Systems](/20260525-20260603/2606.02281v1-distributed-moe-based-uplink-detection-for-cell-free-communication-systems)  
+   evidence：针对物理信息神经网络（PINN）的自适应采样方法，可应用于通信系统
+12. [Scalable Mamba-Based Message-Passing Neural Decoder for Error-Correcting Codes](/20260505-20260603/2605.10681v1-scalable-mamba-based-message-passing-neural-decoder-for-error-correcting-codes)  
    标签：评分：8.0/10、query:channel-nn
-   evidence：基于混合专家网络的神经网络上行检测
-4. [Deep Machine Learning in MIMO Communication Systems](/20260525-20260603/2605.25458v1-deep-machine-learning-in-mimo-communication-systems)  
-   标签：评分：7.0/10、query:channel-nn
-   evidence：用于MIMO通信的深度学习自编码器
-5. [A Novel Tensor Product-Based Neural Network for Solving Partial Differential Equations](/20260525-20260603/2605.29688v1-a-novel-tensor-product-based-neural-network-for-solving-partial-differential-equations)  
-   标签：评分：7.0/10、query:channel-nn
-   evidence：新颖的张量积神经网络用于PDE求解
-6. [elasticAI.explorer: Towards a Unified End-to-End Framework for Hardware-Aware Neural Architecture Search](/20260525-20260603/2605.30019v2-elasticaiexplorer-towards-a-unified-end-to-end-framework-for-hardware-aware-neural-architecture-search)  
-   标签：评分：7.0/10、query:channel-nn
-   evidence：硬件感知神经架构搜索框架用于高效设计
-7. [Multi-Scale Separable Fourier Neural Networks for Solving High-Frequency PDEs](/20260525-20260603/2605.31027v1-multi-scale-separable-fourier-neural-networks-for-solving-high-frequency-pdes)  
-   标签：评分：7.0/10、query:channel-nn
-   evidence：新颖的神经网络架构用于求解高频偏微分方程
-8. [GNN-based Online Beamforming Design for HAPS-Assisted NTN](/20260525-20260603/2606.00244v1-gnn-based-online-beamforming-design-for-haps-assisted-ntn)  
-   标签：评分：7.0/10、query:channel-nn
-   evidence：基于图神经网络的HAPS辅助非地面网络波束赋形
-9. [Time-Varying Parametric Channel Estimation With CP Decomposition Tensor Processing](/20260525-20260603/2605.25593v1-time-varying-parametric-channel-estimation-with-cp-decomposition-tensor-processing)  
-   标签：评分：6.0/10、query:channel-nn
-   evidence：基于CP分解的快速参数信道估计
-10. [Unsupervised Learning for Scalable Downlink Power Control in Cell-Free Massive MIMO](/20260525-20260603/2605.26301v1-unsupervised-learning-for-scalable-downlink-power-control-in-cell-free-massive-mimo)  
-   标签：评分：6.0/10、query:channel-nn
-   evidence：用于通信功率控制的物理信息无监督框架
-11. [Optimization of CF-mMIMO Systems for the Coexistence between eMBB+ and mMTC+: From Analytical to GNN-Aided Designs](/20260525-20260603/2605.27930v1-optimization-of-cf-mmimo-systems-for-the-coexistence-between-embb-and-mmtc-from-analytical-to-gnn-aided-designs)  
-   标签：评分：6.0/10、query:channel-nn
-   evidence：使用图神经网络辅助CF-mMIMO系统设计
+   evidence：提出Mamba状态空间模型作为新型神经网络架构用于解码
+13. [KAN-CL: Per-Knot Importance Regularization for Continual Learning with Kolmogorov-Arnold Networks](/20260505-20260603/2605.12306v1-kan-cl-per-knot-importance-regularization-for-continual-learning-with-kolmogorov-arnold-networks)  
+   标签：评分：8.0/10、query:channel-nn
+   evidence：KAN用于持续学习的逐节点重要性正则化
+14. [Massive MIMO CSI Feedback with Spiking Neural Networks](/20260505-20260603/2605.12434v1-massive-mimo-csi-feedback-with-spiking-neural-networks)  
+   标签：评分：8.0/10、query:channel-nn
+   evidence：用于CSI反馈的新型脉冲神经网络架构
+15. [CSPMNet: Pareto-Efficient Automatic Modulation Classification With Learnable Complex Subband Phase Motion](/20260505-20260603/2605.25099v1-cspmnet-pareto-efficient-automatic-modulation-classification-with-learnable-complex-subband-phase-motion)  
+   标签：评分：8.0/10、query:channel-nn
+   evidence：新颖的轻量级自动调制分类神经网络
+16. [Distributed MoE-based Uplink Detection for Cell-Free Communication Systems](/20260505-20260603/2606.02281v1-distributed-moe-based-uplink-detection-for-cell-free-communication-systems)  
+   标签：评分：8.0/10、query:channel-nn
+   evidence：基于分布式混合专家网络的深度学习上行检测，使用CNN
 
 
 <div class="dpr-home-promo-card">

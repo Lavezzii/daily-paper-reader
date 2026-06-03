@@ -1,0 +1,673 @@
+Title: Scalable Mamba-Based Message-Passing Neural Decoder for Error-Correcting Codes
+
+URL Source: https://arxiv.org/pdf/2605.10681v1
+
+Published Time: Tue, 12 May 2026 03:25:08 GMT
+
+Number of Pages: 6
+
+Markdown Content:
+# Scalable Mamba-Based Message-Passing Neural Decoder for Error-Correcting Codes 
+
+Rostislav Gusev, Nikita Aleksandrov, Artem Solomkin, Dmitry Artemasov 
+
+Skolkovo Institute of Science and Technology , Moscow, Russia 
+
+{rostislav.gusev, nikita.aleksandrov, artem.solomkin, d.artemasov }@skoltech.ru 
+
+Abstract —Forward error correction is essential for reliable communication over noisy channels. Attention-based model-free neural decoders have shown strong performance for short codes, but their scalability to longer codes is limited by the quadratic memory and computational cost of attention. In this paper, we introduce the Mamba message-passing decoder (MMPD), an attention-free syndrome-based neural decoder for binary linear codes. MMPD retains the Tanner-graph structure of a message-passing decoder by performing local pairwise aggregation along variable-check edges. To enable efficient long-range information propagation, these local updates are combined with bidirectional Mamba state-space blocks. By avoiding dense attention matrices, MMPD scales more favorably for long codes in both memory and computation. Experiments on the (1056 , 880) LDPC code show that MMPD achieves a 0.45 dB gain over the state-of-the-art CrossMPT decoder at a specified target bit error rate, while reducing memory consumption by a factor of 1.5. This reduction factor increases substantially for longer codes, demonstrating the applicability of MMPD to scalable neural decoding of practical long codes. 
+
+Index Terms —Attention-free decoder, binary linear codes, deep neural networks, forward error correction, Mamba, message passing, model-free neural decoder. 
+
+I. I NTRODUCTION 
+
+Forward error correction is a fundamental component of modern communication systems, enabling reliable transmis-sion over noisy channels under strict latency and complexity constraints. Neural decoders have attracted growing inter-est as a way to narrow the gap between computationally tractable classical decoding algorithms and the performance of optimal but intractable decoding rules, especially in finite-length regimes [1]. Within the development of neural decoding techniques, two main directions have emerged: model-based methods, which unfold and augment classical decoders such as belief propagation (BP) with trainable parameters [2], [3], and model-free methods, which learn the decoding rule in a data-driven manner. Among the latter, syndrome-based decoding has become one of the most promising approaches for binary linear codes, because code linearity allows training the model on the all-zero codeword without overfitting and recasts decoding as the recovery of the channel-induced error pattern [4], [5]. A significant step in neural decoding was the introduc-tion of the error correction code Transformer (ECCT) [6], a Transformer-based architecture for decoding linear codes. ECCT demonstrated that masked attention can model de-pendencies between code bits more effectively than prior neural decoding architectures. Subsequent works showed that Transformer decoders can be further improved by injecting the Tanner-graph structure more explicitly. In particular, in CrossMPT [7], decoding is reformulated as alternating mes-sage passing between magnitude and syndrome streams, using parity-check-matrix-induced masks inside cross-attention so that variable and check representations exchange information only along valid graph connections. This message-passing interpretation substantially improved the structured reason-ing capabilities of Transformer decoders and established a strong baseline for neural decoding of short Bose-Chaudhuri-Hocquenghem (BCH), Polar, and low-density parity-check (LDPC) codes. Recent work has broadened neural ECC decoding beyond a single architectural family. The accelerating error correction code Transformer (AECCT) [8] extends Transformer-based decoding through ternary quantization and code-aware multi-head processing. In a complementary direction, the hybrid Mamba–Transformer decoder (ECCM) [9] combines Mamba blocks with Transformer layers to improve the speed–accuracy trade-off while retaining attention. In parallel, studies [10] and [11] explored the development of code-agnostic models aimed at improving generalization and reuse across multiple code families. Another important direction treats decoding as a denoising problem rather than a purely attention-based pre-diction task. Paper [12] introduced a diffusion-based decoder (DDECC) with iterative reverse denoising guided by parity information, whereas a subsequent study [13] reduces this cost by moving to a one-step consistency-style decoder (ECCFM) with lower latency and improved error-rate performance. To-gether, these directions show that the field is moving beyond raw decoding accuracy toward neural decoders that are more efficient, scalable, and reusable. Despite this progress, an important gap remains. The strongest transformer-based decoders still rely on attention as the main interaction primitive, which makes memory and run-time scale poorly as block length grows, even when masking is used to enforce code structure. Efficiency-oriented variants alleviate this issue, but they remain fundamentally attention-based. As a result, the field lacks a decoder that retains the structured variable-check reasoning of modern message-passing transformers while replacing attention itself with a linear-time alternative tailored to Tanner-graph decoding. In this work, we address this gap by introducing the Mamba message-passing decoder (MMPD), which preserves 
+
+> arXiv:2605.10681v1 [cs.IT] 11 May 2026
+
+the core inductive bias of Tanner-graph decoding while re-moving attention from the main update path. Following the syndrome-based formulation, the decoder maintains separate variable-node and check-node streams and alternates infor-mation exchange across the two streams, as in CrossMPT. However, instead of masked cross-attention, local interactions are implemented through compact pairwise aggregation along Tanner-graph edges, followed by gated residual node updates and bidirectional Mamba blocks that provide efficient global propagation across the variable and check streams. The proposed method differs from prior work in several key respects. Relative to ECCT and CrossMPT, we do not merely sparsify or restructure attention. Instead, we replace it with an attention-free operator that is explicitly adapted to Tanner-graph message-passing operations. Relative to AECCT, our goal is not to compress a Transformer decoder but to obtain a different scaling law for the decoder backbone itself. Relative to ECCM, we do not build a hybrid Mamba–Transformer model; we use state-space modeling to supply global mix-ing on top of graph-structured local aggregation, eliminating attention from the core decoder layers. Relative to DDECC and ECCFM, we remain in the direct discriminative decoding regime rather than the generative denoising regime. The main contributions of this paper are threefold. First, we introduce an attention-free neural decoder that combines edge-restricted pairwise message aggregation with bidirectional state-space global mixing, while preserving the structured variable-check decomposition of modern message-passing transformers. Second, we provide a systematic comparison with existing neural decoders, demonstrating that MMPD improves the performance-memory trade-off relative to state-of-the-art attention-based baselines. Third, we target the practi-cally important regime of long codes, showing that the reduced memory consumption of the proposed design enables scaling to code lengths for which existing neural decoders become infeasible. The rest of the paper is organized as follows. Section II introduces the system model. Section III describes the pro-posed MMPD architecture. Section IV presents the evaluation pipeline and discusses the obtained results. Finally, Section V concludes the paper and outlines directions for future re-search. II. S YSTEM MODEL 
+
+We consider a communication system in which a transmitter sends a k-bit information word u ∈ { 0, 1}k. The information word is encoded into a codeword c ∈ {0, 1}n using abinary linear block code C of length n and dimension k.The codeword is then mapped to a binary phase-shift keying (BPSK) signal, 
+
+x = τ (c), τ (c) = ( τ (c1), . . . , τ (cn)) , (1) where τ : {0, 1} → { 1, −1}.The modulated codeword x ∈ {− 1, 1}n is transmitted over an additive white Gaussian noise (AWGN) channel. The received vector is 
+
+y = x + z, (2) where y = ( y1, . . . , y n) ∈ Rn, z ∼ N (0 , σ 2In), and In
+
+denotes the n × n identity matrix. For the graph-based representation of the code, we consider the Tanner graph associated with the parity-check matrix H ∈{0, 1}n−k×n. The graph consists of n variable nodes (VNs) and n − k check nodes (CNs). A check node j and a variable node i are connected if Hj,i = 1 . In the following, Nv (i)
+
+denotes the set of check nodes connected to variable node 
+
+i, and Nc(j) denotes the set of variable nodes connected to check node j.III. M AMBA -B ASED MESSAGE -P ASSING DECODING 
+
+In this work, we use the syndrome-based formulation in-troduced in [4]. The decoder takes as input the reliability vector my = |y| ∈ Rn and the signed syndrome vector 
+
+sy ∈ {− 1, +1 }n−k. The latter is computed as τ (Hy b), where 
+
+yb = bin(sign( y)) denotes the demodulated version of y.Based on the neural message-passing approach of [7], the proposed decoder maintains two latent streams throughout the decoding process: a VN stream and a CN stream. At decoding block t ∈ { 0, . . . , T − 1}, these streams are represented by 
+
+M(t) =
+
+h
+
+m(t)1 , . . . , m(t)
+
+> n
+
+i⊤
+
+∈ Rn×d, (3) 
+
+S(t) =
+
+h
+
+s(t)1 , . . . , s(t)
+
+> n−k
+
+i⊤
+
+∈ Rn−k×d, (4) where d denotes the model’s hidden dimension, and (·)⊤
+
+denotes the transpose operation. Fig. 1 provides an overview of the proposed decoding pipeline, including input initializa-tion, iterative VN–CN message passing, bidirectional Mamba refinement, and final prediction by the output head. 
+
+1) Input initialization: The initial node states are obtained by scaling learnable node-specific embeddings by the corre-sponding scalar inputs 
+
+m(0)  
+
+> i
+
+= my ie(v) 
+
+> i
+
++ b(v) 
+
+> i
+
+, i = 1 , . . . , n, (5) 
+
+s(0)  
+
+> j
+
+= sy j e(c) 
+
+> j
+
++ b(c) 
+
+> j
+
+, j = 1 , . . . , n − k, (6) where e(v) 
+
+> i
+
+, b(v) 
+
+> i
+
+∈ Rd and e(c) 
+
+> j
+
+, b(c) 
+
+> j
+
+∈ Rd are learnable VN and CN embeddings, respectively. 
+
+2) Compact pairwise aggregation: To aggregate informa-tion from CNs to VNs, we first project the node states into an 
+
+r-dimensional space 
+
+˜m(t) 
+
+> i
+
+= W(t) 
+
+> m
+
+m(t) 
+
+> i
+
+, ˜s(t) 
+
+> j
+
+= W(t) 
+
+> s
+
+s(t) 
+
+> j
+
+, (7) where W(t) 
+
+> m
+
+, W(t) 
+
+> s
+
+∈ Rr×d are trainable matrices. For each Tanner-graph edge (j, i ) such that Hj,i = 1 , we form a compact pairwise feature [14] 
+
+ϕ(t) 
+
+> ij
+
+=
+
+h
+
+˜m(t) 
+
+> i
+
+⊙ ˜s(t) 
+
+> j
+
+; ˜m(t) 
+
+> i
+
+− ˜s(t)
+
+> j
+
+i
+
+∈ R2r , (8) and compute a scalar edge score 
+
+f (t) 
+
+> ij
+
+= w(t)⊤ 
+
+> 2
+
+SiLU 
+
+
+
+W(t)1 ϕ(t)
+
+> ij
+
+
+
+, (9) where W(t)1 ∈ Rr×2r and w(t)2 ∈ Rr are learnable parameters, and SiLU denotes the sigmoid linear unit activation. Initial embedding layer MMPD layer Output layer    
+
+> ••Embedding
+> Norm FC Compact Pairwise Aggregation
+> Gated Update
+> Norm Norm
+> BiMamba
+> FFN Norm
+> Compact Pairwise Aggregation
+> Norm Norm
+> Gated Update
+> BiMamba
+> FFN Norm
+
+Fig. 1. Architecture of the proposed MMPD. 
+
+The scores are then normalized over the neighbors of VN iα(t) 
+
+> ij
+
+= exp( f (t) 
+
+> ij
+
+)
+
+P 
+
+> j′∈N v(i)
+
+exp( f (t) 
+
+> ij ′
+
+) , j ∈ N v (i). (10) The resulting CN-to-VN message is 
+
+r(t,v ) 
+
+> i
+
+= W(t,v )
+
+> o
+
+X 
+
+> j∈N v(i)
+
+α(t) 
+
+> ij
+
+W(t,v ) 
+
+> p
+
+s(t) 
+
+> j
+
+, (11) where W(t,v ) 
+
+> p
+
+, W(t,v ) 
+
+> o
+
+∈ Rd×d are learnable VN-stream pro-jections. The reverse VN-to-CN aggregation is defined similarly. 
+
+¯s(t) 
+
+> j
+
+= ¯W(t) 
+
+> s
+
+s(t) 
+
+> j
+
+, ¯m(t+1)  
+
+> i
+
+= ¯W(t) 
+
+> m
+
+m(t+1)  
+
+> i
+
+, (12) 
+
+¯ϕ(t) 
+
+> ji
+
+=
+
+h
+
+¯s(t) 
+
+> j
+
+⊙ ¯m(t+1)  
+
+> i
+
+; ¯ s(t) 
+
+> j
+
+− ¯m(t+1) 
+
+> i
+
+i
+
+, (13) 
+
+¯f (t) 
+
+> ji
+
+= ¯ w(t)⊤ 
+
+> 2
+
+SiLU 
+
+ ¯W(t)1 ¯ϕ(t)
+
+> ji
+
+
+
+, (14) 
+
+¯α(t) 
+
+> ji
+
+= exp( ¯f (t) 
+
+> ji
+
+)
+
+P
+
+> i′∈N c(j)
+
+exp( ¯f (t) 
+
+> ji ′
+
+) , i ∈ N c(j), (15) and the VN-to-CN message is 
+
+¯r(t,c ) 
+
+> j
+
+= ¯W(t,c )
+
+> o
+
+X
+
+> i∈N c(j)
+
+¯α(t) 
+
+> ji
+
+¯W(t,c ) 
+
+> p
+
+¯m(t+1)  
+
+> i
+
+. (16) For brevity, we denote the compact pairwise aggregation operation by Agg( ·).
+
+3) Gated node update: Both node streams are updated using the same gated residual operator. Given a current state 
+
+ξ and an aggregated message η, the update is computed as 
+
+h = GELU( Wh [LN( ξ) ; LN( η)]) , (17) 
+
+g = σ(Wg h), ∆ = W∆h, (18) 
+
+ξ′ = ξ + g ⊙ ∆, (19) followed by a feed-forward refinement 
+
+GUpdate( ξ, η) = ξ′ + FFN(LN( ξ′)) . (20) Here, σ denotes the sigmoid function, LN denotes layer normalization, GELU represents Gaussian error linear unit, and FFN denotes the feed-forward network. Accordingly, the VN update is 
+
+ˆm(t+1)  
+
+> i
+
+= GUpdate v
+
+
+
+m(t) 
+
+> i
+
+, r(t,v )
+
+> i
+
+
+
+, (21) while the CN update is 
+
+ˆs(t+1)  
+
+> j
+
+= GUpdate c
+
+
+
+s(t) 
+
+> j
+
+, ¯r(t,c )
+
+> j
+
+
+
+. (22) 
+
+4) Bidirectional Mamba refinement: After each local ag-gregation and gated update, a bidirectional Mamba block is applied to the corresponding stream. 
+
+Γ(t+1) = BiMambaBlock 
+
+ˆΓ(t+1) 
+
+, Γ ∈ { M, S}, (23) with BiMambaBlock (ˆΓ) = ˆΓ + λ BiMamba( ˆΓ)+ FFN 
+
+
+
+LN 
+
+ˆΓ + λ BiMamba( ˆΓ)
+
+ 
+
+,
+
+(24) where λ is a learnable scalar. 
+
+5) Decoder block and output head: One decoder block consists of the following operations 
+
+R(t,v ) = Agg c→v (M(t), S(t); H), (25) 
+
+ˆM(t+1) = GUpdate v (M(t), R(t,v )), (26) 
+
+M(t+1) = BiMambaBlock v ( ˆM(t+1) ), (27) 
+
+¯R(t,c ) = Agg v→c(S(t), M(t+1) ; H), (28) 
+
+ˆS(t+1) = GUpdate c(S(t), ¯R(t,c )), (29) 
+
+S(t+1) = BiMambaBlock c(ˆS(t+1) ). (30) Stacking T such blocks forms the decoder model. The output is produced from the final VN stream by applying the fully connected (FC) layer 
+
+ˆνi = w⊤ 
+
+> out
+
+LN( m(T ) 
+
+> i
+
+) + bout , i = 1 , . . . , n. (31) 
+
+6) Training objective: Following common practice in the neural decoding literature, the model is trained with the binary cross-entropy loss to predict the error indicator. 
+
+L = −
+
+> n
+
+X
+
+> i=1
+
+εi log σ(ˆ νi) + (1 − εi) log  1 − σ(ˆ νi) , (32) TABLE I COMPARISON OF DECODING PERFORMANCE AT THREE SNR VALUES (4, 5, 6) FOR BP, ECCT [6], AECCT [8], C ROSS MPT [7], AND MMPD. T HE RESULTS ARE MEASURED AS THE NEGATIVE NATURAL LOGARITHM OF BER ( − ln(BER) ). T HE BEST RESULTS ARE SHOWN IN BOLD , AND THE SECOND -BEST RESULTS ARE UNDERLINED . H IGHER IS BETTER                                                                                                                        
+
+> Codes (n, k )BP (50 iter.) ECCT 1.2M[6] AECCT 1.2M[8] CrossMPT 1.2M[7] MMPD 1.2M(ours)
+> 456456456456456Polar (64,48) 4.26 5.38 6.50 6.36 8.46 11.09 6.43 8.54 11.12 6.51 8.70 11.31 6.54 8.75 11.39
+> (128,86) 4.49 5.65 6.97 6.31 9.01 12.45 6.04 8.56 11.81 7.51 10.83 15.24 7.94 11.50 16.04
+> (128,96) 4.61 5.79 7.08 6.31 9.12 12.47 6.11 8.81 12.15 7.15 10.15 13.13 7.37 10.33 13.21
+> LDPC (49,24) 6.23 8.19 11.72 5.79 8.13 11.40 6.10 8.65 12.34 6.68 9.52 13.19 6.78 9.67 13.68
+> (121,60) 5.65 8.82 13.28 5.01 7.99 12.78 5.17 8.32 13.40 5.74 9.26 14.78 5.84 9.62 15.15
+> (121,80) 7.84 11.92 16.97 7.07 10.96 16.25 7.27 11.50 16.90 7.99 12.75 18.15 8.07 12.83 18.17
+
+where ε ∈ { 0, 1}n is the ground-truth error indicator vector. IV. S IMULATION RESULTS 
+
+In this section, we compare the proposed MMPD with classical and state-of-the-art neural decoders:  
+
+> •
+
+BP : sum-product belief propagation [15];  
+
+> •
+
+ECCT : error correction code Transformer [6];  
+
+> •
+
+AECCT : accelerated and compressed version of ECCT [8];  
+
+> •
+
+CrossMPT : structured cross-attention message-passing Transformer decoder [7];  
+
+> •
+
+MMPD : the proposed Mamba message-passing decoder. For evaluation, random codewords are generated, mapped to BPSK symbols, and transmitted over an AWGN channel as defined in (2). Decoding performance is measured using the bit error rate (BER), 
+
+BER = 1
+
+n
+
+> n
+
+X
+
+> i=1
+
+P(ci̸ = ˆ ci), (33) where ˆc denotes the estimated codeword. We consider two groups of experiments. The first group ad-dresses short-length baseline codes commonly used to bench-mark neural decoders, for which performance is reported in terms of − ln(BER) , following common practice in the neural decoding literature [6]–[8]. The second group considers longer codes and showcases the scalability of the developed model, for which performance is presented as BER versus signal-to-noise ratio (SNR) curves. All neural decoders are trained under the same protocol, following [7]. For all reported results, Monte Carlo statistics at each SNR point are accumulated until at least 1000 frame errors have been observed. Table I summarizes the performance results for BP, ECCT, AECCT, CrossMPT, and MMPD on the benchmark codes. 1
+
+The − ln(BER) metric is reported at Eb/N 0 values of 4,
+
+5, and 6 dB . For this experiment, the hyperparameters of all neural decoders are aligned so that each model has approxi-mately 1.2 million trainable parameters. Under this matched parameter budget, the proposed MMPD achieves the strongest performance among the considered neural decoders. In Fig. 2, we compare the BER performance of BP with 5 and 50 iterations, ECCT, CrossMPT, and the proposed MMPD 
+
+> 1ECCM [9] is excluded from the performance comparison because the available implementation did not reproduce the results reported in the preprint.
+
+for several longer codes established as benchmarks [7], namely the (384 , 320) wireless regional area network (WRAN) LDPC code, the (529 , 440) LDPC code, the (648 , 540) IEEE 802.11n LDPC code, and the (1056 , 880) WiMAX LDPC code. As shown in Fig. 2a, ECCT does not reach the performance of the classical BP decoder with 5 iterations on WRAN 
+
+(384 , 320) LDPC code. In contrast, the proposed MMPD slightly outperforms CrossMPT, with its BER curve lying between those of BP-5 and BP-50. Analyzing the results for the longer (529 , 440) LDPC code, depicted in Fig. 2b, we observe that both ECCT and CrossMPT fall substantially short of the BP-5 performance. Meanwhile, the proposed MMPD demonstrates strong performance, approaching the BP-50 curve. Fig. 2c shows the BER performance for the 
+
+(648 , 540) IEEE 802.11n LDPC code. CrossMPT and MMPD achieve comparable results, both outperforming the BP-50 decoder. Fig. 2d presents the results for the longest code con-sidered in this experiment, namely the (1056 , 880) WiMAX LDPC code. In this experiment, the CrossMPT model does not reach BP-5 performance, whereas the proposed MMPD achieves performance between BP-5 and BP-50, approaching BP-50 in the high-SNR regime 2 and thereby supporting the claimed scalability to longer codes. To further assess the practical applicability of the considered neural decoders, Table II reports the number of trainable parameters, the GPU memory footprint during a training step with a fixed batch size of 128, and the memory required for single-sample inference. All experiments were conducted using FP32 precision on a server running Ubuntu 24.04, Python 3.12, PyTorch 2.6.0, and an NVIDIA H200 GPU with driver version 580.126.09. We next evaluate how the memory requirements of the considered neural decoders scale on a family of practical 5G LDPC codes [16]. All models are evaluated with the same fixed architectural hyperparameters, such as the number of layers, hidden dimension, and number of decoding iterations, while the code length is varied. We consider the 5G LDPC codes with rate 11 /12 constructed from the BG1 base graph 
+
+> 2We note that in this experiment, the BP decoder exhibits an error-floor effect in the high-SNR regime, which can be attributed to its message-passing nature and the irregularity of the code. The proposed MMPD is not prone to such behavior and continues to improve its BER performance as the SNR increases.
+
+TABLE II MODEL SETTINGS AND MEMORY USAGE FOR LONG -CODE LDPC EXPERIMENTS                                                     
+
+> Codes (n, k )CrossMPT MMPD (ours) Params, M Train Mem, GB Infer Mem, GB Hyperparams Params, M Train Mem, GB Infer Mem, GB Hyperparams
+> Longer LDPC
+> (384 ,320) 0.26 3.69 0.041 T = 6, d = 32 0.26 2.35 0.035 T = 4, d = 32
+> (529 ,440) 0.43 6.82 0.055 T = 6, d = 32 0.42 4.18 0.037 T = 4, d = 42
+> (648 ,540) 2.57 20.84 0.082 T = 10, d = 128 2.57 15.05 0.047 T = 8, d = 84
+> (1056 ,880) 1.42 23.92 0.096 T = 6, d = 32 1.43 15.83 0.064 T = 6, d = 68 2.02.53.03.54.04.55.0
+> 10 −5
+> 10 −4
+> 10 −3
+> 10 −2
+> 10 −1
+> Eb/N 0, dB
+> Bit error rate
+> BP-5
+> BP-50
+> ECCT
+> CrossMPT
+> MMPD (ours)
+
+(a) (384, 320) WRAN LDPC code 1.0 2.0 3.0 4.0 5.0 6.0 7.0 
+
+> 10 −7
+> 10 −6
+> 10 −5
+> 10 −4
+> 10 −3
+> 10 −2
+> 10 −1
+> Eb/N 0, dB
+> Bit error rate
+> BP-5
+> BP-50
+> ECCT
+> CrossMPT
+> MMPD (ours)
+
+(b) (529, 440) LDPC code 3.00 3.25 3.50 3.75 4.00 4.25 4.50 4.75 5.00 
+
+> 10 −8
+> 10 −7
+> 10 −6
+> 10 −5
+> 10 −4
+> 10 −3
+> 10 −2
+> 10 −1
+> Eb/N 0, dB
+> Bit error rate
+> BP-5
+> BP-50
+> CrossMPT
+> MMPD (ours)
+
+(c) (648, 540) IEEE 802.11n LDPC code 3.00 3.25 3.50 3.75 4.00 4.25 4.50 4.75 5.00  
+
+> 10 −7
+> 10 −6
+> 10 −5
+> 10 −4
+> 10 −3
+> 10 −2
+> 10 −1
+> Eb/N 0, dB
+> Bit error rate
+> BP-5
+> BP-50
+> CrossMPT
+> MMPD (ours)
+
+(d) (1056, 880) WiMAX LDPC code Fig. 2. BER performance for long LDPC codes. 
+
+with kb = 22 . By varying the lifting factor, we obtain block lengths, including punctured bits, ranging from n = 208 to 
+
+n = 9984 .Figs. 3 and 4 report the measured memory required for training with a batch size 128 and for single-sample infer-ence, respectively. Fig. 5 shows the corresponding number of trainable parameters. The observed trends are consistent with the theoretical memory consumption and complexity of the architectures. In attention-based decoders, the main memory bottleneck is the storage of attention maps, whose size grows quadratically with the relevant sequence length. Thus, depending on whether attention is applied over codeword positions, syndrome po-sitions, or their combination, the leading memory term scales as a quadratic function of n, n − k, or both. This quadratic dependence leads to a rapid increase in memory consumption as the code length grows. In contrast, the proposed MMPD avoids global attention. Its main memory cost comes from storing messages on the Tanner graph and therefore scales as O(|E|), where |E| is the number of edges induced by the parity-check matrix. For fixed hidden dimension and a fixed number of message-passing iterations, this yields linear memory growth in |E|.A similar effect is observed in the number of trainable parameters. For the considered attention-based architectures, the parameter growth is mainly caused by the output head. In particular, after the hidden dimension is reduced from d
+
+to 1, the output head maps the concatenated magnitude and syndrome representations of length 2n − k to an output vector of length n. As a result, this layer introduces a parameter contribution that scales as O(n(2 n − k)) , which is quadratic in the code parameters. In contrast, the proposed MMPD uses a lightweight output head independent of the code parameters applied only to the magnitude stream, as illustrated in Fig. 1. These results indicate that the quadratic growth in mem-ory consumption and in the number of trainable parameters in the attention-based model-free decoders can restrict their applicability to practical long codes. The proposed attention-1,000 2,000 3,000 4,000 5,000  
+
+> 50
+> 100
+> Code length n
+> Peak train memory, GB
+> ECCT
+> CrossMPT
+> MMPD (ours)
+
+Fig. 3. Peak GPU memory footprint during training for 5G LDPC codes, measured with a batch size of 128. The available memory is limited by the RAM size of a single GPU. 2,000 4,000 6,000 8,000 10 ,000  
+
+> 0.1
+> 1
+> 10
+> Code length n
+> Inference memory, GB
+> ECCT
+> CrossMPT
+> MMPD (ours)
+
+Fig. 4. GPU memory footprint during single-sample inference for 5G LDPC codes. 2,000 4,000 6,000 8,000 10 ,000  
+
+> 1
+> 10
+> 100
+> Code length n
+> Parameters, M
+> ECCT
+> CrossMPT
+> MMPD (ours)
+
+Fig. 5. Number of trainable parameters for 5G LDPC codes 
+
+free MMPD, on the other hand, inherits the sparse structure of the Tanner graph and therefore scales more favorably to larger block lengths. V. C ONCLUSION 
+
+This paper introduced MMPD, an attention-free syndrome-based neural decoder for binary linear codes. By combin-ing Tanner-graph edge-restricted message aggregation with bidirectional Mamba state-space blocks, MMPD preserves structured variable-check reasoning while enabling efficient long-range information propagation. MMPD achieves the best overall performance among the considered neural decoders on standard benchmarks and has memory requirements that scale with the number of Tanner-graph edges rather than quadratically with the sequence length. This favorable scaling enables neural decoding at code lengths where attention-based decoders become memory-prohibitive. Future work includes evaluation on longer 5G LDPC and more diverse codes, detailed complexity analysis, MMPD-oriented code design for improved performance and reduced complex-ity, and extensions toward foundation decoders capable of generalizing to unseen code structures. REFERENCES [1] T. Matsumine and H. Ochiai, “Recent advances in deep learning for channel coding: A survey,” IEEE Open Journal of the Communications Society , vol. 5, pp. 6443–6481, 2024. [2] S. Cammerer, J. Hoydis, F. A. Aoudia, and A. Keller, “Graph neural networks for channel decoding,” in 2022 IEEE Globecom Workshops (GC Wkshps) , 2022, pp. 486–491. [3] K. Andreev, A. Frolov, G. Svistunov, K. Wu, and J. Liang, “Deep neural network based decoding of short 5G LDPC codes,” in 2021 XVII International Symposium ”Problems of Redundancy in Information and Control Systems” (REDUNDANCY) , 2021, pp. 155–160. [4] A. Bennatan, Y. Choukroun, and P. Kisilev, “Deep learning for decod-ing of linear codes - a syndrome-based approach,” in proc. of IEEE International Symposium on Information Theory (ISIT) , June 2018, pp. 1595–1599. [5] D. Artemasov, K. Andreev, P. Rybin, and A. Frolov, “Iterative syndrome-based deep neural network decoding,” IEEE Open Journal of the Communications Society , vol. 6, pp. 629–641, 2024. [6] Y. Choukroun and L. Wolf, “Error correction code transformer,” in Advances in Neural Information Processing Systems ,vol. 35. Curran Associates, Inc., 2022, pp. 38 695–38 705. [Online]. Available: https://proceedings.neurips.cc/paper files/paper/ 2022/file/fcd3909db30887ce1da519c4468db668-Paper-Conference.pdf [7] S.-J. Park, H.-Y. Kwak, S.-H. Kim, Y. Kim, and J.-S. No, “CrossMPT: Cross-attention message-passing transformer for error correcting codes,” in The Thirteenth International Conference on Learning Representations , 2025. [Online]. Available: https://openreview.net/ forum?id=gFvRRCnQvX [8] M. Levy, Y. Choukroun, and L. Wolf, “Accelerating error correction code transformers,” 2024. [Online]. Available: https://arxiv.org/abs/ 2410.05911 [9] S. el Cohen, Y. Choukroun, and E. Nachmani, “Hybrid mamba-transformer decoder for error-correcting codes,” 2025. [Online]. Available: https://arxiv.org/abs/2505.17834 [10] Y. Choukroun and L. Wolf, “A foundation model for error correction codes,” in The Twelfth International Conference on Learning Representations , 2024. [Online]. Available: https://openreview.net/ forum?id=7KDuQPrAF3 [11] S.-J. Park, H.-Y. Kwak, S.-H. Kim, Y. Kim, and J.-S. No, “Cross-attention message-passing transformers for code-agnostic decoding in 6g networks,” 2025. [Online]. Available: https://arxiv.org/abs/2507.01038 [12] Y. Choukroun and L. Wolf, “Denoising diffusion error correction codes,” 2022. [Online]. Available: https://arxiv.org/abs/2209.13533 [13] H. Lei, C. W. Lau, K. Zhou, N. Guo, and F. Farnia, “Syndrome-flow consistency model achieves one-step denoising error correction codes,” 2026. [Online]. Available: https://arxiv.org/abs/2512.01389 [14] L. Mou, R. Men, G. Li, Y. Xu, L. Zhang, R. Yan, and Z. Jin, “Natural language inference by tree-based convolution and heuristic matching,” in 
+
+Proceedings of the 54th Annual Meeting of the Association for Compu-tational Linguistics . Berlin, Germany: Association for Computational Linguistics, Aug. 2016, pp. 130–136. [15] F. Kschischang, B. Frey, and H.-A. Loeliger, “Factor graphs and the sum-product algorithm,” IEEE Transactions on Information Theory , vol. 47, no. 2, pp. 498–519, 2001. [16] 3GPP, “5G NR Multiplexing and Channel Coding,” 3rd Generation Partnership Project (3GPP), Technical Specification TS 38.212, 2020, version 16.11.0. Available: https://www.3gpp.org/ftp/Specs/archive/38 series/38.212.
