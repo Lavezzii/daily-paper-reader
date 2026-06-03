@@ -1,0 +1,865 @@
+Title: GNN-based Online Beamforming Design for HAPS-Assisted NTN
+
+URL Source: https://arxiv.org/pdf/2606.00244v1
+
+Published Time: Tue, 02 Jun 2026 00:11:41 GMT
+
+Number of Pages: 7
+
+Markdown Content:
+# GNN-based Online Beamforming Design for HAPS-Assisted NTN 
+
+Lavanya S S Anjapuli ∗, Animesh Yadav ∗, and Halim Yanikomeroglu †∗School of EECS, Ohio University, Athens, OH, USA 
+
+> †
+
+NTN Lab., Department of SCE, Carleton University, Ottawa, ON, Canada Email: {ls775924, yadava }@ohio.edu ∗, halim@sce.carleton.ca †
+
+Abstract —In terrestrial networks, especially in urban areas, cell-edge users often face significant capacity limitations due to high path loss, shadowing, and inter-cell interference (ICI). This paper proposes integrating a high-altitude platform station (HAPS) into terrestrial networks, where terrestrial base stations (BS) can alleviate these issues by relaying data intended for cell-edge users via HAPS, thereby leveraging line-of-sight (LoS) links. We formulate an energy-efficiency (EE) maximization problem to jointly design beamforming vectors at the BS and HAPS with the goal of improving cell-edge user performance. Since the resulting problem is non-convex, we develop an online optimization framework based on a graph neural networks (GNN), which effectively captures the network topology. Numerical results show that the proposed HAPS-assisted architecture improves network performance, particularly by increasing the 5th-percentile EE, thereby enhancing service for cell-edge users. 
+
+Index Terms —energy efficiency, graph neural networks, high altitude platform station, online optimization, 6G Networks. 
+
+I. I NTRODUCTION 
+
+Multi-cell network architectures form the backbone of cellu-lar wireless systems and are continued to remain fundamental in beyond fifth-generation (5G) and sixth-generation (6G) net-works to support dense connectivity, high data rates, and wide-area coverage through massive multiple input multiple output (MIMO), advanced beamforming, and dynamic interference management [1]. However, inter-cell interference, shadowing, and non-line-of-sight (NLoS) propagation significantly degrade the performance of cell-edge users, limiting spectral and EE [2]. HAPS have therefore emerged as a promising solution to these challenges by offering large-scale coverage with a high probability of line-of-sight (LoS) air-to-ground links, thereby effectively mitigating shadowing effects [3]. Furthermore, due to the presence of LoS air-to-ground links and the availability of wide bandwidth, millimeter-wave (mmWave) communication is well suited for HAPS-assisted networks. The LoS links help mmWave signals compensating severe path loss but more can be achieved by employing large antenna elements to achieve beamforming gain [4]. Implementing fully digital beamforming with large antenna arrays is often impractical, as it requires one radio-frequency (RF) chain per antenna element, resulting in high hardware cost, power consumption, and baseband processing complexity [5]. Hybrid beamforming offers a practical alternative by combining analog RF beam steering with low-dimensional digital precoding, thereby providing a favorable trade-off between performance and hardware efficiency. Nevertheless, hybrid architectures introduce additional challenges in beamformer optimization under constant-modulus constraints and dynamic resource allocation, motivating the development of advanced design methodologies [6], [7]. Iterative optimization-based algorithms for hybrid beamforming design include alternating optimization methods [8], [9], adaptive cross-entropy (ACE) approaches [10], and stochastic beamforming techniques [11]. Recently, learning-based methods have gained traction for their ability to reduce the computational burden of iterative optimization [12]–[15]. For instance, the deep neural network (DNN)-based hybrid beamforming framework in [12] reduces training complexity in multi-user mmWave multiple-input multiple-outpur (MIMO) systems. [13] develops a convolutional neural networks (CNN) architecture through supervised training to jointly learn analog and digital beamforming weights for improved energy efficiency in mmWave massive MIMO. Similarly, [14] presents a CNN model that optimizes hybrid beamforming weights in a multiple-input single-output (MISO) system using an signal-to-noise ratio (SNR) as a loss function. Lastly, [15] proposes an end-to-end CNN framework that integrates channel state information (CSI) feedback and hybrid beamforming weight design for mmWave MIMO systems, aimed at maximizing spectral efficiency. While the aforementioned learning-based approaches significantly reduce computational complexity, they typically operate under fixed input–output dimensions and lack explicit modeling of network topology and interference relationships. As a result, their ability to generalize is limited when the number of users or base stations changes. Moreover, practical wireless networks experience time-varying channels due to dynamic propagation environments, which can lead to mismatches between training data and real-time channel distributions. Online optimization frameworks mitigate this issue by continuously updating model parameters using real-time channel observations [16]. Motivated by these insights, we propose an online graph neural networks (GNN)-based hybrid beamforming framework for energy-efficient HAPS-assisted multi-cell NOMA networks. GNN address these limitations by modeling wireless systems as graphs and explicitly capturing interference relationships, enabling scalable and topology-aware optimization [17]. The contributions of this paper are summarized as follow:  
+
+> •
+
+A GNN-based online optimization technique is developed to jointly optimize hybrid beamforming weights at both terrestrial BS and HAPS by maximizing the EE of the 
+
+> arXiv:2606.00244v1 [cs.NI] 29 May 2026
+
+Fig. 1: System architecture of the network considered. network.  
+
+> •
+
+Comprehensive performance evaluations is provided by comparing the proposed approach with DNN, CNN and ACE-based techniques demonstrating the superiority of the proposed technique. The remainder of this paper is organized as follows: Section II describes the system model, while Section III formulates the EE optimization problem. The solution to this problem is pre-sented in Section IV. Section V outlines the simulation setup and discusses the results, and Section VI concludes the paper. II. S YSTEM MODEL 
+
+In this paper, we consider a multi-cell network in which each cell is served by a BS equipped with a uniform two-dimensional planar array consisting of Mb = Mbh Mbv antenna elements where Mbh and Mbv are the number of elements along the horizontal x-axis and vertical z-axis, respectively. A full-duplex (FD) high-altitude platform station (HAPS), capable of simultaneous transmission and reception over the same frequency band, is deployed to support cell-edge UE that experience severe inter-cell interference, while near UE are directly served by their associated BS. Specifically, the FD-HAPS simultaneously receives signals from multiple BS and transmits data to edge UE over the same time– frequency resources. The HAPS is also equipped with a UPA comprising Mh = Mhx Mhy antenna elements arranged along the horizontal x and y axes.To enhance spectral efficiency, power-domain non-orthogonal multiple access (NOMA) is employed at the transmitting nodes to multiplex near and edge UE signals over the same time–frequency resources, while SIC is applied at the receivers to decode the superimposed signals.The entire architecture is illustrated in Fig. 1. All terrestrial links in the considered multi-cell network operate in the millimeter-wave (mmWave) frequency band, typically in the range of 24–100 GHz, to exploit the large available bandwidth for high data rate transmission [1], [4], [18]. In this work, we consider 28 GHz as the operating frequency for all transmissions. 
+
+A. Channel Model 
+
+Because of the use of mmWave band frequencies, which undergo limited scattering, all the terrestrial links, such as BS-to-UE, are modeled using a sparse geometric multipath framework [19]. Considering S dominant scatterers, the channel from BS b to UE u can be represented as 
+
+hb,b u =
+
+r 1
+
+S
+
+> S
+
+X
+
+> k=1
+
+gkb,b u rt(θD,k b,b u ,φ D,k b,b u )
+
+q
+
+Gb
+
+ θD,k b,b u ,φ D,k b,u 
+
+, (1) where gkb,b u represents the complex channel gain of the path 
+
+k, which also includes path loss, PL = 
+
+ 4πdf c
+
+> c
+
+2
+
+with fc is the carrier frequency, c = 3 × 10 8 m/s is the speed of light in free space and d is the distance from BS to UE [20]. The angles θD,k b,u , θ ∈ [−π/ 2, π/ 2] and φD,k b,u , φ ∈ [0 , 2π] are the elevation and azimuth angles of departure, respectively. The term Gb
+
+ θD,k b,b u ,φ D,k b,b u
+
+ represents the antenna gain of BS b and 
+
+rt(θD,k b,u ,φ D,k b,u ), for the path k, represents the transmit array response vector at an elevation and azimuth angle of θ and 
+
+φ, which can be defined as 
+
+rt(θ,φ ) = rx(θ,ϕ )⊗rz (θ), (2) where ⊗ is Kronecker product and rx and rz are the steering vectors in x-axis and z-axis respectively [21]. Considering 
+
+dA as the distance between antenna elements and λ as the wavelength of the carrier signal, the steering vectors can be defined as 
+
+rx(θ,ϕ ) = 
+
+h
+
+1,e j 2πd Aλ sin θcos ϕ,...,e j 2πd Aλ (Mbh −1)sin θcos ϕiT
+
+, (3) 
+
+rz (θ) = 
+
+h
+
+1,e j 2πd Aλ cos θ ,...,e j 2πd Aλ (Mbv −1)cos θ iT
+
+. (4) Considering the communication link between the BS and the HAPS, the channel generally consists of a dominant LoS component along with several NLoS components caused by ground-level scatterers such as buildings and terrain. Since the HAPS is located at a high altitude above the ground level, the number of significant multipath components is limited, and thus the BS–HAPS channel can be accurately modeled using a sparse geometric multipath framework with 
+
+S dominant scatterers. 
+
+hb,h =
+
+r 1
+
+S
+
+> S
+
+X
+
+> k=0
+
+gkb,h rr (θA,k b, h ,φ A,k b, h )r∗ 
+
+> t
+
+(θD,k b, h ,φ D,k b, h )
+
+×
+
+q
+
+Gh
+
+ θA,k b, h ,φ A,k b, h
+
+Gb
+
+ θD,k b, h ,φ D,k b, h
+
+. (5) The first term with k = 0 in (5) represents the LoS component and the second term represent the NLoS component. g0
+
+> b, h
+
+and gkb, h represent the complex channel gain of the LoS and NLoS path k, respectively. The terms rr (θA,k b, h , φ A,k b, h )
+
+and rt(θD,k b, h , φ D,k b, h ) represent the receive and transmit array response vector of NLoS path k, respectively. These two terms with k = 0 represent response vectors of the LoS path respectively. Gh
+
+ θA,k b, h , φ A,k b, h
+
+ and Gb
+
+ θD,k b, h , φ D,k b, h
+
+ are the antenna gain of HAPS and BS b respectively. Similar to (6), we can define the channel from HAPS to UE u of the BS b as 
+
+hh,b u =
+
+> S
+
+X
+
+> k=0
+
+αkgkh,b u rt(θD,k h,b u ,φ D,k h,b u )
+
+q
+
+Gh
+
+ θD,k h,b u ,φ D,k h,b u
+
+, (6) where g0 
+
+> h,b u
+
+and gkh,b u denote the complex channel gains of the LoS and NLoS paths, respectively, and rt(θD,k h,b u , φ D,k h,b u )
+
+represents the transmit array response vector of path k (with 
+
+k = 0 corresponding to the LoS path). Gh
+
+ θD,k h,b u , φ D,k h,b u
+
+
+
+denotes the antenna gain of the HAPS. 
+
+B. Signal Model 
+
+In the system considered, each BS serves two UE by transmitting two independent data streams over the same time–frequency resources with different power levels. Hybrid beamforming is adopted at the BS since fully digital beamforming requires one RF chain per antenna, leading to high power consumption for large arrays, while fully analog beamforming relies on a single RF chain and therefore lacks the flexibility required for multi-user transmission and effective inter-user interference mitigation. Hybrid beamforming achieves a practical trade-off between analog and digital beamforming flexibility and interference mitigation capability, and hardware complexity and power consumption, by combining digital and analog processing. Specifically, the data streams are processed using digital beamforming weights 
+
+WD 
+
+> b
+
+= [ wD
+
+> b,n
+
+,wD
+
+> b,e
+
+] ∈ C2×2, followed by analog beamforming weights WA 
+
+> b
+
+= [ wA
+
+> b,n
+
+, wA
+
+> b,e
+
+] ∈ CMb×2, where wD 
+
+> b,u
+
+∈ C2×1
+
+denotes the digital beamforming vector for UE u ∈ { n,e } at BS b, and wA 
+
+> b,u
+
+∈ CMb×1 denotes the corresponding analog beamforming vector. At time instant t, the signal received at the HAPS is a superposition of four data streams, two transmitted from each BS can be represented as 
+
+xb,h [t] = 
+
+> 2
+
+X
+
+> b=1
+
+X
+
+> u∈{ n,e }
+
+hHb,h WA 
+
+> b
+
+wD
+
+> b,u
+
+xb,u [t]+ nb,h [t], (7) where xb,u [t] represents the data symbol transmitted from BS b
+
+to UE u and nb,h [t] represents the noise at time instance t. The receiver at the FD-HAPS is equipped with a hybrid combiner such that the digital combiner weights are CD = [ cD 
+
+> 1
+
+,cD 
+
+> 2
+
+] ∈
+
+C2×2 and analog combiner weights are CA = [ cA 
+
+> 1
+
+, cA 
+
+> 2
+
+] ∈
+
+C2×Mh . The signal received at the HAPS can be represented as 
+
+yb,h [t] = ( cD 
+
+> b
+
+)H (CA)H xb,h [t]. (8) The transmitter at the FD-HAPS is also equipped with a hybrid beamforming with digital beamforming weights 
+
+WD 
+
+> h
+
+= [ wD
+
+> h, 1
+
+,wD
+
+> h, 2
+
+] ∈ C2×2 and analog beamforming weights 
+
+WA 
+
+> h
+
+= [ wA
+
+> h, 1
+
+,wA
+
+> h, 2
+
+] ∈ CMh×2. Accordingly, the signal received at the near UE can be derived as combination two data stream from HAPS 
+
+yb,h, ue [t] = hHh,b n
+
+> B
+
+X
+
+> m=1
+
+WAwD
+
+> h,m
+
+dm,u [t−τ ]+ nh,b n [t], (9) where τ denotes the propagation time delay of the HAPS-UE link caused by the long transmission distance due to the high-altitude deployment of the HAPS. Similarly, the received signal at the near UE can be derived as combination of two datastream from BS and two data stream from HAPS 
+
+yb,h, un [t] = hHb,b e
+
+X
+
+> k∈{ n,e }
+
+WA 
+
+> b
+
+wD
+
+> b,k
+
+db,u [t]+hHh,b e
+
+> B
+
+X
+
+> m=1
+
+WAwD
+
+> h,m
+
+dm,e [t−τ ]+ nb,b e [t]. (10) At the FD-HAPS receiver, signals transmitted by multiple BS overlap on the same frequency, as shown in (8), resulting in inter-BS interference. To separate these superimposed signals, the HAPS applies SIC by sequentially detecting and subtracting the strongest signal components. Therefore, the resulting signal-to-interference-plus-noise ratio (SINR) at the FD-HAPS for BS b is given by 
+
+γb,h h = |(cD 
+
+> b
+
+)H (CA)H hHb,h WA 
+
+> b
+
+wD
+
+> b,e
+
+|2
+
+|(cD 
+
+> b
+
+)H (CA)H hHb,h WA 
+
+> b
+
+wD
+
+> b,n
+
+|2+
+
+> B
+
+X
+
+> m>b
+
+X
+
+> u∈{ n,e }
+
+|(cD
+
+> m
+
+)H (CA)H hHm,h WA
+
+> m
+
+wD
+
+> m,u
+
+|2 +σ2
+
+> b,h
+
+.
+
+(11) Considering the received signal at the edge UE in (9), the data streams transmitted by the HAPS over the same frequency interfere with each other. To mitigate this interference, SIC is employed at the edge UE by first detecting and canceling the strongest signal component in the received signal. Therefore the corresponding SINR can be expressed as 
+
+γh,b e 
+
+> b
+
+= |hHh,b e WAwD
+
+> h,b
+
+|2
+
+PBm>b |hHh,m e WAwD
+
+> h,m
+
+|2 +σ2
+
+> h,b e
+
+. (12) From (10), the near UE receives signals from both the BS and the HAPS, where the HAPS transmission and the edge UE signal from the BS act as interference. The edge UE signal from the BS is first decoded and canceled using SIC. For successful cancellation, the near UE must decode the edge UE signal of its serving BS while treating its own signal as interference. Therefore, the SINR of the edge UE signal at the near UE is given by 
+
+γn,e b = hHb,b n WA 
+
+> b
+
+wD
+
+> b,e
+> 2
+
+hHb,b n WA 
+
+> b
+
+wD 
+
+> b,n
+> 2
+
++
+
+> B
+
+X
+
+> m=1
+> m̸=b
+
+hHh,m n WAwD 
+
+> h,m
+> 2
+
++σ2
+
+> n,e
+
+.
+
+(13) Once the edge UE signal is subtracted from received signal, the remaining interference signal is due to edge UE signal from the HAPS corresponding to the other BS. Therefore, the SINR of the received signal at near UE can be derived as 
+
+γb,b n 
+
+> b
+
+= |hHb,b n WA 
+
+> b
+
+wA
+
+> b,n
+
+|2
+
+PBm=1 ,m ̸=b|hHh,b n WAwA
+
+> h,m
+
+|2 +σ2
+
+> b,b n
+
+. (14) From the above SINR equations, the overall SINR of edge UE can be obtained as 
+
+γb,b e 
+
+> b
+
+= min( γh,b e 
+
+> b
+
+,γ b,h h ,γ n,e b ). (15) The achievable rates for the near UE n and edge UE u of BS 
+
+b can be obtained as, 
+
+Rb,u = log 2(1+ γb,b n 
+
+> b
+
+) for u ∈ { n,e }. (16) III. P ROBLEM FORMULATION 
+
+In this work, we are interested in obtaining a problem to jointly optimize the transmit hybrid precoders at the BS and FD-HAPS, the receiver combiner at the FD-HAPS such that the EE ( η) of the system is maximized with the minimum rate (rQoS ) constraints and the maximum transmit power constraints at the BS and the FD-HAPS. To formulate the EE maximiza-tion problem, we start with defining the EE ( η) as follows: 
+
+η =
+
+PBb=1 
+
+P
+
+> u∈{ n,e }
+
+Rb,u 
+
+PBb=1 
+
+P
+
+> u∈{ n,e }
+
+|WA 
+
+> b
+
+wD
+
+> b,u
+
+|2 
+
+> F
+
++PBb=1 |WA 
+
+> h
+
+wD
+
+> h,b
+
+|2
+
+> F
+
+. (17) Therefore, the beamforming optimization problem can defined as 
+
+max 
+
+> WA,WD,WA
+> h,
+> WD
+> h,CA,CD
+
+η (18a) s.t. Rb,u ≥ Rmin ,∀b,u, (18b) 
+
+WA 
+
+> b
+> 2
+> i,j
+
+= 1
+
+Mb
+
+,∀i,j,b, (18c) 
+
+WA 2 
+
+> i,j
+
+= 1
+
+Mh
+
+,∀i,j, (18d) 
+
+CA 2 
+
+> i,j
+
+= 1
+
+Mh
+
+,∀i,j, (18e) 
+
+X
+
+> u∈{ n,e }
+
+WA 
+
+> b
+
+wD 
+
+> bu
+> 2
+> F
+
+≤ P b
+
+> max
+
+, ∀b, (18f) 
+
+> B
+
+X
+
+> b=1
+
+WA 
+
+> h
+
+wD 
+
+> h,b
+> 2
+> F
+
+≤ P h
+
+> max
+
+, (18g) where WA = [ WA 
+
+> 1
+
+,..., WAB ], WD = [ WD 
+
+> 1
+
+,..., WDB ], wA 
+
+> h,b
+
+and 
+
+wD 
+
+> h,b
+
+are the analog and digital precoders at the FD-HAPS, 
+
+CA, CD are the analog and digital combiners at the FD-HAPS, respectively. The constraint (18b) is used to ensure that all UE achieve a minimum rate of Rmin . The constraints (18c)-(18e) is used to ensure that analog beamforming weights and combiner weights have constant modulus and it is equal to inverse of number of antenna elements. These constraints reflect the practical realization of analog beamforming which uses phase shifters and only changes the phase of the signal and not its strength. Setting a constant value keeps the total transmitted power under control. Constraints (18f) and (18g) ensures that transmit power of BS and HAPS are within the maximum power limits of P bmax and, P hmax respectively. IV. P ROPOSED SOLUTION 
+
+A. Analog beamforming weights design 
+
+Joint optimization of the hybrid beamforming and combiner at the BS and the FD-HAPS is challenging, due to non-convex objective function, matrix-product power constraints (18f) and (18g), and constant-modulus constraints (18c), (18e) and (18d). To this end, we first design the analog beamforming weights using a low-complexity strategy that directly maps the phase of the complex-conjugate channel coefficients onto the beamforming weights, thereby maximizing array gain while satisfying the constant-modulus constraints. Accordingly, the analog beamforming weights associated with the near UE of BS b is expressed as 
+
+wA 
+
+> b,n
+
+=[ e−j∠[h∗  
+
+> b,bn ]1
+
+,e −j∠[h∗  
+
+> b,bn ]2
+
+,...,e −j∠[h∗  
+
+> b,bn ]Mb
+
+]T ,∀b, (19) where [hb,b n ]i is the ith element of the channel vector hb,b n .For the edge UE served by BS b, the analog beamforming weights is constructed based on the transmit array response vector corresponding to the dominant departure direction, expressed as 
+
+wA 
+
+> b,e
+
+= rt(θD, 0 
+
+> b, h
+
+,φ D, 0 
+
+> b, h
+
+), ∀b. (20) Similarly, we can obtain the analog beamforming weights of FD-HAPS based on the channel from HAPS to edge UE as 
+
+wA 
+
+> h,b
+
+=[ e−j∠[h∗  
+
+> h,be ]1
+
+,e −j∠[h∗  
+
+> h,be ]2
+
+,...,e −j∠[hh,be ]Mh ]T ,∀b. (21) Further, we can obtain the analog combiner weights of FD-HAPS using the receive array response vector as 
+
+cA 
+
+> b
+
+= rr (θD, 0 
+
+> b, h
+
+,φ D, 0 
+
+> b, h
+
+), ∀b. (22) Since the analog beamforming and combiner weights are known, (18) can be reduced to the following problem 
+
+max 
+
+> WD,WD
+> h,CD
+
+η (23a) s.t. (18b) ,(18f) −(18g) . (23b) 
+
+B. Digital beamforming weights design 
+
+Next, we focus on designing the digital beamforming weights by solving (23). This step is still challenging due to the non-convex objective function and rate constraints (18b). Conventional iterative methods, such as ACE [10] and stochas-tic beamforming [22], rely on model-based updates and often struggle to scale effectively in dense networks with high in-terference due to large number of UE [23], [24]. To overcome these limitations, a GNN-based optimization framework is adopted to learn a direct nonlinear mapping from instantaneous channel state information to digital beamforming weights. 
+
+Fig. 2: Proposed GNN-based optimization architecture 
+
+1) GNN and Wireless Networks: GNN are specialized neural network architectures designed to learn from graph-structured data, where nodes (vertices) are connected by edges (links). Unlike traditional neural networks that handle independent feature vectors, GNNs model relationships among nodes by iteratively exchanging and aggregating information through a message-passing mechanism [25], [26]. Each node has a state vector, and each edge has a feature vector, facilitating complex dependency learning among nodes. Wireless communication networks can leverage GNNs, as they naturally represent their elements as graphs—network elements are nodes and wireless links are edges. GNNs have been effectively used in these networks to optimize resource allocation, power control, and beamforming due to their ability to utilize spatial relationships and interference patterns [27]– [29]. In this work, we propose a GNN-based architecture to optimize digital beamforming weights, modeling base stations (BS), high-altitude platform stations (HAPS), and user equip-ment (UE) as nodes, with wireless channels and interference as links. This architecture includes three neural networks: Node NN ( N N node ), Link NN ( N N link ), and Beamforming NN ( N N beam ). Let vt represent the state vector for each node, and Hr,t denote the link feature between nodes t and r.The Link NN generates message vector for the link between nodes t and r as mr,t = N N node (vt, Hr,t ). It essentially represents the signal transmitted from node t that has propagated through the channel Hr,t to reach node r.Similarly, all other messages are created for other links. In the next step, the receiving nodes send messages to Node NN and update their state vector as vr = N N link (mr, 1,..., mr,T ,vr ),where T denotes the number of neighboring nodes sending messages to node r.The updated state vectors associated with the BS and the HAPS nodes are then fed to the Beamforming NN to generate the digital beamforming and combining weights as 
+
+{W D,WD 
+
+> h
+
+,CD} = N N beam (v1,..., vB ,vh).
+
+2) Problem Transformation to GNN: In general, NN training requires an objective function to be optimized. For the beamforming optimization considered here, we instead employ a penalty function derived from (23). During training, this penalty is minimized while enforcing all constraints. The penalty function is defined as 
+
+ρ = λ1
+
+EE +λ2Rc +λ3Pc, (24) 
+
+Rc =
+
+> B
+
+X
+
+> b=1
+
+X
+
+> u∈{ n,e }
+
+max(0 ,R min −Rb,u ), (25) 
+
+Pc =
+
+> B
+
+X
+
+> b=1
+
+max(0 ,P b −P b
+
+> max
+
+)+max(0 ,P h −P h
+
+> max
+
+), (26) 
+
+P b = X
+
+> u∈{ n,e }
+
+WA 
+
+> b
+
+wD 
+
+> b,u
+> 2
+> F
+
+,∀b, (27) 
+
+P h =
+
+> B
+
+X
+
+> b=1
+
+WA 
+
+> h
+
+wD 
+
+> h,b
+> 2
+> F
+
+, (28) where, Rc represents the minimum achievable rate constraint described in (18b) and Pc is maximum power constraints de-scribed in (18f) and (18g). The terms P h and P b represent the transmit powers of HAPS and BS b, respectively. λ1, λ2, λ3 are the scaling factors. We consider λ2 and λ3 to higher than λ1 to ensure that the minimum rate and maximum power constraints are strictly enforced. This prevents the GNN from prioritizing EE maximization at the expense of violating the minimum rate and maximum power constraints. Based on the penalty func-tion, the final problem, equivalent to (23a), can be defined as 
+
+min 
+
+> WD,WD
+> h,CD
+
+ρ. (29) The optimization problem in (29) is equivalent to (23a) and is solved using the penalty formulation given in (24). The first term in the penalty function is defined as the inverse of the EE. When the penalty is minimized, the first term is reduced, which increases the EE and achieves the main objective of (23a). The term Rc enforces the minimum rate constraint in (18b). This term is zero when the achievable rate Rb,u satisfies the QoS requirement Rmin , and becomes positive when the rate falls below this threshold, increasing the penalty. The term Pc accounts for the transmit power constraints in (18f) and (18g). It remains zero as long as the transmit powers are within the allowable limits P b 
+
+> max
+
+and, 
+
+P h 
+
+> max
+
+and increases when these values are above thresholds. As the optimization minimizes the penalty, it naturally drives the second and third terms toward zero, ensuring that the rate constraint and power constraint are satisfied. 
+
+Fig. 3: Flow diagram of GNN optimization Fig.2 which is a detailed representation of second stage in Fig. 3, illustrates the GNN architecture that models the network as a graph with BS, HAPS, and UE as nodes, and wireless links. The GNN is executed centrally at the HAPS, which collects the required channel information from the BS and UE and performs the message-passing computations. As shown in the fig. 2, the GNN employs three components: Link NNs use channel features and learn propagation effects, Node NNs aggregate the output of Link NN to capture signal and interference patterns at receivers, and a Beamforming NN generates digital beamforming and combining weights from the node states. Fig.3 represents the complete workflow utilizing this architecture. Starting with network configuration and channel matrix, the first stage computes analog weights using closed-form solutions based on channel phases for near users and array steering for HAPS-assisted edge users. The second stage constructs the graph from Fig.3 and iteratively optimizes digital weights: the GNN forward pass generates beamforming weights, and a penalty function is computed to measure EE and constraint satisfaction. The gradients are calculated and the NN are updated using backpropagation technique. This loop continues until maximum iterations, yielding optimized hybrid beamforming that maximizes energy efficiency while satisfying QoS and power constraints. TABLE I: Simulation Parameters                                          
+
+> Parameter Value
+> No. of antennas in BS Mbh = 8 , M bv = 8
+> No. of antennas in HAPS Mhx = 10 , M hy = 10
+> Carrier frequency fc= 28 GHz Bandwidth B= 500 kHz Cell radius 200 m,1000 mHAPS height 22 km Maximum transmit power Phx = 45 dBm, Pb= 45 dBm No. of NLoS paths S= 5
+> No. of hidden layers DNN = 2 , CNN = 2 , GNN = 2
+> Neurons per hidden layer DNN: 64 ,32 ;CNN: 64 ,32 ;GNN: 32 ,32
+> Scaling factors λ1= 1 , λ 2= 10 , λ 3= 10
+
+V. S IMULATION RESULTS AND DISCUSSION 
+
+A. Simulation Setup 
+
+In this section, we evaluate the performance of the proposed GNN-based online optimization framework. To enable a fair comparison among optimization-driven baselines, topology-agnostic learning, and structure-aware learning, we consider three benchmark methods: (i) an ACE-based optimizer that iteratively updates a sampling distribution over candidate beamformers to maximize EE [10]; (ii) a fully connected DNN that learns a direct mapping from CSI (and network descrip-tors) to beamforming parameters [30]; and (iii) a CNN-based model that applies convolutional and pooling layers prior to the fully connected layers to exploit local feature structure [13]. For each network realization, the instantaneous CSI and network topology are used to construct the graph input and initialize the NN architecture described in Section IV-B1. The GNN parameters are then updated online by minimizing the penalty-based objective in Section IV-B2 via backpropagation, following the workflow in Fig.3. To study scalability and cov-erage effects, we consider three cell radii, 200 , 500 , 1000 m. Also, for each realization, the optimizer is executed for at most 1000 iterations with early stopping enabled. The list of simulation parameters is summarized in Table I. Furthermore, to ensure a fair comparison, all schemes are evaluated under identical channel realizations and system parameters. 
+
+B. Results and Discussion 
+
+Fig. 4: CDF vs. EE for different solution approaches and cell radii ∈ { 200 ,1000 } m. We compare the EE performance using the CDF for dif-ferent cell radii, such as 200 m and 1000 m, to examine the impact of increasing cell size on EE. The results show that, based on the observed CDF behavior, the EE performance does not decrease significantly as the cell radius increases. Fig. 4 plots the cumulative distribution functions (CDFs) versus EE, obtained using the GNN-based approach, under different terrestrial cell radii and compares its performance with three benchmarks approaches (i.e., ACE, DNN, CNN). It can be observed that the GNN-based approach consistently achieves higher EE across all considered cell radii. The higher EE is due to the ability of the GNN to explicitly capture inter-cell interference and coordination through graph-based message passing. Although DNN and CNN outperform the ACE ap-proach, their lack of explicit topology awareness limits their performance. The ACE method yields the lowest energy effi-ciency, while the GNN provides the best overall performance. 
+
+Fig. 5: CDF vs. EE with NOMA and OMA techniques across different cell radii ∈ { 200 ,1000 } m. Fig. 5 compares the CDF versus EE performance of NOMA and orthogonal multiple access (OMA) techniques. The results show that NOMA consistently achieves higher EE than OMA for all cell radii, highlighting its superior energy efficiency in multi-user scenarios. As the cell radius increases, the overall EE slightly decreases for all schemes due to higher path loss and reduced spectral efficiency at larger distances. Among the techniques, the proposed GNN-based methods outperform CNN- and DNN-based approaches for both NOMA and OMA, demonstrating the GNN’s ability to effectively capture interference patterns and optimize resource allocation. The CDF curves further show that the GNN-based NOMA achieves higher EE for a larger fraction of users, with the curves shifting right and steeper compared to other methods, indicating more consistent and robust EE gains. When comparing performance across two different cell radii, a significant variation is observed in the GNN performance under OMA, whereas the deviation is considerably smaller in the NOMA case. This demonstrates the consistency of the proposed GNN-based technique when integrated with the NOMA framework. 
+
+Fig. 6: CDF graphs of EE with and without HAPS across different cell radii ∈ { 200 ,1000 } m. Fig. 6 compares the CDF versus EE performance and studies the effect of using HAPS in the network. Higher EE is achieved when HAPS is used in all three solution approaches to that of without HAPS. This observation highlights that the HAPS-assisted NTN help in improving the EE of the network. Further, the proposed GNN-based method achieves a 5th-percentile EE higher than the other three solution approaches. This significant improvement demonstrates that the GNN maintains strong EE performance even under challenging conditions, such as severe interference and low SINR, while ensuring improved capacity for edge users through the HAPS relay, highlighting the robustness of the proposed approach. When comparing performance across two different cell radii, a significant variation is observed in the GNN performance with-out HAPS, whereas the deviation is considerably smaller in the HAPS-assisted case. This demonstrates the consistency of the proposed GNN-based technique when integrated with HAPS. VI. C ONCLUSION 
+
+In this work, we proposed an online beamforming optimization approach using GNN that enhances the energy-efficient transmission in HAPS-assisted multi-cell NOMA networks. The performance of the proposed GNN-based solution is evaluated and compared with DNN, CNN, and ACE-based approaches. Numerical results show that NN can effectively address the non-convex and coupled beamforming problem without relying on offline training. Among all methods, the GNN-based approach consistently achieved higher EE and more stable due to its topology-aware graph representation and message-passing mechanism. However, DNN and CNN provided moderate improvements but were less effective in exploiting network structure, while the ACE method yielded lower EE. Furthermore, the network with HAPS shown to provide higher EE and a 5th percentile as compared to one without HAPS. These findings highlight the importance of HAPS and topology-aware learning for online optimization in multi-cell NOMA systems. Future work will consider extensions to multiple HAPS deployments, user mobility, and imperfect channel state information. REFERENCES [1] J. G. Andrews, S. Buzzi, W. Choi, S. V. Hanly, A. Lozano, A. C. K. Soong, and J. C. Zhang, “What will 5G be?” IEEE J. Sel. Areas Commun. , vol. 32, no. 6, pp. 1065–1082, Jun. 2014. [2] D. Gesbert, S. Hanly, H. Huang, S. Shamai, O. Simeone, and W. Yu, “Multi-cell MIMO cooperative networks: A new look at interference,” 
+
+IEEE J. Sel. Areas Commun. , vol. 28, no. 9, pp. 1380–1408, Dec. 2010. [3] P. Kanani, M. J. Omidi, M. Modarres-Hashemi, and H. Yanikomeroglu, “HAPS-ISAC: Enhancing sensing and communication in 6G networks with advanced MIMO beamforming,” IEEE Open J. Commun. Soc. ,vol. 6, pp. 5988 – 6004, Jul. 2025. [4] T. S. Rappaport et al. , “Millimeter wave mobile communications for 5G cellular: It will work!” IEEE Access , vol. 1, pp. 335–349, May 2013. [5] A. F. Molisch, V. V. Ratnam, S. Han, Z. Li, S. L. H. Nguyen, L. Li, and K. Haneda, “Hybrid beamforming for massive MIMO: A survey,” 
+
+IEEE Commun. Mag. , vol. 55, no. 9, pp. 134–141, Sept. 2017. [6] S. Sun, T. S. Rappaport, and M. Shaft, “Hybrid beamforming for 5G millimeter-wave multi-cell networks,” in Proc. IEEE Infocom. Conf. ,Honolulu, HI, USA, 15-18, Apr. 2018. [7] O. E. Ayach, S. Rajagopal, S. Abu-Surra, Z. Pi, and R. W. H. Jr., “Spatially sparse precoding in millimeter wave MIMO systems,” IEEE Trans. Wireless Commun. , vol. 13, no. 3, pp. 1499–1513, Jan. 2014. [8] X. Yu, J.-C. Shen, J. Zhang, and K. B. Letaief, “Alternating minimization algorithms for hybrid precoding in millimeter wave MIMO systems,” 
+
+IEEE J. Sel. Topics Signal Process. , vol. 10, no. 3, pp. 485–500, Apr. 2016. [9] X. Qiao, Y. Zhang, M. Zhou, and L. Yang, “Alternating optimization based hybrid precoding strategies for millimeter wave MIMO systems,” 
+
+IEEE Access , vol. 8, pp. 113 078–113 089, 2020. [10] S. u. Hassan, T. Mir, S. Alamri, N. A. Khan, and U. Mir, “Machine learning-inspired hybrid precoding for HAP massive MIMO systems with limited RF chains,” MDPI Electronics , vol. 12, no. 4, Feb. 2023. [11] W. Fang, M. Fu, Y. Shi, and Y. Zhou, “Outage minimization for intelligent reflecting surface aided MISO communication systems via stochastic beamforming,” in Proc. 2020 IEEE 11th Sensor Array. Multichannel. Signal Process. Workshop (SAM Wkshps) , Hangzhou, China, 08-11 Jun. 2020. [12] L. Sung and D.-H. Cho, “Multi-user hybrid beamforming system based on deep neural network in millimeter-wave communication,” IEEE Access , vol. 8, pp. 91 616–91 623, Apr. 2020. [13] H. Ayad, M. Y. Bendimerad, and F. T. Bendimerad, “Convolutional neural network-based hybrid beamforming design based on energy efficiency for mmwave M-MIMO systems,” Int. J. Elect. Comp. Eng. ,no. 6, pp. 5443–5452, Dec. 2025. [14] T. Zhang, A. Dong, C. Zhang, J. Yu, J. Qiu, S. Li, and Y. Zhou, “Hybrid beamforming for MISO system via convolutional neural network,” 
+
+Electronics , vol. 11, Jul. 2022. [15] Q. Sun, H. Zhao, J. Wang, and W. Chen, “Deep learning-based joint CSI feedback and hybrid precoding in FDD mmwave massive MIMO systems,” Entropy , Mar. 2022. [16] G. Chen, Z. Wang, H. Lin, P. Du, and Y. Huang, “Online adaptive real-time beamforming design for dynamic environments in cell-free systems,” IEEE Trans. Wireless Commun. , vol. 24, no. 11, pp. 8925–8938, Nov. 2025. [17] Y. Shen, J. Zhang, S. H. Song, and K. B. Letaief, “Graph neural networks for wireless communications: From theory to practice,” IEEE Trans. Wireless Commun. , vol. 22, no. 5, pp. 3554–3569, Nov. 2022. [18] M. Giordani, M. Mezzavilla, S. Rangan, and M. Zorzi, “Multi-connectivity in 5G mmwave cellular networks,” in Proc. 2016 Mediterranean Ad. Hoc. Netw. Workshop (Med-Hoc-Net Wkshps) ,Vilanova i la Geltru, Spain, 20-22 Jun. 2016. [19] V. Raghavan and A. M. Sayeed, “Multi-antenna capacity of sparse multipath channels,” IEEE Trans. Inf. Theory , vol. 1, no. 1, pp. 156–166, Jun. 2008. [20] G. R. MacCartney, S. Sun, T. S. Rappaport, Y. Xing, H. Yan, J. Koka, R. Wang, and D. Yu, “Millimeter wave wireless communications: New results for rural connectivity,” in Proc. ACM MobiCom , New York, NY, USA, Oct. 2016. [21] B. Liu, X. Liu, S. Gao, X. Cheng, and L. Yang, “LLM4CP: Adapting large language models for channel prediction,” J. Commun. Inf. Net. ,vol. 9, no. 2, pp. 113–125, Jun. 2024. [22] P. Viswanath and D. N. C. Tse, “Opportunistic beamforming using dumb antennas,” IEEE Trans. Inf. Theory , vol. 48, no. 6, pp. 1277–1294, Jun. 2002. [23] W. Xia, G. Zheng, Y. Zhu, J. Zhang, J. Wang, and A. P. Petropulu, “A deep learning framework for optimization of MISO downlink beamform-ing,” IEEE Trans. Commun. , vol. 68, no. 3, pp. 1866 – 1880, Dec. 2019. [24] S. Lu, S. Zhao, and Q. Shi, “Learning-based massive beamforming,” in 
+
+Proc. IEEE Global Commun. Conf. , Taipei, Taiwan, 07-11 Dec. 2020. [25] F. Scarselli, M. Gori, A. C. Tsoi, M. Hagenbuchner, and G. Monfardini, “The graph neural network model,” IEEE Trans. Neu. Nets. , vol. 20, no. 1, pp. 61–80, Jan. 2009. [26] Z. Wu, S. Pan, F. Chen, G. Long, C. Zhang, and P. S. Yu, “A comprehensive survey on graph neural networks,” IEEE Trans. Neu. Nets. Learn. Systs , vol. 32, no. 1, pp. 4–24, Jan. 2021. [27] W. Jiang, “Graph-based deep learning for communication networks: A survey,” Computer Commun. , vol. 185, pp. 40–54, Jan. 2022. [28] B. Lim and M. Vu, “Graph neural network based beamforming and RIS reflection design in a multi-RIS assisted wireless network,” in 
+
+Proc. IEEE Stat. Sig. Proc. Workshops (SSP Wkshps) , Aug. 2023. [29] A. Ivanov, K. Tonchev, V. Poulkov, A. Manolova, and N. N. Neshov, “Graph-based resource allocation for integrated space and terrestrial communications,” Sensors , vol. 22, no. 15, Aug. 2022. [30] R. Hu, L. Jiang, and P. Li, “Hybrid beamforming with deep learning for large-scale antenna arrays,” IEEE Access , vol. 9, pp. 54 690–54 699, 2021.

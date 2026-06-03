@@ -1,0 +1,279 @@
+Title: From Waves to Graphs: A Ray-Tracing-Inspired Neural Radio Propagation Model
+
+URL Source: https://arxiv.org/pdf/2605.30525v1
+
+Published Time: Mon, 01 Jun 2026 00:26:28 GMT
+
+Number of Pages: 7
+
+Markdown Content:
+# From Waves to Graphs: A Ray-Tracing-Inspired Neural Radio Propagation Model 
+
+Paul Almasan †, Stefanos Bakirtzis ‡, Jos´ e Su´ arez-Varela †, Andra Lutu ††Telef´ onica Research, ‡University of Cambridge 
+
+Abstract —Artificial intelligence-driven radio propagation models provide agile and robust solutions for mobile network operators in their effort to ensure the optimal performance of the wireless ecosystem and support its efficient expansion. In this paper, we introduce G RAPH WAVE , a neural graph-driven 
+
+propagation solver hinging on the governing principles of ray tracing. The proposed model leverages a digitized version of the propagation environment to build a point cloud and extract an equivalent graph representation of the radio environment. By applying neural message passing over the equivalent graph, it allows the model to accurately infer radio-related quantities, e.g. ,received signal strength, in a three-dimensional environment. We showcase the use of G RAPH WAVE as a radio environment digital twin and we demonstrate that the model can learn from synthetic and real-world data while achieving low inference times. 
+
+Index Terms —Radio propagation, graph neural network, ray-tracing, 6G 
+
+I. I NTRODUCTION 
+
+Artificial intelligence (AI) has transformed various aspects of the wireless ecosystem along with the methods and tools used to underpin its effective operation [1]. In particular, AI has enabled the emergence of radio access network (RAN) digital twins (DT) that provide predictive and data-driven representations of the propagation conditions experienced by the network. Notably, a drastic shift has been observed in radio propagation modeling, moving from conventional empirical or deterministic models to AI-powered solutions that exhibit enhanced accuracy, computational efficiency, and lower cost [2]. Such models yield an invaluable tool for mo-bile network operators (MNOs) to support predictive control and optimization of the RAN, enabling critical applications such as network planning, coverage optimization, interference management, beamforming, and localization [3]. To mold AI-powered radio propagation tools, one needs a model that accurately translates data from a radio propagation scene—with some transmitting devices deployed—into some radio quantities of interest (QoI), typically the received signal strength (RSS) or the path loss (PL). To this end, it is crucial to properly co-design a data representation that cap-tures the fundamental factors influencing radio propagation in the scene, along with an AI model that can effectively learn and abstract patterns from these representations. Early works in this direction use tabular data along with multi-layer perceptrons (MLPs) [4], [5]. Later works use two-dimensional (2D) image-like visualizations of the propagation 
+
+> This work was done while Stefanos Bakirtzis was with Telef´ onica Re-search.
+
+environment and other physics-based input features, which can be combined with convolutional neural networks [6], [7], [8] or transformer-based encoding-decoding architectures [9] to exploit spatial correlations and infer the RSS. However, transforming the 3D propagation space into a simplified 2D scene inherently curbs the functionality and fidelity of radio propagation tools. First, 2D-based models constrain the prediction to a single receiving plane ( e.g. , at a predefined height). This renders them unsuitable for predict-ing radio propagation in the 3D space. Second, 3D geometries like buildings or cluttered data are reduced to pixels, hence losing structural details that can produce inaccuracies in the radio propagation modeling. Alternatively, more robust and realistic representations can be achieved via physics-driven approaches that consider the principles of radio propagation mechanisms. A well-established method is ray-tracing [10], which simplifies the intricate behavior of wave propagation by assuming that elec-tromagnetic (EM) energy flows along geometrically defined ray paths. These paths are created by the consecutive inter-action of a ray/wave emitted from a transmitter with objects found within the propagation environment. Specifically, when a ray impinges onto an interface between two media, it can be partially reflected, refracted, diffracted, or scattered, and there exist laws and approximations to compute the strength and phase of each component [11]. In this paper, we present G RAPH WAVE , a graph-driven 
+
+framework inspired by the principles of ray tracing that esti-mates wireless signal-related QoIs in 3D radio environments. The proposed framework directly integrates the radio scene and the ray paths into a unified graph representation, forming the basis of RAN DTs. To do that, we initially build a point cloud representation that captures all objects, transmitters, and receivers in the radio propagation scene. Then, these elements are used to construct a graph where point cloud elements are mapped to nodes in the graph, and edges interconnect all the scene elements by simulating rays (see schematic representation in Figure 1). Particularly, our work yields the following contributions:  
+
+> •
+
+We demonstrate how the digital representation of the propagation environment can be converted into a set of nodes, forming the foundations of our graph-driven 
+
+propagation model. By establishing proper connections between the graph nodes, we instate a representation of the input data that innately resembles the potential paths EM waves can traverse. Unlike the widely adopted     
+
+> arXiv:2605.30525v1 [cs.NI] 28 May 2026 Real World
+> Antenna
+> Deployment
+> Real World
+> Environment
+> Deployment
+> Dataset
+> COMBINE
+> DATASETS
+> Digital
+> Propagation
+> Environment
+> (Sec. III.A)
+> Point Cloud
+> Discretization
+> Graph Representation
+> (Sec. III.A) and Features
+> Initialization (Sec. III.B)
+> Graph Model
+> (Sec. III.C) Estimated RSS Map
+> Extract edge and node features Fig. 1. System architecture overview of the proposed method, using various data modalities to construct a DPE, extract an equivalent graph representation, and apply a neural transformation on it to infer RSS.
+
+simplified 2D visualization [6], [7], [8], [12], [13], our model favors from its physics-inspired architecture.  
+
+> •
+
+We design a set of custom node and edge features that enable our solver to learn to emulate radio propagation through neural message exchange.  
+
+> •
+
+We showcase the potential of G RAPH WAVE to learn from simulated and real-world measurement data, proving its reliability in a realistic operational setting using data from a production-grade network. II. G RAPH WAVE IDEATION AND PROBLEM FORMULATION 
+
+GRAPH WAVE aspires to establish an equivalent graph-driven representation of the propagation environment and the potential paths that EM waves may traverse. To achieve that, it is necessary to convert the continuous 3D physical world into a discretized digital equivalent space, referred to as the digital propagation environment (DPE). Specifically, the DPE includes three main components: ( i) a set of physical objects, such as buildings, cars and trees, that interact with the EM waves, ( ii ) a transmitting antenna, Tx, and ( iii ) a set of receivers R. Each physical object is represented by a collection of triangular meshes in the 3D space, parameterized by its vertex coordinates (see Section III-A). In Figure 1 we show a general overview of our entire framework, depicting how we build the DPE and extract a graph representation (see Section III-A). Each point in the cloud accounts for a node, v, in a graph, G, that resembles the DPE. By properly arranging the connections between the graph nodes, we can create virtual trajectories that reenact the paths through which EM energy flows. Further, each node and edge connection between them is endowed with physics-based and network-related features (see Section III-B). GRAPH WAVE amalgamates the graph-driven representa-tion with a neural transformation to infer a QoI value, ˆyr ,at each receiving point r ∈ R. This neural transformation is implemented through the exchange of learnable messages between the graph nodes, and corresponds to identifying a mapping function, f , that transforms a graph G into ˆyr [14]. Notably, G RAPH WAVE exhibits a schematic equivalence with ray-tracing, i.e. , graph paths correspond to potential ray tra-jectories, yet its neural nature allows our model to assimilate knowledge and learn from real-world data. Formally, the operation of G RAPH WAVE is defined as: 
+
+ˆyr = f (G; θ), (1) where θ represents the learnable parameters of G RAPH WAVE 
+
+that regulate the message exchange between the graph nodes. Specifically, G RAPH WAVE ’s parameters are computed such that the difference between the predicted and some ground truth values, yr , is minimized. Note that the approach is general in nature and, as we will demonstrate later, G RAPH -WAVE can be forged either using synthetic data from high-performance propagation simulations or real-world data. III. M ODEL DESIGN 
+
+In the following subsections, we present the design choices and implementation details of the components that constitute GRAPH WAVE . Specifically, we discuss how we generate the DPE and the equivalent graph representation, the selection of the node and edge input features, and the operation of the graph neural network (GNN) used to predict ˆyr .
+
+A. Digital Propagation Environment & Graph Representation 
+
+Each DPE comprises essential environmental and network-related details, including the object layout and its proper-ties, wireless device locations, and the respective transmitter antenna configuration. The 3D objects in the DPE are de-composed into a set of distinct triangular meshes, with each triangle capturing a portion of the object’s surface. The union of all triangular meshes precisely recreates the shape of each structure, ensuring an accurate geometric representation of the propagation environment. This is a common practice in computer vision since any 3D surface can be represented by a mesh of triangles, which are simpler and they have consistent geometric properties. We note that in this work, the only type of objects considered are buildings, however, the outlined methodology is general and can also be applied to model other entities, such as cars. Subsequently, the triangular meshes are utilized to derive a point cloud representation of the DPE. This is achieved by iterating over all triangles within the DPE, and for each one of them we create a discrete 2D plane with uniform spacing TABLE I TABLE WITH THE NODE AND EDGE FEATURES .Feature Description Node/Edge Feature Node type One-hot vector encoding indicating the node type, i.e. , building, transmitter, or receiver Node                               
+
+> α node Angle between the node orientation and the XY plane Node
+> β node Angle between node orientation and antenna orientation Node Height Node elevation (in meters) Node Edge type One-hot vector encoding indicating the edge type, i.e. , transmitter-building, transmitter-receiver and building-receiver Edge Distance Distance between nodes (in meters) Edge SinKR Phase shift real part, np.sin((2* π/λ)*Distance), where λis the wavelength Edge CosKR Phase shift imaginary part, np.cos((2* π/λ)*Distance), where λis the wavelength Edge Free Space Path Loss Free Space Path Loss value computed using the distance between nodes Edge
+> α edge Angle between the edge connecting the points and the XY plane Edge
+> β edge Angle between the edge and the antenna orientation. For the building-coverage edges, the angle is between the edge and the building node orientation Edge Radiation Pattern Only for transmitter-receiver and transmitter-building edges. It stores the gain value where the edge intersects the radiation pattern of the transmitter Edge
+
+between its points, eventually retaining in the cloud only the points that overlap with the triangle surface. In addition to digitizing physical objects, the wireless equipment, i.e. ,the transmitting antenna Tx and the set of receivers R, are also digitized and represented as distinct points of the cloud. These are placed accordingly to their relative position to the buildings in the real-world. The constructed cloud point sets the basis for constructing the graph representation of the DPE. To do this, the cloud points are considered distinct nodes, and they are intercon-nected to form a graph Gr = ( Vr , E r ) for each receiver 
+
+r ∈ R, where Vr is the set of nodes and Er is the set of edges. The edges are created by connecting the transmitter node to all building nodes, and then linking all the building nodes with the receiver node. In addition, we add a distinct edge from the transmitter to the receiver to consider the case of line-of-sight propagation. Note that this connectivity policy does not explicitly reconstruct the ray-tracing paths, but instead provides a graph-based approximation of all potential propa-gation routes from the transmitter to the receiver. However, in its current format, this representation is limited to first-order reflections, and we leave the inclusion of additional edges that will capture higher-order reflections as future work. 
+
+B. Features Initialization 
+
+To enable GRAPH WAVE to learn the EM propagation dynamics, each node and edge must be assigned with some input features that will be processed neurally to derive ˆyr .Specifically, each node v ∈ Vr is associated with a fea-ture vector xv ∈ RdV , forming the node feature matrix 
+
+XV ∈ R|Vr |× dV . There are three types of nodes in the graph: transmitter nodes, building nodes, and receiver nodes. Each node feature vector is initialized with a one-hot encoding vector to indicate its type. Additionally, each node is assigned an orientation to represent its spatial direction. In particular, for a transmitter node the orientation is determined by its azimuth and tilt angles, whilst all the receivers R are oriented towards the positive Z-axis. Lastly, the orientation of each building node is defined perpendicular to the 3D triangle that is part of. These orientations are encoded using two angles: 
+
+αv and βv . The first represents the angle between the node orientation and the XY ground plane, and the latter depicts the angle between the node orientation and antenna orientation. Note that this design choice allows our graph-driven neural propagation solver to be rotation equivariant [15]. Similarly, each edge e ∈ Er has an associated feature vector xe ∈ RdE , which defines the edge feature ma-trix XE ∈ R|Er |× dE . The edge features capture relation-ships between nodes, including distance, incidence angle, and visibility. There are three categories of edges: transmit-ter–building, building–receiver, and transmitter–receiver. Each edge is initialized with a one-hot encoding vector to represent its category. In addition, a set of supplementary features is concatenated to the edge feature vector. Table I shows a summary of all the features used to initialize the node and edges feature vectors. Similarly to the nodes angle features, we also assign an edge angle orientation αe and βe.
+
+C. Graph Neural Network Model 
+
+The graph representation, along with the carefully de-signed features, enable portraying faithfully the geometric characteristics of the propagation environment. Further, the selected features provide meta-information that helps capture properties related to the antenna orientation with respect to the receivers and the buildings, as well as how potential path/edges affect the propagation of EM waves, e.g. , phase shift and path attenuation. Bringing these pieces of informa-tion together through a unified neural operator, G RAPH WAVE 
+
+learns and quantifies the impact of various propagation mech-anisms on EM wave strength, such as reflection, diffraction, and scattering. The neural operator is implemented via a GNN that adheres to the neural message passing process outlined in [14], estimating ˆyr at the receiving nodes through L consecutive message-passing operations and a final readout stage. During the message-passing phase, each node feature vector, xv,is transformed into a hidden state, hv, based on the infor-mation gathered from neighboring nodes and the respective connecting edges. For the l + 1 -th message passing operation, this transformation is achieved via two learnable non-linear functions, fm and fu, parameterized via neural networks and employed to evaluate the transmitted messages, mv , and update the node hidden states, respectively: 
+
+m(l+1)  
+
+> vi
+
+= X 
+
+> j∈N(vi)
+
+fm(h(l) 
+
+> vi
+
+, h(l) 
+
+> vj
+
+, xei,j ), (2) 
+
+h(l+1)  
+
+> vi
+
+= fu(h(l) 
+
+> vi
+
+, m(l+1)  
+
+> vi
+
+), (3) where xei,j is the edge feature vector of the edge connecting the i-th and the j-th nodes, whilst hvi and hvj are the hidden state feature vectors for the l-th message-passing layer (note that for the zeroth layer these corresponds to xv ). Then, in the readout phase, ˆyr is estimated through a neural readout function, fr , as: 
+
+ˆyr = fr (h(L) 
+
+> vi
+
+|v ∈ Vr ). (4) and the loss function to be minimized is the mean absolute error (MAE) between the prediction and the ground truth values: 
+
+L(θ) = 1
+
+|R|
+
+X
+
+> r∈R
+
+|ˆyr − yr | (5) IV. E VALUATION 
+
+In the following subsections, we discuss the details of the dataset used to forge G RAPH WAVE . We provide a proof-of-concept for our graph-driven neural propagation model, showcasing how it can replicate the results of a ray-tracer. We then exemplify its potential to learn from real-world data and outperform conventional propagation simulators. To finalize, we discuss the open challenges for building AI-based radio propagation tools. All the experiments where executed on off-the-shelf hardware with an Intel(R) Xeon(R) Gold 6348 CPU with 2.60GHz and an NVIDIA RTX A5000 GPU. 
+
+A. Datasets 
+
+GRAPH WAVE is built using three different data sources, conveying information related to the network configuration, the propagation environment layout, and the target QoI. The first data source comes from a major MNO in Europe that comprises real-world antenna placements and their config-uration, i.e. , operating frequency, azimuth and tile angles, beam width. This information is then used in conjunction with data from OpenStreetMap (OSM) [16] to extract 3D building geometric information and construct the DPEs. To do this, we create a bounding box that surrounds the antenna ( i.e. ,
+
+200 × 200 meters with the antenna placed in the middle), and download all the geometric information for all the buildings within this area. Subsequently, we use Blender 4.0.0 [17] and Python 3.10.12 to iterate over the triangular mesh and convert this geometric information into a point cloud, as per Section III-A. The triangular mesh is implicitly defined in the OSM dataset, hence no additional step is required to obtain the triangles. The third dataset includes the ground truth values that will be used to train G RAPH WAVE , which can be obtained either through software simulations or real-world measure-ments from the operating network. In Section IV-B we used simulated data generated via Sionna RT 0.19.0 [18] in 0   
+
+> 10
+> 20
+> 30
+> 40
+> 50
+> Antenna Configuration Idx
+> 0
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> MAE (dB)
+> Average
+> (a) 0
+> 10
+> 20
+> 30
+> 40
+> 50
+> Antenna Configuration Idx
+> 0
+> 2
+> 4
+> 6
+> 8
+> 10
+> RMSE
+> Average (b) Fig. 2. (a) MAE and (b) RMSE sample distribution between G RAPH WAVE
+> and the ground truth values obtained with Sionna RT. The x-axis indicates the antenna configuration index from the 53 different antenna configurations used for testing.
+
+order to verify that indeed G RAPH WAVE can produce results commensurate to that of existing propagation solvers. Yet, the advantage of G RAPH WAVE is that due to its neural nature, it can accrue knowledge from real data. To highlight this strength, in section IV-C we used crowdsourced data from a major MNO in Europe. Using the latitude and longitude of each measurement allowed us to place them within our DPE. 
+
+B. Proof-of-Concept with Ray-Tracing Data 
+
+The objective of this set of experiments was to demonstrate the capabilities of G RAPH WAVE to predict the RSS. Specif-ically, we aim at observing the gap between the proposed model and the ground truth obtained with Sionna RT. To this end, we took a real-world antenna configuration, and we built a DPE of 200x200 meters using OSM. Then, we created a synthetic dataset of 71 different antenna configurations, where we changed the original azimuth and tilt angles. Specifically, the tilt angle ranges from -10 to +15 in steps of five and these values were added to the original tilt value from the antenna configuration. Similarly, for the azimuth we explored a range from -25 to +30 that was added to the original value. For each antenna configuration, we used the Sionna RT [18] version 0.19.0 to launch the simulations and obtain the ground truth RSS values. Sionna was configured with a cell size of (2, 2) meters, with a maximum reflection depth of 8, with 
+
+1 · 10 6 rays traced and with diffraction enabled. From a total of 71 pairs of different tilt and azimuth values, we selected 18 of them for training and 53 for testing. For each pair, we built a DPE, and we placed a set of receivers so that we could use Sionna RT to simulate the RSS values. During training, we randomly selected 70% of the receiver positions for training and the remaining 30% were used for validation, which is a common dataset split ratio in machine learning. We set a size of 64 for the feature vectors of the nodes and edges, and we used 256 neurons in the two-layer of the readout with a dropout of 0.1 and a batch size of 32. The learning rate remained constant at 0.001 during the entire training process of 3000 epochs. The model with the lowest validation loss is selected for further evaluation in the test split. −150 −125 −100 −75 −50 −25 0
+
+> RSS (dBm)
+> 0.00
+> 0.01
+> 0.02
+> 0.03
+> 0.04
+> 0.05
+> 0.06
+> Density
+> True
+> Predicted
+
+(a) −150 −125 −100 −75 −50 −25 0 
+
+> RSS (dBm)
+> 0.000
+> 0.005
+> 0.010
+> 0.015
+> 0.020
+> 0.025
+> 0.030
+> 0.035
+> 0.040
+> Density
+> True
+> Predicted
+
+(b) Fig. 3. Continuous probability density curves for the predictions in the antenna configuration index with (a) maximum MAE and (b) minimum MAE in the test set. 
+
+Figure 2 shows the mean absolute error (MAE) and root mean squared error (RMSE) between G RAPH WAVE ’s pre-dictions and the ground truth RSS values for the test set. This comparison allows us to measure the gap between the GNN-based model and the ground truth values simulated with Sionna RT. G RAPH WAVE achieves an MAE of 3.73 dB with a range of values from 2.28 to 5.86 dB, demonstrating robust performance throughout different antenna configurations than those seen during training. In terms of execution cost to obtain the RSS maps, we observe an average time of 1.03 seconds for G RAPH WAVE and 1.86 seconds for Sionna RT. This gap, even though it’s small, indicates a potential for GNN-based methods to make fast, accurate predictions. From the experiments described above, we selected the antenna configuration index with highest and lowest MAE in the test set to visually compare the distributions of the predicted values by G RAPH WAVE with respect to the ground truth obtained with Sionna RT 0.19.0. Figures 3(a) and 3(b) show the probability density curves of G RAPH WAVE ’s predictions together with the true values for the DPE with maximum and minimum MAE respectively. For the case with the highest MAE, the results indicate that the distribution of predicted values does not fully match the ground truth values. Nevertheless, the peaks in both distributions coincide, indicating the potential of G RAPH WAVE to learn the key radio propagation aspects for the DPE. Alternatively, the case with minimum MAE from Figure 3(b) shows the distributions are almost identical. The difference lies in the non-coverage values with an RSS of ≈ -140 dBm, indicating that the deviations between GRAPH WAVE and ray-tracing are not critical. 
+
+C. High-fidelity RSS Inference with Real-World data 
+
+In this section, we exemplify the potential of G RAPH WAVE 
+
+to generate high-fidelity empirical coverage maps from real-world data. Traditional simulations often fail to accurately represent real-world environments due to the difficulty of gathering critical meta-information, such as the construction material properties. Not having this kind of information or making assumptions about it, e.g. , assuming all buildings are made of concrete, along with the innate limitations of the propagation solver, results in discrepancies between Sionna GraphWave Ericsson Linear Regression 10 −2 10 −1 10 0 10 1 10 2
+
+> Absolute Error [dB]
+> 0
+> 0.25
+> 0.5
+> 0.75
+> 1
+> CDF
+> Sionna
+> GraphWave
+> Ericsson
+> Linear
+> Regression
+
+(a) 10 −1 10 0 10 1 10 2
+
+> Absolute Error [dB]
+> 0
+> 0.25
+> 0.5
+> 0.75
+> 1
+> CDF
+> Sionna
+> GraphWave
+> Ericsson
+> Linear
+> Regression
+
+(b) Fig. 4. Results with real-world measurements on (a) city A and (b) city B. 
+
+the obtained simulated values and the empirical measure-ments. In this set of experiments, the objective was to train GRAPH WAVE with real-world measurements and use the trained model to obtain realistic high-fidelity estimations. Since measurements capture radio propagation in the real-world, with G RAPH WAVE we are reducing the natural gap between simulations and real-world radio propagation. In these experiments, we leveraged a real-world crowd-sourced measurements dataset from a MNO in Europe (see Section IV-A). Initially, we selected the RSS measurements from two different cities, referred to as city A and B, and we merged them with the antenna deployment dataset, allowing us to associate the measurements with the antennas they are connected to. For each of these antennas, we had their config-uration and radiation pattern, which allowed us to faithfully represent the antenna configuration in the DPE. We selected one antenna from city A and one from city B, creating two different DPEs with a set of empirical measurements placed on the respective scenes as they were in the real-world. The empirical measurements were randomly split into 70% of them for training, 20% for validation and 10% for testing. We trained G RAPH WAVE , and we evaluated its performance on the testing set for each DPE independently. As baselines, we used a Linear Regression, Sionna [18] and the empirical Ericsson channel model, which is a modification of Okumura-Hata model with tunable parameters set according to [19]. Figure 4(a) shows the evaluation results for city A. The x-axis corresponds to the absolute error between the real-world empirical measurements and the estimated RSS values for each model. On the y-axis on the left-hand side, we can read the cumulative density function (CDF) of the same errors. The experimental results indicate that ≥90% of the samples predicted by G RAPH WAVE have an absolute error between 0 and 10 dB. In addition, GRAPH WAVE has amean error of -0.03, whereas Sionna has a mean of 3.51 and Ericsson and Linear Regression models have a mean error of -6.7 and 113.46 respectively. These values indicate that Sionna and Linear Regression tend to underestimate the RSS values and the Ericsson model overestimates them on average. In Figure 4(b) we show the results for city B having similar trends as in city A. The means are 0.46, -19.16, 0.39 and 3.28 for G RAPH WAVE , Ericsson, Linear Regression and Sionna respectively. Similarly, in City A, Sionna and Linear Regression underestimate the RSS, the Ericsson model overestimates the predictions and G RAPH WAVE offers more equilibrated predictions. 
+
+D. Discussion 
+
+The experimental evaluation showed the potential of GRAPH WAVE to learn radio propagation in 3D environments and estimate QoIs for a given area of interest. Even though the results are promising, there are several open challenges that need to be addressed to mold a generic AI-powered radio propagation tool. We envision a tool with high performance and low computational complexity regardless of the 3D en-vironmental characteristics or the transmitter configuration. To do this, we need to solve the lack of real-world datasets with accurate geometric meta-information of the buildings and their materials. In our work, we used OSM as a data source for this information, but we noticed that the building heights are approximated and the building materials information is, in most cases, incomplete. This naturally results in discrepancies between the simulated scenarios and the real-world environ-ment. The implementation of G RAPH WAVE relies on representing the DPE as a point cloud, a design choice that was inspired by the EM wave propagation in a 3D environment. We acknowledge that this representation limits the scalability of our method to substantially larger DPEs due to the limited GPU memory needed to train the GNN. As future work, we are planning to analyze techniques like subgraph chunking and other mechanisms to handle larger DPEs while reducing graph size and memory consumption. In addition, we are planning to extend G RAPH WAVE by incorporating additional propagation mechanisms such as scattering or second-order reflections that would lead to more accurate modeling. V. C ONCLUSIONS 
+
+In this paper, we presented a graph-driven neural radio propagation modeling approach inspired by ray-tracing. We demonstrated how to extract a point cloud representation from a digital replica of a real-world propagation environment, and then convert it to an equivalent graph with features in the nodes and edges. Consequently, we assigned proper physics-based and system-related features to the graph nodes and edges that were effectively transformed to an end-user RSS value via neural message passing. Our experimental results indicated that G RAPH WAVE can learn from both synthetic and real-world data. The proposed framework showed better accuracy compared to ray-tracing for real-world datasets, paving the way for the establishment of physics-inspired tools that can be exploited by MNOs for efficient RAN optimization and predictive performance analysis. ACKNOWLEDGMENT 
+
+This work was supported by the SNS JU under the Euro-pean Union’s Horizon Europe research and innovation pro-gram under Grant Agreements No. 101139161 (INSTINCT) and No. 101192369 (6G-MIRAI). Views and opinions ex-pressed are however those of the authors only and do not necessarily reflect those of the European Union or SNS JU. Neither the European Union nor the granting authority can be held responsible for them. Stefanos Bakirtzis was supported by the Foundation for Education and European Culture. REFERENCES [1] K. B. Letaief et al., “The roadmap to 6g: Ai empowered wireless networks,” IEEE Commun. Mag. , vol. 57, no. 8, pp. 84–90, 2019. [2] C. Huang et al., “Artificial intelligence enabled radio propagation for communications—part ii: Scenario identification and channel modeling,” IEEE Trans. Antennas Propag. , vol. 70, no. 6, 2022. [3] S. Bakirtzis et al., “Empowering wireless network applications with deep learning-based radio propagation models,” IEEE Wirel. Com-mun. , 2025. [4] E. Ostlin et al., “Macrocell path-loss prediction using artificial neural networks,” IEEE Trans. Veh. Technol , vol. 59, no. 6, pp. 2735–2747, 2010. [5] L. Azpilicueta et al., “A ray launching-neural network approach for radio wave propagation analysis in complex indoor environments,”                                                           
+
+> IEEE Trans. Antennas Propag , vol. 62, no. 5, pp. 2777–2786, 2014. [6] X. Zhang et al., “Cellular network radio propagation modeling with deep convolutional neural networks,” in Proc. 26th ACM SIGKDD Int. Conf. Knowl. Discovery & Data Mining, , 2020, pp. 2378–2386. [7] R. Levie et al., “Radiounet: Fast radio map estimation with convolu-tional neural networks,” IEEE Trans. Wirel. Commun. , vol. 20, no. 6, pp. 4001–4015, 2021. [8] S. Bakirtzis et al., “EM DeepRay: An expedient, generalizable and realistic data-driven indoor propagation model,” IEEE Trans. Antennas Propag. , vol. 70, no. 6, pp. 4140–4154, 2022. [9] Y. Tian et al., “Radionet: Transformer based radio map pre-diction model for dense urban environments,” arXiv preprint arXiv:2105.07158 , 2021. [10] Z. Yun et al., “Ray tracing for radio propagation modeling: Principles and applications,” IEEE access , vol. 3, pp. 1089–1100, 2015. [11] D. K. Cheng et al., Field and wave electromagnetics . Pearson Educa-tion India, 1989. [12] A. Bufort et al., “Data-driven radio propagation modeling using graph neural networks,” arXiv preprint arXiv:2501.06236 , 2025. [13] G. Chen et al., “A graph neural network based radio map construc-tion method for urban environment,” IEEE Communications Letters ,vol. 27, no. 5, pp. 1327–1331, 2023. [14] J. Gilmer et al., “Neural message passing for quantum chemistry,” in International conference on machine learning ,PMLR, 2017, pp. 1263–1272. [15] V. G. Satorras et al., “E (n) equivariant graph neural networks,” in International conference on machine learning ,PMLR, 2021, pp. 9323–9332. [16] OpenStreetMap contributors, Planet dump retrieved from https://planet.osm.org , https://www.openstreetmap.org, 2017. [17] Blender Foundation, Blender - A 3D Modelling and Rendering Tool ,Accessed: 2025-03-26. [Online]. Available: https://www.blender.org/ [18] J. Hoydis et al., “Sionna rt: Differentiable ray tracing for radio propagation modeling,” in 2023 IEEE Globecom Workshops (GC Wkshps) , 2023, pp. 317–321. DOI : 10.1109/GCWkshps58843.2023. 10465179
+
+[19] J. Milanovic et al., “Comparison of propagation models accuracy for wimax on 3.5 ghz,” in 2007 14th IEEE Int. Conf. Electr. Cir. Syst. ,IEEE, 2007, pp. 111–114.

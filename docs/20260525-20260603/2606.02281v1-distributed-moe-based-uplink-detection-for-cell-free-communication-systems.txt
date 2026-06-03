@@ -1,0 +1,586 @@
+Title: Distributed MoE-based Uplink Detection for Cell-Free Communication Systems
+
+URL Source: https://arxiv.org/pdf/2606.02281v1
+
+Published Time: Tue, 02 Jun 2026 02:49:44 GMT
+
+Number of Pages: 6
+
+Markdown Content:
+# Distributed MoE-based Uplink Detection for Cell-Free Communication Systems 
+
+Le Zhao ∗, Xuesong Pan ∗, Xinyi Wang ∗† , Zhong Zheng ∗† , Zesong Fei ∗† ∗ School of Information and Electronics, Beijing Institute of Technology, Beijing 100081, China  
+
+> †
+
+National Key Laboratory of Science and Technology on Space-Born Intelligent Information Processing, Beijing Institute of Technology, Beijing 100081, China Contact Email: tobin bit@icloud.com 
+
+Abstract —Cell-free Massive multiple input and multiple output (MIMO) is recognized as a key technology for beyond-5G networks, where distributed access points (APs) jointly serve user equipments (UEs) to address the inherent inter-cell inter-ference issue inherent in cellular systems. While conventional distributed signal detection methods offer a practical balance between performance and fronthaul load, they are fundamentally limited by linear processing constraints. In this paper, we propose a novel deep learning based uplink detection framework by introducing the distributed mixture of experts detection network (DMoE-DetNet). In this architecture, each AP acts as a local expert employing convolutional neural networks (CNNs) for non-linear feature extraction, and transmits the local minimum mean square error (MMSE) detection results and statistical channel information to the central processing unit (CPU). In the CPU, an attention-based encoder module captures complex spatio-temporal dependencies among users for global feature fusion, with a gating network at the central processor dynam-ically weighting the contributions from different APs. At last, a linear detector outputs the symbol probability. Simulation results demonstrate that the proposed DMoE-DetNet significantly outperforms conventional linear processing based cell-free signal detection methods in terms of symbol error rate, showcasing the potential of artificial intelligence-enabled communication systems. 
+
+Index Terms —Cell-free MIMO, distributed signal detection, deep learning, mixture of experts. 
+
+I. I NTRODUCTION 
+
+Global mobile user equipment (UE) connections are pro-jected to reach 7.49 billion by 2025. Multiple-input multiple-output (MIMO) technology has been fundamental to 5G and beyond-5G networks [ 1], delivering over 10× spectral effi-ciency gains compared to legacy systems through base station hardware upgrades rather than new site deployments [ 2], [ 3]. In the uplink MIMO systems, efficiently and accurately receiving and processing signals transmitted by UEs has always been a core challenge in communication systems. While linear signal detection techniques such as s minimum mean-squared error (MMSE) and zero forcing (ZF) combin-ing, have been widely adopted for their reasonable perfor-mance and acceptable implementation complexity [ 4], their performance are fundamentally limited by linear processing constraints. Artificial intelligence (AI) is playing a promising role in MIMO signal detection to overcome the limitations of these conventional MIMO detectors [ 5]. Several AI-based approaches, including DetNet [ 6], OAMP-Net [ 7], and LISA [8] have demonstrated promising results by leveraging deep learning for MIMO detection. Nevertheless, the mentioned methods are limited by the inter-cell interference and network coverage since a non-cooperative cellular network where each base station serves an exclusive set of UEs. Inspired by cell-free architecture proposed for the scenario where a large number of access points (APs) and central processing unit (CPU) are jointly serving UEs with no cell boundaries, the distributed signal detection has emerged as a promising cellular paradigm. Early studies such as [ 9] focused on configurations where distributed APs are connected to a CPU via fronthaul links, forwarding both channel state information (CSI) and received signals to facilitate centralized detection. This architecture, denoted as a fully centralized pro-cessing framework, however, introduces substantial fronthaul overhead and increases processing latency. To overcome the main drawback of the centralized detection method, several distributed schemes such as local CSI utilization for interme-diate computations [ 10 ], expectation propagation with inter-module iteration [ 11 ], and partial MMSE reception where users are served by partial nodes [ 12 ] were proposed. Among the multiple low-overhead distributed detection schemes, large-scale fading decoding (LSFD) [ 13 ], [ 14 ] has attracted considerable attention. LSFD operates in two distinct stages: local detection at the APs and weighted combining at the CPU, where the combining weights are determined based on channel large-scale channel fading coefficients. In [ 12 ], the authors derived closed-form expressions for the optimal combining weights under the assumption that matched filters (MF) are used at the local receivers. while [ 15 ] and [ 16 ]extended to ZF and MMSE detectors incorporating channel estimation errors. However, the optimization of LSFD com-bining weights relies on the expectation-maximization process and statistical channel assumptions, leading to performance degradation under complex deterministic channel conditions. Moreover, practical deployment requires the CPU to period-ically acquiring CSI from UEs to APs to observe channel statistics and update the weights, which introduces additional overhead. To overcome these limitations and realize the full potential of distributed processing, we propose the distributed mixture         
+
+> arXiv:2606.02281v1 [eess.SP] 1 Jun 2026 ly
+> AP 1 / Expert 1 AP l/ Expert lAP L/ Expert L
+> Ly
+
+# Ă Ă
+
+> 1y
+> CPU
+
+# Ă
+
+> UEs
+
+# ĂĂ UEs ĂĂ 
+
+> Fig. 1. Illustration of the cell-free MIMO uplink system.
+
+of experts detection network (DMoE-DetNet) framework. In this structure, each AP acts as a local expert, leveraging instantaneous CSI (ICSI) for precise signal processing, while a gating network at the CPU uses statistical CSI (SCSI) for adaptive expert fusion. Furthermore, a Transformer encoder is utilized to capture complex spatio-temporal dependencies that are challenging for conventional linear processors. Once well-trained, the proposed framework operates using only the detected signals from APs and SCSI, which can be acquired in prior via, e.g., channel knowledge map (CKM) [ 17 ]–[ 19 ]. The rest of this paper is organized as follows. Section II 
+
+presents the system model and reviews conventional dis-tributed reception schemes. Section III details the proposed DMoE-DetNet architecture. Simulation results and discussions are provided in Section IV , and Section V concludes the paper. II. S YSTEM MODEL AND CONVENTIONAL DETECTION 
+
+A. Cell-Free MIMO System Model 
+
+As illustrated in Fig. 1, we consider a cell-free MIMO uplink system where K single-antenna UEs are served by L
+
+distributed APs, each equipped with N receive antennas. All APs are connected to a CPU via fronthaul links. The channel between UE k and AP l is modeled as spatially correlated Rayleigh fading: 
+
+hkl ∼ CN (0, Rkl ), (1) where Rkl ∈ CN ×N is the spatial correlation matrix, and 
+
+βkl , tr( Rkl )/N represents the large-scale fading coefficient. During uplink data transmission, each AP first estimates the local CSI from UEs and performs MMSE signal detection based on estimated CSI. The CPU subsequently combines the locally detected signals from all APs through weighted fusion to enhance the overall detection accuracy. The received signal at AP l is modeled as: 
+
+yl =
+
+> K
+
+∑
+
+> k=1
+
+pkhkl M(sk) + nl, (2) where M(·) denotes the modulation mapping function, sk ∈ S 
+
+is the transmitted symbol from UE k with E[|sk |2] = 1 , and 
+
+nl ∼ CN (0, σ 2
+
+> n
+
+IN ) represents the additive white Gaussian noise at AP l.To estimate the transmitted symbols, an MMSE detector is applied to minimize the mean-square error. Using the estimated channel ˆhkl , the detection matrix for AP l is given by 
+
+vMMSE  
+
+> l
+
+=
+
+(ˆhHkl ˆhkl + σ2
+
+> n
+
+IN
+
+)−1 ˆhHkl , (3) and the corresponding symbol estimate is obtained as: 
+
+ˆsMMSE  
+
+> l
+
+= vMMSE  
+
+> l
+
+yl. (4) However, in multi-cell scenarios, inter-cell interference severely degrades the accuracy of the channel estimate ˆhkl ,which in turn constrains the detection performance at the l-th AP. 
+
+B. Fully Centralized Processing 
+
+To overcome the performance limitations caused by inter-cell interference in local detection, the fully centralized pro-cessing framework is first considered [ 9]. In this architecture, all APs forward their received signals to the CPU for joint processing, thereby mitigating the impact of local channel estimation errors. The aggregate received signal across all APs is given by: 
+
+y = Hx + n, (5) where 
+
+y =
+
+
+
+y1
+
+...
+
+yL
+
+ , H =
+
+
+
+H1
+
+...
+
+HL
+
+ , x =
+
+
+
+p1M(s1)
+
+...
+
+pK M(sK )
+
+ , n =
+
+
+
+n1
+
+...
+
+nL
+
+ .
+
+(6) Here, Hl = [ h1l, . . . , hKl ] ∈ CN ×K denotes the channel matrix at AP l, and n ∼ CN (0, σ 2
+
+> n
+
+ILN ) is the composite noise vector. Equivalently, the signal model can be expressed as: 
+
+y =
+
+> K
+
+∑
+
+> i=1
+
+hisi + n, (7) where hi = [ hTi1, . . . , hTiL ]T ∈ CLN represents the aggregated channel vector from UE i to all APs. The CPU performs MMSE detection to estimate the trans-mitted symbols: 
+
+ˆsk = vHk y, (8) with the optimal combining vector formulated as: 
+
+vk = pk
+
+( K∑
+
+> i=1
+
+pi
+
+(hihHi
+
+) + σ2
+
+> n
+
+ILN 
+
+)−1
+
+ˆhk. (9) In this paper, we assume perfect CSI is available. While this centralized approach achieves theoretically opti-mal performance, it requires all APs to transmit their complete received signals to the CPU, resulting in prohibitive fronthaul overhead that limits practical implementation in large-scale systems. C. Distributed Cell-Free MIMO Detection 1) Local Processing with LSFD Combining [ 16 ]: In this distributed approach, each AP l first computes local estimates of the transmitted symbols using linear combiners. For UE k,the local estimate at AP l is obtained as 
+
+ˇskl = vHkl yl, (10) where vkl ∈ CN is the local combining vector. The local MMSE combiner at AP l for UE k is given by: 
+
+vkl = pk
+
+( K∑
+
+> i=1
+
+pi
+
+(ˆhil ˆhHil + Cil 
+
+)
+
++ σ2
+
+> n
+
+IN
+
+)−1
+
+ˆhkl . (11) These local estimates are then forwarded to the CPU, which performs LSFD to produce the final symbol estimate. In particular, the optimal LSFD weights are derived based on channel statistics as 
+
+ak =
+
+( K∑
+
+> i=1
+
+piE{gki gHki } + σ2
+
+> n
+
+Dk
+
+)−1
+
+E{gkk }, (12) where gki = [vHk1hi1, . . . , vHkL hiL 
+
+]T , and Dk =diag (E{‖ vk1‖2}, . . . , E{‖ vkL ‖2}). The final LSFD-based estimated signal is calculated as 
+
+ˆsk =
+
+> L
+
+∑
+
+> l=1
+
+a∗ 
+
+> kl
+
+ˇskl . (13) This method achieves a favorable balance between detection performance and fronthaul overhead by exploiting statistical channel information. 
+
+2) Local Processing with Averaging Combining: A simpli-fied fusing scheme for CPU is to execute equal weighting for all APs as 
+
+ˆsk = 1
+
+L
+
+> L
+
+∑
+
+> l=1
+
+ˇskl . (14) While this approach minimizes fronthaul signaling and computational complexity at the CPU compared with LSFD combining, it yields suboptimal performance due to the non-adaptive averaging of local estimates, particularly in heteroge-neous channel conditions. III. P ROPOSED DM OE-D ET NET 
+
+In this section, we present the proposed DMoE-DetNet framework. While ICSI enables precise local signal process-ing, SCSI provides the statistical context for intelligent fusion. Our architecture explicitly leverages this distinction through a novel division of labor. 
+
+A. Core Design Principle 
+
+The DMoE-DetNet embodies a principled approach to dis-tributed detection by assigning distinct roles to different types of channel information:  
+
+> •
+
+ICSI for Expert Networks: Each AP’s expert network utilizes ICSI estimation {ˆhkl } to perform sophisticated,                    
+
+> AP 1 AP 2 ... AP LAP 1 AP 2 ... AP L
+> Embedding
+> Attention
+> FFN
+> Gating
+> Embedding
+> Embedding
+> Detector
+> Attention Matrix
+> Input
+> Key K
+> Output
+> Softmax
+> Key V Key Q
+> Transpose
+> Linear layer
+> Linear layer
+> Linear layer
+> Linear layer
+> ...
+> ...
+> ...
+> ...
+> ...
+> ...
+> ...
+> ...
+> ...
+> ...
+> ...
+> ...
+> Encoded features
+> Fusioned features
+> MMSE Detector
+> Symbol probability
+> ...
+> ...
+> ...
+> ...
+> ...
+> ...
+> ...
+> ...
+> ... ... ... ... ... ...
+> ...
+> ...
+> ...
+> ... ... ... ... ...
+> ...
+> ...
+> ...
+> ...
+> ... ... ... ... ...
+> 0 1 2 Ă0 1 2 Ă
+> AP 1 AP 2 ... AP LAP 1 AP 2 ... AP L
+
+AP 
+
+CPU AP CPU 
+
+H
+
+R
+
+H
+
+y
+
+y
+
+Fig. 2. Illustration of the cell-free MIMO uplink system. 
+
+non-linear local processing that adapts to fast-fading variations.  
+
+> •
+
+SCSI for Gating Network: The central gating network employs SCSI {Rkl } to compute fusion weights that reflect long-term channel statistics and network geometry. This design mirrors and generalizes conventional distributed reception: the expert networks learn non-linear counterparts to local combining, while the gating network learns optimized replacements for LSFD weights. However, unlike conventional approaches constrained by linear processing, DMoE-DetNet leverages deep learning to discover more effective non-linear strategies. 
+
+B. Architecture Components 
+
+As shown in Fig. 2, the components of DMoE-DetNet specifically consist of the following components: 
+
+1) MMSE detection: Upon receiving the signals, each AP firstly performs MMSE detection to obtain a preliminary estimate ˆsMMSE = [ˆ s1, . . . , ˆsL], as predicted in ( 11 ). These local estimates are then transmitted to the CPU, where a neural network captures complex spatio-temporal dependencies for further refinement. 
+
+2) Distributed Experts: Each AP l hosts an expert network that processes locally available information 
+
+Fl = Expert l
+
+(
+
+Concat 
+
+(
+
+yl, ℜ( ˆH), ℑ( ˆH)
+
+)) 
+
+, (15) where ˆHl denotes the instantaneous CSI (ICSI) of all UEs observed at AP l. The output Fl ∈ CK×DF is a fused representation, with DF being the dimension of the expert’s final linear layer. Here, ℜ(·) and ℑ(·) extract the real and imaginary parts, respectively. Algorithm 1: DMoE-DetNet based Signal Detection 
+
+Input: Received signals {yl}, ICSI { ˆHkl }, SCSI 
+
+{Rkl }
+
+Output: Detected symbols {ˆsk} 
+
+> 1
+
+for each AP l = 1 to L do  
+
+> 2
+
+Estimate the local signal: 
+
+ˆsMMSE = ( HH H + σ2
+
+> n
+
+IN )−1HH y; 
+
+> 3
+
+Distributed experts processing: 
+
+Fl = Expert l
+
+(
+
+Concat 
+
+(
+
+yl, ℜ( ˆH), ℑ( ˆH)
+
+)) 
+
+; 
+
+> 4
+
+end  
+
+> 5
+
+Encode the received signal in CPU: 
+
+˜sglobal = Transformer(ˆ sMMSE ); 
+
+> 6
+
+Compute gating weights A based on ( ?? );  
+
+> 7
+
+Estimate the symbol probability distribution P(ˆ s)
+
+based on ( 18 );  
+
+> 8
+
+return Detected symbols {ˆsk}
+
+3) Feature Encoder: With input from MMSE detection at APs, CPU employs a Transformer encoder to captures complex spatio-temporal dependencies through self-attention, ultimately producing the detected symbols. The global en-coded feature can be expressed as 
+
+˜sglobal = Transformer(ˆ sMMSE , F), (16) where F = [ F1, . . . , FL] ∈ CL×K×DF .
+
+4) Intelligent Gating Network: The gating network at the CPU computes attention weights based on SCSI 
+
+al = exp (Gate ( {Rkl }, ˜sglobal )) 
+
+∑Ki=1 exp (Gate ( {Rkl }, ˜sglobal )) , (17) where al ∈ CK×1 is the optimized LSFD weight of l-th AP for detect signal from K UEs, the weight matrix is denoted as A = [ a1, . . . , aL]T ∈ CL×K . Note that fusing 
+
+Rkl and ˜sglobal enables dynamic, statistics-aware fusion that prioritizes contributions from APs with favorable long-term channel conditions. 
+
+5) Signal Detector: The fused vector—obtained by weight-ing and summing the outputs of the experts according to weight matrix A—is passed through a linear fully-connected layer to output the probability of each symbol in the symbol set S. This process can be expressed as: 
+
+P(ˆ s) = Linear 
+
+( L∑
+
+> l=1
+
+(al · Fl)
+
+)
+
+, (18) where al ∈ C1×K denotes the l-th row vector of A. The detected signal vector ˆs is obtained from the output of this layer. During model training, the loss function measures the error between the predicted distribution in ( 18 ) and the true symbol distribution P(s). The complete workflow of the proposed DMoE-DetNet detector is summarized in Algorithm 1.IV. S IMULATION RESULTS DISCUSSION 
+
+In this section, we evaluate the symbol error rate (SER) performance of the proposed DMoE-DetNet and compare it with several benchmarks. In particular, Rayleigh fading is considered for the channels between UEs and APs equipped with N antennas. {4, 16 }− QAM modulation is adopted for uplink transmission. 
+
+A. Data Generation 
+
+The channel realizations are generated using a spatially cor-related Rayleigh fading model. The large-scale fading coeffi-cients, incorporating both path loss and spatial correlation, are embedded in the covariance matrix Rkl for each UE k and AP 
+
+l links. This matrix is constructed as Rkl = PL kl · Φkl , where PL kl is the distance-based path loss, and Φkl ∈ CN ×N is a normalized covariance matrix defining the spatial correlation. The instantaneous channel vector hkl (t) is then generated as hkl (t) = R1/2 
+
+> kl
+
+w(t), where w(t) ∼ CN (0, IN ). This approach ensures the deterministic channel realizations to exhibit consistent large-scale statistics across different network snapshots, providing a deterministic foundation for evaluating detector performance. Note that perfect channel estimation is assumed at the APs, allowing the channel error terms in ( 9)and ( 11 ) to be set to 0.For model training, we generate 10 5 distinct large-scale fading matrices Rkl for each combination of K UEs and 
+
+L APs. Each such matrix is associated with Nseq = 14 
+
+independent transmitted symbols sk within a single frame. The test dataset consists of 10 4 independently generated large-scale matrices and their corresponding small-scale channel samples. 
+
+B. Model Configuration 
+
+The detailed configuration and parameter distribution of the proposed DMoE-DetNet are summarized in Table I.                
+
+> TABLE I MODEL ARCHITECTURE SUMMARY
+> Module Core Components
+> Input embedding x_embedding : Linear( 2×L, 256)
+> Encoder wq/wk/wv : Linear(256, 256)
+> dense : Linear(256, 256)
+> 8 heads, dropout=0.1
+> Gating network R_encoder : Linear( 2×N2, 128) + ReLU
+> s_proj : Linear(256, 128)
+> fusion : Linear(256, 128) + ReLU + Linear(128, 1)
+> Expert cnn2d : Conv2d( 256 + 2 N, 64, 3 ×3) + ReLU
+> Conv2d(64, 64, 3 ×3) + ReLU
+> Conv2d(64, 256, 1 ×1)
+> Lexperts in parallel
+> Detector detectionHead : Linear(256, |S| )
+
+The computaional complexity of DMoE-DetNet is primarily determined by the input dimensions sequence length Nseq ,number of UEs K, number of APs L, and number of antennas 
+
+N . Overall, the complexity is expressed as O(LKN 2 +
+
+Nseq K2 + Nseq KLN ).0 2 4 6 8 10 12 
+
+Average Recv SNR (dB) 
+
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+> Average SER
+> Local processing-Averaing
+> Local processing-LSFD [15]
+> Proposed DMoE-DetNet
+> Fully centralized processing
+
+Fig. 3. Average SER against the average receiver SNR ( K = 8 , Ls = 4 ,
+
+N = 8 , 16 –QAM).      
+
+> 00.2 0.4 0.6 0.8 1
+
+SER 
+
+> 00.2 0.4 0.6 0.8 1
+> CDF
+> Local processing-Averaing
+> Local processing-LSFD [15]
+> Proposed DMoE-DetNet
+> Fully centralized processing
+
+Fig. 4. CDF of average SER ( K = 8 , L = 4 , N = 8 , 16 -QAM). 
+
+C. Comparison and Discussion 
+
+Fig. 3 illustrates the SER versus average received SNR across all AP-UE links. As SNR increases, all schemes ex-hibit performance improvements. Fully centralized processing achieves the optimal performance, while local processing with averaging combining yields the poorest results. Al-though LSFD weighting, optimized through statistical expecta-tion, significantly mitigates inter-cell interference compared to equal weighting, its performance remains limited by reliance on channel statistical assumptions. Notably, proposed DMoE-DetNet, while sharing the same architectural framework as local processing with LSFD combining, demonstrates superior performance by adaptively learning from deterministic channel conditions and leveraging enhanced feature fusion and encod-ing, closely approaching the performance upper bound set by fully centralized processing. Fig. 4 shows the cumulative distribution function (CDF) of SER, revealing trends consistent with Fig. 3. DMoE-DetNet consistently outperforms local processing with LSFD combining, despite utilizing identical CSI and received signal     
+
+> 6810 12 14
+
+Number of UEs 
+
+> 10 -6
+> 10 -5
+> 10 -4
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+> Average SER
+> Fully centralized processing (16-QAM)
+> Proposed DMoE-DetNet (16-QAM)
+> Local processing-LSFD [15] (16-QAM)
+> Local processing-Averaing (16-QAM)
+> Fully centralized processing (4-QAM)
+> Proposed DMoE-DetNet (4-QAM)
+> Local processing-LSFD [15] (4-QAM)
+> Local processing-Averaing (4-QAM)
+
+Fig. 5. Average SER against the number of UEs ( L = 4 , N = 8 , {4/16 }–QAM).     
+
+> 246810
+
+Number of APs, N=8     
+
+> 10 -4
+> 10 -1
+> Symbol Error Rate (SER)
+> 246810
+
+Number of APs, N=16    
+
+> 10 -5 10 -2
+> 10 -1
+> 810
+> 10 -4
+> 10 -3
+> Fully centralized processing
+> Proposed DMoE-DetNet
+> Local processing-LSFD [15]
+> Local processing-Averaing
+> 6810
+> 10 -5
+> 10 -3
+
+Fig. 6. Average SER against the number of APs and antennas ( K = 8 , 16 –QAM). 
+
+information, which clearly validates the effectiveness and advancement of the proposed method. In Fig. 5, we investigate the average SER versus the number of UEs under 4–QAM and 16 –QAM modulation. As the number of UEs increases, SER monotonically rises due to intensified multi-user interference. The SER for 4–QAM remains lower than that of 16 –QAM, benefiting from its lower modulation order. While fully centralized processing combin-ing and local processing with averaging combining exhibit relatively stable performance degradation, both DMoE-DetNet and local processing with LSFD combining show accelerated performance degradation with more UEs, indicating higher sensitivity to UE contamination. Fig. 6 compares the SER performance of different methods under varying numbers of APs and antennas per AP. The SER monotonically decreases as the number of APs increases, due to enhanced macro diversity. Similarly, a larger number of antennas per AP also reduces SER. It is also observed that the rate of SER improvement gradually saturates as the number of APs grows. V. C ONCLUSION 
+
+In this paper, we propose DMoE-DetNet, a novel deep learning framework for distributed uplink detection in cell-free massive MIMO systems. The architecture employs local expert networks at APs to extract non-linear features from ICSI, while a transformer-based encoder at the CPU captures global spatio-temporal dependencies. The key is the gating network that dynamically weights AP contributions using SCSI, enabling intelligent fusion. Comprehensive simulations demonstrate that our approach outperforms LSFD-based linear detectors, achieving near-optimal performance while maintain-ing practical fronthaul requirements. Compared to the fully centralized processing combing scheme that attains the maxi-mum best SER, the proposed method can achieve comparable performance, with much reduced interaction overhead. VI. A CKNOWLEDGEMENT 
+
+This work was supported in part by the National Natural Science Foundation of China under Grant NSFC 62301032, and Grant NSFC 62371040. REFERENCES [1] T. L. Marzetta, “Noncooperative cellular wireless with unlimited num-bers of base station antennas,” IEEE Trans. Wireless Commun. , vol. 9, no. 11, pp. 3590–3600, 2010. [2] E. Bj¨ ornson, J. Hoydis, L. Sanguinetti et al. , “Massive MIMO networks: Spectral, energy, and hardware efficiency,” Found. Trends Signal Pro-cess. , vol. 11, no. 3-4, pp. 154–655, 2017. [3] H. Yao, T. Li, Y. Song, W. Ji, Y. Liang, and F. Li, “Low-complexity signal detection networks based on gauss-seidel iterative method for massive MIMO systems,” EURASIP J. Adv. Signal Process. , vol. 2022, no. 1, p. 51, Dec. 2022. [4] Z. Zhang, X. Dai, Y. Dong, X. Wang, and T. Liu, “A low-complexity signal detection utilizing AOR iterative method for massive MIMO systems,” China Commun. , vol. 14, no. 11, pp. 269–278, 2017. [5] L. V. Nguyen, N. T. Nguyen, N. H. Tran, M. Juntti, A. L. Swindlehurst, and D. H. N. Nguyen, “Leveraging deep neural networks for massive MIMO data detection,” IEEE Wireless Commun. , vol. 30, no. 1, pp. 174–180, 2023. [6] N. Samuel, T. Diskin, and A. Wiesel, “Learning to detect,” IEEE Trans. Signal Process. , vol. 67, no. 10, pp. 2554–2564, May 2019. [7] H. He, C.-K. Wen, S. Jin, and G. Y. Li, “Model-driven deep learning for MIMO detection,” IEEE Trans. Signal Process. , vol. 19, pp. 1702–1715, 2017. [8] J. Sun, Y. Zhang, J. Xue, and Z. Xu, “Learning to search for MIMO detection,” IEEE Trans. Wireless Commun. , vol. 19, pp. 7571–7584, Nov. 2017. [9] H. Q. Ngo, A. Ashikhmin, H. Yang, E. G. Larsson, and T. L. Marzetta, “Cell-free massive mimo versus small cells,” IEEE Trans. Wireless Commun. , vol. 16, no. 3, pp. 1834–1850, 2017. [10] R. Van Rompaey and M. Moonen, “Scalable and distributed mmse algorithms for uplink receive combining in cell-free massive MIMO systems,” in Proc. ICASSP , 2021, pp. 4445–4449. [11] H. He, H. Wang, X. Yu, J. Zhang, S. H. Song, and K. B. Letaief, “Distributed expectation propagation detection for cell-free massive MIMO,” in Proc. IEEE GLOBECOM , 2021, pp. 01–06. [12] E. Nayebi, A. Ashikhmin, T. L. Marzetta, and B. D. Rao, “Performance of cell-free massive MIMO systems with mmse and LSFD receivers,” in 
+
+Proc. 50th Asilomar Conf. Signals, Syst. Comput. , 2016, pp. 203–207. [13] A. Adhikary, A. Ashikhmin, and T. L. Marzetta, “Uplink interference re-duction in large-scale antenna systems,” IEEE Trans. Commun. , vol. 65, no. 5, pp. 2194–2206, 2017. [14] X. Pan, Z. Zheng, X. Huang, and Z. Fei, “On the uplink distributed detection in uav-enabled aerial cell-free mmimo systems,” IEEE Trans. Wireless Commun. , vol. 23, no. 10, pp. 13 812–13 825, 2024. [15] J. Zhang, J. Zhang, E. Bj¨ ornson, and B. Ai, “Local partial zero-forcing combining for cell-free massive MIMO systems,” IEEE Trans. Commun. , vol. 69, no. 12, pp. 8459–8473, 2021. [16] E. Bj¨ ornson and L. Sanguinetti, “Making cell-free massive MIMO competitive with MMSE processing and centralized implementation,” 
+
+IEEE Trans. Wireless Commun. , vol. 19, no. 1, pp. 77–90, 2020. [17] R. Levie, c. Yapar, G. Kutyniok, and G. Caire, “RadioUNet: Fast radio map estimation with convolutional neural networks,” IEEE Trans. Wireless Commun. , vol. 20, no. 6, pp. 4001–4015, Feb. 2021. [18] L. Zhao, Z. Fei, X. Wang, J. Luo, and Z. Zheng, “3D-RadioDiff: An altitude-conditioned diffusion model for 3D radio map construction,” 
+
+IEEE Wireless Commun. Lett. , vol. 14, no. 7, pp. 1969–1973, April 2025. [19] D. Wu, Y. Zeng, S. Jin, and R. Zhang, “Environment-aware hybrid beamforming by leveraging channel knowledge map,” IEEE Trans. Wireless Commun. , vol. 23, no. 5, pp. 4990–5005, 2024.

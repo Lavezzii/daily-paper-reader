@@ -1,0 +1,225 @@
+Title: Practical Cross-Band Channel Prediction for AI-RAN via Physics-Guided Deep Unfolding
+
+URL Source: https://arxiv.org/pdf/2605.31279v1
+
+Published Time: Mon, 01 Jun 2026 01:32:29 GMT
+
+Number of Pages: 2
+
+Markdown Content:
+# Poster: Practical Cross-Band Channel Prediction for AI-RAN via Physics-Guided Deep Unfolding 
+
+## Ruiqi Kong, He Chen ∗, Xiaojun Lin 
+
+Department of Information Engineering, The Chinese University of Hong Kong, Hong Kong SAR, China Email: {rqkong, he.chen, xjlin}@ie.cuhk.edu.hk 
+
+Abstract 
+
+To make cross-band channel prediction practical for AI-native RAN, algorithms must generalize across diverse environments and sup-port real-time inference. Existing approaches achieve one but not both. To bridge this gap, we introduce GUIDE, a physics-guided deep unfolding framework that embeds wireless channel physics into differentiable layers. Without retraining in unseen environ-ments, GUIDE achieves 2.75 × beamforming gain than the deep learning-based baseline FIRE with only a slight increase in inference time, and 1.39 × beamforming gain than the strongest model-based baseline R2F2 while running over 1610 × faster. 
+
+CCS Concepts 
+
+• Networks → Wired access networks ; Mobile networks ; •
+
+Computing methodologies → Artificial intelligence .
+
+Keywords 
+
+AI-RAN, cross-band channel prediction, deep unfolding. 
+
+ACM Reference Format: 
+
+Ruiqi Kong, He Chen ∗, Xiaojun Lin . 2026. Poster: Practical Cross-Band Channel Prediction for AI-RAN via Physics-Guided Deep Unfolding. In The 24th Annual International Conference on Mobile Systems, Applications and Ser-vices (MobiSys Companion ’26), June 21–25, 2026, Cambridge, United Kingdom. 
+
+ACM, New York, NY, USA, 2 pages. https://doi.org/10.1145/3812835.3814874 
+
+1 Introduction 
+
+Among the AI-native capabilities envisioned for AI-RAN, cross-band channel prediction is particularly valuable for frequency di-vision duplexing (FDD) cellular systems [ 2 , 3], where downlink (DL) channel state information (CSI) acquisition typically relies on explicit user feedback [ 1 ]. In massive MIMO, this feedback incurs substantial bandwidth overhead and latency [ 2 ]. The key physical insight enabling feedback-free FDD is that the underlying multipath parameters are frequency-independent . If these parameters can be accurately estimated from the uplink (UL) channel, the DL channel at any frequency can be reconstructed directly. Existing approaches adopt two broad paradigms, each with dis-tinct trade-offs, as summarised in Table 1. Model-based methods 
+
+such as R2F2 [4] and Horcrux [2] explicitly exploit the physical  
+
+> *Corresponding author.
+> This work is licensed under a Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License.
+> MobiSys Companion ’26, Cambridge, United Kingdom
+> ©2026 Copyright held by the owner/author(s). ACM ISBN 979-8-4007-2711-5/2026/06 https://doi.org/10.1145/3812835.3814874
+
+Table 1: Comparison of channel prediction methods. 
+
+Property R2F2 FIRE HORCRUX GUIDE 
+
+Env. generalization ✓ × ✓ ✓
+
+Fast inference × ✓ × ✓
+
+Multipath-rich envs × × × ✓
+
+structure: R2F2 iteratively estimates multipath parameters, offer-ing strong interpretability and cross-environment transferability, yet its greedy search is computationally prohibitive and collapses under dense multipath; Horcrux improves robustness through sub-band neural estimators but retains a disjoint two-stage pipeline that is not jointly optimised, limiting accuracy and increasing la-tency. Black-box deep learning methods such as Fire [ 3] sidestep explicit modelling entirely, achieving fast inference by learning a direct UL-to-DL mapping, but at the cost of poor generalization; the learned mapping must be retrained whenever environments or system setups change. This motivates a model-driven deep learning approach that com-bines the physical interpretability and transferability of model-based methods with the speed and end-to-end trainability of data-driven ones. GUIDE achieves this via deep unfolding : the iterative estimation of multipath parameters is mapped to multiple differ-entiable network layers with physics constraints embedded struc-turally. This makes GUIDE accurate, fast, and transferable to unseen environments without retraining the neural network itself. 
+
+2 GUIDE Design 
+
+GUIDE unfolds the iterative estimation of multipath parameters 
+
+{distance 𝑑 𝑛 , complex attenuation 𝑎 𝑛 } into a stack of 𝐿 differen-tiable physics-guided layers trained end-to-end via backpropaga-tion. Realizing this idea, however, raises two non-trivial challenges: 
+
+(i) determining which physical constraints to be embedded rigidly versus left to the data, and (ii) ensuring stable gradient flow through layers after physical constraints embedding. The design of GUIDE 
+
+is shaped by both, as shown in Fig. 1. The observed UL CSI matrix HUL is first processed by a multi-scale CNN, capturing both local and global structure across subcar-riers to produce a shared feature representation for all subsequent steps. Reliable initialization of multipath parameters is essential before unfolding: a poor starting point risks slow convergence or entrapment in local optima. A learned initializer layer there-fore uses cross-attention to aggregate per-antenna features into 𝑁 
+
+path-specific estimates d0, placing the solution close to the true parameter manifold. The unfolding stage then refines these estimates over 𝐿 iter-ations, directly confronting challenge (i) : embedding too many constraints reduces model capacity under environment mismatch, 
+
+> arXiv:2605.31279v1 [eess.SP] 29 May 2026
+
+MobiSys Companion ’26, June 21–25, 2026, Cambridge, United Kingdom Ruiqi Kong, He Chen ∗, Xiaojun Lin -Band Channel Prediction MobiSys 2025 
+
+nfold 
+
+e estimation of multi-
+
+ack of L differentiable end via backpropaga-e. 
+
+CIK (where I is the 
+
+umber of antennas) is  
+
+> ×K
+
+. We stack real and 
+
+B, 2, I, K ) and pass 
+
+P) ∈ RB×C×I×K (2) olutional branches 
+
+5 to capture features at nnel-wise concatena-
+
+or 
+
+path-specific parameter 
+
+ntion: 
+
+latten (F)) (3) 
+
+e query vectors. Initial d: 
+
+RB×2×N (4) 
+
+Layers 
+
+L, the system: 
+
+rix S k ∈ CIK ×N :  
+
+> πrant ·ˆu(ψk,n )
+> λi
+
+(5) 
+
+ˆu(ψ) is the unit di-
+
+= p − Skak, where ak
+
+rned correction: 
+
+dUpdate (ψk, d k, rk, Tk)(6) 
+
+tion 
+
+udes are estimated via  
+
+> −1
+
+SHL p (7) ayer, allowing gra- 
+
+> L
+
+and dL.
+
+n 
+
+> DL
+
+is reconstructed by   
+
+> ˆdn
+> DL ,i +jˆϕn
+
+(8)              
+
+> UL Channel H UL
+> Channel Feature Extractor
+> Multi-Scale Initial Estimator d0∈RN
+> Construct Steering Matrix S l
+> Physics-Guided Update Module
+> ×Llayers
+> dl+1
+> al+1
+> LMMSE Estimator (closed-form) ˆa∈CN
+> DL Channel Reconstruction
+> ■Physics (fixed) ■Learned (trainable)
+> Figure 2. DeepUnfold architecture. Blue blocks are physics-derived (differentiable but fixed-form); orange blocks are learned neural modules. The dashed purple box denotes the
+> L-layer unfolding loop.
+
+3. Experimental Evaluation 
+
+3.1. Setup Simulation. We generate channels using Eq. (1) with 
+
+N ∈ { 2, 4, 8} paths, dn ∼ U (1 , 200) m, an ∼ U (0 , 1), ϕn ∼U(−π, π ), 20 MHz bandwidth, 64 subcarriers, and SNR 
+
+∈ [10 , 25] dB. Training uses 200K simulated samples; no real-world data is used for training. 
+
+Hardware. We implement DeepUnfold on WARP v3 SDRs with a 2/4-antenna base station. Uplink is measured on channel 1 (2.412 GHz); downlink is predicted on channel 6 (2.437 GHz, ∆ f = 25 MHz) and channel 11 (2.462 GHz, ∆f = 50 MHz). 
+
+Metric. Channel prediction accuracy (dB): Acc =
+
+−10 log 10 
+
+(
+
+∥H − ˆH∥2/∥ ˆH∥2
+
+)
+
+.
+
+Baselines. R2F2 [1], FIRE [2], HORCRUX [3]. All baselines are reimplemented from scratch. 
+
+3.2. Results 3.3. Discussion 
+
+Table 1 summarizes the key properties of all meth-ods. DeepUnfold is the only system that simultaneously achieves physics grounding, cross-environment generaliza-tion, cross-frequency scalability, and end-to-end trainability. 
+
+4. Conclusion 
+
+We presented DeepUnfold , a physics-guided deep un-folding network for cross-band channel prediction in FDD systems. By unrolling iterative multipath parameter esti-mation into jointly trainable layers with embedded physics constraints, DeepUnfold achieves state-of-the-art accu-racy across diverse environments and frequency bands with-
+
+> 4
+
+Figure 1: GUIDE architecture. Blue blocks are physics-derived (differentiable but fixed-form); orange blocks are learned neural modules. The dashed purple box denotes the 𝐿 -layer unfolding loop. 
+
+while embedding too few sacrifices cross-environment transferabil-ity. GUIDE resolves this tension by hard-coding only the steering matrix construction, encoding propagation distance via complex exponentials, while delegating residual correction to a lightweight learned module. Specifically, at each iteration 𝑙 , the steering ma-trix S𝑙 is constructed analytically from current estimates d𝑙 , and the residual r𝑙 = HUL − S𝑙 a𝑙 provides a physically interpretable error signal. The learned corrector then outputs refined estimates 
+
+d𝑙 +1, absorbing model mismatch without re-learning the under-lying wave physics. Challenge (ii) is addressed by the analytical differentiability of the steering matrix: since each entry of S𝑙 is a composition of smooth complex exponentials, gradients propa-gate cleanly through all 𝐿 physics layers during backpropagation without approximation. Once geometric parameters converge, the complex path attenuations ˆa are recovered in closed form via the LMMSE estimator, which remains fully differentiable throughout training. 
+
+3 Experimental Evaluation 
+
+We synthesize 80K training channels under the CDL-B non-line-of-sight (NLoS) model with 10 MHz bandwidth, 26 subcarriers, and SNR ∈ [ 10 , 20 ] dB. We evaluate generalisation on over-the-air mea-surements collected in a complex office environment under NLoS conditions using a Xilinx ZC706 SDR with four antennas. Uplink channels are measured at 2.412 GHz and downlink channels are predicted at 2.422 GHz. No retraining is performed on real-world data. All training and inference are conducted on an NVIDIA RTX 4070 GPU. Three baselines are evaluated: R2F2 [ 4], FIRE [ 3 ], and HORCRUX [2], with beamforming gain as the metric. Fig. 2 compares the downstream beamforming performance and inference efficiency of the proposed method against representative baselines. Fig. 2(a) reports the beamforming gain across all meth-ods in real-world measurements. GUIDE achieves a mean value of 
+
+5.20 dB, outperforming R2F2 ( 3.76 dB), FIRE ( 0.81 dB), and HOR-CRUX ( 0.34 dB) by +1.44 dB, +4.86 dB, and +4.39 dB, respectively, and approaching within 0.76 dB of the ground-truth (GT). The error bars in Fig. 2(a) further show that our method provides consistently 
+
+(a) Beamforming Gain. (b) Speed–Accuracy Trade-off. 
+
+Figure 2: Performance comparison against baselines. 
+
+high beamforming gains across test cases. Although R2F2 can occa-sionally produce competitive estimates, its large variation suggests limited robustness under the evaluated conditions. FIRE and HOR-CRUX, on the other hand, fail to provide reliable beamforming improvement. Fig. 2(b) further reveals the speed-accuracy trade-off across methods. GUIDE achieves the best of both regimes: it approaches the ground-truth beamforming gain while completing inference in under 4 ms, over 1610 × faster than R2F2. Therefore, the proposed method provides a favorable balance between accuracy and efficiency, enabling a real-time AI-RAN capability for accurate channel inference and low-latency RAN optimization. 
+
+4 Conclusion 
+
+GUIDE achieves accurate and environment-generalizable cross-band channel prediction through a physics-guided deep unfolding design. When deployed directly from simulation to real-world mea-surements without retraining, GUIDE attains near-ground-truth beamforming gain at real-time inference speed and substantially outperforms all baselines. These findings suggest that GUIDE can serve as a practical and deployable channel-inference component for real-time AI-RAN. 
+
+5 Acknowledgments 
+
+The research work described in this paper was conducted in the JC STEM Lab of Advanced Wireless Networks for Mission-Critical Automation and Intelligence funded by The Hong Kong Jockey Club Charities Trust. The work of Ruiqi Kong is supported in part by Hong Kong ITC under Project PiH/277/25GS. The work of He Chen is supported in part by Hong Kong RGC under Project 24210524. 
+
+References 
+
+[1] Arjun Bakshi, Yifan Mao, Kannan Srinivasan, and Srinivasan Parthasarathy. 2019. Fast and Efficient Cross Band Channel Prediction Using Machine Learning. In The 25th Annual International Conference on Mobile Computing and Networking (Los Cabos, Mexico) (MobiCom ’19) . Association for Computing Machinery, New York, NY, USA, Article 37, 16 pages. [2] Avishek Banerjee, Xingya Zhao, Vishnu Chhabra, Kannan Srinivasan, and Srini-vasan Parthasarathy. 2024. HORCRUX: Accurate Cross Band Channel Prediction. In Proceedings of the 30th Annual International Conference on Mobile Computing and Networking (Washington D.C., DC, USA) (ACM MobiCom ’24) . Association for Computing Machinery, New York, NY, USA, 1–15. [3] Zikun Liu, Gagandeep Singh, Chenren Xu, and Deepak Vasisht. 2021. FIRE: enabling reciprocity for FDD MIMO systems. In Proceedings of the 27th Annual International Conference on Mobile Computing and Networking (New Orleans, Louisiana) (MobiCom ’21) . Association for Computing Machinery, New York, NY, USA, 628–641. [4] Deepak Vasisht, Swarun Kumar, Hariharan Rahul, and Dina Katabi. 2016. Elimi-nating Channel Feedback in Next-Generation Cellular Networks. In Proceedings of the 2016 ACM SIGCOMM Conference (Florianopolis, Brazil) (SIGCOMM ’16) .Association for Computing Machinery, New York, NY, USA, 398–411.

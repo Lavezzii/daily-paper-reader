@@ -1,0 +1,623 @@
+Title: Time-Varying Parametric Channel Estimation With CP Decomposition Tensor Processing
+
+URL Source: https://arxiv.org/pdf/2605.25593v1
+
+Published Time: Tue, 26 May 2026 01:59:40 GMT
+
+Number of Pages: 5
+
+Markdown Content:
+> 1
+
+# Time-Varying Parametric Channel Estimation With CP Decomposition Tensor Processing 
+
+Enrique T. R. Pinto, Graduate Student Member, IEEE , Andr´ e L. F. de Almeida, Senior Member, IEEE ,and Markku Juntti, Fellow, IEEE 
+
+Abstract —Integrated sensing and communications (ISAC) is a key use case for sixth-generation (6G) wireless systems, where parametric channel estimation (PCE) plays a central role in enabling sensing, localization, and channel equalization in high-mobility scenarios. However, PCE is typically more computa-tionally demanding than conventional channel estimation, which motivates the development of lower-complexity solutions. In this letter, we propose a fast PCE algorithm for time-varying and frequency-selective (TVFS) channels based on canonical polyadic (CP) decomposition and tensor processing, combined with ESPRIT-based initialization, component refinement, and exact line-search alternating coordinate descent. Two variants are presented: one for fully digital and another for hybrid receiver architectures. Numerical results show that the proposed method clearly outperforms a related CP-based baseline while achieving estimation performance close to a multiple-start SAGE benchmark at a substantially lower computational cost, with about one order of magnitude shorter execution time. 
+
+Index Terms —ISAC, parametric channel estimation, CP de-composition, tensor processing 
+
+I. I NTRODUCTION 
+
+# TENSOR processing methods have garnered increasing in-terest in wireless communications because they preserve the multilinear structure naturally present in many signal mod-els [1], [2], [3], [4], [5]. In parallel, the emergence of sensing-oriented functionalities in future wireless standards, such as integrated sensing and communications (ISAC) for sixth gen-eration standard (6G), has intensified the demand for accurate sensing, localization, and channel inference techniques [6], [7]. Among these techniques, parametric channel estimation (PCE) plays a central role because it provides geometric information about the channel, including the number of specular paths as well as their angles of arrival (AoAs), angles of departure (AoDs), time of flights (ToFs), and Doppler frequencies [8], [9]. Despite this potential, most tensor-based approaches are not well suited to time-varying scenarios: they either neglect Doppler, assume approximately constant subframes, or impose restrictive pilot structures. Tensor-based methods have been successfully applied to blind multiuser equalization [2], space-time coding [3], co-
+
+The work was supported in part by the Research Council of Finland (former Academy of Finland) 6G Flagship Program (Grant Number: 369116) and S6GRAN project (370559). Enrique T. R. Pinto and Markku Juntti are with the Centre for Wireless Communications, Faculty of Information Technology and Electrical Engi-neering, University of Oulu, 90014 Oulu, Finland (e-mail: {enrique.pinto, markku.juntti }@oulu.fi). Andr´ e L. F. de Almeida is with the Department of Teleinformatics En-gineering, Federal University of Cear´ a, 60455-970 Fortaleza, Brazil (e-mail: andre@gtel.ufc.br). 
+
+operative and relay-assisted multiple input multiple output (MIMO) systems [4], and intelligent reflecting surface aided channels [5]; see also [10], [11], [1] for a broad overview. More specifically, [12] proposed a tensor-based compressive sensing framework for massive MIMO-orthogonal frequency division multiplexing (OFDM) channel estimation by exploit-ing the multilinear sparse structure of time- and frequency-selective channels. In [13], Cao et al. proposed a hybrid-field channel estimation method based on the canonical polyadic (CP) decomposition. In [9], Wen et al. developed a CP- and tensor-estimation of signal parameters via rotational invariant techniques (ESPRIT)-based method for PCE and mapping with diffuse multipath. However, these methods do not explic-itly address Doppler estimation in the formulation considered here. Likewise, methods such as [14], [15] assume that the number of paths is known a priori , which is unrealistic in practice, and require a two-stage pilot transmission, thereby increasing estimation overhead. The method in [16] estimates most channel parameters, but it does not reuse previously estimated AoA and ToF information to improve subsequent AoD and Doppler estimation. The main appeal of tensor-based PCE lies in their com-putational efficiency. Once the CP components have been estimated, several subsequent computations can be carried out in parallel. This property is particularly attractive in large-scale antenna arrays and high-mobility scenarios, where the channel model dimension increases significantly and low-latency processing becomes essential. In addition, multilinear factorization offers a compact representation of the received data, which helps separate the contributions of the different channel parameters before the final refinement stage. This is in contrast with maximum likelihood (ML) methods based on expectation-maximization (EM) [17] such as space-alternating generalized expectation-maximization (SAGE) [18], [19], [20] and Richter’s maximum likelihood estimation (RiMAX) [21], which are typically more sequential and usually have more computationally demanding parameter updates. In this letter, we address the gap above by proposing a single-stage tensor-based PCE procedure that explicitly estimates Doppler with low computational complexity. The proposed method, named component refinement with exact line search CP (CREL-CP), combines CP decomposition, tensor ESPRIT, component refinement, and exact line-search alternating coordinate descent (ACD) in a unified estimation pipeline. Its originality lies in coupling a low-complexity multilinear factorization stage with refinement steps that reuse intermediate geometric information to improve the final pa-
+
+> arXiv:2605.25593v1 [eess.SP] 25 May 2026 2
+
+rameter estimates, especially for AoD and Doppler. We further present two tailored versions of the method: one for single-stream pilots with a fully digital receiver and another for multi-stream pilots with a hybrid combiner. Overall, the pro-posed framework aims to provide a fast PCE solution with competitive estimation accuracy and model-order detection performance. II. S YSTEM MODEL 
+
+Consider a transmitter (Tx)-receiver (Rx) pair equipped with uniform linear arrays (ULAs). An OFDM pilot signal 
+
+X P CNCˆNSˆNT is transmitted over a fast time-varying chan-nel H P CNCˆNSˆNRˆNT , where NC, NS, NR, and NT denote the numbers of OFDM subcarriers, OFDM symbols, receive antennas, and transmit antennas, respectively. We assume a far-field narrowband channel composed of the superposition of L paths, each modeled as a rank-1 contribution, i.e., 
+
+rHsntuv “ hntuv “
+
+> L
+
+ÿ
+
+> ℓ“1
+
+bℓejpnω 1ℓ`tω 2ℓ`uψ ℓ`vς ℓq, (1) where bℓ P C is the channel coefficient, while ω1ℓ, ω2ℓ,
+
+ψℓ, and ςℓ are the angular frequencies associated with the ToF, Doppler, AoA, and AoD, respectively. Moreover, rHsntuv 
+
+denotes the entry of tensor H indexed by pn, t, u, v q, where the indices correspond to subcarrier, OFDM symbol, receive antenna, and transmit antenna, respectively. 
+
+A. Single Stream Pilot With Fully Digital Receiver 
+
+For a fully digital receiver, the received signal is represented by the tensor Y, with entries given by 
+
+rYsntu “ yntu “
+
+> NT´1
+
+ÿ
+
+> v“0
+
+hntuv xntv ` wntu , (2) where wntu „ CN p0, N 0q are the entries of the circularly symmetric additive white Gaussian noise (AWGN) tensor W.Assume that the pilot signal admits the separable structure 
+
+xntv “ ptv snt , i.e., the product of a time-varying precoder and an OFDM pilot resource grid. Then, we define the tensor 
+
+A elementwise as 
+
+rAsntu “ antu “ yntu 
+
+snt 
+
+“
+
+> L
+
+ÿ
+
+> ℓ“1
+
+ejnω 1ℓ
+
+˜ÿ
+
+> v
+
+bℓejptω 2ℓ`vς ℓqptv 
+
+¸
+
+ejuψ ℓ ` wntu 
+
+snt 
+
+. (3) The tensor A is the main observation used for parameter estimation in Section IV-A. 
+
+B. Multi-Stream Pilot With Hybrid Combiner 
+
+We now extend the model to a hybrid beamforming architec-ture. For a Tx-Rx pair with hybrid beamformers, the received contribution associated with path ℓ is written as 
+
+yℓntm “ bℓrmt pψℓqxnt pςℓqejpnω 1ℓ`tω 2ℓq, (4) where 
+
+rmt pψℓq “ 
+
+> NR´1
+
+ÿ
+
+> u“0
+
+rmtu ejuψ ℓ ,
+
+(5) 
+
+xnt pςℓq “ 
+
+> NT´1
+
+ÿ
+
+> v“0
+
+xntv ejvς ℓ ,
+
+(6) with rmtu denoting the entries of the combiner tensor R at OFDM symbol time t, radio frequency (RF) chain m, and receive antenna u, and xntv denoting the transmitted pilot entry at subcarrier n, symbol t, and transmit antenna v. The complete received signal is then given by 
+
+yntm “
+
+> L
+
+ÿ
+
+> ℓ“1
+
+yℓntm `wntm “
+
+> NR´1
+
+ÿ
+
+> u“0
+> NT´1
+
+ÿ
+
+> v“0
+
+rmtu xntv hntuv `wntm ,
+
+(7) where the transmitted signal is generally decomposed into DT
+
+transmit streams as 
+
+rX sntv “ xntv “
+
+> DT´1
+
+ÿ
+
+> d“0
+
+pvdt sntd , (8) with pvdt and sntd denoting the entries of the precoding tensor 
+
+P and pilot-symbol tensor S, respectively. III. M ATHEMATICAL PRELIMINARIES 
+
+In this section, we briefly review the mathematical tools underlying the proposed estimation procedures, namely the CP decomposition [22] and the minimum description length (MDL) criterion [23]. 
+
+A. CP Decomposition 
+
+The proposed estimators make recurrent use of the CP decomposition. For a third-order tensor Z P CN1ˆN2ˆN3 , its rank-K CP decomposition is written as 
+
+Z “ JZ1, Z2, Z3K “
+
+> K
+
+ÿ
+
+> k“1
+
+z1 
+
+> k
+
+˝ z2 
+
+> k
+
+˝ z3
+
+> k
+
+, (9) where “ ˝” denotes the tensor outer product. The factor matri-ces are defined as Zm “ “zm 
+
+> 1
+
+¨ ¨ ¨ zmK
+
+‰, with zmk P CNm . In our context, the usefulness of this decomposition relies on the observed data tensors approximately following the multilinear structure in (9). A well-known property of the CP decompo-sition is the scaling ambiguity among the factors, once that only the product of the component scalings is identifiable. Therefore, different sets of factors are equivalent as long as they yield the same rank-1 tensor terms, or equivalently, preserve the same product }z1
+
+> k
+
+} } z2
+
+> k
+
+} } z3
+
+> k
+
+} for each k.
+
+B. Model Order Estimation 
+
+To estimate the tensor rank L, which is used as an input to the CP decomposition, we adopt the MDL criterion applied to all k-mode unfoldings of the input tensor Z. Let Zpkq denote the unfolding of Z along the kth mode 1 [24]. The resulting estimate of L is defined as 
+
+ˆL “ max  
+
+> k
+
+MDL `Zpkq
+
+˘ , (10) where MDL p¨q is evaluated as in [23, Eq. (7)]. 
+
+> 1For a third-order tensor, this is equivalent to matricization. 3
+
+IV. E STIMATION PROCEDURE 
+
+We now describe the proposed estimation procedures for the two modeling cases introduced in Section II: (a) a single-stream pilot with a fully digital receiver, and (b) a multi-stream pilot with a hybrid combiner. In both cases, the estimation strategy follows the same general sequence: (1) model-order estimation, (2) tensor decomposition, (3) estimation of directly identifiable parameters, (4) refinement of the tensor compo-nents, and (5) estimation of the remaining parameters. 
+
+A. Single Stream Channel Estimation 
+
+For the single-stream case, we process the tensor A defined in (3). We begin by estimating ˆL as described in Section III-B, and then compute the rank- ˆL CP decomposition of A. This yields components of the form 
+
+ra1 
+
+> ℓ
+
+sn 9 ejnω 1ℓ (11) 
+
+ra2 
+
+> ℓ
+
+st 9 ÿ
+
+> v
+
+bℓejptω 2ℓ`vς ℓqptv , (12) 
+
+ra3 
+
+> ℓ
+
+su 9 ejuψ ℓ , (13) where the noise contribution is omitted for simplicity. The factors ra1 
+
+> ℓ
+
+sn and ra3 
+
+> ℓ
+
+su allow us to estimate ω1ℓ and ψℓ,respectively, via ESPRIT as in [9]. Using the estimates ˆω1ℓ
+
+and ˆψℓ, we refine the corresponding CP components, denoted by ˆa1 
+
+> ℓ
+
+and ˆa3 
+
+> ℓ
+
+, as 
+
+ˆa1 
+
+> ℓ
+
+“ “1 ej ˆω1ℓ ¨ ¨ ¨ ejpNC´1qˆω1ℓ
+
+‰T , (14) 
+
+ˆa3 
+
+> ℓ
+
+“
+
+”
+
+1 ej ˆψℓ ¨ ¨ ¨ ejpNR´1q ˆψℓ
+
+ıT
+
+. (15) Next, consider the ℓth rank-1 component tensor Aℓ. For convenience, we define aℓ “ vec pAℓq “ vec `a1 
+
+> ℓ
+
+b a3 
+
+> ℓ
+
+b a2
+
+> ℓ
+
+˘,where vectorization is taken columnwise. Then, vec pAℓq “ 
+
+´
+
+vec 
+
+´
+
+a1 
+
+> ℓ
+
+a3,T ℓ
+
+¯
+
+b INS
+
+¯
+
+a2 
+
+> ℓ
+
+. (16) This relation enables the refinement of ˆa2 
+
+> ℓ
+
+through the least-squares problem 
+
+ˆa2 
+
+> ℓ
+
+“ arg min 
+
+> a
+
+}vec pAℓq ´ Λℓa}2 “ Λ:
+
+> ℓ
+
+vec pAℓq , (17) where Λℓ “ vec 
+
+´
+
+ˆa1 
+
+> ℓ
+
+ˆa3,T ℓ
+
+¯
+
+b INS . Having obtained ˆa2 
+
+> ℓ
+
+, we estimate the remaining parameters by solving 
+
+pˆω2ℓ, ˆςℓ, ˆbℓq “ arg min 
+
+> pω2,ς,b q
+
+››ˆa2 
+
+> ℓ
+
+´ bαpω2, ς q››2 , (18) 
+
+αpω2, ς q “ ÿ
+
+> v
+
+ejptω 2`vς qptv . (19) For fixed pω2, ς q, the least-squares estimate of bℓ has the closed-form expression 
+
+bℓpω2, ς q “ ˆa2,T ℓ α˚pω2, ς q{} αpω2, ς q} 2. (20) Substituting this expression into (18) yields an equivalent optimization problem over pω2ℓ, ς ℓq only, 
+
+pˆω2ℓ, ˆςℓq “ arg min 
+
+> pω2,ς q
+
+ˇˇˇř 
+
+> t
+
+ˆa2,T ℓ α˚pω2, ς q
+
+ˇˇˇ2
+
+ř 
+
+> t
+
+|ř 
+
+> v
+
+ejvς ptv |2 . (21) This optimization is referred to in the literature as joint AoD and Doppler shift estimation (JADE) [16]. Since an exhaustive grid search is computationally demanding, we instead adopt the ACD strategy with exact line search from [20]; a multiple-start heuristic may also be used to mitigate convergence to poor local optima. Once pˆω2ℓ, ˆςℓq are obtained, we compute 
+
+ˆbℓ “ bℓpˆω2ℓ, ˆςℓq. Repeating this procedure for ℓ “ 1, . . . , ˆL
+
+yields the full set of parameter estimates ξ “ r ξ1, . . . , ξ ˆLs,where ξℓ “ p bℓ, ψ ℓ, ς ℓ, ω 1ℓ, ω 2ℓq.
+
+B. Multi-Stream Channel Estimation 
+
+We next extend the procedure to the hybrid beamforming case. Consider a Tx-Rx pair equipped with hybrid beamform-ers, so that the received signal tensor Y has entries yntm 
+
+given by (7). Because multiple pilot streams are transmitted simultaneously, we can no longer divide by snt to decouple the n and t dimensions as in the construction of A. To recover a tractable multilinear structure, we therefore assume a pilot and combiner that are constant over t, so that the entries of 
+
+X and R can be written as xnv “ řDT 
+
+> d“0
+
+pvd snd and rmu ,respectively. Under this assumption, we have 
+
+yntm “
+
+> L
+
+ÿ
+
+> ℓ“1
+
+bℓxnpςℓqejpnω 1ℓ`tω 2ℓqrmpψℓq ` wntm , (22) where rmpψℓq and xnpςℓq are defined in (5) and (6), respec-tively. In this case, the tensor Y again admits a CP-structured decomposition. We first estimate the model order using the MDL criterion on Y, obtaining ˆL, and then compute the corresponding CP decomposition, which yields components of the form 
+
+ra1 
+
+> ℓ
+
+sn 9 bℓejnω 1ℓ
+
+ÿ
+
+> v
+
+ejvς ℓ xnv , (23) 
+
+ra2 
+
+> ℓ
+
+st 9 ejtω 2ℓ , (24) 
+
+ra3 
+
+> ℓ
+
+sm 9 ÿ
+
+> u
+
+rmu ejuψ ℓ . (25) The requirement of a t-constant pilot and combiner may limit performance in some systems, since it can prevent the generation of a sufficiently illuminating pilot or an effective energy-collecting combiner. In particular, when the subarrays are large, their beams may become too narrow, leaving some angles of arrival and departure insufficiently covered. To en-sure adequate angular coverage, a t-constant doubly isotropic pilot-combiner pair can be designed as in [25], provided that 
+
+DT ě N T 
+
+> a
+
+and DR ě N R 
+
+> a
+
+, where N T 
+
+> a
+
+and N R 
+
+> a
+
+are the Tx and Rx subarray sizes, respectively. The estimation then proceeds by first extracting ω2ℓ via ESPRIT. Next, ψℓ is obtained by solving 
+
+ˆψℓ “ arg min 
+
+> ψ
+
+ÿ
+
+> m
+
+ˇˇˇˇˇra3 
+
+> ℓ
+
+sm ´ ÿ
+
+> u
+
+rmu ejuψ ℓ
+
+ˇˇˇˇˇ
+
+> 2
+
+, (26) which can be solved without numerical line search by using companion-matrix techniques such as those in [20]. The esti-mate of a1 
+
+> ℓ
+
+is then refined using the estimates of a2 
+
+> ℓ
+
+and a3 
+
+> ℓ
+
+,following the same rationale as in Section IV-A. Finally, ω1ℓ,
+
+ςℓ, and bℓ are obtained by first solving 
+
+pˆω1ℓ, ˆςℓq “ arg min 
+
+> pω1,ς q
+
+ˇˇˇř 
+
+> n
+
+ˆa1,T ℓ β˚pω1, ς q
+
+ˇˇˇ2
+
+ř 
+
+> n
+
+|ř 
+
+> v
+
+ejvς xnv |2 , (27) 4
+
+where rβpω1, ς qs n “ ejnω 1 ř 
+
+> v
+
+ejvς xnv , and then computing 
+
+bℓpω1, ς q “ ˆa1,T ℓ β˚pω1, ς q{} βpω1, ς q} 2. Algorithm 1 summa-rizes the proposed multi-stream estimation procedure. 
+
+Algorithm 1 Proposed multi-stream CREL-CP algorithm  
+
+> 1:
+
+procedure MAIN (Y, X , R) 
+
+> 2:
+
+Compute ˆL using (10) on Y; 
+
+> 3:
+
+Compute the CP decomposition of Y; 
+
+> 4:
+
+for L “ 1, . . . , ˆL do  
+
+> 5:
+
+Estimate ω2ℓ using ESPRIT;  
+
+> 6:
+
+Estimate ψℓ using (26);  
+
+> 7:
+
+Refine the ˆa1 
+
+> ℓ
+
+as in Section IV-A;  
+
+> 8:
+
+Solve (27) using the ACD procedure with exact line search from [20];  
+
+> 9:
+
+Compute bℓpω1, ς q “ ˆa1,T ℓ β˚pω1, ς q{} βpω1, ς q} 2; 
+
+> 10:
+
+Group the estimates as ˆξℓ “ p ˆψℓ, ˆςℓ, ˆω1ℓ, ˆω2ℓ, ˆbℓq;
+
+return ˆξ “ p ˆξ1, . . . , ˆξ ˆLq, ˆL
+
+V. A LGORITHM COMPLEXITY 
+
+We now analyze the computational complexity of the pro-posed method for the fully digital receiver case; for the hybrid combiner case, the same reasoning applies after replacing NR
+
+with DR. In both the single-stream and multi-stream settings, the algorithm begins with model-order estimation followed by the CP decomposition. Model-order estimation requires com-puting three singular value decompositions (SVDs), with com-plexity Opmax tNC, N S, N Ru ¨ Nxq, where Nx “ NCNSNR.This first stage is not merely a preprocessing step: it deter-mines the effective tensor rank used in the subsequent multi-linear factorization and therefore directly influences the overall cost of the procedure. In this work, the CP decomposition is computed using the Gauss-Newton with dogleg trust region (GN-DL) algorithm, which has per-iteration complexity of 
+
+Op ˆL3pNC `NS `NRq3q (given in flops /iteration) [26]. The remaining computations can be separated into ˆL in-dependent branches, each associated with one estimated CP component. This structure is attractive from an implementation perspective since it enables parallel processing after the multi-linear decomposition stage. Each branch includes two SVDs, one for ESPRIT and one for component refinement, followed by an ACD procedure. The cost of the two SVDs is dominated by the largest tensor dimension, which yields a combined complexity of Opmax tNC, N S, N Ru3q. The ACD step can be implemented using the exact line search strategy from [20], which requires two eigenvalue decompositions (EVDs) per iteration, with complexity Opmax tNT, N Su3q for the digital case and Opmax tNT, N Cu3q for the hybrid combiner case. Overall, the computational cost is dominated by the CP decomposition stage, so the total complexity of the proposed algorithm scales as Op ˆL3pNC ` NS ` NRq3q. Our analysis corroborates the design objective of the proposed tensor PCE method: to concentrate the main computational effort in a structured tensor factorization step and then exploit lower-dimensional refinements and parallelizable updates to keep the remaining stages manageable.     
+
+> Fig. 1. Channel tensor relative estimation error (left) and model order estimates (right) for the considered algorithms. The mean and median per-formance are represented by the solid and dashed lines, respectively. The dashed black line shows L“10 ;
+
+VI. N UMERICAL RESULTS 
+
+We now compare the proposed CREL-CP algorithm with two representative state-of-the-art (SOTA) baselines: the mul-tiple start SAGE (MS-SAGE) algorithm from [25] and the CP time-varying and frequency-selective (CP-TVFS) method from [16]. The MS-SAGE algorithm can be viewed as a robust extension of the standard SAGE procedure, in which the initialization is strengthened through a multiple-start heuristic. For the tensor decompositions required by both CREL-CP and CP-TVFS, we use Tensorlab 3.0 [27], with GN-DL and alternating least squares (ALS) employed for CREL-CP and CP-TVFS, respectively. The Monte Carlo (MC) setup considers NT “ NR “ 16 
+
+antennas partitioned into D “ 4 subpanels of four elements each. For the CREL-CP and MS-SAGE algorithms, each Tx and Rx RF chain uses discrete Fourier transform (DFT)-based combiners for each subpanel, and D orthogonal pilot streams are transmitted over n. Since CP-TVFS only supports single-stream pilots, an isotropic [20] single-stream pilot is adopted for that method. In addition, CP-TVFS performs numerical line search with a resolution of 1000 points. The pilot frame contains NS “ 64 symbols and NC “ 31 subcarriers. The channel consists of L “ 10 paths, whose parameters 
+
+p ˆψℓ, ˆςℓ, ˆω1ℓ, ˆω2ℓq are sampled from the four-dimensional uni-form distribution U4p´ π, π q. The path coefficient magnitudes 
+
+|bℓ| follow a Rician distribution with noncentrality parameter 
+
+10 ´6 and scale parameter 5 ¨ 10 ´6, and the strongest path is given an additional 10 dB gain to emulate a dominant line-of-sight (LOS) component. Finally, the phases =bℓ are sampled from Up´ π, π q, and 128 MC realizations are generated for each simulated point. The mean and median relative channel tensor estimation er-ror }H´ ˆH}F {} H}F and the model-order estimate ˆL are shown in the left and right panels of Fig. 1, respectively. As expected, the best estimation accuracy is achieved by MS-SAGE. The proposed CREL-CP method exhibits slightly lower accuracy but remains clearly more reliable than CP-TVFS, whose estimates are often severely degraded. Although CP-TVFS is able to recover several channel parameters for a subset of the paths, the missed or poorly estimated paths lead to a notably inaccurate reconstruction of ˆH, which explains the large estimation error observed in the simulations. In addition, both CREL-CP and CP-TVFS rely on the MDL criterion for 5
+
+Fig. 2. Mean wall clock execution times for the serial (solid line) and parallelized (dashed line) versions of the considered algorithms. 
+
+estimating ˆL, since [16] does not provide a dedicated model-order estimation procedure. The wall-clock execution times are reported in Fig. 2, for both serial and parallel implementations. The results show that CREL-CP and CP-TVFS are roughly one order of mag-nitude faster than MS-SAGE (the parallel implementation of MS-SAGE considers parallel computations of the path initializations), which confirms the computational advantage of tensor-based processing over more demanding ML-type iterative approaches. More importantly, CREL-CP achieves this runtime reduction while maintaining a substantially better estimation quality than CP-TVFS. These results corroborate the favorable tradeoff between estimation accuracy and com-putational efficiency offered by the CREL-CP algorithm. Curi-ously, the performance gain from parallelization is apparently not substantial enough to justify its use in practical systems. VII. C ONCLUSION 
+
+In this paper, we introduced the CREL-CP algorithm, a tensor-based PCE method that combines CP decomposition, component refinement, and efficient parameter updates to address fast time-varying channels. The proposed approach improves upon a related tensor-based SOTA baseline while remaining significantly less computationally demanding than a SAGE-based SOTA solution. Although the latter still provides slightly more accurate estimates, CREL-CP achieves a much more attractive complexity-performance tradeoff, with approx-imately one order of magnitude lower execution time. Our results indicate that CREL-CP constitutes a fast and effective alternative to more expensive EM-based PCE algorithms in high-mobility scenarios. REFERENCES [1] H. Chen, F. Ahmad, S. Vorobyov, and F. Porikli, “Tensor decompositions in wireless communications and MIMO radar,” IEEE J. Sel. Top. Signal Process. , vol. 15, no. 3, pp. 438–453, 2021. [2] A. L. F. de Almeida, G. Favier, and J. C. M. Mota, “PARAFAC-based unified tensor modeling for wireless communication systems with application to blind multiuser equalization,” Signal Processing , vol. 87, no. 2, pp. 337–351, 2007. [3] G. Favier, M. N. da Costa, A. L. F. de Almeida, and J. M. T. Romano, “Tensor space–time (TST) coding for MIMO wireless communication systems,” Signal Processing , vol. 92, no. 4, pp. 1079–1092, 2012. [4] L. R. Ximenes, G. Favier, and A. L. F. de Almeida, “Semi-blind receivers for non-regenerative cooperative MIMO communications based on nested PARAFAC modeling,” IEEE Transactions on Signal Process-ing , vol. 63, no. 18, pp. 4985–4998, 2015. [5] G. T. de Ara´ ujo, A. L. F. de Almeida, and R. Boyer, “Channel estimation for intelligent reflecting surface assisted MIMO systems: A tensor modeling approach,” IEEE Journal of Selected Topics in Signal Processing , vol. 15, no. 3, pp. 789–802, 2021. [6] F. Liu, Y. Cui, C. Masouros, J. Xu, T. X. Han, Y. C. Eldar, and S. Buzzi, “Integrated sensing and communications: Toward dual-functional wire-less networks for 6G and beyond,” IEEE J. Sel. Areas Commun. , vol. 40, no. 6, pp. 1728–1767, 2022. [7] D. Wen, Y. Zhou, X. Li, Y. Shi, K. Huang, and K. B. Letaief, “A survey on integrated sensing, communication, and computation,” IEEE Commun Surveys Tuts. , pp. 1–1, 2024. [8] J. A. Zhang, M. L. Rahman, K. Wu, X. Huang, Y. J. Guo, S. Chen, and J. Yuan, “Enabling joint communication and radar sensing in mobile networks—a survey,” IEEE Commun. Surveys Tuts. , vol. 24, no. 1, pp. 306–345, 2022. [9] F. Wen, J. Kulmer, K. Witrisal, and H. Wymeersch, “5G positioning and mapping with diffuse multipath,” IEEE Trans. Wireless Commun. ,vol. 20, no. 2, pp. 1164–1174, 2021. [10] G. Favier and A. L. F. de Almeida, “Overview of constrained PARAFAC models,” EURASIP Journal on Advances in Signal Process-ing , vol. 2014, 9 2014. [11] N. D. Sidiropoulos, L. De Lathauwer, X. Fu, K. Huang, E. E. Papalex-akis, and C. Faloutsos, “Tensor decomposition for signal processing and machine learning,” IEEE Transactions on Signal Processing , vol. 65, no. 13, pp. 3551–3582, 2017. [12] D. C. Ara´ ujo, A. L. F. de Almeida, J. P. C. L. da Costa, and R. T. de Sousa, “Tensor-based channel estimation for massive MIMO-OFDM systems,” IEEE Access , vol. 7, pp. 42133–42147, 2019. [13] J. Cao, C. Luo, and Y. Luo, “Tensor-based hybrid-field channel estima-tion for extremely large-scale massive MIMO systems,” IEEE Transac-tions on Wireless Communications , vol. 25, pp. 8326–8340, 2026. [14] L. Cheng, G. Yue, D. Yu, Y. Liang, and S. Li, “Millimeter wave time-varying channel estimation via exploiting block-sparse and low-rank structures,” IEEE Access , vol. 7, pp. 123355–123366, 2019. [15] L. Cheng, G. Yue, X. Xiong, Y. Liang, and S. Li, “Tensor decomposition-aided time-varying channel estimation for millimeter wave MIMO sys-tems,” IEEE Wireless Communications Letters , vol. 8, no. 4, pp. 1216– 1219, 2019. [16] R. Zhang, L. Cheng, S. Wang, Y. Lou, W. Wu, and D. W. K. Ng, “Tensor decomposition-based channel estimation for hybrid mmWave massive MIMO in high-mobility scenarios,” IEEE Transactions on Communications , vol. 70, no. 9, pp. 6325–6340, 2022. [17] T. Moon, “The expectation-maximization algorithm,” IEEE Signal Pro-cess. Mag. , vol. 13, no. 6, pp. 47–60, 1996. [18] B. Fleury, M. Tschudin, R. Heddergott, D. Dahlhaus, and K. Inge-man Pedersen, “Channel parameter estimation in mobile radio environ-ments using the SAGE algorithm,” IEEE J. Sel. Areas Commun. , vol. 17, no. 3, pp. 434–450, 1999. [19] D. Shutin and B. H. Fleury, “Sparse variational bayesian SAGE algo-rithm with application to the estimation of multipath wireless channels,” 
+
+IEEE Trans. Signal Process. , vol. 59, no. 8, pp. 3609–3623, 2011. [20] E. T. R. Pinto and M. Juntti, “Robust OFDM-SAGE channel estimation algorithm with adaptive model order,” IEEE Trans. Wireless Commun. ,vol. 25, pp. 5275–5290, 2026. [21] A. Richter, Estimation of Radio Channel Parameters . PhD thesis, Technische Universit¨ at Ilmenau, Nov 2005. [22] J. D. Carroll and J.-J. Chang, “Analysis of individual differences in multidimensional scaling via an N-way generalization of “Eckart-Young” decomposition,” Psychometrika , vol. 35, no. 3, p. 283–319, 1970. [23] T. Yokota, N. Lee, and A. Cichocki, “Robust multilinear tensor rank esti-mation using higher order singular value decomposition and information criteria,” IEEE Trans. Signal Process. , vol. 65, no. 5, pp. 1196–1206, 2017. [24] T. G. Kolda and B. W. Bader, “Tensor Decompositions and Applica-tions,” SIAM Review , vol. 51, no. 3, pp. 455–500, 2009. [25] E. T. R. Pinto, S. Mandelli, M. Henninger, and M. Juntti, “Paramet-ric channel estimation with hardware impaired hybrid beamformers: Sensing, communications, and power efficiency tradeoffs,” IEEE Trans. on Wireless Commun., submitted , Feb. 2026. Preprint available: http: //dx.doi.org/10.36227/techrxiv.177155628.83126625/v1. [26] L. Sorber, M. Van Barel, and L. De Lathauwer, “Optimization-based al-gorithms for tensor decompositions: Canonical polyadic decomposition, decomposition in rank-pLr , L r , 1q terms, and a new generalization,” 
+
+SIAM Journal on Optimization , vol. 23, no. 2, pp. 695–720, 2013. [27] N. Vervliet, O. Debals, L. Sorber, M. V. Barel, and L. D. Lathauwer, “Tensorlab 3.0.” Available: http://www.tensorlab.net, March 2016.
