@@ -1,0 +1,1528 @@
+Title: Scalable GNN-Based Power Allocation for Rate-Splitting Cell-Free Massive MIMO Systems
+
+URL Source: https://arxiv.org/pdf/2606.01714v1
+
+Published Time: Tue, 02 Jun 2026 02:05:29 GMT
+
+Number of Pages: 15
+
+Markdown Content:
+> 1
+
+# Scalable GNN-Based Power Allocation for Rate-Splitting Cell-Free Massive MIMO Systems 
+
+Ruomeng Wang, Yin Xu, Senior Member, IEEE , Aimin Tang, Senior Member, IEEE , Xiaowu Ou, Jun Zhu, Dazhi He, Senior Member, IEEE , Lifeng Wang, Member, IEEE , and Wenjun Zhang, Fellow, IEEE 
+
+Abstract —Cell-free massive multiple-input multiple-output (CF-mMIMO) systems provide enhanced coverage and capacity for next-generation wireless networks. However, CF-mMIMO systems face significant challenges in downlink power alloca-tion (PA) due to imperfect channel state information (CSI), severe multi-user interference (MUI), and high computational complexity. To address these issues, rate-splitting multiple access (RSMA) is adopted as a robust interference management strategy. Accordingly, this paper proposes an unsupervised and scalable graph neural network (GNN) framework for PA in rate-splitting CF-mMIMO (RS-CF-mMIMO) systems, relying exclusively on large-scale fading (LSF) coefficients without instantaneous CSI. To resolve the dimensionality mismatch in dynamic networks, we introduce a slice-based adaptive layer that projects variable-dimension features into a fixed latent space. This mechanism enables a unified model to generalize across diverse topologies without retraining. Within this architecture, the sum spectral efficiency (SE) is maximized under per-AP power constraints, assuming maximum-ratio precoding for common streams and regularized zero-forcing precoding for private streams. We also derive a weighted minimum mean-square error-alternating di-rection method of multipliers (WMMSE-ADMM) algorithm as a performance upper bound. Extensive simulations verify that the proposed GNN framework achieves near-optimal SE and outperforms unsupervised deep neural networks (DNNs) across diverse system sizes and pilot assignment schemes. Furthermore, the scalable variant maintains robust performance while reducing the trainable parameter count by over 57% relative to DNNs and decreasing inference latency by up to three orders of magnitude compared with WMMSE-ADMM. 
+
+Index Terms —Cell-free massive MIMO, graph neural network, scalability, power allocation 
+
+I. I NTRODUCTION 
+
+# MASSIVE multiple-input multiple-output (mMIMO) is an essential technology designed for facilitating high-density user equipments (UEs) in next-generation wireless networks, delivering substantial gains in both spectral effi-ciency (SE) and energy efficiency (EE) [1], [2]. However, its performance within conventional cellular networks is limited by inherent architecture drawbacks, including uneven coverage and severe inter-cell interference. To address these issues, cell-free massive MIMO (CF-mMIMO) is proposed by distributing access points (APs) within a specific coverage area to collab-oratively serve multiple UEs without creating artificial cell 
+
+(Corresponding author: Yin Xu.) Ruomeng Wang, Yin Xu, Aimin Tang, Xiaowu Ou, Jun Zhu, Dazhi He, and Wenjun Zhang are with Shanghai Jiao Tong University, Shanghai 200240, China (e-mail: {wangruomeng, xuyin, tangaiming, xiaowu ou, zhujun 22, hedazhi, zhangwenjun }@sjtu.edu.cn). Lifeng Wang is with the School of Future Information Technology, Fudan University, Shanghai 200433, China (e-mail: lifengwang@fudan.edu.cn). 
+
+boundaries [3]. This paradigm exploits the spatial diversity and multi-user interference (MUI) suppression capabilities of the system, thereby providing near-uniform quality of service (QoS) to all UEs [4]–[7]. Nevertheless, practical CF-mMIMO systems also face several challenges that must be resolved to fully realize their potential, primarily the high computational complexity of signal processing at central processing units (CPUs) and complex interference management issues caused by pilot contamination [8]–[11]. In particular, pilot contamination gains significant atten-tion in recent years, as it induces channel estimation errors that severely degrade SE performance, further exacerbated in high-density user scenarios, such as massive machine-type communications (mMTC), where pilot resources are severely constrained [12]. To mitigate these impairments, rate-splitting multiple access (RSMA) has emerged as a pow-erful paradigm for robust interference management. Unlike conventional space-division multiple access (SDMA) or non-orthogonal multiple access (NOMA), RSMA provides a gen-eralized transmission framework that bridges the gap between fully decoding interference and treating it strictly as noise, offering unprecedented flexibility and robustness against the imperfect channel state information (CSI) prevalent in large-scale deployments [13], [14]. Specifically, in rate-splitting CF-mMIMO (RS-CF-mMIMO) systems, the message of each UE is split into common and private parts. The former are aggregated into a shared common stream, while the latter are mapped to dedicated private streams for individual decoding. Through the optimization of power allocation (PA) for split messages, this framework facilitates partial decoding of inter-ference while treating the remaining interference as noise [15]. Therefore, PA is pivotal in RS-CF-mMIMO systems, dictat-ing both the interference mitigation efficacy and the overall SE [16], [17]. Prior research extensively investigates conventional opti-mization techniques to tackle the PA problem and characterize fundamental performance limits [18]–[23]. For instance, the work in [18] introduces a max-min fairness PA algorithm by solving a sequence of second-order cone programs (SOCP) for the downlink, albeit at the cost of the computational complexity that scales polynomially with the system size. To accelerate convergence, some works compress the input data at the cost of information loss. In [19], the authors propose an accelerated projected gradient method for large-scale CF-mMIMO systems, achieving SE performance comparable to successive convex approximation (SCA). Alternatively, other studies simplify the PA optimization by introducing tractable 
+
+> arXiv:2606.01714v1 [eess.SP] 1 Jun 2026 2
+
+assumptions. For example, the authors in [20] simplify the signal-to-interference-plus-noise ratio (SINR) expression un-der the assumptions of conjugate beamforming and full-power transmission. Additionally, several approaches decompose the original problem into subproblems with closed-form solutions. For instance, a randomized alternating direction method of multipliers (ADMM) algorithm is developed in [21], which requires solving only a small number of subproblems per iteration. Similarly, a closed-form precoder for the common and private streams for RS-CF-mMIMO systems is derived under fixed system configurations [22], [23]. To further alleviate the computational burden, recent works in [24]–[37] explore deep learning-based approaches to ap-proximate near-optimal power coefficients. Under supervised frameworks, a convolutional neural network (CNN) is pro-posed in [24] to learn max-min PA solutions with labels gener-ated by SOCP or SCA solvers, whereas distributed deep neural networks (DNNs) at APs are employed in [25] to approximate weighted minimum mean square error (WMMSE) strategies. Similarly, a supervised framework is developed in [26] to jointly optimize fronthaul interactions and decentralized edge computation. Conversely, unsupervised approaches are also investigated in [27]–[29], which directly optimize DNNs for max-min or sum-rate objectives, jointly tackling user associa-tion and pilot assignment. To further reduce signaling overhead within this unsupervised paradigm, a decentralized beamform-ing scheme is proposed in [30], while [31] introduces a model-based unrolled WMMSE algorithm to balance fronthaul con-straints and sum-rate performance. Extending these paradigms to RSMA-specific resource management, recent research fur-ther employs federated DRL [32], multi-agent DRL [33], and recurrent neural networks (RNNs) [34] to jointly optimize user selection, precoding, and PA coefficients. To address the scalability bottleneck inherent in these approaches, some researchers introduce techniques such as aggregating large-scale fading (LSF) coefficients [35], [36] or substituting fully connected layers with convolutional layers [37]. Beyond DNN-based schemes, graph neural networks (GNNs) are leveraged to capture topological dependencies and interactions between APs and UEs, offering superior data efficiency and generalization capabilities. Specifically, prior studies indicate that GNNs with n nodes can achieve O(n)
+
+times lower generalization error and require O(n2) times fewer training samples than multilayer perceptrons (MLPs) [38], [39]. Capitalizing on such graph-native features, recent works develop GNN-based strategies for the PA task [40]–[44]. For instance, SINRnet is proposed to maximize EE, where links are modeled as nodes and channels are encoded into four types via edge attributes based on their roles in the SINR expres-sion [40]. Parallel work in [41] develops a distributed GNN to maximize the sum ergodic SE relying on local CSI and lim-ited information exchange among APs. Further contributions include geometric-mean rate maximization for balanced user rates [42] and supervised GNNs for optimal linear precod-ing prediction [43]. Regarding RSMA-specific applications, a GNN-aided framework is introduced in hardware-impaired cell-free ultra-reliable low-latency communication (URLLC) systems [44], where nodes represent AP-UE associations and edges characterize MUI. Recent studies explore various strategies to enable GNN scalability across dynamic system configurations [45]–[48]. Specifically, some works employ one-hot-encoded edge at-tributes to represent per-AP serving densities [45], while others utilize attention mechanisms to dynamically weight neighbor contributions [46]. However, these approaches lead to a significant increase in the number of trainable parameters as the network scales, rendering them inefficient for dense deployments. Alternatively, scalability is attempted by com-pressing the graph structure, either through dynamic pooling mechanisms that aggregate nodes, or by selecting the top-
+
+K “closest” AP-UE pairs to form a fixed-size edge set [48]. Although these achieve system-size independence, they intro-duce additional preprocessing overhead and generalize poorly to unseen system configurations. In light of the aforementioned challenges, we propose a GNN-based PA framework designed to be robust against interference, efficient in training, and inherently scalable to dynamic system sizes. To mitigate the severe pilot contami-nation and MUI arising from imperfect CSI, we incorporate RSMA as a robust interference management strategy via common-private message splitting. Distinct from conventional supervised approaches, we formulate an SE-oriented objective function to drive end-to-end unsupervised learning, thereby eliminating the computational burden of label generation. Notably, to achieve size-agnostic scalability, we devise a novel slice-based adaptive embedding mechanism that ad-dresses two critical limitations of conventional zero-padding methods. Firstly, in terms of computational efficiency, zero-padding couples the model complexity to the maximum pre-defined network size, leading to parameter redundancy and unnecessary computations [49]. In contrast, our mechanism activates only the weights associated with the actual AP and UE dimensions of each network realization, so that the com-putational cost scales with the active topology. Secondly, in terms of topological fidelity, padded zeros may create artificial “ghost nodes” that disrupt the graph Laplacian’s symmetric normalization [50], while our slice-based mechanism dynam-ically maps variable-dimensional features into a fixed latent space, completely obviating ghost nodes and empowering a single unified model to generalize seamlessly across diverse dynamic topologies without retraining. The main contributions of this paper are summarized as follows: 
+
+• We integrate RSMA into the CF-mMIMO system to ensure robust interference management and formulate the downlink PA for common and private streams as an unsupervised graph learning task. By modeling APs and UEs as heterogeneous nodes and large-scale links as the edges, the proposed framework relies exclusively on scaled LSF coefficients, thereby eliminating the depen-dency on instantaneous CSI while maximizing system SE under per-AP power constraints via an end-to-end objective. 
+
+• We propose a scalable GNN architecture featuring a novel slice-based adaptive embedding layer. This mechanism implements a topology-aware projection by dynamically 3
+
+extracting a sub-matrix from a global weight pool to map variable inputs to a fixed latent space. Crucially, this design obviates the need for zero-padding and effectively decouples the model complexity from the worst-case sys-tem size, empowering a single unified model to generalize across heterogeneous configurations without retraining. 
+
+• We derive a WMMSE reformulation for the considered problem and develop an ADMM-based solver to serve as a performance upper bound. Extensive simulations are conducted to assess both SE and computational complexity across diverse system sizes and pilot assign-ment schemes, demonstrating near-optimal performance with substantially reduced trainable parameter count and millisecond-level inference latency. 
+
+1) Organizations: The remainder of the paper is organized as follows: the system model is described in Section II, followed by the problem formulation and the derivation of the WMMSE–ADMM algorithm in Section III. The proposed scalable GNN framework is detailed in Section IV. Numerical results and a complexity analysis are presented in Section V, and the paper concludes in Section VI. 
+
+2) Notations: Bold uppercase and bold lowercase letters denote matrices and vectors, respectively. The spaces Cm×n
+
+and Rm×n represent the sets of m × n complex-valued and real-valued matrices. IM and 0m×n denote the M ×M identity matrix and the m×n zero matrix. The superscripts (·)T , (·)H ,and (·)−1 stand for the transpose, Hermitian transpose, and matrix inverse operations. Regarding mathematical operators, 
+
+E[·], ℜ(·), tr( ·), ∥ · ∥ 2, | · | , and ◦ denote the expectation, real part, trace, Euclidean norm, cardinality, and Hadamard product, respectively. Finally, CN (μ, σ 2) denotes the circu-larly symmetric complex Gaussian distribution with mean μ
+
+and variance σ2.II. S YSTEM AND SIGNAL MODELS 
+
+A. System Model 
+
+As illustrated in Fig. 1, this paper considers a CF-mMIMO system. It consists of a central processing unit (CPU) deployed at the edge server, and L distributed APs. Each AP is equipped with N antennas and connected to the CPU via fronthaul links to serve K single-antenna UEs coherently. All centralized operations, including precoding and power allocation, are performed at the CPU and then communicated to the respective APs for coherent transmission. The channel vector between AP l and UE k is denoted by 
+
+hk,l ∈ CN ×1 and is modeled as correlated Rayleigh fading 
+
+hk,l ∼ CN (0, Rk,l ), (1) where Rk,l ∈ CN ×N is the spatial correlation matrix, and the LSF coefficient is given by βk,l = 1 
+
+> N
+
+tr( Rk,l ).The system operates under a time division duplex (TDD) protocol, leveraging channel reciprocity to estimate downlink channels from uplink pilots. We adopt a standard block fading channel model where the channel remains static and frequency-flat within a coherence block of length τc symbols. Each block is partitioned into τp symbols for uplink pilot transmission and τd symbols for downlink data transmission, 𝑼𝑬 𝟏   
+
+> 𝑼𝑬 𝟐
+> 𝑼𝑬 𝒌
+> 𝑼𝑬 𝑲
+> CPU
+> 𝑨𝑷 𝒍
+> Private stream
+> Fronthaul link
+> Common stream
+> Fig. 1. The CF-mMIMO system architecture.
+
+satisfying τc = τp + τd. Regarding the uplink pilot training, let Φ = [ ϕ1, . . . , ϕτp ] ∈ Cτp×τp denote the set of τp mutually orthogonal pilot sequences satisfying ϕHt ϕt′ = τpδt,t ′ . In this paper, we consider a dense network scenario characterized by K ≥ τp, which necessitates pilot reuse. Accordingly, let tk ∈ { 1, . . . , τ p} denote the index of the pilot sequence assigned to UE k.To manage the MUI effectively, we adopt the RSMA scheme during the downlink data transmission phase. Specifi-cally, the message of each UE is split into common and private parts. The former are aggregated into a shared common stream decoded by all UEs, while the latter are mapped to dedicated private streams for individual decoding. 
+
+B. Pilot Assignment Strategy 
+
+We establish the pilot indices {tk}Kk=1 using a low-complexity greedy assignment algorithm detailed in [9], [51]. The procedure is executed as follows: Initially, the first τp UEs are randomly assigned distinct orthogonal pilot sequences such that ti̸ = tj for i̸ = j, where 
+
+i, j ∈ { 1, . . . , τ p}. Subsequently, for each remaining UE k,where k ∈ { τp + 1 , . . . , K }, the system first identifies the 
+
+Master AP that provides the strongest LSF gain to UE k. The index of the Master AP is given by 
+
+l∗ = arg max 
+
+> l∈{ 1,...,L }
+
+βk,l . (2) Next, the Master AP l∗ selects the pilot index τ ∗ for UE k
+
+that minimizes the potential pilot contamination from the set of previously assigned (k − 1) UEs. This selection criterion is formulated as 
+
+τ ∗ = arg min 
+
+> t∈{ 1,...,τ p}
+> k−1
+
+X
+
+> i=1
+> ti=t
+
+βi,l ∗ . (3) We then set tk = τ ∗. This procedure is repeated sequentially until all K UEs are assigned pilot indices. This strategy effectively reduces the likelihood of assigning identical pilots to UEs with strong spatial correlation, thereby minimizing the dominant interference components. 4
+
+C. Uplink Signal Model and Channel Estimation 
+
+During the uplink pilot training phase, all K UEs simul-taneously transmit their assigned pilot sequences to the APs. The received pilot signal matrix Yp,l ∈ CN ×τp at AP l is modeled as 
+
+Yp,l =
+
+> K
+
+X
+
+> i=1
+
+√ηihi,l ϕTti + Np,l , (4) where ηi represents the uplink pilot power coefficient of UE i,and Np,l ∈ CN ×τp denotes the noise matrix with independent 
+
+CN (0 , σ 2) entries. To estimate the channel hk,l , AP l performs normalized despreading by projecting the received signal Yp,l onto the selected pilot sequence ϕ∗ 
+
+> tk
+
+. The despread pilot signal ytk ,l ∈
+
+CN ×1 is expressed as 
+
+ytk ,l = 1
+
+√τp
+
+Yp,l ϕ∗ 
+
+> tk
+
+=
+
+> K
+
+X
+
+> i=1
+> ti=tk
+
+√τpηihi,l + ntk ,l , (5) where ntk ,l ∼ CN (0, σ 2IN ) is the effective noise vector. As derived in [43], applying the standard MMSE estimator yields the channel estimate 
+
+ˆhk,l = √τpηk Rk,l 
+
+
+
+> K
+
+X
+
+> i=1
+> ti=tk
+
+τpηiRi,l + σ2IN
+
+
+
+> −1
+
+ytk ,l . (6) The estimated channel follows the distribution 
+
+ˆhk,l ∼ CN 
+
+
+
+0, τ pηk Rk,l Ψ−1 
+
+> k,l
+
+Rk,l 
+
+
+
+,
+
+where 
+
+Ψk,l = Eytk ,l yHtk ,l =
+
+> K
+
+X
+
+> i=1
+> ti=tk
+
+τpηiRi,l + σ2IN
+
+denotes the covariance matrix of the despread pilot signal 
+
+ytk ,l .
+
+D. Downlink Signal Model 
+
+RSMA is employed for downlink data transmission. To balance the computational complexity and interference sup-pression capability, we employ maximum ratio precoding for the common stream and regularized zero-forcing for the private streams. Let ¯wc,l and ¯wk,l denote the unnormalized beamforming directions constructed based on local CSI at AP l, which is given by 
+
+¯wc,l = 1
+
+√K
+
+> K
+
+X
+
+> i=1
+
+ˆhi,l , (7) 
+
+¯wk,l =
+
+> K
+
+X
+
+> i=1
+
+ζi ˆhi,l ˆhHi,l + σ2IN
+
+!−1
+
+ζk ˆhk,l , (8) where ζk represents the weight coefficient for UE k. The final transmit beamforming vectors wc,l and wk,l are obtained by normalizing these directions to satisfy unit norm, i.e., 
+
+∥wc,l ∥2 = ∥wk,l ∥2 = 1 .Consequently, the transmitted signal vector xl ∈ CN ×1 at AP l is expressed as 
+
+xl = √ρc,l wc,l sc +
+
+> K
+
+X
+
+> i=1
+
+√ρi,l wil si, (9) where sc, s i ∼ CN (0 , 1) denote the normalized data symbols. The variables ρc,l and ρi,l represent the downlink transmit powers allocated by AP l. For optimization convenience, we introduce the non-negative power coefficient vectors μc =[μc,1, . . . , μ c,L ]T and μk = [ μk, 1, . . . , μ k,L ]T , such that ρc,l =
+
+μ2c,l and ρk,l = μ2
+
+> k,l
+
+. The transmission at each AP satisfies the maximum power constraint Pt, given by 
+
+ρc,l +
+
+> K
+
+X
+
+> i=1
+
+ρi,l ≤ Pt, ∀l ∈ { 1, . . . , L }. (10) By leveraging the TDD channel reciprocity, the received signal yk ∈ C at UE k is given by 
+
+yk =
+
+> L
+
+X
+
+> l=1
+
+hHk,l xl + nk, (11) where nk ∼ CN (0 , σ 2) is the additive Gaussian noise at UE k.
+
+E. Performance Metrics 
+
+To facilitate a unified formulation of the SINR expressions, we introduce the stream type indicator α ∈ { c, p} and let 
+
+wαk,l denote the beamforming vector at AP l for the stream of type α intended for UE k. Specifically, for the common stream ( α = c ), the beamformer is shared by all UEs, i.e., 
+
+wc 
+
+> k,l
+
+= wc,l , ∀i. For the private stream ( α = p ), it corresponds to the user-specific beamformer, i.e., wp 
+
+> k,l
+
+= wk,l .Based on these definitions, we utilize the use-and-then-forget (UatF) bound to derive the achievable rates. First, we define the effective channel gain provided by AP l to UE k
+
+for stream type α as 
+
+akl,α = E hHk,l wαk,l . (12) By aggregating the gains from all L APs, the effective channel gain vector ak,α ∈ RL×1 is formulated as 
+
+ak,α = [ ak1,α , a k2,α , . . . , a kL,α ]T . (13) Similarly, to characterize the interference power, we com-pute the interference correlation term between APs l and m,arising from the stream of type α intended for UE i, interfering with UE kblm ki,α = R
+
+
+
+E
+
+n
+
+hHk,l wαi,l (wαi,m )H hk,m 
+
+o 
+
+, (14) where blm ki,α denotes the (l, m )-th entry of the interference correlation matrix Bki,α ∈ RL×L.Consequently, the SINRs of the common and private streams at UE k are given by 
+
+SINR k, c(μc) = (aTk, cμc)2
+
+Ik, c + PKi=1 μTi Bki, pμi + σ2 , (15) 
+
+SINR k, p(μk) = (aTk, pμk)2
+
+PKi=1 μTi Bki, pμi − (aTk, pμk)2 + σ2 , (16) 5
+
+where Ik, c = μT 
+
+> c
+
+Bkk, cμc − (aTk, cμc)2 represents the interfer-ence power caused by the channel estimation uncertainty of the common stream. Finally, the achievable rate is defined as the sum of the minimum common stream rate and all private stream rates, which is given by 
+
+SE = τd
+
+τc
+
+
+
+min  
+
+> k
+
+{log 2 (1 + SINR k, c(μc)) }
+
++
+
+> K
+
+X
+
+> k=1
+
+log 2 (1 + SINR k, p(μk)) 
+
+
+
+. (17) III. P ROBLEM FORMULATION AND SOLUTION 
+
+METHODOLOGY 
+
+In this section, we formulate the downlink PA problem for the common and private streams. The objective is to maximize the achievable rate by optimizing the power coefficients {ρk,l }
+
+and {ρc,l }, subject to per-AP power constraints. To tackle this problem, we derive a conventional iterative algorithm combin-ing WMMSE and ADMM. This numerical approach serves as a performance upper bound for assessing the proposed GNN-based framework in the subsequent sections. 
+
+A. Problem Formulation 
+
+Mathematically, the sum SE maximization problem is for-mulated as 
+
+max  
+
+> μc,{μk}
+
+τd
+
+τc
+
+min  
+
+> k
+
+Rc,k +
+
+> K
+
+X
+
+> k=1
+
+Rp,k 
+
+!
+
+(18) s.t. μ2c,l +
+
+> K
+
+X
+
+> k=1
+
+μ2 
+
+> k,l
+
+≤ Pt, ∀l ∈ { 1, . . . , L }, (18a) where the achievable rates Rc,k = log 2(1 + SINR k, c) and 
+
+Rp,k = log 2(1 + SINR k, p) are determined by the SINRs as defined in (15) and (16). 
+
+B. WMMSE-ADMM Algorithm 
+
+To solve the non-convex optimization problem formulated in (18), we first exploit the WMMSE equivalence to obtain a tractable reformulation. Subsequently, we develop an ADMM-based procedure to solve the reformulated subproblems effi-ciently, which enables closed-form updates for all optimization variables and is theoretically guaranteed to converge to a stationary point. For UE k, let vk, c and vk, p denote the scalar equalizers for the common and private streams, respectively. The corre-sponding mean square errors (MSEs) are defined as 
+
+ek, c = v2 
+
+> k, c
+
+μT 
+
+> c
+
+Bkk, cμc +
+
+> K
+
+X
+
+> i=1
+
+μTi Bki, pμi + σ2
+
+!
+
+− 2vk, c aTk, cμc + 1 ,
+
+(19) 
+
+ek, p = v2
+
+> k, p
+> K
+
+X
+
+> i=1
+
+μTi Bki, pμi + σ2
+
+!
+
+− 2vk, p aTk, pμk + 1 .
+
+(20) By introducing auxiliary weights wk,α > 0, the equivalent WMMSE optimization problem can be formulated as 
+
+min   
+
+> μc,{μk},
+> {wk,α , v k,α }
+> K
+
+X
+
+> k=1
+
+X
+
+> α∈{ c,p}
+
+(wk,α ek,α − ln wk,α ) (21) s.t. μ2c,l +
+
+> K
+
+X
+
+> k=1
+
+μ2 
+
+> k,l
+
+≤ Pt, ∀l ∈ { 1, . . . , L }. (21a) 
+
+Given fixed power coefficients μk, μc and auxiliary weights 
+
+wk,α , the optimal equalizer vopt  
+
+> k,α
+
+are obtained by setting the first-order derivative of (21) to zero, yielding the closed-form updates as follows 
+
+vopt  
+
+> k, c
+
+= aTk, cμc
+
+˜vk, c
+
+, (22) 
+
+vopt  
+
+> k, p
+
+= aTk, pμk
+
+˜vk, p
+
+, (23) where 
+
+˜vk, c = μT 
+
+> c
+
+Bkk, cμc +
+
+> K
+
+X
+
+> i=1
+
+μTi Bki, pμi + σ2, (24) 
+
+˜vk, p =
+
+> K
+
+X
+
+> i=1
+
+μTi Bki, pμi + σ2. (25) Substituting (22) and (23) into (19) and (20), we obtain the minimum MSE as 
+
+eMMSE  
+
+> k,α
+
+= 11 + SINR k,α 
+
+, (26) Consequently, the optimal MSE weights wopt  
+
+> k,α
+
+are updated as 
+
+wopt  
+
+> k,α
+
+= e−1
+
+> k,α
+
+. (27) The WMMSE procedure alternates among updating the equalizers vk,α , the weights wk,α , and the power coefficients 
+
+μk, μc. Specifically, with fixed equalizers and weights, the power-update subproblem is equivalent to solving the follow-ing quadratically constrained quadratic program (QCQP) 
+
+min  
+
+> μ
+
+f (μ) (28) s.t. μ2c,l +
+
+> K
+
+X
+
+> k=1
+
+μ2 
+
+> k,l
+
+≤ Pt, ∀l, (28a) where 
+
+f (μ) = wk, cek, c +
+
+> K
+
+X
+
+> k=1
+
+wk, pek, p, (29) and μT = [ μ1T , μ2T , · · · , μcT ] ∈ R(K+1) L. The formulated subproblem (28) is convex and can be efficiently solved by the ADMM-based procedure summarized in Algorithm 1. The computational complexity of the proposed WMMSE-ADMM algorithm is dominated by the iterative updates of the optimization variables. In each outer iteration, updating the scalar equalizers {vk,α } and weights {wk,α } entails calculat-ing the SINR values, which involves matrix-vector multiplica-tions with a complexity of O(K2L2). For the PA update via 6
+
+Algorithm 1 WMMSE–ADMM Algorithm for PA  
+
+> 1:
+
+Initialization: Set iteration index r = 0 . Initialize v(0) 
+
+> k,α
+
+,
+
+w(0) 
+
+> k,α
+
+, and μ(0) for all k, α . 
+
+> 2:
+
+repeat  
+
+> 3:
+
+Step 1: Update Receive Filters  
+
+> 4:
+
+Calculate v(r+1)  
+
+> k,α
+
+according to (22) and (23).  
+
+> 5:
+
+Step 2: Update MSE Weights  
+
+> 6:
+
+Calculate w(r+1)  
+
+> k,α
+
+according to (27).  
+
+> 7:
+
+Step 3: Update Power Allocation (ADMM)  
+
+> 8:
+
+Solve the QCQP problem (28) to obtain μ(r+1) . 
+
+> 9:
+
+r ← r + 1 . 
+
+> 10:
+
+until convergence of μ(r) or the objective value f (μ(r))
+
+ADMM, the computational bottleneck lies in the primal μ-update step. Specifically, solving the unconstrained quadratic subproblem requires determining the Cholesky factorization of a large-scale matrix with dimension (K + 1) L × (K + 1) L,resulting in a complexity of O(K3L3). Although the subse-quent projection step onto the per-AP power constraints can be decomposed across APs with a lower linear complexity of 
+
+O(LK ), the overall computational burden remains dictated by the matrix operations. Consequently, the total computational complexity of the WMMSE-ADMM algorithm is approxi-mately O Iout (K3L3 +Iin K2L2), where Iout and Iin denote the number of outer WMMSE iterations and inner ADMM iterations, respectively. This high polynomial complexity with respect to the system size L and K renders the WMMSE-ADMM approach computationally prohibitive for real-time applications in large-scale CF-mMIMO systems. IV. P ROPOSED SCALABLE GNN F RAMEWORK 
+
+Although the WMMSE-ADMM algorithm derived in Sec-tion III-B provides a near-optimal solution for the problem in (18), its practical deployment is hindered by the prohibitive overhead arising from iterative matrix operations. To overcome these latency and scalability bottlenecks, we propose a scalable unsupervised GNN-based PA framework deployed on the CPU of an edge server. This centralized deployment enables real-time inference by shifting the heavy optimization burden to offline training, allowing the CPU to efficiently compute and distribute PA coefficients to individual APs using aggregated LSF information. Crucially, unlike fixed-size neural networks, our framework features a topology-adaptive architecture that decouples model complexity from the system size. 
+
+A. Graph Modeling and Feature Construction 
+
+The RS-CF-mMIMO system is naturally modeled as a bipartite graph G = ( V, E). The node set V = VUE ∪ V AP 
+
+comprises K UE nodes and L AP nodes. Specifically, we assign indices {1, . . . , K } to VUE and {K + 1 , . . . , K + L} to 
+
+VAP . The edge set E represents the active communication links between APs and UEs. We utilize the LSF coefficients {βk,l }
+
+as raw node features due to their stability and dominance in                               
+
+> TABLE I LAYER CONFIGURATIONS OF THE PROPOSED SCALABLE GNN FRAMEWORK
+> Layer Type Output Dimension Activation
+> Input Raw Feature K+L–Layer 1 Adaptive Embedding 48 Linear Layer 2 GCN Backbone ( t= 1 )64 ReLU Layer 3 GCN Backbone ( t= 2 )128 ReLU Layer 4 MLP 64 ReLU Output Adaptive Projection (K+ 1) LSigmoid
+
+PA decisions. To mitigate the large dynamic range of channel gains, the LSF values are normalized as 
+
+β′ 
+
+> k,l
+
+= pPt
+
+(βk,l )ξ
+
+PKm=1 (βm,l )ξ , (30) where ξ is a tunable exponent. Leveraging this topology, we construct a raw feature vector xi ∈ R(L+K)×1 for each node 
+
+vi ∈ V . To preserve the distinct roles and connectivity patterns of APs and UEs, the feature vectors are structured according to the node type 
+
+xi =
+
+(
+
+[β′
+
+> i, 1
+
+, . . . , β ′
+
+> i,L
+
+, 01×K ]T , if vi ∈ V UE ,
+
+[01×L, β ′
+
+> 1,l
+
+, . . . , β ′
+
+> K,l
+
+]T , if vi ∈ V AP , (31) where for any AP node, the corresponding AP index is mapped by l = i − K. Crucially, the zero blocks 01×K and 01×L
+
+serve as structural indicators that explicitly encode the bipartite constraints, i.e., the absence of direct UE-UE or AP-AP links. 
+
+B. Scalable Architecture Design 
+
+The schematic overview of the proposed GNN framework is illustrated in Fig. 2 with specific layer configurations detailed in Table I. The architecture primarily comprises three func-tional modules: a slice-based adaptive embedding layer serving as the scalable interface, a multi-layer graph convolutional network (GCN) backbone equipped with residual connections for deep feature extraction, and an adaptive projection layer that maps the refined node embeddings onto the topology-dependent PA coefficients. 
+
+1) Slice-Based Adaptive Embedding: As the first layer of the proposed scalable architecture, the slice-based adaptive embedding layer in Fig. 3 provides a topology-adaptive in-terface that allows a single unified GNN to operate across CF deployments with varying (L, K ). Specifically, we introduce a global trainable weight pool Win ∈ RFin ×Dmax , where Fin 
+
+denotes the target latent dimension and Dmax = Lmax +Kmax 
+
+represents the maximum system capacity, which is set to 64 in our simulations. For a deployment with input dimension 
+
+Din = L+K, the layer activates the corresponding prefix sub-matrix Win [: , 1 : Din ] with dimension Fin × Din and computes the initial node embedding as 
+
+h(0)  
+
+> i
+
+= Win [: , 1 : Din ]xi, (32) thereby mapping variable-dimensional topology features into a fixed-dimensional latent space of size Fin prior to message passing. 7Scenario Instance  𝑺 𝒕𝒓𝒂𝒊𝒏            
+
+> 𝒋
+> Raw LSF Features
+> 𝜷 𝒌 ,𝒍
+> Scaled LSF Features
+> 𝜷 𝒌 ,𝒍
+> ′
+> Node Feature Construction
+> 𝒗 𝒊 ∈𝓥 𝐔𝐄
+> 𝒗 𝒊 ∈𝓥 𝐀𝐏
+> 𝑲 𝑳
+> 𝒙 𝒊 ∈ℝ(𝑳 +𝑲 )×𝟏
+> Graph Modeling
+> 𝓥 𝐔𝐄
+> 𝓥 𝐀𝐏
+
+Mixed Training Dataset of Scenarios  {𝑺 𝐭𝐫𝐚𝐢𝐧  
+
+> 𝒋
+
+}
+
+Preprocessing Phase                       
+
+> Node Feature Matrix
+> ⋮
+> 𝓥 𝐔𝐄
+> 𝓥 𝐀𝐏
+> Adjacency Matrix
+> 000011
+> 000011
+> 111100
+> 111100
+> ⋮
+> 𝓥 𝐔𝐄
+> 𝓥 𝐀𝐏
+> Inputs of
+> Scenarios {𝑺 𝐭𝐫𝐚𝐢𝐧
+> 𝒋 }
+
+Inputs of Scenario Instance  𝑺 𝒕𝒓𝒂𝒊𝒏 
+
+> 𝒋
+
+Unified Scalable  GNN  Framework 
+
+Training Phase               
+
+> Slice -based
+> Adaptive Layer
+> 𝑫 𝐦𝐚𝐱
+> 𝑫 𝐢𝐧
+> 𝑭 𝐢𝐧
+> GCN
+> Layers
+> Slice -based
+> Adaptive Layer
+> 𝑭 𝐨𝐮𝐭
+> 𝑫 𝐨𝐮𝐭
+> 𝑫 𝐦𝐚𝐱
+> 𝑳𝒐𝒔𝒔 =−𝑺𝑬 +𝑪 ෍
+> 𝒍 =𝟏
+> 𝑳
+> 𝐑𝐞𝐋 𝐔 (𝝁 𝐜 ,𝒍
+> 𝟐 +෍
+> 𝒌 =𝟏
+> 𝑲
+> 𝝁 𝒌 ,𝒍
+> 𝟐 −𝑷 𝐭 )
+> Outputs of Scenario Instance 𝑺 𝐭𝐫𝐚𝐢𝐧
+> 𝒋
+> Power Coefficients {𝝁 𝒌 ,𝒍 ,𝝁 𝐜 ,𝒍 }
+> Training Loss
+
+Mixed Test Dataset of Scenarios  {𝑺 𝐭 𝐞𝐬𝐭  
+
+> 𝒋
+
+}        
+
+> Trained GNN Model
+> In -Distribution
+> Scenarios
+> Scaled LSF Features
+> 𝜷 𝒌 ,𝒍
+> ′
+> Out -of -Distribution
+> Scenarios
+> Scaled LSF Features
+> 𝜷 𝒌 ,𝒍
+> ′
+> Power Coefficients
+> {𝝁 𝒌 ,𝒍 ,𝝁 𝐜 ,𝒍 }
+
+SE 
+
+> Trainable
+> Parameter
+> Count
+> Inference
+> Latency
+
+Analysis 
+
+Inference Phase and Analysis 
+
+Inference Phase  
+
+> Zero -Padding
+> Scaled LSF
+> Trainable
+> Frozen
+
+Fig. 2. A schematic overview of the proposed GNN framework 
+
+Fig. 3. Illustration of the adaptive node embedding layer mechanism. 
+
+In conventional padding-based designs, each xi is first ex-panded to the maximum dimension Dmax , and the embedding is computed using a fixed Fin × Fmax transformation. In contrast, our layer performs the multiplication with an effective matrix of size Fin ×Din , so that the embedding cost scales with the actual deployment size as O(Fin Din ) = O(Fin (L + K)) .Consequently, the proposed embedding avoids redundant com-putations and enables efficient real-time inference in dynamic CF-mMIMO deployments. 
+
+2) Graph Convolutional Processing: To capture high-order interference dependencies embedded in the network topology, the initial node embeddings are processed by a stack of T GCN layers. We employ a spectral graph convolution operator with symmetric normalization to ensure stable and degree-unbiased feature aggregation. Specifically, the feature update for node 
+
+vi at layer t ∈ { 1, . . . , T } is given by 
+
+h(t)
+
+i = σ
+
+W(t) X
+
+vj ∈N (vi)
+
+ci,j h(t−1) 
+
+j + h(t−1) 
+
+i
+
+ , (33) where N (vi) denotes the set of first-order neighbors of node vi and W(t) is the trainable weight matrix at layer t.
+
+ci,j = 1 /p|N (vi)| |N (vj )| and |N (·)| denotes the cardinality of the corresponding neighbor set. The residual connection 
+
+h(t−1) 
+
+i is introduced to mitigate over-smoothing and facilitate gradient propagation during training, while σ(·) denotes the ReLU activation function. By iteratively applying (33), the node representations pro-gressively integrate local channel characteristics with broader topological interference information. Specifically, in a two-layer architecture ( T = 2 ), the initial message-passing iteration (t = 1 ) aggregates immediate neighborhood features, directly encoding the spatial coupling between UEs and APs. The subsequent iteration ( t = 2 ) expands the receptive field to two-hop neighbors, systematically resolving the overlapping interference clusters among UEs sharing the same or adjacent APs. By projecting these topological dependencies into high-dimensional embeddings, the GCN implicitly characterizes complex MUI boundaries without requiring instantaneous small-scale fading, thereby establishing the essential inter-ference awareness requisite for subsequent RSMA power allocation. 
+
+3) Slice-based Adaptive Projection: Following the GCN backbone, an adaptive projection layer maps the refined node 8
+
+embeddings of dimension Fout to the topology-dependent power coefficient vector with dimension Dout = ( K + 1) L.The resulting projection output is passed through a sigmoid ac-tivation and scaled by Pt, producing non-negative coefficients that satisfy the per-AP transmit power constraints. 
+
+C. Scalability Analysis and Boundary Conditions 
+
+For ultra-large-scale deployments in which the required dimension Din exceeds Dmax , processing the entire monolithic topology with a single direct slice is structurally infeasible. To extend the framework’s capability to arbitrarily large deploy-ments, we integrate a user-centric overlapping clustering strat-egy that decomposes the global topology into size-bounded sub-graphs. To execute this decomposition, we first construct a sparse UE-AP topology based on the dominant large-scale channel conditions, following the procedures as follows: Each UE firstly associates with its QAP strongest candidate APs, defined by Ak = TopQ l(βk,l ) with |A k| = QAP .Furthermore, to regulate localized graph density, we define 
+
+Ul as the set of UEs associated with AP l, where each AP retains at most QUE UEs with the highest channel gains, i.e., |U l| ≤ QUE . Here, QAP and QUE serve as structural constraints to govern local graph density rather than training hyperparameters. The global network is subsequently partitioned into over-lapping sub-graphs. Let Ci ⊆ V UE denote the set of core UEs assigned to the i-th sub-graph. The corresponding sub-graph 
+
+Si is constructed as the T -hop neighborhood of these core UEs, i.e., Si = NT (Ci), where NT (·) denotes the set of all AP and UE nodes within a T -hop distance of the core UEs in the global graph, thereby encompassing all nodes participating in the T -layer GNN message-passing operations. The total dimension of each sub-graph is constrained by 
+
+Di = |S i ∩ V AP | + |S i ∩ V UE | ≤ Dmax . (34) To verify the structural integrity of this decomposition, we define the global T -hop receptive field of UE k as RT (k) = 
+
+NT ({k}; G). If UE k is designated as a core user for sub-graph 
+
+Sc(k), its structural context is perfectly preserved if RT (k) ⊆Sc(k). We quantify the context preservation efficacy via: 
+
+ρT = 1
+
+|V UE |
+
+X
+
+> k∈V UE
+
+I RT (k) ⊆ S c(k) , (35) where I{·} is the indicator function. A preservation ratio of 
+
+ρT = 100% confirms that the essential interference context for each core UE is rigorously maintained. This mechanism guarantees that the pre-trained neural architecture generalizes seamlessly to arbitrary network scales without retraining, effectively circumventing the global dimensionality curse by shifting the scalability bottleneck from global counts to local-ized neighborhood density. 
+
+D. Unsupervised Training Strategy 
+
+The proposed framework is trained in an unsupervised manner. Based on the achievable-rate expressions derived in Section II, the SINRs of the common and private streams can be evaluated as explicit functions of the PA coefficients produced by the GNN. Since the common stream must be decoded by all UEs, its achievable rate is limited by the minimum user rate, whereas the private streams contribute additively to the overall throughput. Accordingly, the SE-based loss is defined as 
+
+LSE = − min  
+
+> k
+
+log 2(1 + SINR k, c)
+
+− 1
+
+K
+
+> K
+
+X
+
+> k=1
+
+log 2(1 + SINR k, p)+ C
+
+> L
+
+X
+
+> l=1
+
+ReLU μ2c,l +
+
+> K
+
+X
+
+> k=1
+
+μ2 
+
+> k,l
+
+− Pt
+
+!
+
+, (36) As the presence of the minimum operator in (36) renders the objective non-differentiable, we approximate the minimum function using the LogSumExp (LSE) formulation 
+
+min  
+
+> k
+
+xk ≈ − τ ln 
+
+> K
+
+X
+
+> k=1
+
+exp 
+
+
+
+− xk
+
+τ
+
+!
+
+, (37) The differentiable loss used for training is 
+
+˜LSE = − τ ln 
+
+> K
+
+X
+
+> k=1
+
+exp 
+
+
+
+− log 2(1 + SINR k, c)
+
+τ
+
+!
+
+− 1
+
+K
+
+> K
+
+X
+
+> k=1
+
+log 2(1 + SINR k, p)+ C
+
+> L
+
+X
+
+> l=1
+
+ReLU μ2c,l +
+
+> K
+
+X
+
+> k=1
+
+μ2 
+
+> k,l
+
+− Pt
+
+!
+
+, (38) where τ > 0 governs the trade-off between LogSumExp approximation accuracy and gradient smoothness, whereas C
+
+dictates the enforcement of the power constraint. To establish a robust training foundation, we perform sensitivity analyses to identify stable operational regimes for these hyperparameters. Regarding the temperature τ , empirical results show that while a lower value (e.g., τ = 0 .05 ) marginally improves rate-approximation accuracy (by less than 0.3%), it risks decelerating convergence due to gradient concentration. Con-versely, τ = 0 .1 maintains a superior balance, facilitating rapid convergence without compromising the SE. Regarding the penalty coefficient C, we observe that weak regularization (C ≤ 0.01 ) fails to effectively suppress power violations, whereas excessive penalization ( C ≥ 0.2) distorts the gra-dient descent trajectory, prematurely forcing the model into a feasibility-dominated regime. Consequently, C = 0.1 is identified as the optimal configuration, effectively suppressing power violation rates to a negligible level ( < 0.03% ) while preserving the global optimization trajectory. Based on these validations, we adopt τ = 0.1 and C = 0.1 across all deployments to ensure strict compliance with constraints and robust convergence. V. S IMULATION RESULTS AND ANALYSIS 
+
+A. Simulation Setup 
+
+In this section, we present numerical results to evaluate the performance of the proposed scalable GNN PA frame-work. The simulations are conducted in an urban scenario 9                      
+
+> TABLE II SIMULATION PARAMETERS
+> Parameter Value
+> Coverage Area 1000 ×1000 m 2
+> System Bandwidth 20 MHz
+> Number of APs ( L){9,16 ,25 ,36 }
+> Number of UEs ( K){6,10 ,16 ,20 }
+> Antennas per AP ( N)4
+> Per-AP max downlink power ( Pt)1 W
+> UL pilot power ( ηi)100 mW
+> Coherence block length ( τc)200 Receiver noise power −94 dBm
+> Path-loss exponent ( α)3.67
+> LSF scaling exponent ( ξ)0.4
+
+within a square area of 1000 m × 1000 m . We consider networks comprising L ∈ {9, 16 , 25 , 36 } distributed APs, each equipped with N = 4 antennas. The AP positions are fixed across channel realizations, assuming a wrapped-around topology to mitigate boundary effects. The APs jointly serve 
+
+K ∈ { 6, 10 , 16 , 20 } single-antenna UEs that are randomly distributed within the coverage area. We simulate both or-thogonal and non-orthogonal pilot assignment schemes over a bandwidth of 20 MHz with a receiver noise power of 
+
+−94 dBm. The per-AP maximum downlink transmit power is Pt = 1 W and the UL pilot power is ηi = 100 mW. The LSF coefficients are generated based on the model in [52] 
+
+βk,l = −30 .5 − 36 .7 log 10 ( dk,l 
+
+1m ), (39) where dk,l is the distance between UE k and AP l. Key simulation parameters are summarized in Table II. The proposed framework is implemented using PyTorch on an NVIDIA RTX 4090 GPU (24 GB). The models are trained using the Adam optimizer with a mini-batch size of 
+
+32 . The initial learning rate is set to 0.01 and is dynamically decayed via a cosine-annealing scheduler. To maximize the system SE, the loss function defined in (38) is adopted. To comprehensively assess the proposed architecture, we conduct evaluations under two distinct training regimes: Scenario-Specific Training and Mixed-Scenario Training . We denote the datasets of diverse system configurations for training and testing as {Sj
+
+> train
+
+} and {Sj
+
+> test
+
+}, respectively. Specific dataset configurations are detailed in the respective subsections. The performance of the proposed scalable GNN framework, denoted as RSMA-GNN-U , is evaluated by comparing with a comprehensive set of seven distinct benchmark schemes, categorized as follows: 
+
+(i) BC : A broadcasting strategy that serves as a perfor-mance floor. 
+
+(ii) RSMA-EP : An RSMA scheme employing uniform PA across all streams, serving as a specific lower bound for rate-splitting transmission. 
+
+(iii) RSMA-WMMSE : The WMMSE-ADMM algorithm for-mulated in Algorithm 1, which provides a performance upper bound. 
+
+(iv) RSMA-DNN-U : An adaptation of the DNN-based scheme [51] for RSMA, serving as a benchmark to verify the architectural superiority of the proposed GNN. 
+
+(v) SDMA-GNN-U : The proposed GNN framework adapted for SDMA, quantifying the explicit gain of RSMA. 
+
+(vi) SDMA-DNN-U : The conventional unsupervised DNN-based SDMA framework established in [51]. 
+
+(vii) SDMA-DNN-S : A supervised DNN-based SDMA model [25] trained using labels generated by the WMMSE algorithm. This diverse selection of benchmarks enables a rigorous assessment of the proposed RSMA-GNN-U framework, vali-dating its advantages in terms of SE , inference latency , and 
+
+parameter count .
+
+B. Offline Training Cost Analysis 
+
+We first evaluate the dataset generation cost of the proposed framework. Unlike supervised methodologies that demand computationally prohibitive iterative solvers to yield ground-truth labels, the proposed unsupervised training set is con-structed solely by sampling UE locations and computing the corresponding LSF coefficients and spatial correlation matrices. Empirically, generating a comprehensive dataset of 
+
+20 , 000 samples on an NVIDIA RTX 4090 GPU takes only 
+
+114 .4 seconds (averaging 5.72 ms per sample). This data acquisition cost is virtually negligible, as it circumvents the most time-consuming phase of conventional deep learning pipelines. Furthermore, we quantify the offline training overhead of the unified mixed-scenario GNN. The model is trained across eight heterogeneous scenarios with N = 2 ,000 samples per setup and a 0.9 training split, yielding 14 ,400 training samples per epoch. On the same GPU platform, the entire 20 -epoch training procedure, encompassing data loading, gradient up-dates, and validation, takes only 57 .4 minutes. It is imperative to note that this constitutes a strictly one-time offline cost. For comparison, while the conventional WMMSE-ADMM algorithm avoids offline training, it still requires solving a complex iterative optimization problem for each new channel realization. Our measurements indicate that its average runtime is highly topology-dependent, escalating from 24 .7 seconds per sample in sparse networks (e.g., L = 16 , K = 6 ) to 260 .6
+
+seconds per sample in denser deployments (e.g., L = 16 , K =16 ). Consequently, the entire one-time offline training cost of the GNN is equivalent to merely 13 –140 WMMSE-ADMM executions. Moreover, evaluating the WMMSE-ADMM solver exclusively on the test split of the eight considered scenarios (800 samples) would demand approximately 31 .4 hours. In contrast, the GNN training concludes in under one hour. Once deployed, the GNN circumvents per-sample iterative optimization via an efficient direct forward pass. Therefore, the offline training overhead is highly affordable and is rapidly amortized by the substantial online computational savings. 
+
+C. Performance Evaluation with Scenario-Specific Training 
+
+We then evaluate the performance of the proposed frame-work in a scenario-specific setting. In this regime, a dedicated model is trained specifically for each fixed target (L, K )
+
+pair utilizing orthogonal pilot assignment. The corresponding 10 0.0 0.5 1.0 1.5 2.0 2.5 3.0 3.5 
+
+> SE per UE [bit/s/Hz]
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> CDF
+> RSMA-EP
+> RSMA-WMMSE
+> RSMA-DNN-U
+> RSMA-GNN-U
+> SDMA-GNN-U
+> SDMA-DNN-U [51]
+> SDMA-DNN-S [25]
+> BC
+
+(a) Underloaded: K = 10 UEs 0.0 0.5 1.0 1.5 2.0 2.5 3.0  
+
+> SE per UE [bit/s/Hz]
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> CDF
+> RSMA-EP
+> RSMA-WMMSE
+> RSMA-DNN-U
+> RSMA-GNN-U
+> SDMA-GNN-U
+> SDMA-DNN-U [51]
+> SDMA-DNN-S [25]
+> BC
+
+(b) Fully Loaded: K = 16 UEs 0.0 0.5 1.0 1.5 2.0 2.5  
+
+> SE per UE [bit/s/Hz]
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> CDF
+> RSMA-EP
+> RSMA-WMMSE
+> RSMA-DNN-U
+> RSMA-GNN-U
+> SDMA-GNN-U
+> SDMA-DNN-U [51]
+> SDMA-DNN-S [25]
+> BC
+
+(c) Overloaded: K = 20 UEs Fig. 4. CDF of the downlink SE per UE under different network loads: (a) Underloaded ( K = 10 ), (b) Fully Loaded ( K = 16 ), and (c) Overloaded ( K = 20 )scenarios. All plots are evaluated with L = 16 APs and orthogonal pilot assignment. 
+
+dataset comprises 20 , 000 independent channel realizations, which are randomly split into training, validation, and test sets with a ratio of 8 : 1 : 1 . This configuration allows us to assess the architecture’s peak capability when fully optimized for a known, static environment. To rigorously validate the robustness of the proposed scheme under varying network loads, we define three rep-resentative scenarios with a fixed number of APs L = 16 :an underloaded scenario with K = 10 (K < L ); a fully loaded scenario with K = 16 (K = L); and an overloaded scenario with K = 20 (K > L ). This setup aligns with the experimental conditions in [25]. In the following analysis, we present the cumulative distribution function (CDF) of the downlink SE per UE. Additionally, the training and validation loss curves are provided to illustrate the convergence behavior. 
+
+1) SE performance: The CDF of the downlink SE per UE for the underloaded scenario is presented in Fig. 4(a). As antic-ipated, the iterative RSMA-WMMSE achieves the highest SE. In contrast, the BC and RSMA-EP schemes demonstrate the lowest performance due to their lack of spatial beamforming for effective interference mitigation. Regarding learning-based schemes, the supervised SDMA-DNN-S exhibits a performance degradation of approximately 0.15 bit/s/Hz relative to RSMA-WMMSE , due to the optimality gap inherent in the training labels. Notably, the proposed RSMA-GNN-U and SDMA-GNN-U closely approach the near-optimal RSMA-WMMSE ,maintaining a marginal gap of only 0.1 bit/s/Hz. Moreover, they outperform the unsupervised DNN counterparts by a significant margin of roughly 0.4 bit/s/Hz. The evaluation extends to fully loaded and overloaded regimes in Fig. 4(b) and (c). Despite intensified interference, the proposed framework remains robust. Notably, the SE gain of RSMA-GNN-U over unsupervised DNN baselines widens from 0.4 bit/s/Hz in the fully loaded scenario to 0.5 bit/s/Hz in the overloaded case, highlighting the advantage of message-passing in capturing complex topologies. However, the specific gain of RSMA is marginal here, as the orthogonal pilot assignment inherently prevents pilot contamination. Regarding the optimality gap relative to the RSMA-WMMSE benchmark, the proposed RSMA-GNN-U exhibits remarkable stability, maintaining a narrow performance gap of only 0.15 bit/s/Hz. 0 10 20 30 40 50 60 70 80 90 
+
+> Epoch
+> 30
+> 28
+> 26
+> 24
+> 22
+> 20
+> Loss
+> Train Loss: RSMA-GNN-U
+> Train Loss: SDMA-DNN-U [51]
+> Train Loss: SDMA-GNN-U
+> Train Loss: RSMA-DNN-U
+> Valid Loss: RSMA-GNN-U
+> Valid Loss: SDMA-DNN-U [51]
+> Valid Loss: SDMA-GNN-U
+> Valid Loss: RSMA-DNN-U
+
+Fig. 5. Training and validation loss curves for the learning-based schemes over 100 epochs in the underloaded scenario ( L = 16 APs, K = 10 UEs). 
+
+2) Convergence Analysis: Fig. 5 illustrates the training and validation loss curves for the underloaded scenario, with sim-ilar trends observed across higher loads. Both losses decrease monotonically and converge within 40 epochs. Furthermore, the tight alignment between the training and validation curves confirms that the proposed framework effectively learns the channel characteristics without overfitting. 
+
+3) Computational Complexity Analysis: We evaluate the theoretical computational complexity in terms of floating-point operations (FLOPs). As established previously, the it-erative RSMA-WMMSE algorithm requires O Iout (K3L3 +
+
+Iin K2L2) operations, whereas the computational cost of the fully connected RSMA-DNN-U scheme scales quadratically as 
+
+O(( LK )2). In contrast, the proposed RSMA-GNN-U achieves linear scalability. By leveraging a shared-parameter message-passing mechanism, its inference complexity across T layers is bounded to O  T · LK · F 2in 
+
+. Furthermore, by integrating a user-centric clustering algorithm to sparsify the topology, this complexity can be further reduced to O  T · E · F 2in 
+
+, where E
+
+is the number of active edges. We empirically evaluate computational complexity via in-ference latency (averaged over 100 runs following 10 warm-ups) and trainable parameter count, summarized in Tables III and IV. Consistent with [43], the latency for SDMA-DNN-S is 11 
+
+TABLE III INFERENCE LATENCY (ms )
+
+Scenarios (APs, UEs) (16, 10) (16, 16) (16, 20) RSMA-WMMSE 2373.60 6329.39 7687.25 
+
+RSMA-GNN-U 5.63 7.21 9.69 
+
+RSMA-DNN-U 0.16 0.14 0.16 SDMA-GNN-U 5.62 7.18 9.77 
+
+SDMA-DNN-U 0.18 0.17 0.18 
+
+SDMA-DNN-S 126.73 133.64 124.04 TABLE IV TRAINABLE PARAMETER COUNT (K) 
+
+Scenarios (APs, UEs) (16, 10) (16, 16) (16, 20) RSMA-WMMSE – – –
+
+RSMA-GNN-U 329.65 594.70 821.37 
+
+RSMA-DNN-U 777.46 869.71 931.22 
+
+SDMA-GNN-U 303.01 561.92 775.49 
+
+SDMA-DNN-U 769.76 862.02 923.52 
+
+SDMA-DNN-S 79.04 85.28 89.44 
+
+measured on a per-AP basis. As demonstrated in Table III, the proposed RSMA-GNN-U 
+
+reduces latency by three orders of magnitude compared to the iterative RSMA-WMMSE . Specifically, the WMMSE solver re-quires nearly 7.7 s to converge in the overloaded regime, while 
+
+RSMA-GNN-U executes in under 10 ms. Although the fully-connected DNNs achieve sub-millisecond latencies ( 0.16 ms), the 5-10 ms runtime of both GNN architectures easily satisfies typical 10 -20 ms channel coherence time constraints. Regarding the trainable parameter count detailed in Ta-ble IV, RSMA-GNN-U requires approximately 57% fewer parameters than RSMA-DNN-U in the underloaded setting, with SDMA-GNN-U maintaining a similarly efficient foot-print. While SDMA-DNN-S uses the fewest parameters, it suffers from poor generalization and relies on computationally expensive label generation. Ultimately, the proposed RSMA-GNN-U delivers near-optimal SE with real-time latency, while circumventing both the prohibitive execution time of iterative solvers and the parameter explosion of conventional DNNs. 
+
+D. Performance Evaluation with Mixed-Scenario Training 
+
+In this subsection, we assess the performance of the pro-posed framework under the Mixed-Scenario Training regime, where a unified GNN model is trained to generalize across varying topologies via an adaptive embedding layer. To rig-orously validate the scalability and robustness of the model, we conduct controlled experiments across four distinct dimen-sions: (i) scalability with respect to AP density, (ii) scalability with respect to user loading, (iii) adaptability to pilot con-figurations, and (iv) out-of-distribution (OOD) generalization, assessing performance in system configurations (e.g., L, K ,and pilot lengths) diverge from the training distribution. 
+
+1) Scalability with Respect to AP Density: We investigate the scalability of the unified model by inferencing on topolo-gies with a fixed user load of K = 6 and varying AP counts 
+
+L ∈ { 9, 16 , 25 , 36 }, as illustrated in Fig. 6. As observed, both GNN-based architectures exhibit robust scalability as network density increases. Specifically, RSMA-GNN-U closely tracks the near-optimal RSMA-WMMSE 0.0 0.5 1.0 1.5 2.0 2.5 3.0 
+
+> SE per UE [bit/s/Hz]
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> CDF
+> RSMA-EP
+> RSMA-WMMSE
+> RSMA-DNN-U
+> RSMA-GNN-U
+> SDMA-GNN-U
+> SDMA-DNN-U [51]
+> SDMA-DNN-S [25]
+> BC
+
+(a) L = 9 APs 0 1 2 3 4 
+
+> SE per UE [bit/s/Hz]
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> CDF
+> RSMA-EP
+> RSMA-WMMSE
+> RSMA-DNN-U
+> RSMA-GNN-U
+> SDMA-GNN-U
+> SDMA-DNN-U [51]
+> SDMA-DNN-S [25]
+> BC
+
+(b) L = 16 APs 0 1 2 3 4
+
+> SE per UE [bit/s/Hz]
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> CDF
+> RSMA-EP
+> RSMA-WMMSE
+> RSMA-DNN-U
+> RSMA-GNN-U
+> SDMA-GNN-U
+> SDMA-DNN-U [51]
+> SDMA-DNN-S [25]
+> BC
+
+(c) L = 25 APs 0 1 2 3 4 5 
+
+> SE per UE [bit/s/Hz]
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> CDF
+> RSMA-EP
+> RSMA-WMMSE
+> RSMA-DNN-U
+> RSMA-GNN-U
+> SDMA-GNN-U
+> SDMA-DNN-U [51]
+> SDMA-DNN-S [25]
+> BC
+
+(d) L = 36 APs Fig. 6. CDF of the downlink SE per UE with K = 6 UEs and varying numbers of APs under orthogonal pilot assignment. 0 1 2 3 4
+
+> SE per UE [bit/s/Hz]
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> CDF
+> RSMA-EP
+> RSMA-WMMSE
+> RSMA-DNN-U
+> RSMA-GNN-U
+> SDMA-GNN-U
+> SDMA-DNN-U [51]
+> SDMA-DNN-S [25]
+> BC
+
+(a) K = 6 UEs 0.0 0.5 1.0 1.5 2.0 2.5 3.0 3.5  
+
+> SE per UE [bit/s/Hz]
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> CDF
+> RSMA-EP
+> RSMA-WMMSE
+> RSMA-DNN-U
+> RSMA-GNN-U
+> SDMA-GNN-U
+> SDMA-DNN-U [51]
+> SDMA-DNN-S [25]
+> BC
+
+(b) K = 10 UEs 0.0 0.5 1.0 1.5 2.0 2.5 3.0 
+
+> SE per UE [bit/s/Hz]
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> CDF
+> RSMA-EP
+> RSMA-WMMSE
+> RSMA-DNN-U
+> RSMA-GNN-U
+> SDMA-GNN-U
+> SDMA-DNN-U [51]
+> SDMA-DNN-S [25]
+> BC
+
+(c) K = 16 UEs 0.0 0.5 1.0 1.5 2.0 2.5  
+
+> SE per UE [bit/s/Hz]
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> CDF
+> RSMA-EP
+> RSMA-WMMSE
+> RSMA-DNN-U
+> RSMA-GNN-U
+> SDMA-GNN-U
+> SDMA-DNN-U [51]
+> SDMA-DNN-S [25]
+> BC
+
+(d) K = 20 UEs Fig. 7. CDF of the downlink SE per UE with L = 16 APs and varying numbers of UEs under orthogonal pilot assignment. 
+
+benchmark with a stable gap of 0.1-0.3 bit/s/Hz, while con-sistently outperforming its counterpart ( SDMA-GNN-U ), ver-ifying the SE gains of rate-splitting. This stability contrasts sharply with the DNN baselines ( RSMA-DNN-U and SDMA-DNN-U ). While GNN and DNN schemes perform comparably in the sparse regime ( L = 9 ), the DNNs degrade significantly as the network scales. These results underscore both the superior topological generalization of the GNN framework and the inherent limitations of fixed-size DNN architectures in dense deployments. 
+
+2) Scalability with Respect to User Loading: We next investigate the scalability with respect to UE density. The unified model is evaluated on topologies with fixed L = 16 
+
+APs and varying user populations K ∈ { 6, 10 , 16 , 20 }.As depicted in Fig. 7, the GNN-based frameworks demon-strate remarkable resilience to interference escalation. Interest-12 0.0 0.5 1.0 1.5 2.0 2.5 3.0 3.5 
+
+> SE per UE [bit/s/Hz]
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> CDF
+> RSMA-EP
+> RSMA-WMMSE
+> RSMA-DNN-U
+> RSMA-GNN-U
+> SDMA-GNN-U
+> SDMA-DNN-U [51]
+> SDMA-DNN-S [25]
+> BC
+
+(a) Sufficient Pilot Resources: K = 10 0.0 0.5 1.0 1.5 2.0 2.5 3.0  
+
+> SE per UE [bit/s/Hz]
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> CDF
+> RSMA-EP
+> RSMA-WMMSE
+> RSMA-DNN-U
+> RSMA-GNN-U
+> SDMA-GNN-U
+> SDMA-DNN-U [51]
+> SDMA-DNN-S [25]
+> BC
+
+(b) Strained Pilot Resources: K = 16 0.0 0.5 1.0 1.5 2.0 2.5  
+
+> SE per UE [bit/s/Hz]
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> CDF
+> RSMA-EP
+> RSMA-WMMSE
+> RSMA-DNN-U
+> RSMA-GNN-U
+> SDMA-GNN-U
+> SDMA-DNN-U [51]
+> SDMA-DNN-S [25]
+> BC
+
+(c) Severely Strained Pilot Resources: K = 20 
+
+Fig. 8. CDF of the downlink SE per UE under varying Pilot Resource Strains with fixed τp = 10 : (a) Sufficient Pilot Resources ( K = 10 ), (b) Strained Pilot Resources ( K = 16 ), (c) Severely Strained Pilot Resources ( K = 20 ). All plots are evaluated with L = 16 APs. 
+
+ingly, under this orthogonal pilot assignment scheme, SDMA-GNN-U slightly outperforms RSMA-GNN-U , maintaining a tighter optimality gap relative to the RSMA-WMMSE bench-mark. This phenomenon reveals that when pilot contamination is inherently prevented, the powerful spatial interference mit-igation capability of the GNN renders the common stream in RSMA redundant, making pure SDMA more power-efficient. In contrast, the fixed-size DNN architectures experience se-vere performance degradation as the number of UEs increases. For instance, the optimality gap for RSMA-DNN-U widens drastically from 0.3 bit/s/Hz to over 0.5 bit/s/Hz, underscoring the limited capacity of conventional DNNs to resolve high-dimensional multi-user interference. Ultimately, both adaptive GNN architectures maintain a commanding lead over the DNN baselines and heuristic approaches across all evaluated loads. 
+
+3) Generalization to Different Pilot Assignment Schemes: 
+
+We further assess the generalization capability of the scalable model under different pilot assignment schemes. In this ex-periment, the pilot length is fixed at τp = 10 , and the AP count at L = 16 , while the number of UEs varies across 
+
+K ∈ { 10 , 16 , 20 }. Consequently, the system transitions from a contamination-free regime ( K ≤ τp) to a pilot-contaminated regime ( K > τ p). The corresponding CDFs of the downlink SE per UE are depicted in Fig. 8. As illustrated in Fig. 8, the proposed RSMA-GNN-U demon-strates exceptional resilience to pilot contamination and out-performs its counterpart SDMA-GNN-U . Even as channel estimation errors become pronounced, the GNN model main-tains a tight performance alignment with the RSMA-WMMSE 
+
+benchmark, keeping the SE optimality gap within 0.3 bit/s/Hz. This suggests that the GNN effectively learns the interference structure even with imperfect CSI. By contrast, the DNN-based schemes and RSMA-EP experience significant performance de-terioration in the non-orthogonal case, reflecting their limited ability in mitigating the impact of multi-user interference and pilot contamination. 
+
+4) Out-of-Distribution Generalization to Unseen Configu-rations: We finally assess the model’s scalability by evaluating its ability to generalize to unseen system configurations. As detailed in Table V, the model is trained exclusively on medium-scale deployments but evaluated on unseen small- and large-scale scenarios with concurrently varying APs, UEs, and 
+
+TABLE V SYSTEM CONFIGURATIONS FOR MODEL TRAINING AND 
+
+GENERALIZATION TESTING 
+
+Scenario Type Scenario ID APs ( L) UEs ( K) Pilots ( τp)Training 
+
+T1 16 6 6T2 16 10 10 T3 16 16 10 T4 16 16 16 T5 25 6 6T6 25 10 10 T7 25 16 10 T8 25 16 16 
+
+Testing 
+
+E1 9 6 6E2 16 20 10 E3 16 20 20 E4 36 6 6E5 36 10 10 
+
+pilot assignments. The 95%-outage downlink SE results, summarized in Ta-ble VI, validate the inherent robustness of the proposed framework. Despite operating entirely outside its training distribution, the unified RSMA-GNN-U model exhibits highly stable edge-user performance. Notably, it closely trails the dimension-specific RSMA-DNN-U benchmark with a max-imum performance gap of only 0.13 bit/s/Hz, while offer-ing massive computational savings. Moreover, comparing the multi-access mechanisms reveals that RSMA-GNN-U generally matches or outperforms its SDMA counterpart ( SDMA-GNN-U) across most OOD topologies. This reaffirms that the rate-splitting architecture successfully preserves its robust interfer-ence mitigation capabilities even when generalized to entirely new network scales. 
+
+5) Computational Complexity Analysis: Having established the theoretical complexity bounds previously, we now evaluate the empirical computational cost of the unified model across OOD topologies. As illustrated in Fig. 9, the trainable param-eter space of the proposed GNN is entirely decoupled from the varying system dimensions, requiring zero architectural modifications for unseen scales. As detailed in Table VII, both adaptive GNN architectures maintain remarkably low and predictable inference latencies, scaling smoothly from 7.2 ms in sparse configurations to 13                                                                                                              
+
+> TABLE VI 95%-OUTAGE DOWNLINK SE PER UE ACROSS DIFFERENT SCENARIOS (BIT /S/H Z)
+> Scenarios RSMA-RSMA-RSMA-SDMA-SDMA-SDMA-RSMA-BC (APs, UEs, Pilots) WMMSE GNN-U DNN-U GNN-U DNN-U DNN-S EP
+> (9, 6, 6) 2.85 2.45 2.52 2.45 2.50 2.50 2.28 0.33 (16, 20, 10) 2.51 1.62 1.73 1.59 1.76 1.93 1.36 0.04 (16, 20, 20) 2.46 1.67 1.80 1.84 1.63 1.97 1.43 0.04 (36, 6, 6) 4.93 4.14 4.27 4.04 4.20 3.88 4.20 0.61 (36, 10, 10) 4.14 3.62 3.60 3.57 3.69 3.22 3.55 0.29 TABLE VII INFERENCE LATENCY ACROSS DIFFERENT SCENARIOS (ms )
+> Scenarios RSMA-RSMA-RSMA-SDMA-SDMA-SDMA-(APs, UEs, Pilots) WMMSE GNN-U DNN-U GNN-U DNN-U DNN-S
+> (9, 6, 6) 14871 7.21 0.29 7.23 0.31 388.62 (16, 20, 10) 366439 37.48 0.24 37.52 0.28 394.88 (16, 20, 20) 371267 41.54 0.26 41.75 0.29 390.73 (36, 6, 6) 180176 37.76 0.25 31.73 0.29 369.42 (36, 10, 10) 59707 59.00 0.25 49.10 0.28 374.43 916 36
+> Number of APs
+> 0
+> 200
+> 400
+> 600
+> 800
+> 1000
+> 1200
+> Trainable Parameters (K)
+> 168.48K
+> SDMA-DNN-S [25]
+> RSMA-GNN-U (47.03K)
+> SDMA-GNN-U (46.96K)
+> RSMA-DNN-U (1235.09K)
+> SDMA-DNN-U [51] (1235.09K)
+> Fig. 9. Trainable parameter count across varying number of APs.
+
+59 .0 ms in massive topologies. Crucially, compared to the iterative RSMA-WMMSE algorithm, which requires anywhere from 14 .8 s to over 371 s to converge, the proposed RSMA-GNN-U achieves a massive latency reduction of up to three orders of magnitude. Furthermore, the GNN framework accel-erates inference by a factor of 6 to 50 relative to the supervised 
+
+SDMA-DNN-S baseline. These results confirm that the unified GNN natively satisfies the stringent real-time constraints of dynamic CF-mMIMO networks without sacrificing SE. 
+
+E. Computational Efficiency of Scalable Architectures 
+
+To evaluate the computational efficiency and parameter scal-ability of our proposed slice-based mechanism, we benchmark it against two established baselines: an attention-weighted GNN and a dynamic pooling GNN. Table VIII summarizes the comparative performance in terms of trainable parameters and multiply-accumulate (MAC) operations. As indicated in Table VIII, the attention baseline suffers from severe parameter inflation (from 43.91K to 96.34K) and quadratic complexity growth, with its computational burden exploding from 1.30M MACs to 424.08M MACs as the network scales. This is due to the direct scale dependence of its high-dimensional node attributes in expanding topologies. Meanwhile, the pooling baseline incurs high preprocessing sorting overhead and structural distortions during graph down-sampling, with its parameter count growing from 46.47K to 63.19K. In contrast, the proposed slice-based method guaran-tees an absolute invariant model capacity of 47.03K parameters across all scaled deployments satisfying Din ≤ Dmax , while maintaining a highly competitive and strictly linear computa-tional growth profile (scaling conservatively from 939.20K to 15.21M MACs). For extreme scaling scenarios where the net-work dimension exceeds the predefined operational boundary (Din > D max ), the framework operates seamlessly alongside the user-centric clustering strategy introduced in Section IV-C. By decomposing the ultra-large continuous topology into size-bounded overlapping subgraphs ( Dsub ≤ Dmax ), our neural architecture scales to arbitrary networks without retraining, maintaining full graph topological integrity while ensuring strict local parameter and execution efficiency. 
+
+F. Feasibility Analysis in Ultra-Dense Scenarios 
+
+We evaluate the feasibility of the proposed framework in ultra-dense regimes. If the network is modeled as a fully connected bipartite graph, the message-passing complexity creates a fundamental computational bottleneck. However, severe path loss dictates that each UE is effectively served by only a sparse subset of APs. To evaluate the framework’s adaptability to such extreme scales, we implement a user-centric graph sparsification strat-egy prior to GNN inference. By retaining only the QUE domi-nant large-scale links per UE, the message-passing complexity is strictly bounded to O(T · |E| · F 2) = O(T · QUE K · F 2).Tables IX and X present the boundary analysis under two distinct clustering configurations, scaling up to an extreme deployment of L = 1024 APs and K = 640 UEs. Under the first configuration (Table IX), the active edges constitute merely 0.39% of the dense formulation, yielding a staggering 
+
+256 × reduction in computational cost. Crucially, local clus-tering restricts the peak subgraph dimension ( Dsub ≤ 64 ), securing 100% preservation of the T -hop receptive field. When 14 
+
+TABLE VIII QUANTITATIVE COMPARISON OF PARAMETERS AND COMPUTATIONAL COMPLEXITY (MAC S) A CROSS DIFFERENT SCALABLE ARCHITECTURES 
+
+Scenarios (APs, UEs) Global Din Slice Params Att. Params Pool. Params Slice MACs Att. MACs Pool. MACs 
+
+(16, 6) 22 47.03K 43.91K 46.47K 939.20K 1.30M 3.75M (16, 10) 26 47.03K 45.20K 46.99K 1.13M 1.89M 3.77M (25, 16) 41 47.03K 49.42K 48.34K 1.88M 4.97M 3.85M (36, 32) 68 47.03K 57.38K 51.10K 3.41M 18.40M 4.02M (64, 40) 104 47.03K 67.11K 53.93K 5.84M 56.85M 4.31M (128, 80) 208 47.03K 96.34K 63.19K 15.21M 424.08M 5.60M TABLE IX SCALABILITY AND COMPLEXITY REDUCTION ANALYSIS (C ONFIGURATION A: M AX DSUB = 64 , Q UE = 4 )
+
+AP ( L) UE ( K) Dense LK Active |E| |E| /LK Avg. AP/UE Reduction ( LK/ |E| ) Max Dsub T -hop Pres. 
+
+128 128 16,384 512 3.12% 4.00 32.0 × 64 100% 256 160 40,960 640 1.56% 4.00 64.0 × 64 100% 512 320 163,840 1,280 0.78% 4.00 128.0 × 64 100% 1024 640 655,360 2,560 0.39% 4.00 256.0 × 64 100% 
+
+TABLE X SCALABILITY AND COMPLEXITY REDUCTION ANALYSIS (C ONFIGURATION B: M AX DSUB = 128 , Q UE = 8 )
+
+AP ( L) UE ( K) Dense LK Active |E| |E| /LK Avg. AP/UE Reduction ( LK/ |E| ) Max Dsub T -hop Pres. 
+
+128 128 16,384 1,024 6.25% 8.00 16.0 × 128 100% 256 160 40,960 1,280 3.12% 8.00 32.0 × 128 100% 512 320 163,840 2,560 1.56% 8.00 64.0 × 128 100% 1024 640 655,360 5,120 0.78% 8.00 128.0 × 128 100% 
+
+a denser local association is demanded ( QUE = 8, Table X), scaling the offline capacity to Dmax = 128 restores structural feasibility, achieving a 128 × complexity reduction while preserving perfect T -hop context. These results confirm that the scalability boundary is strictly governed by the local density QUE and offline capacity Dmax , thereby completely circumventing the global dimensionality curse. VI. C ONCLUSION 
+
+In this paper, we proposed an unsupervised and scalable GNN framework for downlink power allocation in RS-CF-mMIMO systems, aiming to maximize system SE under different pilot assignment schemes and varying network scales. By modeling APs and UEs as graph nodes with large-scale coefficients as features, the framework preserved permutation equivariance and maintained low complexity in terms of both inference latency and trainable parameter count. A WMMSE-ADMM power allocation algorithm was developed that served as a performance upper bound. A key innovation of our work lay in the design of adaptive embedding layers, which enabled the scalable GNN architecture to generalize effectively across diverse network sizes and pilot configurations without the need for retraining. Numerical results demonstrated that the proposed scheme achieved near-optimal spectral efficiency and consistently outperformed unsupervised DNN-based models, supervised learning baselines, and heuristic power allocation strategies across underloaded, fully loaded, and overloaded scenarios. Finally, the comprehensive complexity analysis con-firmed its practicality for real-time edge deployment. REFERENCES [1] L. Lu, G. Y. Li, A. L. Swindlehurst, A. Ashikhmin, and R. Zhang, “An overview of massive MIMO: Benefits and challenges,” IEEE J. Sel. Topics Signal Process. , vol. 8, no. 5, pp. 742–758, 2014. [2] A. Ashraf, T. S. Gunawan, M. Kartiwi, L. O. Nur, B. S. Nugroho, and R. P. Astuti, “Advancements and challenges in scalable modular antenna arrays for 5G massive MIMO networks,” IEEE Access , vol. 12, pp. 57 895–57 916, 2024. [3] H. He, X. Yu, J. Zhang, S. Song, and K. B. Letaief, “Cell-free massive MIMO for 6G wireless communication networks,” IEEE J. Commun. Inf. Netw. , vol. 6, no. 4, pp. 321–335, 2021. [4] M. Mohammadi, Z. Mobini, H. Q. Ngo, and M. Matthaiou, “Next-generation multiple access with cell-free massive MIMO,” Proc. IEEE ,2024. [5] A. Apiyo and J. Izydorczyk, “A survey of NOMA-aided cell-free massive MIMO systems,” Electronics , vol. 13, no. 1, p. 231, Jan. 2024. [6] J. Zheng, J. Zhang, H. Du, D. Niyato, B. Ai, M. Debbah, and K. B. Letaief, “Mobile cell-free massive MIMO: Challenges, solutions, and future directions,” IEEE Wireless Commun. , vol. 31, no. 3, pp. 140– 147, 2024. [7] H. Q. Ngo, G. Interdonato, E. G. Larsson, G. Caire, and J. G. Andrews, “Ultradense cell-free massive MIMO for 6G: Technical overview and open questions,” Proc. IEEE , vol. 112, no. 7, pp. 805–831, 2024. [8] H. A. Ammar, R. Adve, S. Shahbazpanahi, G. Boudreau, and K. V. Srinivas, “User-centric cell-free massive MIMO networks: A survey of opportunities, challenges and solutions,” IEEE Commun. Surveys Tuts. ,vol. 24, no. 1, pp. 611–652, 2022. [9] E. Bj¨ ornson and L. Sanguinetti, “Scalable cell-free massive MIMO systems,” IEEE Trans. Commun. , vol. 68, no. 7, pp. 4247–4261, 2020. [10] ——, “Making cell-free massive MIMO competitive with MMSE pro-cessing and centralized implementation,” IEEE Trans. Wireless Com-mun. , vol. 19, no. 1, pp. 77–90, 2020. [11] N. Garg and T. Ratnarajah, “Generalized superimposed training scheme in cell-free massive MIMO systems,” IEEE Trans. Wireless Commun. ,vol. 21, no. 9, pp. 7668–7681, 2022. [12] A. Mishra, Y. Mao, C. K. Thomas, L. Sanguinetti, and B. Clerckx, “Mitigating intra-cell pilot contamination in massive MIMO: A rate-splitting approach,” IEEE Trans. Wireless Commun. , vol. 22, no. 5, pp. 3472–3487, 2023. 15 
+
+[13] Y. Mao, O. Dizdar, B. Clerckx, R. Schober, P. Popovski, and H. V. Poor, “Rate-splitting multiple access: Fundamentals, survey, and future research trends,” IEEE Commun. Surveys Tuts. , vol. 24, no. 4, pp. 2073– 2126, 2022. [14] B. Clerckx, Y. Mao, E. A. Jorswieck, J. Yuan, D. J. Love, E. Erkip, and D. Niyato, “A primer on rate-splitting multiple access: Tutorial, myths, and frequently asked questions,” IEEE J. Sel. Areas Commun. , vol. 41, no. 5, pp. 1265–1308, 2023. [15] Y. Mao, B. Clerckx, and V. O. Li, “Rate-splitting multiple access for downlink communication systems: bridging, generalizing, and outper-forming SDMA and NOMA,” EURASIP J. Wireless Commun. Netw. ,vol. 2018, no. 1, p. 133, 2018. [16] F. G¨ ottsch, N. Osawa, I. Kanno, T. Ohseki, and G. Caire, “Fairness scheduling in user-centric cell-free massive MIMO wireless networks,” 
+
+IEEE Trans. Wireless Commun. , vol. 23, no. 9, pp. 11 942–11 957, 2024. [17] A. L. Imoize, H. I. Obakhena, F. I. Anyasi, and S. N. Sur, “A review of energy efficiency and power control schemes in ultra-dense cell-free massive MIMO systems for sustainable 6G wireless communication,” 
+
+Sustainability , vol. 14, no. 17, 2022. [18] H. Q. Ngo, A. Ashikhmin, H. Yang, E. G. Larsson, and T. L. Marzetta, “Cell-free massive MIMO versus small cells,” IEEE Trans. Wireless Commun. , vol. 16, no. 3, pp. 1834–1850, 2017. [19] C. Hao, T. T. Vu, H. Q. Ngo, M. N. Dao, X. Dang, C. Wang, and M. Matthaiou, “Joint user association and power control for cell-free massive MIMO,” IEEE Internet Things J. , vol. 11, no. 9, pp. 15 823– 15 841, 2024. [20] E. Nayebi, A. Ashikhmin, T. L. Marzetta, H. Yang, and B. D. Rao, “Pre-coding and power optimization in cell-free massive MIMO systems,” 
+
+IEEE Trans. Wireless Commun. , vol. 16, no. 7, pp. 4445–4459, 2017. [21] B. Wang, J. Fang, Y. Xiao, and M. Haardt, “Max-min beamforming for large-scale cell-free massive MIMO: A randomized ADMM algorithm,” 
+
+IEEE Trans. Wireless Commun. , vol. 24, no. 5, pp. 4315–4328, 2025. [22] F. Luo and Y. Mao, “A practical max-min fair resource allocation algo-rithm for rate-splitting multiple access,” IEEE Commun. Lett. , vol. 27, no. 12, pp. 3285–3289, 2023. [23] A. R. Flores, R. C. de Lamare, and K. V. Mishra, “Clustered cell-free multi-user multiple-antenna systems with rate-splitting: Precoder design and power allocation,” IEEE Trans. Commun. , vol. 71, no. 10, pp. 5920– 5934, 2023. [24] L. Sala¨ un and H. Yang, “Deep learning based power control for cell-free massive MIMO with MRT,” in Proc. IEEE Global Commun. Conf. (GLOBECOM) . IEEE, 2021, pp. 01–07. [25] M. Zaher, ¨ O. T. Demir, E. Bj¨ ornson, and M. Petrova, “Learning-based downlink power allocation in cell-free massive MIMO systems,” IEEE Trans. Wireless Commun. , vol. 22, no. 1, pp. 174–188, 2023. [26] H. Lee, J. Kim, and S.-H. Park, “Learning optimal fronthauling and decentralized edge computation in fog radio access networks,” IEEE Trans. Wireless Commun. , vol. 20, no. 9, pp. 5599–5612, 2021. [27] N. Rajapaksha, K. S. Manosha, N. Rajatheva, and M. Latva-Aho, “Deep learning-based power control for cell-free massive MIMO networks,” in 
+
+Proc. IEEE Int. Conf. Commun. (ICC) . IEEE, 2021, pp. 1–7. [28] M. Usman Khan, E. Testi, M. Chiani, and E. Paolini, “Joint power control and pilot assignment in cell-free massive MIMO using deep learning,” IEEE Open J. Commun. Soc. , vol. 5, pp. 5260–5275, 2024. [29] N. Rajapaksha, K. S. Manosha, N. Rajatheva, and M. Latva-Aho, “Unsupervised learning-based joint power control and fronthaul capacity allocation in cell-free massive MIMO with hardware impairments,” IEEE Wireless Commun. Lett. , vol. 12, no. 7, pp. 1159–1163, 2023. [30] H. Hojatian, J. Nadal, J.-F. Frigon, and F. Leduc-Primeau, “Decen-tralized beamforming for cell-free massive mimo with unsupervised learning,” IEEE Commun. Lett. , vol. 26, no. 5, pp. 1042–1046, 2022. [31] D. Yu, M. Boloursaz Mashhadi, and R. Tafazolli, “Model-based neural collaboration framework for resource-efficient downlink beamforming in cell-free massive mimo systems,” IEEE Trans. Commun. , vol. 73, no. 10, pp. 8980–8995, 2025. [32] S. A. Mousavi, M. Monemi, R. Mohseni, and M. Latva-aho, “A federated deep learning framework for cell-free RSMA networks,” 
+
+arXiv:2501.07126 , 2025. [33] O. N. Irkicatal, E. T. Ceran, and M. Yuksel, “Deep reinforcement learn-ing enhanced rate-splitting multiple access for interference mitigation,” 
+
+arXiv:2403.05974 , 2024. [34] J. Johnston and X. Wang, “RNN beamforming optimizer for rate-splitting multiple access and cell-free massive MIMO,” IEEE Trans. Commun. , vol. 73, no. 5, pp. 3579–3592, 2025. [35] Y. Zhang, J. Zhang, Y. Jin, S. Buzzi, and B. Ai, “Deep learning-based power control for uplink cell-free massive MIMO systems,” in Proc. IEEE Global Commun. Conf. (GLOBECOM) . IEEE, 2021, pp. 1–6. [36] Y. Zhang, J. Zhang, S. Buzzi, H. Xiao, and B. Ai, “Unsupervised deep learning for power control of cell-free massive MIMO systems,” IEEE Trans. Veh. Technol. , vol. 72, no. 7, pp. 9585–9590, 2023. [37] Y. Zhao, I. G. Niemegeers, and S. H. De Groot, “Power allocation in cell-free massive MIMO: A deep learning method,” IEEE Access , vol. 8, pp. 87 185–87 200, 2020. [38] M. Mohsenivatani, S. Ali, V. Ranasinghe, N. Rajatheva, and M. Latva-Aho, “Graph representation learning for wireless communications,” 
+
+IEEE Commun. Mag. , vol. 62, no. 1, pp. 141–147, 2024. [39] Y. Shen, Y. Shi, J. Zhang, and K. B. Letaief, “Graph neural networks for scalable radio resource management: Architecture design and theoretical analysis,” IEEE J. Sel. Areas Commun. , vol. 39, no. 1, pp. 101–115, 2021. [40] R. Raghunath, B. Peng, and E. A. Jorswieck, “Energy-efficient power allocation in cell-free massive MIMO via graph neural networks,” in 
+
+Proc. IEEE Int. Conf. Mach. Learn. Commun. Netw. (ICMLCN) . IEEE, 2024, pp. 31–37. [41] N. X. Tung, T. Van Chien, H. Q. Ngo, and W. J. Hwang, “Dis-tributed graph neural network design for sum ergodic spectral efficiency maximization in cell-free massive MIMO,” IEEE Trans. Veh. Technol. ,vol. 74, no. 3, pp. 5181–5186, 2025. [42] H. D. Tuan, A. A. Nasir, H. Q. Ngo, E. Dutkiewicz, and H. V. Poor, “Scalable user rate and energy-efficiency optimization in cell-free massive MIMO,” IEEE Trans. Commun. , vol. 70, no. 9, pp. 6050–6065, 2022. [43] B. Parlier, L. Sala¨ un, and H. Yang, “Learning optimal linear precoding for cell-free massive MIMO with GNN,” in Proc. Eur. Conf. Mach. Learn. Knowl. Discov. Databases (ECML PKDD) . Brno, Czech Republic: Springer, Sept. 2024, pp. 72–88. [44] Y. Huang, Y. Jiang, F.-C. Zheng, and P. Zhu, “GNN-based RSMA for energy efficiency in hardware-impaired cell-free URLLC systems,” in 
+
+Proc. IEEE Int. Conf. Commun. (ICC) . IEEE, 2025, pp. 3551–3556. [45] S. Mishra, L. Salaun, H. Yang, and C. S. Chen, “Graph neural network aided power control in partially connected cell-free massive MIMO,” 
+
+IEEE Trans. Wireless Commun. , vol. 23, no. 9, pp. 12 412–12 423, 2024. [46] Q. Sun, Y. He, and O. Petrosian, “Resource allocation in heterogeneous network with node and edge enhanced graph attention network,” Applied Intelligence , vol. 54, no. 6, pp. 4865–4877, 2024. [47] Y. Zhao, F. Zhang, Z. Zhou, and G. Hu, “A dynamic power allocation approach for downlink cell-free massive MIMO with graph neural network,” IEEE Trans. Veh. Technol. , vol. 74, no. 4, pp. 6518–6532, 2025. [48] B. Li, L.-L. Yang, R. G. Maunder, S. Sun, and P. Xiao, “Heterogeneous graph neural network for power allocation in multicarrier-division duplex cell-free massive MIMO systems,” IEEE Trans. Wireless Commun. ,vol. 23, no. 2, pp. 962–977, 2024. [49] N. A. Mitsiou, P. S. Bouzinis, P. G. Sarigiannidis, and G. K. Karagian-nidis, “Heterogeneous resource allocation with multi-task learning for wireless networks,” IEEE Trans. Wireless Commun. , vol. 25, pp. 7191– 7205, 2026. [50] Z. Liu, Q. Mao, C. Liu, Y. Fang, and J. Sun, “On size-oriented long-tailed graph classification of graph neural networks.” New York, NY, USA: Association for Computing Machinery, 2022. [Online]. Available: https://doi.org/10.1145/3485447.3512197 [51] M. Fabiani, A. Abdallah, A. Celik, and A. M. Eltawil, “Unsupervised learning-based downlink power allocation for CF-mMIMO networks,” in Proc. IEEE Global Commun. Conf. (GLOBECOM) . IEEE, 2023, pp. 6309–6314. [52] M. Fabiani, A. Abdallah, A. Celik, O. Haliloglu, and A. M. Eltawil, “Unsupervised learning for distributed downlink power allocation in cell-free mMIMO networks,” IEEE Trans. Mach. Learn. Commun. Netw. , vol. 3, pp. 644–658, 2025.

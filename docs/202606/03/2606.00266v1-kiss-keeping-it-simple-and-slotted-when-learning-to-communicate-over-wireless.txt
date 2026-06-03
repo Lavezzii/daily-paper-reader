@@ -1,0 +1,647 @@
+Title: KISS: Keeping it Simple and Slotted when Learning to Communicate over Wireless
+
+URL Source: https://arxiv.org/pdf/2606.00266v1
+
+Published Time: Tue, 02 Jun 2026 00:13:10 GMT
+
+Number of Pages: 16
+
+Markdown Content:
+# KISS: K EEPING IT SIMPLE AND SLOTTED WHEN LEARNING TO COMMUNICATE OVER WIRELESS 
+
+Kamil Szczech,  Maksymilian Wojnar,  Krzysztof Rusek 
+
+Katarzyna Kosek-Szott,  Szymon Szott 
+
+AGH University of Krakow, Poland 
+
+kamil.szczech@agh.edu.pl 
+
+## ABSTRACT 
+
+A long-standing challenge in distributed wireless systems is ensuring efficient and fair random chan-nel access. Existing solutions often address specific constraints related to timing, periodicity, or centralization, but they typically rely on fixed heuristics. Motivated by recent advances in machine learning (ML), we investigate whether ML agents can autonomously learn efficient and fair access strategies, and whether such learning can offer new insights into medium access control (MAC) design. Rather than proposing a deployable protocol, our aim is to examine whether decentral-ized learning can rediscover or approximate theoretically efficient random-access mechanisms under minimal assumptions. To this end, we deploy an off-policy Double Deep Q-Network (DDQN) with Bayesian inference to train agents operating over a slotted channel. The resulting method is fully on-line (no pre-training), fully distributed (independent multi-agent learners), stochastic (non-periodic), and requires no coordination or explicit communication. Extensive simulations show that the learned strategy adapts to varying network conditions and achieves near-theoretical efficiency while main-taining fairness. Ablation studies further reveal that the learned behavior resembles slotted ALOHA with a dynamically adjusted transmission probability, leading us to refer to the method as KISS: Keeping It Simple and Slotted. 
+
+Keywords Distributed channel access · machine learning · MAC protocol 
+
+## 1 Introduction 
+
+Channel access protocols in distributed wireless systems originate from the original (pure) ALOHA protocol [1]. Their evolution into more complex systems, through several improvements, such as slotted ALOHA and carrier sense multiple access (CSMA), has led to the enhanced distributed channel access (EDCA) function of IEEE 802.11, as well as to a multitude of protocols proposed in the literature [2]. Meanwhile, simpler protocols based on ALOHA remain relevant and used, e.g., in Internet of Things (IoT) [3, 4, 5] and low-Earth orbit (LEO) satellite communications [6, 7]. The operating limits of ALOHA-based protocols have been obtained analytically. For example, under full buffers, pure ALOHA and slotted ALOHA achieve throughput limits of 12e ≈ 18 .4% and 1 
+
+> e
+
+≈ 36 .8% , respectively [8]. For dynamic, time-varying settings, control-theoretic approaches have shown how to optimally configure the transmission probability [9]. With the rise of machine learning (ML) methods, we ask whether ML agents can autonomously re-discover efficient behavior in fully distributed environments without explicit communication . We apply learning agents primarily as an analytical tool to explore what channel-access strategies can emerge under minimal assumptions, rather than as a deployable MAC protocol. This question remains pertinent because existing ML-based channel-access methods typically rely on centralization, cyclic transmissions, or additional signaling (Section 2). To address this challenge, we consider a distributed system composed of agents operating in synchronous time slots (Figure 1). Agents act independently, i.e., all learning and decision making is done locally. There is no central con-
+
+> arXiv:2606.00266v1 [cs.NI] 29 May 2026
+
+KISS: Keeping it Simple and Slotted Slotted wireless channel 
+
+> Action
+> Observation
+> Reward
+> Action
+> Observation
+> Reward
+> Action
+> Observation
+> Reward
+
+Figure 1: Simplified KISS operation diagram. troller, no shared parameters, and no control messages. We formulate the problem as a partially observable stochas-tic game (POSG) and define the environment (i.e., slotted wireless channel) states, action space, and observations (Section 3). We next design a reward function to promote efficient use of the channel, rewarding the agent for suc-cessful transmissions, penalizing for collisions, etc. We train agents using an off-policy Double Deep Q-Network (DDQN) [10] with Bayesian inference. The training is done in a custom wireless channel access simulator (assuming a perfect physical layer), wherein we have implemented several ML and non-ML baselines (Section 4). A thorough simulation study (Section 5) shows that our agents approach the throughput limit of slotted ALOHA in full-buffer scenarios. Baseline results indicate that higher throughput is only possible when relaxing the assumptions of distributed operation and no coordination. Despite these constraints, our agents maintain high fairness and adapt quickly in dynamic settings, converging to new operating points. In non-saturated regimes, KISS is the only protocol that preserves both high throughput and fairness, outperforming all baselines under low and medium loads. Ablation studies (Section 6) further reveal that KISS’s performance stems primarily from the reward function, while modifica-tions to the observation history or action-space constraints offer little benefit and may even harm performance. Overall, the agents learn a simple yet efficient slotted-ALOHA-like strategy with dynamic transmission probabilities, which we term KISS: Keeping It Simple and Slotted. In short, the contributions of this paper are as follows: • Defining limitations of existing ML-based channel access schemes. • Designing KISS, a fully distributed DDQN-based access mechanism with zero coordination, zero shared parameters, and no prior structural assumptions. • Re-implementing state-of-the-art baselines for reproducible comparisons. • Demonstrating, through extensive experiments, that KISS achieves near-optimal throughput, high fairness, and strong robustness across saturated, non-saturated, static, and dynamic scenarios. • Providing systematic ablation studies that identify reward shaping as the decisive factor enabling stable and fair decentralized operation. • Releasing our simulator, baselines, and KISS implementation as open-source. 1
+
+## 2 Motivation 
+
+Our literature review in the area of ML-based wireless channel access methods (Table 1) reveals the following short-comings which motivate our work. 
+
+Centralization. A substantial portion of the existing ML-based MAC literature depends on centralization either dur-ing operation or training. Many approaches adopt centralized training with distributed execution (CTDE), requiring a controller that aggregates experience or coordinates actions among nodes [18, 19, 20, 21, 22]. Even some decentralized designs become partially centralized when fairness is enforced: a central controller performs round-robin scheduling and collects transmission outcomes from the agents [12]. Such dependency is incompatible with random-access wire-less settings where infrastructure may not be present or where nodes must operate autonomously. This motivates our focus on a fully distributed mechanism that does not rely on a coordinator, global knowledge, or centralized learning. 
+
+> 1https://github.com/mldr-devs/ltc
+
+2KISS: Keeping it Simple and Slotted Table 1: Decentralized ML-based random-access methods in chronological order. Actions: transmit (TX), channel sense (CS). Requirements summarize additional assumptions beyond basic slot-level feedback.                                     
+
+> Paper Actions Observations Reward Mode Model Requirements Outcome vs. ALOHA
+> ALOHA-Q [11] Slot choice Slot result +1 /−1Decentralized Q-learning Cyclic access; node count known Higher through-put and lower de-lay; converges to collision-free pat-terns. DLMA [12] TX, CS History of slot results
+> +1 /0Decentralized/ centralized DDQN History buffer; cen-tralized controller for fairness Maintains through-put and fairness with ALOHA nodes; not purely random access. UW-ALOHA-Q [13] Slot choice Slot result +1 /−1Decentralized Q-learning Signaling hand-shake; cyclic oper-ation Improves under-water ALOHA; no terrestrial compari-son. DR-ALOHA-Q [14] Slot choice Slot result +1 /0Decentralized Hysteretic Q-learning Cyclic operation Improves underwa-ter performance; no terrestrial compari-son. ALOHA-dQT [15] Cycle and slot choice Outcome/ACK history N/A Decentralized with info exchange Policy tree History and ACK summary ex-change; coordi-nated cycles Higher utilization and fairness; relies on coordination beyond ALOHA. DMRL-MAC [16] TX proba-bility Local success/ collision rates Throughput-fairness metric Decentralized Hysteretic Q-learning Tracks per-node throughput; local monitoring Improved through-put under varying loads. DMLLI [17] TX proba-bility Local success/ collision rates Throughput-fairness metric Decentralized with infor-mation exchange Hysteretic Q-learning Piggybacked throughput; neigh-borhood monitor-ing Performance gains when coexisting with ALOHA nodes.
+> KISS (this work)
+> TX, CS Channel outcome; local state See Sec. 3.2 Decentralized DDQN No signaling; no node count; slot-level feedback only Learns p-persistent ALOHA-like ac-cess; approaches
+> 1/e throughput without coordina-tion.
+
+Cyclic transmissions. Several learning-based ALOHA variants rely on structured, periodic, or frame-based trans-missions rather than the minimal assumptions of classic slotted random access. ALOHA-Q and related underwater ALOHA adaptations operate over framed or cyclic structures [11, 23, 13, 14], and thereby deviate from the simplicity of classical slotted ALOHA. Similarly, ALOHA-dQT intentionally learns coordinated periodic access patterns [15], which, while improving channel utilization, introduces predetermined transmission cycles that reduce the spontane-ity and independence expected from random-access systems. Our goal is instead to preserve the fundamental slotted nature of ALOHA without imposing periodic schedules or frame-level structure. 
+
+Additional signaling. Many proposed solutions require explicit information exchange among nodes, increasing overhead and relying on signaling channels not available in minimal ALOHA-like systems. For example, ALOHA-dQT nodes exchange identifiers and summaries of past outcomes to coordinate expert policies [15]. Distributed ap-proaches such as DMRL-MAC and DMLLI piggyback throughput information or observe all transmission outcomes [16, 17]. Even when the underlying learning formulation is decentralized, the need for such side information contra-dicts the purely independent learning model where each node uses only its own local slot-level feedback. By contrast, our approach avoids any explicit signaling and assumes only the minimal observable: the channel outcome. 
+
+Network monitoring. Another recurring assumption is that nodes possess knowledge about the network state be-yond what classic ALOHA requires. Some methods depend on knowing the number of competing nodes a priori 
+
+[11, 23], while others require estimating or tracking the throughput of all agents [16, 17]. Such monitoring effectively replaces random access with a form of distributed scheduling or coordinated adaptation. By contrast, we assume 3KISS: Keeping it Simple and Slotted agents have no knowledge of network size, traffic demand, or other nodes’ performance. This allows us to investigate whether a fully distributed deep reinforcement learning (RL) agent, operating solely on local slotted observations, can autonomously converge to classical p-persistent ALOHA behavior. 
+
+Summary. Although prior research demonstrates that reinforcement learning can improve or even surpass ALOHA in both homogeneous and heterogeneous settings, these gains typically rely on assumptions that depart from the simplicity of classic random access. Existing solutions often introduce centralization, cyclic transmission structures, explicit signaling, or require knowledge of global network parameters, all of which simplify learning but compromise decentralization. To our knowledge, no prior work shows that fully distributed deep reinforcement learning (DRL) agents can autonomously recover the classic p-persistent ALOHA behavior ( ≈ 1/e throughput) using only slot-level feedback, i.e., without exchanging frames, sharing histories, or knowing the network size or topology. This gap motivates our central claim: to learn to communicate over wireless, it is enough to keep the structure simple and slotted . Accordingly, we propose Keeping it Simple and Slotted (KISS), a fully distributed DDQN-based approach in which agents operate solely on the per-slot channel outcome. We demonstrate that this simplicity is sufficient for convergence toward theoretically optimal behavior. 
+
+## 3 System Model 
+
+We consider a distributed system composed of N independent agents operating in synchronous time slots t = 0 , 1, . . . , T − 1 (Algorithm 1). The shaded box in Algorithm 1 highlights the sequence of local operations executed indepen-dently by each agent (these steps run in parallel on all active agents). Agents act independently, i.e., learning and decision making processes run locally on each node: there is no central controller, no shared parameters, and no control messages. 
+
+Algorithm 1: KISS: Distributed Learning Loop.                                                     
+
+> Initialization: Agents i∈ { 1..N }with weights θi, history oi
+> 0=0
+> 1for each time slot t= 0 ,1, . . . , T −1do
+> 2for each active agent i∈ { 1, . . . , N }in parallel do
+> 3Observe xit(2) and update history oit(3);
+> 4Calculate reward rit−1based on (4) and (5);
+> 5Store transition (sit−1, a it−1, r it−1, s it)in replay buffer Di;
+> 6Update weights θiby minimizing total loss L(10);
+> 7Sample Bayesian parameter sample ˜θi(8);
+> 8Sample next action aitusing ϵ-greedy policy;
+> 9Collect and execute all actions simultaneously;
+> 10 Determine channel state (Section 4.1);
+> 11 Provide observations to agents;
+> 12 Update buffer states and generate new traffic (Section 4.1);
+
+3.1 Problem Formulation 
+
+The problem can be formulated as a partially observable stochastic game (POSG) 
+
+(I, S, {A i}, P, {Ri}, {Ωi}, {Oi}, γ ), where I = {1, . . . , N } is the set of agents, S is a set of environment states, Ai is the action set of agent i, P (s′|s, a) is a transition probability conditioned on the joint action 
+
+a = ( a1, . . . , a N ), Ri : S × Q 
+
+> i
+
+Ai → R is the reward function of agent i, Ωi is the observation set of agent i,
+
+Oi(oi|s′, a) is the conditional observation probability for agent i, and γ ∈ [0 , 1] is the discount factor. The global state space S is hidden from the agents, while P and Oi are governed by the simulator as detailed in Section 4. Each agent i ∈ { 1, . . . , N } at each slot selects one action from the set 
+
+A = {TX , CS }, (1) corresponding to transmit (TX) or channel sense (CS). Note that there are no restrictions on action selection, therefore an agent is allowed to take any action at any state, even if that behavior is unfavorable (e.g., transmission with empty buffer). The local instantaneous (per-slot) observation at time t is a 5-tuple 
+
+xit =  bit, c it, r ic,t , n i
+
+> idle ,t
+
+, a it
+
+, (2) where bit ∈ { 0, 1} is the binary buffer occupancy state (empty, full), cit ∈ {− 1, 0, 1} is the channel state observed in the previous slot (undetermined/collision, idle, successful transmission), ric,t ∈ Z≥0 is the retransmission counter, 4KISS: Keeping it Simple and Slotted Table 2: Reward function constants. 
+
+Constant Symbol Value 
+
+Max. retransmissions M 8Safe idle period Sidle 25 Safe idle std. dev. σidle 3Penalized idle period D 25 Successful transmission reward Rtx 1.0 Empty buffer idle reward Ridle 0.5 Idle penalty Pidle −1.0 Empty buffer TX penalty Pempty −0.5 Collision penalty Pcoll −1.0 Max. retransmission penalty Pmax −1.0 
+
+ni 
+
+> idle ,t
+
+∈ Z≥0 is the number of consecutive idle slots, and ait ∈ { TX , CS } is the action taken at time t. When the agent chose CS at time t − 1, the channel state is observed as cit = 0 (idle), cit = 1 (successful transmission), or cit = −1
+
+(collision). When the agent chose TX , it cannot sense the channel, so cit is set to −1 (undetermined). The observation provided to the agent is the history of the last L instantaneous observations: 
+
+oit = xit−L+1 , x it−L+2 , . . . , x it
+
+, (3) therefore Ω ⊆ ZL×5.
+
+3.2 Reward Function 
+
+The reward function is designed to promote efficient use of the channel. It encourages successful packet delivery with minimal retransmissions, discourages wasteful transmissions with empty buffers or collisions, and penalizes excessive waiting to send packets. 
+
+Transmission: When the agent selects TX, let τ ∈ {− 1, 1} denote the transmission outcome 2 (τ = 1 for success, 
+
+τ = −1 for collision) and b the buffer state. The reward is 
+
+rTX =
+
+
+
+Rtx , τ = 1 , b > 0,Pempty , τ = 1 , b = 0 ,Pcoll , τ = −1, r c < M, Pmax , τ = −1, r c ≥ M, 
+
+(4) where rc is the retransmission counter and M is the maximum number of retransmissions (Table 2). In all cases, 
+
+nidle is set to zero. The rc counter is reset to zero on successful or empty buffer transmission. On collision, rc is incremented; if it reaches M , the frame is dropped and rc is reset. 
+
+Channel sense: When the agent selects CS, the reward depends on the buffer state and idle duration: 
+
+rCS =
+
+
+
+Ridle , b = 0 ,
+
+0, b > 0, n idle < s, Pidle · min  1, (nidle − s + 1) /D , b > 0, n idle ≥ s, 
+
+(5) where s = Sidle + ⌊ξ⌉, ξ ∼ N (0 , σ 2idle ), ⌊·⌉ denotes rounding to the nearest integer, and D is the penalized idle scaling factor. When the buffer is empty, both counters are reset to zero. Otherwise, the rc counter remains unchanged and 
+
+nidle is incremented. After the grace-period threshold is exceeded, the penalty for waiting with a non-empty buffer increases and then saturates at a fixed maximum value. 
+
+3.3 Learning scheme and neural network model 
+
+KISS agents follow a DDQN algorithm with a Q-network parameterized by θ and a target network by θ−. The target network is updated using a soft update rule. The DDQN bootstrap target is 
+
+y = r + (1 − δ)γ Q θ−
+
+ s′, argmax 
+
+> a′
+
+Qθ (s′, a ′), (6) 
+
+> 2
+
+Following other state-of-the-art papers, we assume that acknowledgments are sent back immediately and their transmission is part of the slot duration. 
+
+5KISS: Keeping it Simple and Slotted and the standard temporal-difference (TD) loss is 
+
+LTD (θ) = E(s,a,r,s ′,δ )∼D 
+
+   Qθ (s, a ) − y2 , (7) where D denotes the replay buffer and δ is a terminal flag. Moreover, KISS agents use ε-greedy exploration with an exponential decay factor. The Q-network architecture is a one-layer transformer classifier [24] with a final fully connected layer producing the action logits. The choice of the transformer model is motivated by the fact that, to achieve distributed channel access with decentralized operation, an ML solution is needed that can handle variable-length sequences (i.e., different history sizes) 3. The Q-network is implemented as a Bayesian neural network [25] and each parameter is represented by a Gaussian posterior with diagonal covariance (mean field approximation). For each parameter, we sample a noisy realization for the forward pass: ˜θi = θi + σiξ, ξ ∼ N (0 , 1) , (8) where σi is a learnable standard deviation and ξ is sampled from a standard normal distribution. We evaluate a Monte Carlo estimate of the Kullback–Leibler (KL) divergence term 
+
+KL ≈ X
+
+> i
+
+
+
+log φ ˜θi; θi, σ i
+
+ − log φ ˜θi; 0 , σ p
+
+
+
+, (9) where φ is the normal distribution density, σp is a prior standard deviation, and the summation is over all dimensions of all parameters. The total loss minimized during training is therefore 
+
+L(θ) = LTD (θ) + λKL KL( θ), (10) where λKL is a regularization coefficient. The full set of training hyperparameters is listed in Table 3. This stochastic network allows injecting data-driven noise into the learned protocol (the learning algorithm can cancel this noise by setting an arbitrarily small σi). This noise captures the agent’s uncertainty due to unseen configurations, and in the multi-agent setting it gives agents the option to use mixed strategies. This option is beneficial, as the Nash equilibrium often lies in a mixed strategy. To illustrate the learned posteriors, we examine a single representative run with N = 5 agents under saturated traffic. Figure 2 shows the joint distribution of weight means θi and posterior standard deviations σi for each agent. A charac-teristic V-shape emerges: weights near zero are learned with low posterior variance, while larger-magnitude weights carry proportionally higher σi. All five agents develop nearly identical distributional shapes despite fully independent training, confirming that stochastic variational inference (SVI) yields symmetric stochastic policies without explicit coordination. Figure 3 decomposes the posterior of Agent 1 by layer category. Dense and attention layer weights constitute the majority of parameters and form the V-shaped envelope. The output layer weight converges to near-zero σi, meaning the final mapping from features to action logits is essentially deterministic. Biases are fixed at zero by design and are not subject to SVI. Layer normalization parameters settle at larger positive θi with low variance. This reveals that the stochasticity originates in the internal feature representations rather than the output head – the agents randomize how 
+
+they perceive the channel state, not the decision rule applied to a given representation. 
+
+## 4 Implementation 
+
+We now describe the environment in which the agents learn, our network and traffic assumptions, and define the metrics used to evaluate agent performance. 
+
+4.1 Simulator 
+
+The network simulator is developed in the JAX framework, which accelerates simulation execution. The simulator is based on a slotted (Monte Carlo) model, which is a key assumption of the system. The slot duration is not tied to any specific unit of time. All slots are considered equal, and within each slot, one of three outcomes may occur: a successful packet transmission, a collision, or the channel may be idle. Our MAC simulator design relies on several simplifications. First, the channel model does not account for signal attenuation with distance and there are no channel errors. Transmission errors in the radio channel occur only when          
+
+> 3While the main experiments use a fixed history length L= 10 , the transformer architecture enables evaluating different values of Lwithout modifying the network structure. We exploit this property in the ablation study (Section 6), where we compare L= 1
+> and L= 10 using the same model.
+
+6KISS: Keeping it Simple and Slotted 0.0           
+
+> 0.2
+> 0.4
+> Uncertainty  i
+> Agent 1 Agent 2
+> 0.0
+> 0.2
+> 0.4
+> Uncertainty  i
+> Agent 3
+> 101
+> Weight i
+> Agent 4
+> 101
+> Weight i
+> 0.0
+> 0.2
+> 0.4
+> Uncertainty  i
+> Agent 5
+> 10 010 110 210 3
+> Count
+
+Figure 2: Joint distribution of weight means θi and the uncertainty measured by the standard deviations σi for each of the five agents from a single training run ( N = 5 ,saturated traffic). 0.5 0.0 0.5 1.0 1.5   
+
+> Weight i
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> Uncertainty  i
+> Dense layers
+> Attention
+> Output layer
+> Biases
+> Layer norm
+> y= | x|
+
+Figure 3: Joint distribution of weight means θi and un-certainty measured by the standard deviations σi for Agent 1, shown as a contour plot and colored by layer category. Biases are fixed at zero by design. multiple stations transmit simultaneously. Second, all stations are located within their transmission ranges, eliminating the problem of hidden stations. The simulator follows Algorithm 1. It iterates over consecutive slots and, in each slot, first determines the channel status based on the actions selected by the agents. If more than one agent chooses to transmit, the simulator registers a collision and all colliding transmissions fail. Next, the simulator updates each agent’s buffer: if an agent transmitted and no collision occurred, its buffer is cleared. The buffer is then incremented according to the output of the traffic generator. We model the traffic with a double-stochastic process. For each transmission opportunity (TXOP), we first sample the rate from a lognormal distribution and then draw the number of frames from an independent Poisson distribution with that sampled rate. This approach provides flexibility, allowing the variance and mean rate to be controlled independently. Afterwards, the simulator updates the observation histories with new data and removes the oldest entries. Finally, it computes the rewards for each agent independently. 
+
+4.2 Baselines 
+
+We consider the following slotted channel access protocols as our baselines for comparison, including both traditional and learning-based methods: • Exponential backoff ALOHA (EB-ALOHA) – we select an ALOHA variant as a non-ML baseline. The simplest variant, which uses a fixed transmission probability, is unsuitable in our evaluation scenarios where the number of nodes is unknown a priori . Therefore, we use the more adaptable EB-ALOHA. Following the settings of [12], we use an initial window size of 4 and a maximum backoff stage of 2, corresponding to a contention window range of [4 , 16] . This baseline can be viewed as a rough approximation of Wi-Fi’s distributed coordination function (DCF), whose contention window range is larger but whose operation is unslotted. 7KISS: Keeping it Simple and Slotted Table 3: DDQN training hyperparameters.                             
+
+> Parameter Value
+> Q-network architecture
+> Transformer layers 1Hidden dimension 64 Attention heads 4Prior scale ( σp)2.0
+> λKL 0.1
+> Optimizer (Adam + cosine decay)
+> Learning rate (init →final) 10 −4→10 −6
+> Decay steps 60 000 Gradient clipping 1.0
+> β1, β 20.95, 0.95
+> Reinforcement learning
+> Discount factor ( γ)0.95 Replay buffer size 30 000 Batch size 128 Training steps per env. step 5Target network τ0.05
+> ε(init →min) 1.0→0.0
+> εdecay 0.999
+
+• ALOHA-Q [11] – a pioneering RL-based enhancement of ALOHA, which assumes cyclic transmission pat-terns. We consider two configurations: (i) ideal , in which the transmission cycle is perfectly (though unreal-istically) aligned with the actual number of stations, and (ii) fixed , where the transmission cycle is set to 10, unless otherwise specified. • Deep reinforcement Learning Multiple Access (DLMA) [12] – a widely cited DRL approach designed to maximize throughput or fairness, with a strong focus on coexistence with other access methods. DLMA op-erates in a fully decentralized manner only for throughput-oriented optimization. For fairness optimization, it requires a centralized controller implementing, e.g., simple round-robin scheduling. Hence, in our evaluation, we only use the throughput-oriented variant. In summary, EB-ALOHA serves as a non-ML reference point, while ALOHA-Q and DLMA represent state-of-the-art RL-driven approaches. The remaining works listed in Table 1 rely on assumptions that differ substantially from ours, rendering them incompatible for direct comparison. 
+
+4.3 Metrics 
+
+We evaluate the performance of KISS and the aforementioned baselines using two complementary metrics: aggregate throughput and fairness. First, we consider normalized aggregate network throughput: the ratio of slots with successful transmissions to the total number of slots. This metric represents channel utilization. Ideally, a utilization of 1.0 is achievable only in fully centralized systems or systems with cyclic transmissions (such as the ideal ALOHA-Q), where the number of cycles exactly matches the number of active stations. Meanwhile, the theoretical maximum utilization for a distributed slotted ALOHA system is 1 
+
+> e
+
+≈ 36 .8% [8]. Consequently, reaching this bound represents the best achievable performance for our distributed KISS agents. However, relying solely on throughput can be misleading because in a distributed system all participants should re-ceive an equal share of transmission opportunities. We want to avoid cases where a single dominant node transmits continuously, at the expense of others. Therefore, we also study fairness in channel utilization by measuring Jain’s fairness index: 
+
+J(x1, x 2, . . . , x n) = (Pni=1 xi)2
+
+n · Pni=1 x2
+
+> i
+
+(11) where xi represents the number of successful transmissions by station i, and n is the number of stations. The goal of distributed access methods is to achieve values close to 1.0 (perfect fairness). 8KISS: Keeping it Simple and Slotted 0.0       
+
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Aggregate throughput
+> 05k 10k 15k 20k 25k 30k
+> Steps
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Jain's fairness index
+> EB-ALOHA
+> Ideal ALOHA-Q
+> Fixed ALOHA-Q
+> DLMA
+> KISS
+
+Figure 4: Performance for the instantaneous case. 0.0         
+
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Aggregate throughput
+> 510 15 20 25 30 35 40
+> Number of stations
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Jain's fairness index
+> EB-ALOHA
+> Ideal ALOHA-Q
+> Fixed ALOHA-Q
+> DLMA
+> KISS
+
+Figure 5: Performance for the steady-state case. 
+
+## 5 Performance Analysis 
+
+We evaluate KISS against the defined baselines in saturated networks, considering both instantaneous behavior for a 15-station system and steady-state scalability across different network sizes. We then analyze performance under non-saturated low- and medium-load traffic profiles, followed by a dynamic scenario where stations join or leave the network. Together, these experiments assess throughput, fairness, convergence time, and adaptability. All experiments, including the ablation studies in Section 6, were repeated five times with different random seeds. All plots show the mean performance, with shaded regions indicating the 95% confidence interval. 
+
+5.1 Instantaneous Case 
+
+In our first study, the instantaneous case, we analyze the performance of each protocol for a network of 15 stations by measuring how each station’s throughput evolves over time and how long it takes the protocol to converge to a stable solution. Figure 4 presents the performance of the protocols over time. EB-ALOHA immediately reaches stable performance in both throughput and fairness. In contrast, RL-based protocols require an exploration phase before stabilizing. The two ALOHA-Q variants converge the fastest, while DLMA requires the longest exploration time; even after 30,000 steps, it still does not reach a stable state. KISS converges significantly faster than DLMA but more slowly than the ALOHA-Q protocols. This is expected: ALOHA-Q operates under simpler assumptions, making it easier for the agent to maximize its reward. Finding a suitable slot within a known interval is far simpler than discovering a new, optimal transmission strategy from scratch. EB-ALOHA achieves the lowest aggregate throughput, remaining below 0.3. ALOHA-Q maintains stable throughput after its exploration phase. For the ideal (but unrealistic) ALOHA-Q, throughput reaches 1. However, when the number of slots is limited to 10 (fixed ALOHA-Q), throughput drops significantly (to 0.6). This reduction stems from having too few slots for a network of 15 stations (only 66.7% of stations can transmit simultaneously) and larger networks experience even greater degradation. A similar trend appears in the fairness results: the fairness drop for fixed ALOHA-Q indicates unequal channel access. DLMA’s throughput keeps rising, indicating that the network remains in the exploration phase. The large standard deviation reflects learning instability, and fairness declines over time, suggesting emerging selfish behavior in which one agent continues transmitting while others stay idle to avoid collision penalties. Meanwhile, our solution (KISS) achieves higher throughput than EB-ALOHA, maintaining a value of approxi-mately 0.4. KISS also preserves high fairness, only slightly lower than that of ALOHA-Q. Thus, despite operating in a fully distributed manner, KISS agents maintain fair channel access and effectively prevent selfish behavior. These results confirm the superiority of KISS over the other channel-access schemes. 9KISS: Keeping it Simple and Slotted 5 10 15 20 25 30 35 40 
+
+> Number of stations
+> 0.00
+> 0.05
+> 0.10
+> 0.15
+> 0.20
+> Probability
+> KISS agents
+> Ideal slotted ALOHA
+
+Figure 6: Comparison of the transmission probability of KISS agents versus ideal slotted ALOHA ( 1/N ). 
+
+5.2 Steady-state Case 
+
+For the steady-state case, we evaluate the scalability of each protocol by testing its performance in networks of different sizes (Figure 5). The ideal ALOHA-Q maintains the maximum possible throughput and fairness regardless of the number of active stations. In contrast, fixed ALOHA-Q achieves optimal throughput and fairness only when the number of available time slots matches the number of stations (i.e., 10). In all other cases, the larger the mismatch between the number of stations and slots, the lower the resulting throughput. We observe a significant drop in fairness when the system consists of 15 stations. At this stage, 10 stations already identify and stabilize in their optimal time slots, while the remaining 5 are still looking for suitable ones. The problem is that these 10 stations have entered the exploitation phase, whereas the other 5 are still in the exploration phase. This imbalance leads to unfair resource allocation. When the number of stations is larger, this issue does not occur because there are too few time slots available. As a result, all stations are forced to continuously explore and none of them can fully settle into pure exploitation. EB-ALOHA, similarly to fixed ALOHA-Q, faces scalability issues. As the number of stations increases, both the aggregate throughput and the fairness index decrease. DLMA, in the range of 2 to 15 stations, achieves high throughput but suffers from low fairness. For larger networks, its throughput drops to zero. Therefore, both selfish behavior (small networks) and protocol collapse (20+ stations) can be observed. KISS maintains an aggregate throughput of ≈ 0.4 and high fairness across the entire station range, which approximates the slotted ALOHA throughput limit of 1/e [9]. These results indicate that KISS is scalable in networks with an unknown number of transmitters and considerably outperforms other non-ideal solutions. Furthermore, Figure 6 shows the transmission probability chosen by the KISS agent as a function of the number of stations, compared to the theoretical optimum of 1/N . The agents’ probability closely follows the optimal curve across the entire range, demonstrating that KISS adaptively approximates the ideal transmission probability without any explicit knowledge of the number of active stations. 
+
+5.3 Non-saturated Traffic Profiles 
+
+We now examine how the protocols behave under non-saturated network conditions –specifically, low and medium traffic. The station traffic generators produce enough data for the aggregate load to reach at most 0.1 in the low-traffic case and 0.3 in the medium-traffic case. As shown in Figure 7, all protocols except DLMA perform similarly in the low-traffic scenario, regardless of network size. The aggregate throughput remains close to 0.1, matching the offered load, and the fairness index stays near 1. DLMA achieves comparable performance for network sizes between 1 and 15 stations but degrades rapidly as the network grows larger. Under medium traffic conditions (Figure 8), only KISS maintains a stable aggregate throughput (of ≈ 0.3). Both DLMA and fixed ALOHA-Q lose efficiency as the number of stations increases. Furthermore, EB-ALOHA achieves a lower throughput than KISS in the range of 1-20 stations; beyond this range, its throughput is comparable to that of KISS. Interestingly, the ideal ALOHA-Q maintains a throughput of 0.25 . This is because the reward in ALOHA-Q is updated only when a data frame is sent. With low network load, reward updates are rare, which makes the learning process inefficient. As a result, agents cannot find permanent slots to carry out stable transmissions. This instability 10 KISS: Keeping it Simple and Slotted 0.00        
+
+> 0.02
+> 0.04
+> 0.06
+> 0.08
+> 0.10
+> Aggregate throughput
+> 510 15 20 25 30 35 40
+> Number of stations
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Jain's fairness index
+> EB-ALOHA
+> Ideal ALOHA-Q
+> Fixed ALOHA-Q
+> DLMA
+> KISS
+
+Figure 7: Steady-state case under low traffic. 0.00         
+
+> 0.05
+> 0.10
+> 0.15
+> 0.20
+> 0.25
+> Aggregate throughput
+> 510 15 20 25 30 35 40
+> Number of stations
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Jain's fairness index
+> EB-ALOHA
+> Ideal ALOHA-Q
+> Fixed ALOHA-Q
+> DLMA
+> KISS
+
+Figure 8: Steady-state case under mid traffic. 5 10 15 20 25 30 35 40 
+
+> Number of stations
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> Switching rate
+> Ratio of failed TX
+> Traffic
+> Saturated traffic
+> Mid traffic
+> Low traffic
+> Metrics
+> Switching rate
+> Ratio of failed TX
+
+Figure 9: ALOHA-Q slot switching rate and ratio of failed transmissions vs no. of stations. limits the system from achieving the maximum aggregate throughput possible in a reasonable time. To better explain the observed behavior, Figure 9 illustrates the ALOHA-Q slot switching rate and the ratio of failed transmissions. The figure presents the mean values together with confidence intervals obtained from five independent agents in each experiment. The slot switching rate measures how frequently ALOHA-Q agents change their selected transmission slot; higher values indicate more frequent slot switching. In addition, the ratio of failed transmissions is the number of collisions divided by the total number of transmission attempts. Both metrics are significantly higher for ALOHA-Q agents operating in non-saturation than under saturation, affecting achievable throughput values and explaining the non-ideal ALOHA-Q behavior presented in Figure 8. To summarize, experiments with non-saturated traffic profiles demonstrate that KISS performs significantly better than the baselines. 
+
+5.4 Dynamic Case 
+
+Finally, we examine a dynamic scenario in which stations join or leave the network over time, allowing us to assess the flexibility of each protocol. Figure 10 shows the aggregate throughput for two such scenarios, one with an increasing number of stations and one with a decreasing number. In these experiments, we exclude ideal ALOHA-Q and DLMA. Estimating the number of active stations is difficult in real deployments, so instead of ideal ALOHA-Q, we use a fixed variant with a time window of 25, corresponding to the average network size in our dynamic tests. DLMA is also omitted due to its long exploration time and poor performance observed in earlier evaluations. 11 KISS: Keeping it Simple and Slotted 0 20k 40k 60k 80k 100k 120k 
+
+> Steps
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Aggregate throughput
+> EB-ALOHA
+> ALOHA-Q (| S| = 25)
+> KISS
+> Active STAs
+> 20
+> 22
+> 24
+> 26
+> 28
+> 30
+> Active stations
+
+(a) Throughput vs time ( N : 30 → 20 ). 0 20k 40k 60k 80k 100k 120k  
+
+> Steps
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Aggregate throughput
+> EB-ALOHA
+> ALOHA-Q (| S| = 25)
+> KISS
+> Active STAs
+> 20
+> 22
+> 24
+> 26
+> 28
+> 30
+> Active stations
+
+(b) Throughput vs time ( N : 20 → 30 ). 
+
+Figure 10: Performance for the dynamic case. The aggregate throughput of ALOHA-Q is heavily dependent on the number of active stations. When the number of stations decreases (increases), the throughput increases (drops). As in the steady-state case, ALOHA-Q performs best when the number of stations is close to the number of available time slots. As a result, ALOHA-Q requires continuous monitoring of the number of users and dynamic adjustment of the number of time slots to operate effectively in a dynamic environment. The aggregate KISS throughput remains constant at ≈ 0.4, regardless of the number of stations. The network ex-periences slight temporary throughput drops when a single station connects or disconnects from the network. This occurs because the stations must adapt to the new environment (network state) and spend some time on exploration. Nevertheless, KISS is the only distributed channel access scheme that adapts successfully to a dynamic environment. 
+
+## 6 Ablation Studies 
+
+We evaluate KISS’s sensitivity to its state representation, reward components, and action-space constraints. Each experiment modifies only one element of the default configuration to isolate its impact. 
+
+6.1 Observation History Length 
+
+The state representation includes a history of the last L instantaneous observations. Figure 11 compares the default configuration ( L = 10 ) against a minimal history length ( L = 1 ). For N = 5 and N = 10 , the L = 1 configuration achieves a higher aggregate throughput but at the cost of significantly lower fairness. This indicates that without a temporal context, agents converge to more aggressive or asymmetric policies that favor channel capture by a subset of nodes. However, as the network size increases ( N ≥ 15 ), the performance of both configurations converges. For larger 
+
+N , the aggregate throughput for L = 1 drops to the same level as L = 10 , while fairness improves to near-optimal levels. 
+
+6.2 Reward Components 
+
+We selectively disable the following three components of the reward function. 
+
+Collision penalty. Setting Pcoll = 0 (Figure 12) has the most severe effect. Throughput collapses to near zero for N ≥ 25 . Fairness remains below 0.2 across all scenarios, indicating that agents fail to learn any form of col-lision avoidance without a direct negative signal. This confirms that the collision penalty is the primary driver for decentralized consensus in the shared medium. 
+
+Delay penalty. Removing delay penalties ( Sidle , D) induces a strong throughput–fairness tradeoff (Figure 13). Ag-gregate throughput climbs to ≈ 0.85 for N = 35 (compared to the ≈ 0.35 baseline), but Jain’s index vanishes, falling below 0.1 for N ≥ 30 . Without a penalty for idling or buffer growth, some agents adopt an aggressive channel-capture strategy that maximizes total output by starving other nodes. 12 KISS: Keeping it Simple and Slotted 5 10 15 20 25 30 35 40 
+
+> Number of stations
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Aggregate throughput
+> Jain's fairness index
+> Metrics
+> Throughput
+> Fairness
+> Ablation
+> Window size = 10
+> Window size = 1
+
+Figure 11: Ablation of the observation history length L.For small networks ( N ≤ 10 ), shorter history ( L = 1 )leads to higher throughput at the cost of significantly lower fairness. For larger networks ( N ≥ 15 ), both con-figurations converge to similar performance. 5 10 15 20 25 30 35 40 
+
+> Number of stations
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Aggregate throughput
+> Jain's fairness index
+> Metrics
+> Throughput
+> Fairness
+> Ablation
+> Collision penalties
+> No collision penalties
+
+Figure 12: Ablation of the collision penalty Pcoll . With-out it, throughput collapses to near zero for N ≥ 25 as agents fail to coordinate. 5 10 15 20 25 30 35 40 
+
+> Number of stations
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Aggregate throughput
+> Jain's fairness index
+> Metrics
+> Throughput
+> Fairness
+> Ablation
+> Delay penalties
+> No delay penalties
+
+Figure 13: Ablation of the delay penalties ( Sidle , D). Removing them allows for channel capture, peaking throughput at ≈ 0.85 but destroying fairness. 5 10 15 20 25 30 35 40 
+
+> Number of stations
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Aggregate throughput
+> Jain's fairness index
+> Metrics
+> Throughput
+> Fairness
+> Ablation
+> Empty buffer reward
+> No empty buffer reward
+
+Figure 14: Ablation of the empty buffer reward. Remov-ing it increases throughput but degrades the coordination required for high fairness in dense networks. 
+
+Empty buffer reward. Disabling rewards for maintaining an empty buffer ( Ridle , Pempty ) in a low traffic scenario increases throughput from ≈ 0.10 to ≈ 0.18 , but fairness drops from ≈ 0.9 to ≈ 0.38 at N = 40 (Figure 14). This suggests the empty buffer reward prevents agents from monopolizing resources when their own demand is met, ensuring fair resource distribution in dense networks. 
+
+6.3 Action Space Constraints 
+
+We also evaluate the impact of constraining the action space of the KISS agents with hand-crafted heuristics such as listen-before-talk (LBT) and a rule that prevents transmission attempts when the buffer is empty. 
+
+Listen before talk. With an LBT heuristic agents must sense an idle channel before transmitting. We observe that introducing the LBT constraint significantly reduces the aggregate throughput (Figure 15). This reduction is caused by the fact that stations must sense the channel and wait for an idle slot, effectively introducing a mandatory overhead of at least one slot for every successful transmission. While LBT maintains relatively high fairness for small networks, its fairness starts to degrade for N > 20 , eventually falling below the performance of unconstrained KISS agents. These results confirm that constraining the action space with a hand-crafted heuristic such as LBT is counterproductive. 
+
+No transmissions with empty buffer. We evaluate the impact of a rule that explicitly prevents transmission attempts when the buffer is empty. This constraint is theoretically beneficial as it prevents wasteful use of the radio resources. However, the performance of the constrained agent is almost identical to the unconstrained one in a low traffic scenario (Figure 16). This indicates that the KISS agent autonomously learns to avoid transmitting with an empty buffer, driven by the reward function, making such a hard-coded constraint redundant. 13 KISS: Keeping it Simple and Slotted 5 10 15 20 25 30 35 40 
+
+> Number of stations
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Aggregate throughput
+> Jain's fairness index
+> Metrics
+> Throughput
+> Fairness
+> Ablation
+> No listen before talk
+> Listen before talk
+
+Figure 15: Ablation of listen-before-talk. LBT signif-icantly reduces aggregate throughput and degrades fair-ness in larger networks compared to unconstrained KISS. 5 10 15 20 25 30 35 40 
+
+> Number of stations
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Aggregate throughput
+> Jain's fairness index
+> Metrics
+> Throughput
+> Fairness
+> Ablation
+> No additional rules
+> No empty tx rule
+
+Figure 16: Ablation of empty buffer transmission rule. The performance of unconstrained KISS is almost equal to the one with a hard-coded ’no empty tx’ rule, suggest-ing that agents autonomously learn this behavior (low traffic profile used). 
+
+6.4 Summary 
+
+Our ablation studies reveal that the reward design is the most critical part for KISS operation, as removal of its components leads to severe performance degradation. Specifically, the collision penalty is the primary driver for decentralized consensus; without it, throughput collapses as coordination fails. Furthermore, delay and empty-buffer rewards are essential for maintaining Jain’s fairness index by preventing aggressive channel-capture behaviors and starvation. We also find that a temporal history of observations ( L = 10 ) is beneficial in ensuring fairness in smaller networks, although its impact diminishes as the network density increases. Finally, we demonstrate that imposing rigid heuristics like LBT or a “no empty tx” rule is counterproductive or redundant. These rules either limit the agents’ ability to discover more efficient stochastic transmission strategies or are autonomously learned. Our findings underscore that KISS succeeds by combining simple slot-level observations with a carefully balanced multi-objective reward function. 
+
+## 7 Conclusions and Future Work 
+
+Although many research articles address the problem of distributed and decentralized wireless network operation, we demonstrate that ML agents can autonomously learn channel-access strategies without inheriting the shortcomings identified in the literature. In this sense, these agents should be viewed primarily as a tool for discovering decentralized access strategies rather than as the final runtime protocol. One might argue that we employ a complex ML system to learn behavior that a simple, hand-crafted heuristic could approximate. However, the key distinction is that our solution learns effectively under stricter and more realistic conditions than those assumed in existing ML-based approaches. KISS is fully online (requiring no pre-training), fully distributed (with each agent learning and acting independently), stochastic (with no reliance on periodic schedules), and requires no coordination or explicit communication to achieve efficient and fair channel access. The proposed system model allows agents to learn a simple yet efficient slotted-ALOHA method with dynamic trans-mission probabilities and quickly adapt to dynamic environmental changes (e.g., node mobility). Interestingly, the agents converge to a simple slotted-ALOHA-like strategy with dynamically adjusted transmission probabilities, sug-gesting that decentralized learning can autonomously rediscover efficient random access mechanisms. Furthermore, comprehensive ablation studies led to distillation of the most impactful state representations, reward components, and action space constraints. In our studies, we have so far assumed a simplified traffic generation model. Future work is required for more real-istic traffic patterns, such as bursts. Additionaly, more realistic network conditions should be considered, including propagation delays, capture effect, hidden nodes, variable packet lengths, energy consumption, and potential sources of external interference. Finally, ML interpretability is an important current trend that improves its trustworthiness. Therefore, we plan to use symbolic regression to extract the protocol learned by the neural network in symbolic form. Another direction for future work is to include on-policy baselines, such as multi-agent proximal policy optimization (MAPPO). 14 KISS: Keeping it Simple and Slotted 
+
+## Acknowledgments 
+
+This research was funded by the National Science Centre, Poland (2023/05/Y/ST7/00004). For the purpose of Open Access, the authors have applied a CC-BY public copyright licence to any Author Accepted Manuscript (AAM) version arising from this submission. We gratefully acknowledge the support of the National Research Institute, grant number POIR.04.02.00-00-D008/20-01 on “National Laboratory for Advanced 5G Research” (acronym PL-5G) for providing computing facilities. 
+
+## References 
+
+[1] Norman Abramson. The aloha system: Another alternative for computer communications. In Proceedings of the November 17-19, 1970, fall joint computer conference , pages 281–285, 1970. [2] Rasool Sadeghi, João Paulo Barraca, and Rui L Aguiar. A survey on cooperative mac protocols in ieee 802.11 wireless networks. Wireless Personal Communications , 95(2):1469–1493, 2017. [3] Eren Balevi, Faeik T. Al Rabee, and Richard D. Gitlin. Aloha-noma for massive machine-to-machine iot communication. volume 2018-May, 2018. doi:10.1109/ICC.2018.8422892. URL 
+
+https://www.scopus.com/inward/record.uri?eid=2-s2.0-85048454170&doi=10.1109%2fICC. 2018.8422892&partnerID=40&md5=673539387e3b4404fa2ae5256111da43 . All Open Access, Green Open Access. [4] Mohamed Elkourdi, Asim Mazin, Eren Balevi, and Richard D. Gitlin. Enabling slotted aloha-noma for massive m2m communication in iot networks. page 1 – 4, 2018. doi:10.1109/WAMICON.2018.8363906. URL https://www.scopus.com/inward/record.uri?eid=2-s2.0-85048394208&doi=10.1109% 2fWAMICON.2018.8363906&partnerID=40&md5=e7d11870b151ff172b0cf37cf2b0af81 .[5] Jun-Bae Seo, Yangqian Hu, Hu Jin, and Swades De. Aloha with sic-aided collision resolution. IEEE Internet of Things Journal , 12(8):10194 – 10209, 2025. doi:10.1109/JIOT.2024.3510461. URL 
+
+https://www.scopus.com/inward/record.uri?eid=2-s2.0-105002562422&doi=10.1109%2fJIOT. 2024.3510461&partnerID=40&md5=e32c033c4caa1a51f4373c5d7e541967 .[6] Vignon Fidele Adanvo, Samuel Mafra, Samuel Montejo-Sanchez, Felipe Augusto Tondo, and Richard Demo Souza. Analytical modeling of slotted aloha-based direct-to-satellite-iot sensor networks over nakagami-m fading channels. IEEE Sensors Journal , 26(2):3264 – 3277, 2026. doi:10.1109/JSEN.2025.3635197. URL 
+
+https://www.scopus.com/inward/record.uri?eid=2-s2.0-105023199478&doi=10.1109%2fJSEN. 2025.3635197&partnerID=40&md5=fcce34883b7e27c6d5643cc27942db02 .[7] Felipe Augusto Tondo, Samuel Montejo Sanchez, and Richard Demo Souza. Closeness centrality-based scheduling for iot transmissions in leo satellite networks. page 335 – 338, 2025. doi:10.1109/LCIoT64881.2025.11118577. URL https://www.scopus.com/inward/record.uri? eid=2-s2.0-105016379310&doi=10.1109%2fLCIoT64881.2025.11118577&partnerID=40&md5= f06798925d1d14fcdd3b3ae595db6e77 .[8] N. Abramson. The throughput of packet broadcasting channels. IEEE Transactions on Communications , 25(1): 117–128, 1977. doi:10.1109/TCOM.1977.1093713. [9] Andres Garcia-Saavedra, Albert Banchs, Pablo Serrano, and Joerg Widmer. Adaptive mechanism for distributed opportunistic scheduling. IEEE Transactions on Wireless Communications , 14(6):3494–3508, 2015. [10] Hado van Hasselt, Arthur Guez, and David Silver. Deep reinforcement learning with double q-learning. In 
+
+Proceedings of the Thirtieth AAAI Conference on Artificial Intelligence , AAAI’16, pages 2094–2100. AAAI Press, 2016. [11] Yi Chu, Paul D. Mitchell, and David Grace. Aloha and q-learning based medium access control for wireless sensor networks. In 2012 International Symposium on Wireless Communication Systems (ISWCS) , pages 511– 515, 2012. doi:10.1109/ISWCS.2012.6328420. [12] Yiding Yu, Taotao Wang, and Soung Chang Liew. Deep-reinforcement learning multiple access for heteroge-neous wireless networks. IEEE Journal on Selected Areas in Communications , 37(6):1277–1290, 2019. [13] Sung Hyun Park, Paul D. Mitchell, and David Grace. Reinforcement learning based mac protocol (aloha-q). 
+
+IEEE Access , 2019. doi:10.1109/ACCESS.2019.2953801. [14] Slavica Tomovic and Igor Radusinovic. Dr-aloha-q: A q-learning-based adaptive mac protocol for underwater acoustic sensor networks. Sensors , 23(9):4474, 2023. 15 KISS: Keeping it Simple and Slotted [15] Molly Zhang, Luca de Alfaro, and J. J. Garcia-Luna-Aceves. Making slotted aloha efficient and fair using reinforcement learning. Computer Communications , 181:58–68, 2022. [16] Hrishikesh Dutta and Subir Biswas. Towards multi-agent reinforcement learning for wireless network protocol synthesis. In Proc. IEEE COMSNETS , 2021. [17] Hrishikesh Dutta and Subir Biswas. Distributed reinforcement learning for scalable wireless medium access in iots and sensor networks. Computer Networks , 202:108662, 2022. [18] Ziyang Guo, Zhenyu Chen, Peng Liu, Jianjun Luo, Xun Yang, and Xinghua Sun. Multi-agent reinforcement learning-based distributed channel access for next generation wireless networks. IEEE Journal on Selected Areas in Communications , 40(5):1587–1599, 2022. [19] Zhenyu Chen and Xinghua Sun. Scalable multi-agent reinforcement learning-based distributed channel access. In ICC 2023-IEEE International Conference on Communications , pages 453–458. IEEE, IEEE, 2023. [20] Jianbin Xiao, Zhenyu Chen, Xinghua Sun, Wen Zhan, Xijun Wang, and Xiang Chen. Online multi-agent rein-forcement learning for multiple access in wireless networks. IEEE Communications Letters , 27(12):3250–3254, 2023. [21] Zhenyu Chen, Xinghua Sun, Yili Jin, and Fangxin Wang. Multi-task reinforcement learning-based multiple access for dynamic wireless networks. IEEE Transactions on Mobile Computing , 24(9):9153–9167, 2025. doi:10.1109/TMC.2025.3559676. [22] Mingqi Han, Xinghua Sun, Xijun Wang, and Xiang Chen. Foundation model enhanced multiple ac-cess in heterogeneous networks. IEEE Transactions on Mobile Computing , 24(9):8974–8987, 2025. doi:10.1109/TMC.2025.3558942. [23] Yi Chu, Selahattin Kosunalp, Paul D Mitchell, David Grace, and Tim Clarke. Application of reinforcement learn-ing to medium access control for wireless sensor networks. Engineering Applications of Artificial Intelligence ,46:23–32, 2015. [24] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez, Łukasz Kaiser, and Illia Polosukhin. Attention is all you need. Advances in neural information processing systems , 30, 2017. [25] Laurent Valentin Jospin, Hamid Laga, Farid Boussaid, Wray Buntine, and Mohammed Bennamoun. Hands-on bayesian neural networks—a tutorial for deep learning users. IEEE Computational Intelligence Magazine , 17 (2):29–48, 2022. doi:10.1109/MCI.2022.3155327. 16

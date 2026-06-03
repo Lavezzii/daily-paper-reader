@@ -1,0 +1,408 @@
+Title: MIMO-OTFS-Based Semantic Communication for High-Mobility Scenarios
+
+URL Source: https://arxiv.org/pdf/2605.29332v1
+
+Published Time: Fri, 29 May 2026 00:33:57 GMT
+
+Number of Pages: 6
+
+Markdown Content:
+# MIMO-OTFS-Based Semantic Communication for High-Mobility Scenarios 
+
+Yu Zhang 1, Jiarui Yan 1, Yue Liu 2, Tenglun Ke 3, Yimeng Wang 3, and Zhijin Qin 1
+
+> 1
+
+Department of Electronic Engineering, Tsinghua University, Beijing 100084, China 
+
+> 2
+
+Faculty of Applied Sciences, Macao Polytechnic University, MacaoSAR, China 
+
+> 3
+
+Beijing Institute of Remote Sensing Equipment, Beijing 100854, China Email: zhangyu06@mail.tsinghua.edu.cn 
+
+Abstract —In high-mobility scenarios with time-frequency doubly-selective channels, existing semantic communication sys-tems suffer significant performance degradation. To address this issue, we propose a semantic communication framework that synergistically integrates multiple-input multiple-output orthog-onal time frequency space (MIMO-OTFS) with semantic-aware sub-channel allocation. First, an entropy module is employed to evaluate importance of different semantic features, and the Kendall correlation coefficient is used to quantify the align-ment between semantic importance and sub-channel conditions. Subsequently, joint optimization of the encoder and decoder is achieved through a comprehensive loss function that balances image classification accuracy, reconstruction quality, and sub-channel matching degree. Experimental results confirm the superior reconstruction quality of our proposed framework com-pared to conventional semantic communication systems based on orthogonal frequency division multiplexing in high-mobility channel environment. 
+
+Index Terms —Semantic communication, MIMO-OTFS, se-mantic importance, sub-channel allocation 
+
+I. I NTRODUCTION 
+
+The advent of 6G and beyond wireless networks is driv-ing the evolution of communication paradigms from merely focusing on bit-level accuracy towards the goal of success-ful task-oriented semantic transmission [1]. Semantic com-munication embodies a paradigm shift wherein the focus evolves from bit-level accuracy to conveying the underlying meaning and intent of information. Through task-oriented information extraction at the transmitter and intelligent se-mantic interpretation at the receiver, semantic communication can significantly reduce redundant transmission and enhance transmission efficiency. These advantages are particularly crit-ical in high-mobility scenarios, such as high-speed railways, autonomous vehicles, and low-altitude aviation. There has been surging interest in semantic communication from both academia and industry over the past few years. Early studies [2], [3], [4], [5] developed joint semantic-channel coding (JSCC) that outperforms traditional sepa-rated coding under low signal-to-noise-ratio (SNR) condi-tions. However, incompatibility of JSCC with existing digital systems hindered its practical deployment. To bridge this gap, Bo et al. [6] developed a joint coding and modulation (JCM) framework which converts source data into discrete constellation symbols through probability converters, achiev-ing joint optimization of coding and modulation. Zhang et al. 
+
+[7] further proposed a multi-stage JCM method and modelled the modulation as a constrained quantization process, which is approximated by using scaling factors and artificial noise. Under multipath fading channels, both JSCC and JCM-based semantic communication systems suffer from serious inter-symbol interference. To mitigate this issue, researchers have introduced orthogonal frequency division multiplexing (OFDM) technology with excellent resistance into semantic communication systems. Yang et al. [8] incorporated multi-path fading channels and OFDM modulation as differentiable layers into a JSCC-based end-to-end learning framework. Jiang et al. [9] integrated constellation modulation and OFDM modules in the JSCC framework, improving semantic re-covery ability under different channel conditions. Liu et al. 
+
+[10] designed task-related semantic importance metrics and corresponding subcarrier allocation strategies, further boosting transmission performance over multipath fading channels. Nevertheless, in high-mobility scenarios characterized by pronounced Doppler shift and time-frequency doubly-selective fading, existing semantic communication systems still face considerable performance degradation. Addressing the challenges posed by high-mobility scenarios remains a critical issue. Orthogonal time frequency space (OTFS) mod-ulation offers a compelling alternative [11]. Its key advantage stems from delay-Doppler (DD) domain processing, which effectively mitigates time-varying channel effects by rendering them nearly stationary. When combined with multiple-input multiple-output (MIMO) technology, MIMO-OTFS provides substantial diversity and multiplexing gains, establishing a highly reliable physical-layer foundation [12]. More importantly, most existing semantic communication systems treat semantic modeling and physical-layer trans-mission as separate entities, lacking deep integration. Atruly intelligent semantic communication architecture should facilitate dynamic and synergistic interaction between the semantic and physical layers. Specifically, such a system should be capable of evaluating the relative importance of 
+
+> arXiv:2605.29332v1 [eess.SP] 28 May 2026
+
+different semantic components and adaptively mapping them to available physical resources. Inspired by this, we present a MIMO-OTFS-based semantic communication framework, referred to as MIMO-OTFS-SC, which deeply integrates semantic importance assessment with sub-channel allocation. Our main contributions are twofold:  
+
+> •
+
+We develop a novel MIMO-OTFS-SC system architec-ture specifically designed for reliable transmission in doubly-selective channel environments. This architec-ture effectively converts time-varying multipath channels into near-stationary delay-Doppler domain representa-tions through innovative signal modulation techniques, providing a robust physical-layer foundation for semantic communication in high-mobility scenarios.  
+
+> •
+
+We design a semantic-aware sub-channel allocation (SA-SCA) strategy that employs an entropy model to eval-uate feature significance and utilizes Kendall correla-tion optimization to dynamically align critical semantic features with high-quality sub-channels. This strategy ensures optimal matching between semantic importance and channel conditions, enabling intelligent resource allocation. Simulation results confirm that our proposed framework outperforms conventional OFDM-based semantic communi-cation systems in terms of image reconstruction quality and classification accuracy under doubly-selective channels. Following this introduction, Section II describes the MIMO-OTFS-SC system architecture. Section III elaborates on the SA-SCA scheme. Section IV discusses simulation results and performance evaluation. Conclusion is given in Section V. 
+
+Notations : Vectors are indicated by bold lowercase a, and matrices by bold uppercase letters A. IN is an N × N identity matrix. RM ×N means an M × N real matrix and CM ×N
+
+means an M × N complex matrix. AT and AH represent the transpose and conjugate transpose of A, respectively. FM
+
+denotes the M -point fast Fourier transform (FFT) matrix. Hor-izontal and vertical concatenation of a and b are represented by [a, b] and [a; b]. A⊗B means Kronecker product of A and 
+
+B. E {·} denotes expectation. CN (a, A) indicates a complex Gaussian vector characterized by mean a and covariance A.II. F RAMEWORK OF THE MIMO-OTFS-SC S YSTEM 
+
+Fig. 1 depicts the architecture of the proposed MIMO-OTFS-SC system. At the transmitter side, NT antennas are used, while the receiver is equipped with NR antennas, both featuring NRF radio-frequency (RF) chains for image transmission. At the TX, a neural network is employed to extract se-mantic features f = Fα(D) from the source data D, where 
+
+Fα denotes the semantic encoder parameterized by trainable weights α. Let S represent the inherent semantic information in the source data. The semantic encoder outputs a feature Probability     
+
+> Converter
+> Source
+> Image
+> 𝐃
+> Semantic
+> Encoder
+> Semantic
+> Features
+> 𝐟
+> OTFS
+> Modulator
+> Precoder
+> G
+> Layer
+> Mapping
+> Constellation
+> Symbol Generator
+> RF chain 1
+> Probability
+> Converter
+> OTFS
+> Modulator
+> Constellation
+> Symbol Generator
+> RF chain NRF
+> …
+> Q
+> Hyper
+> Encoder
+> Hyper
+> Decoder
+> ො𝐲
+> 𝐳 Qො𝐳 Gaussian
+> Parameters
+> Entropy
+> Calculation
+> Semantic
+> Importance
+> 𝐰
+> Semantic Importance
+> Evaluation
+> … NT
+
+(a) Source Image  
+
+> Reconstruction
+> Semantic Information
+> Reconstruction ෠𝐒
+> ෡𝐃
+> Combiner
+> W
+> OTFS Demodulator
+> OTFS Demodulator
+> Parallel -
+> to -Serial
+> Converter
+> …
+> …NR
+> NRF
+
+(b) 
+
+Fig. 1. The proposed MIMO-OTFS-SC system architecture. (a) Transmitter, (b) Receiver. 
+
+sequence f = [ f1, f 2, ..., f K ]T , where K denotes the total number of semantic features. The semantic features are processed through an entropy model (EM) to obtain the semantic importance vector w.The specific details of the EM will be described in Section III. Based on their semantic importance and the quality of MIMO-OTFS sub-channels, the semantic feature sequence f
+
+are mapped to NRF RF chains, forming a semantic feature matrix E = [e1, e2..., eNRF ] ∈ RNS×NRF , where en ∈
+
+> NS×1
+
+, n = 1 , 2, ..., N RF denotes the semantic feature vector assigned to the n-th RF chain, and NS = K/N RF .Each RF chain independently processes its assigned se-mantic features through constellation modulation and OTFS modulation. For the n-th RF chain, en is first fed into a probability converter to obtain the transition probability from semantic features to constellation symbols. Based on the transition probability, a constellation symbol generator then produces the corresponding constellation symbols Mn.The symbols Mn is mapped to the DD-domain, forming OTFS frames denoted as Xn ∈ CP ×M ×N , where P , M ,and N are the number of OTFS frames, the number of symbols in the delay dimension, and the number of symbols in the Doppler dimension, respectively. For each OTFS frame 
+
+Xn,p ∈ CM ×N , p = 1 , 2, ..., P , we apply the inverse symplec-tic fast Fourier transform (ISFFT) followed by the Heisenberg transform 
+
+Sn,p = FHM
+
+FM Xn,p FHN
+
+| {z }
+
+> ISFFT
+
+| {z }
+
+> Heisenberg transform
+
+= Xn,p FHN , (1) where Sn,p ∈ CM ×N is the time-domain transmit signal of the p-th frame of the n-th RF chain. By vectorizing Sn,p , we obtain 
+
+sn,p = vec ( Sn,p ) =  FHN ⊗ IM
+
+ xn,p ∈ CM N ×1, (2) where xn,p = vec( Xn,p ) ∈ CM N ×1. Assuming a time slot is composed of one OTFS frame, the time-domain signals from all NRF RF chains for the p-th time slot are then combined, resulting in 
+
+sp =  INRF ⊗  FHN ⊗ IM
+
+ xp, (3) where sp = [ s1,p ; s2,p ; ... ; sNRF ,p ] ∈ CNRF M N ×1 and xp =[x1,p ; x2,p ; ... ; xNRF ,p ] ∈ CNRF M N ×1. Through an NTM N ×
+
+NRF M N precoder Gp, the signal is mapped onto the anten-nas for transmission, yielding yp = Gpsp ∈ CNTM N ×1.At the RX, the time-domain received signal is given by 
+
+rp = Hpyp + np ∈ CNRM N ×1, (4) where Hp ∈ CNRM N ×NTM N represents the time-domain channel matrix, and np ∼ CN  0, σ 2 
+
+> p
+
+INRM N 
+
+ ∈ CNRM N ×1
+
+denotes the complex additive white Gaussian noise with σ2
+
+> p
+
+being the noise power. The processing procedure at the RX is the reverse of that at the TX. The received signal is first processed by an NRM N ×
+
+NRF M N combiner Wp, yielding 
+
+ˆsp = WHp rp = WHp HpGpsp + WHp np. (5) The vector ˆsp is then distributed across NRF RF chains, each of which sequentially applies the Wigner transform and the symplectic fast Fourier transform (SFFT) to obtain the DD-domain signal. The resulting DD-domain received symbol vector ˆxp ∈ CNRF M N ×1 is expressed as 
+
+ˆxp = ( INRF ⊗ (FN ⊗ IM )) ˆsp
+
+= ( INRF ⊗ (FN ⊗ IM )) WHp HpGp
+
+ INRF ⊗  FHN ⊗ IM
+
+ | {z }
+
+> DD −domain effective channel
+
+xp
+
++ ( INRF ⊗ (FN ⊗ IM )) WHp np
+
+| {z }
+
+> DD −domain effective noise
+
+.
+
+(6) By combining all P DD-domain received frames, we obtain the recovered semantic feature vector ˆx = [ ˆx1; ˆx2; ... ; ˆxP ],which is used for semantic information reconstruction and source image reconstruction 
+
+ˆS = Gβ (ˆx) , ˆD = Gδ (ˆx) , (7) where Gβ and Gδ represent the two decoding networks for reconstructing the semantic information and source image, re-spectively, with β and δ denoting the corresponding trainable parameters. Here, ˆS and ˆD denote the recovered semantic information and source image. According to [13], the MIMO-OTFS channel can be mod-eled as the superposition of L distinct propagation paths, each of which is characterized by its delay, Doppler, angle-of-departure (AoD) and angle-of-arrival (AoA) 
+
+Hp =
+
+> L
+
+X
+
+> i=1
+
+αi
+
+ aR (φi) aH 
+
+> T
+
+(ϕi) ⊗  Πli ∆ki  , (8) where αi, li and ki denote the complex gain, delay tap and Doppler tap of the i-th path, respectively; ϕi and φi
+
+are the AoD and AoA. aT (ϕi) and aR (φi) represent the array response vectors related to the corresponding angles, whose expression are provided in [14]. Π is an M N × M N 
+
+forward cyclic shift matrix, and ∆ = diag 
+
+n
+
+ej 2πq M N 
+
+oM N −1
+
+> q=0
+
+is an M N × M N diagonal phase-rotation matrix. III. S EMANTIC -A WARE SUB -C HANNEL ALLOCATION 
+
+This section presents the core methodology for SA-SCA in the proposed MIMO-OTFS-SC system. The framework consists of three key components: (a) SVD-based precoding and combining that decomposes the MIMO-OTFS channel into parallel sub-channels characterized by singular values; (b) An EM-based semantic importance evaluation mechanism that quantifies the criticality of semantic features; and (c) A two-stage training strategy with specialized loss functions that jointly optimize semantic preservation and sub-channel matching. The fundamental insight is to maximize the align-ment between semantic importance and sub-channel quality through Kendall correlation optimization, thereby ensuring that semantically critical information is preferentially allo-cated to higher-quality sub-channels for enhanced transmis-sion reliability. 
+
+A. SVD-Based Precoding and Combining 
+
+Assuming the channel remains constant over P OTFS frames, we denote the channel matrix uniformly as H, omit-ting the frame-specific subscript p. The same precoder G and combiner W are applied to all frames. It is assumed that the RX can accurately acquire H via the channel estimation method described in [13]. By performing singular value decomposition (SVD) on H, we obtain 
+
+H = UΣV H , (9) where V and U are NTM N × r and NRM N × r unitary matrices, respectively, satisfying VH V = UH U = Ir , with 
+
+r being the rank of H. Here, Σ = diag {λs}rs=1 is a r ×
+
+r diagonal matric comprising r singular values arranged in descending order. The optimal precoder and combiner are obtained by ex-tracting the first NRF M N columns of V and U, respectively. Without loss of generality, we assume NRF M N is equal to 
+
+r. Thus, the optimal precoder and combiner can be written as 
+
+Gopt = V, Wopt = U. (10) Substituting (10) into (6) yields 
+
+ˆxp = ( INRF ⊗ (FN ⊗ IM )) UH  UΣV H  V
+
+×  INRF ⊗  FHN ⊗ IM
+
+ xp + ¯np = Σx p + ¯np, (11) where ¯np = ( INRF ⊗ (FN ⊗ IM )) WH np denotes the effec-tive noise in the DD-domain. For the s-th element of ˆxp, we have 
+
+ˆxp,s = λsxp,s + ¯ np,s , (12) where xp,s and ¯np,s represent the s-th element of xp and ¯np,respectively. Therefore, by exploiting SVD-based precoding and com-bining, the MIMO-OTFS channel is equivalent to NRF M N 
+
+independent sub-channels, and the quality of each sub-channel is characterized by its corresponding singular value. 
+
+B. EM-Based Semantic Importance Evaluation 
+
+To enhance system performance, it is essential to prioritize the assignment of more critical semantic information to sub-channels with superior quality. This strategy helps minimize information loss and improves overall transmission efficiency. The effectiveness of such sub-channel allocation heavily de-pends on the chosen evaluation criteria. Thus, a key challenge lies in assessing both the channel conditions of the sub-channels and the importance of the semantic information. The sub-channel gain vector γ serves as a quantitative mea-sure of sub-channel quality, defined as the vector composed of the singular values of all sub-channels 
+
+γ = [ λ1, λ 2, ..., λ NRF M N ]T . (13) Inspired by [15], we employ an entropy model (EM) to assess the importance of the semantic feature f output by the semantic encoder. The process begins by feeding f into a hyper encoder and a quantizer, producing a deeper feature 
+
+z and a quantized representation ˆy, respectively. The deeper feature z is then quantized to yield ˆz, which is subsequently fed into a hyper decoder to obtain ˜z. The outputs ˆy and 
+
+˜z are then jointly input to a Gaussian parameter estimator. The resulting estimated Gaussian parameters are passed to an entropy calculation module, producing the entropy values of the semantic feature. These entropy values serve as the semantic importance vector w = [ w1, w 2, ..., w NRF M N ]T .To measure the degree of matching between semantic im-portance and sub-channel conditions, we employ the Kendall correlation coefficient between the semantic importance vec-tor w and the sub-channel gain vector γ as the evaluation metric such that 
+
+κ =2 P
+
+> s<s ′
+
+Sigmoid [ −2 ( ws − ws′ ) ( λs − λs′ )] 
+
+NRF M N (NRF M N − 1) , (14) which reflects the ordinal similarity between the two se-quences. 
+
+C. Training and Loss Function 
+
+The proposed model adopts a two-stage training strategy due to the functional separation between semantic impor-tance assessment and semantic encoding/decoding. Stage I jointly trains the semantic encoder and semantic importance assessment model, with the goal of improving the latter’s ability to evaluate semantic importance. Stage II fine-tunes both the semantic encoder and decoder to enhance their ability to extract semantic information and perform effective sub-channel allocation for transmission. The first training stage aims to jointly minimize the trans-mitted bit-stream length and the reconstruction distortion. Since both the latent feature ˆy and hyper-latent feature ˆz
+
+contribute to the transmitted bit-stream, the loss function must account for the transmission cost of ˆy and ˆz. The first-stage loss function, incorporating mean square error (MSE) as the distortion measure, is formulated as 
+
+L1 = E [−log 2pˆy (ˆy)] + E [−log 2pˆz (ˆz)] + D − ˆD 22
+
+, (15) where the first two items correspond to the bit-stream lengths of ˆy and ˆz, respectively, while the third item evaluates reconstruction fidelity by comparing the output image with its original counterpart. During the second training phase, the goal is to maximize recovery of both source data and semantic content from the received feature sequence {ˆxn}NSa 
+
+> n=1
+
+, while ensuring that important semantic information is matched with high-quality sub-channels. The loss function is defined as 
+
+L2 = − 1
+
+> NSa
+> NSa
+
+P
+
+> nNLa
+
+P
+
+> l
+
+p (Sn = l|ˆxn) log pGβ (Sn = l|ˆxn)+λMSE D − ˆD 22
+
+− λEM · κ , 
+
+(16) where NSa denotes the number of samples per training batch. In the context of the image classification task considered here, the semantic information is confined to classification labels, i.e. Sn ∈ { 1, 2, ..., N La } , n = 1 , 2, ..., N Sa , where Sn
+
+represents the semantic label of the n-th sample, and NLa is the number of classes. The cross-entropy (CE) loss, appearing as the first term in (16), measures the mismatch between the ground-truth and reconstructed classification distributions, with pGβ (Sn = l|ˆxn) denoting the classification probability output by the semantic decoder Gβ . The coefficients λMSE and 
+
+λEM are the trade-off parameters that balance the contribu-tions of image classification accuracy, reconstruction quality, and sub-channel matching. IV. S IMULATION RESULTS 
+
+We assess the proposed semantic-aware MIMO-OTFS-SC system by performing image transmission over a high-mobility channel environment with the maximum velocity of 500km/h. The system is equipped with NRF = 2 RF chains, utilizing 64-QAM constellation modulation. The center fre-quency is configured as 28 GHz and the subcarrier spacing as 120 kHz. The OTFS parameters are configured with M = 8 
+
+(delay dimension) and N = 8 (Doppler dimension). The channel comprises L = 10 independent paths, with maximum delay and Doppler taps of 5 and 1, respectively. The delay taps 
+
+li and Doppler taps ki are randomly generated. The gain of 5 0 5 10 15     
+
+> SNR_test (dB)
+> 20
+> 22
+> 24
+> 26
+> 28
+> 30
+> PSNR (dB)
+> (a) PSNR vs. SNR
+> Analog SC (AWGN) [2]
+> JCM-SC (AWGN) [6]
+> MIMO-OFDM-SC [8]
+> Proposed MIMO-OTFS-SC with U-SCA
+> Proposed MIMO-OTFS-SC with SA-SCA
+> 50510 15
+> SNR_test (dB)
+> 0.55
+> 0.60
+> 0.65
+> 0.70
+> 0.75
+> 0.80
+> 0.85
+> 0.90
+> SSIM
+> (b) SSIM vs. SNR
+> Analog SC (AWGN) [2]
+> JCM-SC (AWGN) [6]
+> MIMO-OFDM-SC [8]
+> Proposed MIMO-OTFS-SC with U-SCA
+> Proposed MIMO-OTFS-SC with SA-SCA
+
+Fig. 2. System performance vs. SNR with NT = NR = 8 and NRF = 2 .
+
+each path αi ∼ CN (0 , 1) . The azimuth angles φi and ϕi are uniformly distributed in [0 , π ].The neural network architectures of semantic encoder, prob-ability converter, semantic information reconstruction, and source image reconstruction modules follow the design in [6]. The channel use is set to 1024 . For both training stages, we use a batch size of 32 and optimize the model using the Adam optimizer with a cosine annealing schedule, where the learning rate decays from an initial value of 5 × 10 −4 to 10 −6
+
+over 300 epochs. The EM structure is adopted from [15] and is trained separately with the Adam optimizer. The learning rate is set to a constant value of 10 −4. The trade-off parameters in the loss function are empirically set as λMSE = 20 and 
+
+λEM = 0 .5.The proposed MIMO-OTFS-SC with SA-SCA is compared against analog semantic communication [2] under AWGN 4 6 8 10 12 14 16       
+
+> Number of antennas
+> 20
+> 22
+> 24
+> 26
+> 28
+> 30
+> PSNR (dB)
+> (a) PSNR vs. N_t
+> Analog SC (AWGN) [2]
+> JCM-SC (AWGN) [6]
+> MIMO-OFDM-SC [8]
+> Proposed MIMO-OTFS-SC with U-SCA
+> Proposed MIMO-OTFS-SC with SA-SCA
+> 46810 12 14 16
+> Number of antennas
+> 0.50
+> 0.55
+> 0.60
+> 0.65
+> 0.70
+> 0.75
+> 0.80
+> 0.85
+> 0.90
+> SSIM
+> (b) SSIM vs. N_t
+> Analog SC (AWGN) [2]
+> JCM-SC (AWGN) [6]
+> MIMO-OFDM-SC [8]
+> Proposed MIMO-OTFS-SC with U-SCA
+> Proposed MIMO-OTFS-SC with SA-SCA
+
+Fig. 3. System performance vs. NT with NRF = 2 and SNR test = 0 .
+
+channel, JCM-based semantic communication (JCM-SC) [6] under AWGN channel, MIMO-OFDM-based semantic com-munication (MIMO-OFDM-SC) [8] under doubly-selective channel, and MIMO-OTFS-SC with uniform sub-channel al-location (U-SCA). All experiments are conducted using the CIFAR-10 dataset. The model is implemented in PyTorch 1.13.1 with CUDA 11.7 and executed on an NVIDIA A800 GPU with 80 GB memory. Ideal CSI is assumed known to the transceiver. In the training stage, the number of antennas is set to NT = NR = 8 ,and the SNR ( SNR train ) is set to 0 dB. Then the trained model is evaluated at SNRs of -6, 0, 6, 12, and 18 dB. Table I lists the classification accuracy of various semantic communication schemes under different SNR test conditions. When the SNR is greater than 0 dB, the proposed MIMO-OTFS-SC with TABLE I CLASSIFICATION ACCURACY OF VARIOUS SEMANTIC COMMUNICATION SCHEMES UNDER DIFFERENT SNR TEST CONDITIONS 
+
+Algorithm / SNR -6 dB 0 dB 6 dB 12 dB 18 dB Analog SC 0.879 0.867 0.869 0.870 0.870 JCM-SC 0.874 0.873 0.875 0.876 0.875 MIMO-OFDM-SC 0.873 0.871 0.873 0.876 0.875 MIMO-OTFS-SC with U-SCA 0.877 0.869 0.869 0.868 0.868 MIMO-OTFS-SC with SA-SCA 0.876 0.878 0.877 0.878 0.878 
+
+SA-SCA outperforms all competing schemes in classification accuracy. Fig. 2 presents the peak signal-to-noise ratio (PSNR) and structural similarity index measure (SSIM) performance of various semantic communication schemes. As the SNR in-creases, both the PSNR and SSIM of all schemes show an improving trend. However, under the same SNR condition, the image quality performance of the MIMO-OFDM-SC scheme consistently lags behind the other schemes. For instance, the PSNR of MIMO-OFDM-SC is 3.38 dB and 4.05 dB lower than that of MIMO-OTFS-SC with U-SCA and SA-SCA, respectively. Within the proposed MIMO-OTFS-SC scheme, the SA-SCA mechanism outperforms the U-SCA approach, achieving reconstruction quality close to that of the JCM scheme under AWGN channels, which validates the effec-tiveness of the proposed method in time-frequency doubly-selective channels. In summary, the proposed MIMO-OTFS-SC scheme, particularly with the SA-SCA strategy, maintains high classification accuracy and superior image reconstruction quality, demonstrating its robustness and practical potential in challenging channel environments. Then the trained model is evaluated with numbers of transmit antennas NT = 4 , 6, 8, 10 , 12 , 14 , 16 , while keeping 
+
+NR = NT and NRF = 2 . Fig. 3 shows the PSNR and SSIM performance as functions of the number of antennas. Both PSNR and SSIM gradually improve as NT increases. Among all schemes, MIMO-OFDM-SC shows the lowest PSNR and SSIM, further highlighting its limitations in signal recovery over doubly-selective channels. In contrast, the proposed MIMO-OTFS-SC scheme with SA-SCA achieves a PSNR of up to approximately 28 dB and an SSIM of 0.85 at NT = 16 ,significantly outperforming MIMO-OFDM-SC. These results confirm that increasing the number of antennas enhances overall system performance, and the proposed MIMO-OTFS-SC scheme, particularly with SA-SCA, maintains superior image reconstruction quality, demonstrating its robustness and practical potential in challenging channel environments. V. C ONCLUSION 
+
+This paper presents a semantic communication framework integrating MIMO-OTFS with semantic-aware resource allo-cation for robust image transmission in high-mobility environ-ments. Our key contributions include a novel MIMO-OTFS architecture resilient to doubly-selective fading and a semantic importance-aware sub-channel allocation strategy that opti-mally maps critical features to quality sub-channels via en-tropy modeling and Kendall correlation. Experimental results demonstrate significant gains in reconstruction quality over conventional OFDM-based semantic communication system under doubly-selective channels, validating the effectiveness of semantic-physical layer co-design. ACKNOWLEDGEMENT 
+
+This work was supported in part by the National Natural Science Foundation of China under Grant 62293484, in part by the National Key Research and Development Program of China under Grant 2023YFB2904300, and in part by the Program of Jiangsu Province under Grant NTACT-2024Z-001. REFERENCES [1] Z. Qin, F. Gao, B. Lin, X. Tao, G. Liu and C. Pan, “A Generalized Semantic Communication System: From Sources to Channels,” IEEE Wireless Commun. , vol. 30, no. 3, pp. 18-26, Jun. 2023. [2] E. Bourtsoulatze, D. Burth Kurka and D. Gunduz, “Deep joint source-channel coding for wireless image transmission,” IEEE Trans. Cogn. Commun. Netw. , vol. 5, no. 3, pp. 567-579, Sept. 2019. [3] H. Xie, Z. Qin, G. Y. Li, and B.-H. Juang, “Deep learning enabled semantic communication systems,” IEEE Trans. Signal Process. , vol. 69, pp. 2663-2675, Apr. 2021. [4] Z. Weng and Z. Qin, “Semantic communication systems for speech transmission,” IEEE J. Sel. Areas Commun. , vol. 39, no. 8, pp. 2434-2444, Aug. 2021. [5] T. Tung and D. Gunduz, “DeepWiVe: Deep-learning-aided wireless video transmission,” IEEE J. Sel. Areas Commun. , vol. 40, no. 9, pp. 2570-2583, Sept. 2022. [6] Y. Bo, Y. Duan, S. Shao and M. Tao, “Joint coding-modulation for digital semantic communications via variational autoencoder,” IEEE Trans. Commun. , vol. 72, no. 9, pp. 5626-5640, Sept. 2024. [7] G. Zhang et al., “From analog to digital: Multi-order digital joint coding-modulation for semantic communication,” IEEE Trans. Commun. , vol. 73, no. 6, pp. 4257-4271, Jun. 2025. [8] M. Yang, C. Bian, and H.-S. Kim, “OFDM-guided deep joint source channel coding for wireless multipath fading channels,” IEEE Trans. Cognit. Commun. Netw. , vol. 8, no. 2, pp. 584-599, Jun. 2022. [9] P. Jiang, C.-K. Wen, S. Jin, and G. Y. Li, “Wireless semantic communi-cations for video conferencing,” IEEE J. Sel. Areas Commun. , vol. 41, no. 1, pp. 230-244, Jan. 2023. [10] C. Liu et al, “OFDM-based digital semantic communication with importance awareness,” IEEE Trans. Commun. , vol. 72, no. 10, pp. 6301-6315, Oct. 2024. [11] Y. Liu et al., “OTFS versus OFDM: Which is superior in multiuser LEO satellite communications,” IEEE J. Sel. Areas Commun. , vol. 43, no. 1, pp. 139-155, Jan. 2025. [12] M. F. Keskin et al., “Integrated sensing and communications with MIMO-OTFS: ISI/ICI exploitation and delay-doppler multiplexing,” 
+
+IEEE Trans. Wireless Commun. , vol. 23, no. 8, pp. 10229-10246, Aug. 2024. [13] Z. Meng, Y. Zhang, Y. Zhou and J. Shi, “Data-interference free and low-overhead channel estimation framework for MIMO-OTFS system,” 
+
+IEEE Commun. Lett. , vol. 29, no. 9, pp. 2143-2147, Sept. 2025. [14] Y. Zhang, X. Dong, F. Yin and M. Qu, “Tree-coding-aided adaptive-cross-entropy algorithm for hybrid precoding with low-resolution analog phase shifters,” IEEE Trans. Veh. Technol. , vol. 71, no. 6, pp. 6807-6812, Jun. 2022. [15] F. Wang, X. Chen and X. Deng, “Wireless adaptive image transmission over OFDM channels based on entropy model,” IEEE Wireless Commun. Lett. , vol. 13, no. 10, pp. 2902-2906, Oct. 2024.

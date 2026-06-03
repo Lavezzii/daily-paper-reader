@@ -1,0 +1,928 @@
+Title: Voxel-CKM: Voxelized Radio Frequency Radiance Fields for Fast and Few-Shot CKM Construction
+
+URL Source: https://arxiv.org/pdf/2606.03531v1
+
+Published Time: Wed, 03 Jun 2026 01:04:51 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+> 1
+
+# Voxel-CKM: Voxelized Radio Frequency Radiance Fields for Fast and Few-Shot CKM Construction 
+
+Hanlei Li, Guangyi Zhang, Kequan Zhou, Yunlong Cai, and Guanding Yu 
+
+Abstract —Channel knowledge maps (CKMs) are designed to predict channel state information (CSI) from user locations, thereby enabling low-overhead CSI acquisition. However, exist-ing CKM construction methods often require hours-to-days of training time and dense measurements, resulting in substantial deployment cost. In this paper, we propose Voxel-CKM, anovel voxelized radio frequency (RF) radiance field framework for fast and few-shot CKM construction. The core idea is to replace implicit neural representations with explicit voxel grids to efficiently capture the spatial variation of wireless channels. Building upon this, we further introduce a compact vector-matrix (VM) decomposition to parameterize these voxel grids using a small set of matrices and vectors, which significantly accelerates convergence and facilitates fast CKM construction. To enable few-shot learning, we incorporate a transmitter prior as an inductive bias to guide the learning process under sparse measurements. Additionally, a total-variation (TV) regularization loss is proposed to mitigate overfitting and stabilize optimization. Experiments show that Voxel-CKM substantially accelerates training convergence and improves performance in the few-shot regime. 
+
+Index Terms —Channel knowledge map, channel prediction, environment-aware communication, few-shot learning, neural radiance field. 
+
+I. I NTRODUCTION 
+
+Accurate and timely acquisition of channel state information (CSI) is fundamental to reliable and high-rate wireless com-munications. However, as sixth-generation (6G) systems are expected to employ large-scale antenna arrays and ultra-wide bandwidths [1]–[7], conventional pilot-based CSI acquisition incurs prohibitive overhead. To address this challenge, the channel knowledge map (CKM) has emerged as a promising alternative [8]–[10]. By predicting CSI directly from user locations, CKM can substantially reduce the overhead of CSI acquisition. Nevertheless, realizing this benefit hinges on the efficient construction of high-fidelity CKMs, which remains a critical challenge that warrants further investigation. 
+
+A. Prior Work 
+
+Existing approaches to CKM construction can be broadly classified into two categories: model-driven and data-driven approaches. Model-driven approaches exploit domain knowl-edge of wireless propagation to construct CKMs with strong physical interpretability [11]–[18]. Specifically, [15] developed a calibrated ray-tracing framework that incorporates diffuse 
+
+H. Li, G. Zhang, K. Zhou, Y. Cai, and G. Yu are with the College of Infor-mation Science and Electronic Engineering, Zhejiang University, Hangzhou 310027, China (e-mail: hanleili@zju.edu.cn; zhangguangyi@zju.edu.cn; kqzhou@zju.edu.cn; ylcai@zju.edu.cn; yuguanding@zju.edu.cn). 
+
+scattering effects to improve the accuracy of CKM construc-tion. In addition, a scatterer-based modeling approach was pro-posed in [18], where CKMs are constructed by parameterizing dominant scatterer responses and estimating them via iterative optimization. However, model-driven approaches rely heavily on modeling assumptions and are inherently sensitive to model mismatch, which may lead to performance degradation in complex propagation environments. In contrast, data-driven methods bypass explicit propagation modeling and instead learn the location-to-CSI mapping directly from measurement data using deep learning techniques [19]–[26]. In particular, [20] formulated CKM construction as an image inpainting problem and proposed a Laplacian pyramid-based framework for efficient channel reconstruction. Moreover, a diffusion-based generative model was introduced in [24], which cap-tures channel structures via a conditional generation process, enabling improved modeling of propagation effects. In [26], CKM construction was cast as a style transfer problem and addressed using a conditional generative adversarial network (GAN), where a U-Net generator and a patch-based dis-criminator are jointly trained to generate high-fidelity CKMs. Despite their promising performance, data-driven approaches rely heavily on large-scale training datasets and often exhibit limited generalization to unseen environments, thereby hinder-ing practical deployment. More recently, neural radiance field (NeRF) [27] and three-dimensional Gaussian splatting (3DGS) [28] techniques have catalyzed a new line of research on CKM construction. NeRF and 3DGS represent 3D scenes using parameterized spatial units and synthesize scene views from arbitrary viewpoints via radiance field rendering, providing a physically grounded paradigm for modeling light propagation. Leveraging the anal-ogy between optical and radio frequency (RF) propagation, several studies have adapted these radiance field rendering techniques to wireless communication scenarios [29]–[34]. As a pioneering effort, [29] presented the NeRF 2 framework, which represents wireless environments using a set of virtual radiation sources and derives channel responses via volumetric rendering. Following a similar paradigm, a NeRF-inspired approach termed NeWRF was developed in [30], where direction-of-arrival (DoA) is incorporated as side information to enhance CSI inference performance. In parallel, the authors of [32] proposed WRF-GS+, a framework that represents wire-less environments with deformable 3D Gaussian primitives, enabling efficient channel prediction. In [34], a 3DGS-based scheme named RF-3DGS was proposed, which encodes multi-modal channel characteristics using spherical harmonics (SH) to facilitate accurate wireless channel synthesis. 
+
+> arXiv:2606.03531v1 [eess.SP] 2 Jun 2026 2
+
+B. Motivation and Contributions 
+
+Despite the progress made by existing methods, we can identify two key limitations:  
+
+> •
+
+Lack of construction efficiency: In practical wireless sys-tems, CKMs are expected to be constructed efficiently to facilitate timely deployment and updates. However, exist-ing CKM construction methods typically require hours-to-days of training time, indicating limited construction efficiency. This inefficiency mainly stems from com-plex network architectures and computationally intensive optimization procedures, which lead to high computa-tional overhead and slow convergence. As a result, these methods struggle to support real-time adaptation, which hinders their practical deployment.  
+
+> •
+
+Reliance on dense measurements: Existing CKM con-struction methods generally require a large number of measurements to achieve satisfactory accuracy. However, this requirement is difficult to meet in practical sys-tems, as collecting dense measurements is costly and time-consuming. When only limited training samples are available, existing methods often struggle to capture the complex spatial variations of wireless channels, leading to significant performance degradation. This heavy reliance on dense measurements poses a major barrier to the practical deployment of CKM. In this paper, we propose Voxel-CKM, a novel voxelized RF radiance field framework for fast and few-shot CKM construction. Specifically, we formulate a voxelized RF ra-diance field that efficiently captures the spatial variation of wireless channels. Unlike NeRF-style methods [29], [30] that represent the radiance field using computationally expensive multilayer perceptrons (MLPs), we adopt an explicit voxel grid representation, which allows continuous field queries via efficient trilinear interpolation, thereby substantially acceler-ating the learning process. Building upon the explicit voxel-grid representation, we adopt a compact vector-matrix (VM) decomposition to further enhance construction efficiency. By replacing dense voxel parameters with a small set of low-rank matrices and vectors, this decomposition reduces the number of trainable parameters and improves training stability, enabling faster convergence and thereby mitigating the first limitation. To address the second limitation, we propose that appropri-ate initialization plays a critical role in addressing sparse mea-surements, since initialization strongly influences early-stage optimization and restricts the space of feasible solutions under few-shot conditions. Guided by physical insight, we identify the transmitter as a natural anchor for initialization, owing to its dominant role in shaping the spatial variation of wireless channels. Accordingly, a transmitter prior is incorporated to bias the voxelized RF radiance field before training. Con-cretely, we instantiate the prior by initializing the voxel grid with radial Gaussian functions, assigning higher initial values to voxels near the transmitter and smoothly decaying the values with distance. This prior provides an inductive bias that guides optimization under sparse measurements, effectively improving sample efficiency. Furthermore, we incorporate a total-variation (TV) regularization [35] on the voxel grid to combat overfitting in limited-data scenarios. By penalizing abrupt variations between neighboring voxels, the regulariza-tion encourages local spatial coherence, improving robustness and generalization in the few-shot regime. Simulation results demonstrate that Voxel-CKM achieves faster convergence than existing baselines and exhibits great performance under chal-lenging few-shot conditions. Our main contributions are summarized as follows:  
+
+> •
+
+We propose Voxel-CKM, a novel framework for fast and few-shot CKM construction. To achieve this, we formulate a voxelized RF radiance field by replacing implicit neural representations with explicit voxel grids, which efficiently capture the spatial variation of wireless channels.  
+
+> •
+
+We introduce a compact VM decomposition method to accelerate the optimization of voxelized RF radiance fields. By decomposing dense voxel parameters into a small set of matrices and vectors, the proposed method significantly reduces the number of trainable parameters, thereby improving optimization efficiency.  
+
+> •
+
+We incorporate a transmitter prior to enable few-shot learning. This prior injects a physically motivated induc-tive bias into the voxelized RF radiance field, guiding its optimization under sparse measurements. Additionally, a TV regularization term is proposed to mitigate overfitting and improve robustness in the few-shot regime.  
+
+> •
+
+We present extensive experimental results to validate the effectiveness of the proposed framework. Compared to existing methods, Voxel-CKM achieves faster conver-gence during training and delivers superior performance under few-shot conditions. 
+
+C. Organization and Notations 
+
+The rest of this paper is organized as follows. Section II introduces the preliminaries on wireless channel modeling and NeRF techniques. Section III formulates the voxelized RF radiance field. The construction of Voxel-CKM is detailed in Section IV. Then, simulation results are provided in Section V, and Section VI concludes the paper. Unless otherwise specified, scalars, vectors, and tensors of dimension greater than one are denoted by lowercase, boldface lowercase, and boldface uppercase letters, respectively. For a scalar a, |a| represents its absolute value. For vectors and tensors, ∥ · ∥ 1 and ∥ · ∥ 2 denote the entry-wise ℓ1 norm and the Euclidean norm, respectively. Finally, Cm×n(Rm×n) is the space of m × n complex (real) matrices. II. P RELIMINARIES 
+
+In this section, we introduce the preliminaries of wireless channel modeling and NeRF techniques. 
+
+A. Wireless Channel Modeling 
+
+A typical wireless communication system comprises a trans-mitter, a receiver, and a wireless propagation environment. The transmitter generates and modulates a signal x = Ae jφ , where 
+
+A and φ represent the amplitude and phase, respectively. As the signal propagates through the environment, it undergoes 3
+
+amplitude attenuation ∆A and phase rotation ∆φ. Accord-ing to the basic free space path loss model, the amplitude attenuation ∆A scales inversely with the propagation distance 
+
+d, while the phase rotation ∆φ varies linearly with d. The received signal can therefore be written as 
+
+y = x · ∆Ae j∆φ = Ae jφ · ∆Ae j∆φ, (1a) 
+
+∆A = c
+
+4πf d , ∆φ = −2πf d c , (1b) where f represents the carrier frequency and c denotes the speed of light. In realistic propagation environments, re-flections and scattering cause the signal to propagate along multiple paths, each experiencing distinct attenuation and phase shifts. Consequently, the received signal becomes the superposition of all multipath components, expressed as 
+
+y = Ae jφ ·
+
+> L
+
+X
+
+> l=1
+
+∆Alej∆φl , (2) where L is the number of propagation paths, ∆Al and ∆φl
+
+represent the amplitude attenuation and phase rotation of the 
+
+l-th path, respectively. The wireless channel h is defined as the ratio of the received signal to the transmitted signal: 
+
+h ≜ yx =
+
+> L
+
+X
+
+> l=1
+
+∆Alej∆φl . (3) 
+
+B. NeRF Techniques 
+
+NeRF is a deep learning-based framework for 3D scene representation [27]. It represents a scene using a continuous function parameterized by a neural network (NN). This func-tion takes as input a spatial coordinate p = ( x, y, z ) and a viewing direction ω = ( θ, ϕ ), and outputs the corresponding volume density σ and directional radiance c = ( r, g, b ).To render an image from a given viewpoint, NeRF casts rays from each pixel and samples a set of points along each ray. For each sampled point, its spatial coordinate and viewing direction are fed into the NN to obtain the corresponding volume density and radiance. The pixel color, ˆC(ω), is then computed as a weighted sum of the radiance values at the sampled points: 
+
+ˆC(ω) = 
+
+> N
+
+X
+
+> j=1
+
+Tj αj cj , (4) where αj = 1 − e−σj δj and Tj = Qj−1
+
+> k=1
+
+(1 − αk) indicate the opacity and accumulated transmittance for the j-th sampled point, respectively, both j and k denote the sample indices along the ray, N is the number of sampled points, and 
+
+δj = || pj+1 − pj || 2 is the distance between adjacent samples. The synthesized image is then compared with the ground-truth image to compute a mean squared error (MSE) loss, which guides the optimization of the network parameters. III. V OXELIZED RF R ADIANCE FIELD 
+
+CKM construction is often constrained by tight time budgets and sparse measurements, as environmental dynamics neces-sitate rapid updates while dense channel measurements are Voxel Grid & I nterpolation   
+
+> Density Grid
+> Feature Grid
+> Radiator Sampling
+> Virtual Wireless
+> Radiator
+> Rx
+> Tx
+> Interpolation
+> Interpolation
+> Fig. 1. Overview of the voxelized RF radiance field. The wireless environ-ment is modeled as a set of virtual wireless radiators, whose radiance and density attributes are stored in explicit voxel grids and queried via trilinear interpolation for CSI prediction.
+
+costly in deployment. Motivated by these practical constraints, we address the problem of fast and few-shot CKM construction in a wireless communication scenario, where the transmitter is fixed at a known location pt. In the few-shot setting, we assume that only M sparse measurements {(pir , h i)}Mi=1 are available, where each hi ∈ C denotes the CSI measured at receiver location pir . Our goal is to predict the CSI at arbitrary receiver locations by efficiently learning a CKM from these sparse measurements. We begin by formulating the voxelized RF radiance field, as illustrated in Fig. 1. The Huygens–Fresnel principle [36] states that any point reached by an RF signal can be regarded as a secondary source that re-radiates the signal outward. Motivated by this, we treat each spatial point in the environment as a virtual radiator, each associated with two learnable attributes: a complex radiance coefficient s ∈ C and a scalar density σ ∈ R.Here, the complex coefficient s represents the directional radiance response, while the density σ characterizes the local material absorption of RF signals. Rather than implicitly en-coding these radiance and density attributes using a deep MLP, we adopt an explicit voxel-based representation. Specifically, we construct a density grid Vσ ∈ RI×J×K×1 and a feature grid VF ∈ RI×J×K×D , where I, J, and K denote the grid resolutions along the X, Y , and Z axes, respectively, and D
+
+represents the dimensionality of the feature vector stored at each voxel in the feature grid. For an arbitrary 3D spatial point p = ( x, y, z ), its density value σ(p) is obtained via trilinear interpolation over the density grid Vσ , as shown in Fig. 1. Specifically, p is first mapped to its enclosing voxel cell, whose eight vertices are indexed in the density grid Vσ . The density σ(p) is then computed as a weighted combination of the density values stored at these eight vertices, where the weights are determined by the relative offsets of p within the voxel cell. This process is formally expressed as 
+
+σ(p) = 
+
+> 8
+
+X
+
+> n=1
+
+wn(p)Vσ [qn], (5) where qn denotes the n-th vertex of the voxel cell enclosing 
+
+p, Vσ [qn] represents the density value stored at vertex qn,and wn(p) is the trilinear interpolation weight. 4VM Decomposition     
+
+> Learned CKM
+> Decoder Ray Distance
+> Ray Distance
+> Transmitter Prior Loss Function
+> MSE Loss
+> L1 Loss
+> TV Loss
+> ReLU
+> Lightweight Decoder Radiator Sampling
+> Virtual Wireless
+> Radiator
+> Rx
+> Tx X
+> Y
+> Z
+> X
+> Y
+> Z
+> Fig. 2. Pipeline of the Voxel-CKM framework. The framework builds on a voxelized RF radiance field and integrates a VM decomposition, a transmitter-aware prior, a lightweight decoder, and a regularized loss to support efficient CKM construction from sparse measurements.
+
+Similarly, the radiance coefficient at the query point is obtained from the feature grid. We first query the feature grid VF via trilinear interpolation to produce a feature vector 
+
+f (p) ∈ RD . Since the interpolated feature f (p) is inherently agnostic of the viewing direction, we further combine it with the radiance direction ω and feed them into a lightweight decoder to predict the directional radiance coefficient s(p, ω):
+
+s(p, ω) = Dθ (f (p), ω) , (6) where Dθ (·) denotes the lightweight decoder, and θ represents its parameter set. To predict the CSI at the receiver, we first define a set of rays {ri}Nr
+
+> i=1
+
+, each originating from the receiver location and extending into the scene along its DoA, where Nr denotes the number of rays. The DoA can be obtained using the ray-searching algorithm in [30]. Along each ray ri, we sample a set of discrete points {pij }Ns
+
+> j=1
+
+, where i indicates the ray index and Ns represents the number of samples per ray. By querying the voxel grids, the density σij and radiance coefficient sij at each sampled point are computed according to Eqs. (5) and (6). Following standard volume rendering, the density values are converted into an absorption ratio αij and an accumulated transmittance Tij :
+
+Tij =
+
+> j−1
+
+Y
+
+> k=1
+
+(1 − αik ), αij = 1 − exp ( −σij δij ) , (7) where i denotes the ray index, both j and k represent the indices of sampled points, and δij = ∥pi,j +1 − pij ∥2 denotes the distance between adjacent samples. In addition to material absorption, RF signals also experience free-space path loss due to spherical wave spreading [37]. To model this attenuation, we introduce a free-space attenuation factor ρ, expressed as 
+
+ρij = c
+
+4πf d ij 
+
+e−j2πf d ij /c , (8) where dij denotes the distance between pij and the receiver, and f represents the carrier frequency. By aggregating the contributions from all sampled points across all rays, the CSI prediction ˆh at the receiver is computed as 
+
+ˆh =
+
+> Nr
+
+X
+
+> i=1
+> Ns
+
+X
+
+> j=1
+
+Tij ρij αij sij . (9) The predicted CSI is then compared with the ground-truth CSI to compute the training loss, which is used to jointly optimize the voxel grids and the lightweight decoder. IV. C ONSTRUCTION OF VOXEL -CKM In this section, we provide an in-depth elaboration on the proposed Voxel-CKM and its implementation specifics. 
+
+A. Construction Pipeline 
+
+Building upon the voxelized RF radiance field, we present our Voxel-CKM framework, which integrates structured fac-torization with physics-informed priors for fast and few-shot CKM construction. The overall construction pipeline is illustrated in Fig. 2. In particular, Voxel-CKM consists of the following key components:  
+
+> •
+
+VM Decomposition: This method parameterizes the voxel grids with compact vector and matrix factors. It preserves the efficiency of the explicit grid representation while significantly reducing the number of trainable pa-rameters, thereby enabling faster convergence and rapid adaptation.  
+
+> •
+
+Transmitter Prior: This prior initializes the vector and matrix factors with radial Gaussian functions centered at the transmitter location. The resulting initialization encourages higher voxel values near the transmitter and a smooth decay with distance, thereby guiding optimization under sparse measurements.  
+
+> •
+
+Lightweight Decoder: This module predicts the radiance coefficient s from the queried feature f (p) and the radiance direction ω. Instead of using deep MLPs as in NeRF-style methods, we combine SH encoding with compact linear layers, yielding a lightweight decoder.  
+
+> •
+
+Regularized Loss Function: This loss function combines the CSI prediction loss with ℓ1 and TV regularization terms imposed on the VM factors. These regularization terms constrain excessive factor magnitudes and suppress abrupt spatial variations, which stabilizes optimization in the few-shot regime.  
+
+> •
+
+Progressive Training Strategy: This strategy optimizes the vector and matrix factors in a coarse-to-fine manner. The field is first learned at a low spatial resolution to 5
+
+capture the global propagation structure, and is then progressively upsampled to recover finer spatial details. The details of these components are presented in the fol-lowing subsections. 
+
+B. VM Decomposition 
+
+While explicit voxel grids provide an intuitive and spa-tially structured representation of RF radiance fields, directly optimizing dense grid parameters can be inefficient [38]. To improve parameter efficiency and accelerate convergence, we adopt a compact VM decomposition to parameterize the voxel grids. The core idea of VM decomposition is to represent a dense 3D tensor using a compact set of plane matrices and line vectors. Formally, a dense 3D tensor T ∈ RI×J×K can be parameterized as 
+
+T =
+
+> R
+
+X
+
+> r=1
+
+
+
+vXr ◦ MY Z r + vYr ◦ MXZ r + vZr ◦ MXY r
+
+
+
+, (10) where vXr ∈ RI , vYr ∈ RJ , vZr ∈ RK are learnable vector fac-tors along the three coordinate axes, MY Z r ∈ RJ×K , MXZ r ∈
+
+RI×K , MXY r ∈ RI×J represent the learnable matrix factors, 
+
+R denotes the decomposition rank, and ◦ represents the outer product. In our voxelized RF radiance field, the voxel grids are represented as 4D tensors, with an additional channel di-mension corresponding to voxel-wise attributes. We therefore extend the above VM decomposition to the 4D setting. To handle the channel dimension while maintaining a compact parameterization, we associate each vector–matrix pair in the VM decomposition with a learnable coefficient vector: 
+
+Vσ =
+
+> R1
+
+X
+
+> r=1
+
+
+
+vXσ,r ◦ MY Z σ,r ◦ b1 
+
+> σ,r
+
++ vYσ,r ◦ MXZ σ,r ◦ b2
+
+> σ,r
+
++vZσ,r ◦ MXY σ,r ◦ b3
+
+> σ,r
+
+
+
+, (11a) 
+
+VF =
+
+> R2
+
+X
+
+> r=1
+
+
+
+vXF,r ◦ MY Z F,r ◦ b1 
+
+> F,r
+
++ vYF,r ◦ MXZ F,r ◦ b2
+
+> F,r
+
++vZF,r ◦ MXY F,r ◦ b3
+
+> F,r
+
+
+
+, (11b) where R1 and R2 represent the decomposition ranks for the density grid and feature grid, respectively, and bkσ,r ∈ R and 
+
+bkF,r ∈ RD for k = 1 , 2, 3 denote learnable coefficient vectors associated with the r-th vector–matrix pair. Once the voxel grids are parameterized by these vector and matrix factors, we no longer explicitly reconstruct the dense 3D tensors or apply trilinear interpolation. Instead, the field is queried directly from the factorized representation. Given a 3D query point p = ( x, y, z ), we project it onto the three coordinate axes ( X, Y, Z ) and the three canonical planes (XY, XZ, Y Z ). At these projected locations, we perform 1D linear interpolation on the corresponding vector factors and 2D bilinear interpolation on the corresponding matrix factors, yielding the line and plane coefficients 1, respectively. The   
+
+> 1Here, vector and matrix factors refer to the learnable 1D and 2D arrays in the VM decomposition, respectively, whereas line and plane coefficients refer to the scalar values interpolated from these factors at the query point. Slice Plane for Heatmap
+> Physical Scenario Heatmap of Voxel Density
+> Location of Transmitter
+> 0.00
+> 0.05
+> 0.10
+> 0.15
+> 0.20
+> 0.25
+> 0.30
+> Fig. 3. Visualization of the learned voxel density field. A slice plane is extracted to generate the heatmap of voxel density, which highlights the spatial concentration of voxel density around the transmitter location.
+
+density σ(p) is then computed by combining these interpolated coefficients: 
+
+σ(p) = 
+
+> R1
+
+X
+
+> r=1
+
+
+
+vXσ,r (x) MY Z σ,r (y,z ) b1 
+
+> σ,r
+
++vYσ,r (y) MXZ σ,r (x,z ) b2
+
+> σ,r
+
++vZσ,r (z) MXY σ,r (x,y ) b3
+
+> σ,r
+
+
+
+,
+
+(12) where vXσ,r (x), vYσ,r (y), and vZσ,r (z) denote the interpolated line coefficients evaluated at the projected locations, and 
+
+MXY σ,r (x, y ), MXZ σ,r (x, z ), and MY Z σ,r (y, z ) denote the inter-polated plane coefficients. Using the same factorization and querying scheme, the feature f (p) is computed as 
+
+f (p) = 
+
+> R2
+
+X
+
+> r=1
+
+
+
+vXF,r (x) MY Z F,r (y,z ) b1 
+
+> F,r
+
++vYF,r (y) MXZ F,r (x,z ) b2
+
+> F,r
+
++vZF,r (z) MXY F,r (x,y ) b3
+
+> F,r
+
+
+
+.
+
+(13) The queried feature f (p) is then combined with the radiance direction ω to predict the directional radiance coefficient. 
+
+C. Transmitter Prior 
+
+In wireless propagation, the transmitter plays a dominant role in shaping the spatial variation of wireless channels, as the signal originates from the transmitter’s location and its energy gradually decays with distance. This physical characteristic is also reflected in the learned radiance field, where higher values are observed near the transmitter, as illustrated in Fig. 3. Motivated by this observation, we propose to explicitly incorporate a transmitter prior into the voxelized RF radiance field to guide its optimization under sparse measurements. Concretely, the transmitter prior is introduced by initializing the vector and matrix factors in the VM decomposition with radial Gaussian functions. The procedure is summarized as follows. For clarity, we focus on the vector factor vXF,r and the matrix factor MY Z F,r , while the remaining VM factors follow the same procedure. 
+
+1) Projecting Transmitter Location: Given the transmit-ter coordinate pt = (xt, y t, z t) and the scene bounds 6
+
+[xmin , x max ] × [ymin , y max ] × [zmin , z max ], we first map the transmitter location onto discrete grid indices: 
+
+it = ⌊(xt − xmin )( I − 1) /(xmax − xmin )⌋ , (14a) 
+
+jt = ⌊(yt − ymin )( J − 1) /(ymax − ymin )⌋ , (14b) 
+
+kt = ⌊(zt − zmin )( K − 1) /(zmax − zmin )⌋ , (14c) where it, jt, and kt denote the indices of the transmitter along the X, Y , and Z axes, respectively. Then, it is used to index the entry of the X axis vector factor vXF,r and (jt, k t) is used to index the entry of the Y Z matrix factor MY Z F,r .
+
+2) Generating Gaussian Biases: According to the projected indices, we generate biases for the vector factor vXF,r and the matrix factor MY Z F,r , respectively. Specifically, these biases are constructed using radial Gaussian functions centered at the projected transmitter indices: 
+
+gXF,r [i] = ηv exp 
+
+
+
+− (i − it)2
+
+2σ2
+
+> v
+
+
+
+, (15a) 
+
+GY Z F,r [j, k ] = ηm exp 
+
+
+
+− (j − jt)2 + ( k − kt)2
+
+2σ2
+
+> m
+
+
+
+, (15b) where ηv and ηm control the strengths of the biases, respec-tively, and σv and σm determine their spatial spread. 
+
+3) Injecting Biases into VM Factors: The generated biases are then added to the corresponding VM factors as initializa-tion offsets before training: 
+
+vXF,r ← vXF,r + gXF,r , MY Z F,r ← MY Z F,r + GY Z F,r . (16) This initialization biases the voxelized RF radiance field toward a transmitter-centered spatial structure, encouraging higher values near the transmitter and a smooth decay with distance, thereby facilitating optimization under sparse mea-surements. 
+
+D. Lightweight Decoder Design 
+
+Given the interpolated feature f (p) from the VM represen-tation and the radiance direction ω, we employ a lightweight decoder to predict the directional radiance coefficient s(p, ω)
+
+of the virtual radiator. As shown in Fig. 4, the decoder follows a two-branch architecture. The first branch passes the interpolated feature f (p) through a SiLU activation [39] and a linear layer, yielding a compact feature representation. The second branch first encodes the radiance direction ω via SH encoding, which is defined as 
+
+γSH (ω) = {Y mℓ (ω)}0≤ℓ≤LSH , −ℓ≤m≤ℓ, (17) where Y mℓ denotes the SH basis function of degree ℓ and order m, and LSH is the maximum SH degree used in the encoding. The encoded direction is then mapped to a feature representation using a linear layer. The outputs of the two branches are fused through element-wise addition, followed by a SiLU activation and a final linear layer to produce the radiance coefficients. These design choices keep the decoder lightweight by using a fixed SH basis for directional encoding and compact linear projections for feature transformation, rather than relying on the stacked hidden layers commonly adopted in NeRF-style MLP decoders. SH Encoding  
+
+> Lightweight Decoder
+> Linear
+> SiLU
+> Linear
+> Linear
+> SiLU
+> Ray Distance
+> Fig. 4. Architecture of the proposed lightweight decoder.
+
+E. Regularized Loss Function 
+
+We optimize Voxel-CKM using a composite objective that combines a CSI prediction loss with regularization terms on the VM factors. The overall loss function is defined as 
+
+L = LMSE + λℓ1 Lℓ1 + λTV LTV , (18) where λℓ1 and λTV denote the hyperparameters to control the strength of the regularization terms. The MSE term is defined as 
+
+LMSE = 1
+
+B
+
+> B
+
+X
+
+> i=1
+
+hi − ˆhi 2, (19) where B represents the batch size. This term penalizes the discrepancy between the predicted CSI ˆhi and the ground-truth CSI hi. The ℓ1 term suppresses excessive magnitudes in the VM factors to stabilize optimization, expressed as 
+
+Lℓ1 = X
+
+> v∈V
+
+1
+
+Nv
+
+∥v∥1 + X
+
+> M∈M
+
+1
+
+NM
+
+∥M∥1, (20) where V and M denote the sets of vector and matrix factors in the VM decomposition, respectively, and Nv and NM
+
+represent the numbers of elements in v and M, respectively. To mitigate overfitting under sparse measurements, we further introduce a TV regularization term. This regularization penal-izes the squared differences between adjacent VM elements, defined as 
+
+LTV = X
+
+> v∈V
+
+1
+
+Nv
+
+∥∆v∥22 + X
+
+> M∈M
+
+βNM
+
+∥∆M∥22, (21) where β controls the relative contributions of vector and matrix factors, and ∆v and ∆M denote the differences between ad-jacent elements in the vector and matrix factors, respectively. Concretely, for a vector factor v ∈ RI and a matrix factor 
+
+M ∈ RJ×K , ∥∆v∥22 and ∥∆M∥22 are computed as 
+
+∥∆v∥22 =
+
+> I−1
+
+X
+
+> i=1
+
+ v[i + 1] − v[i]2, (22a) 
+
+∥∆M∥22 =
+
+> J−1
+
+X
+
+> j=1
+> K
+
+X
+
+> k=1
+
+ M[j + 1 , k ] − M[j, k ]2
+
++
+
+> J
+
+X
+
+> j=1
+> K−1
+
+X
+
+> k=1
+
+ M[j, k + 1] − M[j, k ]2. (22b) By discouraging high-frequency variations in the VM factors, the TV regularization suppresses non-physical oscillations that may arise under sparse measurements, facilitating few-shot learning. 7
+
+Algorithm 1: Training algorithm for Voxel-CKM 
+
+Input: Training dataset S; number of iterations Q;upsampling schedule U.
+
+Output: Learned VM factors for (Vσ , VF ) and lightweight decoder parameters.  
+
+> 1
+
+Initialize VM factors and lightweight decoder.  
+
+> 2
+
+Apply transmitter prior to VM factors based on Eqs. (14), (15), and (16).  
+
+> 3
+
+for q ← 1 to Q do  
+
+> 4
+
+Sample a receiver location pr from S. 
+
+> 5
+
+Generate ray set {ri}Nr 
+
+> i=1
+
+and sampled points {pij }Ns
+
+> j=1
+
+along each ray.  
+
+> 6
+
+Query VM-factorized field to obtain density σij and radiance coefficient sij for each sampled point based on Eqs. (12) and (13).  
+
+> 7
+
+Compute accumulated transmittance Tij and free-space attenuation factor ρij using Eqs. (7) and (8).  
+
+> 8
+
+Compute the predicted CSI ˆh using Eq. (9).  
+
+> 9
+
+Compute the training loss L based on Eq. (18).  
+
+> 10
+
+Update the parameters of VM factors and lightweight decoder.  
+
+> 11
+
+if q ∈ U then  
+
+> 12
+
+Upsample vector factors by 1D linear interpolation and matrix factors by 2D bilinear interpolation.  
+
+> 13
+
+end  
+
+> 14
+
+end 
+
+F. Progressive Training Strategy 
+
+Directly optimizing the VM factors at the target spatial resolution is inefficient, since the high-resolution factors intro-duce excessive degrees of freedom, making the optimization susceptible to poor local minima during the early stage of training [38]. To address this challenge, we adopt a progressive training strategy. Specifically, this strategy initializes the VM factors at a coarse resolution and progressively increases their resolution at predefined training iterations. The intermediate resolutions are selected in logarithmic space between the initial and target resolutions, allowing the representation capacity to increase gradually throughout training. To facilitate a smooth transition across resolutions, the vector factors are upsampled along their axis via 1D linear interpolation, and the matrix factors are upsampled along their two axes via 2D bilinear interpolation. This coarse-to-fine strategy allows the model to capture global structure before refining details, thereby improving optimization efficiency. Algorithm 1 summarizes the training procedure of Voxel-CKM. The VM factors and the lightweight decoder are first initialized, after which the transmitter prior is injected into the VM factors. At each iteration, we sample a receiver location, cast rays along its DoAs, and sample discrete points along each ray. The VM-factorized field is then queried at the sampled points to obtain density values and radiance coefficients, which are aggregated via differentiable rendering to predict the CSI. The resulting prediction is used to compute the loss defined in Eq. (18), and the VM factors and decoder parameters are jointly optimized via gradient-based updates. Following a pre-defined schedule, the VM factors are progressively upsampled during training, enabling efficient coarse-to-fine optimization.                                                             
+
+> TABLE I TRAINING SETTINGS AND HYPERPARAMETERS FOR THE RADIANCE FIELD .
+> Training Setting Hyperparameters for Radiance Field
+> Platform PyTorch Samples per Ray Ns128
+> Optimizer Adam Density Rank R116
+> Batch Size 32 Feature Rank R248
+> Iterations 30 ,000 Feature Dim. D27
+> VM Factors LR 2×10 −2Bias Strength ηv, η m1
+> Decoder LR 1×10 −3Bias Spread σv, σ m3
+> LR Decay Exponential Hidden Dim. Nhid 128
+> ℓ1Strength λℓ18×10 −5Initial Resolution 128 ×128 ×128
+> TV Strength λTV {10 ,1,0.01 }Target Resolution 300 ×300 ×300
+> TV Coefficient β{1,0.1,0}Upsampling Schedule 2k ,3k ,4k ,5k Conference Room Bedroom Office
+> Fig. 5. The geometries of three indoor 3D environment models.
+
+V. E XPERIMENTS 
+
+A. Experimental Settings 1) Implementation Details: We implement Voxel-CKM us-ing the PyTorch platform and conduct experiments on a 2.60 
+
+GHz Intel(R) Xeon(R) Platinum 8350C CPU and an NVIDIA GeForce RTX 4090 GPU. All models are trained with a batch size of 32 for 30 , 000 iterations using the Adam optimizer. The learning rate is set to 2 × 10 −2 for VM factors and 1 × 10 −3
+
+for the lightweight decoder. We apply an exponential learning rate decay, reducing the learning rate to 0.1 of its initial value by the end of optimization. To balance optimization stability and model flexibility across different sampling budgets, we fix λℓ1 = 8 × 10 −5 across all experiments, while decreasing the TV regularization strength λTV and the coefficient β as the number of training samples M increases. Specifically, (λTV , β )
+
+is set to (10 , 1) , (1 , 0.1) , and (0 .01 , 0) for M = 100 , 400 , and 
+
+1, 000 , respectively. These settings are shared across all scenes under the same sampling budgets. For the radiance field configuration, we uniformly sample 
+
+128 points along each ray. The decomposition ranks for the density and feature grids are set to R1 = 16 and 
+
+R2 = 48 , respectively. Each voxel in the feature grid stores a 27 -dimensional feature vector. For the transmitter prior, the Gaussian bias strengths are set to ηv = ηm = 1 , and the bias spreads are set to σv = σm = 3 . The hidden dimension of the lightweight decoder is configured to Nhid = 128 . Under the progressive training strategy, the grid resolution is initialized at 128 × 128 × 128 and gradually increased to 300 × 300 × 300 
+
+during training. This upsampling is performed in logarithmic space at training iterations 2,000 , 3,000 , 4,000 , and 5,000 .These parameter settings are summarized in Table I. 8                                                                      
+
+> TABLE II FEW -SHOT PERFORMANCE COMPARISON ACROSS THREE INDOOR ENVIRONMENTS .
+> CPSNR (dB) ↑
+> Conference Room Bedroom Office
+> M= 100 M= 400 M= 1 ,000 M= 100 M= 400 M= 1 ,000 M= 100 M= 400 M= 1 ,000
+> NeWRF [30] 12 .69 21 .08 22 .55 6.55 10 .48 12 .08 4.05 7.89 8.51
+> NeRF 2[29] −1.48 −1.22 −1.37 −1.53 −2.38 −1.90 −1.92 −1.45 −1.64
+> MLP [42] −1.66 −1.71 −1.94 −2.11 −1.88 −1.82 −2.21 −1.83 −2.15
+> KNN [43] −0.76 −1.05 −0.93 −1.16 −1.30 −0.38 −1.45 −1.26 −1.01
+> Voxel-CKM (Ours) 17 .46 23 .30 26 .93 11 .26 14 .17 15 .09 7.22 9.40 9.80
+
+2) Datasets: We evaluate the proposed method on both simulated and real-world datasets.  
+
+> •
+
+Simulated Dataset: In a manner similar to [30], we construct simulated datasets across three indoor environ-ments, including a conference room, a bedroom, and an office. The geometries of these environments are shown in Fig. 5. In each scene, a single transmitter is placed at a fixed location, while receiver locations are randomly sampled within the environment. CSI samples are generated using the shooting and bouncing ray tracing method [40] at a carrier frequency of 2.412 GHz. For each scene, we generate 10 , 000 training samples and 500 
+
+test samples, where each sample corresponds to a distinct receiver location. For evaluation, we subsample 100 , 400 ,and 1, 000 training samples from the full training set, whereas the test set remains unchanged.  
+
+> •
+
+Real-World Dataset: In addition, we evaluate Voxel-CKM on a real-world dataset collected by Katholieke Universiteit Leuven [41]. The dataset contains 252 ,004 
+
+over-the-air multiple-input multiple-output (MIMO) or-thogonal frequency-division multiplexing (OFDM) chan-nel measurements acquired in an indoor environment. The base station (BS) is equipped with 64 antennas and the user equipment (UE) employs a single antenna. The measurements are conducted using an OFDM system operating at a center frequency of 2.61 GHz with 100 sub-carriers. To align with our problem formulation, the target CSI is defined as the channel coefficient corresponding to the first BS antenna and the first OFDM subcarrier. For evaluation, we randomly sample 100 , 400 , and 1, 000 
+
+measurements to construct few-shot training sets, while an additional 10 , 000 samples are used for testing. 
+
+3) Metrics and Baselines: To evaluate the performance of Voxel-CKM, we employ the channel prediction signal-to-noise ratio (CPSNR), defined as CPSNR (dB ) = −10 log 10 
+
+|ˆh − h|2
+
+|h|2 , (23) where ˆh and h denote the predicted and ground-truth CSI, respectively. A higher CPSNR implies more accurate channel prediction performance. To validate the effectiveness of our model, we compare Voxel-CKM with several baselines.  
+
+> •
+
+NeWRF [30]: NeWRF is a NeRF-based framework that predicts CSI directly from receiver locations. We adopt its open-source implementation and retrain the model on our datasets for a fair comparison.  
+
+> •
+
+NeRF 2 [29]: NeRF 2 is a channel modeling method originally designed for dynamic transmitter scenarios. We use its open-source code and adapt it to our setting.  
+
+> •
+
+MLP [42]: MLP learns a direct mapping from receiver locations to CSI using a fully connected network.  
+
+> •
+
+K-Nearest Neighbors (KNN) [43]: KNN predicts CSI at a test location by averaging the CSI values of its K
+
+nearest neighbors in the training set, where we set K = 3 
+
+in all experiments. 
+
+B. Evaluation over Simulated Datasets 1) Few-Shot Performance: Table II presents the few-shot performance across three indoor environments under differ-ent sampling budgets. It is evident that our Voxel-CKM consistently outperforms all the baselines, with particularly pronounced advantages in the extreme few-shot regime. When only 100 training samples are available, most baseline methods suffer from severe performance degradation, exposing their strong reliance on dense measurements. In contrast, Voxel-CKM maintains stable and reliable prediction performance across all environments. This robustness can be attributed to the explicit voxelized representation and transmitter-aware prior, which provide strong inductive bias under sparse mea-surements. As the training set grows to 400 and 1, 000 sam-ples, Voxel-CKM continues to deliver superior performance, achieving CPSNR improvements of up to 2 dB over the strongest baseline. These results underscore the reliability of Voxel-CKM, which remains effective across a wide range of sampling budgets. 
+
+2) Fast Learning Behavior: To evaluate the fast-learning behavior of our approach, we analyze the training convergence curves of Voxel-CKM under different sampling budgets in the conference room. As illustrated in Fig. 6, Voxel-CKM exhibits faster convergence than NeWRF across all sampling budgets, requiring only about one-fifteenth of the training time to reach comparable performance. This acceleration stems from the explicit voxelized RF radiance field, which provides a structured representation that accelerates the learning process. As a result, Voxel-CKM achieves highly efficient construction and supports rapid adaptation to new data, making it suitable for practical scenarios. 90 10 20 30 40 50 60 Training Time (min) (a)                                                             
+
+> 0
+> 5
+> 10
+> 15
+> 20 CPSNR (dB)
+> 15x
+> 100-Samples
+> Voxel-CKM (Ours) NeWRF
+> 010 20 30 40 50 60 Training Time (min) (b)
+> 0
+> 5
+> 10
+> 15
+> 20
+> 25
+> 14x
+> 400-Samples
+> Voxel-CKM (Ours) NeWRF
+> 010 20 30 40 50 60 Training Time (min) (c)
+> 0
+> 5
+> 10
+> 15
+> 20
+> 25
+> 16x
+> 1000-Samples
+> Voxel-CKM (Ours) NeWRF
+> Fig. 6. Comparison of training convergence curves between Voxel-CKM and NeWRF under different sampling budgets: (a) 100 samples, (b) 400 samples, (c) 1,000 samples. We mark the time required for Voxel-CKM to attain the peak CPSNR of NeWRF and indicate the corresponding relative speedup. TABLE III PERFORMANCE COMPARISON ON THE REAL -WORLD DATASET UNDER DIFFERENT SAMPLING BUDGETS M.Method Metric M= 100 M= 400 M= 1 ,000
+> NeWRF [30] CPSNR (dB) ↑0.07 2.98 7.54
+> Time (min) ↓98 .55 96 .57 99 .08
+> NeRF 2[29] CPSNR (dB) ↑−1.09 −0.67 −0.57
+> Time (min) ↓160 .88 163 .02 167 .99
+> Voxel-CKM CPSNR (dB) ↑5.34 8.71 13 .36
+> Time (min) ↓9.55 9.47 9.66
+
+C. Evaluation over Real-World Datasets 
+
+To further demonstrate the practical applicability of our approach, we compare Voxel-CKM with baseline methods on a real-world MIMO dataset collected by Katholieke Univer-siteit Leuven [41]. This dataset captures realistic propagation characteristics and reflects practical non-idealities arising from hardware impairments, providing a challenging evaluation scenario. Among the evaluated methods, NeWRF and Voxel-CKM require DoA information for ray sampling, which is not explicitly provided in the real-world dataset. To address this issue, we adopt a simple geometric approximation based on the known transmitter and receiver locations. Specifically, we first compute the line-of-sight (LoS) direction from the transmitter to the receiver, and then uniformly sample 18 
+
+additional directions over the angular domain, yielding a total of 19 candidate DoAs. This DoA configuration is applied consistently to all DoA-dependent methods throughout the experiments. Table III summarizes the performance comparison on the real-world dataset under different sampling budgets. Voxel-CKM delivers higher CPSNR than NeWRF and NeRF 2 across all settings. The performance gap is particularly pronounced in the extremely sparse setting with M = 100 , where the baseline models obtain CPSNR values close to 0 dB, sug-gesting limited prediction fidelity in the few-shot regime. In contrast, Voxel-CKM remains effective and achieves a                                    
+
+> TABLE IV PERFORMANCE COMPARISON UNDER DENSE SAMPLING IN THE CONFERENCE ROOM SCENARIO .Method Metric M= 3 ,000 M= 6 ,000 M= 10 ,000
+> NeWRF [30] CPSNR (dB) ↑23 .85 24 .34 24 .61
+> Time (min) ↓98 .50 96 .44 101 .21
+> NeRF 2[29] CPSNR (dB) ↑−1.39 −0.88 −0.27
+> Time (min) ↓168 .87 170 .10 167 .55
+> Voxel-CKM CPSNR (dB) ↑27 .83 29 .05 29 .64
+> Time (min) ↓17 .40 17 .48 17 .58
+
+CPSNR of 5.34 dB, demonstrating its stability and robustness under practical deployment scenarios. In addition, Voxel-CKM requires substantially lower training time than NeWRF across all evaluated settings, indicating its efficiency for practical applications. 
+
+D. Evaluation under Extended Settings 
+
+In this subsection, we conduct additional experiments to evaluate the robustness of Voxel-CKM under extended set-tings. Specifically, we consider two scenarios: 1) dense mea-surements and 2) the OFDM setting. 
+
+1) Performance under Dense Measurements: In Table IV, we evaluate the performance of different methods under dense measurements in the conference room scenario at 2.412 GHz. Specifically, the number of training measurements is increased to M = 3 , 000 , 6, 000 , and 10 , 000 . To accommodate these larger training sets, we train our models for 50 ,000 iterations, while keeping all other experimental settings unchanged. As reported in Table IV, Voxel-CKM consistently achieves higher CPSNR across all dense sampling configurations. No-tably, the performance of Voxel-CKM continues to improve as the number of measurements increases, demonstrating its ability to effectively exploit additional supervision beyond the few-shot regime. Additionally, Voxel-CKM maintains signifi-cantly lower training time compared to the baseline methods. This behavior can be attributed to the explicit voxelized RF 10                                        
+
+> TABLE V PERFORMANCE COMPARISON ON THE OFDM SETTING UNDER DIFFERENT SAMPLING BUDGETS MIN THE CONFERENCE ROOM SCENARIO .Method Metric M= 100 M= 400 M= 1 ,000
+> NeWRF [30] CPSNR (dB) ↑12 .34 19 .88 25 .19
+> Time (min) ↓142 .50 145 .55 144 .88
+> NeRF 2[29] CPSNR (dB) ↑−1.71 −1.55 −1.47
+> Time (min) ↓188 .55 189 .05 191 .20
+> Voxel-CKM CPSNR (dB) ↑15 .66 20 .08 26 .79
+> Time (min) ↓28 .50 28 .95 29 .17
+
+radiance field representation, which enables efficient CKM construction across a wide range of sampling budgets. 
+
+2) Performance under OFDM Setting: We further evalu-ate the proposed Voxel-CKM under an OFDM transmission setting to examine its ability to model frequency-selective channels. Unlike the single-carrier case, an OFDM system models the wireless channel as a set of parallel subcarrier re-sponses in the frequency domain, where the CSI is represented as a vector across subcarriers. Following prior work [30], we construct a simulated OFDM dataset using the MATLAB platform. The OFDM system operates at a 20 MHz bandwidth with 64 subcarriers, among which 52 subcarriers are used for channel measurements. All experiments are conducted in the conference room scenario, and results are reported for different measurement budgets M .To extend Voxel-CKM to the OFDM setting, we introduce two straightforward modifications. First, the density grid is augmented with an additional subcarrier dimension, resulting in a grid of size I × J × K × Nc, where Nc = 52 represents the number of subcarriers. Second, the output dimension of the lightweight decoder is adjusted to jointly predict the radiance coefficients across all subcarriers. For a fair comparison, the baseline methods are adapted to the OFDM setting by adjusting their output layers to match the dimension of the CSI vector. In the OFDM setting, CPSNR is computed over the multi-subcarrier CSI vector, defined as CPSNR (dB ) = −10 log 10 
+
+|| ˆh − h|| 22
+
+|| h|| 22
+
+, (24) where ˆh ∈ CNc and h ∈ CNc denote the predicted and ground-truth CSI vectors, respectively. As shown in Table V, Voxel-CKM outperforms existing methods across different measurement budgets. This indi-cates that the proposed Voxel-CKM can effectively capture frequency-selective propagation characteristics across multiple subcarriers, leading to accurate CSI prediction in OFDM settings. In terms of training efficiency, although the CSI dimensionality increases substantially due to multi-subcarrier modeling, Voxel-CKM achieves a training time of approx-imately 29 minutes, while the other methods require more than 100 minutes. These results demonstrate that the proposed Voxel-CKM still supports fast learning even in challenging OFDM settings. 
+
+E. Complexity Analysis 
+
+To assess the efficiency and practicality of Voxel-CKM, we conduct a comprehensive complexity analysis from two aspects: space complexity and computational complexity. The space complexity quantifies the asymptotic storage cost of the learnable parameters, while the computational complexity measures the number of operations required for a forward pass. Let NSH denote the feature dimension after SH encoding. The detailed complexity analysis is presented as follows. 
+
+1) Space Complexity: The space complexity of Voxel-CKM arises from the VM factors and the lightweight decoder.  
+
+> •
+
+VM Factors: Under the VM decomposition in Eq. (11a), the density grid is represented by R1 components, each consisting of three vector factors, three matrix factors, and three scalar coefficients. Ignoring constant factors, the corresponding storage cost is O R1
+
+ I + J + K +
+
+IJ + IK + JK ). The feature grid follows the same VM structure with rank R2, except that each scalar coefficient is replaced by a D-dimensional vector. This gives a complexity of O R2(I + J + K + IJ + IK + JK + D).Assuming I, J, and K are O(N ), the overall space complexity of the VM factors can be given as 
+
+O (R1 + R2)N 2 + R2D. (25) Compared with dense voxel grids, which require 
+
+O(N 3D) parameters, the VM decomposition reduces the storage cost from cubic to quadratic order in the grid resolution.  
+
+> •
+
+Lightweight Decoder: The lightweight decoder trans-forms the SH-encoded direction and interpolated feature into a complex radiance coefficient. Ignoring biases and constant factors, it introduces a storage cost of 
+
+O NSH Nhid + DN hid 
+
+, (26) where the two terms correspond to the linear projections applied to the SH-encoded direction and the interpolated feature, respectively. In summary, the space complexity of Voxel-CKM is 
+
+Cspace = O (R1 + R2)N 2 + R2D + ( NSH + D)Nhid 
+
+. (27) This complexity can be controlled via the grid resolution N ,the VM ranks R1 and R2, the feature dimension D, the SH encoding dimension NSH , and the hidden dimension of the lightweight decoder Nhid .
+
+2) Computational Complexity: The computational complex-ity of Voxel-CKM is dominated by three operations: field querying, lightweight decoding, and radiance rendering.  
+
+> •
+
+Field Querying: For each sampled point, the interpola-tion operation incurs an O(1) cost for each VM factor. The per-point querying cost is therefore determined by the subsequent aggregation steps. According to Eq. (12), the density value is computed by aggregating R1 compo-nents, leading to a cost of O(R1). For the feature grid, the aggregation is performed over R2 components across 
+
+D feature dimensions, which gives a cost of O(R2D).Therefore, the complexity of per-point field querying is 11                    
+
+> TABLE VI ABLATION STUDY ON THE VM DECOMPOSITION .Method #Params Training Time ↓CPSNR ↑
+> w/o VM 756 .04 M68 .49 min 4.42 dB w/ VM (Ours) 17 .37 M10 .19 min 17 .46 dB
+
+O(R1 + R2D). Since the query is evaluated at every sampled point along each ray, the overall complexity is 
+
+O Nr Ns(R1 + R2D). (28)  
+
+> •
+
+Lightweight Decoding: The computational cost of the decoder is dominated by the linear projections of the SH-encoded direction and the interpolated feature. Con-sidering Nr rays and Ns sampled points per ray, the computational complexity of the decoder is 
+
+O Nr NsNhid (NSH + D). (29)  
+
+> •
+
+Radiance Rendering: The computational complexity of radiance rendering mainly arises from computing the ac-cumulated transmittance Tij and aggregating the radiance contributions according to Eq. (9). Since these operations involve only element-wise scalar computations, the result-ing rendering complexity is 
+
+O Nr Ns
+
+. (30) Combining the costs of field querying, lightweight de-coding, and radiance rendering, the overall computational complexity of Voxel-CKM is given by 
+
+Ccomp = O
+
+
+
+Nr Ns
+
+R1 + R2D + Nhid (NSH + D)
+
+, (31) which scales linearly with the number of rays Nr and the per-ray radiator count Ns. Notably, this complexity is independent of the grid resolution, since the forward pass queries the voxelized RF radiance field only at sampled points rather than traversing the entire grid. This resolution-independent query cost supports efficient CKM construction even when high-resolution grids are used. 
+
+F. Ablation Studies 
+
+In this subsection, we evaluate the effectiveness of key design components in Voxel-CKM through ablation studies. All experiments are conducted in the conference room scenario with 100 training samples. 
+
+1) Ablation on the VM Decomposition: Table VI investigates the effectiveness of the VM decomposition. The variant with-out VM directly parameterizes the voxelized RF radiance field using dense voxel grids, whereas our Voxel-CKM employs VM decomposition for a low-rank factorized representation. For a fair comparison, both methods use the same voxel grid resolution, with I = J = K = 300 . As shown in Table VI, incorporating VM decomposition substantially reduces the model size, decreasing the number of learnable parameters by more than an order of magnitude. This compact representation leads to a remarkable improvement in training                                          
+
+> TABLE VII ABLATION STUDY ON THE TRANSMITTER PRIOR .Method Training Time ↓CPSNR ↑
+> w/o Transmitter Prior 10 .18 min 8.45 dB w/ Transmitter Prior (Ours) 10 .19 min 17 .46 dB TABLE VIII ABLATION STUDY ON THE REGULARIZED LOSS FUNCTION .Loss Function Training Time ↓CPSNR ↑LMSE 9.07 min 5.72 dB
+> LMSE +Lℓ19.44 min 6.43 dB
+> LMSE +LTV 9.98 min 16 .35 dB
+> LMSE +Lℓ1+LTV (Ours) 10 .19 min 17 .46 dB
+
+efficiency, enabling faster convergence during optimization. More importantly, this improvement does not come at the cost of performance, with a CPSNR of 17 .46 dB achieved. In contrast, the variant without VM yields an excessively large model, which is difficult to optimize and exhibits infe-rior performance in the few-shot regime. These observations confirm the advantage of the proposed VM decomposition, which provides a compact representation for the voxelized RF radiance field, facilitating efficient CKM construction and improving CSI prediction performance. 
+
+2) Ablation on the Transmitter Prior: To evaluate the contribution of the transmitter prior, we compare the CPSNR performance with and without this prior. As shown in Table VII, the incorporation of the transmitter prior leads to a noticeable improvement in performance, with CPSNR increas-ing by over 9 dB. This enhancement arises from the strong inductive bias provided by the transmitter prior, which guides the optimization of Voxel-CKM under sparse measurements, improving sample efficiency. Consequently, our Voxel-CKM excels in few-shot learning tasks, demonstrating potential for practical applications. 
+
+3) Ablation on the Regularized Loss Function: Table VIII presents an ablation study on the effect of different loss com-ponents in Voxel-CKM. We observe that Voxel-CKM with the complete loss function outperforms all other configurations. When only the MSE loss is used, the model demonstrates reduced stability and inferior performance. The inclusion of ℓ1
+
+regularization improves generalization by constraining exces-sive parameter magnitudes in the VM factors, leading to more stable training and a slight increase in CPSNR. Incorporating TV regularization further enhances the model’s performance, contributing to its ability to penalize large variations between neighboring factors, thus mitigating overfitting. Together, these loss components substantially improve the robustness and generalization of the model in the few-shot regime. 
+
+G. Visualization of Learned CKM 
+
+Fig. 7 provides qualitative visualizations of the learned CKMs in the conference room and office environments. 12 Conference (M=400) CPSNR     
+
+> Ground Truth
+> -0.35 dB
+> NeRF 2
+> 24.31 dB
+> NeWRF
+> 28.35 dB
+> Voxel-CKM
+> Office (M=400) CPSNR -0.60 dB 8.67 dB 10.97 dB
+> 100
+> 80
+> 60
+> 40
+> Gain (dB)
+> 100
+> 90
+> 80
+> 70
+> 60
+> 50
+> 40
+> Gain (dB)
+
+Fig. 7. Visualization of learned CKMs from different models. The first column presents the top-down floor plans of two indoor environments. The second column shows the corresponding channel gain heatmaps at a height of 1.2 m. The remaining columns display the learned heatmaps of different models, with each model trained using 400 samples. 
+
+Specifically, we present the channel gain heatmaps at a height of 1.2 m for each environment, comparing the ground truth with the predictions of different models. As shown in Fig. 7, Voxel-CKM effectively captures fine-grained characteristics of wireless channels, including interference patterns and coher-ent spatial variations. Moreover, the learned maps preserve shadowing and occlusion effects induced by walls, leading to spatially structured channel distributions that align well with the ground truth. These visualizations complement the quantitative analysis, highlighting the effectiveness of Voxel-CKM in capturing environment-aware representations. VI. C ONCLUSION 
+
+In this paper, we proposed Voxel-CKM, a novel framework for fast and few-shot CKM construction. Specifically, we first formulated a voxelized RF radiance field that replaces implicit neural representations with explicit voxel grids to efficiently capture the spatial variation of wireless channels. Building upon this, we introduced a compact VM decomposition to parameterize the voxel grids using a small set of matrices and vectors, significantly accelerating the learning process. To enable few-shot learning, we further incorporated a transmitter prior that provides an inductive bias to guide model training under sparse measurements. Additionally, a regularized loss function was designed to mitigate overfitting and stabilize optimization. Experimental results demonstrated that the pro-posed Voxel-CKM achieves substantially faster convergence than existing baselines while delivering superior performance in few-shot scenarios. These results highlight the potential of Voxel-CKM as an efficient and practical solution for CKM construction in future wireless communication systems. REFERENCES [1] H. Lu and Y. Zeng, “Communicating with extremely large-scale ar-ray/surface: Unified modeling and performance analysis,” IEEE Trans. Wireless Commun. , vol. 21, no. 6, pp. 4039–4053, Jun. 2022. [2] Z. Liu, L. Wang, L. Xu, and Z. Ding, “Deep learning for efficient CSI feedback in massive MIMO: Adapting to new environments and small datasets,” IEEE Trans. Wireless Commun. , vol. 23, no. 9, pp. 12 297– 12 312, Sep. 2024. [3] K. Zhou, G. Zhang, Y. Cai, Q. Hu, G. Yu, and A. Lee Swindlehurst, “Feature allocation for semantic communication with space-time impor-tance awareness,” IEEE Trans. Wireless Commun. , vol. 24, no. 10, pp. 8847–8862, Oct. 2025. [4] J. Kim, J. Choi, J. Park, A. Alkhateeb, and N. Lee, “FDD massive MIMO: How to optimally combine UL pilot and limited DL CSI feedback?” IEEE Trans. Wireless Commun. , vol. 24, no. 2, pp. 926– 939, Feb. 2025. [5] J. Mirza and B. Ali, “Channel estimation method and phase shift design for reconfigurable intelligent surface assisted MIMO networks,” IEEE Trans. Cognit. Commun. Netw. , vol. 7, no. 2, pp. 441–451, Jun. 2021. [6] E. Shtaiwi, H. Zhang, S. Vishwanath, M. Youssef, A. Abdelhadi, and Z. Han, “Channel estimation approach for RIS assisted MIMO systems,” 
+
+IEEE Trans. Cognit. Commun. Netw. , vol. 7, no. 2, pp. 452–465, Jun. 2021. [7] P. Wang, B. He, B. Yin, H. Zeng, and W. Wang, “A structure-shared dual-polarization endfire MIMO antenna based on uniform circular array for positioning EMIS,” IEEE Trans. Veh. Technol. , vol. 73, no. 4, pp. 5925–5929, Apr. 2024. [8] Y. Zeng, J. Chen, J. Xu, D. Wu, X. Xu, S. Jin, X. Gao, D. Gesbert, S. Cui, and R. Zhang, “A tutorial on environment-aware communications via channel knowledge map for 6G,” IEEE Commun. Surveys Tuts. , vol. 26, no. 3, pp. 1478–1519, 3rd Quart. 2024. [9] Y. Zeng and X. Xu, “Toward environment-aware 6G communications via channel knowledge map,” IEEE Wireless Commun. , vol. 28, no. 3, pp. 84–91, Jun. 2021. [10] Z. Ren, J. Zhou, J. Xu, L. Qiu, Y. Zeng, H. Hu, J. Zhang, and R. Zhang, “Channel knowledge map construction: Recent advances and open challenges,” IEEE Wireless Commun. , early access, Mar. 12, 2026, DOI: 10.1109/MWC.2026.3668205. [11] E. Dall’Anese, S.-J. Kim, and G. B. Giannakis, “Channel gain map tracking via distributed Kriging,” IEEE Trans. Veh. Technol. , vol. 60, no. 3, pp. 1205–1211, Mar. 2011. 13 
+
+[12] K. Sato, K. Suto, K. Inage, K. Adachi, and T. Fujii, “Space-frequency-interpolated radio map,” IEEE Trans. Veh. Technol. , vol. 70, no. 1, pp. 714–725, Jan. 2021. [13] A. Karttunen, A. F. Molisch, S. Hur, J. Park, and C. J. Zhang, “Spatially consistent street-by-street path loss model for 28-GHz channels in micro cell urban environments,” IEEE Trans. Wireless Commun. , vol. 16, no. 11, pp. 7538–7550, Nov. 2017. [14] O. Kanhere and T. S. Rappaport, “Calibration of NYURay, a 3D mmWave and Sub-THz ray tracer using indoor, outdoor, and factory channel measurements,” in Proc. IEEE Int. Conf. Commun. (ICC) ,Rome, Italy, May 2023, pp. 5054–5059. [15] R. Charbonnier, C. Lai, T. Tenoux, D. Caudill, G. Gougeon, J. Senic, C. Gentile, Y. Corre, J. Chuang, and N. Golmie, “Calibration of ray-tracing with diffuse scattering against 28-GHz directional urban channel measurements,” IEEE Trans. Veh. Technol. , vol. 69, no. 12, pp. 14 264– 14 276, Dec. 2020. [16] K. Li, P. Li, Y. Zeng, and J. Xu, “Channel knowledge map for environment-aware communications: EM algorithm for map construc-tion,” in Proc. IEEE Wireless Commun. Netw. Conf. (WCNC) , Austin, TX, USA, Apr. 2022, pp. 1659–1664. [17] N. Suga, R. Sasaki, M. Osawa, and T. Furukawa, “Ray tracing accelera-tion using total variation norm minimization for radio map simulation,” 
+
+IEEE Wireless Commun. Lett. , vol. 10, no. 3, pp. 522–526, Mar. 2021. [18] H. Sun, L. Zhu, and R. Zhang, “Channel gain map estimation for wireless networks based on scatterer model,” IEEE Trans. Wireless Commun. , vol. 24, no. 8, pp. 7012–7028, Aug. 2025. [19] J.-H. Lee and A. F. Molisch, “A scalable and generalizable pathloss map prediction,” IEEE Trans. Wireless Commun. , vol. 23, no. 11, pp. 17 793–17 806, Nov. 2024. [20] Z. Jin, L. You, J. Wang, X.-G. Xia, and X. Gao, “An I2I inpainting approach for efficient channel knowledge map construction,” IEEE Trans. Wireless Commun. , vol. 24, no. 2, pp. 1415–1429, Feb. 2025. [21] J. Chen, R. Gao, J. Wang, S. Sun, and Y. Wu, “Channel gain map construction based on subregional learning and prediction,” IEEE Trans. Veh. Technol. , vol. 74, no. 6, pp. 9852–9857, Jun. 2025. [22] Z. Liu, S. Zhang, Q. Liu, H. Zhang, and L. Song, “WiFi-Diffusion: Achieving fine-grained WiFi radio map estimation with ultra-low sam-pling rate by diffusion models,” IEEE J. Sel. Areas Commun. , vol. 43, no. 11, pp. 3796–3812, Nov. 2025. [23] S. Fu, Z. Wu, D. Wu, and Y. Zeng, “Generative CKM construction using partially observed data with diffusion model,” in Proc. IEEE Veh. Technol. Conf. (VTC) , Oslo, Norway, Jun. 2025, pp. 1–5. [24] X. Wang, K. Tao, N. Cheng, Z. Yin, Z. Li, Y. Zhang, and X. Shen, “RadioDiff: An effective generative diffusion model for sampling-free dynamic radio map construction,” IEEE Trans. Cognit. Commun. Netw. ,vol. 11, no. 2, pp. 738–750, Apr. 2025. [25] S. Zhang, A. Wijesinghe, and Z. Ding, “RME-GAN: A learning framework for radio map estimation based on conditional generative adversarial network,” IEEE Internet Things J. , vol. 10, no. 20, pp. 18 016–18 027, Oct. 2023. [26] Z. Liu and S. Shao, “RadioPix2pix: A GAN-based style transfer model for 2D radio map estimation,” in Proc. IEEE Veh. Technol. Conf. (VTC) ,Chengdu, China, Oct. 2025, pp. 1–5. [27] B. Mildenhall, P. P. Srinivasan, M. Tancik, J. T. Barron, R. Ramamoorthi, and R. Ng, “NeRF: Representing scenes as neural radiance fields for view synthesis,” Commun. ACM , vol. 65, no. 1, pp. 99–106, Dec. 2021. [28] B. Kerbl, G. Kopanas, T. Leimk¨ uhler, and G. Drettakis, “3D Gaussian splatting for real-time radiance field rendering,” ACM Trans. Graph. ,vol. 42, no. 4, pp. 1–14, Jul. 2023. [29] X. Zhao, Z. An, Q. Pan, and L. Yang, “NeRF2: Neural radio-frequency radiance fields,” in Proc. ACM Int. Conf. Mob. Comput. Netw. (Mobi-Com) , Madrid, Spain, Oct. 2023, pp. 1–15. [30] H. Lu, C. Vattheuer, B. Mirzasoleiman, and O. Abari, “NeWRF: A deep learning framework for wireless radiation field reconstruction and channel prediction,” in Proc. Int. Conf. Mach. Learn. (ICML) , Vienna, Austria, Jul. 2024, pp. 33 147–33 159. [31] K. Zhou, G. Zhang, H. Li, Y. Cai, S. Liu, and G. Yu, “F 4-CKM: Learning channel knowledge map with radio frequency radiance field rendering,” 
+
+IEEE Trans. Commun. , vol. 74, pp. 5684–5700, 2026. [32] C. Wen, J. Tong, Y. Hu, Z. Lin, and J. Zhang, “Neural representation for wireless radiation field reconstruction: A 3D Gaussian splatting approach,” IEEE Trans. Wireless Commun. , vol. 25, pp. 7490–7504, 2026. [33] K. Yang, G. Dong, S. Ji, W. Du, and M. Srivastava, “GSRF: Complex-valued 3D Gaussian splatting for efficient radio-frequency data synthe-sis,” in Adv. Neural Inf. Process. Syst. (NeurIPS) , San Diego, CA, USA, Dec. 2025. [34] L. Zhang, H. Sun, S. Berweger, C. Gentile, and R. Q. Hu, “RF-3DGS: Wireless channel modeling with radio radiance field and 3D Gaussian splatting,” IEEE Trans. Wireless Commun. , vol. 25, pp. 10 419–10 433, 2026. [35] L. Rudin and S. Osher, “Total variation based image restoration with free local constraints,” in Proc. Int. Conf. Image Process. (ICIP) , Austin, TX, USA, Nov. 1994, pp. 31–35. [36] M. Born and E. Wolf, Principles of Optics , 7th ed. Cambridge, U.K.: Cambridge Univ. Press, 1999. [37] D. Tse and P. Viswanath, Fundamentals of Wireless Communication .Cambridge, U.K.: Cambridge Univ. Press, 2005. [38] A. Chen, Z. Xu, A. Geiger, J. Yu, and H. Su, “TensoRF: Tensorial radiance fields,” in Proc. Eur. Conf. Comput. Vis. (ECCV) , Tel Aviv, Israel, Oct. 2022, pp. 333–350. [39] S. Elfwing, E. Uchibe, and K. Doya, “Sigmoid-weighted linear units for neural network function approximation in reinforcement learning,” 
+
+Neural Netw. , vol. 107, pp. 3–11, Nov. 2018. [40] R. Brem and T. F. Eibert, “A shooting and bouncing ray (SBR) modeling framework involving dielectrics and perfect conductors,” IEEE Trans. Antennas Propag. , vol. 63, no. 8, pp. 3599–3609, Aug. 2015. [41] A. Colpaert, S. De Bast, R. Beerten, A. P. Guevara, Z. Cui, and S. Pollin, “Massive MIMO channel measurement data set for localization and communication,” IEEE Commun. Mag. , vol. 61, no. 9, pp. 114–120, Sep. 2023. [42] X. Glorot and Y. Bengio, “Understanding the difficulty of training deep feedforward neural networks,” in Proc. Int. Conf. Artif. Intell. Statist. (AISTATS) , Sardinia, Italy, May 2010, pp. 249–256. [43] O. Anava and K. Levy, “k*-nearest neighbors: From global to local,” in 
+
+Adv. Neural Inf. Process. Syst. (NeurIPS) , Barcelona, Spain, Dec. 2016, pp. 4916–4924.
