@@ -25,3 +25,60 @@ subscriptions:
     stage: A
     diff_threshold_pct: 15
   keyword_recall_mode: or
+  intent_profiles:
+    - tag: channel-nn
+      description: 请帮我找新的能用于通信建模或者均衡的神经网络结构，比如之前的PINN和KAN可以更efficient
+      enabled: true
+      paper_sources:
+        - arxiv
+      keywords:
+        - keyword: neural network architectures
+          keyword_cn: 神经网络结构
+          query: novel neural network architectures
+        - keyword: communication channel modeling
+          keyword_cn: 通信信道建模
+          query: neural networks for communication channel modeling
+        - keyword: equalization neural networks
+          keyword_cn: 均衡神经网络
+          query: neural network based equalization
+        - keyword: Kolmogorov-Arnold networks
+          keyword_cn: Kolmogorov-Arnold网络
+          query: Kolmogorov-Arnold networks in communication
+        - keyword: efficient neural architectures
+          keyword_cn: 高效神经网络结构
+          query: efficient neural network designs for communication
+        - keyword: deep learning for communications
+          keyword_cn: 通信深度学习
+          query: deep learning techniques applied to communications
+      intent_queries:
+        - query: Find novel neural network architectures for communication channel modeling and equalization
+          query_cn: 寻找用于通信信道建模和均衡的新型神经网络结构
+          enabled: true
+          source: manual
+          note: ''
+        - query: Search for physics informed neural networks in communication systems
+          query_cn: 搜索通信系统中的物理信息神经网络
+          enabled: true
+          source: manual
+          note: ''
+        - query: Discover efficient neural network structures for adaptive equalization
+          query_cn: 发现用于自适应均衡的高效神经网络结构
+          enabled: true
+          source: manual
+          note: ''
+      updated_at: '2026-06-03T09:26:02.039Z'
+source_backends:
+  arxiv:
+    papers_table: arxiv_papers
+    use_vector_rpc: true
+    vector_rpc: match_arxiv_papers
+    vector_rpc_exact: match_arxiv_papers_exact
+    use_bm25_rpc: true
+    bm25_rpc: match_arxiv_papers_bm25
+    sync_table: arxiv_sync_status
+    sync_success_value: success
+    schema: public
+    kind: supabase
+    enabled: true
+    url: https://lyucdwgefyfbmaiopjbk.supabase.co
+    anon_key: sb_publishable_lX-oi64Uxyd7SIVv3_w2Uw_MTOojeKq
