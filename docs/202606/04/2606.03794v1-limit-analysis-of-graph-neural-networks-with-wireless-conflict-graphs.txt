@@ -1,0 +1,738 @@
+Title: Limit Analysis of Graph Neural Networks with Wireless Conflict Graphs
+
+URL Source: https://arxiv.org/pdf/2606.03794v1
+
+Published Time: Wed, 03 Jun 2026 01:35:49 GMT
+
+Number of Pages: 9
+
+Markdown Content:
+# Limit Analysis of Graph Neural Networks with Wireless Conflict Graphs 
+
+Romina Garcia Camargo Zhiyang Wang Alejandro Ribeiro 
+
+Abstract —Graph Neural Networks (GNNs) have emerged as a powerful tool for wireless resource allocation that leverages the underlying graph structure of communication networks. Their transferability property enables models trained on small-scale graphs to generalize to large-scale deployments with little performance deterioration, a desirable property for currently growing networks. Wireless networks are sparse regimes, where a single node is connected to a small number of other users. This work establishes theoretical results for transferability of GNNs over graphs derived from sparse Random Geometric Graphs (RGGs). In particular, we focus on conflict graphs of RGGs used to model interference among links. Our approach considers the closeness between RGGs and Deterministic Grid Graphs (DGG) to establish bounds in the performance loss when a model is transferred across scales. We validate our theoretical findings through the problem of link scheduling, demonstrating that our learned policies consistently outperform existing benchmarks at scale. Finally, we examine the impact of our theoretical assumptions on empirical performance. 
+
+Index Terms —transferability, graph neural networks, random geometric graphs, conflict graphs 
+
+I. I NTRODUCTION 
+
+Learning-based solutions are promising tools for addressing complex resource allocation challenges in next-generation networks. Graph Neural Networks (GNNs) are well-suited for these tasks, as the architecture exploits the underlying graph structure of wireless systems [1]–[3]. In particular, it allows for transferability: models trained on small graphs generalize to larger networks with minimal performance loss. While empirical studies show that GNNs successfully transfer in wireless settings [4], these observations lack a formal foundation. Multiple works have explored the transferability of Graph Neural Networks [5]–[9]. However, most existing frameworks typically rely on limit objects such as graphons [5] or manifolds [8], which define transferability as connectivity increases toward a dense limit. Physical constraints in wireless channels limit the number of connections per user, resulting in sparse graphs that traditional dense-limit theories fail to account for. To bridge this gap, recent work has begun analyzing transferability on sparse graphs via graphops [9] or using Random Geometric Graphs (RGGs), leveraging the geometric structure intrinsic to communication systems [10]. Resource allocation tasks such as link scheduling depend on the relationships between communication links rather than the users themselves. This is often tackled via conflict 
+
+> RGC and AR are with the Department of Electrical and Systems En-gineering, University of Pennsylvania, Philadelphia, PA (emails: {rominag, aribeiro}@seas.upenn.edu). ZW is with Halıcıo˘ glu Data Science Institute, UCSD, La Jolla, CA (email: zhw135@ucsd.edu).
+
+graphs, where links are modeled as nodes and edges represent interference or shared resources [11], [12] (Section II). However useful, it creates a specific sparse regime distinct from the underlying physical network. In this work we establish the theoretical analysis for transferability of GNNs on conflict graphs (Sections III and IV). Extending our framework [10], we model wireless connectivity using Random Geometric Graphs (RGGs) and prove that transferability holds via Deterministic Grid Graphs (DGGs). By leveraging their spatial periodicity, we overcome the analytical challenges posed by the topological irregularities of random node placements. Our results demonstrate that as the number of nodes increases, transferability is guaranteed for conflict graphs of RGGs that approximate conflict graphs of DGGs. We validate our theoretical framework with numerical experiments on the wireless link scheduling problem, incorpo-rating a minimum transmission requirement per link (Section V). The GNN is trained on conflict graphs derived from RGGs to select which links should be scheduled at each time step. Empirical results demonstrate that our transferred model consistently outperforms benchmarks at larger scales. Furthermore, we characterize the robustness of our RGG-DGG proximity assumption by analyzing model performance as the graph topology deviates from a grid-like structure. II. R ESOURCE ALLOCATION ON CONFLICT GRAPHS 
+
+Let G = ( V, E) be a graph with |V| = v nodes and |E| = e
+
+edges. Its conflict graph GC = ( VC , EC ) will have |V C | = e
+
+nodes, one for each edge in G. An edge (i, j ) ∈ E C will exist if edges i and j are incident on the same node in G. Figure 1 shows an illustration of graphs and their conflict graphs. In wireless communication settings, conflict graphs are widely used to model resource allocation tasks (Section II-A ,[4]), as they represent dependencies or forbidden combinations between the edges of the original graphs [11], [12]. In particular, these models are used to analyze the links of the network, such as via the primary interference model for wireless link scheduling [13] (Section II-B). 
+
+A. Optimal Resource Allocation in Wireless Settings 
+
+Let there be a network with m users, where each user is associated with a state at time t given by the vector 
+
+xm(t) ∈ Rm. Given the channel gains in Sm(t) ∈ Rm×m,where [Sm(t)] ij is the gain from user i to user j, we are interested in allocating resources across the network. Let 
+
+p(xm(t), Sm(t)) be a mapping from network states to the instantaneous resource allocation policy across the network. 
+
+> arXiv:2606.03794v1 [cs.LG] 2 Jun 2026
+
+Figure 1: Illustration of Random Geometric Graphs (blue) and their corresponding conflict graphs (pink) as the noise in positions increases. Observe that the RGG deviates from a grid-like structure as the positional noise increases. The system will then return a reward given the allocation, 
+
+f (p(xm(t), Sm(t)); xm(t), Sm(t)) . Considering the expecta-tion over the stationary joint distribution of (xm, Sm), we focus on the long-term average performance as 
+
+rm = E[f (p; xm, Sm)] . (1) Consider a utility function u0(rm) and long-term system constraints u(·). Our goal is to maximize the expected reward (1) by designing our allocation policy p(xm, Sm):
+
+p⋆(xm, Sm) = arg max 
+
+> p(xm,Sm)∈P (xm,Sm)
+
+u0(rm), (2) s.t. rm = E[f (p(xm, Sm); xm, Sm)] ,
+
+u(rm) ≥ 0.
+
+The objective in Equation (2) is often nonconvex in p,which makes finding a solution challenging. The common approach introduces a parameterized policy Φ(xm, Sm; Hm),with parameters Hm ∈ Rs and learns a solution (Section III). 
+
+B. Example: Wireless Link Scheduling 
+
+Let G be wireless network with m links, where pi(t) ∈{0, 1} denotes the status of link i ∈ { 1, 2, . . . , m }. Entry 
+
+pi(t) = 1 indicates that the link i is scheduled to transmit at time step t. Two links interfere each other if they are scheduled at the same time and share a common user [13]. The vector 
+
+p(t) = [ pi(t)] 1≤i≤m ∈ { 0, 1}m describes the scheduling status of all links and is therefore supported on the edges of G.Let us define GC the conflict graph of G, then p(t) is supported on the nodes of GC . We denote the adjacency matrix of GC as Am ∈ { 0, 1}m×m. The successful transmissions 
+
+rm(p) resulting from a schedule p(t) can be computed via the Hadamard product between the schedules and nonnegative projection [1 − Amp(t)] +,
+
+rm(p) = p(t) ⊙  1 − Amp(t) 
+
+> +
+
+. (3) We are interested in the average rate over a time horizon. Wireless link scheduling seeks a policy that maximizes the long-term average of the sum rate rm(p) over T time steps. The policy must also satisfy the interference constraints intrinsic to the topology of the network. We incorporate a minimum transmission requirement for each link, ∆ ∈ Rm 
+
+> +
+
+, such that all links must transmit at least a fraction of time: 
+
+p⋆(1 : T ) = arg max 
+
+> s(t)∈{ 0,1}K
+
+1
+
+T
+
+> T
+
+X
+
+> t=1
+
+1⊤p(t) ⊙  1 − Amp(t) 
+
+> +
+
+,
+
+s.t. 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+p(t) ⊙  1 − Amp(t)  
+
+> +
+
+≥ ∆.
+
+(4) To solve this constrained optimization task we turn to the Lagrangian dual domain, defining a new learning objective that combines our objective function and a penalty term for constraint violations. Nonetheless, Lagrangian maximizers will not result in workable policies as they will not vary over time. By leveraging the dual descent dynamics, we can incorporate the evolution of the dual variable λ into our learning via state augmentation [14]. More details about the problem formulation and the algorithm can be found in [3]. III. T RAINING BY TRANSFERENCE 
+
+Finding optimal solutions to resource allocation problems such as the one in Equation (2) is often computationally pro-hibitive. Common approaches approximate these solutions by using a parameterized policy Φ(xm, Am; Hm). The objective is to identify the optimal parameters H⋆m ∈ Rs that maximize the network utility while satisfying the expected constraints: 
+
+H⋆m = arg max 
+
+> Hm∈Rs
+
+u0(rm), (5) s.t. rm = E[f (Φ(xm, Am; Hm); xm, Am)] ,
+
+u(rm) ≥ 0.
+
+2In wireless applications, Graph Neural Networks (GNNs) are the preferred architecture for Φ. By training over diverse channel realizations, GNNs learn efficient allocation policies that maintain awareness of the network topology. Let the graphs used for training have m nodes, and assume we want to execute on graphs with n nodes, such that 
+
+m < n. In this case, the evaluation consists of finding policies Φ(xn, An; H⋆m). Note that while the descriptions of the network state ( xn, An) now have n dimensions, the parameter matrix H⋆m is independent of the number of nodes in the graph. This implies we can execute a GNN trained on a small graph on a larger graph, i.e. transfer the GNN. Nonetheless, it is necessary to assess whether these policies remain optimal as the network scales. To analyze this, we first present the GNN architecture in Section III-A .Furthermore, we introduce Random Geometric Graphs and their deterministic grid counterparts (Section III-B ) to later present our transferability results (Section IV). 
+
+A. Graph Neural Networks 
+
+A Graph Neural Network is composed of a cascade of layers, each containing a graph convolutional filter and a pointwise nonlinearity γ, with γ : R → R. Given a graph signal x ∈ Rm,a graph convolutional filter is defined as follows: 
+
+y =
+
+> K−1
+
+X
+
+> k=0
+
+hkAkx, (6) where K is the order of the filter and {hk}K−1 
+
+> k=0
+
+are the coeffi-cients. The filter is a polynomial on a matrix representation of the graph, A ∈ Rm×m.A single-layer GNN applies the nonlinearity γ to the output of the graph filter in Equation (6) . For a GNN with L layers, the l-th layer takes xl−1, the output of the previous layer, as input signal. This is later processed via γ to obtain xl:
+
+xl = γ
+
+> K−1
+
+X
+
+> k=0
+
+hlk Akxl−1
+
+!
+
+. (7) We can summarize the weights in a matrix H ∈ H as the trainable parameters of the network. 
+
+B. Deterministic and Random Geometric Graphs 
+
+Define a metric space of size W × W and place v nodes randomly following a uniform distribution in the space, V ∼ U2(0 , W ). We create an edge between any two nodes that meet that their Euclidean distance is at most a fixed radius 
+
+r, E = {(i, j ) : d(i, j ) ≤ r}. These sets define a Random Geometric Graph (RGG) [15], G = ( V, E), which appear naturally in wireless settings due to the relation between the fixed radius r and connectivity determined by signal strength. Define a regular lattice in a Euclidean space with v inter-sections. By placing a node in each intersection and creating links between neighboring nodes following the grid, we can obtain a deterministic grid graph (DGG), ˜G = ( ˜V, ˜E).RGGs can be seen as a perturbation of DGGs, resulting from adding Gaussian noise η ∼ N (0 , σ 2) to the node positions. If the perturbation is small, an analysis can be done that seamlessly relates RGGs and DGGs [10]. As observed in Figure 1 (see σ = 0 ), the conflict graph of a DGG will also be highly regular and can be easily related to the conflict graph of a RGG. This forms the basis of the theoretical analysis we present in Section IV. IV. T RANSFERABILITY IN CONFLICT RANDOM GEOMETRIC 
+
+GRAPHS 
+
+Consider a DGG ˜G with m1 edges. Construct a RGG G
+
+by adding positional noise to ˜G, connecting the nodes given a fixed radius such that it has m2 edges with m1 ≃ m2. In order to study the transferability of GNNs from conflict Random Geometric Graphs to conflict Deterministic Grid Graphs, we consider the normalized adjacency matrices of conflict graphs 
+
+˜Am1 ∈ Rm1×m1 , Am2 ∈ Rm2×m2 .To assess the similarity between a DGG and a RGG, we are interested in comparing their adjacency matrices. To enable the comparison we zero-pad the normalized adjacency matrices to obtain A, ˜A ∈ R(m1+m2)×(m1+m2). By embedding both graphs into a spatially-aligned vector space, the perturbation captures only the mismatched edges between the two topolo-gies. We assume that GNN consists of layers cascading the graph filter, which is assumed to be integral Lipschitz continuous and the normalized Lipschitz point-wise nonlinearities [16]. We note that these are reasonable assumptions and have been implemented widely in theory and in practice. With these definitions, we present in Theorem 1 the result for transferability of GNNs between RGG and DGG. 
+
+Theorem 1 Let ˜G be a DGG with m1 edges and G be a RGG with m2 edges. Define A, ˜A ∈ { 0, 1}(m1+m2)×(m1+m2)
+
+the zero padded adjacency matrices of their conflict graphs, such that ∥A − ˜A∥ ≤ ε. Let Φ(x, A; H) be a L-layer GNN with a graph filter H that is integral Lipschitz with constant C
+
+and a normalized Lipschitz nonlinearity γ. The GNN can be transferred between ˜A and A with minimal performance loss: 
+
+∥Φ(x, ˜A; H) − Φ(x, A; H)∥ ≤ 2L√εC ∥x∥. (8) 
+
+Proof. See Appendix VII-A. Theorem 1 shows that the error between running a GNN on a DGG and a RGG is small, provided the graphs are close. We then analyze the transferability of GNN trained on a DGG of size m to a DGG of size n, with m < n . This is an extension of the transferability studies of CNNs [17]. Let these two graphs be described via their normalized adjacency matrices ˜Am ∈ Rm×m, ˜An ∈ Rn×n.Let L( ˜Am, H) be the performance measure associated with running a GNN on ˜Am [17]. We assume an input x and compare the GNN to the optimal policy p∗.
+
+L( ˜Am, H) = 1
+
+m ∥Φ(x, ˜Am; H) − p∗∥2 (9) Similarly, let L( ˜An, H) be the performance when applied to 
+
+˜An. We compare the difference between the loss functions by 3considering a window of the large graph, ˜An, and comparing it to the small graph, ˜Am.
+
+Theorem 2 Let Φ(x, ˜An; H) be the parameterized policy that achieves a performance loss L( ˜An, H) when applied on a grid graph with size n and achieves a loss of L( ˜Am, H) when applied on another grid graph with size m. Suppose n > m ,the difference of these two losses can be bounded as 
+
+L( ˜An, H) ≤ L ( ˜Am, H) + CE[x2] + 2 
+
+q
+
+L( ˜Am, H)CE[x2],
+
+(10) 
+
+where C = H2 
+
+> K
+> m
+
+(2 √mK +K2) and HK = PK−1 
+
+> k=0
+
+|hk|∥ ˜Am∥k 
+
+> 2
+
+.Proof. See Appendix VII-B. In Theorem 6, the performance difference between the evaluation on small and large DGGs is bounded by a small constant under mild assumptions. As n increases, the interior nodes of both graphs have the same neighborhoods and the boundary effects go to zero. A GNN trained on small RGGs can be transferred to small DGGs (Theorem 1). Moreover, a GNN that performs close to optimality on small DGGs can maintain this performance for large DGGs (Theorem 6). Finally, because performance in large DGGs will be similar to performance in large RGGs, it follows that a GNN can be trained in small RGGs and transferred to large RGGs with minimal performance loss as long as the RGGs can be seen as a shift of its corresponding DGGs with ∥A − ˜A∥ ≤ ε. We summarize this result in the following theorem: 
+
+Theorem 3 Under assumptions analogous to Theorem 1, consider an L-layer GNN Φ(x, A; H) trained to minimize the loss L(Am, H) for RGGs of size m, such that L(Am, H) ≤ ζ
+
+and suppose the deviation of RGG to its corresponding DGG is bounded by ϵ. The GNN can be transferred to graphs of size n with minimal performance deterioration: 
+
+|L (An, H) − L (Am, H)| =
+
+O pζ  √ϵ∥xn∥ + √ϵ∥xm∥ + ϵ∥xn∥2 + ϵ∥xm∥2
+
+!
+
+(11) 
+
+Proof. See Appendix VII-C. V. N UMERICAL EXPERIMENTS 
+
+We conduct simulations on the wireless link scheduling problem as per the formulation in Equation (4) .1. We observe the transferability of Graph Neural Networks over conflict graphs in practice, evaluating the scalability of the learned policies via comparisons with baselines at scale (Section V-A ). Furthermore, we analyze how robust the policies are to different levels of perturbation between a DGG and a RGG (Section V-B). 
+
+> 1The code used to run the experiments and the implementation details are available for reproducibility https://github.com/romm32/rgg_transferability
+
+Figure 2: Comparison between the percentage of successfully scheduled links between SAGNN (ours) and FPLinQ. Our model is trained for graphs with K ≃ 500 links and transferred to larger scales without significant performance loss. We consider a GNN with L = 3 layers, with leaky ReLU pointwise nonlinearities. The output signal of the last layer is passed through a sigmoid nonlinearity in order to obtain entries between 0 and 1. The performance of the algorithm is measured by binarizing the continuous output of the GNN with a threshold of 0.5 to decide which links to turn on. We consider T = 200 time steps. The percentage of links transmitting a fraction lower than ∆ = 0 .1 of the time steps (i.e. violating the constraint), along with the long-term average percentage of links transmitting without interference (i.e. the objective function) are the two main performance metrics. All evaluations presented are on datasets unseen during training. 
+
+A. Performance at Scale 
+
+The policy was trained using 100 graphs with K ≃ 500 .The graphs are RGGs obtained via DGGs, adding positional noise with σ = 0 .01 (see Figure 1). Figure 2 shows how our State Augmented GNN (SAGNN) transfers across scales. Performance does not degrade as we evaluate on five datasets with different scales, remaining close to 20-25% of active links. Note that we present the average over 100 graphs on each dataset. The values achieved for the total average rates are close to the size of the maximum independent sets of the graphs, which represents the optimal solution to this problem. We compare our results with FPLinQ [18], a fractional programming approach to solve link scheduling that focuses on instantaneous rate maximization. We perform close to this state-of-the-art baseline and achieve runtimes that are orders of magnitude more efficient (a speed up of 4x for K ≃ 500 
+
+and an improvement of 30x for K ≃ 2500 ). Furthermore, our GNN-based policy can be implemented in a distributed manner, allowing practical use. In Figure 3 we show a histogram of the average rates achieved by the different links, comparing both algorithms for scales K = {500 , 2500 }. SAGNN diversifies the schedules across all links, with the vast majority achieving rates higher than the 10% transmission requirement. Nonetheless, the FPLinQ baseline repeatedly schedules the same links, not allowing for fair sharing of the resources. 4Figure 3: Average rates achieved by different links, presented as the percentage of time T each link is scheduled. The minimum transmission requirement is set to ∆ = 10% (red). 
+
+Figure 4: Study of the robustness of policies trained for a given level of position noise σT and evaluated on σE . We present the percentage of links violating the constraint. 
+
+B. Robustness to Different Perturbation Levels 
+
+Our theoretical results in Theorem 7 assume that the RGG must be close enough to a DGG, i.e. the perturbation level must be small. This can be translated in practice to adding positional noise with low variance σ.In Figure 4 we show the constraint violation results of training six models, one for each of the noise levels il-lustrated in Figure 1. Each of these models is evaluated on six datasets containing 100 graphs each, generated by adding different levels of positional noise to a DGG. As expected, we see that models trained with lower noise levels (σT = {0, 0.0075 , 0.01 }) generalize worse to higher levels noise levels ( σE = {0.015 , 0.02 , 0.035 }). Models trained for larger noise levels achieve good performance across all noise levels. VI. C ONCLUSIONS 
+
+Random Geometric Graphs are a simple, yet accurate model of wireless networks. This work provides the theoretical study of transferability of Graph Neural Networks on conflict graphs derived from sparse RGG. This ensures wireless policies trained to satisfy requirements on the links of a network can be transferred to larger graphs with minimal loss in performance. We verified our theoretical results hold with numerical experiments on the wireless link scheduling task. It remains crucial to better assess the relevance of our assumptions with respect to practical development, which we leave for future work. REFERENCES [1] M. Randall, S. Paternain, P. Casas, F. Larroca, and P. Belzarena, “User association in wireless networks with distributed gnn-based reinforcement learning,” in 2025 12th IFIP International Conference on New Technologies, Mobility and Security (NTMS) , 2025, pp. 352–360. [2] Z. Wang, M. Eisen, and A. Ribeiro, “Learning decentralized wireless resource allocations with graph neural networks,” IEEE Transactions on Signal Processing , vol. 70, pp. 1850–1863, 2022. [3] R. G. Camargo, Z. Wang, N. NaderiAlizadeh, and A. Ribeiro, “Wireless link scheduling with state-augmented graph neural networks,” 2025. [Online]. Available: https://arxiv.org/abs/2505.07598 [4] M. Eisen and A. Ribeiro, “Optimal wireless resource allocation with random edge graph neural networks,” ieee transactions on signal processing , vol. 68, pp. 2977–2991, June 2020. [5] L. Ruiz, L. F. O. Chamon, and A. Ribeiro, “Transferability properties of graph neural networks,” IEEE Transactions on Signal Processing ,vol. 71, pp. 3474–3489, 2023. [6] S. Maskey, R. Levie, and G. Kutyniok, “Transferability of graph neural networks: An extended graphon approach,” Applied and Computational Harmonic Analysis , vol. 63, pp. 48–83, 2023. [Online]. Available: https://www.sciencedirect.com/science/article/pii/S1063520322000987 [7] N. Keriven, A. Bietti, and S. Vaiter, “Convergence and stability of graph convolutional networks on large random graphs,” Advances in Neural Information Processing Systems , vol. 33, pp. 21 512–21 523, 2020. [8] Z. Wang, L. Ruiz, and A. Ribeiro, “Geometric graph filters and neural networks: Limit properties and discriminability trade-offs,” IEEE Transactions on Signal Processing , 2024. [9] T. Le and S. Jegelka, “Limits, approximation and size transferability for gnns on sparse graphs via graphops,” in Advances in Neural Information Processing Systems , 2023, pp. 41 305–41 342. [10] R. G. Camargo, Z. Wang, and A. Ribeiro, “Graph neural networks in large scale wireless communication networks: Scalability across random geometric graphs,” 2025. [Online]. Available: https: //arxiv.org/abs/2510.00896 [11] Z. Zhao, G. Verma, C. Rao, A. Swami, and S. Segarra, “Link scheduling using graph neural networks,” IEEE Transactions on Wireless Communi-cations , vol. 22, no. 6, pp. 3997–4012, 2023. [12] J. Cao, T. Peng, X. Liu, W. Dong, R. Duan, Y. Yuan, W. Wang, and S. Cui, “Resource allocation for ultradense networks with machine-learning-based interference graph construction,” IEEE Internet of Things Journal , vol. 7, no. 3, pp. 2137–2151, 2020. [13] B. Hajek and G. Sasaki, “Link scheduling in polynomial time,” IEEE Transactions on Information Theory , vol. 34, no. 5, pp. 910–917, 1988. [14] M. Calvo-Fullana, S. Paternain, L. F. O. Chamon, and A. Ribeiro, “State augmented constrained reinforcement learning: Overcoming the limitations of learning with rewards,” IEEE Transactions on Automatic Control , vol. 69, pp. 4275–4290, 2021. [Online]. Available: https://api.semanticscholar.org/CorpusID:232035640 [15] M. Penrose, Random geometric graphs . OUP Oxford, 2003, vol. 5. [16] L. Ruiz, F. Gama, and A. Ribeiro, “Graph neural networks: Architectures, stability, and transferability,” Proceedings of the IEEE , vol. 109, no. 5, pp. 660–682, 2021. [17] D. Owerko, C. I. Kanatsoulis, J. Bondarchuk, D. J. B. Jr, and A. Ribeiro, “Transferability of convolutional neural networks in stationary learning tasks,” 2023. [18] K. Shen and W. Yu, “FPLinQ: A cooperative spectrum sharing strategy for device-to-device communications,” in 2017 IEEE international symposium on information theory (ISIT) . IEEE, 2017, pp. 2323–2327. 
+
+VII. A PPENDIX 
+
+We provide the proofs for the different theoretical results in the work. 5A. Proof of Theorem 1 
+
+Before showing the transferability of GNNs from DGG to RGG, we present in Theorem 4 the transferability of graph filters from DGG to RGG. 
+
+Theorem 4 Let ˜G be a deterministic grid graph with M edges and G be a random geometric graph with K edges. Define 
+
+˜A, A ∈ {0, 1}(K+M )×(K+M ) the zero padded adjacency matrices of their conflict graphs. The RGG can be seen as a perturbation of the DGG such that ∥ ˜A − A∥ ≤ ε.2 Consider a graph filter H that is integral Lipschitz with constant C
+
+and whose coefficients are normalized. The difference between applying the filter to the two graphs with input signal x can be bounded as follows. 
+
+∥H( ˜A)x − H(A)x∥2 ≤ 4Cε ∥x∥. (12) 
+
+Proof. The extended adjacency matrices are symmetric and therefore allow their eigendecomposition to be written. As the difference between the matrices is ∥ ˜A−A∥ ≤ ε, the difference between their eigenvalues is also bounded: 
+
+|˜λi − λi| ≤ ε (13) Let δ > 0 small. For a given eigenvalue ˜λi of ˜A, we have eigenvalues λj of A that are closer than δ, such that |˜λi −λj | ≤ 
+
+δ, and eigenvalues λj of A that are further away than δ, such that |˜λi − λj | > δ . Let us use this to construct an eigenbasis via the eigenvalues of A as follows. 
+
+Vi =[ vj ]j:|˜λi−λj |≤ δ
+
+VCi =[ vj ]j:|˜λi−λj |>δ (14) Let ˜vi be an eigenvector of A, we can write ˜vi = ViVHi ˜vi +
+
+VCi (VCi )H ˜vi. We apply the graph filter to both graphs with input ˜vi and compare the corresponding outputs. 
+
+H( ˜A) ˜ vi − H(A) ˜ vi = ( H( ˜A) − H(A)) ˜ vi = ∆ i (15) Because the eigenvectors form a complete orthonormal basis, bounding the filter output difference for a given eigenvector 
+
+˜vi is sufficient to bound the difference in the outputs for any arbitrary graph signal. Next, we consider the squared operator norm of ∆i. We replace the filter applied to ˜A, H( ˜A) by the frequency response representation of the filter. 
+
+∥∆i∥2 =∥h(˜λi) ˜ vi − H(A) ˜ vi∥2
+
+=∥h(˜λi)I − H(A) ˜ vi]( ViVHi ˜vi + VCi (VCi )H ˜vi)∥2
+
+=∥[h(˜λi)I − H(A) ˜ vi]ViVHi ˜vi∥2
+
++ ∥[h(˜λi)I − H(A) ˜ vi]VCi (VCi )H ˜vi∥2, (16) where the crossterms disappear because the vectors are orthogo-nal. Define the terms of Equation (16) ∆1 
+
+> i
+
+and ∆2 
+
+> i
+
+, respectively. 
+
+> 2By embedding both graphs into a spatially-aligned vector space, the perturbation captures only the mismatched edges between the two topologies.
+
+We have that ∆1 
+
+> i
+
+is associated to those eigenvalues of A that are closer than δ to the eigenvalue ˜λi of ˜A, while ∆2 
+
+> i
+
+considers those further away. To bound ∆1 
+
+> i
+
+we expand H(A) via the eigendecomposition of A.
+
+∆1 
+
+> i
+
+= H(A)ViVHi ˜vi − h( ˜λi)ViVHi ˜vi
+
+= Vh(Λ) VH ViVHi ˜vi − Vih( ˜λi)IVHi ˜vi
+
+= Vi
+
+
+
+h(Λ i) − h( ˜λi)I
+
+
+
+VHi ˜vi (17) Let h(·) be an integral Lipschitz filter with constant C, we can bound ∆1 
+
+> i
+
+as follows. 
+
+∥∆1 
+
+> i
+
+∥2 ≤ C2δ2, (18) where we consider the eigenvectors are orthonormal. To bound ∆2 
+
+> i
+
+, we apply the triangle inequality to the operator norm of the filter difference. Noting the filter coefficients are normalized such that ∥H(A)∥ = max j |h(λj )| ≤ 1, we get: 
+
+∥H(A) − h( ˜λi)I∥2 ≤(∥H(A)∥ + ∥h( ˜λi)I∥)2
+
+≤(1 + 1) 2 = 4 . (19) We must also bound the projection of ˜vi onto the complement subspace, ∥(VCi )H ˜vi∥2. Using the fact that (A − ˜A) ˜ vi =(A − ˜λiI) ˜ vi, we left-multiply by (VCi )H to obtain: 
+
+(VCi )H (A − ˜A) ˜ vi =(Λ Ci − ˜λiI)( VCi )H ˜vi (20) Taking the norm of both sides and applying the Davis-Kahan theorem, we bound the vector projection. Since the eigenvalues in ΛCi are strictly further than δ from ˜λi, we have: 
+
+∥(VCi )H ˜vi∥ ≤ ∥(A − ˜A) ˜ vi∥
+
+min j | ˜λi − λCj | ≤ εδ . (21) Putting Equations (19) and (21) together, we obtain a bound for ∆2 
+
+> i
+
+:
+
+∥∆2 
+
+> i
+
+∥2 ≤∥ H(A) − h( ˜λi)I∥2∥(VCi )H ˜vi∥2
+
+≤4 ε2
+
+δ2 (22) Finally, substituting the bounds for both terms yields the final bound for the squared error: 
+
+∥∆i∥2 =∥H(A) ˜ vi − h( ˜λi) ˜ vi∥2
+
+≤C2δ2 + 4 ε2
+
+δ2 . (23) Let x ∈ R(K+M )×(K+M ) be the input to the graph filter, we can write x in terms of the eigenvectors ˜vi:
+
+x =
+
+> n
+
+X
+
+> i=1
+
+( ˜ viH x ˜vi) = 
+
+> n
+
+X
+
+> i=1
+
+(˜xi ˜vi). (24) 6To finish the proof, we bound the squared norm of ∆ix by observing the eigenvectors are orthogonal and therefore the cross products are zero. 
+
+∥∆ix∥22 =∥∆inX
+
+> i=1
+
+(˜xi ˜vi)∥22
+
+=
+
+> n
+
+X
+
+> i=1
+
+∥∆i˜xi ˜vi∥22
+
+=
+
+> n
+
+X
+
+> i=1
+
+˜x2 
+
+> i
+
+∥∆i ˜vi∥22, (25) where we find that the first term is ∥x∥22 and the second term is what we bounded in Equation (23) . Finally, if we define 
+
+δ2 = 2εC , we get the final bound: 
+
+∥H(A)x − H( ˜A)x∥2 ≤ 4Cε ∥x∥. (26) Having shown the transferability of graph filters, we proceed to extend the result to Graph Neural Networks in Theorem 5. 
+
+Theorem 5 Let ˜G be a DGG with m1 edges and G be a RGG with m2 edges. Define A, ˜A ∈ { 0, 1}(m1+m2)×(m1+m2)
+
+the zero padded adjacency matrices of their conflict graphs, such that ∥A − ˜A∥ ≤ ε. Let Φ(x, A; H) be a L-layer GNN with a graph filter H that is integral Lipschitz with constant C
+
+and a normalized Lipschitz nonlinearity γ. The GNN can be transferred between ˜A and A with minimal performance loss: 
+
+∥Φ(x, ˜A; H) − Φ(x, A; H)∥ ≤ 2L√εC ∥x∥. (27) 
+
+Proof. 
+
+We compare the outputs of the GNN applied to both graphs via A and ˜A for layer l, considering the pointwise nonlinearity 
+
+σ(·) is normalized Lipschitz. 
+
+∥Φl(x, ˜A; H) − Φl(x, A; H)∥ =∥σ(Hl( ˜A)Φl−1(x, ˜A; H)) 
+
+− σ(Hl(A)Φl−1(x, A; H)) ∥≤∥ Hl( ˜A)Φl−1(x, ˜A; H)
+
+− Hl(A)Φl−1(x, A; H)∥.
+
+(28) Add and subtract the cross term Hl( ˜A)Φl−1(x, A; H). By applying the triangle inequality, we establish a recursion: 
+
+∥Φl(x, ˜A; H) − Φl(x, A; H)∥ ≤∥ Hl( ˜A)Φl−1(x, ˜A; H)
+
+− Hl( ˜A)Φl−1(x, A; H)∥
+
++ ∥Hl( ˜A)Φl−1(x, A; H)
+
+− Hl(A)Φl−1(x, A; H)∥≤∥ Hl( ˜A)∥∥ Φl−1(x, ˜A; H)
+
+− Φl−1(x, A; H)∥
+
++ ∥Hl( ˜A) − Hl(A)∥∥Φl−1(x, A; H)∥. (29) We assume that the filter coefficients are normalized, such that ∥Hl( ˜A)∥ ≤ 1. Furthermore, the combination of non-amplifying filters and the normalized Lipschitz property of the activation function ensures that ∥Φl−1(x, A; H)∥ ≤ ∥ x∥.Incorporating the transferability bound of the single graph filter, we obtain: 
+
+∥Φl(x, ˜A;H) − Φl(x, A; H)∥ ≤ ∥Φl−1(x, ˜A; H) − Φl−1(x, A; H)∥ + 2 √εC ∥x∥.
+
+(30) By unrolling the recursion over the layers, we arrive at the final bound for the outputs of a GNN with L layers: 
+
+∥ΦL(x, ˜A; H) − ΦL(x, A; H)∥ ≤ 2L√εC ∥x∥. (31) 
+
+B. Proof of Theorem 2 
+
+Theorem 6 Let Φ(x, ˜An; H) be the parameterized policy that achieves a performance loss L( ˜An, H) when applied on a grid graph with size n and achieves a loss of L( ˜Am, H) when applied on another grid graph with size m. Suppose n > m ,the difference of these two losses can be bounded as 
+
+L( ˜An, H) ≤ L ( ˜Am, H) + CE[x2] + 2 
+
+q
+
+L( ˜Am, H)CE[x2],
+
+(32) 
+
+where C = H2 
+
+> K
+> m
+
+(2 √mK +K2) and HK = PK−1 
+
+> k=0
+
+|hk|∥ ˜Am∥k 
+
+> 2
+
+.Proof. Given we consider a 2D space, we can write the performance L( ˜Am, H) as the sum of the expected difference for each entry of the window of size m.
+
+L( ˜Am, H) = 1
+
+m2 E
+
+h m−1X
+
+> i,j =0
+
+|Φ(x, ˜Am; H)( i, j ) − y(i, j )|2i
+
+.
+
+(33) 7We are interested in comparing L( ˜Am, H) as presented in (33) to L( ˜An, H). Let us define ϵ(i, j ) = Φ(x, ˜An; H)( i, j ) −
+
+y(i, j ) to simplify the notation. 
+
+L( ˜An, H) = 1
+
+n2 E
+
+h n−1X
+
+> i,j =0
+
+|Φ(x, ˜An; H)( i, j ) − y(i, j )|2i
+
+≤ 1(N m )2 E
+
+h N m −1X
+
+> i,j =0
+
+|ϵ(i, j )|2i
+
+, (34) where we defined N = ⌈ nm ⌉. We recenter the sums, denoting 
+
+T = {im − (N −1) m 
+
+> 2
+
+| i ∈ Z, 1 ≤ i < N }. This is equivalent to defining small squares in the 2D space in which we partition the sums, where each point has coordinates τ = ( τ1, τ 2):
+
+L( ˜An, H) ≤ 1(N m )2 E
+
+h X  
+
+> τ∈T
+
+h m−1X
+
+> i,j =0
+
+|ϵ(i − τ1, j − τ2)|2ii 
+
+.
+
+(35) The sum over the partitions T does not affect the expectation and can therefore be taken outside. Furthermore, because the input and output are assumed to be jointly stationary, we have 
+
+E[|ϵ(i − τ1, j − τ2)|2] = E[|ϵ(i, j )|2].
+
+L( ˜An, H) ≤ 1(N m )2
+
+X 
+
+> τ∈T
+
+h
+
+E
+
+h m−1X
+
+> i,j =0
+
+|ϵ(i, j )|2ii 
+
+. (36) In Equation (36), the dependence on τ inside the expectation has been removed. This allows the computation of the sum over T independently from the other terms. As |T | = N 2, we can simplify the terms as follows: 
+
+L( ˜An, H) ≤ N 2
+
+(N m )2 E
+
+h m−1X
+
+> i,j =0
+
+|ϵ(i, j )|2i
+
+≤ 1
+
+m2 E
+
+h m−1X
+
+> i,j =0
+
+|ϵ(i, j )|2i
+
+. (37) Let ⊓m be a masking operator acting on the larger space Rn.For any spatial signal, ⊓m pointwise multiplies the signal by the indicator function 1(( i, j ) ∈ m×m), zeroing out all entries outside the m× m window while preserving the dimensionality 
+
+n. Under this unified dimension, we have xm = ⊓mx, and 
+
+˜Am = ⊓m ˜An⊓m.We now return to the original notation, dropping ϵ(i, j ) and defining the full-scale output xn,L = Φ(x, ˜An; H) and the smaller-scale output xm,L = Φ(⊓mx, ˜Am; H). Because both are now naturally represented in Rn, we can directly apply the masking operator to their difference. 
+
+L( ˜An, H) ≤ 1
+
+m2 E∥ ⊓ m (xn,L − y)∥2
+
+≤ 1
+
+m2 E∥ ⊓ m (xn,L − xm,L ) + ⊓m(xm,L − y)∥2
+
+≤ 1
+
+m2 E∥ ⊓ m (xm,L − y)∥2
+
++ 1
+
+m2 E∥ ⊓ m (xn,L − xm,L )∥2
+
++ 2
+
+m2 E∥ ⊓ m (xm,L − y)∥∥ ⊓ m (xn,L − xm,L )∥.
+
+(38) The first term in Equation (38) is, by definition, L( ˜Am, H).Because xm,L strictly operates within the m region, applying the mask to it leaves it unchanged (i.e., ⊓mxm,L = xm,L ). The second term can be bounded as follows: 
+
+∥ ⊓ m (xn,L − xm,L )∥ = ⊓m
+
+ K−1X
+
+> k=0
+
+hk ˜Aknx
+
+
+
+−
+
+> K−1
+
+X
+
+> k=0
+
+hk(⊓m ˜An⊓m)k(⊓mx)
+
+≤
+
+> K−1
+
+X
+
+> k=0
+
+|hk|∥ ⊓ m ( ˜Aknx)
+
+− (⊓m ˜An⊓m)k(⊓mx)∥. (39) By the construction of the conflict graph, edges only exist between nodes that are at most adjacent or diagonal to each other. Therefore, a single application of the adjacency matrix spreads information by at most 1 hop. The error is bounded by the spectral norm of the adjacency matrix and the signal isolated at this boundary expansion: 
+
+∥ ⊓ m (xn,L − xm,L )∥ ≤ 
+
+> K−1
+
+X
+
+> k=0
+
+|hk|∥ ˜An∥k 
+
+> 2
+
+∥ ⊓ m+k (x − ⊓ mx)∥≤
+
+> K−1
+
+X
+
+> k=0
+
+|hk|∥ ˜An∥k 
+
+> 2
+
+∥ ⊓ m+K−1 (x − ⊓ mx)∥.
+
+(40) Let HK = PK−1 
+
+> k=0
+
+|hk|∥ ˜An∥k 
+
+> 2
+
+.
+
+∥ ⊓ m (xn,L − xm,L )∥ ≤ HK ∥ ⊓ m+K−1 (x − ⊓ mx)∥. (41) As x is stationary, the expected squared norm of the boundary term in Equation (41) can be evaluated as the variance of x
+
+over the volume difference (m + K − 1) 2 − m2.
+
+E∥ ⊓ m (xn,L − xm,L )∥2 ≤H2
+
+> K
+
+ (m + K − 1) 2 − m2E[x2]
+
+≤H2 
+
+> K
+
+(2 mK + K2)E[x2]. (42) 8This bounds the second term in Equation (38) . Observe the third cross-term can also be bounded via Cauchy-Schwarz and the second term bound. Defining C1 = H2 
+
+> K
+
+(2 mK + K2), we arrive at the final bound: 
+
+L( ˜An, H) ≤ L ( ˜Am, H) + C1E[x2] + 2 
+
+q
+
+L( ˜Am, H)C1E[x2].
+
+(43) 
+
+C. Proof of Theorem 3 
+
+Theorem 7 Under assumptions analogous to Theorem 1, consider an L-layer GNN Φ(x, A; H) trained to minimize the loss L(Am, H) for RGGs of size m, such that L(Am, H) ≤ ζ
+
+and suppose the deviation of RGG to its corresponding DGG is bounded by ϵ. The GNN can be transferred to graphs of size n with minimal performance deterioration: 
+
+|L (An, H) − L (Am, H)| =
+
+O pζ  √ϵ∥xn∥ + √ϵ∥xm∥ + ϵ∥xn∥2 + ϵ∥xm∥2
+
+!
+
+(44) 
+
+Proof. Let us decompose the loss difference as follows. 
+
+|L (An, H) − L (Am, H)| ≤|L (An, H) − L ( ˜An, H)|
+
++ |L ( ˜Am, H) − L ( ˜An, H)|
+
++ |L ( ˜Am, H) − L (Am, H)|
+
+(45) Observe that the first and third terms relate the performance for a RGG and a DGG that are sufficiently close, and therefore they can be bounded using Theorem 1. The second term relates two grid graphs of different sizes and can be bounded via Theorem 6. This concludes the proof. 9
