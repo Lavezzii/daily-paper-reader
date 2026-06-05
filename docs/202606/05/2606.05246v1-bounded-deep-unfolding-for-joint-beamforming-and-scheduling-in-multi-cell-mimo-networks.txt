@@ -1,0 +1,2259 @@
+Title: Bounded Deep Unfolding for Joint Beamforming and Scheduling in Multi-Cell MIMO Networks
+
+URL Source: https://arxiv.org/pdf/2606.05246v1
+
+Published Time: Fri, 05 Jun 2026 00:06:20 GMT
+
+Number of Pages: 18
+
+Markdown Content:
+> 1
+
+# Bounded Deep Unfolding for Joint Beamforming and Scheduling in Multi-Cell MIMO Networks 
+
+Jiansheng Li, Shuqi Chai, Fan Xu, Kaiming Shen, Guangxu Zhu, Junting Chen 
+
+Abstract —This paper investigates the joint resource block group (RBG) scheduling and beamforming optimization prob-lem for weighted sum-rate (WSR) maximization in multi-cell multiple-input multiple-output (MIMO) downlink networks. While the Fast Fractional Programming (FastFP) framework provides a reliable model-driven solution, it suffers from con-servative continuous beamforming updates and prohibitive com-putational overhead during the discrete RBG matching phase. To address these bottlenecks, we propose a joint deep unfolding framework comprising two core modules: P-Net and K-Net. For continuous beamforming, P-Net learns an adaptive relaxation factor along the analytical FastFP update direction. By strictly constraining this factor within an ascent-preserving interval, P-Net accelerates the optimization trajectory while rigorously retaining monotonic improvement and stationary-point conver-gence guarantees. For discrete RBG scheduling, K-Net learns a long-horizon priority policy that guides a low-complexity greedy assignment, effectively preserving the assignment quality while bypassing the high complexity of Hungarian matching. Both networks leverage analytical algorithmic priors and utilize recurrent parameter sharing, enabling flexible inference beyond the training horizon. Extensive simulations demonstrate that the proposed joint framework achieves higher WSR and faster execution times than conventional model-driven baselines, while generalizing robustly across unseen network scales, antenna configurations, and channel conditions without retraining. 
+
+Index Terms —Deep unfolding, fractional programming (FP), joint beamforming and scheduling, multi-cell MIMO, learning-to-optimize. 
+
+I. I NTRODUCTION 
+
+To meet the stringent capacity and connectivity demands of future wireless systems [1], [2], dense spectrum reuse and multi-cell MIMO transmission have emerged as key physical-layer enablers [3], [4]. However, aggressive co-channel reuse severely exacerbates inter-cell and inter-user interference, making interference-aware resource coordination and beam-forming crucial for unlocking the full potential of MIMO [5], [6]. In Orthogonal Frequency Division Multiple Access (OFDMA) downlink systems, discrete resource block group (RBG) allocation fundamentally dictates the cross-cell inter-ference topology [7], while continuous beamformers control desired signal power and interference leakage. Consequently, coupling these variables transforms the joint scheduling and beamforming task into a highly complex nonlinear mixed-integer optimization problem [8]–[12].                    
+
+> Jiansheng Li, Kaiming Shen, and Junting Chen are with the School of Science and Engineering, The Chinese University of Hong Kong, Shenzhen, 518172, China (e-mail: jianshengli@link.cuhk.edu.cn; shenkaim-ing@cuhk.edu.cn; juntingchen@cuhk.edu.cn). Shuqi Chai and Guangxu Zhu are with the Shenzhen Research Institute of Big Data, Shenzhen 518172, China (e-mail: schai@sribd.cn; gxzhu@sribd.cn). Fan Xu is with the School of Electronic Information Engineering, Tongji University, Shanghai 201804, China (e-mail: xxiaof999@tongji.edu.cn).
+
+Classical model-driven optimization methods remain the backbone of WSR maximization in wireless networks. For a fixed RBG allocation, the continuous beamforming problem is commonly handled by the weighted minimum mean-square error (WMMSE) algorithm and the fractional programming (FP) framework [13]–[15]. The WMMSE algorithm exploits the equivalence between rate maximization and weighted MSE minimization and solves the resulting problem via block coordinate descent, with provable convergence to a stationary point. However, in multi-cell MIMO networks, each WMMSE iteration typically involves large matrix inversions whose dimensions scale with the number of transmit antennas, and the transmit-power constraints require the search for Lagrange multipliers. These operations can become computationally demanding when massive antenna arrays are deployed. The importance of this complexity bottleneck has also motivated recent efforts to rethink WMMSE, such as reduced-complexity variants that exploit the low-dimensional structure of station-ary precoders or recursive per-antenna updates to reduce the antenna-dimensional scaling [16]. FP provides another pow-erful model-driven approach by applying the Lagrangian dual transform and the quadratic transform to recast SINR-ratio objectives into more tractable surrogate forms [15]. Moreover, WMMSE can be interpreted as a special case of FP, revealing a close connection between these two algorithmic families. Beyond continuous beamforming and power control, FP has also been extended to discrete wireless scheduling problems, where the transformed objective can induce analytically de-rived edge utilities for combinatorial matching [17]. Following this line, FP combined with the Hungarian algorithm has been used for downlink multiuser MIMO resource allocation, where beamforming and user/RBG scheduling are alternately optimized [18]. Although FP-Hungarian methods preserve the problem structure and provide exact local solutions, repeatedly executing the matching step is computationally prohibitive. Furthermore, maximizing the current surrogate is locally my-opic, as current RBG assignments fundamentally alter sub-sequent interference topologies and beamforming trajectories. This motivates a learning-guided scheduling mechanism that retains the analytical FP-derived edge utility while bypassing the overhead of repeated Hungarian matching to optimize the long-term trajectory. Learning-based optimization methods have emerged as a promising way to improve the speed-performance tradeoff of resource allocation algorithms. Early learning-based ap-proaches either approximate the input-output behavior of optimization algorithms or directly learn resource-allocation policies, enabling fast inference once trained [19], [20]. Re-inforcement learning has also been applied to radio resource 
+
+> arXiv:2606.05246v1 [cs.IT] 3 Jun 2026 2
+
+management and wireless scheduling, where the scheduling process is naturally modeled through states, actions, and rewards [21]. However, directly mapping channel states or queue states to discrete resource-allocation actions may face large combinatorial action spaces, feasibility enforcement dif-ficulties, sample-efficiency issues, and limited interpretability. Learning-to-optimize methods for wireless resource manage-ment have therefore emphasized the importance of embedding learning into structured optimization procedures rather than replacing the whole solver with a black-box predictor [22]. Recent graph neural network (GNN)-based resource allocation studies further show that exploiting wireless topology, permu-tation structure, and local interference relations can improve scalability and generalization [23]–[25]. While the above learning-based resource-allocation studies mainly motivate the discrete scheduling component, a paral-lel line of research focuses on learning-based beamforming optimization. Early learning-based beamforming methods use neural networks to approximate the solution mapping of op-timization algorithms or to directly infer beamformers from channel states, thereby reducing online inference latency once the network is trained [19], [26]. However, purely black-box mappings may provide limited interpretability and do not explicitly preserve the algorithmic structure, feasibility mechanism, or convergence behavior of classical beamforming solvers. Deep unfolding addresses this issue by mapping a finite number of iterations of a model-driven algorithm into a layer-wise trainable architecture, so that the resulting neural network (NN) inherits part of the original optimization structure while introducing learnable degrees of freedom [27]. In MIMO beamforming, many existing unfolded networks are built upon WMMSE-type iterations. For instance, IAIDNN unfolds the WMMSE algorithm for MU-MIMO precoding and introduces trainable parameters to replace high-complexity operations in the forward propagation [28]. Matrix-inverse-free WMMSE further reformulates the WMMSE update to avoid matrix inversion, eigendecomposition, and bisection-type operations, making the resulting iterations more suitable for real-time implementation and deep unfolding [29]. Graph-based unfolded WMMSE methods exploit the interference topology of wireless networks and use graph neural networks to parameterize the unfolded update, thereby improving scala-bility and generalization across network instances [30]. These studies demonstrate that learning selected components of an iterative beamforming solver can provide a favorable speed-performance tradeoff. Nevertheless, since they are mainly derived from WMMSE-type updates, they may still inherit the structural limitations of the target algorithm, such as compli-cated power-constraint handling, matrix-related operations, or limited adaptation to multi-cell MIMO settings. To overcome the inherent structural bottlenecks of WMMSE-based unfolding, recent research has shifted towards the FP framework. DeepFP unfolds FastFP for MIMO beam-forming and learns acceleration-related parameters, show-ing that FP iterations can be improved through data-driven tuning [31]. A core concept in FastFP is the conservative curvature bound, which guarantees monotonic ascent via the minorization-maximization (MM) principle [32], [33]. How-ever, this conservative bound severely limits the step size in heterogeneous channels, leading to slower convergence rates. Motivated by this limitation, this paper proposes to learn an adaptive relaxation factor along the analytical FastFP update direction, which can accelerate convergence without overshooting the safe region or violating the monotonic ascent property. Specifically, at each iteration, P-Net utilizes the analytical FastFP guide VFP and learns an adaptive relaxation factor α(τ ) ∈ (0 , 2) to update the state (which may include Nesterov momentum U(τ −1) ): 
+
+V(τ ) = U(τ −1) + α(τ ) 
+
+VFP − U(τ −1) 
+
+.
+
+Constraining α(τ ) ensures that the update strictly remains within the ascent-preserving interval of the quadratic surro-gate. Coupled with a low-complexity surrogate safety-check and restart mechanism to handle the non-monotonicity of Nes-terov momentum, P-Net significantly accelerates the FastFP trajectory while rigorously preserving the monotonic ascent and stationary-point convergence properties of the MM frame-work. Thus, instead of allowing the neural network to replace or freely modify the update rule as in DeepFP, our continuous module learns only a bounded relaxation factor along the analytical FastFP direction. This design choice is motivated by a simple principle: the learning module should accelerate the reliable optimizer, rather than destroy the mechanism that makes the optimizer reliable. Such a philosophy is also consis-tent with recent signal-processing studies showing that analytic structures and a small number of learnable parameters can improve efficiency while retaining theoretical control [34]– [36]. Furthermore, for the discrete allocation phase, we propose K-Net, a policy-guided priority scheduler. Rather than directly predicting assignments, K-Net preserves the analytical FastFP edge metric ξu,i,n as a physics-informed utility and learns a priority ordering for sequential greedy RBG selection. This ordering-based design effectively avoids repeated Hungarian matching, reducing the allocation complexity from O(U K 3)
+
+to O(U K 2) (when each user contains N = K logical slots). Trained via terminal WSR feedback, K-Net optimizes the long-term allocation trajectory rather than merely maximizing myopic local surrogates. The main contributions of this paper are summarized as follows:  
+
+> •
+
+We formulate the joint RBG scheduling and beamforming problem in multi-cell MIMO networks as a mixed-integer WSR maximization problem, explicitly identifying the computational bottlenecks of conventional FP-based con-tinuous updates and discrete matching.  
+
+> •
+
+We develop P-Net to accelerate the continuous beam-forming stage. By learning a bounded relaxation factor along the analytical FastFP direction, P-Net expedites convergence while strictly preserving the model-driven structure and the ascent-preserving interval.  
+
+> •
+
+We propose K-Net for discrete RBG scheduling. Rather than predicting the assignment matrix directly, it learns a priority ordering to guide a low-complexity greedy 3
+
+decoder, significantly reducing allocation overhead while retaining analytical FP priors.  
+
+> •
+
+We establish rigorous monotonic ascent and stationary-point convergence guarantees for the bounded P-Net up-date. For the Nesterov-accelerated variant, we introduce a low-complexity surrogate safety-check mechanism to strictly preserve these theoretical properties.  
+
+> •
+
+Extensive simulations confirm that the joint P-Net + K-Net framework achieves a superior performance-runtime tradeoff compared to conventional baselines. Further-more, the proposed models generalize robustly across unseen network scales, antenna dimensions, and channel conditions without retraining. The remainder of this paper is organized as follows. Section II introduces the multi-cell MIMO system model and formu-lates the joint RBG allocation and beamforming optimization problem. Section III reviews the traditional fractional program-ming framework, including the continuous FastFP update and the discrete RBG allocation subproblem. Section IV details the proposed deep unfolding framework, including P-Net for bounded FastFP beamforming acceleration and K-Net for policy-guided RBG scheduling. Section V provides extensive numerical results to evaluate the performance, runtime, and generalization ability of the proposed method. Finally, Section VI concludes the paper. Throughout this paper, boldface uppercase and lowercase letters denote matrices and vectors, respectively. The space of 
+
+M ×N complex matrices is denoted by CM ×N . The operators 
+
+(·)T and (·)H stand for the transpose and conjugate transpose of a matrix, respectively. The trace and determinant of a matrix are represented by Tr( ·) and det( ·), respectively. IN denotes an N × N identity matrix. ℜ{·} extracts the real part of a complex variable. E[·] denotes the statistical expectation. ∥·∥ F
+
+represents the Frobenius norm of a matrix. PW (·) denotes the projection operator onto a given set W. For Hermitian matrices A and B, A ⪯ B indicates that B − A is positive semi-definite, and λmax (A) denotes the maximum eigenvalue of A. The cardinality of a set A is denoted by |A| , and [N ]
+
+defines the set of integers {0, 1, . . . , N − 1}.II. S YSTEM MODEL AND PROBLEM FORMULATION 
+
+A. System Model 
+
+We consider a downlink MIMO transmission scenario in a multi-cell Multiple-Input Multiple-Output (MIMO) wireless network. The system consists of a set of base stations (BSs), denoted by A, a set of users, denoted by U, and a set of shared resource block groups (RBGs), denoted by K. All BSs operate on a co-channel deployment basis, sharing the entire set of RBGs, which inherently induces inter-cell interference. The cardinalities of these sets are given by B = |A| , U = |U| , and 
+
+K = |K| . Each BS is equipped with Mt transmit antennas, and each user equipment is equipped with Mr receive antennas. The number of spatial data streams transmitted from the serv-ing BS to user u is denoted by du, which is assumed identical across all users to maximize spatial multiplexing. The transmit signal vector for user u is denoted by s ∈ Cdu , normalized such that E[ss H ] = Idu . Let [K] ≜ {0, 1, . . . , K − 1} denote Physical RBG Set           
+
+> PRB 1 PRB 2 PRB 3 PRB 4
+> PRB 2 PRB 4
+> User 1
+> Allocation decisions for User 1 (Max quota: RBGs)
+> PRB 1
+> PRB 1 PRB 2
+> User 2
+> Allocation decisions for User 2 (Max quota: RBGs)
+> PRB 3
+> PRB
+> Fig. 1. Illustration of the proposed resource allocation variables. Physical RBG indices (represented as blocks) are directly mapped into predefined logical decision slots for each user. Unused allocation decisions are simply marked with the ∅state.
+
+the set of integer from 0 to K − 1, which represents the set of RBGs indices. Similarly, [U ] denotes the set of user indices. 
+
+B. Signal Model and Problem Formulation 
+
+To streamline the formulation, we define two decision variables as follows:  
+
+> •
+
+RBG allocation variable ku,i ∈ [K]∪{∅} : We introduce a flexible scheduling framework where each user u is granted a quota of N logical allocation decision slots, indexed by i ∈ [N ]. Unless otherwise specified, we set 
+
+N = K, so that each user has at most one allocation decision for each physical RBG. The pair (u, i ) therefore denotes the i-th allocation decision slot of user u. As illustrated in Fig. 1, ku,i maps this allocation decision slot to a physical RBG index. If ku,i = ∅, no RBG is allocated to this decision slot; otherwise, ku,i ∈ [K] and the decision slot becomes active.  
+
+> •
+
+Transmit beamforming variable Vbu,k u,i ,u ∈ CMt×du :For an active allocation decision slot (u, i ) with ku,i ̸ = ∅,this precoding matrix is applied by the serving BS bu to transmit du data streams to user u on physical RBG ku,i .We define the set of active allocation decision slots sharing the same physical RBG as (u, i ) as 
+
+Cu,i ≜ {(j, ℓ ) | kj,ℓ = ku,i , k j,ℓ ̸ = ∅} . (1) For notation brevity, since the serving BS bu and the assigned RBG kui are uniquely determined by the user index u and its decision slot index i, we simplify the comprehensive subscripts 
+
+{bu, k ui , u } to {u, i } in the sequel. Therefore, the interference-plus-noise covariance matrix ex-perienced by user u under its active allocation decision (u, i )
+
+is given by: 
+
+Mu,i = X
+
+> (j,ℓ )∈C −u,i
+
+Hbj ,k u,i ,u Vj,ℓ VHj,ℓ HHbj ,k u,i ,u + σ2IMr .
+
+(2) 4
+
+where C−u,i ≜ Cu,i \ { (u, i )}. After that, the achievable rate 
+
+Ru,i for user u on slot i is directly formulated as: 
+
+Ru,i = log det  Idu + VHu,i HHu,i M−1 
+
+> u,i
+
+Hu,i Vu,i 
+
+ . (3) Our objective is to maximize the network’s Weighted Sum Rate (WSR), where ρu ≥ 0 denotes the priority weight assigned to user u. The joint resource allocation and beam-forming optimization problem can be formulated as: maximize 
+
+> kui ,Vu,i
+
+X 
+
+> u∈[U]
+
+ρu
+
+X 
+
+> i∈[N]
+
+Ru,i (4a) s.t. ∥Vu,i ∥2 
+
+> F
+
+≤ Pmax , ∀u ∈ [U ], i ∈ [N ] (4b) 
+
+kui ∈ [K] ∪ {∅} , ∀u ∈ [U ], i ∈ [N ] (4c) Constraint (4b) enforces the maximum transmission power 
+
+Pmax for each beamformer. This formulation is a highly non-convex MINLP problem, compounded by the complicated multi-user interference coupling within the log-determinant function. To address problem (4), we first introduce a con-ventional iterative optimization algorithm in Section III, and subsequently unfold its iterations into a neural network archi-tecture in Section IV to simultaneously accelerate convergence and enhance the achievable system performance. III. F RACTIONAL PROGRAMMING BASED TRADITIONAL OPTIMIZATION METHODS 
+
+To tackle the highly non-convex mixed-integer program-ming problem in (4), we adopt an alternating optimization (AO) framework to iteratively update the continuous transmit beamforming matrices Vu,i and the discrete RBG allocation variables kui . Specifically, when fixing the scheduling vari-ables kui , the continuous beamforming optimization subprob-lem is tackled via the model-driven Fractional Programming (FP) framework [15]. The core principle is to sequentially decouple the multi-user interference from the desired sig-nal components, thereby transforming the intractable log-determinant objective into a series of analytically tractable quadratic surrogate subproblems. On the other hand, the discrete RBG allocation variables kui and their associated can-didate beamformers Vu,i are jointly evaluated and optimized by exploiting the linear additive properties of the transformed FP objective [17]. This elegant structural decoupling allows the combinatorial assignment task to be partitioned into in-dependent per-user weighted bipartite matching subproblems, which are sequentially and exactly solved via the Hungarian algorithm guided by analytically derived edge utilities. 
+
+A. Beamforming Optimization via the FP Framework 
+
+To address the matrix ratio terms embedded within the log-determinant operation, we first apply the Lagrangian dual transform [15]. By introducing an auxiliary variable Γu,i ∈
+
+Cdu×du , the original problem is equivalently recast as: 
+
+max 
+
+> V,Γ
+
+X
+
+> u,i
+
+h
+
+ρu log det( Idu + Γu,i ) − ρuTr (Γu,i )+ Tr  ρuVHu,i HHu,i J−1 
+
+> u,i
+
+Hu,i Vu,i (Idu + Γu,i ) i (6) where Ju,i = Hu,i Vu,i VHu,i HHu,i + Mu,i represents the total covariance matrix. Although (6) successfully isolates the desired signal compo-nents, the total covariance matrix Ju,i remains coupled within a matrix inverse. To fully decouple these variables, we apply the Quadratic Transform. By introducing decoding auxiliary variables Yu,i ∈ CMr ×du , we establish a quadratic lower bound, yielding the following surrogate problem: 
+
+max  
+
+> V,Γ,Y
+
+fP3 (V, Γ, Y), (7) where the explicit expression of fP3 is given by (5) at the bottom of this page , and 
+
+Λu,i ≜ ρuHHu,i Yu,i (Idu + Γu,i ). (8) We iteratively update Γu,i , Yu,i , and Vu,i in a block coordinate descent fashion. Based on the first-order optimality conditions, the optimal closed-form updates for the auxiliary variables, when fixing the other variables, are respectively obtained as: 
+
+Γu,i = VHu,i HHu,i M−1 
+
+> u,i
+
+Hu,i Vu,i , (9) 
+
+Yu,i = J−1 
+
+> u,i
+
+Hu,i Vu,i . (10) When optimizing the transmit beamformers Vu,i with the 
+
+Γu,i and Yu,i fixed, the surrogate function (7) becomes con-cave with respect to Vu,i . Consequently, the optimal closed-form update is given by: 
+
+Vu,i = ( Lu,i + μu,i IMt )−1 Λu,i , (11) where μu,i ≥ 0 is the Lagrange multiplier associated with the power constraint. To express the curvature matrix Lu,i 
+
+compactly, we define the weighted decoding matrix as: 
+
+Ψj,ℓ ≜ Yj,ℓ 
+
+ Idj + Γj,ℓ 
+
+ YHj,ℓ . (12) Thus, the curvature matrix Lu,i is formulated as: 
+
+Lu,i = X
+
+> (j,ℓ )∈C u,i
+
+ρj HHbu,k ui ,j Ψj,ℓ Hbu,k ui ,j . (13) 
+
+B. FastFP and Nesterov Acceleration 
+
+Although the FP framework offers a closed-form solution, computing the inverse of the high-dimensional matrix Lu,i 
+
+incurs a prohibitive computational complexity of O(M 3 
+
+> t
+
+),which becomes a critical bottleneck. To circumvent this issue, FastFP [33] leverages the nonhomogeneous bound to construct 
+
+fP3 (V, Γ, Y) = X
+
+> u,i
+
+h
+
+ρu log det( Idu + Γu,i ) − ρuTr (Γu,i ) + Tr  2ℜ{ VHu,i Λu,i } − ρuTr  YHu,i Ju,i Yu,i (Idu + Γu,i ) i
+
+.
+
+(5) 5
+
+a surrogate function that upper-bounds the curvature of the original problem, enabling a closed-form update without ma-trix inversion. 
+
+Lemma 1 (Nonhomogeneous Bound [32]) . For any Hermitian matrix L ⪯ K and arbitrary matrices V, Z of compatible dimensions, the quadratic term is lower-bounded by: 
+
+−Tr (VH LV ) ≥ − Tr (VH KV ) + 2 ℜ{ Tr (VH (K − L)Z)}− Tr (ZH (K − L)Z).
+
+By configuring an matrix K = λu,i IMt , where λu,i =
+
+λmax (Lu,i ), and subsequently substituting the quadratic term in (7), we obtain the equivalent optimization problem for problem 7: 
+
+max  
+
+> V,Γ,Y,Z
+
+fP4 (V, Γ, Y, Z), (15) where the explicit expression of fP4 is given by (14) at the bottom of this page .The auxiliary variable Zu,i can be optimally updated as 
+
+V(τ −1)  
+
+> u,i
+
+. Then, the closed-form update for Vτu,i can be com-puted as: 
+
+˜V(τ ) 
+
+> u,i
+
+= V(τ −1)  
+
+> u,i
+
++ 1
+
+λu,i 
+
+
+
+Λu,i − Lu,i V(τ −1) 
+
+> u,i
+
+
+
+. (16) After which, a projection is applied to ensure the power constraint: 
+
+V(τ ) 
+
+> u,i
+
+=
+
+( ˜Vu,i , if Tr ( ˜Vu,i ˜VHu,i ) ≤ Pmax ,
+
+q Pmax  
+
+> Tr ( ˜Vu,i ˜VHu,i )
+
+˜Vu,i , otherwise. (17) As proved in [33], this closed-form update is mathematically equivalent to a gradient projection operation bounded by the power constraint W. Building upon this equivalence, the authors in [33] seamlessly integrated Nesterov’s Extrapolation strategy to accelerate convergence. The specific procedure consists of two steps: 1) Nesterov Momentum and Extrapolation : Calculate the momentum coefficient ν(τ −1) = max { τ −2  
+
+> τ+1
+
+, 0} and construct the extrapolation anchor: 
+
+U(τ −1)  
+
+> u,i
+
+= V(τ −1)  
+
+> u,i
+
++ ν(τ −1) 
+
+V(τ −1)  
+
+> u,i
+
+− V(τ −2) 
+
+> u,i
+
+
+
+. (18) 2) Gradient Step with projection : Compute the uncon-strained gradient with λu,n = λmax (Lu,n ), and restrict it to the feasible set: 
+
+V(τ ) 
+
+> u,i
+
+= PW
+
+
+
+U(τ −1)  
+
+> u,i
+
++ 1
+
+λu,i 
+
+
+
+Λu,i − Lu,i U(τ −1) 
+
+> u,i
+
+
+
+. (19) where PW (·) denotes the projection operation of (17). To provide a holistic view, the standard FP, along with the unified FastFP and Nesterov FastFP procedures, are summa-rized in Algorithm 1. 
+
+Algorithm 1 Standard FP, FastFP, and Nesterov-FastFP  
+
+> 1:
+
+input: CSI H 
+
+> 2:
+
+Initialize V satisfying the power constraint and Fixed RBG allocation k 
+
+> 3:
+
+repeat  
+
+> 4:
+
+Calculate Γu,i by (9) and Yu,i by (10).  
+
+> 5:
+
+if use Standard FP then  
+
+> 6:
+
+Calculate Vu,i by (11).  
+
+> 7:
+
+else  
+
+> 8:
+
+Set momentum ν(τ −1) = max 
+
+n τ −2  
+
+> τ+1
+
+, 0
+
+o
+
+for Nes-terov strategy, or 0 for FastFP.  
+
+> 9:
+
+Calculate Uu,i by (18) and Vu,i by (19).  
+
+> 10:
+
+end if  
+
+> 11:
+
+until the objective (4) converges  
+
+> 12:
+
+output: Final converged V
+
+C. RBG Allocation Optimization via Bipartite Matching 
+
+The core challenge of RBG allocation lies in its discrete na-ture, which fundamentally dictates the multi-user interference topology and heavily couples the achievable rates across the network. To address this, we optimize the discrete allocation variables kui using the equivalent quadratic surrogate problem (15). Given the fixed auxiliary variables ( Γu,i and Yu,i ), the FP framework mathematically decouples the complex multi-user interference into a linear additive form. Leveraging this property, we can quantify the potential WSR gain of each candidate slot-to-RBG assignment as an edge weight, thereby transforming the combinatorial resource allocation into a weighted bipartite matching problem [17]. At iteration τ , we evaluate the potential WSR gain of assigning physical RBG n to user u’s i-th decision slot by defining an edge matching weight ξ(τ )
+
+> u,i,n
+
+. This weight is explicitly derived by extracting the terms associated with the candidate beamformer from the surrogate objective (14). First, we define the set of active allocation decisions from other users currently occupying RBG n as: 
+
+S(τ −1)  
+
+> −u,n
+
+≜ {(j, ℓ ) | j̸ = u, k (τ −1)  
+
+> j,ℓ
+
+= n}. (20) Consequently, the receiver-side allocation decisions affected by the candidate beamformer are collected in R(τ ) 
+
+> u,i,n
+
+≜
+
+{(u, i )} ∪ S (τ −1)  
+
+> −u,n
+
+. The edge weight ξ(τ ) 
+
+> u,i,n
+
+is then formulated as: 
+
+ξ(τ ) 
+
+> u,i,n
+
+= 2 ℜ
+
+n
+
+Tr 
+
+ bV(τ )Hu,i,n Λ(τ )
+
+> u,i,n
+
+o 
+
+− Tr 
+
+ bV(τ )Hu,i,n L(τ ) 
+
+> u,i,n
+
+bV(τ )
+
+> u,i,n
+
+
+
+− X 
+
+> (j,ℓ )∈S (τ−1)
+> −u,n
+
+ρu Tr 
+
+
+
+V(τ −1) Hj,ℓ HHbj ,n,u Ψ(τ ) 
+
+> u,i
+
+Hbj ,n,u V(τ −1) 
+
+> j,ℓ
+
+
+
+,
+
+(21) 
+
+fP4 = X
+
+> u,i
+
+h
+
+ρu log det( Idu + Γu,i ) − ρuTr (Γu,i ) − ρuσ2Tr  YHu,i Yu,i (Idu + Γu,i ) − λu,i Tr (VHu,i Vu,i )+ Tr  2ℜ VHu,i Λu,i + VHu,i (λu,i IMt − Lu,i )Zu,i 
+
+ − Tr  ZHu,i (λu,i IMt − Lu,i )Zu,i 
+
+ i
+
+.
+
+(14) 6
+
+where the optimal candidate beamformer bV(τ ) 
+
+> u,i,n
+
+is given by: 
+
+bV(τ ) 
+
+> u,i,n
+
+= PW V(τ −1)  
+
+> u,i
+
++ 1
+
+λ(τ )
+
+> u,i,n
+
+
+
+Λ(τ ) 
+
+> u,i,n
+
+− L(τ )
+
+> u,i,n
+
+V(τ −1) 
+
+> u,i
+
+!
+
+.
+
+(22) The constituent matrices Λ(τ ) 
+
+> u,i,n
+
+and L(τ ) 
+
+> u,i,n
+
+are defined as: 
+
+Λ(τ ) 
+
+> u,i,n
+
+= ρu HHbu,n,u Y(τ )
+
+> u,i
+
+ Idu + Γ(τ )
+
+> u,i
+
+, (23a) 
+
+L(τ ) 
+
+> u,i,n
+
+= X 
+
+> (j,ℓ )∈R (τ)
+> u,i,n
+
+ρj HHbu,n,j Ψ(τ ) 
+
+> j,ℓ
+
+Hbu,n,j . (23b) As shown in (21), this edge weight captures three critical components: the desired signal contribution of the candidate link, the interference leakage to the receiver-side links in 
+
+R(τ )
+
+> u,i,n
+
+, and the interference received from existing transmitters on RBG n.With the edge weights analytically established, the combina-torial allocation problem becomes a maximum-weight bipartite matching problem. Since our system allows spatial sharing of physical RBGs, the global allocation decouples into U
+
+independent per-user matching subproblems. For each user 
+
+u, a bipartite graph connects its N logical decision slots to the K physical RBGs. The optimal discrete assignment 
+
+x∗ 
+
+> u,i,n
+
+∈ { 0, 1} is obtained by solving the following integer linear program via the Hungarian algorithm: maximize 
+
+> xu,i,n ∈{ 0,1}
+
+X 
+
+> i∈[N]
+
+X
+
+> n∈[K]
+
+ξ(τ )
+
+> u,i,n
+
+xu,i,n (24a) s.t. X
+
+> n∈[K]
+
+xu,i,n ≤ 1, ∀i ∈ [N ] (24b) 
+
+X 
+
+> i∈[N]
+
+xu,i,n ≤ 1, ∀n ∈ [K] (24c) Upon obtaining the optimal binary assignment x∗
+
+> u,i,n
+
+, the specific RBG index kui allocated to user u’s i-th decision slot is recovered by: 
+
+kui =
+
+(
+
+n, if x∗ 
+
+> u,i,n
+
+= 1 and ξ(τ ) 
+
+> u,i,n
+
+> 0,
+
+∅, otherwise . (25) The overall alternating procedure for joint RBG allocation and continuous beamforming is summarized in Algorithm 2. Although the FP-based method provides monotonic con-vergence, addressing real-time MIMO optimization reveals two significant efficiency bottlenecks: 1) Conservative con-tinuous updates : Gradient steps guided by the worst-case spectral radius λmax are overly conservative, resulting in slow convergence for the beamforming variables. 2) Prohibitive alternating overhead : In the discrete RBG allocation phase, while formulating candidate edge weights inherently requires matrix operations, the fundamental scaling bottleneck lies in finding the exact optimal assignment. Specifically, applying the Hungarian algorithm demands a prohibitive combinatorial complexity of O(U K 3) (assuming N = K). Repeatedly ex-ecuting this matching step within the alternating optimization loop renders the traditional framework practically infeasible for large-scale networks. 
+
+Algorithm 2 Joint Beamforming Optimization and RBG Al-location via Bipartite Matching  
+
+> 1:
+
+input: Channel matrices H. 
+
+> 2:
+
+initialize: Beamforming matrices V(0) satisfying power constraints, and RBG allocation k(0) . 
+
+> 3:
+
+repeat  
+
+> 4:
+
+[Beamforming Optimization Step] At iteration τ 
+
+> 5:
+
+Update Γ(τ ) and Y(τ ) via (9) and (10).  
+
+> 6:
+
+Update V(τ ) via (16).  
+
+> 7:
+
+[RBG Allocation Optimization Step]  
+
+> 8:
+
+for each user u ∈ [U ] do  
+
+> 9:
+
+Compute Ξ(τ ) 
+
+> u
+
+= [ ξ(τ )
+
+> u,i,n
+
+]N ×K via (21), ∀i ∈ [N ], n ∈
+
+[K]. 
+
+> 10:
+
+Solve (24) via Hungarian algorithm to obtain binary assignment x∗
+
+> u,i,n
+
+. 
+
+> 11:
+
+Recover k(τ ) 
+
+> ui
+
+and update V(τ ) 
+
+> u,i
+
+← bV(τ ) 
+
+> u,i,k (τ)
+> ui
+
+, ∀i ∈
+
+[N ]. 
+
+> 12:
+
+end for  
+
+> 13:
+
+until the objective WSR (4) converges  
+
+> 14:
+
+output: Final RBG allocation k∗ and beamforming V∗.IV. B OUNDED DEEP UNFOLDING NETWORK 
+
+ARCHITECTURE 
+
+To overcome the efficiency bottlenecks of the traditional FP framework, we propose a bounded deep unfolding architecture comprising two modules: P-Net and K-Net. A fundamental limitation of conventional AO is its strict reliance on myopic, local surrogate maximization at each iteration. In contrast, P-Net and K-Net share a unified design motivation: they leverage analytical algorithmic priors to guide variable updates from a global optimization trajectory perspective. Specifically, to address the conservative continuous updates, P-Net learns an adaptive, theoretically bounded relaxation factor that accel-erates the FastFP beamforming trajectory while rigorously preserving the monotonically non-decreasing property. Con-currently, to tackle the prohibitive combinatorial overhead, K-Net learns a long-horizon priority policy to guide a sequen-tial greedy assignment. This strategically reduces the exact matching complexity from O(U K 3) to O(U K 2), allowing the network to directly optimize the long-term allocation trajectory rather than just the immediate local surrogate. Ultimately, the proposed hybrid deep unfolding paradigm substantially reduces the computational time without compromising the optimization performance. 
+
+A. P-Net: Bounded Relaxation Controller for Beamforming 1) Learned Update Rule and its Principle: A fundamental limitation of the conventional FastFP algorithm is its greedy algorithmic nature: at each iteration τ , it strictly advances toward the exact peak of the current local surrogate function. While anchoring the update exactly at this surrogate maximum guarantees the maximum local elevation of the objective value, it is inherently short-sighted and lacks a global perspective of the entire optimization trajectory. To overcome this limitation, we do not discard the reliable FastFP mathematical framework; 7FP Aux Anchor FastFP Guide Output                        
+
+> ,
+> Channel
+> Joint P-Net & K-Net Optimization Architecture (Iteration )
+> State Extraction P-Net RNN
+> Update & Proj
+> Relaxation
+> Edge Weights
+> Edge State K-Net Policy Policy Sort
+> Greedy Decoder
+> P-Net: Continuous Beamforming Branch K-Net: Discrete Scheduling Branch
+> Fig. 2. Algorithmic architecture of the proposed joint P-Net and K-Net deep unfolding framework. The top timeline illustrates the optimization trajectory across shared unrolled layers. Within each iteration τ, the framework executes a sequential bipartite update: First, the continuous branch (P-Net) adaptively accelerates the analytical FastFP beamforming update via a learned relaxation factor α(τ), bounded strictly within (0 ,2) to guarantee monotonic ascent. Second, the newly beamformers V(τ)cascade into the discrete branch (K-Net) to formulate the exact matching weights ξ(τ)
+> u,i,n . Driven by these physics-informed edge utilities, K-Net extracts local optimization states and predicts a priority policy π(τ)to guide a low-complexity greedy decoder, ultimately yielding the updated RBG allocation k(τ).
+
+rather, we geometrically exploit its local surrogate to design a parameterized update rule. Specifically, within the FastFP framework, the objective function in problem 15 at an arbitrary τ -th iteration can be interpreted as maximizing a minorant surrogate function: 
+
+Q(V | V(τ −1) ) = 2 ℜ{ Tr (VH Ξ)} − λTr (VH V) + C(τ −1) ,
+
+(26) where Ξ ≜ Λ+( λIMt −L)V(τ −1) denotes the gradient direc-tion matrix. The constant term C(τ −1) , which is independent of V, is explicitly given by: 
+
+C(τ −1) = ρu log det( Idu + Γ(τ −1)  
+
+> u,i
+
+) − ρuTr (Γ(τ −1)  
+
+> u,i
+
+)
+
+− ρuσ2Tr 
+
+
+
+(Y(τ −1)  
+
+> u,i
+
+)H Y(τ −1)  
+
+> u,i
+
+(Idu + Γ(τ −1)  
+
+> u,i
+
+)
+
+
+
+− Tr 
+
+
+
+(V(τ −1) )H (λIMt − L)V(τ −1) 
+
+.
+
+(27) Crucially, by replacing the dense quadratic penalty with the scaled identity matrix structure −λTr (VH V), the surrogate function Q(V | V(τ −1) ) geometrically forms an isotropic multi-dimensional paraboloid .Instead of myopically restricting the update to the local surrogate maximizer, denoted as VFP = 1 
+
+> λ
+
+Ξ, P-Net introduces a NN-guided relaxation factor to capture long-term iterative dependencies. The relaxed update strategy is formulated as: 
+
+V(τ )(α) = V(τ −1) + α(VFP − V(τ −1) ), (28) where α is a dynamically learned relaxation factor generated by the NN. This strategy grants the network the flexibility to explore iteration points either closer to or further beyond the local optimum VFP along the gradient direction. 
+
+2) Monotonic Increase and Convergence Guarantee: Let 
+
+f (Vτ ) denote the original WSR objective function in problem (4) at τ -th iteration. The following lemma establishes the monotonic ascent property of the proposed update rule in (28). 
+
+Lemma 2. For any relaxation factor α(τ ) 
+
+> u,i
+
+∈ (0 , 2) , the sequence of objective values generated by the proposed beam-forming update rule in (28) is monotonically non-decreasing, i.e., f (V(τ )) ≥ f (V(τ −1) ).
+
+A simple geometric illustration for intuitive understanding is provided in Fig. 3, while the detailed mathematical proof is deferred to Appendix A. Building upon Lemma 1, the following theorem guarantees that the inference procedure in the algorithm 3 converges to a stationary point. 
+
+Theorem 1. Given a fixed RBG allocation k, the sequence of beamformers {V(τ )} generated by the inference procedure in the algorithm 3 converges to a stationary point of the optimization problem in (4) .
+
+The detailed proof is provided in Appendix B. By strictly constraining the learnable relaxation factor within the ascent-preserving interval, the proposed unfolding framework suc-cessfully decouples the pursuit of acceleration from the risk of divergence. 
+
+3) P-Net with Nesterov Acceleration: Building upon the standard FastFP-based P-Net, the incorporation of Nesterov’s acceleration is straightforward. The learned update rule is 8VSum-rate                          
+
+> ()()()
+> Safe exploration interval:
+> gradient direction
+> Fig. 3. Geometric illustration of the monotonic ascent guarantee. The surrogate function Qacts as a strict minorant to the true non-convex objective
+> f. While standard FastFP conservatively stops at the local peak ( α= 1 ), the proposed P-Net can explore along the gradient direction. Due to the parabola’s symmetry, any learned relaxation factor α∈(0 ,2) ensures that Qremains above its starting elevation.
+
+naturally extended by replacing the previous state V(τ −1) with the extrapolated anchor U(τ −1) defined in (18). Consequently, the target FastFP guide VFP is evaluated at U(τ −1) using (18), and the update rule is reformulated as follows: 
+
+V(τ )(α) = U(τ −1) + α
+
+
+
+VFP − U(τ −1) 
+
+. (29) However, directly applying Nesterov momentum inherently breaks the monotonic non-decreasing property of the FastFP method. To strictly maintain the theoretical guarantees, we in-troduce a low-complexity Surrogate Safety Check and Restart 
+
+mechanism. Specifically, at τ -th iteration, we first compute a candidate beamformer V(τ ) 
+
+> cand
+
+guided by the Nesterov anchor 
+
+U(τ −1) . We then evaluate the low-complexity surrogate func-tion fP3 to compare the candidate against the previous state. If fP3 (V(τ )
+
+> cand
+
+) ≥ fP3 (V(τ −1) ), the momentum step is deemed beneficial and the update is accepted. Otherwise, an unsafe trajectory is detected, triggering a restart: the momentum is discarded ( U(τ −1) ← V(τ −1) ), and the network performs a fallback update purely based on the monotonic base point. Since the computation of fP3 only involves low-complexity trace operations, and the P-Net inference relies on highly par-allelizable lightweight matrix multiplications, the occasional extra forward pass incurs negligible overhead. Consequently, the monotonic non-decreasing property and the stationary-point convergence guarantees, as established in Lemma 2 and Theorem 1, remain valid for the P-Net equipped with Nesterov acceleration. 
+
+4) Input Feature and Network Architecture: To avoid ex-cessive physical features and dimensionality explosion, we construct the input state of P-Net using an optimization-state-based feature vector. The network should learn the relaxation policy directly from the local optimization geometry, con-straint activity, and acceleration history. For any active link serving user u on slot i at iteration 
+
+τ , we define the FastFP update direction and the Nesterov momentum direction as D(τ ) 
+
+> u,i
+
+= VFP  
+
+> u,i
+
+− U(τ −1)  
+
+> u,i
+
+and M(τ ) 
+
+> u,i
+
+=
+
+U(τ −1)  
+
+> u,i
+
+− V(τ −1)  
+
+> u,i
+
+, respectively. The six-dimensional compact input feature vector s(τ ) 
+
+> u,i
+
+is constructed entirely from quantities already available during the standard FastFP update: 
+
+s(τ ) 
+
+> u,i
+
+= s1, s 2, s 3, s 4, s 5, s 6
+
+. (30) These six features sequentially correspond to:  
+
+> •
+
+Update magnitude (s1 = ∥D(τ )   
+
+> u,i ∥F
+> ∥U(τ−1)
+> u,i ∥F
+
+): captures the rela-tive step size of the current FastFP guide.  
+
+> •
+
+Curvature tightness (s2 = Tr (Lu,i )/M t 
+
+> λu,i
+
+): evaluates whether the worst-case majorization bound is overly conservative.  
+
+> •
+
+Power occupation (s3 = ∥U(τ −1)   
+
+> u,i ∥2
+> F
+> Pmax
+
+): indicates the prox-imity to the feasible power boundary.  
+
+> •
+
+Projection risk (s4 = max 
+
+
+
+0, ∥VFP  
+
+> u,i ∥2
+> F
+> Pmax
+
+−1
+
+
+
+): assesses the likelihood of the candidate being truncated by the power projection.  
+
+> •
+
+Momentum consistency (s5 = ℜ{ Tr (( D(τ )         
+
+> u,i )HM(τ)
+> u,i )}∥D(τ)
+> u,i ∥F∥M(τ)
+> u,i ∥F
+
+): mea-sures the alignment between the Nesterov momentum and the current gradient direction to determine momentum reliability.  
+
+> •
+
+Iteration stage (s6 = ττ +c ): allows the network to distinguish between early-stage exploration and late-stage refinement via a bounded scale constant c > 0.Unlike conventional deep unfolding architectures that al-locate independent trainable parameters for each layer, the proposed P-Net employs a strict parameter-sharing mechanism parameterized by a recurrent neural network (RNN) Fθ . The forward pass operates in an autoregressive manner: 
+
+
+
+α(τ ) 
+
+> u,i
+
+= 2 · Sigmoid 
+
+
+
+Fθ
+
+
+
+s(τ ) 
+
+> u,i
+
+, h(τ −1) 
+
+> u,i
+
+ 
+
+V(τ ) = Ψ 
+
+
+
+U(τ −1) , α (τ )
+
+> u,i
+
+ , ∀τ ∈ [1 , T ]
+
+(31) where h(τ −1)  
+
+> u,i
+
+represents the hidden state of the RNN, and 
+
+Ψ( ·) denotes the update rule defined in (29). Notably, the 
+
+Sigmoid( ·) activation inherently constrains the network output to the interval (0 , 1) ; hence, the scaling factor of 2 strictly bounds the learned relaxation factor α(τ ) 
+
+> u,i
+
+within (0 , 2) . This guarantees rigorous mathematical compliance with the ascent-preserving interval established in Lemma 2. The overall unfolded architecture of the proposed P-Net and the detailed computation graph of the τ -th iteration are illustrated in the left side of Fig. 2. This shared-weight design forces the network to learn a generalized, iteration-invariant mapping rather than layer-specific behaviors, significantly re-ducing the memory footprint. More importantly, it decouples the inference horizon from the training depth T , allowing the algorithm to flexibly extend the iterations until convergence during practical deployment. 
+
+5) Training Strategy: The training objective is to maximize the Weighted Sum Rate (WSR) across all users. Therefore, the 9
+
+loss function L(θ) over the training dataset D is defined as the negative expectation of the WSR: 
+
+L(θ) = − E
+
+> (H,V,k)∼D
+
+ X 
+
+> u∈[U]
+
+ρu
+
+X 
+
+> i∈[N]
+
+R(T ) 
+
+> u,i
+
+(θ)
+
+ , (32) where R(T ) 
+
+> u,i
+
+(θ) is the achievable rate evaluated using the beamforming matrices V(T ) output by the final T -th iteration of the unfolded network. To mitigate memory overhead and prevent vanishing gra-dients over a long unfolding horizon, we train the recurrent optimizer using Truncated Backpropagation Through Time (TBPTT). Specifically, the T -iteration forward rollout is par-titioned into consecutive chunks of length l. During the for-ward pass, optimization variables and recurrent hidden states are propagated across the entire trajectory. However, during backpropagation, the computational graph is detached at chunk boundaries, thereby restricting gradient flow to local l-step windows. The end-to-end training and autoregressive inference proce-dures are summarized in Algorithm 3. For each mini-batch, the beamformers are initialized to satisfy the power constraints. At each iteration τ ∈ [1 , T ], local features s(τ ) 
+
+> u,i
+
+are analytically extracted and fed into P-Net to output α(τ ) and calculate the updated beamformer V(τ ). After the full rollout, the final loss 
+
+L(θ) is evaluated, and the shared parameters θ are updated via TBPTT. 
+
+B. K-Net: Policy-Guided Priority RBG Scheduling 
+
+The proposed K-Net is introduced to improve the RBG allocation trajectory over a fixed unfolding horizon. In the AO-based algorithm proposed in Section III, the RBG assignment at iteration τ is obtained by solving a weighted bipartite matching problem to maximize a local surrogate objective, denoted as Q(τ )(k). The optimal local assignment via the Hungarian algorithm is given by: 
+
+k(τ )HM = arg max 
+
+> k∈K feas
+
+Q(τ )(k), (33) where Kfeas denotes the feasible RBG allocation set. Similar to the limitation of the FP framework for updating the beamformers, this myopic update ignores the long-term impact of current decisions. Since the current RBG pattern fundamentally alters the subsequent interference topology, auxiliary variables, and beamforming trajectories, maximizing the local surrogate is generally suboptimal for the terminal weighted sum-rate (WSR) under a finite iteration budget T .Specifically, the local maximizer typically diverges from the trajectory-optimal decision: 
+
+arg max  
+
+> k
+
+Q(τ )(k)̸ = arg max  
+
+> k
+
+EF  V(T ), k(T ) | x(τ ), k,
+
+(34) where F (·) denotes the terminal WSR, x(τ ) represents the complete algorithmic state at iteration τ , and the expectation is conditioned on the current assignment choice k(τ ) = k.To bridge this gap, K-Net is designed to learn a long-horizon scheduling policy while preserving the analytical structure of the FastFP assignment subproblem. Instead of replacing the 
+
+Algorithm 3 Bounded P-Net Training and Auto-regressive Inference Procedure  
+
+> 1:
+
+[Phase 1: Training procedure]  
+
+> 2:
+
+input: Training dataset D, unrolling depth T . 
+
+> 3:
+
+Initialize shared network parameters θ. 
+
+> 4:
+
+repeat  
+
+> 5:
+
+Sample mini-batch H ∼ D and initialize V(0) , k(0) . 
+
+> 6:
+
+for τ = 1 , . . . , T do  
+
+> 7:
+
+Update Γ(τ ) 
+
+> u,i
+
+and Y(τ ) 
+
+> u,i
+
+via (9) and (10).  
+
+> 8:
+
+Extract s(τ ) 
+
+> u,i
+
+and predict α(τ ) 
+
+> u,i
+
+via P-Net Fθ . 
+
+> 9:
+
+Update V(τ ) 
+
+> u,n
+
+via (29) and projection (17).  
+
+> 10:
+
+end for  
+
+> 11:
+
+Compute negative WSR loss L(θ) using V(T ). 
+
+> 12:
+
+Update shared parameters θ via Truncated BPTT.  
+
+> 13:
+
+until training loss converges  
+
+> 14:
+
+output: Trained network parameters θ∗. 
+
+> 15:
+
+[Phase 2: Inference procedure]  
+
+> 16:
+
+input: CSI H, Initialized V(0) , k(0) , max iterations Tinf . 
+
+> 17:
+
+repeat  
+
+> 18:
+
+Update Γ(τ ) 
+
+> u,i
+
+and Y(τ ) 
+
+> u,i
+
+via (9) and (10).  
+
+> 19:
+
+Extract s(τ ) 
+
+> u,i
+
+, predict α(τ ) 
+
+> u,i
+
+via Fθ∗ , and calculate V(τ )
+
+> cand
+
+. 
+
+> 20:
+
+if fP3 (V(τ )
+
+> cand
+
+) ≥ fP3 (V(τ −1) ) then  
+
+> 21:
+
+V(τ ) 
+
+> u,n
+
+← V(τ ) 
+
+> cand
+
+(Accept momentum step)  
+
+> 22:
+
+else  
+
+> 23:
+
+U(τ −1)  
+
+> u,n
+
+← V(τ −1)  
+
+> u,n
+
+(Safety Check Failed: Restart)  
+
+> 24:
+
+Re-extract s(τ ) 
+
+> u,i
+
+, re-predict α(τ ) 
+
+> u,i
+
+, and update V(τ )
+
+> u,n
+
+. 
+
+> 25:
+
+end if  
+
+> 26:
+
+until objective converges or τ = Tinf  
+
+> 27:
+
+output: Final beamforming matrices V
+
+heuristic matching weights ξ(τ ) 
+
+> u,i,n
+
+or directly predicting discrete assignments, K-Net exclusively determines the priority order 
+
+in which logical transmission slots select RBGs. Each slot then greedily selects its optimal RBG based on the original FastFP metric. This ordering-based design retains the physical interpretability of the assignment weights and significantly reduces the allocation complexity from O(U K 3) (for per-user Hungarian matching) to O(U K 2) (for sequential greedy allocation). 
+
+1) Markov Decision Process (MDP) Formulation: We cast the long-horizon RBG scheduling task as a finite-horizon MDP embedded within the alternating optimization loop. To optimize the full trajectory under a finite iteration budget T ,the macro-components of the MDP are formally structured as follows:  
+
+> •
+
+State ( s(τ )): The state space aggregates the underlying multi-cell topology and algorithmic states, which will be detailed later.  
+
+> •
+
+Action ( a(τ )): Rather than directly predicting the binary assignment matrix, the action space is defined as the priority scheduling order for all users, denoted as a(τ ) =
+
+{π(τ ) 
+
+> u
+
+}Uu=1 , where each π(τ ) 
+
+> u
+
+is a structural permutation of the logical slots [N ]. 
+
+> •
+
+Transition ( T ): The environment state evolves deter-ministically via a transition function T : S × A → S ,10 
+
+expressed as s(τ +1) = T  s(τ ), a (τ ). Specifically, the action a(τ ) is first mapped by the priority-greedy decoder to reconstruct the discrete allocation k(τ ), which subse-quently triggers the model-driven continuous updates to yield the next optimization state.  
+
+> •
+
+Reward ( Rb): To enforce trajectory-optimal behavior, an episodic terminal reward is evaluated for the b-th sample at the terminal horizon T , defined as the utility gain over the myopic Hungarian baseline: 
+
+Rb = F
+
+
+
+V(T ) 
+
+> θ,b
+
+, k(T )
+
+> θ,b
+
+
+
+− F
+
+
+
+V(T )ref ,b , k(T )ref ,b 
+
+
+
+, (35) where F (·) denotes the terminal network weighted sum-rate (WSR).  
+
+> •
+
+Discount Factor (γ): A parameter γ ∈ [0 , 1] that dictates the importance of long-term trajectory gains over immediate improvements. For the state feature, we construct a compact six-dimensional vector e(τ ) 
+
+> u,i,n
+
+for each candidate edge (u, i, n ):
+
+e(τ ) 
+
+> u,i,n
+
+= e1, e 2, e 3, e 4, e 5, e 6
+
+. (36) To ensure training stability, all continuous scalar features are normalized via sample-wise standardization with logarithmic pre-scaling. The elements of the state feature vector are defined as:  
+
+> •
+
+Edge Weight (e1): A global representation integrates the analytical matching weight ξ(τ )
+
+> u,i,n
+
+, the signal gain component, and the interference penalty in (21).  
+
+> •
+
+Allocation and Activation Status ( e2): A status indica-tor comprising the binary allocation variable x(τ −1)  
+
+> u,i,n
+
+∈{0, 1} and the logical slot activation flag a(τ −1)  
+
+> u,i
+
+=
+
+P 
+
+> n∈[K]
+
+x(τ −1)  
+
+> u,i,n
+
+∈ { 0, 1}. 
+
+> •
+
+Candidate Power Occupation ( e3): The normalized power consumption of the candidate beamformer, expressed as 
+
+p(τ ) 
+
+> u,i,n
+
+= ∥ bV(τ )
+
+> u,i,n
+
+∥2 
+
+> F
+
+/(Pmax ), characterizing the proximity to the continuous constraint boundary.  
+
+> •
+
+Effective Achievable Rate ( e4): The effective data rate supported at the current slot, evaluated by the term ρ(τ ) 
+
+> u,i
+
+= 
+
+> 1
+> du
+
+log det  Idu + Γ(τ )
+
+> u,i
+
+. 
+
+> •
+
+Interference Penalty Weight (e5): The receiver-side weighting term that scales the penalty for co-channel interference in the FP objective, defined via the decoding trace χ(τ ) 
+
+> u,i
+
+= 1  
+
+> Mrdu
+
+Tr  Y(τ ) 
+
+> u,i
+
+(Idu + Γ(τ ) 
+
+> u,i
+
+)Y(τ )Hu,i 
+
+. 
+
+> •
+
+Temporal Progress ( e6): An iteration-aging parameter given by ητ = ττ +cK , allowing the recurrent policy to adaptively switch behaviors between early-stage explo-ration and late-stage fine-tuning. 
+
+2) Global-Pooling Priority Network: K-Net maps the raw edge feature tensor E(τ ) = {e(τ )
+
+> u,i,n
+
+} to scalar slot-priority log-its through a series of shared edge embeddings and multi-scale pooling operations. First, each candidate edge is mapped into a high-dimensional representation via a shared NN denoted by 
+
+ψe, which is given by 
+
+h0 
+
+> u,i,n
+
+= ψe
+
+
+
+e(τ )
+
+> u,i,n
+
+
+
+∈ Rdh . (37) To capture the complex multi-user interference topol-ogy, K-Net subsequently aggregates hierarchical context vec-tors—specifically at the slot, user, RBG, base station (BS), and global network levels. These contextual representations are respectively formulated as 
+
+cSu,i = ψS
+
+ 1
+
+K
+
+X
+
+> n∈[K]
+
+h0
+
+> u,i,n
+
+ , (38a) 
+
+cUu = ψU
+
+ 1
+
+N K 
+
+X 
+
+> i∈[N]
+
+X
+
+> n∈[K]
+
+h0
+
+> u,i,n
+
+ , (38b) 
+
+cRn = ψR
+
+ 1
+
+U N 
+
+X 
+
+> u∈[U]
+
+X 
+
+> i∈[N]
+
+h0
+
+> u,i,n
+
+ , (38c) 
+
+cBb = ψB
+
+ 1
+
+|U b|N K 
+
+X
+
+> u∈U b
+
+X 
+
+> i∈[N]
+
+X
+
+> n∈[K]
+
+h0
+
+> u,i,n
+
+ , (38d) 
+
+cG = ψG
+
+ 1
+
+U N K 
+
+X 
+
+> u∈[U]
+
+X 
+
+> i∈[N]
+
+X
+
+> n∈[K]
+
+h0
+
+> u,i,n
+
+ , (38e) where ψS , ψU , ψR, ψB , and ψG denote dedicated NNs designed to extract distinct levels of topological features. These pooled representations effectively equip K-Net with comprehensive information regarding local candidate qualities, per-slot competition intensity, per-user allocation status, RBG congestion, cell-level load, and the global network environ-ment. By integrating these hierarchical contexts, the fused edge representation is computed via a fusion network ψF , expressed as 
+
+zu,i,n = ψF
+
+ h0 
+
+> u,i,n
+
++ cSu,i + cUu + cRn + cBbu + cG . (39) Subsequently, the slot-level representation is derived by per-forming an average pooling over all RBG candidates, given by 
+
+zSu,i = 1
+
+K
+
+X
+
+> n∈[K]
+
+zu,i,n , (40) which is ultimately mapped to a scalar priority logit via a linear output layer ψout , yielding 
+
+o(τ ) 
+
+> u,i
+
+= ψout (zSu,i ). (41) Remarkably, since all constituent NNs are shared across users, slots, RBGs, BSs, and unfolding iterations, the total number of trainable parameters remains strictly independent of the system dimensions ( U , N , and K). Consequently, the forward inference computation scales efficiently and linearly with the number of candidate edges. 
+
+3) Priority-Greedy RBG Decoding: During the stochastic training phase, the discrete slot priority order π(τ ) 
+
+> u
+
+is sampled from a Plackett–Luce distribution parameterized by the pre-dicted logits. For each user u, the probability of realizing a specific permutation is defined as 
+
+pθ
+
+
+
+π(τ ) 
+
+> u
+
+| s(τ )
+
+=
+
+> N
+
+Y
+
+> ℓ=1
+
+exp 
+
+
+
+o(τ ) 
+
+> u,π u,ℓ
+
+/T K
+
+P 
+
+> j∈J u,ℓ
+
+exp 
+
+
+
+o(τ ) 
+
+> u,j
+
+/T K
+
+ , (42) 11 
+
+where TK is the sampling temperature controlling the ex-ploration variance, and Ju,ℓ denotes the set of remaining unselected slots prior to the ℓ-th decoding step. Assuming conditionally independent decisions across users, the joint network policy factorizes as 
+
+pθ
+
+
+
+a(τ ) | s(τ )
+
+=
+
+> U
+
+Y
+
+> u=1
+
+pθ
+
+
+
+π(τ ) 
+
+> u
+
+| s(τ )
+
+. (43) Conversely, during the deterministic inference phase, the slots are simply sorted in descending order based on the logits o(τ )
+
+> u,i
+
+to form the exact priority sequence. Given the priority sequence π(τ ) 
+
+> u
+
+, K-Net employs a se-quential greedy decoding scheme. Let Ru,ℓ denote the subset of physical RBGs that remain available to user u before decoding the ℓ-th slot. The optimally selected RBG n⋆u,ℓ for the current slot is determined by greedily maximizing the analytical matching weight: 
+
+n⋆u,ℓ = arg max 
+
+> n∈R u,ℓ
+
+ξ(τ )
+
+> u,π u,ℓ ,n
+
+. (44) Accordingly, the exact binary decision is formalized as 
+
+x(τ ) 
+
+> u,π u,ℓ ,n
+
+=
+
+(1, if n = n⋆u,ℓ and ξ(τ )
+
+> u,π u,ℓ ,n ⋆u,ℓ
+
+> 0,
+
+0, otherwise . (45) As explicitly constrained by (45), if the maximum available matching weight is nonpositive, the corresponding slot remains inactive to prevent WSR degradation. Crucially, this decoding paradigm retains the physics-informed matching weight ξ(τ )
+
+> u,i,n
+
+,while exclusively optimizing the sequential order in which slots compete for resources. Furthermore, when assuming 
+
+N = K, this decoding paradigm has complexity O(U K 2)
+
+smaller than O(U K 3) for per-user Hungarian matching . 
+
+4) Policy-Gradient Training: The training objective of K-Net is to maximize the expected terminal WSR: 
+
+J (θ) = Epθ
+
+h
+
+F
+
+
+
+V(T ), k(T )i 
+
+. (46) To directly optimize this objective over the discrete action space, we employ the REINFORCE policy-gradient estimator [37]. The corresponding policy gradient is formulated as: 
+
+∇θ J (θ) = Epθ
+
+"
+
+RbTX 
+
+> τ=1
+
+∇θ log pθ
+
+
+
+a(τ ) | s(τ )#
+
+. (47) To effectively reduce the variance of the gradient estimation, the advantage term Rb is explicitly designed as the terminal utility gain over the traditional deterministic optimization algorithm in section III. The proposed K-Net leverages the analytical FastFP edge weighting as a physics-informed utility, while learning an or-dering policy that optimizes the long-term allocation trajectory. Consequently, K-Net significantly improves the terminal WSR under a strict unfolding budget, preserving the low-complexity advantage of sequential greedy allocation. V. N UMERICAL RESULTS 
+
+In this section, we evaluate the proposed deep-unfolding framework through extensive numerical simulations. First, we outline the simulation setup. Next, to explicitly isolate the contribution of the continuous beamforming optimizer, we evaluate P-Net under fixed RBG assignments. In this part, we analyze its WSR acceleration capability, convergence behavior, the distribution of the learned relaxation factor α,and its robustness across unseen network scales and channel conditions. Finally, we evaluate the complete joint resource allocation and beamforming framework. Within this joint setting, we first demonstrate how the policy-guided K-Net mitigates the performance degradation introduced by low-complexity greedy scheduling with well-learned decoding or-der, and then showcase how the combined P-Net and K-Net architecture achieves a superior complexity-performance trade-off compared to conventional model-driven joint optimization baselines. 
+
+A. Simulation Setup 
+
+We consider a multi-cell downlink MIMO network with a hexagonal cell layout, where each BS is located at the center of a cell, and users are uniformly distributed within the service area. All BSs share the same set of RBGs, and the distance between adjacent BSs is set to D = 0 .8 km. The number of data streams is identical for all users and satisfies du = 2 .Each BS is equipped with Mt = 32 transmit antennas, and each user is equipped with Mr = 4 receive antennas. The maximum transmit power is Pmax = 40 dBm. The noise power density is set to N0 = −174 dBm/Hz, and the bandwidth is set to 180 kHz. The distance-dependent path-loss model follows: P L (r) = 128 .1 + 37 .6 log 10 (r) + ξ, where r is the transmission distance in kilometers and ξ ∼ N (0 , 82) models log-normal shadowing. All user weights are identical and set to ρu = 1 . Independent channel realizations are generated and divided into training and test sets. The initial RBG assignment is constructed based on the direct channel gain, and the initial beamformer is initiated randomly, followed by power projection. The P-Net is implemented as a recurrent optimizer based on a single-layer GRU with 128 hidden units. The input features are normalized before being fed into the network. The GRU parameters are shared across all unfolded optimization iterations, allowing the trained model to be evaluated with an inference horizon different from the training horizon. For the TBPTT training, we roll out the recurrent optimizer for T = 100 optimization iterations and apply truncated backpropagation through time with a truncation length of 
+
+l = 10 . Therefore, the rollout is partitioned into 10 consecutive chunks. For K-Net, all NN modules—including the shared edge embedding, multi-scale context encoders, and the feature fusion layer—are implemented as two-layer MLPs with 32 
+
+hidden units. In addition, both P-Net and K-Net are optimized using the Adam optimizer. 12  
+
+> Fig. 4. Validation weighted sum-rate (WSR) trajectories of P-Net under different learning rates during the training phase.
+
+B. Performance Evaluation under Fixed RBG Allocation 
+
+To strictly isolate the contribution of the continuous beam-forming optimizer, we first evaluate P-Net under fixed RBG assignments. In this specific setting, to ensure a fair com-parison with the standard FP benchmarks [33], we temporar-ily replace the per-beamformer power constraint defined in (4b) with a base-station (BS)-level sum-power constraint: P
+
+> u∈U b
+
+P  
+
+> i∈[N]
+
+Tr (Vu,i VHu,i ) ≤ Pmax , ∀b ∈ A . Consequently, the continuous FastFP update rules must be adapted to ac-commodate this BS-level constraint. Specifically, the scalar curvature bound λ in the gradient step must be unified across all active links within the same cell, defined as λb =max u∈U b, i ∈[N ] λmax (Lu,i ). The corresponding unconstrained update and the BS-level power projection are respectively modified as: 
+
+˜V(τ ) 
+
+> u,i
+
+= V(τ −1)  
+
+> u,i
+
++ 1
+
+λbu
+
+
+
+Λu,i − Lu,i V(τ −1) 
+
+> u,i
+
+
+
+and 
+
+V(τ ) 
+
+> u,n
+
+=
+
+( ˜V(τ )
+
+> u,n
+
+, if Sb ≤ Pmax ,
+
+q Pmax 
+
+> Sb
+
+˜V(τ )
+
+> u,n
+
+, otherwise ,
+
+where Sb = P
+
+> u∈U b
+
+P 
+
+> i
+
+Tr( ˜V(τ ) 
+
+> u,i
+
+˜V(τ )Hu,i ) denotes the total unconstrained transmit power of BS b. Unless otherwise spec-ified, the surrogate safety-check procedure is disabled during inference, as it is rarely activated in practice. Therefore, the results mainly reflect the intrinsic acceleration behavior of P-Net. 
+
+1) Training Dynamics: We first examine the training be-havior of P-Net and the effect of key hyperparameters in the setting with B = 7 BSs, U = 14 users, and K = 14 RBGs. Fig. 4 and Fig. 5 illustrate the validation WSR trajectories under varying learning rates and batch sizes, respectively. A learning rate of 10 −3 and a moderate batch size of 16 
+
+are empirically selected to balance convergence speed and training stability. The smooth saturation of these validation curves confirms that the proposed recurrent parameter-sharing structure can be reliably optimized across unfolded iterations. 
+
+2) WSR Performance and Acceleration Ability: We then evaluate the beamforming performance of P-Net against rep-resentative iterative baselines. The compared methods are summarized as follows.   
+
+> Fig. 5. Validation weighted sum-rate (WSR) trajectories of P-Net under different batch sizes.
+> •
+
+FastFP: The state-of-the-art (SOTA) inversion-free FP benchmark based on the nonhomogeneous bound [33] whose optimization trajectory can be conservative due to the worst-case spectral radius step size.  
+
+> •
+
+Nesterov-FastFP: A momentum-accelerated variant of FastFP that integrates Nesterov’s extrapolation strategy to expedite the model-driven continuous optimization trajectory.  
+
+> •
+
+DeepFP-hybrid [31]: A latest deep-unfolded FP baseline that unrolls a fixed number of FastFP iterations into neu-ral network layers. In each layer, the analytical updates of the FP auxiliary variables and beamformers are preserved, while a DNN predicts the user-wise stepsize λ(τ ). The network is first pre-trained by supervised distillation using beamforming labels generated by 100-iteration Nesterov-FastFP, and is then fine-tuned by maximizing the WSR objective.  
+
+> •
+
+DeepFP-unsupervised [31]: An unsupervised counter-part of DeepFP-hybrid with the same fixed-depth un-folded FastFP architecture. Instead of using labels, it is trained from scratch by minimizing the negative WSR evaluated at the terminal unfolded layer. We first consider the scenario setting with B = 7 , U = 28 ,and K = 14 . All algorithms are evaluated over 1000 indepen-dent channel realizations sampled from the same environment setting. Fig. 6 shows the corresponding cumulative distribution function (CDF). Compared with FastFP and Nesterov-FastFP, the distribution of P-Net is shifted toward the high-WSR region, indicating that the gain is not limited to the aver-age value; P-Net also improves lower-percentile and median performance on the test samples. The acceleration effect is further quantified in Table I. We use the WSR achieved by Nesterov-FastFP after 100 iterations as the reference target. P-Net reaches this target within 55 iterations and requires 116 .74 
+
+milliseconds, whereas the 100-iteration Nesterov-FastFP refer-ence requires 194 .34 milliseconds. Although the per-iteration runtime of P-Net is slightly higher due to neural network inference, the reduced number of iterations results in lower total inference time. FastFP does not reach the same target within 100 iterations under this setting. We further benchmark it against learning-based methods 13 
+
+TABLE I ITERATIONS AND RUNTIME REQUIRED TO MATCH THE 100-I TERATION NESTEROV -F AST FP R EFERENCE (B = 7 , U = 28 , K = 14 )Method WSR at 100 Iter. Iter. to Target Time to Target (ms) Time/Iter. (ms) Nesterov-FastFP 3485 .64 100 194 .34 (100%) 1.94 
+
+P-Net 3908 .35 55 116 .74 (60.7%) 2.12 
+
+FastFP 2130 .00 > 100 – 1.92 
+
+TABLE II COMPARISON WITH FIXED -D EPTH DEEP FP B ASELINES UNDER FIXED RBG A SSIGNMENT (B = 7 , U = 28 , K = 14 )Method Training Signal Inference Horizon Avg. WSR CPU Time (ms) FastFP – 100 iter. 2129 .72 185 .34 
+
+Nesterov-FastFP – 100 iter. 3485 .20 180 .66 
+
+DeepFP-Unsupervised WSR 8 layers/iter. 1600 .85 20 .91 
+
+DeepFP-Hybrid Label(100iter .) + WSR 8 layers/iter. 2179 .13 17 .20 
+
+P-Net WSR 8 iter. 1554 .02 16 .49 
+
+P-Net WSR 100 iter. 3908 .35 185 .95 1500 2000 2500 3000 3500 4000 4500 5000 
+
+> Weighted Sum-Rate
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Probability
+> FastFP
+> Nesterov-FastFP
+> P-net
+
+Fig. 6. Cumulative Distribution Function (CDF) of the final WSR for the 
+
+B = 7 , U = 28 , and K = 14 setting. 
+
+to evaluate the structural impact of our recurrent parameter-sharing architecture relative to a fixed-depth unfolding of DeepFP. For both DeepFP baselines, we fix the unfolded depth to T = 8 layers. This configuration is primarily chosen to maintain a comparable number of model parameters with P-Net. Table II compares these methods under the same B = 7 ,
+
+U = 28 , and K = 14 test setting. As observed, DeepFP-Hybrid exhibits a strong short-horizon WSR ( 2179 .13 ) due to its end-to-end knowledge distillation from a 100-iteration teacher. However, its fixed-depth architecture severely restricts further iterative refinement. In contrast, P-Net functions as a bounded step-size controller; its recurrent parameter-sharing mechanism completely decouples the inference horizon from the training depth. When unfolded to 100 iterations, P-Net achieves an ultimate WSR of 3908 .35 , outperforming the 100-iteration Nesterov-FastFP reference by 12 .1% under a comparable runtime. We next evaluate a denser setting with B = 7 BSs, U = 35 
+
+users, and K = 20 RBGs. The distribution-level results for 2000 3000 4000 5000 6000 7000 8000 
+
+> Weighted Sum-Rate
+> 0
+> 5
+> 10
+> 15
+> 20
+> 25
+> 30
+> 35
+> Number of Samples
+> FastFP
+> Nesterov-FastFP
+> P-net
+
+Fig. 7. Weighted Sum-rate distribution in the B = 7 , U = 35 , and K = 20 
+
+setting. 
+
+the same setting are shown in Fig. 7, which shows that P-Net yields a higher WSR distribution than the considered baselines at the same iteration budget. Hence, the gain observed in the convergence curve is also reflected across the sample-wise performance distribution. To further evaluate the convergence behavior of the P-net, Fig. 8 compares the average WSR trajec-tories over more than 100 iterations. Enabled by the bounded relaxation factor, P-Net consistently maintains a steeper ascent and achieves a faster convergence rate than both FastFP and Nesterov-FastFP across the entire iteration horizon. To better understand P-Net’s acceleration mechanism, Fig. 9 visualizes the empirical statistics of the learned relaxation factor α(τ )
+
+> u,i
+
+over these 500 iterations. Structurally bounded within the safe interval (0 , 2) to preserve monotonicity, the mean and median of α consistently exceed the standard FastFP baseline ( α = 1 ), enabling more aggressive optimization steps. Furthermore, the network learns an iteration-dependent policy: it favors larger relaxation factors during early iterations to expedite progress, and adaptively reduces α in later stages to prevent unstable 14 0 100 200 300 400 500             
+
+> Iteration
+> 1000
+> 2000
+> 3000
+> 4000
+> 5000
+> 6000
+> 7000
+> Weighted Sum-rate
+> P-Net
+> FastFP
+> Nesterov-FastFP
+> Fig. 8. Average WSR convergence trajectories over 500 iterations in the
+> B= 7 ,U= 35 , and K= 20 setting. 0100 200 300 400 500
+
+P-Net iteration           
+
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> Alpha Value
+> min-max
+> p05-p95
+> mean
+> median
+> = 1
+> = 2
+> Fig. 9. Statistical distribution (mean, median, and percentiles) of the learned relaxation factor αover 500 optimization iterations in the B= 7 ,U= 35 ,and K= 20 setting.
+
+oscillations. This interpretable dynamic confirms that P-Net functions as an adaptive step-size controller rather than a purely black-box beamformer predictor. 
+
+3) Generalization Under Network-Scale Variations: Since P-Net operates on the physics features of the FastFP frame-work and shares parameters across user-RB links, it is ex-pected to generalize more naturally across different values of 
+
+U and K than a fully fixed-dimensional NN. We evaluate this property by training P-Net in the network with B = 7 BSs, 
+
+U = 28 users, and K = 14 RBGs, and then testing it under network settings with different numbers of users and/or RBGs. Figs. 10a–10c report the CDFs when the number of RBGs is varied while the number of users remains fixed at U = 28 .Across different values of K, the P-Net curve consistently shifts to the right of the FastFP and Nesterov-FastFP baselines, indicating that the learned relaxation rule remains effective when the dimension of the RBG set differs from the training setting. Figs. 10d–10f further evaluate the generalization to different numbers of users. These results suggest that P-Net learns a transferable update policy from local optimization-state features, rather than memorizing a fixed network setting policy. We further evaluate the robustness of P-Net to shifts in transmit power and shadowing variance. The P-Net model is trained only under the default simulation setting with BS total transmit power Pmax = 40 dBm and shadowing 
+
+ξ ∼ N (0 , 82). The results in Table III show that P-Net out-performs Nesterov-FastFP under all tested transmit power and shadowing variances. Meanwhile, the relative gain becomes smaller as the transmit power decreases. This is because lower transmit power leads to a lower-SNR regime, where both methods are closer to their converged performance after 100 iterations, leaving less room for P-Net to further improve over the baseline. As a result, P-Net achieves modest gains at transmit power of 20 dBm, while its advantage becomes more pronounced in higher-SNR scenarios. 
+
+C. Performance Evaluation Under Joint Optimization of RBG Allocation and Beamforming 
+
+The preceding experiments under fixed RBG assignments verify that P-Net can accelerate the continuous FastFP beam-forming update. We now evaluate the complete joint RBG allocation and beamforming process, where the continuous beamforming step and the discrete RBG scheduling step are updated alternately. This setting is more challenging because the RBG assignment affects the interference topology, while the beamforming update in turn changes the utility of future RBG assignments. We consider two network scenarios to evaluate whether the proposed modules provide a consistent performance-runtime advantage under different scheduling loads. The first scenario is configured as B = 7 , U = 14 , and K = 28 , where the number of RBGs is relatively abundant compared with the number of users. The second scenario is configured as B = 7 ,
+
+U = 28 , and K = 35 , where the number of users is doubled and the discrete scheduling competition becomes stronger. For all compared methods, the same channel realizations, initial RBG assignments, and initial beamformers are used in each scenario. We compare the following four joint optimization methods:  
+
+> •
+
+FastFP + Hungarian : the conventional model-driven joint baseline, where the beamforming step uses FastFP and the RBG allocation step is solved by Hungarian matching.  
+
+> •
+
+FastFP + Greedy : a low-complexity baseline that uses the priority-greedy RBG decoding process, but follows a fixed default index order of the decision slots.  
+
+> •
+
+FastFP + K-Net : an allocation-side learned accelerator, where the beamforming step remains FastFP while K-Net predicts the priority order used by the same greedy RBG decoder.  
+
+> •
+
+P-Net + K-Net : the proposed learned joint method, where P-Net accelerates the continuous FastFP beamforming update and K-Net accelerates the discrete RBG allocation step. This comparison separates the roles of the two learning modules. The gap between FastFP + Greedy and FastFP + K-Net isolates the benefit of learning the priority order for greedy RBG decoding. The gap between FastFP + K-Net and P-Net + K-Net further shows whether P-Net can still provide additional 15 3000 4000 5000 6000 7000 
+
+> Weighted Sum-Rate
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Probability
+> FastFP
+> Nesterov-FastFP
+> P-net
+
+(a) K = 21 3000 4000 5000 6000 7000 8000 9000  
+
+> Weighted Sum-Rate
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Probability
+> FastFP
+> Nesterov-FastFP
+> P-net
+
+(b) K = 28 4000 5000 6000 7000 8000 9000 10000 11000  
+
+> Weighted Sum-Rate
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Probability
+> FastFP
+> Nesterov-FastFP
+> P-net
+
+(c) K = 35 2000 3000 4000 5000 6000 
+
+> Weighted Sum-Rate
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Probability
+> FastFP
+> Nesterov-FastFP
+> P-net
+
+(d) U = 35 2000 3000 4000 5000 6000  
+
+> Weighted Sum-Rate
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Probability
+> FastFP
+> Nesterov-FastFP
+> P-net
+
+(e) U = 42 2000 3000 4000 5000 6000 7000  
+
+> Weighted Sum-Rate
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Probability
+> FastFP
+> Nesterov-FastFP
+> P-net
+
+(f) U = 49 
+
+Fig. 10. CDFs of WSR under different system dimensions. The first row evaluates the generalization of P-Net to different numbers of RBGs, while the second row evaluates the generalization to different numbers of users. TABLE III P-N ET GENERALIZATION UNDER DIFFERENT SHADOWING VARIANCES AND TRANSMIT -P OWER BUDGETS WITHOUT RETRAINING 
+
+Pmax (dBm) σsh (dB) Average WSR After 100 Iterations Relative Gain CPU Time (ms) P-Net Nesterov-FastFP 
+
+20 4 1255 .77 1248 .87 0.55% 126 .25 (67 .1% )
+
+8 1476 .40 1455 .24 1.45% 120 .78 (62 .1% )
+
+12 1728 .50 1670 .63 3.46% 113 .75 (59 .9% )
+
+30 4 2634 .54 2555 .88 3.08% 120 .93 (62 .7% )
+
+8 2759 .19 2628 .52 4.97% 133 .44 (68 .2% )
+
+12 2826 .90 2601 .36 8.67% 131 .41 (61 .8% )
+
+40 4 4126 .52 3757 .74 9.81% 107 .81 (53 .0% )
+
+8 3951 .97 3500 .98 12 .88% 108 .29 (57 .0% )
+
+12 3645 .41 3090 .35 17 .96% 111 .09 (56 .8% )
+
+beamforming acceleration after the discrete allocation step has already been accelerated by K-Net. Table IV reports the final WSR and measured runtime per sample of the four joint optimization methods. In Scenario I, FastFP + Greedy reduces the runtime to 31 .86% of FastFP + Hungarian, but its final WSR decreases by 4.65% . This confirms that simply replacing Hungarian matching with a fixed-order greedy decoder provides acceleration at a clear performance cost. In contrast, FastFP + K-Net uses the same greedy decoder but replaces the default order with a learned priority order. It improves the final WSR by 5.28% over FastFP + Hungarian while using only 36 .74% of the baseline runtime. Therefore, the gain of K-Net comes from learning a better decoding order rather than from changing the underlying FP-derived edge utility or invoking a more expensive assignment solver. The same conclusion also holds in Scenario II. When the number of users increases from 14 to 28 , FastFP + Greedy still remains below FastFP + Hungarian in final WSR. FastFP + K-Net, however, slightly exceeds the Hungarian baseline by 
+
+1.13% while reducing the runtime to 50 .83% . This result is important because the larger scenario increases the size and difficulty of the discrete scheduling problem, yet K-Net still preserves the WSR quality of Hungarian matching with much lower inference time. The complete P-Net + K-Net method further strengthens this advantage in both scenarios. In Scenario I, it improves the WSR gain from 5.28% to 7.27% over FastFP + Hungarian and reaches the final Hungarian target using only 19 .46% of the baseline time. In Scenario II, the additional contribution of P-Net becomes more pronounced: P-Net + K-Net improves the final WSR by 5.71% over FastFP + Hungarian and by 16 
+
+TABLE IV PERFORMANCE AND RUNTIME SUMMARY FOR JOINT RBG A LLOCATION AND BEAMFORMING 
+
+Scenario Method Final WSR WSR Gain CPU time (s) Time Ratio Speedup Target Iter./Time 
+
+7BS-14 UE-28 RB FastFP + Hungarian 2730 .70 Ref. 4.60 100 .00% 1.00 × 100 /4.60 (100 .00%) 
+
+FastFP + Greedy 2603 .77 −4.65% 1.47 31 .86% 3.14 × –FastFP + K-Net 2874 .88 +5 .28% 1.69 36 .74% 2.72 × 67 /1.13 (24 .62%) 
+
+P-Net + K-Net 2929 .13 +7 .27% 1.69 36 .72% 2.72 × 53 /0.89 (19 .46%) 7BS-28 UE-35 RB FastFP + Hungarian 4670 .34 Ref. 8.91 100 .00% 1.00 × 100 /8.91 (100 .00%) 
+
+FastFP + Greedy 4516 .82 −3.29% 4.32 48 .46% 2.06 × –FastFP + K-Net 4722 .97 +1 .13% 4.53 50 .83% 1.97 × 93 /4.21 (47 .27%) 
+
+P-Net + K-Net 4936 .90 +5 .71% 4.55 51 .02% 1.96 × 67 /3.05 (34 .18%) 0 20 40 60 80 100 
+
+> iteration
+> 1000
+> 1500
+> 2000
+> 2500
+> 3000
+> sum-rate
+> FastFP + Hungarian
+> FastFP + Greedy
+> P-Net + KNet
+> FastFP + KNet
+
+(a) B = 7 , U = 14 , K = 28 .0 20 40 60 80 100  
+
+> iteration
+> 1500
+> 2000
+> 2500
+> 3000
+> 3500
+> 4000
+> 4500
+> 5000
+> sum-rate
+> FastFP + Hungarian
+> FastFP + Greedy
+> P-Net + KNet
+> FastFP + KNet
+
+(b) B = 7 , U = 28 , K = 35 .
+
+Fig. 11. Average WSR trajectories of joint RBG allocation and beamforming optimization. 
+
+4.53% over FastFP + K-Net. These results show that K-Net addresses the discrete-matching bottleneck, while P-Net further accelerates and improves the continuous beamforming trajectory after the allocation step has been changed. Fig. 11 compares the WSR trajectories of the four methods. In both scenarios, FastFP + Greedy remains below FastFP + Hungarian, indicating that the fixed default priority order is insufficient to preserve the performance of joint optimiza-tion. FastFP + K-Net reaches or exceeds the final FastFP + Hungarian target with substantially fewer effective runtimes. Specifically, it reaches the target at the 67 -th iteration in Scenario I and at the 93 -rd iteration in Scenario II. P-Net + K-Net reaches the same target earlier, at the 53 -rd and 67 -th iterations, respectively. This demonstrates that the learned continuous and discrete modules are complementary: K-Net avoids the high cost of Hungarian matching, while P-Net further shortens the trajectory required to reach the same WSR level. It is also observed that the K-Net-based trajectories may exhibit mild non-monotonic fluctuations. This behavior is expected in joint RBG allocation and beamforming. Because K-Net is trained to improve the long-horizon terminal WSR rather than enforce monotonic improvement at every discrete reassignment step. Fig. 12 reports the sample-wise final WSR distributions. The CDFs show that FastFP + K-Net and P-Net + K-Net shift the WSR distribution to the right of FastFP + Hungarian in both scenarios. Hence, the average WSR gain is not caused by a few favorable channel realizations, but appears consistently across the test distribution. Among all methods, P-Net + K-Net produces the most favorable distribution, confirming that the learned continuous beamforming acceleration and learned discrete priority scheduling jointly improve the performance-runtime tradeoff. VI. C ONCLUSION 
+
+In this paper, we proposed a joint deep unfolding frame-work, comprising P-Net and K-Net, to tackle the mixed-integer RBG scheduling and beamforming problem in multi-cell MIMO networks. For continuous beamforming, P-Net accelerates the FastFP trajectory by learning a bounded re-laxation factor, ensuring rapid convergence while strictly preserving theoretical monotonic ascent and stationary-point guarantees. For discrete scheduling, K-Net learns a prior-ity policy that guides a low-complexity greedy allocation, effectively bypassing the prohibitive overhead of Hungarian matching without sacrificing assignment quality. By lever-aging recurrent parameter sharing, both networks achieve a minimal memory footprint and support flexible inference beyond the training horizon. Extensive simulations confirm that the proposed framework achieves a superior WSR-runtime trade-off compared to conventional model-driven baselines, while generalizing robustly to unseen network scales, antenna configurations, and channel conditions without retraining. 17 2000 2500 3000 3500 
+
+> Weighted Sum-Rate
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Probability
+> FastFP + Hungarian
+> FastFP + Greedy
+> P-Net + KNet
+> FastFP + KNet
+
+(a) CDF, B = 7 , U = 14 , K = 28 .4000 4500 5000 5500 6000  
+
+> Weighted Sum-Rate
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Probability
+> FastFP + Hungarian
+> FastFP + Greedy
+> P-Net + KNet
+> FastFP + KNet
+
+(b) CDF, B = 7 , U = 28 , K = 35 .
+
+Fig. 12. Final WSR CDF under joint RBG allocation and beamforming optimization. 
+
+APPENDIX APROOF OF LEMMA 2In this appendix, we provide the detailed proof of Lemma 2, which mathematically establishes the monotonic non-decreasing property of the proposed P-Net update rule. 
+
+Proof. The FastFP algorithm operates within a MM frame-work [33]. As conceptually illustrated in Fig. 3, at an arbitrary 
+
+τ iteration, the surrogate function Q(V | V(τ −1) ) acts as a tight lower bound (minorant) to the true objective f (V),satisfying the global minorization property Q(V | V(τ −1) ) ≤
+
+f (V) and tight bound at the expansion point Q(V(τ −1) |
+
+V(τ −1) ) = f (V(τ −1) ).By completing the square with respect to V, the surrogate function Q(V | V(τ −1) ) can be equivalently rewritten as: 
+
+Q(V | V(τ −1) ) = −λ∥V − VFP ∥2 
+
+> F
+
++ C′
+
+where C′ = 1 
+
+> λ
+
+∥Ξ∥2 
+
+> F
+
++ C is a term independent of V, and 
+
+VFP = 1 
+
+> λ
+
+Ξ is the unconstrained maximizer. Let ∆V ≜ VFP − V(τ −1) denote the update direction. The P-Net update rule is formulated as V(τ ) = V(τ −1) + α∆V.Substituting this into the surrogate function yields: 
+
+Q(V(τ ) | V(τ −1) ) = −λ∥V(τ −1) + α∆V − VFP ∥2 
+
+> F
+
++ C′
+
+= −λ∥(α − 1)∆ V∥2 
+
+> F
+
++ C′
+
+= −λ(α − 1) 2∥∆V∥2 
+
+> F
+
++ C′.
+
+Similarly, evaluating the surrogate at the expansion point 
+
+V(τ −1) gives Q(V(τ −1) | V(τ −1) ) = −λ∥∆V∥2 
+
+> F
+
++ C′.The elevation of the surrogate function can be mathemati-cally quantified as: 
+
+Q(V(τ ) | V(τ −1) ) − Q(V(τ −1) | V(τ −1) )= λ  1 − (α − 1) 2 ∥∆V∥2
+
+> F
+
+= λα (2 − α)∥∆V∥2 
+
+> F
+
+.
+
+Since λ > 0 and ∥∆V∥2 
+
+> F
+
+≥ 0, the condition for strict surro-gate ascent is α(2 − α) ≥ 0. The P-Net structurally bounds the relaxation factor to α ∈ (0 , 2) , which strictly satisfies this inequality, thereby guaranteeing Q(V(τ ) | V(τ −1) ) ≥
+
+Q(V(τ −1) | V(τ −1) ).Combining this with the properties of the MM framework, we deduce: 
+
+f (V(τ )) ≥ Q(V(τ ) | V(τ −1) )
+
+≥ Q(V(τ −1) | V(τ −1) ) = f (V(τ −1) )
+
+This confirms the monotonic non-decreasing of the objective function. APPENDIX BPROOF OF THEOREM 1In this appendix, we provide the detailed proof of Theorem 1 about the proposed algorithm converging to a stationary point of the original optimization problem. 
+
+Proof. First, given the compact transmit power constraints in (4b) and the finite additive noise, the weighted sum-rate objective function f (V) is upper-bounded. Since Lemma 2 guarantees that the sequence of objective values {f (V(τ ))}
+
+is monotonically non-decreasing, it must converge to a finite limit f ∗. Furthermore, owing to the compactness of the feasible set W enforced by the power constraints, the sequence of beamformers {V(τ )} possesses at least one limit point, denoted by V∗.As τ → ∞ , the parameter parameterized update rule in (28) yields the limiting relation V∗ = V∗ + α(VFP ∗ − V∗),where VFP ∗ represents the analytical FastFP guide evaluated at V∗. Given that the neural network structurally ensures the relaxation factor α > 0, this equality holds if and only if 
+
+V∗ = VFP ∗. Since VFP ∗ is mathematically equivalent to a gradient projection operation on the local surrogate function 
+
+Q, the limit point V∗ must satisfy the projected fixed-point condition of the surrogate problem: 
+
+V∗ = PW
+
+
+
+V∗ + 1
+
+λ ∇VQ(V∗ | V∗)
+
+
+
+.18 
+
+According to the first-order gradient matching property of the MM framework, the gradient of the true objective function and the surrogate function are identical at the expansion point, i.e., ∇Vf (V∗) = ∇VQ(V∗ | V∗). Substituting this into the fixed-point relation yields: 
+
+V∗ = PW
+
+
+
+V∗ + 1
+
+λ ∇Vf (V∗)
+
+
+
+.
+
+This explicitly satisfies the projected gradient stationary con-dition for the original constrained optimization problem in (4), which concludes the proof that the limit point V∗ is a stationary point of f (V).REFERENCES [1] ITU Radiocommunication Sector, “Framework and overall objectives of the future development of imt for 2030 and beyond,” International Telecommunication Union, Recommendation ITU-R M.2160-0, November 2023. [Online]. Available: https://itu.int [2] Ericsson, “Ericsson mobility report june 2024,” Ericsson, Tech. Rep., Jun. 2024. [Online]. Available: https://www.ericsson.com/en/ reports-and-papers/mobility-report [3] H. Tataria, M. Shafi, A. F. Molisch, M. Dohler, H. Sj¨ oland, and F. Tufvesson, “6G wireless systems: Vision, requirements, challenges, insights, and opportunities,” Proceedings of the IEEE , vol. 109, no. 7, pp. 1166–1199, 2021. [4] K. B. Letaief, W. Chen, Y. Shi, J. Zhang, and Y.-J. A. Zhang, “The roadmap to 6g: Ai empowered wireless networks,” IEEE communica-tions magazine , vol. 57, no. 8, pp. 84–90, 2019. [5] D. Gesbert, S. Hanly, H. Huang, S. Shamai, O. Simeone, and W. Yu, “Multi-cell MIMO cooperative networks: A new look at interference,” 
+
+IEEE Journal on Selected Areas in Communications , vol. 28, no. 9, pp. 1380–1408, 2010. [6] E. Bj¨ ornson and E. Jorswieck, “Optimal resource allocation in coordi-nated multi-cell systems,” Foundations and Trends in Communications and Information Theory , vol. 9, no. 2–3, pp. 113–381, 2013. [7] J. Huang, V. G. Subramanian, R. Agrawal, and R. A. Berry, “Downlink scheduling and resource allocation for ofdm systems,” IEEE Transac-tions on Wireless Communications , vol. 8, no. 1, pp. 288–296, 2009. [8] Y.-F. Liu and Y.-H. Dai, “On the complexity of joint subcarrier and power allocation for multi-user ofdma systems,” IEEE Transactions on Signal Processing , vol. 62, no. 3, pp. 583–596, 2014. [9] B. Song, Y.-H. Lin, and R. L. Cruz, “Weighted max-min fair beam-forming, power control, and scheduling for a miso downlink,” IEEE Transactions on Wireless Communications , vol. 7, no. 2, pp. 464–469, 2008. [10] W. Yu, T. Kwon, and C. Shin, “Multicell coordination via joint schedul-ing, beamforming, and power spectrum adaptation,” in Proceedings IEEE INFOCOM , 2011, pp. 2570–2578. [11] N. U. Hassan and M. Assaad, “Downlink beamforming and resource al-location in multicell MISO-OFDMA systems,” Transactions on Emerg-ing Telecommunications Technologies , vol. 25, no. 2, pp. 173–182, 2014. [12] A. Khanafer, T. J. Lim, R. Doostnejad, and T. Tang, “MIMO-OFDMA rate allocation and beamformer design using a multi-access channel framework,” in IEEE International Conference on Communications ,2012, pp. 2553–2558. [13] S. S. Christensen, R. Agarwal, E. De Carvalho, and J. M. Cioffi, “Weighted sum-rate maximization using weighted mmse for mimo-bc beamforming design,” IEEE Transactions on Wireless Communications ,vol. 7, no. 12, pp. 4792–4799, 2008. [14] Q. Shi, M. Razaviyayn, Z.-Q. Luo, and C. He, “An iteratively weighted MMSE approach to distributed sum-utility maximization for a MIMO interfering broadcast channel,” IEEE Transactions on Signal Processing ,vol. 59, no. 9, pp. 4331–4340, 2011. [15] K. Shen and W. Yu, “Fractional programming for communication systems—part I: Power control and beamforming,” IEEE Transactions on Signal Processing , vol. 66, no. 10, pp. 2616–2630, 2018. [16] X. Zhao, S. Lu, Q. Shi, and Z.-Q. Luo, “Rethinking WMMSE: Can its complexity scale linearly with the number of BS antennas?” IEEE Transactions on Signal Processing , vol. 71, pp. 433–446, 2023. [17] K. Shen and W. Yu, “Fractional programming for communication systems—part II: Uplink scheduling via matching,” IEEE Transactions on Signal Processing , vol. 66, no. 10, pp. 2631–2644, 2018. [Online]. Available: https://arxiv.org/abs/1802.10197 [18] A. A. Khan, R. S. Adve, and W. Yu, “Optimizing downlink resource al-location in multiuser mimo networks via fractional programming and the hungarian algorithm,” IEEE Transactions on Wireless Communications ,vol. 19, no. 8, pp. 5162–5175, 2020. [19] H. Sun, X. Chen, Q. Shi, M. Hong, X. Fu, and N. D. Sidiropoulos, “Learning to optimize: Training deep neural networks for wireless re-source management,” IEEE Transactions on Signal Processing , vol. 66, no. 20, pp. 5438–5453, 2018. [20] L. Liang, H. Ye, G. Yu, and G. Y. Li, “Deep-learning-based wireless resource allocation with application to vehicular networks,” Proceedings of the IEEE , vol. 108, no. 2, pp. 341–356, 2019. [21] A. Alwarafy, M. Abdallah, B. S. Ciftler, A. Al-Fuqaha, and M. Hamdi, “Deep reinforcement learning for radio resource allocation and management in next generation heterogeneous wireless networks: A survey,” arXiv preprint arXiv:2106.00574 , 2021. [Online]. Available: https://arxiv.org/abs/2106.00574 [22] Y. Shen, Y. Shi, J. Zhang, and K. B. Letaief, “Lorm: Learning to optimize for resource management in wireless networks with few training sam-ples,” IEEE Transactions on Wireless Communications , vol. 19, no. 1, pp. 665–679, 2020. [23] W. Cui, K. Shen, and W. Yu, “Spatial deep learning for wireless schedul-ing,” IEEE Journal on Selected Areas in Communications , vol. 37, no. 6, pp. 1248–1261, 2019. [24] Y. Shen, Y. Shi, J. Zhang, and K. B. Letaief, “Graph neural networks for scalable radio resource management: Architecture design and theoretical analysis,” IEEE Journal on Selected Areas in Communications , vol. 39, no. 1, pp. 101–115, 2021. [25] Z. Wang, M. Eisen, and A. Ribeiro, “Learning decentralized wireless resource allocations with graph neural networks,” IEEE Transactions on Signal Processing , vol. 70, pp. 1850–1863, 2022. [26] S. Lu, S. Zhao, and Q. Shi, “Learning-based massive beamforming,” in GLOBECOM 2020-2020 IEEE Global Communications Conference .IEEE, 2020, pp. 1–6. [27] V. Monga, Y. Li, and Y. C. Eldar, “Algorithm unrolling: Interpretable, efficient deep learning for signal and image processing,” IEEE Signal Processing Magazine , vol. 38, no. 2, pp. 18–44, 2021. [28] Q. Hu, Y. Cai, Q. Shi, K. Xu, G. Yu, and Z. Ding, “Iterative algorithm induced deep-unfolding neural networks: Precoding design for mul-tiuser MIMO systems,” IEEE Transactions on Wireless Communications ,vol. 20, no. 2, pp. 1394–1410, 2021. [29] L. Pellaco, M. Bengtsson, and J. Jald´ en, “Matrix-inverse-free deep unfolding of the weighted mmse beamforming algorithm,” IEEE Open Journal of the Communications Society , vol. 3, pp. 65–81, 2021. [30] A. Chowdhury, G. Verma, A. Swami, and S. Segarra, “Deep graph unfolding for beamforming in MU-MIMO interference networks,” IEEE Transactions on Wireless Communications , vol. 23, no. 5, pp. 4889– 4903, 2024. [31] J. Zhu, T.-H. Chang, L. Xiang, and K. Shen, “Deepfp: Deep-unfolded fractional programming for mimo beamforming,” IEEE Transactions on Communications , 2026. [32] Y. Sun, P. Babu, and D. P. Palomar, “Majorization-minimization algo-rithms in signal processing, communications, and machine learning,” 
+
+IEEE Transactions on Signal Processing , vol. 65, no. 3, pp. 794–816, 2017. [33] K. Shen, Z. Zhao, Y. Chen, Z. Zhang, and H. V. Cheng, “Accelerating quadratic transform and WMMSE,” IEEE Journal on Selected Areas in Communications , vol. 42, no. 11, pp. 3110–3124, 2024. [34] J. Liu, X. Chen, Z. Wang, and W. Yin, “Alista: Analytic weights are as good as learned weights in lista,” in International conference on learning representations , 2019. [35] C. Bertocchi, E. Chouzenoux, M.-C. Corbineau, J.-C. Pesquet, and M. Prato, “Deep unfolding of a proximal interior point method for image restoration,” Inverse Problems , vol. 36, no. 3, p. 034005, 2020. [36] S. Mukherjee, A. Hauptmann, O. ¨Oktem, M. Pereyra, and C.-B. Sch¨ onlieb, “Learned reconstruction methods with convergence guaran-tees: A survey of concepts and applications,” IEEE Signal Processing Magazine , vol. 40, no. 1, pp. 164–182, 2023. [37] R. S. Sutton, D. McAllester, S. Singh, and Y. Mansour, “Policy gradi-ent methods for reinforcement learning with function approximation,” 
+
+Advances in neural information processing systems , vol. 12, 1999.

@@ -6,34 +6,40 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-04
-- 运行时间：2026-06-04 20:53:05 UTC
+- 最新运行日期：2026-06-05
+- 运行时间：2026-06-05 20:51:11 UTC
 - 运行状态：成功
-- 本次总论文数：4
+- 本次总论文数：6
 - 精读区：1
-- 速读区：3
+- 速读区：5
 
 ### 今日简报（AI）
-今日精读1篇水下OFDM系统信道预测，速读3篇涵盖图神经网络、物理信息网络及多任务学习。  
-最值得关注的是精读论文《Deep Learning Based Multi-Step Channel Prediction...》（8.0分）提出的自适应预测方案，以及速读中Prompt决策变压器在多任务无线网络中的应用（7.0分）。  
-建议优先精读信道预测论文以提升对自适应水下通信的理解，随后可速读Prompt决策变压器论文对比其泛化能力。
-- 详情：[/202606/04/README](/202606/04/README)
+今日精读一篇统计辅助机器学习的双定向无线信道建模论文（8.0分），速读三篇涉及RBF-KAN函数逼近、MIMO波束赋形及物理信息神经网络约束的论文。  
+最值得关注方向：统计辅助机器学习用于无线信道建模，以及有效维度作为算子不变量的物理信息神经网络自适应方法。  
+建议普通读者可结合通信与物理模拟场景，优先探索上述两个方向中多学科交叉的实践案例。
+- 详情：[/202606/05/README](/202606/05/README)
 
 ### 精读区论文标签
-1. [Deep Learning Based Multi-Step Channel Prediction for Adaptive Underwater Acoustic OFDM Systems](/202606/04/2606.05053v1-deep-learning-based-multi-step-channel-prediction-for-adaptive-underwater-acoustic-ofdm-systems)  
+1. [Double-Directional Wireless Channel Modeling Using Statistics-Aided Machine Learning](/202606/05/2606.05993v1-double-directional-wireless-channel-modeling-using-statistics-aided-machine-learning)  
    标签：评分：8.0/10、query:channel-nn
-   evidence：基于Transformer的多步信道预测用于自适应水声OFDM
+   evidence：统计辅助机器学习用于双方向无线信道建模
 
 ### 速读区论文标签
-1. [Limit Analysis of Graph Neural Networks with Wireless Conflict Graphs](/202606/04/2606.03794v1-limit-analysis-of-graph-neural-networks-with-wireless-conflict-graphs)  
+1. [Hierarchical RBF-KAN and RBF-SKAN Architectures for Multidimensional Function Approximation and Random Field Learning](/202606/05/2606.02936v1-hierarchical-rbf-kan-and-rbf-skan-architectures-for-multidimensional-function-approximation-and-random-field-learning)  
    标签：评分：7.0/10、query:channel-nn
-   evidence：分析图神经网络在无线冲突图上的可迁移性，用于资源分配
-2. [A Systematic Benchmark of Physics-Informed Neural Network Architectures for the Stiff Poisson-Nernst-Planck System: Adaptive LossWeighting and Multi-Scale Resolution](/202606/04/2606.04125v1-a-systematic-benchmark-of-physics-informed-neural-network-architectures-for-the-stiff-poisson-nernst-planck-system-adaptive-lossweighting-and-multi-scale-resolution)  
-   标签：评分：6.0/10、query:channel-nn
-   evidence：物理信息神经网络架构基准
-3. [Generalizable Multi-Task Learning for Wireless Networks Using Prompt Decision Transformers](/202606/04/2606.04328v1-generalizable-multi-task-learning-for-wireless-networks-using-prompt-decision-transformers)  
-   标签：评分：6.0/10、query:channel-nn
-   evidence：基于提示决策变换器的无线网络多任务深度学习方法
+   evidence：KAN架构变体（RBF-KAN），有潜力用于通信建模
+2. [Bounded Deep Unfolding for Joint Beamforming and Scheduling in Multi-Cell MIMO Networks](/202606/05/2606.05246v1-bounded-deep-unfolding-for-joint-beamforming-and-scheduling-in-multi-cell-mimo-networks)  
+   标签：评分：7.0/10、query:channel-nn
+   evidence：用于通信优化的新型深度展开架构
+3. [Effective Dimensionality as an Operator Invariant for Physics-Preserving Constraint Adaptation in Physics-Informed Neural Networks](/202606/05/2606.06171v1-effective-dimensionality-as-an-operator-invariant-for-physics-preserving-constraint-adaptation-in-physics-informed-neural-networks)  
+   标签：评分：7.0/10、query:channel-nn
+   evidence：PINN理论框架，适用于通信系统约束
+4. [Foundation Models for Wireless Communications: From PHY Intelligence to Network Autonomy](/202606/05/2606.06239v1-foundation-models-for-wireless-communications-from-phy-intelligence-to-network-autonomy)  
+   标签：评分：7.0/10、query:channel-nn
+   evidence：深度学习应用于无线通信
+5. [LatentWave: JEPA Pretraining for Wireless Foundation Models](/202606/05/2606.06373v1-latentwave-jepa-pretraining-for-wireless-foundation-models)  
+   标签：评分：7.0/10、query:channel-nn
+   evidence：提出基于JEPA的无线基础模型LatentWave，在CSI和频谱图上预训练
 
 
 <div class="dpr-home-promo-card">
