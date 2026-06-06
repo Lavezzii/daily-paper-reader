@@ -6,40 +6,29 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-05
-- 运行时间：2026-06-05 20:51:11 UTC
+- 最新运行日期：2026-06-06
+- 运行时间：2026-06-06 21:10:35 UTC
 - 运行状态：成功
-- 本次总论文数：6
+- 本次总论文数：3
 - 精读区：1
-- 速读区：5
+- 速读区：2
 
 ### 今日简报（AI）
-今日精读一篇统计辅助机器学习的双定向无线信道建模论文（8.0分），速读三篇涉及RBF-KAN函数逼近、MIMO波束赋形及物理信息神经网络约束的论文。  
-最值得关注方向：统计辅助机器学习用于无线信道建模，以及有效维度作为算子不变量的物理信息神经网络自适应方法。  
-建议普通读者可结合通信与物理模拟场景，优先探索上述两个方向中多学科交叉的实践案例。
-- 详情：[/202606/05/README](/202606/05/README)
+今日重点解读多模态大模型驱动的生成式编辑语义通信（GenED-SC, 8分），并速读逆问题正则化与可靠通信两篇论文。最值得关注的方向是GenED-SC利用LLM实现语义层面的灵活编辑，超越传统平均性能的可靠性研究也提供新视角。建议进一步探究大模型如何提升语义通信的编辑能力与鲁棒性。
+- 详情：[/202606/06/README](/202606/06/README)
 
 ### 精读区论文标签
-1. [Double-Directional Wireless Channel Modeling Using Statistics-Aided Machine Learning](/202606/05/2606.05993v1-double-directional-wireless-channel-modeling-using-statistics-aided-machine-learning)  
+1. [GenED-SC: Generative Editing Semantic Communication with Integrated Multi-Modal LLMs](/202606/06/2606.04015v1-gened-sc-generative-editing-semantic-communication-with-integrated-multi-modal-llms)  
    标签：评分：8.0/10、query:channel-nn
-   evidence：统计辅助机器学习用于双方向无线信道建模
+   evidence：利用多模态大语言模型进行生成式编辑的语义通信
 
 ### 速读区论文标签
-1. [Hierarchical RBF-KAN and RBF-SKAN Architectures for Multidimensional Function Approximation and Random Field Learning](/202606/05/2606.02936v1-hierarchical-rbf-kan-and-rbf-skan-architectures-for-multidimensional-function-approximation-and-random-field-learning)  
-   标签：评分：7.0/10、query:channel-nn
-   evidence：KAN架构变体（RBF-KAN），有潜力用于通信建模
-2. [Bounded Deep Unfolding for Joint Beamforming and Scheduling in Multi-Cell MIMO Networks](/202606/05/2606.05246v1-bounded-deep-unfolding-for-joint-beamforming-and-scheduling-in-multi-cell-mimo-networks)  
-   标签：评分：7.0/10、query:channel-nn
-   evidence：用于通信优化的新型深度展开架构
-3. [Effective Dimensionality as an Operator Invariant for Physics-Preserving Constraint Adaptation in Physics-Informed Neural Networks](/202606/05/2606.06171v1-effective-dimensionality-as-an-operator-invariant-for-physics-preserving-constraint-adaptation-in-physics-informed-neural-networks)  
-   标签：评分：7.0/10、query:channel-nn
-   evidence：PINN理论框架，适用于通信系统约束
-4. [Foundation Models for Wireless Communications: From PHY Intelligence to Network Autonomy](/202606/05/2606.06239v1-foundation-models-for-wireless-communications-from-phy-intelligence-to-network-autonomy)  
-   标签：评分：7.0/10、query:channel-nn
-   evidence：深度学习应用于无线通信
-5. [LatentWave: JEPA Pretraining for Wireless Foundation Models](/202606/05/2606.06373v1-latentwave-jepa-pretraining-for-wireless-foundation-models)  
-   标签：评分：7.0/10、query:channel-nn
-   evidence：提出基于JEPA的无线基础模型LatentWave，在CSI和频谱图上预训练
+1. [Deep neural network yields regularization for ill-posed inverse problems](/202606/06/2606.00517v1-deep-neural-network-yields-regularization-for-ill-posed-inverse-problems)  
+   标签：评分：6.0/10、query:channel-nn
+   evidence：DNN正则化逆问题方法，可应用于通信信道估计
+2. [Toward Reliable Semantic Communication: Beyond Average Performance](/202606/06/2606.01284v1-toward-reliable-semantic-communication-beyond-average-performance)  
+   标签：评分：6.0/10、query:channel-nn
+   evidence：深度学习用于可靠语义通信
 
 
 <div class="dpr-home-promo-card">

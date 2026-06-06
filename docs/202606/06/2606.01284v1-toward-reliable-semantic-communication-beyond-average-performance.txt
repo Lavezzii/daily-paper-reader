@@ -1,0 +1,235 @@
+Title: Toward Reliable Semantic Communication: Beyond Average Performance
+
+URL Source: https://arxiv.org/pdf/2606.01284v1
+
+Published Time: Tue, 02 Jun 2026 01:34:29 GMT
+
+Number of Pages: 7
+
+Markdown Content:
+# Toward Reliable Semantic Communication: Beyond Average Performance 
+
+Boyuan Li, Mingze Gong, Shuoyao Wang, Senior Member, IEEE , Jia Yan Member, IEEE ,Suzhi Bi, Senior Member, IEEE , and Ying-Jun Angela Zhang, Fellow, IEEE 
+
+Abstract —Semantic communication has emerged as a promis-ing paradigm for improving transmission efficiency by convey-ing task-relevant semantics rather than raw data. Although recent studies have achieved notable gains in communication efficiency and average task performance, reliability remains a fundamental bottleneck in dynamic and uncertain environments. In particular, most existing designs are still optimized mainly for average-case behavior, while lower-tail performance under adverse transmission conditions remains insufficiently understood and inadequately protected. In this article, we present a unified perspective on reliable semantic communication beyond average performance . We first review three reliability-oriented design categories: channel-aware adaptation, robustness-oriented codec design, and hybrid automatic repeat request (HARQ)-based retransmission. We show that these approaches address reliability from complementary perspectives, but each still has inherent lim-itations. Adaptation-based methods enhance performance across varying channel states through CSI-conditioned semantic coding, but they remain vulnerable to CSI mismatch and generally optimize average quality within each estimated condition rather than lower-tail reliability; robustness-based methods improve intrinsic codec resilience but may introduce a tradeoff between average performance and stability; and HARQ-based methods exploit receiver-side sample-wise feedback but require additional communication overhead and round-trip latency. Motivated by these observations, we discuss two solution directions: robust adaptive semantic communication under imperfect CSI, and joint source-channel-check coding with adaptive retransmission for sample-level reliability enhancement. Finally, we outline several future research directions, including the joint design of robustness and retransmission, reliability metrics beyond averages, and compatibility with existing digital wireless networks. 
+
+Index Terms —Reliable Semantic Communication 
+
+I. I NTRODUCTION 
+
+The rapid evolution of sixth-generation (6G) wireless net-works, coupled with the proliferation of ultra-high-definition multimedia services, is fundamentally reshaping the require-ments for wireless communication systems. Emerging appli-cations, such as extended reality and metaverse-driven im-mersive interaction, demand not only massive data delivery but also stringent perceptual fidelity. As a result, conventional communication paradigms are increasingly challenged by the explosive data volume as well as the stringent requirements for ultra-reliable transmission [1]. Semantic communication (SemComm) has recently emerged as a promising paradigm 
+
+B. Li, M. Gong, S. Wang, and S. Bi are with College of Electronic and Information Engineering, Shenzhen University, China. J. Yan is with Intelligent Transportation Thrust, The Hong Kong University of Science and Technology (Guangzhou), China. Y. J. A. Zhang is with Information Engineering, The Chinese University of Hong Kong, Hong Kong. 
+
+to address these challenges. By extracting and transmitting high-level semantic features rather than raw data, it offers a new path to improving task-oriented communication effi-ciency beyond the design philosophy of traditional Shannon-style communication systems. More importantly, by aligning the decoding objective with task-level fidelity, it inherently enhances the robustness of downstream tasks against channel impairments. Owing to these advantages, it has attracted sub-stantial research attention as a key enabler for next-generation intelligent communication systems. However, the shift from bit accuracy to semantic fidelity introduces new challenges in system design. In particular, ensuring high-quality semantic information at the receiver requires carefully coordinated en-coding and transmission strategies, which must account for both channel impairments and task-specific requirements. As a result, achieving reliable semantic communication, in terms of consistently preserving semantic integrity under practical wireless conditions, remains an open and critical research problem. Recent studies have extensively explored reliability-oriented SemComm, particularly leveraging deep learning-based joint source-channel coding (JSCC) architectures, as shown in Fig. 1. By optimizing encoder-decoder structures in an end-to-end manner, these approaches have demonstrated notable gains in average task performance. Despite its potential, most existing works primarily focus on improving average-case performance, whereas reliability under highly time-varying channels, i.e., the lower-tail performance of the system, remains insufficiently addressed. In practice, a SemComm system may achieve satisfactory average recon-struction or task quality under nominal conditions, while a small fraction of transmissions may still suffer severe semantic distortion due to instantaneous fading, noise bursts, or CSI mismatch. Such lower-tail samples contribute little to mean performance metrics, but they can dominate user-perceived failures and compromise system reliability. This issue is par-ticularly critical in highly dynamic and harsh environments, such as deep-space exploration, underwater imaging, and dis-aster monitoring, where severe channel perturbations, limited resources, and strong uncertainty jointly impose stringent reliability requirements. To address these challenges, existing SemComm frame-works must evolve beyond conventional designs and incor-porate three essential capabilities: channel-aware adaptive semantic extraction, robust feature encoding mechanism, and task-oriented reliable transmission strategy. 
+
+From the perspective of semantic extraction, dynamic wire- 
+
+> arXiv:2606.01284v1 [cs.IT] 31 May 2026 Accident
+> Around! Assistance
+> Required!
+> (a) Real -Time Accident Perception
+> High Quality
+> Experience!
+> Intense Noise
+> Interference!
+> (b) Immersive Service Data Transmission
+
+Fig. 1: Example application scenarios of reliable semantic communication system. less environments introduce significant variability in channel states. Conventional semantic encoders, typically designed for fixed Channel State Information (CSI), like Signal-to-Noise Ratio (SNR), often fail to generalize to such time-varying scenarios. Adaptive semantic extraction, which dynamically adjusts feature representation according to channel conditions and bandwidth restriction, provides a promising direction to enhance system adaptability and improve performance across diverse communication states. However, most existing adaptive schemes rely on the as-sumption of accurate CSI. In practice, CSI is often imperfect or partially observable, especially in fast-fading or highly uncertain environments. Under such conditions, overly special-ized feature extraction may become fragile and susceptible to random noise interference, leading to significant degradation in task performance. By learning channel-agnostic semantic representation, robustness-oriented approaches aim to mitigate performance degradation caused by CSI mismatch. Through a unified end-to-end training framework across diverse channel conditions, these methods enable the system to maintain stable and resilient performance under varying noise and uncertainty. Such designs improve decoding reliability under CSI estima-tion errors and stochastic interference, effectively mitigating noise-induced distortions and ensuring stable semantic repre-sentation under uncertainty. Meanwhile, heterogeneous multimedia services exhibit di-verse requirements in terms of efficiency and reliability. Such diversity motivates the need for a task-oriented reliable transmission strategy that goes beyond traditional encoding robustness. In particular, hybrid automatic repeat request (HARQ)-based strategies can be extended to SemComm by incorporating task-aware error detection and feature-level dis-tortion estimation. By selectively retransmitting severely cor-rupted semantic features, these approaches enable precise error compensation at the receiver, thereby effectively improving the system performance lower bound. Instead of solely en-hancing encoding robustness, HARQ-based strategies further leverage received feature quality to achieve more accurate error-detection and efficient error-correction, achieving higher transmission reliability. However, the retransmission efficiency on error-correction is largely confined by estimation precision. Moreover, under stringent communication overhead, how to fully balance transmission reliability and efficiency, is still an open problem. Building upon the above analysis, adaptation provides a necessary starting point for reliable semantic transmission, be-cause it enables channel-aware semantic encoding under vary-ing wireless conditions. However, such adaptation mainly im-proves performance across different estimated channel states. For a given channel state, individual samples may still suffer severe distortion due to instantaneous noise, CSI mismatch, or random perturbations. Therefore, adaptation alone is in-sufficient to ensure reliable SemComm under practical un-certainty. Robustness-oriented designs are further needed to maintain stable codec behavior under imperfect CSI, while HARQ-based mechanisms are required to perceive and re-cover severely corrupted samples at the receiver side. In this way, reliable SemComm should jointly consider channel-aware adaptation, robustness-oriented encoding, and feedback-driven retransmission, so that both long-term stability and sample-level reliability can be improved. The contributions of this article are three-fold. First, we identify the fundamental tension between channel-adaptive semantic coding and robustness to channel state information (CSI) imperfections, and develop a robust adaptive semantic communication framework that maintains reliable performance under practical imperfect CSI scenarios. Second, to cope with the separate module design for feature coding and check coding, we develop a joint source-channel-check coding trans-mission mechanism, where check codewords provide comple-mentary semantic information and retransmission decisions are adaptively optimized to improve sample-level reliability. Third, we provide a unified perspective on reliable semantic communication beyond average performance , systematically analyzing adaptation-based, robustness-based, and HARQ-based approaches, and identifying their complementary roles and remaining gaps to guide future research directions. This article is organized as follows. We focus on the design of reliable SemComm systems and develop a unified framework that jointly considers semantic extraction, feature encoding, and transmission strategy. Specifically, we first es-tablish a systematic perspective on reliability in SemComm by decomposing it into the aforementioned three key components, enabling adaptability to diverse tasks and service requirements. Building upon this framework, we then present two potential solution directions on semantic extraction, feature encoding and transmission strategy, all of which demonstrate significant performance gains in non-ideal transmission environments. Finally, we discuss open research challenges and outline promising future directions toward fully reliable SemComm systems. II. C ONVENTIONAL APPROACHES 
+
+In this section, we discuss the key challenges of reliable semantic communication shown in Fig. 2, deducing some representative approaches to handling these challenges. 
+
+1) Adaptation-Based Approaches: Existing adaptation-based SemComm methods aim to improve robustness against channel variations by conditioning semantic encoding on CSI, most commonly the SNR. For example, [2], [3] introduced rate-adaptation mechanisms that dynamically adjust the trans-mitted signal length according to channel conditions. Under unfavorable channels, these methods prioritize more important semantic features, thereby preserving task-relevant information under limited transmission resources. Instead of changing the codeword length, [4], [5] proposed SNR-adaptive schemes that retain a fixed transmission length while reweighting semantic features according to side information. In this way, important features can receive stronger protection under different SNR conditions, improving the stability of semantic reconstruction or task inference. The above studies mainly focus on point-to-point semantic transmission, where the encoder is adapted to a single receiver and a single channel condition. However, practical semantic communication systems may need to serve multiple users with heterogeneous channels and different downstream tasks. In such scenarios, a point-to-point adaptation strategy may fail to provide stable performance for all receivers. To address this issue, [6] proposed a multi-branch compression and fusion architecture, where task-channel-aware sub-encoders extract user-specific semantic features and a fusion module integrates them into a unified broadcast signal. With an information bottleneck-based training strategy, this design improves robust-ness against channel and task heterogeneity, thereby enhancing reliable semantic transmission in multi-user broadcast environ-ments. Beyond scalar SNR adaptation, another line of work further exploits fine-grained CSI, such as channel coefficients, to sup-port channel-aware semantic encoding in MIMO systems. For example, [7], [8] incorporate channel matrix information into the semantic transmission process, enabling the model to better adapt feature mapping, power allocation, or feedback overhead to specific channel realizations. These studies demonstrate the potential of fine-grained CSI for improving channel adaptabil-ity and transmission reliability. For example, [7] introduces semantic distortion outage probability, to characterize semantic reliability and adjusts CSI feedback overhead according to predicted image-level reconstruction quality, while DeepJSCC-MIMO proposed in [8] uses channel heatmaps to adapt the JSCC model to MIMO channel conditions. To guarantee each user’s minimum reconstruction quality, [9] develop a Bayesian optimization (BO)-based online algorithm that enables flexible control of the user-side semantic compression ratio (CR) and allocation of transmission rates. However, adaptation-enhanced SemComm methods still face two major limitations from the perspective of reliable semantic communication. First, these methods are often bottle-necked by the assumption of accurately acquired CSI. In prac-tical wireless systems, CSI may be noisy, delayed, quantized, or only partially observable. This issue becomes more severe when adaptation relies on fine-grained channel information, such as channel matrices, whose acquisition usually requires substantial pilot or feedback overhead and is vulnerable to estimation errors. As a result, adaptation mechanisms that are highly dependent on accurate CSI may suffer from significant performance degradation under CSI mismatch. Furthermore, this limitation becomes more pronounced in large-antenna MIMO systems [8], where fine-grained channel matrices can provide useful adaptation information but are difficult to acquire accurately due to pilot overhead, feedback cost, and channel estimation errors. On the other hand, even when reasonably accurate average CSI is available, existing adaptation mechanisms are primarily tailored to optimize average transmission performance rather than ensuring sample-level reliability. Due to the stochastic na-ture of channel noise, individual data samples may experience severe distortions that are not adequately captured by average quality metrics. Thus, adaptation alone lacks the capacity to explicitly detect and recover from such anomalies, making it difficult to guarantee stable task performance under adverse channel conditions. 
+
+2) Robustness-Based Approaches: Beyond adaptation-based approaches, robustness-based methods aim to improve the intrinsic resilience of SemComm systems against random transmission errors and model-channel mismatch. Different from channel-adaptive methods, which adjust semantic en-coding according to the estimated channel state, robustness-based approaches seek to train a unified semantic codec that can maintain a stable performance across different channel realizations and noise conditions. This is particularly important because practical transmission impairments are often stochas-tic and difficult to fully characterize before transmission. Although [10] avoids such impairments via pilot-free MIMO, the channel independent coding significantly limits transmis-sion performance. Accordingly it is necessary to enhance the robustness of SemComm systems for reliable transmission. A representative direction is to enhance the robustness of the semantic codec during training. For example, [11] proposed an Adaptation-Based Approaches   
+
+> CSI Estimation Error & Sample Corruption UnAwareness
+> CSI Estimation Error Sample Corruption Unawareness
+> ØImpracticable Massive Channel Estimation
+
+Impact  
+
+> ØLong-Term Performance Degradation
+
+Robustness-Based Approaches       
+
+> Impact
+> CSI Misalignment & Optimization Bottleneck
+> Misalignment Issues
+> ØImpractical Perfect CSI Assumption
+> ØInevitable CSI Mismatches
+> Optimization Issues
+> ØAbsence of Joint Resilience
+> ØInsufficient E2E Training
+> ØVulnerability to Random Errors
+> ØSignificant Performance Degradation
+
+Reliable Semantic Communication 
+
+HARQ-Based Approaches        
+
+> Impact
+> Biased Quality Perception & Extra Latency-Overheads
+> Perception Error Latency-Cost Constraints
+> ØInaccurate Error Perception
+> ØIneffective Retransmission
+> ØExtra Retransmission Latency
+> ØInefficient Noise Handling
+> ØMismatch with diverse transmission constraints
+> ØPoor ability to recover from random noise interference
+
+Robust Long-term Performance Stable Sample-level Performance       
+
+> ØUnstable Sample-Level Performance
+> ØAmbiguous Module Allocation ØUnaware to Random Disturbance ØUnable to Ensure Sample Performance
+
+Fig. 2: Key challenges in reliable semantic communication. alternating multi-phase training strategy for digital semantic communication, where the training process consists of fea-ture extraction, robustness enhancement, and training-testing alignment. In the robustness enhancement phase, the codec is trained to tolerate information loss caused by quantization, modulation-demodulation, and bit-flipping effects. Moreover, a mask-attack mechanism is introduced to simulate severe and unpredictable bit-flipping in a differentiable manner, while an information restoration network is employed at the receiver to recover corrupted semantic features before decoding. In this way, the system can achieve stronger resilience against random digital transmission errors and support standard modulation schemes within existing digital communication frameworks. However, robustness-based approaches still have inherent limitations from the perspective of reliable SemComm. First, they mainly improve the prior noise resilience of the codec, but they do not explicitly identify whether a specific received sam-ple has suffered severe distortion. Second, robustness training usually improves the average tolerance to random errors, but may still fail to protect lower-tail samples under rare but severe channel perturbations. Therefore, although robustness-oriented codec design is essential for reliable semantic communication, it is not sufficient by itself to guarantee stable sample-level performance under highly uncertain transmission conditions. 
+
+3) HARQ-Based Approaches: Compared with adaptation-and robustness-based approaches, HARQ-based methods are not primarily codec-level designs. Instead, they introduce a higher-level reliability-control mechanism after transmission based on receiver-side feedback. The key advantage is that the receiver can evaluate the realized quality of each received sample, and thus infer whether the current channel realization and stochastic noise have caused severe semantic distortion. By introducing perceptual or task-oriented quality metrics at the receiver, HARQ-based methods can trigger selective re-transmission or incremental semantic refinement for unreliable samples. More specifically, by designing fine-grained error awareness mechanisms that estimate noise-induced semantic distortion, these methods can prioritize the features that have the greatest impact on reconstruction quality or task perfor-mance. For example, [12] models the transmission reliability of SemComm as the amount of intact information available for downstream task. By performing an incremental data re-transmission for error correction, it enables a balance between transmission efficiency and data reliability. As another classic retransmission strategy, [13] asks for identical retransmission based on current SNR condition as well as task performance. By replacing corrupted semantic features by retransmitted feature, it performs higher classification performance under diverse channel conditions. Moreover, [14] treats semantic features and check codewords as complementary information extracted from the original image in multi-round transmission scenarios. By jointly optimizing the feature extraction and check coding, it maximizes communication efficiency under stringent communication overheads and effectively enhances transmission reliability. These attempts allow the system to extract complementary information from retransmitted features and achieve more effective error compensation. Therefore, HARQ-based approaches provide a promising way to improve lower-tail reliability and stabilize task performance under adverse channel conditions. However, the reliability gain of HARQ-based approaches is obtained at the cost of additional communication and latency overhead, including acknowledgment (ACK) and neg-ative acknowledgment (NACK) feedback, extra retransmission resources, and increased round-trip time. Moreover, their ef-fectiveness depends heavily on the accuracy of receiver-side quality estimation and the efficiency of retransmission decision making. If the distortion estimator fails to identify severely corrupted samples, or if the retransmission policy is not well matched to the task requirement, the additional feedback and retransmission may lead to inefficient resource usage. III. R EMAINING GAPS AND DESIGN IMPLICATIONS 
+
+The above discussions show that adaptation-based, robustness-based, and HARQ-based approaches address reliability from different but complementary perspectives. Adaptation-based methods adjust the semantic representation or transmission policy according to time-varying channel conditions. However, most adaptation mechanisms are designed to improve expected performance under estimated channel states, rather than to explicitly protect samples that suffer severe distortion under unfavorable instantaneous channel realizations. Robustness-based methods improve the intrinsic resilience of the semantic codec against stochastic transmission errors and model-channel mismatch. However, they are unable to directly observe whether a particular received sample has been corrupted after transmission, and the robustness-oriented training may introduce a tradeoff between average performance and reliability, which is insufficient to guarantee lower-tail reliability under rare but harmful channel perturbations. HARQ-based methods can trigger retransmission or refinement when severe semantic distortion is detected. However, its reliability gain is obtained at the cost of additional feedback, communication overheads, and round-trip latency. These limitations indicate that reliable SemComm should not rely on a single mechanism. Instead, future designs need to combine the strengths of different reliability strategies. First, adaptation should be in-tegrated with robustness-oriented training, so that channel-aware semantic encoding can remain effective even under imperfect CSI. This motivates robust adaptive designs such as the knowledge distillation-based solution discussed in Section IV, which jointly considers channel-matrix adaptation and resilience to CSI estimation errors. Second, retransmission should be coupled with semantic feature design and receiver-side distortion perception, so that additional transmissions can provide complementary information rather than simply re-peating corrupted content. This motivates the HARQ-oriented solution in Section IV, where feature coding, check coding, and adaptive retransmission are jointly considered to improve sample-level reliability. IV. P OTENTIAL SOLUTIONS 
+
+1) Boosting robust SemComm with imperfect CSI via knowledge distillation: Inspired by SNR-adaptive JSCC schemes, several studies have leveraged CSI feedback in Stage -I: End -to -end training with imperfect channel estimation    
+
+> Stage -II: Knowledge distillation -based fine -tuning
+> ChEnc -
+> CMA
+> ChDec -
+> CMA
+> SemEnc -
+> SA
+> SemDec -
+> SA
+> MIMO
+> Transmission
+> Channel Matrix with Additive Estimation Errors
+> ChEnc -
+> CMA
+> ChDec -
+> CMA
+> SemEnc -
+> SA
+> SemDec -
+> SA
+> MIMO
+> Transmission
+> Channel Matrix with Additive Estimation Errors
+> ChEnc -
+> CMA
+> ChDec -
+> CMA
+> SemEnc -
+> SA
+> MIMO
+> Transmission
+> Accurate Channel Matrix
+> 𝐷 KL
+> 𝐷 KL
+> Task
+> Loss
+> Task
+> Loss
+> ChEnc 1ChEnc 2
+> Channel Matrix
+> Adaptor
+> Inaccurate Channel Matrix
+> ChDec 1ChDec 2
+> Channel Matrix
+> Adaptor
+> Inaccurate Channel Matrix
+
+(a) The overview of HANA-JSCC. 0.02 0.04 0.06 0.08 0.10 
+
+Variance of Additive Estimation Error 
+
+> 26.5
+> 27.0
+> 27.5
+> 28.0
+> 28.5
+> 29.0
+> 29.5
+> 30.0
+> PSNR (dB)
+> HANA-JSCC
+> SwinJSCC
+> DeepJSCC-MIMO
+
+(b) Simulation results of HANA-JSCC and benchmarks. 
+
+Fig. 3: Framework of HANA-JSCC and evaluation results on CIFAR10 dataset. MIMO systems to enhance robustness against fading effects during transmission. However, while SNR estimation is rela-tively straightforward, accurately acquiring the channel gain (i.e., the channel matrix) remains a formidable challenge. Fur-thermore, obtaining perfect full channel matrices in practical MIMO systems is both costly and difficult due to stringent constraints on pilot overhead and hardware resources, partic-ularly in large-scale MIMO scenarios. Consequently, ensuring reliable communication necessitates enhancing the system’s robustness against estimation errors. To address this issue, as shown in Fig. 3a, [15] proposed HANA-JSCC, an approach refining the compressed latent semantics using the acquired channel matrix during the channel coding phase, thereby improving robustness against diverse channel realizations. Additionally, [15] developed a knowledge distillation-based training strategy to further augment the system’s resilience against channel matrix estimation errors. By emulating aperfect-CSI teacher model, this approach effectively mitigates the performance degradation caused by channel matrix mis-matches. In the following, we evaluate HANA-JSCC against two benchmarks: SwinJSCC [4] and DeepJSCC-MIMO [8]. Fol-Stage -I: Joint Source -Channel -Check Coding(JS3C) for  Image  transmission  
+
+> JSCC
+> Encoder
+> SFA -Check
+> Encoder
+> Wireless
+> Channel
+> LPIPS
+> Estimator
+> JS3C
+> Decoder
+> Stage -II: Adaptive Decision and Re -Encoding for Image Retransmission
+> Estimated
+> LPIPS
+> Estimated
+> LPIPS
+> Adaptive
+> Retransmission
+> Agent
+> Wireless
+> Channel
+> JSCC
+> Encoder
+> NAK Signal
+> Entropy
+> Optimize r
+> SFA -Check
+> Encoder
+> Joint JS3C
+> Decoder
+> Buffer Buffer
+> Buffer
+> Buffer
+
+(a) The overview of S3CHARQ. 1 4 7 10 13     
+
+> SNR (dB)
+> 24.0
+> 24.5
+> 25.0
+> 25.5
+> 26.0
+> 26.5
+> 27.0
+> 27.5
+> 28.0
+> 28.5
+> 97th Percentile PSNR (dB)
+> S3CHARQ S3CHARQ- (No RL) Ensembled Single Transmission Progressive Retransmission Identical Retransmission
+> 14710 13
+> 20
+> 22
+> 24
+
+(b) Simulation results of S3CHARQ and benchmarks. 
+
+Fig. 4: Framework of S3CHARQ and evaluation results on CIFAR10 dataset. lowing [15], practical channel estimation errors are simulated by injecting zero-mean Gaussian additive noise into the chan-nel matrix across varying SNRs. Fig. 3b compares the image reconstruction quality, mea-sured in PSNR, across the three evaluated schemes. Over-all, HANA-JSCC consistently delivers superior performance across a wide range of SNRs and estimation error levels, showcasing its distinct advantage under misaligned channel conditions. On average, it maintains a noticeable PSNR lead in image reconstruction over both DeepJSCC-MIMO and SwinJSCC. In a nutshell, these results validate that the HANA-JSCC effectively achieves robustness against channel estima-tion errors. 
+
+2) Joint Optimization of Feature Coding, Check Coding, and Retransmission: To ensure high-fidelity image reconstruc-tion, recent efforts have explored incremental transmission of check codewords, where the receiver estimates percep-tual quality and triggers additional semantic transmission for samples falling below a predefined threshold. While such designs improve the system performance lower bound, they typically treat feature coding and check-coding as indepen-dent procedures, overlooking the fact that check codewords inherently carry latent semantic information. Moreover, the effectiveness of retransmission is fundamentally constrained by quality estimation errors, leading to suboptimal identi-fication of severely corrupted samples. Additionally, homo-geneous retransmission features often provide limited infor-mation diversity, resulting in insufficient compensation for accumulated noise distortion. To address these limitations, a joint source-channel-check coding retransmission framework, namely S3CHARQ, has been proposed in [14]. As shown in Fig. 4a, under a unified information-theoretic perspective, the framework shapes the information distribution between semantic features and check codewords. By enabling the latter to provide complementary information while preserving per-ceptual fidelity, it achieves enhanced reconstruction quality by jointly decoding received features and check codewords. Fur-thermore, to mitigate the mismatch between imperfect quality estimation and threshold-based decision, S3CHARQ incorpo-rates a reinforcement learning-based adaptive retransmission module, which dynamically determines retransmission actions based on channel conditions and sample characteristics. In the retransmission phase, the system performs feature re-encoding conditioned on prior transmission, thereby provides a more precise and efficient reliability enhancement mechanism, effectively guaranteeing the system performance lower bound under adverse channel conditions. Subsequently, we evaluate the performance of S3CHARQ on the CIFAR-10 dataset under diverse SNR conditions, and compare it with several representative schemes, i.e., single transmission with aligned communication overheads [4], pro-gressive retransmission [3], as well as identical retransmission [5]. To further isolate the contribution of joint source-channel-check coding and adaptive retransmission decision, we ad-ditionally consider a threshold-based variant S3CHARQ(No RL), where the retransmission decisions are configured with a compression ratio and retransmission ratio of 1/8, and transmissions are conducted over AWGN channel. Moreover, to eliminate the impact of threshold selection on performance, we followed alignment strategy of [14] across all schemes. Fig. 4 presents a comparative analysis in terms of both aver-age PSNR and tail PSNR, a.k.a the 97th percentile PSNR. The latter characterizes the system performance lower bound under unfavorable conditions. Among all evaluated retransmission schemes, S3CHARQ consistently achieves the best average PSNR performance across all SNR regimes. More importantly, it also demonstrates a clear advantage in tail PSNR, indicating its superior capability in safeguarding performance under severe distortion. These results validate the effectiveness of joint source-channel-check coding and retransmission-aware re-encoding in simultaneously improving average performance and tightening the system performance lower bound. In addi-tion, compared to its static-threshold counterpart, the proposed S3CHARQ exhibits consistent performance gains. This further highlights the importance of accurate and adaptive retransmis-sion decisions, which enable more precise recovery of severely corrupted samples. As a result, the proposed framework effec-tively enhances both data fidelity and transmission reliability for image reconstruction tasks. V. F UTURE RESEARCH DIRECTIONS 
+
+Building on current progress, future research on reliable semantic communication should focus on more rigorous re-liability metrics, better compatibility with practical wireless systems, and deeper joint design of robustness and retrans-mission. 
+
+A. Joint Design of Robustness and Retransmission 
+
+A particularly promising direction is the deeper integration of robustness-oriented encoding and retransmission-oriented transmission control. At present, these two lines of research are often treated separately: robustness methods mainly improve resistance to channel uncertainty during the initial transmis-sion, while retransmission methods enhance reliability after receiver-side quality estimation. However, these two mecha-nisms are inherently coupled. Future work should study unified designs in which semantic feature protection, distortion per-ception, retransmission triggering, and re-encoding are jointly optimized. Such an integrated framework may provide a more effective way to improve not only average performance, but also lower-tail reliability in highly dynamic and uncertain environments. 
+
+B. Reliability Metrics Beyond Averages 
+
+Another important direction is to establish more rigorous reliability metrics for semantic communication. Existing works usually report average PSNR, average task accuracy, or mean perceptual quality, but these metrics cannot fully reflect system behavior under adverse transmission conditions. For reliable SemComm, it is important to go beyond average-case evalua-tion and explicitly characterize lower-tail performance, outage behavior, and task failure risk. In particular, for JSCC-based semantic systems, a clearer and more principled reliability definition is still needed, so that robustness under rare but severe channel degradations can be evaluated in a unified and comparable manner. 
+
+C. Compatibility with Digital Wireless Networks 
+
+A third important direction is to improve compatibility with practical communication systems. Most current reliable Sem-Comm designs are developed in an end-to-end analog JSCC manner, which offers strong performance potential but is not always easy to integrate into existing digital wireless architec-tures. Future research should therefore investigate how reliable semantic communication can coexist with digital semantic communication frameworks and with current protocol stacks. This includes modular design, flexible redundancy control, and smooth deployment over existing network infrastructure. Such compatibility will be important for moving reliable SemComm from proof-of-concept algorithms to practical systems. VI. C ONCLUSION 
+
+In this article, we discussed reliable semantic commu-nication beyond average performance. In particular, we re-viewed adaptation-based, robustness-based, and HARQ-based approaches, and clarified their complementary roles and lim-itations. We further introduced two representative solutions, namely robust adaptive semantic communication under imper-fect CSI and joint source-channel-check coding with adaptive retransmission, to demonstrate how reliability can be enhanced from both codec-level and feedback-driven perspectives. Fi-nally, we highlighted several future research directions, includ-ing joint robustness-retransmission design, reliability metrics beyond averages, and compatibility with digital wireless net-works. This article provides insights for developing reliable SemComm systems with stable performance under dynamic and uncertain environments. REFERENCES [1] H. H. H. Mahmoud, A. A. Amer, and T. Ismail, “6g: A compre-hensive survey on technologies, applications, challenges, and research problems,” Transactions on Emerging Telecommunications Technologies ,vol. 32, no. 4, p. e4233, 2021. [2] T. Wu, Z. Chen, M. Tao, B. Xia, and W. Zhang, “Fusion-based multi-user semantic communications for wireless image transmission over degraded broadcast channels,” in GLOBECOM 2023 - 2023 IEEE Global Communications Conference , pp. 7623–7628, 2023. [3] H. Liu, M.-M. Zhao, M. Lei, L. Li, Y. Cai, and M.-J. Zhao, “Adaptive harq design for semantic image transmission,” in 2024 IEEE 100th Vehicular Technology Conference (VTC2024-Fall) , pp. 1–6, 2024. [4] K. Yang, S. Wang, J. Dai, X. Qin, K. Niu, and P. Zhang, “Swinjscc: Taming swin transformer for deep joint source-channel coding,” IEEE Transactions on Cognitive Communications and Networking , vol. 11, no. 1, pp. 90–104, 2025. [5] P. Jiang, C.-K. Wen, S. Jin, and G. Y. Li, “Deep source-channel coding for sentence semantic transmission with harq,” IEEE Transactions on Communications , vol. 70, no. 8, pp. 5225–5240, 2022. [6] M. Gong, S. Wang, F. Ye, and S. Bi, “Compression before fusion: Broad-cast semantic communication system for heterogeneous tasks,” IEEE Transactions on Wireless Communications , vol. 23, no. 12, pp. 19428– 19443, 2024. [7] G. Zhang, Q. Hu, Y. Cai, and G. Yu, “Scan: Semantic communication with adaptive channel feedback,” IEEE Transactions on Cognitive Com-munications and Networking , vol. 10, no. 5, pp. 1759–1773, 2024. [8] H. Wu, Y. Shao, C. Bian, K. Mikolajczyk, and D. G¨ und¨ uz, “Deep joint source-channel coding for adaptive image transmission over mimo channels,” IEEE Transactions on Wireless Communications , vol. 23, no. 10, pp. 15002–15017, 2024. [9] H. Hou, S. Bi, X. Li, H. Zhang, and Z. Quan, “Reliable online re-source allocation for multi-user semantic communications: A constraint bayesian optimization approach,” arXiv preprint arXiv:2604.10931 ,2026. [10] W. Chen, Q. Yang, Z. Yang, Y. Duan, and Z. Zhang, “Pilot-free semantic communication over multi-user mimo fading channels,” in 2024 IEEE International Conference on Image Processing (ICIP) , pp. 3958–3964, 2024. [11] M. Gong, S. Wang, S. Bi, Y. Wu, and L. Qian, “Digital semantic commu-nications: An alternating multi-phase training strategy with mask attack,”
