@@ -1,0 +1,748 @@
+Title: Hybrid Bit and Semantic Communications for UAV-Enabled Wireless Power Transfer Networks: A Decision-Assisted Deep Reinforcement Learning Approach
+
+URL Source: https://arxiv.org/pdf/2606.00668v1
+
+Published Time: Tue, 02 Jun 2026 00:45:18 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+# Hybrid Bit and Semantic Communications for UAV-Enabled Wireless Power Transfer Networks: A Decision-Assisted Deep Reinforcement Learning Approach 
+
+Jingfu Li, Member, IEEE , Jingjing Cui, Senior Member, IEEE , Chong Huang, Member, IEEE ,Jing Zhu, Member, IEEE , Zheng Chu, Member, IEEE , Mingzhe Chen, Senior Member, IEEE ,Pei Xiao, Senior Member, IEEE , Rahim Tafazolli, Fellow, IEEE 
+
+Abstract —Semantic communications which can significantly reduce spectrum consumption in wireless networks, have re-cently become a popular research area. When combined with wireless power transfer (WPT), semantic communications can help achieve high spectral efficiency for energy-limited devices in wireless communications. In energy-constrained and link budget-limited scenarios such as UAV networks, the integration of semantic communications and WPT enables highly energy-efficient transmission mechanisms. In this paper, we investigate semantic communications in UAV-enabled WPT networks. To achieve adaptability to varying signal-to-noise ratio (SNR) and task requirements, we introduce a multi-layer hybrid bit and semantic communication framework. We adopt a semantic communication efficiency metric and aim to maximize it by jointly optimizing UAV trajectory, energy harvesting base station (EHBS) selection, user association, semantic mode selection, and energy harvesting time allocation. To address this complex long-term optimization problem, we introduce the distributional soft actor-critic (DSAC) algorithm and introduce a decision assistant to further enhance the convergence performance of DSAC. Simulation results validate the effectiveness of the proposed method and framework and demonstrate that our algorithm can achieve superior long-term optimization performance in dynamic network environments. 
+
+Index Terms —Semantic communications, wireless power transfer, unmanned aerial vehicle, deep reinforcement learning, 
+
+The work presented in this article was supported by the U.K. Engineer-ing and Physical Sciences Research Council under Grant EP/X013162/1. J. Li and J. Cui are with School of Information Science and Tech-nology, Southwest Jiaotong University, Chengdu, Sichuan, China (e-mail: jingfuli@swjtu.edu.cn, jingjing.cui@swjtu.edu.cn). C. Huang, P. Xiao and R. Tafazolli are with 5GIC & 6GIC, Institute for Communication Systems (ICS), University of Surrey, Guildford, GU2 7XH, United Kingdom (e-mail: chong.huang@surrey.ac.uk, p.xiao@surrey.ac.uk, r.tafazolli@surrey.ac.uk). Jing Zhu is with the School of Flexible Electronics (SoFE) & State Key Laboratory of Optoelectronic Materials and Technologies (OEMT), Sun Yat-sen University, Shenzhen, Guangdong 518107, China (e-mail: zhuj229@mail.sysu.edu.cn). Z. Chu is with the Department of Electrical and Electronic Engineering, University of Nottingham Ningbo China, Ningbo 315100, China (Email: andrew.chuzheng7@gmail.com). M. Chen is with the Department of Electrical and Computer Engineering, University of Miami, FL, 33146, USA (Email: mingzhe.chen@miami.edu). 
+
+Generative AI (GAI). 
+
+I. I NTRODUCTION 
+
+In this section, we introduce the background and related works of semantic communications and UAV-enabled wireless power transfer (WPT) networks. We then summarize the main contributions of this paper. 
+
+A. Background 
+
+With the development of sixth-generation (6G), semantic communications have emerged as a key technique that focuses on semantic information of data instead of bitwise fidelity, thereby enhancing spectrum efficiency in wireless communi-cations [1]. Semantic communications introduce the semantic encoder to extract semantic features from the raw data, and the semantic decoder to reconstruct the raw data based on the semantic information from the encoder. Therefore, seman-tic communications can significantly reduce the bandwidth requirement for wireless transmissions in 6G. Recently, se-mantic communications have been applied in various fields, e.g., DeepSC for text transmissions [2], DeepJSCC for image transmissions [3], and adaptive semantic model under signal-to-noise ratio (SNR) variations [4]. On the other hand, wireless power transfer (WPT) has become an attractive area in current wireless communication research because it can help realize energy harvesting via radio frequency (RF) [5]. WPT will bring new opportunities to future communication networks by enabling active, control-lable, and truly mobile energy delivery without the need for power cables or large-capacity batteries, thereby facilitating the development of smaller and lighter mobile devices. WPT has already found wide applications in areas such as low-power sensing, low-power computing, and wireless charging systems, providing a foundation for sustainable and energy-efficient wireless communications. Moreover, the transmit power can be further increased with the development of 
+
+> arXiv:2606.00668v1 [cs.IT] 30 May 2026
+
+antenna arrays [6], which is highly beneficial for wireless power transfer. In recent years, unmanned aerial vehicles (UAVs) have at-tracted increasing attention in wireless communications due to their high flexibility and mobility. UAVs can provide flexible coverage, but maintaining high-rate wireless transmissions is a significant challenge due to their limited battery energy [7]. WPT has become a significant technology in UAV energy consumption research [8]. This technology is particularly meaningful for UAVs with limited energy capacity. In wire-less power transfer (WPT)–enabled UAV networks, trajectory planning and resource allocation can significantly improve energy transfer efficiency and transmission rates [9]. How-ever, due to the power limitations and energy loss inherent in WPT, UAVs still cannot perform continuous high-power data transmission even with WPT support. Since semantic communication can save spectrum resources, thereby reducing transmit power or overall transmission time, the integration of semantic communication and WPT can enable UAVs to operate as aerial communication nodes with extended service time and improved quality of service. 
+
+B. Related Work 
+
+At present, semantic communication has attracted widespread attention and research in future 6G networks. In [10], semantic information is optimized according to channel conditions, thereby improving the semantic efficiency of text transmission. An end-to-end encoder–decoder based on deep learning was proposed to realize robust semantic information in text transmissions [2]. To transmit images in semantic communications, separate source/channel codes with a convolutional autoencoder were studied in wireless communications to realize the DeepJSCC method [3]. Deep learning is introduced to construct a semantic communication framework, enhancing the performance efficiency of multimedia transmission in [11]. In [12], deep learning techniques are employed to extract and reconstruct the original image information in semantic communication. To improve the quality of experience (QoE) for users, [13] integrates a semantic communication system into an edge computing framework to assist with computation offloading tasks. In [14], channel state information (CSI)-aware modulation was investigated to enhance the image transmission quality in semantic communications. To study an adaptive rate method in semantic communications, incremental knowledge-based hybrid automatic repeat request (HARQ) was introduced to control the semantic bitrate in dynamic wireless environments [15]. In [16], an iterative algorithm is employed in space–air–ground integrated networks (SAGINs) to optimize the UAV’s position, computational capability, semantic compression ratio, task allocation, and other communication resources to reduce the energy consumption of semantic communication. A multi-scale semantic extractor was studied based on Vision Transformer framework to enhance the semantic communication performance in image transmissions [17]. On the other hand, UAV communication has become an important component of communication networks [18]. In [19], a channel modeling and prediction method based on UAV trajectory, vibration, and channel sparsity conditions was proposed. To study the three dimensional positioning in UAV networks, UAV trajectory and fluid antenna port were optimized by a deep reinforcement learning method to enhance the average positioning accuracy in [20]. In [21], convex optimization techniques were applied to optimize UAV trajectory and beamforming design, thereby improving the secure communication rate of space–air–maritime networks. To suppress interference in space–air–ground networks, in-terference alignment design and degrees-of-freedom analysis were employed in UAV–reconfigurable intelligent surface (RIS)-assisted communication systems in [22]. In [23], UAV trajectory and RIS phase were jointly optimized to enhance the secrecy communication rate in space–air–ground cognitive networks. To address the 3D tracking problem of UAVs, collaborative reinforcement learning is employed in [24] to jointly optimize the UAV’s transmit power and trajectory plan-ning, thereby improving the positioning accuracy. In [25], to investigate the mobile user tracking and robust beamforming design, UAV was utilized in SAGINs to enhance the energy efficiency. To study the covert communication performance in UAV networks, flexible RIS was utilized to enhance the transmission efficiency by adjusting RIS phases and incident angle [26]. In [27], UAV trajectory and resource allocation was optimized by deep reinforcement learning methods to improve the average throughput in visible light communications. Currently, energy limitation is a critical challenge in the research area of UAV [28]. To address this issue, the inte-gration of wireless power transfer with UAVs has become a popular and increasingly active research direction. In [29], reinforcement learning was employed to investigate the WPT performance in RIS-assisted UAV Internet of Things (IoT) networks, thereby improving the overall network throughput. Convex optimization was utilized to jointly optimize UAV trajectories and RIS phase shifts to minimize energy con-sumption in WPT-assisted UAV communications in [30]. In [31], genetic clustering algorithms and dynamic clustering strategies were applied to jointly optimize UAV control, maximizing UAV energy utilization efficiency. To enhance the throughput of UAV relay networks, UAV trajectory and transmit power were jointly optimized under WPT conditions in [32]. Semantic communications can reduce energy consumption by lowering spectrum resource requirements, making its in-tegration with WPT particularly suitable for future green communication. In [33], a deep learning–based optimal auc-tion mechanism was proposed to optimize energy allocation strategies and enhance WPT efficiency in IoT networks. To analyze the relationship between semantic communications and energy transfer, the achievable and inverse regions were derived from an information-theoretic perspective to charac-terize the corresponding energy regions [34]. In [35], the Version Age of Information (VAoI) in satellite communi-cation networks was updated by optimizing semantic-aware strategies, significantly improving energy efficiency. Through joint optimization of communication resources and raw data selection, deep reinforcement learning was used to enhance total data transmission in IoT networks in [36]. However, the above works have not considered the joint in-tegration of WPT-based energy transfer and semantic commu-nications’ adaptive channel capability, nor have they explored the advantages of hybrid bit and semantic communications. Moreover, the combination of UAVs, WPT, and semantic communications remains an open research area. 
+
+C. Motivation and Contributions 
+
+Since semantic communications improve spectrum utiliza-tion, its integration with WPT can further enhance wire-less transmission efficiency—particularly benefiting energy-constrained UAV networks. Furthermore, a hybrid bit and semantic communication mode can offer more flexibility in transmission performance. Therefore, we investigate a UAV semantic communication system assisted by WPT. In this system, the UAV harvests energy from an energy harvesting base station (EHBS) in each time slot and serves users using an adaptive hybrid bit and semantic communication strategy. Our main contributions are as follows:  
+
+> •
+
+We propose a WPT-assisted UAV semantic communica-tion system, where the UAV harvests energy from the EHBS based on a non-linear wireless power transfer model in each time slot and uses the harvested energy to transmit data to ground users, and ground users move based on the random waypoint model.  
+
+> •
+
+We design a hybrid bit and semantic communication framework, which includes bit transmission and multi-level semantic communication modes, enabling adapta-tion to different transmission conditions. Moreover, we introduce a semantic efficiency metric to evaluate overall transmission performance.  
+
+> •
+
+We employ a decision-assisted deep reinforcement learn-ing method to jointly optimize UAV 3D trajectory, EHBS selection, user association, and semantic communication mode under random task arrivals, thereby improving semantic efficiency in UAV-enabled WPT systems.  
+
+> •
+
+Simulation results demonstrate the effectiveness of the proposed algorithm. The hybrid transmission mode adapts well to variations in energy harvesting and dynamic channels, while deep reinforcement learning enhances optimization performance through interaction 
+
+> TABLE I: Main Parameter Notations
+
+Number of EHBS M
+
+Number of GUs N
+
+UAV Trajectory q
+
+Time slot duration Td
+
+Maximum UAV speed Vmax 
+
+Path loss exponent for LoS αL
+
+Path loss exponent for NLoS αN
+
+Rician factor κ
+
+Channel coefficient h
+
+Channel rate C
+
+m-th EHBS transmit power Pm
+
+Distance d
+
+Bandwidth B
+
+Number of tasks K
+
+Generation quality for k-th task Rk
+
+Latency for k-th task Tk
+
+Generation quality threshold for k-th task Rmin 
+
+> k
+
+Latency threshold for k-th task T max 
+
+> k
+
+EHBS selection indicator Sm
+
+User association indicator Vn
+
+Linear energy harvesting efficiency α
+
+Non-Linear energy harvesting factor ξ
+
+Non-Linear energy harvesting factor ǫ
+
+Maximum harvested power at receiver W
+
+Conventional received RF power PRF ,m (t)
+
+Energy harvesting time factor β
+
+Generation quality weight ρq
+
+Latency weight ρd
+
+SEM for k-th task Ek
+
+UAV maximum altitude zmax 
+
+UAV minimum altitude zmin 
+
+Discount factor γ
+
+State at time slot t f (t)
+
+Action at time slot t a(t)
+
+Reward at time slot t r(t)
+
+Reward constraint factor δ
+
+with the simulation environment, ensuring efficient pol-icy learning in dynamic UAV networks. The rest of this paper is organized as follows: In Section II, the UAV-enabled WPT system model is introduced. The hy-brid bit and semantic communication framework, the semantic efficiency metric, and problem formulation are described in III. In Section IV, the decision-assisted DRL-based resource allocation algorithm is proposed. Section V presents the simulation results and analysis. Finally, Section VI concludes this paper. II. S YSTEM MODEL 
+
+We consider a UAV network assisted by M ground energy-harvesting base stations (EHBSs) and serving N ground users Fig. 1. System model of UAV-enabled WPT networks. 
+
+(GUs), where EH m denotes the m-th EHBS, m ∈ M =
+
+{1, . . . , M }, and Gn denotes the n-th GU, n ∈ N =
+
+{1, . . . , N }. The total service duration is slotted, indexed by 
+
+t ∈ T = {1, . . . , T }, and each slot has duration Td. The UAV U flies at the 3D coordinate q(t) = [x(t), y (t), z (t)],while the GUs follow the random waypoint model. The UAV kinematics satisfy 
+
+‖q(t+1) − q(t)‖ ≤ vmax Td, zmin ≤ z(t) ≤ zmax , (1) where vmax is the maximum speed. At each slot, the UAV selects one EHBS for wireless power transfer (WPT) and serves one GU for downlink information transmission. It is important to mention that, unlike many schemes that choose the strongest EHBS, we do not simply select the strongest EHBS in this work. This is because the UAV trajectory affects the downlink transmission performance to the ground user. When trajectory and EHBS selection are jointly optimized, the strongest is not a fixed choice. Ground users randomly generate transmission tasks, and the UAV is responsible for transmitting data to the correspond-ing users. We adopt the Rician fading model for UAV-GU channels [37] as 
+
+hu,n (t) = 
+
+√ κ
+
+κ + 1 ¯Hu,n (t) + 
+
+√ 1
+
+κ + 1 ˆHu,n (t), (2) where the line of sight (LoS) and non-line-of-sight (NLoS) components are 
+
+¯Hu,n (t) = ¯ðu,n du,n (t)− αL 
+
+> 2
+
+, (3) and ˆHu,n (t) = ˆðu,n du,n (t)− αN 
+
+> 2
+
+, (4) respectively. Here, κ is the Rician factor; αL and αN denote the path-loss exponents for LoS and NLoS components, respectively. ¯ðu,n is a deterministic unit-modulus coefficient for LoS component, and ˆðu,n follows zero-mean unit-variance Gaussian distribution. The WPT links for UAV-EHBS are modeled the same as UAV-GU. The communication process is divided into two stages. In the first stage, the UAV selects one EHBS to harvest energy, let a binary indicator Sm ∈ { 0, 1} denotes the selection Sm = 1 
+
+means m-th EHBS is selected for energy harvesting, otherwise 
+
+Sm = 0 . In the second stage, the UAV transmits data to a ground user, where the UAV’s transmit power comes from the energy harvested in the first stage. We assume a binary indicator Vn ∈ { 0, 1} for user association, where Vn = 1 
+
+means n-th GU is selected for transmission in this stage, otherwise Vn = 0 . The time durations of the first and second stages are βT d and (1 − β)Td, respectively, where β ∈ (0 , 1) 
+
+denotes the energy harvesting time factor. Thus, each slot t
+
+follows a harvest-then-transmit structure. Let EH m(t) denote the energy harvesting EHBS at time slot t, based on the linear energy harvesting model, we can obtain the UAV’s transmit power in the second stage is [38] 
+
+Pu(t) = αβ (t)
+
+1 − β(t) Pm(t)∣∣hu,m (t)∣∣2, (5) where α denotes the WPT efficiency from EHBS, Pm(t)
+
+is the transmit power at EHBS EH m. However, the power conversion efficiency is a key performance indicator in prac-tical RF energy harvesting circuits. Many experimental studies have verified that the relationship between the input and output power is strongly nonlinear. Thus, different from the conventional energy harvesting linear model, we introduce the non-linear wireless power transfer model as [39]. Thus, the harvested power at UAV can be expressed as 
+
+Pu(t) = β(t)
+
+1 − β(t)Ψm(t) − W ς 
+
+1 − ς , (6) where 
+
+Ψm(t) = W
+
+1 + exp ( −ξ (PRF ,m (t) − ǫ)) , (7) and 
+
+ς = 1
+
+1 + exp( ξǫ ) , P RF ,m (t) = Pm(t)|hu,m (t)|2, (8) where W denotes the maximum harvested power for the UAV, 
+
+ξ and ǫ are constants of energy harvesting circuit physical hardware, PRF ,m (t) is the conventional logistic function for the received RF power. The UAV selects one GU to transmit data at one time slot. Let the scheduled user at slot t be denoted by Gn. During the second transmission stage, the received signal at Gn is 
+
+yn(t) = √Pu(t) hu,n (t) x(t) + nn(t), (9) where x(t) is a transmit signal from the UAV, and nn(t)
+
+denotes additive white Gaussian noise (AWGN) at Gn. Thus, the instantaneous SNR at time slot t between UAV and Gn is 
+
+SN R n(t) = Pu(t) ∣∣hu,n (t)∣∣2
+
+σ2 . (10) Therefore, the channel capacity for the link between UAV U
+
+and Gn is given by         
+
+> Cu,n =B(1 −β)log 2(1 + SN R n(t)) ,(11)
+
+where B denotes the bandwidth for UAV-GU transmissions. III. H YBRID BIT & S EMANTIC COMMUNICATION 
+
+FRAMEWORK AND PROBLEM FORMULATION 
+
+To avoid collisions with previously used symbols, we adopt the following notation throughout this section. The raw image is denoted by r. A text embedding extracted from a caption is 
+
+ω. The quantized visual semantic representation is c. Diffusion latents are yτ at step τ ∈ { 1, . . . , Θ}, the injected noise is 
+
+ν, and the noise scheduler uses a sequence {ητ }Θ  
+
+> τ=1
+
+with 
+
+ϕτ = 1 − ητ and ¯ϕτ = ∏τi=1 ϕi. The denoiser network (UNet) parameters are ψ. For task-level evaluation, we use {T k}Kk=1 
+
+with score Ek, normalized reconstruction quality Rk ∈ [0 , 1] ,normalized end-to-end latency Tk ∈ [0 , 1] , minimum required quality Rmin  
+
+> k
+
+, latency threshold T max  
+
+> k
+
+, and weights ρq, ρ d ∈
+
+(0 , 1) with ρq + ρd = 1 .
+
+A. Hybrid Bit & Semantic Communication Framework 
+
+To serve different link budgets in UAV communications, the proposed framework exposes three switchable operating modes as shown in Fig. 2:  
+
+> •
+
+Mode-1 (Bit transmission). A classic source-channel transmission. It provides high image quality at the re-ceiver but requires large bit rates and limited scalability, especially under low SNR. JPEG is used as the traditional compression method in this mode.  
+
+> •
+
+Mode-2 (Text features transmission). Only a textual description of the image is transmitted; the receiver reconstructs the image from the text. This offers the highest compression but typically lower reconstruction fidelity and higher compute demand at the decoder.  
+
+> •
+
+Mode-3 (Text + visual features transmission). Both a caption embedding and a compact, quantized visual representation are sent. By varying the spatial resolution and the codebook size, the bitrate–quality trade-off can be adjusted continuously. In this work, we designed three sub-modes for Mode 3, each corresponding to different levels of compression capability and semantic generation quality. The encoder comprises a vision-to-language front-end, a variational autoencoder (VAE) [40], a vector-quantization encoder (VQE), a shared codebook, and a source–channel encoder [41]: 1) Text branch. BLIP-2 [42] produces a caption, which is mapped by a CLIP text encoder [43] to the embedding 
+
+ω.2) Vision branch. The raw image r is mapped by the VAE into a latent feature map. This latent is then processed by the VQE:  
+
+> •
+
+stacked convolutional, residual, and attention blocks distill high-level semantics;  
+
+> •
+
+the spatial size is projected to l × u according to the target bitrate (stride-2 convolutions when downsam-pling is required; otherwise 1 × 1 convolutions);  
+
+> •
+
+a gated attention mechanism modulates channels by learned gates;  
+
+> •
+
+after Nb stages, vector quantization is applied against a codebook, so we can obtain the quantized repre-sentation c.If the codebook cardinality is L, the visual payload scales as approximately lu log 2 L bits. Thus, Mode-3 can finely tune bitrate and fidelity via (l, u, L ). UAVs in the aerial layer can further relay the semantic payloads to users when required by resource constraints. The receiver reconstructs images by running a conditional diffusion process guided by ω and c. Given the scheduler {ητ }
+
+with ϕτ = 1 − ητ and ¯ϕτ = ∏τi=1 ϕi, the forward noising procedure is 
+
+yτ = √ ¯ϕτ y0 + √1 − ¯ϕτ ν, ν ∼ N (0, Id ), (12) where y0 denotes a clean latent and Id is the identity matrix. During reverse denoising, a UNet [44] predicts step-wise noise and updates 
+
+yτ −1 = 1
+
+√ϕτ
+
+(
+
+yτ − 1 − ϕτ
+
+√1 − ¯ϕτ
+
+ˆνψ (yτ , τ, c, ω )
+
+)
+
+. (13) Implementation-wise, the visual embedding c is concatenated with the current noisy latent along the batch dimension to form a hybrid tensor, and cross-attention layers inject global textual constraints from ω while preserving local priors from 
+
+c. Iterating (13) down to τ = 0 yields y0, which is decoded by the VAE to produce the final image. The VAE, BLIP-2, and CLIP are adopted from strong public models and kept frozen to provide stable representations and reduce training cost. Following the VQ-VAE paradigm [45], each local feature vector p is mapped to its nearest codeword 
+
+cq in the codebook. Using stop( ·) to block gradients, the VQ loss is 
+
+Lvq = Ep
+
+[∥∥ stop( p) − cq
+
+∥∥22 + ∥∥ stop( cq ) − p∥∥22
+
+]
+
+. (14) Since transmitter and receiver share the same codebook, transmitting only codeword indices suffices for reconstructing 
+
+c at the decoder, significantly reducing bandwidth. Fig. 2. The Hybrid Bit & Semantic Communication Framework. 
+
+With ν ∼ N (0, Id ), the UNet is trained by mean-squared error: 
+
+Ldenoiser = EPr EPc,yτ |r Eν
+
+∥∥ν − ˆνψ (yτ , τ, c, ω )∥∥22. (15) We employ classifier-free guidance (CFG) [46] at inference to modulate the effect of text conditioning with a guidance factor ωg:
+
+˜νψ = ˆ νψ
+
+(yτ , (c, ∅), τ ) + ωg
+
+[
+
+ˆνψ
+
+(yτ , (c, ω ), τ )
+
+− ˆνψ
+
+(yτ , (c, ∅), τ )]
+
+.
+
+(16) To make CFG feasible, text conditions are randomly dropped with probability p∅ ≈ 0.1 during training and replaced by learnable null embeddings. The compressed size and semantic generation quality for each semantic transmission mode can be found in Fig. 3. 
+
+B. Semantic Communication Efficiency Metric 
+
+We introduce the Semantic Efficiency Metric (SEM) to jointly evaluate latency and reconstruction quality under tight link budgets in UAV communications. For a set of K image transmission tasks {K} , we define 
+
+Ek = ρq
+
+(Rk − Rmin 
+
+> k
+
+) + ρd
+
+(T max  
+
+> k
+
+− Tk
+
+), (17) where Rk is the normalized reconstruction metric (e.g., peak signal to noise ratio (PSNR)) at the receiver, and Tk is the normalized transmission latency for k-th task; Rmin  
+
+> k
+
+and 
+
+T max  
+
+> k
+
+are task-specific thresholds for minimum acceptable quality and maximum allowable latency, respectively. Eq. (17) provides a single scalar objective for mode selection and rate allocation: when thresholds are tight or links are weak (small 
+
+T max  
+
+> k
+
+or large Tk), the system prefers Mode-2 or a lower-rate configuration of Mode-3. When quality is paramount (large 
+
+Rmin  
+
+> k
+
+), the system raises the semantic strength in Mode-3 or falls back to Mode-2 and Mode-1 for maximal generation quality. In summary, the proposed design couples a three-mode, rate-scalable hybrid pipeline (Mode 1, Mode 2 and Mode 3) with VAE–VQE semantic compression and conditional diffusion reconstruction. The SEM metric in (17) offers a principled way to navigate latency-quality trade-offs in UAV communications. Based on the resource budget in UAV net-works, different semantic transmission modes show different suitability. Mode-1 generally requires the highest bit rate and is more appropriate when the harvested energy is sufficient and the channel condition is favorable. Mode-2 has the smallest payload requirement and is thus more suitable when the communication resource is limited, such as under weak channels, low harvested energy, or tight latency constraints. Mode-3 provides a flexible intermediate solution, since its vi-Fig. 3. The compressed size and semantic generation quality for different transmission modes. 
+
+sual semantic payload can be adjusted through the spatial reso-lution and codebook size. The hybrid transmission framework allows the UAV to adapt the transmission mode according to the currently available resource budget rather than relying on a single fixed transmission strategy, this is the reason we introduce this framework to the UAV communications. 
+
+C. Problem Formulation 
+
+In the proposed UAV-enabled WPT networks, we aim to maximize the average semantic transmission efficiency SEM. We can optimize the UAV 3D trajectory, EHBS selection, user association, hybrid transmission mode selection, and energy harvesting time factor in this scenario. Therefore, the problem formulation can be expressed as 
+
+(P1) : max 
+
+> q(t),S(t),V(t),O(t),β (t)
+
+1
+
+K
+
+> K
+
+∑
+
+> k=1
+
+Ek, (18) 
+
+s.t.
+
+> M
+
+∑
+
+> m=1
+
+Sm = 1 , (18a) 
+
+> N
+
+∑
+
+> n=1
+
+Vn = 1 , (18b) 
+
+‖q(t+1) − q(t)‖ ≤ vmax Td, (18c) 
+
+zmin ≤ z(t) ≤ zmax , (18d) 
+
+β ∈ (0 , 1) , (18e) 
+
+Tk ≤ T max  
+
+> k
+
+, ∀k ∈ K , (18f) 
+
+Rk ≥ Rmin  
+
+> k
+
+, ∀k ∈ K , (18g) where S(t) = {S1, S 2, ..., S M } denotes the EHBS selection, 
+
+V(t) = {V1, V 2, ..., V N } denotes the GU selection, O(t) = 
+
+{O1, O 2, O 3,1, O 3,2, O 3,3} denotes the hybrid transmission mode selection, O1 is Mode 1, O2 is Mode 2, O3,1, O3,2
+
+and O3,3 are the sub-modes of Mode 3. (18a) indicates that only one EHBS can be selected at time slot t, (18b) shows that one GU can be selected to receive image from the UAV. (18c) and (18d) present the mobility limitations of the UAV. (18e) shows the constraint of energy harvesting time factor. (18f) and (18g) indicate that the transmission tasks need to satisfy the threshold requirements. Considering that the proposed UAV communication network involves time-varying Rician fading channels, UAV trajectory variations, and uncertainty in transmission tasks, the formulated problem belongs to a long-term optimization problem in a dynamic network. Therefore, to obtain fast decisions in such a highly dynamic environment and to maximize the long-term performance, we adopt a DRL algorithm to maximize the semantic efficiency metric. IV. DRL-B ASED RESOURCE ALLOCATION 
+
+To solve this long-term planning problem in the dynamic UAV network by using DRL, we first model the problem as a Markov decision process (MDP). Therefore, we define the state as         
+
+> f(t) = {t, h u,n (t)n∈N , h u,m (t)m∈M , q (t−1) ,Rk(t)k∈K , T k(t)k∈K }.(19)
+
+Then, we assume the action at time slot t is      
+
+> a(t) = {ah(t), a v(t), v (t),S(t),O(t), β (t)},(20)
+
+where ah(t) and av (t) represent the UAV’s horizontal flight angle and vertical flight angle, respectively. v(t) is the UAV speed. Notice that the angles and speed are discretized into ten uniform intervals. Moreover, the reward function plays a key role in training the DRL agent, serving as the feedback signal from the environment to enhance the policy performance of the agent in the learning process. We define the reward function as    
+
+> r(t) =
+> K∑
+> k=1
+> (Ek−δ),(21)
+
+where δ = 1 when any constraints are not satisfied, otherwise 
+
+δ = 0 .To learn a resource-allocation policy that maximizes the cumulative semantic communication efficiency while explic-itly modeling uncertainty in long-horizon returns, we adopt a distributional soft actor-critic (DSAC) formulation [47]. Unlike conventional SAC [48], which backs up the mean of entropy-regularized returns, DSAC fits and propagates a parametric distribution of soft returns via a distributional Bellman operator. Let P denote the current stochastic policy, x a state, and 
+
+u an action. We define the one-step soft target as 
+
+TP (x, u) = r + γ G(x+), (22) where r is the immediate reward, γ ∈ (0 , 1) the discount factor, and G(x+) the entropy-regularized return-to-go at the successor state x+.The soft state-action value equals the expectation of (22): 
+
+QP (x, u) = E[TP (x, u)] . (23) Instead of collapsing to the mean in (23), DSAC propagates a distribution using the distributional soft Bellman operator 
+
+Tsoft 
+
+[ZP (x, u)] = r + γ
+
+(
+
+ZP (x+, u+) − α log P(u+ | x+)
+
+)
+
+,
+
+(24) where ZP (x, u) is a random variable for the soft return and 
+
+u+ ∼ P (· | x+). The scalar α > 0 is the entropy temperature. Let ̂ Zθ (· | x, u) be a parametric density with parameters θ,and let ¯θ denote a slow-moving target copy. At each update we project the pushed-forward target distribution Tsoft ̂ Z¯θ onto ̂
+
+Zθ by minimizing a divergence (here, KL): ̂
+
+Znew  
+
+> θ
+
+= arg min ̂
+
+> Zθ
+
+E
+
+[
+
+DKL 
+
+(
+
+Tsoft ̂ Z¯θ (· | x, u)
+
+∥∥∥̂ Zθ (· | x, u)
+
+)] 
+
+.
+
+(25) A practical negative log-likelihood objective that realizes (25) is 
+
+LZ (θ) = − E(x,x+ ,u,r )∼D Eu+ ∼P φ(·| x+ ) Ez+ ∼̂ Z¯θ (·| x+ ,u+ )
+
+[log qθ
+
+(Φ( z+; x, u))] ,
+
+(26) where D is a replay buffer, qθ is the density of ̂ Zθ , φ are the policy parameters used to sample u+, and Φ( ·) transports a target draw through (24). Taking gradients yields 
+
+∇θ LZ (θ) = −E[∇θ log qθ
+
+(Φ( z+; x, u))] . (27) Assume ̂ Zθ (· | x, u) = N(μθ(x, u), σ θ (x, u)2). For ˜z =Φ( z+; x, u), the score-function derivatives of the log-density are 
+
+∂ log qθ(˜ z)
+
+∂μ θ
+
+= ˜z − μθ
+
+σ2
+
+> θ
+
+, ∂ log qθ (˜ z)
+
+∂σ θ
+
+= (˜ z − μθ )2
+
+σ3
+
+> θ
+
+− 1
+
+σθ
+
+.
+
+(28) To avoid ill-conditioned gradients when σθ is too small or too large, we enforce a minimum scale 
+
+σθ (x, u) ← max (σθ (x, u), σ ), (29) with hyperparameter σ > 0. We further apply target clipping to mitigate overestimation: 
+
+˜z ← clip 
+
+(
+
+˜z, μ θ (x, u) − ε, μ θ(x, u) + ε
+
+)
+
+, (30) where ε > 0 sets the window width. Given the learned return model, the actor maximizes 
+
+Jπ (φ) = Ex∼D , u∼P φ (·| x)
+
+Qθ (x, u)
+
+︸ ︷︷ ︸ 
+
+> mean of ̂Zθ
+
+−α log Pφ(u | x)
+
+ .
+
+(31) Using the re-parameterization u = gφ(x, ε ) with fixed noise 
+
+ε, the policy gradient is 
+
+∇φJπ (φ) = Ex,ε 
+
+[
+
+∇φgφ(x, ε )
+
+(
+
+∇uQθ (x, u)
+
+− α ∇u log Pφ(u | x)
+
+)]
+
+.
+
+(32) Equations (22)-(32) summarize the proposed DSAC variant. We fit a Gaussian return head via KL projection with a minimum-scale constraint and clipped targets, then improve the actor under the maximum-entropy principle using a re-parameterized sampler. This aligns the learned distribution of soft returns with entropy-regularized control while improving numerical stability during training. 
+
+A. Decision-Assisted DRL 
+
+In our wireless-powered UAV semantic communication network, agents must respect both wireless communication reachability and power transfer constraints. In the previous section, the reward shaping adopted for DSAC assigns a payoff to every action without first checking whether the action is feasible under the current state (e.g., link budget, UAV location, GU locations, task status, harvested energy). This assumption is problematic in the proposed network. For example, if the UAV U has already finished a specific transmission task, then continuing to allocate transmission link for this specific task is an unavailable action. Likewise, when an EHBS has a very weak link between itself and the UAV, selecting this EHBS at the first energy harvesting stage is also unavailable. If such actions are not filtered, the DRL agent must spend many updates to infer the mutual influences among state–action pairs, which reduces sample efficiency and may even prevent convergence. A common remedy in DRL is to give negative rewards to ineffective or goal-irrelevant actions, thereby biasing explo-ration away from them and accelerating learning. However, this purely punitive strategy can be overly harsh during early training. With randomly initialized parameters, the function approximator may output small or near-zero values even for the optimal action over several iterations; strong penalties can then steer the policy toward suboptimal regions and increase the risk of convergence to poor local optima [49]. Another straightforward idea is to hard-ban infeasible actions so they cannot be selected. Yet, in most parameterizations the same policy network produces preferences for all actions. Even if some choices are filtered at execution time, their logits (for discrete) or continuous outputs still backpropagate, reshaping Fig. 4. Unavailable action’s impact on DRL training. 
+
+the shared representation and allowing infeasible actions to distort what the network learns. This effect is qualitatively illustrated in Fig. 4. If unavail-able actions are simply ignored, the fitted mapping behaves as if it “connects” only feasible choices (dashed curves). When unavailable actions are present and penalized, the regressor is pushed away from those points, shifting the fitted surface (solid curves). In both cases, unavailable actions can perturb the function approximator and indirectly affect the resource-allocation decisions of other UAVs. To mitigate this issue, we adopt a decision-assisted DRL scheme that injects feasibility knowledge directly into training [50]. Rather than rewarding or sampling unavailable actions, we assign fixed minimal preferences to state–action pairs that violate the feasibility rules, so that they contribute as little as possible to the gradient signal. Concretely, for each mini-batch we label sampled state–action pairs with a feasibility flag determined by simple tests. Feasible actions are optimized by the standard SAC objective, while infeasible actions are driven toward a fixed baseline output so that their influence on the shared representation is suppressed. As shown in Fig. 5, each policy update deliberately includes a subset of currently infeasible actions identified by the feasibility rules. The policy is trained to output the baseline for those actions, ensuring they receive minimal preference and their gradients rapidly vanish. Because infeasible actions are generated deterministically by prior knowledge (task-completion status, coverage/link-budget checks under WPT scheduling, etc.) rather than by exploration, the range of effective exploration space is reduced, which improves the convergence efficiency of the DRL agent. The complete pro-cedure of the proposed decision-assisted DSAC (DA-DSAC) is summarized in Algorithm 1. 
+
+> Fig. 5. The decision assistant in DRL.
+
+Algorithm 1 DA-DSAC-Based Optimization in UAV-Enabled WPT Network : 
+
+> 1:
+
+Initialize parameters in UAV-Enabled WPT networks and semantic transmission framework.  
+
+> 2:
+
+Initialize DRL learning variables.  
+
+> 3:
+
+repeat : 
+
+> 4:
+
+for time slot 0, 1, ..., T do  
+
+> 5:
+
+Choose an action a(t) based on the current policy and state f (t). 
+
+> 6:
+
+Obtain the next state f (t+1) and reward r(t) from the environment.  
+
+> 7:
+
+Generate the sample {f (t), a (t), r (t), f (t + 1) for time slot t. 
+
+> 8:
+
+Generate samples for unavailable action space.  
+
+> 9:
+
+Save samples to the replay buffer.  
+
+> 10:
+
+Update based on (27).  
+
+> 11:
+
+end for  
+
+> 12:
+
+for each episode do  
+
+> 13:
+
+Generate a minibatch including several samples from the replay buffer.  
+
+> 14:
+
+Update DRL agent.  
+
+> 15:
+
+end for  
+
+> 16:
+
+until Convergence. 
+
+V. S IMULATION RESULTS 
+
+In simulations, we assume the number of EHBS M = 10 ,the number of GUs N = 5 , EHBSs and GUs are randomly distributed within a 200 m × 200 m area, the UAV’s initial altitude is 50 m, the maximum speed of UAV vmax = 20 
+
+m/s, the time slot duration is 1 s, the UAV altitude limitation 
+
+zmin = 45 m, zmax = 70m, the Rician factor κ = 10 dB, path loss exponents αL = 2 and αN = 2 .5, the transmit power of EHBS is 1 W, the noise power at ground users is -10 dBm, the maximum harvested power for the UAV W = 20 mW, the energy harvesting circuit physical hardware constraints ξ
+
+= 1500, ǫ = 0.0022 [39], the bandwidth is 20 MHz, the size of raw data is 3.5 MB, the number of total time slots T =100 , the number of tasks K = 50 , the latency threshold is randomly generated between 0.5 s and 2 s for tasks, the quality threshold is randomly generated between 10 and 25 (PSNR), 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 
+
+> Weight of Image Generation Quality
+> 0.01 0.02 0.03 0.04 0.05 0.06 0.07
+> SEM
+
+Fig. 6. Semantic efficiency vs the weight factor of generation quality. 
+
+The speed range for GUs’ random waypoint model is (0, 5), the weight factors in the SEM are set as 0.5, the discount factor γ = 0 .99 . The ground users generate transmission tasks according to FTP Model 3. Moreover, we introduce the multi-agent proximal policy optimization (MAPPO) [51], ‘Fixed β’(β is fixed in the optimization) and ‘Hovering UAV’ (The UAV remains hovering all the time) as the baselines in simulations. Fig. 6 illustrates the changes of semantic efficiency as the weight factor of SEM changes. In this figure, we present the results of two different episodes. In Episode 1, as the image-quality weight increases, the SEM value also rises accordingly. This result indicates that in this episode, the importance of image quality in the generated tasks is more significant, while the delay constraint is relatively relaxed. However, in Episode 2, we can see an opposite trend. As the image-quality weight increases, the SEM decreases from approximately 0.04 to 0.03. This is because in Episode 2, the randomly generated tasks have tighter delay constraints, while the threshold for generation quality is relatively lower. Therefore, in practice, the weight factors can be determined according to application requirements or preset service policies. Moreover, it can be observed that in both two episodes, the proposed algorithm DA-DSAC outperforms MAPPO and DSAC, this result veri-fies the superiority of the proposed DRL method. Fig. 7 shows the relationship between the number of EHBSs and the semantic communication efficiency. As the number of EHBSs increases, the SEM value initially improves signif-icantly. When the number of EHBSs increases from 3 to 5, the SEM rises from 0.027 to 0.033. However, when the number of EHBSs is larger than 6, the growth of SEM becomes less noticeable. This is because each time an EHBS is selected, both the signal strength between the UAV and the EHBS, and that between the UAV and ground users, need to be con-sidered simultaneously under the UAV’s position constraint. However, when the number of EHBSs becomes sufficiently large, the performance gain from further increasing EHBSs          
+
+> 12345678910
+> Number of EHBS
+> 0.005 0.01 0.015 0.02 0.025 0.03 0.035
+> SEM
+
+Fig. 7. Semantic efficiency vs the number of EHBS.       
+
+> 22.5 33.5 44.5 5
+> Raw Data Size (Mb)
+> 0.01 0.015 0.02 0.025 0.03 0.035 0.04 0.045 0.05 0.055 0.06
+> SEM
+
+Fig. 8. Semantic efficiency vs raw data size. 
+
+becomes marginal. Moreover, the baseline results in this figure demonstrate the advantages of the proposed algorithm, and highlight the importance of optimizing UAV trajectory and wireless power transfer time factor. The impact of raw data size on semantic communication efficiency is shown in Fig. 8. It is clearly observed that as the raw data size increases, the SEM value significantly decreases. When the raw data size reaches 5 MB, the SEM drops to around 0.022. The reason for this result is, although semantic communication can significantly compress the raw data, obtaining a better compression ratio results in genera-tion performance degradation. Conversely, larger transmission delays are introduced with less compression performance. Therefore, the increase in raw data size brings challenges to the efficiency of semantic communications. Fig. 9 presents the impact of UAV mobility on system performance. As the UAV’s speed increases, the semantic communication efficiency also improves. When the UAV’s 10 20 30 40 50 60 70 
+
+> Maximum UAV Speed (m/s)
+> 0.02 0.025 0.03 0.035 0.04 0.045 0.05
+> SEM
+
+Fig. 9. Semantic efficiency vs maximum UAV speed.      
+
+> 25 30 35 40 45 50
+> Transmit power-to-noise ratio of EHBS (dB)
+> 0.01 0.015 0.02 0.025 0.03 0.035
+> SEM
+
+Fig. 10. Semantic efficiency vs the transmit power-to-noise ratio of EHBS. 
+
+maximum speed reaches 60 m/s, the SEM value increases to nearly 0.048. This is because a higher maximum speed provides greater mobility ability to the UAV, so the UAV can quickly reach areas and find more favorable deployment locations that are difficult to access at lower speeds. On the other hand, the growth of SEM slows down when the maximum UAV speed approaches around 70 m/s, since such a high speed is already sufficient for UAV rapid deployment within the service area. Furthermore, we investigate the impact of increasing EHBS transmit power on the overall semantic communication ef-ficiency in Fig. 10. As we expected, the UAV can harvest more energy to increase its transmission power with higher EHBS power, or spend less time on energy harvesting and allocate more time for data transmission. Therefore, increasing the EHBS transmit power can directly enhance the semantic communication efficiency.       
+
+> 0.2 0.3 0.4 0.5 0.6 0.7 0.8
+> WPT efficiency Factor
+> 0.01 0.015 0.02 0.025 0.03 0.035
+> SEM
+
+Fig. 11. Semantic efficiency vs WPT efficiency Factor.       
+
+> 246810 12 14
+> Maximum speed for GUs (m/s)
+> 0.02 0.022 0.024 0.026 0.028 0.03 0.032
+> SEM
+
+Fig. 12. Semantic efficiency vs maximum GU speed. 
+
+Fig. 11 illustrates the impact of WPT efficiency on the semantic communication efficiency of the UAV. Similar to increasing the EHBS transmit power, improving the WPT transmission efficiency achieves a comparable effect by reduc-ing the UAV’s energy harvesting time or allowing it to trans-mit with higher power, thereby further enhancing spectrum utilization. This demonstrates that the integration of WPT and semantic communication is highly suitable for future wireless communication networks, particularly for UAVs that are constrained by limited energy resources. To investigate the impact of ground user mobility on system communication performance, Fig. 12 varies the maximum speed constraint in the ground user random waypoint model. When the maximum GU speed increases to 12 m/s, the semantic efficiency metric is decreased to around 0.025. This result shows that the ground user mobility indeed affects the semantic communication efficiency in the proposed network. As the ground users’ moving speed increases, the system’s dynamics and uncertainty also grow, so it is more difficult for the UAV to quickly find an optimal position to maximize the semantic communication efficiency. Therefore, mobility prediction of users will be an important research direction for future communication networks. VI. C ONCLUSION 
+
+This paper investigates a hybrid bit and semantic commu-nication framework in UAV-enabled WPT networks, where ground users can move randomly. We proposed a seman-tic communication efficiency metric to balance the tradeoff between image generation quality and transmission latency. To maximize this metric, we jointly optimized the UAV trajectory, EHBS selection, user association, semantic com-munication mode selection, and energy harvesting time factor. To address this complex long-term optimization problem, we developed a decision-assisted DRL algorithm to enhance the convergence performance of DRL. Simulation results verified the advantages of the proposed transmission framework and optimization algorithm, demonstrating their effectiveness in achieving adaptive and energy-efficient communication for future large-scale UAV networks and wireless systems. In future work, we plan to extend this study to multi-UAV and multi-source energy harvesting scenarios, and further explore the tradeoff between computation and communication in semantic communication systems. REFERENCES [1] Z. Lu, R. Li, K. Lu, X. Chen, E. Hossain, Z. Zhao, and H. Zhang, “Semantics-empowered communications: A tutorial-cum-survey,” IEEE Commun. Surveys Tuts. , vol. 26, no. 1, pp. 41–79, 2024. [2] H. Xie, Z. Qin, G. Y. Li, and B.-H. Juang, “Deep learning enabled semantic communication systems,” IEEE Trans. Signal Processing ,vol. 69, pp. 2663–2675, Apr. 2021. [3] E. Bourtsoulatze, D. B. Kurka, and D. G¨ und¨ uz, “Deep joint source– channel coding for wireless image transmission,” IEEE Trans. Cogn. Commun. Netw. , vol. 5, no. 3, pp. 567–579, Sep. 2019. [4] D. G¨ und¨ uz, Z. Qin, I. E. Aguerri, H. S. Dhillon, Z. Yang, A. Yener, K.-K. Wong, and C.-B. Chae, “Beyond transmitting bits: Context, semantics, and task-oriented communications,” IEEE J. Select. Areas Commun. , vol. 41, no. 1, pp. 5–41, Jan. 2023. [5] S. Bi, Y. Zeng, and R. Zhang, “Wireless powered communication networks: an overview,” IEEE Wireless Communications , vol. 23, no. 2, pp. 10–18, Apr. 2016. [6] G. Pan, Y. Wu, Y. Si, Z. Hua, X. Gao, S. Wang, J. An, and D. Niyato, “Distributed movable antenna systems for reliable, flex-ible, and resilient communications: Architectures, techniques, and challenges,” IEEE Wireless Communications , pp. 1–9, 2025, doi: 10.1109/MWC.2025.3599138. [7] Y. Zeng, R. Zhang, and T. J. Lim, “Wireless communications with un-manned aerial vehicles: Opportunities and challenges,” IEEE Commun. Mag. , vol. 54, no. 5, pp. 36–42, May. 2016. [8] L. Xie, X. Cao, J. Xu, and R. Zhang, “UAV-enabled wireless power transfer: A tutorial overview,” IEEE Trans. Green Commun. Netw. ,vol. 5, no. 4, pp. 2042–2064, Dec. 2021. [9] X. Yuan, Y. Hu, J. Xu, and A. Schmeink, “Trajectory design for UAV-enabled multiuser wireless power transfer,” IEEE Trans. Wireless Commun. , vol. 20, no. 1, pp. 26–42, Feb. 2021. [10] L. Yan, Z. Qin, R. Zhang, Y. Li, and G. Y. Li, “Resource allocation for text semantic communications,” IEEE Wireless Commun. Lett. , vol. 11, no. 7, pp. 1394–1398, Jul. 2022. [11] Z. Weng and Z. Qin, “Semantic communication systems for speech transmission,” IEEE J. Select. Areas Commun. , vol. 39, no. 8, pp. 2434– 2444, Aug. 2021. [12] D. Huang, F. Gao, X. Tao, Q. Du, and J. Lu, “Toward semantic communications: Deep learning-based image semantic coding,” IEEE J. Select. Areas Commun. , vol. 41, no. 1, pp. 55–71, Jan. 2023. [13] Z. Ji, Z. Qin, X. Tao, and Z. Han, “Resource optimization for semantic-aware networks with task offloading,” IEEE Trans. Wireless Commun. ,vol. 23, no. 9, pp. 12 284–12 296, Sep. 2024. [14] K. Yang, S. Wang, J. Dai, K. Tan, K. Niu, and P. Zhang, “Witt: A wireless image transmission transformer for semantic communications,” 
+
+IEEE International Conference on Acoustics, Speech and Signal Pro-cessing (ICASSP) , Rhodes Island, Greece, Jun. 2023. [15] Q. Zhou, R. Liu, J. Zhang, R. He, R. Wang, and R. Zhang, “Adaptive bit rate control in semantic communication with incremental knowledge-based HARQ,” IEEE Open J. Commun. Soc , vol. 3, pp. 1075–1089, Jul. 2022. [16] Z. Zhao, Z. Yang, M. Chen, C. Zhu, W. Xu, Z. Zhang, and K. Huang, “Energy-efficient probabilistic semantic communication over space-air-ground integrated networks,” IEEE Trans. Wireless Commun. , vol. 24, no. 10, pp. 8814–8829, Oct. 2025. [17] X. Peng, Z. Qin, X. Tao, J. Lu, and K. B. Letaief, “A robust image semantic communication system with multi-scale vision transformer,” 
+
+IEEE J. Select. Areas Commun. , vol. 43, no. 4, pp. 1278–1291, Apr. 2025. [18] G. Geraci, A. Garcia-Rodriguez, M. M. Azari, A. Lozano, M. Mez-zavilla, S. Chatzinotas, Y. Chen, S. Rangan, and M. D. Renzo, “What will the future of UAV cellular communications be? a flight from 5G to 6G,” IEEE Commun. Surveys Tuts. , vol. 24, no. 3, pp. 1304–1335, Thirdquarter, 2022. [19] H. Chang, C.-X. Wang, R. Feng, C. Huang, L. Hou, and E.-H. M. Aggoune, “Beam domain channel modeling and prediction for UAV communications,” IEEE Trans. Wireless Commun. , vol. 24, no. 2, pp. 969–983, Feb. 2025. [20] X. Xu, H. Xu, D. Wei, W. Saad, M. Bennis, and M. Chen, “Transformer-based collaborative reinforcement learning for fluid an-tenna system (FAS)-enabled 3D UAV positioning,” IEEE Journal on Selected Areas in Communications , vol. 44, pp. 1128–1143, 2026, doi: 10.1109/JSAC.2025.3625523. [21] Y. Yao, W. Xiao, P. Miao, G. Chen, H. Yang, C.-B. Chae, and K.-K. Wong, “UAV-relay-aided secure maritime networks coexisting with satellite networks: Robust beamforming and trajectory optimiza-tion,” IEEE Trans. Wireless Commun. , Early Access, 2025. DOI: 10.1109/TWC.2025.3596136. [22] J. Li, G. Chen, T. Zhang, W. Feng, W. Jiang, T. Q. S. Quek, and R. Tafazolli, “UAV-RIS-aided space-air-ground integrated network: In-terference alignment design and DoF analysis,” IEEE Trans. Wireless Commun. , vol. 23, no. 9, pp. 11 678–11 692, Sep. 2024. [23] Y. Liu, C. Huang, G. Chen, R. Song, S. Song, and P. Xiao, “Deep learning empowered trajectory and passive beamforming design in UAV-RIS enabled secure cognitive non-terrestrial networks,” IEEE Wireless Commun. Lett. , vol. 13, no. 1, pp. 188–192, Jan. 2024. [24] Y. Zhu, M. Chen, S. Wang, Y. Hu, Y. Liu, and C. Yin, “Collaborative reinforcement learning based unmanned aerial vehicle (UAV) trajectory design for 3D UAV tracking,” IEEE Trans. Mobile Comput. , vol. 23, no. 12, pp. 10 787–10 802, Dec. 2024. [25] W. Mao, Y. Lu, G. Pan, and B. Ai, “UAV-assisted communications in SAGIN-ISAC: Mobile user tracking and robust beamforming,” IEEE Journal on Selected Areas in Communications , vol. 43, no. 1, pp. 186– 200, Jan. 2025. [26] C. Huang, G. Chen, Z. Xu, J. Zhu, T. Pan, R. Tafazolli, and W. Huang, “Flexible reconfigurable intelligent surface-aided covert communications in UAV networks,” IEEE Journal on Selected Areas in Communications , vol. 44, pp. 1577–1588, 2026, doi: 10.1109/JSAC.2025.3639197. [27] L. Pang, K. Song, P. Miao, C. Huang, B. Ji, Z. An, and G. Chen, “Dynamic interference management by using the enhanced clustering and deep reinforcement learning in VLC-enabled UAV communication,” 
+
+IEEE Transactions on Consumer Electronics , vol. 71, no. 3, pp. 7584– 7596, Aug. 2025. [28] H. Fan, Z. Song, X. Yang, T. Li, S. Wang, C. Y. Leow, G. Pan, and D. Niyato, “Joint optimization of delay and power efficiency of neighbor discovery in UAV networks,” IEEE Transactions on Mobile Computing ,pp. 1–16, 2025, doi: 10.1109/TMC.2025.3649859. [29] K. K. Nguyen, A. Masaracchia, V. Sharma, H. V. Poor, and T. Q. Duong, “RIS-assisted UAV communications for IoT with wireless power transfer using deep reinforcement learning,” IEEE J. Sel. Top. Signal Process. , vol. 16, no. 5, pp. 1086–1096, Aug. 2022. [30] H. Ren, Z. Zhang, Z. Peng, L. Li, and C. Pan, “Energy minimization in RIS-assisted UAV-enabled wireless power transfer systems,” IEEE Internet Things J. , vol. 10, no. 7, pp. 5794–5809, Apr. 2023. [31] J. Shi, P. Cong, L. Zhao, X. Wang, S. Wan, and M. Guizani, “A two-stage strategy for UAV-enabled wireless power transfer in unknown environments,” IEEE Trans. Mobile Comput. , vol. 23, no. 2, pp. 1785– 1802, Jan. 2024. [32] H. Yu, M. Ju, and H.-C. Yang, “Aggregate throughput maximization for UAV-enabled relay networks with wireless power transfer: Joint trajectory and power optimization,” IEEE Trans. Veh. Technol. , vol. 73, no. 6, pp. 8253–8265, Jun. 2024. [33] Z. Q. Liew, Y. Cheng, W. Y. B. Lim, D. Niyato, C. Miao, and S. Sun, “Economics of semantic communication system in wireless powered Internet of Things,” in IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , Singapore, Singapore, May. 2022, pp. 8637-8641. [34] N. Khalfet, C. Psomas, S. Chatzinotas, and I. Krikidis, “Semantic com-munications for simultaneous wireless information and power transfer,” 
+
+IEEE Trans. Commun. , vol. 73, no. 1, pp. 173–188, Jan. 2025. [35] E. Delfani and N. Pappas, “Semantics-aware updates from remote energy harvesting devices to interconnected LEO satellites,” IEEE Commun. Lett. , vol. 29, no. 8, pp. 1928–1932, Aug. 2025. [36] N. H. Sang, N. D. Hai, N. D. D. Anh, N. C. Luong, V.-D. Nguyen, S. Gong, D. Niyato, and D. I. Kim, “Wireless power transfer meets semantic communication for resource-constrained IoT networks: A joint transmission mode selection and resource management approach,” IEEE Internet Things J. , vol. 12, no. 1, pp. 556–569, Jan. 2025. [37] C. You and R. Zhang, “3D trajectory optimization in rician fading for UAV-enabled data harvesting,” IEEE Trans. Wireless Commun. , vol. 18, no. 6, pp. 3192–3207, Jun. 2019. [38] Y. Liu, L. Wang, S. A. Raza Zaidi, M. Elkashlan, and T. Q. Duong, “Secure D2D communication in large-scale cognitive cellular networks: A wireless power transfer model,” IEEE Trans. Commun. , vol. 64, no. 1, pp. 329–342, Jan. 2016. [39] E. Boshkovska, D. W. K. Ng, N. Zlatanov, A. Koelpin, and R. Schober, “Robust resource allocation for MIMO wireless powered communica-tion networks based on a non-linear EH model,” IEEE Transactions on Communications , vol. 65, no. 5, pp. 1984–1999, May. 2017. [40] D. P. Kingma and M. Welling, “Auto-encoding variational bayes,” 
+
+International Conference on Learning Representations (ICLR) , Banff, Canada, Apr. 2014. [41] C. Huang, X. Chen, G. Chen, P. Xiao, G. Y. Li, and W. Huang, “Deep reinforcement learning-based resource allocation for hybrid bit and generative semantic communications in space-air-ground integrated networks,” IEEE J. Select. Areas Commun. , Early Access, 2025. DOI: 10.1109/JSAC.2025.3623157. [42] J. Li, D. Li, S. Savarese, and S. Hoi, “BLIP-2: Bootstrapping language-image pre-training with frozen image encoders and large language models,” International Conference on Machine Learning (ICML) , vol. 202, Hawaii, USA, Jul. 2023, pp. 19730-19742. [43] A. Radford, J. W. Kim, C. Hallacy, A. Ramesh, G. Goh, S. Agarwal, G. Sastry, A. Askell, P. Mishkin, J. Clark, G. Krueger, and I. Sutskever, “Learning transferable visual models from natural language supervi-sion,” International Conference on Machine Learning (ICML) , vol. 139, Jul. 2021, pp. 8748-8763. [44] R. Rombach, A. Blattmann, D. Lorenz, P. Esser, and B. Ommer, “High-resolution image synthesis with latent diffusion models,” IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , New Orleans, USA, Jun. 2022, pp. 10684-10695. [45] A. van den Oord, O. Vinyals, and k. kavukcuoglu, “Neural discrete representation learning,” Advances in Neural Information Processing Systems (NeurIPS) , vol. 30, Long Beach, USA, Dec. 2017. [46] J. Ho and T. Salimans, “Classifier-free diffusion guidance,” Neural Information Processing Systems (NeurIPS) , Dec. 2021. [47] J. Duan, Y. Guan, S. E. Li, Y. Ren, Q. Sun, and B. Cheng, “Distributional soft actor-critic: Off-policy reinforcement learning for addressing value estimation errors,” IEEE Trans. Neural Netw. Learn. , vol. 33, no. 11, pp. 6584–6598, Nov. 2022. [48] D. Wei, X. Xu, Y. Liu, H. Vincent Poor, and M. Chen, “Op-timizing model splitting and device task assignment for deceptive signal-assisted private multi-hop split learning,” IEEE Journal on Se-lected Areas in Communications , vol. 44, pp. 1512–1528, 2026, doi: 10.1109/JSAC.2025.3637738. [49] C. Huang, G. Chen, P. Xiao, Y. Xiao, Z. Han, and J. A. Chambers, “Joint offloading and resource allocation for hybrid cloud and edge computing in SAGINs: A decision assisted hybrid action space deep reinforcement learning approach,” IEEE J. Select. Areas Commun. , vol. 42, no. 5, pp. 1029–1043, May. 2024. [50] C. Huang, G. Chen, and Y. Gong, “Delay-constrained buffer-aided relay selection in the Internet of Things with decision-assisted reinforcement learning,” IEEE Internet Things J. , vol. 8, no. 12, pp. 10 198–10 208, Jun. 2021. [51] C. Yu, A. Velu, E. Vinitsky, J. Gao, Y. Wang, A. Bayen, and Y. WU, “The surprising effectiveness of PPO in cooperative multi-agent games,” 
+
+Conference on Neural Information Processing Systems (NeurIPS) , New Orleans, LA, Nov. 2022, pp. 24611-24624.

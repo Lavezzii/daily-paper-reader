@@ -1,0 +1,1661 @@
+Title: Deconstructing the Composite Channel for Beyond Diagonal RIS: Channel Estimation and Beamforming Design
+
+URL Source: https://arxiv.org/pdf/2606.01564v1
+
+Published Time: Tue, 02 Jun 2026 01:55:10 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+> 1
+
+# Deconstructing the Composite Channel for Beyond Diagonal RIS: Channel Estimation and Beamforming Design 
+
+Fazal-E Asim, Andr´ e L. F. de Almeida, Bruno Sokal Behrooz Makki, and Gabor Fodor 
+
+Abstract —As beyond diagonal reconfigurable intelligent surface (BD-RIS) gains increasing attention in high-frequency wireless communications, developing accurate and scalable channel-estimation methods has become both timely and essential. This paper develops a parametric channel-estimation and beamforming framework that deconstructs the composite BD-RIS channel into its generating directional factors, thereby revealing the rich tensor structure induced jointly by propagation geometry and beyond-diagonal scattering. We propose two tensor-based estimators: Fourth-Order Tucker Channel Estimation (FORTE), which models the partially structured channel as a fourth-order Tucker tensor, and Fourth-Order PARAFAC Channel Estimation (FORPE), which captures the fully structured channel through a fourth-order PARAFAC model. By exploiting the partial and full channel geometry inherent to high-frequency propagation, the proposed methods deliver markedly higher estimation accuracy than state-of-the-art Least Squares and Block Tucker Kronecker Factorization approaches. In particular, FORTE outperforms FORPE thanks to its more compact structure, exploiting the intrinsic composite channel structure partially, given that the FORTE method already attains an normalized mean square error (NMSE) of 10 −4 at an signal to noise ratio (SNR) of 5 dB . While the FORPE approach gives a unique estimation of the composite channel factor matrices, in contrast to the FORTE method, which just gives the subspace of the composite channel factor matrices. The resulting deconstruction provides a structured representation that can be exploited not only for parametric channel estimation but also for sensing-oriented parameter extraction and tensor-structured system optimization. In addition, the Tensor Optimization Framework for Beamforming, Combining, and Scattering (TenFormer) beamforming strategy achieves spectral efficiency performance comparable to the benchmark design while significantly reducing computational complexity through parallel, tensor-structured optimization. 
+
+Index Terms —Beyond diagonal reconfigurable surfaces, channel estimation, beamforming design, tensor decompositions, PARAFAC, Tucker, Kronecker factorization. 
+
+I. I NTRODUCTION 
+
+BD-RIS has recently emerged as a powerful extension of conventional reconfigurable intelligent surface (RIS) architectures with diagonal phase-shift matrices [1], offering higher channel gains, improved coverage, and substantially greater control over wave propagation [2], [3]. By interconnecting reflecting elements through tunable components, BD-RIS enables nonzero off-diagonal scattering matrices and, consequently, much richer electromagnetic interactions than conventional diagonal RIS. Foundational circuit models and fully connected or group-connected architectures were introduced in [4], followed by lower-complexity topologies such as forest-and tree-connected structures derived from graph-theoretic principles [5]. More recently, frequency-aware formulations for multiband optimization [6] and hybrid transmissive, reflective, and multi-sector operating modes [2] have further underscored the relevance of BD-RIS for future networks. The performance gains promised by BD-RIS hinge on accurate channel state information (CSI), yet channel acquisition remains a major bottleneck. Because BD-RIS operates passively, practical estimation strategies typically rely on pilot-based recovery of the composite base station (BS)-BD-RIS-user equipment (UE) channel. In contrast to conventional RIS, however, each BD-RIS architecture imposes specific structural constraints on the scattering matrix while simultaneously increasing the dimensionality of the effective channel, which can lead to prohibitive training overhead [7]. Although the least squares (LS)-based method in [8] addresses group-connected and fully connected architectures, it scales poorly with the number of reflecting elements and does not exploit the block-Kronecker structure of the composite channel. Efficient and scalable CSI acquisition for BD-RIS-enabled systems, therefore, remains an open and pressing research problem. Two main strategies are typically adopted to obtain instantaneous CSI [9]. The first estimates the channels between the base station (BS), UE, and the RIS separately by partially activating RIS elements through dedicated RF chains. In this setting, channel reciprocity in time-division duplex systems can be exploited, and classical subspace-based techniques such as estimation of signal parameters via rotational invariance techniques, multiple signal classification [10], and compressed sensing [11] become applicable. This strategy generally incurs low training overhead regardless of the number of RIS elements and can, in principle, be extended to BD-RIS-aided systems, since the individual channel structures do not depend on the RIS architecture. Once these channel estimates are available, existing BD-RIS designs [3], [5], which assume perfectly known separate channels, can be directly applied. The main drawback of the first method is the need for RF chains at the RIS, which increases hardware cost and power consumption and runs counter to the low-complexity motivation behind RIS-assisted communications. The second strategy instead estimates the cascaded or composite BS-RIS-UE channel using a fully passive RIS [12]. In this 
+
+> arXiv:2606.01564v1 [eess.SP] 1 Jun 2026 2
+
+case, the BS acquires the cascaded channel through carefully designed pilot sequences and RIS configurations, including ON/OFF-based schemes [13] and orthogonality-based training designs [14]. To further reduce training overhead, prior works have proposed anchor-assisted estimation [15], which exploits the common BS–RIS channel shared across users, as well as sparsity- and correlation-aware methods tailored to millimeter-wave propagation [16], [17]. Extending this passive estimation paradigm to beyond-diagonal (BD)-RIS-aided systems is considerably more challenging. The cascaded channel structure becomes tightly coupled to the underlying BD-RIS architecture, which makes existing methods for conventional RIS largely inapplicable. Moreover, the inter-element coupling in BD-RIS substantially increases the dimension of the cascaded channel, demanding longer training sequences and new pattern-design strategies that respect architecture-dependent constraints on the scattering matrix. In addition, existing BD-RIS beamforming methods [18], which rely on separately estimated channels, cannot be directly used when only composite or cascaded channel estimates are available. These challenges strongly motivate the development of low-overhead channel-estimation methods and associated beamforming strategies tailored specifically to BD-RIS systems. The work [12] investigates a variety of channel-estimation methods for RIS-assisted communication systems under both unstructured and structured channel models. The algorithms developed for unstructured channel estimation are straightforward to implement but incur prohibitive training overhead in RIS-based systems, thereby degrading achievable rates by requiring the estimation of a large number of channel coefficients. In contrast, geometric channel models require far fewer parameters to estimate, resulting in substantially reduced training overhead and improved estimation accuracy. These advantages, however, come at the expense of increased algorithmic complexity, the need for model-order estimation, and unavoidable modeling errors. Moving towards higher frequency bands, i.e., mmWave and THz bands, it has been shown that fewer dominant line-of-sight (LOS) paths are present in the channel; hence, it makes more sense to use geometric channel modeling for BD-RIS assisted communications [19]. Tensor modeling has been successfully applied in wireless signal processing problems due to its ability to efficiently capture and exploit the inherent multidimensional structure of communication signals and channels [20]–[25]. More recently, tensor decompositions have also been exploited to solve the channel estimation problem in RIS-assisted communications [26]–[31]. Specifically, [27] showed that the cascaded channel of RIS-assisted multiple-input multiple-output (MIMO) systems can be arranged as a tensor, enabling decoupled estimation of the involved channels with lower training overhead. The work [29] developed a semi-blind tensor-based formulation that jointly exploits training and the tensor signal structure, thereby improving estimation efficiency. More recently, [30] extended tensor-based channel estimation to double-RIS-aided MIMO systems by introducing coupled tensor decompositions. In the BD-RIS context, [31] modeled the composite channel through a block Tucker structure, showing that tensor decomposition effectively leverages the algebraic structure induced by beyond-diagonal scattering architectures to deliver estimates of the individual channels with lower training overheads compared to the LS method [8]. Despite these advances, all these works rely on unstructured or partially structured channel representations and do not fully exploit the parametric low-rank geometry of the underlying channel matrices. In [32], the multidimensional geometric structure of the BS-RIS-UE channel is exploited to recast channel estimation as a single sixth-order tensor approximation problem, thereby highlighting the benefits of tensor modeling in highly structured propagation environments. The work in [33] further investigates two-dimensional channel-parameter estimation in THz RIS-assisted networks by explicitly leveraging the geometric structure of the underlying channels. In particular, a structured pilot design based on the Kronecker product of horizontal and vertical training components decouples the global estimation task into lower-dimensional subproblems for each spatial direction. This reformulation converts channel estimation into asequence of Kronecker factorization problems, which are then addressed using rank-one tensor approximation techniques, improving scalability and computational efficiency [32], [33]. Despite these advances, both works rely on simplified rank-one channel representations and are therefore tailored to conventional RIS-assisted systems rather than the richer coupling structure encountered in BD-RIS architectures. In all the aforementioned works, the focus has been restricted either to unstructured channel models or to simplified rank-one representations tailored to conventional single-connected RIS. As a result, the full multidimensional structure of the composite channel in BD-RIS-assisted systems remains largely unexplored. In contrast, to the best of our knowledge, this paper is the first to fully deconstruct the composite BD-RIS channel into its directional factors, exposing how the BS, UE, and the two sides of the BD-RIS jointly induce a rich higher-order tensor structure. This deconstruction turns the composite channel from a monolithic high-dimensional matrix into a set of interpretable propagation factors that can be directly exploited for parametric channel estimation, sensing, and system optimization. More specifically, rather than treating the composite channel as a generic high-dimensional object, we reveal two distinct tensorization routes, each exposing a different layer of the underlying geometry. The first route leads to Fourth-Order Tucker Channel Estimation (FORTE), in which the composite channel is cast as a fourth-order Tucker model whose modes decouple the steering matrices associated with the UE, the BS, and the two RIS sides. This representation preserves the beyond-diagonal coupling while separating the main-array responses into distinct tensor modes, thereby yielding apartially structured model with a favorable balance among structural exploitation, robustness, and complexity. The second route leads to Fourth-Order PARAFAC Channel Estimation (FORPE), which goes one level deeper by explicitly unveiling the two-dimensional structure of the array manifolds. In this 3
+
+case, the composite channel is reformulated as a fourth-order PARAllel FACtors (PARAFAC) model that decouples the horizontal and vertical components of the UE, BS, and RIS responses across different tensor modes, thus providing a finer parametric factorization of the propagation geometry. Therefore, the term “deconstructing” is used here in a precise algebraic sense: the proposed models break the composite BD-RIS channel into lower-dimensional directional factors whose interactions generate the observed composite channel. These two formulations therefore solve the same estimation problem from strikingly different perspectives: FORTE separates the channel by terminal and surface responses, whereas FORPE separates it by the horizontal and vertical constituents of those responses. This leads to tensor-based estimation frameworks that go beyond prior unstructured LS-based approaches [8] and beyond block-structured factorization methods such as block Tucker Kronecker factorization (BTKF) [31], by incorporating a substantially richer parametric description of the composite channel itself. Consequently, the proposed approaches not only improve estimation accuracy in terms of NMSE, but also establish a new modeling perspective for BD-RIS systems in which the composite channel structure is explicitly identified, decomposed, and exploited at different levels of granularity. In this sense, the two algorithms offer different but complementary tradeoffs: FORTE provides a more compact and computationally efficient decomposition, while FORPE offers stronger structural exploitation, richer identifiability, and potentially higher estimation accuracy. More broadly, this deconstructed view of the composite channel bridges channel estimation and other tasks that depend on directional information, such as localization, sensing, environment mapping, and geometry-aware beamforming. Moreover, adopting this tensor-modeling viewpoint is useful not only for channel estimation but also for beamforming design, since it enables a unified formulation of the joint beamforming problem through which the precoders, combiners, and BD-RIS scattering coefficients can be determined in a coordinated manner. In summary, the contributions of the paper are as follows:  
+
+> •
+
+We deconstruct the composite channel for BD-RIS into its generating directional factors by explicitly exploiting its multidimensional geometric structure. Unlike prior works that treat the composite channel as a single high-dimensional entity, the proposed framework separates the contributions of the BS, UE, and RIS sides into physically meaningful components, thereby revealing a rich tensor structure that supports parametric channel estimation, sensing, and system optimization.  
+
+> •
+
+Building on this decomposition, we develop two tensor-based channel-estimation frameworks: 
+
+– The Fourth-Order Tucker Channel Estimation (FORTE) framework represents the composite channel as a fourth-order Tucker tensor that decouples the BS and UE steering matrices and the two RIS sides into different tensor modes, yielding a compact and partially structured representation. 
+
+– The Fourth-Order PARAFAC Channel Estimation (FORPE) framework further exploits the two-dimensional array structure by decomposing the horizontal and vertical components of the BS, UE, and RIS responses into different tensor modes. This yields a finer and more strongly structured factorization with improved identifiability properties.  
+
+> •
+
+We show that the two tensor formulations provide complementary tradeoffs between structural exploitation and complexity. In particular, FORTE offers a more compact, lower-complexity decomposition, whereas FORPE enables stronger structural identifiability through a finer tensor factorization.  
+
+> •
+
+We derive a unified tensor-based beamforming framework named Tensor Optimization Framework for Beamforming, Combining, and Scattering (TenFormer) that jointly optimizes the BS precoder, combiner, and BD-RIS scattering matrix using the proposed structured channel representations. By leveraging tensor-structured optimization, the proposed design achieves competitive spectral-efficiency performance while significantly reducing computational complexity.  
+
+> •
+
+We derive the Cram´ er–Rao Lower bound (CRLB) for the unstructured composite channel as a reference benchmark and compare the proposed methods with state-of-the-art tensor BTKF- and LS-based estimators. Numerical results demonstrate that the proposed tensor-based approaches achieve substantial improvements in estimation accuracy and beamforming performance while maintaining similar training overhead. 
+
+Notation : Matrices are represented with boldface capital letters (A, B, . . . ), and vectors are denoted by boldface lowercase letters (a, b, . . . ). Tensors are symbolized by calligraphic letters (A, B, . . . ). Transpose of a matrix A are denoted as AT. The operator diag (a) forms a diagonal matrix out of its vector argument, while ∗, ⋄, ⊗ denote the conjugate, Khatri-Rao, and Kronecker products, respectively. IN denotes the N × N identity matrix. The operator vec (·) vectorizes an I × J matrix argument, while unvec I×J (·) does the opposite operation. The tensor Y can be unfolded as three different matrices, referred to as the 1-mode, 2-mode, and 
+
+3-mode unfoldings, respectively, where [Y](1) ∈ CI×JK ,
+
+[Y](2) ∈ CJ×IK , and [Y](3) ∈ CK×IJ . The superscripts {·} T,
+
+{·} *, {·} H and {·} † stand for transpose, conjugate, conjugate transpose, and pseudo-inverse operations, respectively. The operator ∥ · ∥ F denotes the Frobenius norm of a matrix or tensor, and E{·} is the expectation operator. II. C HANNEL AND SYSTEM MODEL 
+
+This section introduces the modeling framework underlying the proposed methods. We first present the structured geometric channel model for the BS–BD-RIS and BD-RIS–UE links, highlighting the parametric structure that is later exploited in the proposed tensor-based formulations. Then, the overall signal model is described, including pilot transmission, BD-RIS training, and the resulting LS-based composite channel estimate that serves as input to the proposed estimation algorithms. 4
+
+Fig. 1: System model of a BD-RIS assisted communications. 
+
+A. Structured Channel Model 
+
+We adopt a geometric channel model for a fully connected BD-RIS-assisted system. Owing to the limited number of dominant propagation paths at high-frequency bands, both the BS–BD-RIS and the BD-RIS–UE channels are represented using parametric angular-domain models. The channel between the BS and the BD-RIS is written as 
+
+H =
+
+> R
+
+X
+
+> r=1
+
+αr b(ϕr 
+
+> ris A
+
+, θ r 
+
+> ris A
+
+)aT(ϕr
+
+> bs
+
+, θ r
+
+> bs
+
+)= BRIS D(α)ATBS ∈ CN ×M , (1) where a(ϕr
+
+> bs
+
+, θ r
+
+> bs
+
+) denotes the two-dimensional steering vector associated with the rth path at the BS, with ϕr 
+
+> bs
+
+and θr
+
+> bs
+
+representing its azimuth of departure (AoD) and elevation of departure (EoD), respectively. Likewise, b(ϕr 
+
+> ris A
+
+, θ r 
+
+> ris A
+
+) denotes the corresponding steering vector at the RIS, where ϕr 
+
+> ris A
+
+and 
+
+θr 
+
+> ris A
+
+are the azimuth of arrival (AoA) and elevation of arrival (EoA), respectively [34]. The coefficient αr is the complex gain of the rth propagation path. In matrix form, BRIS ∈
+
+CN ×R collects the RIS-side steering vectors, ABS ∈ CM ×R
+
+collects the BS-side steering vectors, and D(α) ∈ CR×R is a diagonal matrix containing the path gains. Similarly, the channel between the BD-RIS and the UE is modeled as 
+
+G =
+
+> L
+
+X
+
+> l=1
+
+βlq(ϕl
+
+> ue
+
+, θ l
+
+> ue
+
+)pT(ϕl 
+
+> ris D
+
+, θ l 
+
+> ris D
+
+)= AUE D(β)CTRIS ∈ CQ×N , (2) where q(ϕl
+
+> ue
+
+, θ l
+
+> ue
+
+) is the two-dimensional steering vector associated with the lth path at the UE, and ϕl 
+
+> ue
+
+and θl 
+
+> ue
+
+denote its AoD and EoD, respectively. Likewise, p(ϕl 
+
+> ris D
+
+, θ l 
+
+> ris D
+
+) is the steering vector corresponding to the departure side of the RIS, with ϕl 
+
+> ris D
+
+and θl 
+
+> ris D
+
+denoting the associated AoA and EoA. The coefficient βl is the complex gain of the lth path. Moreover, 
+
+CRIS ∈ CN ×L is the RIS steering matrix, AUE ∈ CQ×L is the receive steering matrix at the UE, and D(β) ∈ CL×L is the diagonal matrix containing the corresponding path gains. 
+
+B. System Model 
+
+We consider a BD-RIS assisted MIMO communication system in which a BS equipped with a uniform planar array (UPA) of M transmit antennas communicates with a UE equipped with a UPA of Q receive antennas through a fully connected BD-RIS with N reflecting elements, as illustrated in Figure 1. During training, the BD-RIS sequentially applies 
+
+K known scattering configurations. For the kth configuration, the received signal is given by 
+
+Y ′ 
+
+> k
+
+= GΩ′
+
+> k
+
+HX + V ′ 
+
+> k
+
+∈ CQ×T , (3) where X ∈ CM ×T is the pilot matrix, H ∈ CN ×M denotes the channel from the BS to the BD-RIS, G ∈ CQ×N denotes the channel from the BD-RIS to the UE, and Ω′ 
+
+> k
+
+∈ CN ×N is the known scattering matrix applied by the BD-RIS in the kth training slot. The noise term V ′ 
+
+> k
+
+∼ CN  0Q×T , σ 2
+
+> n
+
+IQ×T
+
+ is a circularly symmetric additive white Gaussian noise matrix with variance σ2
+
+> n
+
+. By filtering the received signal in (3) using the known orthogonal pilot matrix, we obtain 
+
+Yk = Y ′ 
+
+> k
+
+XH = GΩ′
+
+> k
+
+H + Vk ∈ CQ×M , (4) where XX H = IN , while Vk = V ′ 
+
+> k
+
+XH. Applying the vec   ·  operator to (4) and stacking the resulting observations for all K scattering configurations yield Y =vec  Y1
+
+, . . . , vec  YK
+
+ =  HT ⊗ G Ω + V ∈ CQM ×K ,where Ω = vec  Ω′
+
+> 1
+
+, . . . , vec  Ω′
+
+> K
+
+ ∈ CN 2×K collects the vectorized BD-RIS training matrices, and V =vec  V1
+
+, . . . , vec  VK
+
+ ∈ CQM ×K is the corresponding noise matrix. An estimate of the composite channel E can then be obtained by right-filtering with the known BD-RIS training matrix, coinciding with the solution to the LS problem 
+
+ˆE = argmin 
+
+> E
+
+Y − EΩH 2F, (5) where ˆE ≈ ˆH ⊗ ˆG denotes an estimate of the combined, or composite, channel. Hence, 
+
+ˆE = Y ΩH = HT ⊗ G + N ∈ CQM ×N 2
+
+, (6) where ΩΩ H = IN 2 and N = V ΩH. In the next section, we move beyond this unstructured estimate by explicitly exploiting the intrinsic geometric structure of the composite channel, thereby enabling improved channel estimation and the design of precoding, combining, and scattering matrices. III. S TRUCTURED COMPOSITE CHANNEL ESTIMATION 
+
+Our goal is to exploit the intrinsic geometry of the composite channel via two distinct tensorization routes, each yielding a different estimation algorithm. In the first route, followed by FORTE, the composite channel is represented as a fourth-order Tucker model that decouples the steering matrices of the BS, the UE, and the RIS into different tensor modes. In the second route, followed by FORPE, we further expose the two-dimensional structure of the array responses and represent the same composite channel as a fourth-order PARAFAC model that decouples the horizontal and vertical components of the BS, UE, and RIS into different modes. Thus, FORTE separates the problem at the level of the main channel factors, whereas FORPE separates it at the finer level of the underlying horizontal and vertical array components. The Tucker and PARAFAC formulations provide complementary tradeoffs: the Tucker model yields a more 5
+
+compact representation and lower-complexity decomposition, whereas the PARAFAC model offers stronger uniqueness and identifiability properties by further decoupling the BD-RIS responses into horizontal and vertical components. In the following subsections, these two formulations are developed and used to derive the corresponding algorithms for estimating the factor matrices and extracting the channel parameters. 
+
+A. Fourth-Order Tucker Channel Estimation (FORTE) 
+
+The rationale behind FORTE is to exploit a representation that preserves the physical factors of the composite channel while keeping the model sufficiently compact for robust estimation. To this end, we retain the steering matrices associated with the BS, the UE, and the two RIS sides as separate building blocks. This intermediate level of factorization yields a fourth-order Tucker model, in which the channel factors are decoupled across different tensor modes. By substituting the geometric channel models in (1) and (2) into (6), the composite channel can be written as follows: 
+
+ˆE = HT ⊗ G = BRIS D(α)ATBS  
+
+> T
+
+⊗ AUE D(β)CTRIS .
+
+Rearranging the factors in the previous equation yields 
+
+ˆE = HT ⊗ G = ABS D(α)BTRIS ⊗ AUE D(β)CTRIS .
+
+Using identity (A ⊗ B) ( C ⊗ D) = ( AC ⊗ BD ) leads to 
+
+ˆE = ( ABS ⊗ AUE ) ( D(α) ⊗ D(β)) ( BRIS ⊗ CRIS )T (7) where Dαβ = D(α) ⊗ D(β) ∈ CLR ×LR . (8) Equation (7) can be equivalently expressed as the following fourth-order Tucker tensor model: 
+
+ˆE = Dαβ ×1 AUE ×2 ABS ×3 CRIS ×4 BRIS , (9) where E ∈ CQ×M ×N ×N denotes the resulting fourth-order composite channel tensor, while Dαβ is the corresponding core tensor. The latter is obtained from the mapping in (8) and contains the joint complex path gains associated with the Tucker representation. Once the model in (9) is established, the unknown factor matrices can be estimated iteratively by means of an alternating least squares (ALS) procedure. We begin with the UE-side factor matrix ˆAUE , which is obtained by solving the following optimization problem: 
+
+min 
+
+> ˆAUE
+
+[ˆE](1) − AUE [Dαβ ](1) [BRIS ⊗ CRIS ⊗ ABS ]T 2
+
+> F
+
+, (10) whose first mode unfolding is given as 
+
+[ˆE](1) = AUE [Dαβ ](1) [BRIS ⊗ CRIS ⊗ ABS ]T CQ×N 2M .
+
+The channel factor at the BS ˆABS is estimated via the following optimization problem as: 
+
+min 
+
+> ˆABS
+
+[ˆE](2) − ABS [Dαβ ](2) [BRIS ⊗ CRIS ⊗ AUE ]T 2
+
+> F
+
+, (11) where [E](2) is the second mode unfolding of (9), given as 
+
+[ˆE](2) = ABS [Dαβ ](2) [BRIS ⊗ CRIS ⊗ AUE ]T CM ×N 2Q.
+
+Algorithm 1 Fourth-Order Tucker Channel Estimation (FORTE) Method  
+
+> 1:
+
+Inputs : Estimated composite channel (6) ˆE, and transform it as tensor E (9), factorize via ALS:  
+
+> 2:
+
+Set i = 0 . Randomly initialize ABS , BRIS , CRIS . 
+
+> 3:
+
+for i = 1 : I do  
+
+> 4:
+
+Compute an LS estimate of AUE as 
+
+ˆAUE = [ ˆE](1) 
+
+h
+
+[Dαβ ](1) [BRIS ⊗ CRIS ⊗ ABS ]Ti† 
+
+> 5:
+
+Compute an LS estimate of ABS as 
+
+ˆABS = [ ˆE](2) 
+
+h
+
+[Dαβ ](2) [BRIS ⊗ CRIS ⊗ AUE ]Ti† 
+
+> 6:
+
+Compute an LS estimate of CRIS as 
+
+ˆCRIS = [ ˆE](3) 
+
+h
+
+[Dαβ ](3) [BRIS ⊗ ABS ⊗ AUE ]Ti† 
+
+> 7:
+
+Compute an LS estimate of BRIS as 
+
+ˆBRIS = [ ˆE](4) 
+
+h
+
+[Dαβ ](4) [CRIS ⊗ ABS ⊗ AUE ]Ti† 
+
+> 8:
+
+Compute an LS estimate of ˆdαβ as 
+
+ˆdαβ =
+
+h ˆBRIS ⊗ ˆCRIS 
+
+
+
+⋄
+
+ ˆABS ⊗ ˆAUE 
+
+i †
+
+vec 
+
+n ˆE
+
+o 
+
+> 9:
+
+Compute ˆE(i) = ˆCRIS [ ˆDαβ ](3) 
+
+h ˆBRIS ⊗ ˆABS ⊗ ˆAUE 
+
+iT
+
+and calculate the error ϵ(i) = [ˆE](3) − ˆE(i)
+
+> 2
+> F
+
+, 
+
+> 10:
+
+Check convergence and stop if |ϵ(i) − ϵ(i−1) | ≤ η. 
+
+> 11:
+
+end for  
+
+> 12:
+
+Return ˆAUE , ˆABS , ˆCRIS , ˆBRIS , and ˆdαβ .The channel factor ˆCRIS colecting the responses of arriving paths at the BD-RIS is estimated by solving: 
+
+min 
+
+> ˆCRIS
+
+[ˆE](3) − CRIS [Dαβ ](3) [BRIS ⊗ ABS ⊗ AUE ]T 2
+
+> F
+
+, (12) where [E](3) is the third mode unfolding of (9) given as 
+
+[ˆE](3) = CRIS [Dαβ ](3) [BRIS ⊗ ABS ⊗ AUE ]T CN ×M N Q 
+
+The channel factor ˆBRIS collecting the departuring paths from the BD-RIS is estimated via the following problem: 
+
+min 
+
+> ˆBRIS
+
+[ˆE](4) − BRIS [Dαβ ](4) [CRIS ⊗ ABS ⊗ AUE ]T 2
+
+> F
+
+, (13) where [E](4) is the fourth mode unfolding of (9) given as 
+
+[ˆE](4) = BRIS [Dαβ ](4) [CRIS ⊗ ABS ⊗ AUE ]T CN ×M N Q .
+
+Finally, the vectorized complex-path gain can be estimated as 
+
+ˆdαβ = [( BRIS ⊗ CRIS ) ⋄ (ABS ⊗ AUE )] † vec   ˆE ∈ CLR ×1.
+
+where dαβ is the diagonal vector of Dαβ . The detail steps are shown in Algorithm 1. 
+
+B. Fourth-Order PARAFAC Channel Estimation (FORPE) 
+
+The improved identifiability of the PARAFAC formulation follows from standard uniqueness properties of low-rank tensor decompositions under mild rank conditions. The rationale behind FORPE is to further refine the modeling route adopted by FORTE. While FORTE preserves the main channel factors associated with the BS, the UE, and the two RIS sides as separate tensor modes, FORPE goes one step deeper and explicitly unveils the two-dimensional structure of 6
+
+those array responses. More precisely, each steering matrix is further decomposed into horizontal and vertical components, yielding a more detailed factorization of the composite channel geometry. This finer decomposition transforms the partially structured Tucker representation in (7) into a fourth-order PARAFAC model. With this full geometric decomposition, the composite channel can be written as follows: 
+
+ˆE = [( Ay 
+
+> BS
+
+⋄ Az
+
+> BS
+
+) ⊗ (Ay 
+
+> UE
+
+⋄ Az
+
+> UE
+
+)] Dαβ 
+
+[( By 
+
+> RIS
+
+⋄ Bz
+
+> RIS
+
+) ⊗ (Cy 
+
+> RIS
+
+⋄ Cz
+
+> RIS
+
+)] T (14) where Ay 
+
+> BS
+
+∈ CMy ×R, Ay 
+
+> UE
+
+∈ CQy ×L, By 
+
+> RIS
+
+∈ CNy ×R,
+
+Cy 
+
+> RIS
+
+∈ CNy ×L, and Az 
+
+> BS
+
+∈ CMz ×R, Az 
+
+> UE
+
+∈ CQz ×L,
+
+Bz 
+
+> RIS
+
+∈ CNz ×R, Cz 
+
+> RIS
+
+∈ CNz ×L are the horizontal ( y)and vertical (z) steering matrices, respectively. Applying permutation matrices P1 ∈ RQz Mz Qy My ×Qz Qy Mz My and 
+
+P2 ∈ RNz Nz Ny Ny ×Nz Ny Nz Ny to equation (14) leads to: 
+
+ˆ¯E = P1 [( Ay 
+
+> BS
+
+⋄ Az
+
+> BS
+
+) ⊗ (Ay 
+
+> UE
+
+⋄ Az
+
+> UE
+
+)] Dαβ 
+
+[( By 
+
+> RIS
+
+⋄ Bz
+
+> RIS
+
+) ⊗ (Cy 
+
+> RIS
+
+⋄ Cz
+
+> RIS
+
+)] T P T 
+
+> 2
+
+(15) which can be further rewritten in its new formulation as: 
+
+ˆ¯E = [( Ay 
+
+> BS
+
+⊗ Ay
+
+> UE
+
+) ⋄ (Az 
+
+> BS
+
+⊗ Az
+
+> UE
+
+)] Dαβ 
+
+[( By 
+
+> RIS
+
+⊗ Cy
+
+> RIS
+
+) ⋄ (Bz 
+
+> RIS
+
+⊗ Cz
+
+> RIS
+
+)] T (16) Rewriting (16) in compact form leads to the following double-sided Khatri-Rao model: 
+
+ˆ¯E = [ Ay ⋄ Az ] Dαβ [By ⋄ Bz ]T ∈ CQy My Qz Mz ×N 2   
+
+> yN2
+> z
+
+(17) where Ay = Ay 
+
+> BS
+
+⊗ Ay 
+
+> UE
+
+∈ CQy My ×LR , Az = Az 
+
+> BS
+
+⊗ Az 
+
+> UE
+
+∈
+
+CQz Mz ×LR , By = By
+
+> RIS
+
+⊗Cy 
+
+> RIS
+
+∈ CN 2 
+
+> y×LR
+
+, and Bz = Bz
+
+> RIS
+
+⊗
+
+Cz 
+
+> RIS
+
+∈ CN 2 
+
+> z×LR
+
+. Equation (17) can be equivalently expressed as the following fourth-order PARAFAC tensor model, with 
+
+ˆ¯E ∈ CQz Mz ×Qy My ×N 2   
+
+> z×N2
+> y
+
+:
+
+ˆ¯E = Dα,β  
+
+> 4,LR
+
+×1 Az ×2 Ay ×3 Bz ×4 By . (18) where Dα,β  
+
+> 4,LR
+
+= (ILR ⋄ ILR )Dαβ (ILR ⋄ ILR )T ∈
+
+CLR ×LR ×LR ×LR denotes the core tensor of the fourth-order PARAFAC model. This tensor is constructed from (8) and can be interpreted as an identity core whose nonzero entries are weighted by the combined complex path gains. Based on the tensor model in (18), the unknown factor matrices are estimated iteratively by the proposed FORPE algorithm. We start with the factor matrix ˆAz, which is obtained by solving the following LS optimization problem: 
+
+min 
+
+> ˆAz
+
+[ ˆ¯E](1) − AzDαβ [By ⋄ Bz ⋄ Ay]T 2
+
+> F
+
+, (19) where the first mode unfolding of the PARAFAC tensor 
+
+[ ˆ¯E](1) ∈ CQz Mz ×N 2     
+
+> yN2
+> zQyMy
+
+shown in (18) is given as 
+
+[ ˆ¯E](1) = AzDαβ [By ⋄ Bz ⋄ Ay]T . (20) The channel factor ˆAy that contains the azimuth angular information of the BS and the UE, can be therefore estimated by minimizing the following cost function: 
+
+min 
+
+> ˆAy
+
+[ ˆ¯E](2) − AyDαβ [By ⋄ Bz ⋄ Az]T 2
+
+> F
+
+, (21) 
+
+Algorithm 2 Fourth-Order PARAFAC Channel Estimation (FORPE)  
+
+> 1:
+
+Inputs : Estimated composite channel (6) ˆE, and transform it as tensor ˆ¯E (18), decompose via ALS:  
+
+> 2:
+
+Set i = 0 . Randomly initialize Ay, Bz, By. 
+
+> 3:
+
+for i = 1 : I do  
+
+> 4:
+
+Compute an LS estimate of Az as 
+
+ˆAz = [ ˆ¯E](1) 
+
+h
+
+Dαβ [Bz ⋄ By ⋄ Ay]Ti† 
+
+> 5:
+
+Compute an LS estimate of Ay as 
+
+ˆAy = [ ˆ¯E](2) 
+
+h
+
+Dαβ [Bz ⋄ By ⋄ Az]Ti† 
+
+> 6:
+
+Compute an LS estimate of Bz as 
+
+ˆBz = [ ˆ¯E](3) 
+
+h
+
+Dαβ [By ⋄ Az ⋄ Ay]Ti† 
+
+> 7:
+
+Compute an LS estimate of By as 
+
+ˆBy = [ ˆ¯E](4) 
+
+h
+
+Dαβ [Bz ⋄ Az ⋄ Ay]Ti† 
+
+> 8:
+
+Compute an LS estimate of ˆdαβ as 
+
+ˆdαβ =
+
+h ˆBy ⋄ ˆBz
+
+
+
+⋄
+
+ ˆAy ⋄ ˆAz
+
+i †
+
+vec 
+
+n ˆ¯E
+
+o 
+
+> 9:
+
+Compute ˆE(i) = ˆBz ˆDαβ 
+
+h ˆBy ⋄ ˆAz ⋄ ˆAy
+
+iT
+
+and calculate the error ϵ(i) = [ ˆ¯E](3) − ˆE(i)
+
+> 2
+> F
+
+, 
+
+> 10:
+
+Check convergence and stop if |ϵ(i) − ϵ(i−1) | ≤ η. 
+
+> 11:
+
+end for  
+
+> 12:
+
+Return ˆAz, ˆAy, ˆBz, ˆBy, and ˆdαβ .where the second mode unfolding of the PARAFAC tensor 
+
+[ ˆ¯E](2) ∈ CQy My ×N 2     
+
+> yN2
+> zQzMz
+
+given in (18) is given as 
+
+[ ˆ¯E](2) = AyDαβ [By ⋄ Bz ⋄ Az]T . (22) The channel factor ˆBz that contains all the angular information related to the vertical domain of the BD-RIS can be estimated by solving the following LS cost function: 
+
+min 
+
+> ˆBz
+
+[ ˆ¯E](3) − BzDαβ [By ⋄ Ay ⋄ Az]T 2
+
+> F
+
+, (23) where the third mode unfolding of the PARAFAC tensor 
+
+[ ˆ¯E](3) ∈ CN 2       
+
+> z×QzMzQyMyN2
+> y
+
+given in (18) is given as 
+
+[ ˆ¯E](3) = BzDαβ [By ⋄ Ay ⋄ Az]T . (24) Finally, the channel factor ˆBy that contains all the related azimuth angular information of the BD-RIS can be estimated by minimizing the following cost function: 
+
+min 
+
+> ˆBy
+
+[ ˆ¯E](4) − ByDαβ [Bz ⋄ Ay ⋄ Az]T 2
+
+> F
+
+, (25) where the fourth mode unfolding of the PARAFAC tensor 
+
+[ ˆ¯E](4) ∈ CN 2       
+
+> y×QzMzQyMyN2
+> z
+
+given in (18) is given as 
+
+[ ˆ¯E](4) = ByDαβ [Bz ⋄ Ay ⋄ Az]T . (26) Equations (19), (21), (23), (25) will be solved iteratively until they converge by achieving a predefined threshold. The steps are shown in Algorithm 2. 
+
+C. Identifiability Conditions 
+
+We now examine identifiability of the FORTE and FORPE methods. The purpose is to translate the algebraic rank requirements of the ALS subproblems into simple dimensional conditions on the numbers of antennas, reflecting elements, 7
+
+and propagation paths. In each ALS update, one factor matrix is estimated while the remaining factors and the core are kept fixed. Therefore, the corresponding least-squares solution is unique whenever the regression matrix multiplying the unknown factor has full row rank. For the FORTE method, the subproblems in (10), (11), (12), and (13) are linear least-squares problems with respect to AUE ,
+
+ABS , CRIS , and BRIS , respectively. To improve readability, let us define the corresponding regression matrices as 
+
+Z1 = [ Dαβ ](1) [BRIS ⊗ CRIS ⊗ ABS ]T ∈ CL×M N 2
+
+,
+
+Z2 = [ Dαβ ](2) [BRIS ⊗ CRIS ⊗ AUE ]T ∈ CR×QN 2
+
+,
+
+Z3 = [ Dαβ ](3) [BRIS ⊗ ABS ⊗ AUE ]T ∈ CL×QM N ,
+
+Z4 = [ Dαβ ](4) [CRIS ⊗ ABS ⊗ AUE ]T ∈ CR×QM N .
+
+Thus, each update is identifiable if the corresponding matrix 
+
+Zi, i ∈ { 1, 2, 3, 4}, is full row rank, yielding the following necessary dimensional conditions 
+
+M N 2 ≥ L, QN 2 ≥ R, QM N ≥ L, QM N ≥ R, (27) Equivalently, the UE- and RIS-arrival factors require enough observations to resolve the L paths, while the BS- and RIS-departure factors require enough observations to resolve the R paths. These requirements can be summarized as 
+
+max  M N 2, QM N  ≥ L, max  QN 2, QM N  ≥ R. (28) For the FORPE method, identifiability is governed by two complementary requirements. First, since FORPE represents the composite channel through a fourth-order PARAFAC model of rank LR , the decomposition is essentially unique up to the scaling and permutation. A standard sufficient condition is the Kruskal condition, which depends on the 
+
+k-rank Kr (·) of each factor matrix. For our fourth-order tensor channel model, this condition becomes Kr (Az ) + Kr (Ay ) + 
+
+Kr (Bz ) + Kr (By ) ≥ 2LR + 3 . This condition is satisfied with high probability when the angular parameters are sufficiently distinct, since the array response matrices tend to have full rank. Second, each update in FORPE must be unique. Define the regression matrices in (19), (21), (23), and (25) as 
+
+Z5 = Dαβ [Bz ⋄ By ⋄ Ay]T ∈ CLR ×Qy My N 2   
+
+> yN2
+> z
+
+,
+
+Z6 = Dαβ [Bz ⋄ By ⋄ Az]T ∈ CLR ×Qz Mz N 2   
+
+> yN2
+> z
+
+,
+
+Z7 = Dαβ [By ⋄ Az ⋄ Ay]T ∈ CLR ×Qy My Qz Mz N 2 
+
+> y
+
+,
+
+Z8 = Dαβ [Bz ⋄ Az ⋄ Ay]T ∈ CLR ×Qy My Qz Mz N 2 
+
+> z
+
+.
+
+Requiring Zi, i ∈ { 5, 6, 7, 8}, to be full row rank yields 
+
+Qy My N 2 
+
+> y
+
+N 2 
+
+> z
+
+≥ LR, Qz Mz N 2 
+
+> y
+
+N 2 
+
+> z
+
+≥ LR, Qy My Qz Mz N 2 
+
+> y
+
+≥ LR, Qy My Qz Mz N 2 
+
+> z
+
+≥ LR (29) which can be compactly written as 
+
+max  Qy My N 2 
+
+> y
+
+N 2 
+
+> z
+
+, Q z Mz N 2 
+
+> y
+
+N 2 
+
+> z
+
+,Qy My Qz Mz N 2 
+
+> y
+
+, Q y My Qz Mz N 2
+
+> z
+
+ ≥ LR (30) 
+
+D. Computational Complexity 
+
+We evaluate the computational complexity by counting the dominant operations required by each estimator. The initial unstructured LS estimate of the composite channel follows from (4) and (6); its dominant cost is written as 
+
+O(Q3T 2K2M N 2) since the inversion and multiplication involve the pilot, combiner, and scattering dimensions jointly. For FORTE, Algorithm 1 updates four factor matrices per iteration. The four associated regression matrices have dimensions L×M N 2, R×QN 2, L×QM N , and R×QM N ,respectively. This gives the per-iteration costs O(L2M N 2),
+
+O(R2QN 2), O(L2QM N ), and O(R2QM N ). Hence, after 
+
+J ALS iterations, the total dominant complexity of FORTE is O  J  L2M N 2 + R2QN 2 + L2QM N + R2QM N  . For FORPE, the same reasoning is applied to the four PARAFAC updates in Algorithm 2. Since the rank of the fully structured model is LR , we have O P  L2R2Qy My N 2 
+
+> y
+
+N 2
+
+> z
+
++L2R2Qz Mz N 2 
+
+> y
+
+N 2 
+
+> z
+
++L2R2QM N 2 
+
+> y
+
++L2R2QM N 2
+
+> z
+
+ , where 
+
+P is the number of ALS iterations required by FORPE. Finally, for a fully connected architecture, the competing BTKF estimator in [31] first obtains an unstructured LS estimate and then applies a rank-one Kronecker-factorization step to recover the channel factors. The former contributes 
+
+O(Q3T 2K2M N 2), while the latter is dominated by the rank-one approximation of the rearranged composite channel matrix and contributes O(QM N 2). Thus, the overall dominant complexity is O(Q3T 2K2M N 2 + QM N 2).Table II summarizes identifiability, complexity, and tradeofs. While FORTE favors compactness and numerical robustness, FORPE favors a finer and unique directional deconstruction of the composite channel at the cost of a larger parameter space and higher per-iteration complexity. 
+
+E. Representation complexity of FORTE and FORPE methods 
+
+We now compare the representation complexity of the proposed tensor models, i.e., the number of scalar coefficients required to parameterize the composite channel representation before the iterative estimation is carried out. Lower representation complexity generally means fewer parameters must be estimated from the same training data, improving robustness in noisy and finite-sample regimes. For FORTE, the fourth-order Tucker representation in (9) contains four factor matrices and one core tensor. The factor matrices AUE ∈ CQ×L, ABS ∈ CM ×R, CRIS ∈ CN ×L,and BRIS ∈ CN ×R contribute QL , M R , N L , and N R 
+
+coefficients, respectively. The Tucker core Dαβ contributes 
+
+L2R2 coefficients in the general representation. Hence, the total representation complexity of FORTE is CFORTE = ( QL + M R + N L + N R ) + L2R2. (31) This count is a conservative upper bound for the Tucker representation. If the Kronecker-diagonal structure Dαβ =
+
+D(α) ⊗ D(β) is explicitly enforced, the number of independent gain coefficients is reduced from L2R2 to LR ,corroborating the compactness of FORTE. We keep the general 
+
+L2R2 count to remain consistent with the unconstrained Tucker-core update used in the ALS implementation. For FORPE, the fourth-order PARAFAC model explicitly separates the horizontal and vertical spatial responses. The factor matrices have LR columns, corresponding to all 8
+
+TABLE I: Tensor models adopted under different array geometries at the BS and the UE. 
+
+BS/UE Method Factor Matrices Tensor Model 
+
+UPA/UPA FORTE [AUE , ABS , CRIS , BRIS ] 4th-order Tucker FORPE [Az , Ay , Bz , By ] 4th-order PARAFAC ULA/UPA FORTE [AUE , ABS , CRIS , BRIS ] 4th-order Tucker FORPE [Az , Ay
+
+> UE
+
+Ψ, Bz , By ] Constrained PARAFAC UPA/ULA FORTE [AUE , ABS , CRIS , BRIS ] 4th-order Tucker FORPE [Az , Ay
+
+> BS
+
+Φ, Bz , By ] Constrained PARAFAC ULA/ULA FORTE [AUE , ABS , CRIS , BRIS ] 4th-order Tucker FORPE [Az , Bz , By ] 3rd-order PARAFAC 
+
+TABLE II: Summary of identifiability, complexity, and modeling tradeoffs of the proposed tensor estimators.                                                                                               
+
+> Method Tensor model Identifiability requirement Dominant complexity Main tradeoff
+> FORTE Fourth-order Tucker with factors AUE ,ABS ,CRIS ,and BRIS .
+> max( M N 2, QM N )≥L,
+> max( QN 2, QM N )≥R.
+> O
+> 
+> J(L2M N 2+R2QN 2
+> +L2QM N +R2QM N )
+> More compact and robust; provides lower representation burden; does not guarantee direct unique recovery of all directional factors but identifies factor subspaces. FORPE Fourth-order PARAFAC with horizontal and vertical factors
+> Az,Ay,Bz, and By.
+> max  QyMyN2
+> yN2
+> z,QzMzN2
+> yN2
+> z,QyMyQzMzN2
+> y,QyMyQzMzN2
+> z
+> ≥LR.
+> O
+> 
+> P L 2R2(QyMyN2
+> yN2
+> z
+> +QzMzN2
+> yN2
+> z
+> +QM N 2
+> y+QM N 2
+> z)
+> Finer deconstruction with stronger essential uniqueness and direct directional-factor recovery; higher representation and arithmetic complexity, and more sensitivity to noise.
+
+combinations of the L BD-RIS–UE paths and the R
+
+BS–BD-RIS paths. The factors associated with the z- and 
+
+y-dimensions of the terminal arrays contribute Qz Mz LR 
+
+and Qy My LR coefficients, while the two BD-RIS spatial dimensions contribute N 2 
+
+> z
+
+LR and N 2 
+
+> y
+
+LR coefficients. The path-gain vector adds LR coefficients. Therefore, the total representation complexity of FORPE is CFORPE =  Qz Mz + Qy My + N 2 
+
+> z
+
++ N 2
+
+> y
+
+ LR + LR. (32) As an example, consider the setting in Table III, with 
+
+M = 16 , Q = 4, N = 64 , and L = R = 2. For planar arrays, we use Mz My = 16 , Qz Qy = 4, and 
+
+Nz Ny = 64 , yielding Mz = My = 4 , Qz = Qy = 2 ,and Nz = Ny = 8 . Under these values, FORTE requires 
+
+QL + M R + N L + N R + L2R2 = 312 coefficients, whereas FORPE requires  Qz Mz + Qy My + N 2 
+
+> z
+
++ N 2
+
+> y
+
+ LR + LR =580 coefficients. Thus, FORPE uses approximately 1.86 times more parameters than FORTE in this setting. Generally, the relative representation burden can be expressed as ηrep =
+
+CFORPE /CFORTE . Note that values ηrep > 1 indicate that FORPE uses a larger number of model coefficients than FORTE. The ratio increases with the explicit two-dimensional factorization of the array responses, especially through the N 2 
+
+> z
+
+LR and 
+
+N 2 
+
+> y
+
+LR terms associated with the two BD-RIS dimensions. 
+
+Remark 1 : This difference explains part of the behavior observed in the numerical results. The FORTE model is more compact because it keeps the main channel factors grouped by physical links, namely the UE responses and the two BD-RIS responses. This grouping reduces the number of free factors and makes the corresponding ALS updates less sensitive to noise. By contrast, FORPE imposes a more detailed parametric structure by decomposing the array responses into horizontal and vertical components, thereby increasing the number of coefficients and potentially making parameter estimation more sensitive to errors, especially at low SNR or with limited training. The two models therefore involve a tradeoff. FORTE provides a lower-dimensional and numerically robust representation, which is beneficial for reconstructing the composite channel. However, its Tucker structure identifies the factor subspaces rather than all individual physical factors directly. FORPE, on the other hand, has a larger representation complexity, but its PARAFAC structure can provide essentially unique factor estimates under the identifiability conditions discussed above. This uniqueness is useful when the goal is not only to reconstruct the composite channel but also to extract the underlying angular parameters. 
+
+F. Special Cases for Different Array Structures 
+
+Table I summarizes how the proposed tensor models specialize when the BS and the UE employ different array geometries. The purpose of this table is to clarify how the factor matrices and the associated tensor model change when moving from the general UPA/UPA setting to mixed ULA/UPA, UPA/ULA, and ULA/ULA configurations. In all cases, the FORTE model preserves the same fourth-order Tucker structure, since it operates at the level of the main channel factors AUE , ABS , CRIS , and BRIS , independently of whether the terminal arrays are one-dimensional or two-dimensional. By contrast, the FORPE model is affected by the array geometry because it explicitly decomposes the steering matrices into horizontal and vertical components. Hence, for the UPA/UPA case, FORPE retains its full fourth-order PARAFAC form with factor matrices 
+
+[Az, Ay, Bz, By]. When one side uses a ULA, the missing spatial dimension is absorbed through the constraint matrices 
+
+Ψ = 1T 
+
+> R
+
+⊗ IL and Φ = IR ⊗ 1T
+
+> L
+
+, yielding constrained PARAFAC models [24] for the ULA/UPA and UPA/ULA cases. Finally, when both the BS and the UE are equipped 9
+
+with ULAs, and assuming that each ULA is oriented along the z-dimension, the FORPE representation further reduces to a third-order PARAFAC model since one spatial dimension is absent at both ends. Table I makes explicit that FORTE is structurally robust across array configurations, whereas FORPE adapts its factorization according to the available spatial dimensions and becomes constrained or reduced whenever one or both terminal arrays are one-dimensional. IV. T EN FORMER BASED BEAMFORMING DESIGN 
+
+In this section, we show how the estimated composite channel can be exploited to design joint beamforming in BD-RIS-assisted MIMO systems. We formulate a tractable design framework for the precoder, combiner, and BD-RIS scattering matrix consistent with the proposed tensor-based channel models for spectral efficiency maximization. Consider a MIMO communication system, where the BS is communicating with a single UE via BD-RIS as shown in Figure 1. Assuming that the BS transmits a symbol vector 
+
+s ∈ CNs×1, where Ns is the data streams given that Ns ≤
+
+min {R, L } and E ss T = INs . The estimated data symbol vector at the UE is given as: 
+
+ˆs = W HP F s + W Hv′ ∈ CNs×1, (33) where P = GΘH ∈ CQ×M is the so called cascaded channel. W ∈ CQ×Ns is the combiner, and F ∈ CM ×Ns
+
+is the transmit precoder. v = W Hv′ ∼ CN  0, σ 2
+
+> n
+
+INs×1
+
+
+
+denotes the filtered noise. The joint transceiver and BD-RIS design problem to maximize the spectral efficiency is given as 
+
+max  
+
+> W,F, Θ
+
+log 2
+
+
+
+INs + W HP F F HP HW
+
+σ2
+
+> n
+
+W HW
+
+
+
+subject to ΘHΘ = IN , and tr F F H ≤ PT (34) where PT is the total transmit power. The non-convex BD-RIS constraints render the above optimization problem difficult to solve. To render the problem in (34) amenable to tensor-based processing, we adopt a surrogate formulation in which the achievable-rate objective is approximated by the Frobenius norm of the effective end-to-end channel. This yields the following simplified optimization problem: 
+
+max  
+
+> W,F, Θ
+
+W HGΘHF 2
+
+> F
+
+subject to ΘHΘ = IN , and tr F F H ≤ PT . (35) Compared with the original rate-maximization problem, this surrogate formulation is more tractable and exhibits amultilinear structure that can be efficiently exploited by tensor optimization methods. Consequently, the precoder, combiner, and BD-RIS can be optimized in parallel within a unified tensor framework. Applying vec {.} operator to the above equation leads to the following optimization problem: 
+
+max 
+
+> W,F, Θ
+
+ F T ⊗ W H vec (GΘH) 22
+
+subject to ΘHΘ = IN , and tr F F H ≤ PT (36) Assuming that Θ = ΘGΘT 
+
+> H
+
+, the problem can be recast as 
+
+max 
+
+> W,F, ΘG,ΘH
+
+ F T ⊗ W H  HT ⊗ G(ΘH ⊗ ΘG) vec (IN ) 22
+
+subject to ΘHΘ = IN , and tr F F H ≤ PT . (37) Defining the equivalent channel as T = ( F T ⊗ W H)( HT ⊗
+
+G)( ΘH ⊗ ΘG), and noting that vec (IN ) is fixed, the optimization can be focused on T . Assuming the singular value decompositions (SVDs) H = UH ΣH V H 
+
+> H
+
+∈ CN ×M
+
+and G = UGΣGV H 
+
+> G
+
+∈ CQ×N , we can write He as 
+
+T = ( F T ⊗ W H)( V ∗ 
+
+> H
+
+ΣH U T 
+
+> H
+
+⊗ UGΣGV H 
+
+> G
+
+)( ΘH ⊗ ΘG)= ( F TV ∗ 
+
+> H
+
+⊗ W HUG)( ΣH ⊗ ΣH )( U T 
+
+> H
+
+ΘH ⊗ V H 
+
+> G
+
+ΘG),
+
+from which a solution to (37) is obtained by setting F T = V T 
+
+> H
+
+,
+
+W H = U H
+
+> G
+
+, ΘH = U ∗ 
+
+> H
+
+, and ΘG = VG. In practice, however, this requires separate estimates of G and H.Consider the composite channel E = HT ⊗G ∈ CQM ×N 2
+
+,reshaped into a tensor E ∈ CQ×M ×N ×N . To illustrate this operation, each slice of E, i.e., E.,.,n 1,n 2 , is given by 
+
+E.,.,n 1,n 2 = G.,n 1 Hn2,. ∈ CQ×M , (38) for {n1, n 2} = {1, . . . , N }. Using this tensor representation, we can recast the problem in (37) as 
+
+max 
+
+> W,F, ΘG,ΘH
+
+E ×1 W H ×2 F T ×3 ΘG ×4 ΘH
+
+> 2
+> F
+
+subject to ΘHΘ = IN , and tr F F H ≤ PT . (39) where vec (IN ) is omitted because it is constant, and the objective is now to maximize the Frobenius norm of the equivalent channel tensor. To solve (39), we employ the HOSVD, which exploits each unfolding of E independently. Assuming that the SVD of [E](n) is given by U (n)Σ(n)V (n)H
+
+for n = {1, 2, 3, 4}, we design the beamforming matrices as 
+
+W = U (1) ;,1: Rs ∈ CQ×Rs F = U (2) :,1: Rs ∈ CM ×Rs (40) 
+
+ΘG = U (3) ∈ CN ×N ΘH = U (4) ∈ CN ×N , (41) while the optimum scattering matrix is given by Θ = ΘGΘT 
+
+> H
+
+.Although this procedure yields the same performance as the matrix-based solution of (37), the proposed tensor-based approach offers two main advantages. First, it does not require separate channel estimation, since the beamformers can be optimized directly from the estimated composite channel. Second, it relies on four independent SVDs, which can be computed in parallel. The proposed TenFormer beamforming design is summarized in Algorithm 3. An important advantage of the proposed TenFormer design is that it operates directly on the tensorized composite channel, thereby avoiding the additional channel-separation stage. Using the standard singular value decomposition (SVD) complexity result O(max {m, n } min {m, n }2) for an m ×
+
+n matrix [35], and noting that this reduces to O(m2n)
+
+when m < n, TenFormer requires four SVDs, but these decompositions are independent and can be computed in parallel. Hence, the processing delay is determined by the most expensive unfoldings, which are [E](3) and [E](4) , namely the third and fourth mode unfoldings, resulting in a dominant complexity of order O(M 2N 3) when M = Q.By contrast, a beamforming strategy based on separate channel knowledge, such as in [36], must first recover these channels from the estimated composite channel, i.e., decoupling G and H from HT ⊗ G. This additional step can be implemented, for instance, via a classical least-squares Kronecker factorization [37]. Under the assumption M = Q,10 
+
+Algorithm 3 TenFormer Beamforming Design  
+
+> 1:
+
+Input : Tensorized composite channel E ∈ CQ×M ×N ×N
+
+in (38), number of streams Rs. 
+
+> 2:
+
+Form the mode-n unfoldings [E](n) for n ∈ { 1, 2, 3, 4}. 
+
+> 3:
+
+for n = 1 : 4 do  
+
+> 4:
+
+Compute the SVD of the nth unfolding: 
+
+[E](n) = U (n)Σ(n)V (n)H. 
+
+> 5:
+
+end for  
+
+> 6:
+
+Define the receive combiner from the dominant left singular subspace of [E](1) :
+
+W = U (1) :,1: Rs ∈ CQ×Rs . 
+
+> 7:
+
+Define the transmit precoder from the dominant left singular subspace of [E](2) :
+
+F = U (2) :,1: Rs ∈ CM ×Rs . 
+
+> 8:
+
+Set the two BD-RIS factors from the dominant eigenmodes from [E](3) and [E](4) , repectively: 
+
+ΘG = U (3) ∈ CN ×N , ΘH = U (4) ∈ CN ×N . 
+
+> 9:
+
+Construct the BD-RIS scattering matrix: 
+
+Θ = ΘGΘT 
+
+> H
+
+∈ CN ×N . 
+
+> 10:
+
+Form the effective beamformed tensor/channel:  
+
+> 11:
+
+Output : F , W , Θ
+
+this separation stage requires a rank-one SVD of a rearranged 
+
+M N × M N matrix, which incurs a complexity of order 
+
+O(M 3N 3), dominating the subsequent beamforming stage. Therefore, the proposed TenFormer remains computationally more attractive in practice, since it bypasses the cost of the channel-separation block and directly exploits the multidimensional structure of the combined. V. CRAM ´ER –R AO LOWER BOUND (CRLB) In this section, we derive the CRLB for the unstructured composite channel in BD-RIS-assisted communication systems. Starting from (3), vectorization gives yk = ( XT ⊗
+
+IQ)vec (GΩkH) + nk, where nk ∼ CN (0QT ×1, σ 2
+
+> n
+
+IQT ).Using vec (ABC ) = (CT ⊗ A)vec (B), this becomes 
+
+yk = ( XT ⊗ IQ)( HT ⊗ G)vec (Ωk) + nk, or equivalently 
+
+yk = ( vec (Ωk)T ⊗ XT ⊗ IQ)vec (HT ⊗ G) + nk. Collecting all K received vectors in y = [ yT 
+
+> 1
+
+, . . . , yT 
+
+> K
+
+]T ∈ CQT K ×1, the observation model can be written compactly as 
+
+y =  ΩT ⊗ XT ⊗ IQ
+
+ vec  HT ⊗ G + n, (42) where Ω = [ vec (Ω1), . . . , vec (ΩK )] ∈ CN 2×K and n =[nT 
+
+> 1
+
+, . . . , nT 
+
+> K
+
+]T ∈ CQT K ×1 with n ∼ CN (0, σ 2
+
+> n
+
+IQT K ). Let 
+
+η = vec (HT ⊗ G) ∈ CQM N 2
+
+be the unknown parameter vector and let ˆη be an unbiased estimator. Then, E[∥η− ˆη∥22] ≥
+
+tr {CRLB( η)}, where the CRLB matrix is the inverse of the Fisher information matrix (FIM). Defining V = ΩT ⊗ XT ⊗
+
+IQ, (42) becomes y = V η +n. Hence, y ∼ CN (μ, R), where 
+
+μ = V η and R = σ2
+
+> n
+
+IQT K . We introduce the augmented real parameter vector ηc =  ¯ηT ˜ηTT, where ¯η = Re {η}
+
+and ˜η = Im {η}. Since the covariance is independent of the unknown parameters, the second term of the Slepian–Bangs formula vanishes, and the FIM of ηc becomes 
+
+F (ηc) = 2
+
+σ2
+
+> n
+
+Re V HV −Im V HV
+
+Im V HV Re V HV
+
+ . (43) TABLE III: Simulation parameters                     
+
+> UPA size (BS) MyMz= 4 ×4 = 16
+> UPA size (UE) QyQz= 2 ×2 = 4
+> BD-RIS size NyNz= 8 ×8 = 64
+> Inter-element spacing dh=dvλ/ 2
+> AoD, AoA (one sector of a cell)
+
+ϕr
+
+> BS
+
+, ϕ l 
+
+> RIS D
+
+, ϕ r 
+
+> RIS A
+
+, ϕ l
+
+> UE
+
+∼ U (−60 ◦, 60 ◦) 
+
+> EoD, EoA
+
+θr
+
+> BS
+
+, θ l 
+
+> RIS D
+
+, θ r 
+
+> RIS A
+
+, θ l
+
+> UE
+
+∼ U (90 ◦, 130 ◦)             
+
+> Tranmit power PT1Number of users 1
+> Channel realizations 1000
+> Complex path gains αr, β l∼ N (0 ,1)
+> Number of multipaths R= 2 ,L= 2
+
+Now define ¯Z = Re {V HV } and ˜Z = Im {V HV }. Using standard block-matrix inversion formulas, we obtain 
+
+tr (CRLB ( ¯ η)) = σ2
+
+> n
+
+2 tr 
+
+ ¯Z + ˜Z ¯Z−1 ˜Z
+
+−1
+
+. (44) Next, using the orthogonality of the normalized pilot and scattering matrices, X∗XT = IM , Ω∗ΩT = IN 2 , we obtain 
+
+V HV = ( Ω∗ΩT) ⊗ (X∗XT) ⊗ IQ = IQM N 2 . Therefore, 
+
+¯Z = IQM N 2 and ˜Z = 0, and the CRLB matrices for the real and imaginary parts reduce to CRLB ( ¯ η) = σ2 
+
+> n
+> 2
+
+IQM N 2
+
+and CRLB ( ˜ η) = σ2 
+
+> n
+> 2
+
+IQM N 2 . Hence, the augmented real parameter vector satisfies CRLB( ηc) = σ2 
+
+> n
+> 2
+
+I2QM N 2 . Thus, the total mean-square error of any unbiased estimator obeys 
+
+E[∥ηc − ˆηc∥22] ≥ tr {CRLB( ηc)} = σ2
+
+> n
+
+QM N 2.VI. S IMULATION RESULTS 
+
+We evaluate the proposed FORTE and FORPE algorithms in terms of the NMSE of the composite channel, defined as NMSE = ( ˆE) = (1 /P ) PPp=1 E(p) − ˆE(p) 2
+
+> F
+
+/ E(p) 2
+
+> F
+
+,where ˆE(p) denotes the estimated composite channel in the p-th realization and P is the total number of channel realizations. In all simulations, we set P = 1000 , as summarized in Table III. The total transmit power is fixed to 
+
+PT = 1 W , and the transmit SNR is given by SNR = PT /σ 2
+
+> n
+
+.We compare the proposed methods with two benchmark estimators, namely the LS method [8] and the BTKF method [31], to highlight the gains achieved by explicitly exploiting the geometric structure of the underlying channels. The simulation setup follows the parameter choices listed in Table III. The BS employs a UPA with M = My Mz =4 × 4 = 16 antennas, while the UE uses a UPA with 
+
+Q = Qy Qz = 2 × 2 = 4 antennas. The BD-RIS is composed of N = Ny Nz = 8 × 8 = 64 reflecting elements. For all arrays, the horizontal and vertical inter-element spacings are set to dh = dv = λ/ 2. We assume a single-user scenario and consider R = 2 and L = 2 propagation paths on the two sides of the BD-RIS. The azimuth angles 
+
+ϕr
+
+> BS
+
+, ϕl 
+
+> RIS D
+
+, ϕr 
+
+> RIS A
+
+, and ϕl 
+
+> UE
+
+are independently drawn from the uniform distribution U(−60 ◦, 60 ◦), whereas the elevation angles θr
+
+> BS
+
+, θl 
+
+> RIS D
+
+, θr 
+
+> RIS A
+
+, and θl 
+
+> UE
+
+are independently drawn from U(90 ◦, 130 ◦). Moreover, the complex path gains satisfy 
+
+αr , β l ∼ N (0 , 1) , consistent with the adopted geometric channel model and following the setup in [38]. 11 0 0.05 0.1 0.15 0.2 
+
+> Normalized Square Error
+> 00.2 0.4 0.6 0.8 1
+> CDF
+
+Fig. 2: The cumulative distribution function (CDF) of the normalized square error (NSE) for different methods. -10 0 10 20 30 
+
+> SNR(dB)
+> 10 -6
+> 10 -5
+> 10 -4
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+
+Fig. 3: The NMSE of the proposed FORTE and the FORPE methods with competing approaches.. Figure 2 shows the CDF of the NSE obtained over the entire considered SNR range, from −30 dB to 30 dB , using 
+
+1000 channel realizations. It can be observed that the proposed FORTE method consistently provides the best performance, outperforming the proposed FORPE scheme as well as the benchmark BTKF [31] and LS [8] estimators. For example, at an NSE threshold of 0.05 , the probability that the LS method attains this error level or lower is approximately 
+
+38% , whereas the BTKF/KronF method reaches about 70% .Under the same operating conditions, the proposed FORPE method attains nearly 72% , while the proposed FORTE method achieves approximately 81% . These results confirm the superior estimation accuracy and robustness of FORTE across the full SNR interval considered in the simulations. Figure 3 compares the NMSE performance of the proposed FORTE and FORPE estimators with that of the benchmark LS [8] and BTKF [31] methods. As shown in the figure, both proposed approaches consistently outperform the reference schemes over the considered SNR range. In particular, at 
+
+5 dB , the proposed FORTE method attains an NMSE of approximately 10 −4, while FORPE achieves about 10 −3.5.By comparison, BTKF reaches roughly 10 −3, whereas the LS estimator remains around 10 −1. This gain stems from the proposed methods explicitly exploiting the geometric structure of the underlying channel and embedding it in a tensor model, 0 20 40 60 80 100 
+
+> Number of BD-RIS Elements
+> 10 -5
+> 10 -4
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+
+Fig. 4: NMSE based performance comparison by varying number of BD-RIS elements N assuming SNR 10 dB .. 0 20 40 60 80 100 120 
+
+> Number of Tx Antennas
+> 10 -5
+> 10 -4
+> 10 -3
+> 10 -2
+> 10 -1
+
+Fig. 5: NMSE based performance comparison by varying number of transmit antenna elements M assuming SNR 10 dB .thereby enabling stronger noise mitigation during iterative estimation. In contrast, the BTKF method leverages only the tensor structure of the composite channel, whereas the LS method does not exploit any structural information. It is also worth noting that the LS estimator, being tailored to unstructured composite channels, approaches the theoretical CRLB derived for that unstructured setting. Figure 4 illustrates the NMSE performance as a function of the number of BD-RIS reflecting elements N at an SNR of 10 dB , using 1000 channel realizations. As shown in the figure, increasing the number of reflecting elements improves the performance of the proposed FORTE and FORPE methods, whereas the LS estimator exhibits little to no improvement. This behavior is explained by the fact that, for the proposed methods, a larger BD-RIS yields a richer tensor structure and stronger noise-averaging effects, thereby enhancing the quality of the channel estimates. In contrast, the BTKF method only exploits the tensor structure of the composite channel and therefore achieves more limited gains. For example, at 
+
+N = 40 , the proposed FORTE method attains an NMSE of approximately 10 −4, while FORPE achieves about 10 −3.5 and BTKF reaches roughly 10 −3.2. These results further confirm the benefit of explicitly incorporating the geometric channel structure into the proposed tensor-based estimation framework. Figure 5 illustrates the NMSE performance as a function of the number of transmit antennas M . The values of M12 0 20 40 60 80 100 
+
+> Number of Rx Antennas
+> 10 -5
+> 10 -4
+> 10 -3
+> 10 -2
+
+Fig. 6: NMSE based performance by varying number of receive antenna elements Q assuming SNR 10 dB .. 0 20 40 60 80 100 
+
+> Number of Reflecting Elements
+> 10 2
+> 10 3
+> 10 4
+> 10 5
+> 10 6
+> 10 7
+> 10 8
+
+Fig. 7: Computational complexity of FORTE and FORPE. considered are chosen as powers of two to comply with the Hadamard pilot design used in the simulations. As shown in the figure, increasing the number of transmit antennas improves the performance of both proposed methods, and FORTE and FORPE consistently outperform the benchmark LS and BTKF estimators over the entire range of M . This behavior can be attributed to the fact that a larger transmit array provides a richer, more structured observation model, which the proposed tensor-based methods can exploit more effectively through the geometric characterization of the channel. In contrast, the LS method does not leverage any structural information from the composite channel, resulting in limited improvement, whereas the BTKF method exploits only the tensor structure of the composite channel and thus achieves smaller gains than the proposed approaches. Figure 6 illustrates the NMSE performance as a function of the number of receive antennas Q. As shown in the figure, both proposed methods, FORTE and FORPE, consistently outperform the classical LS estimator and the state-of-the-art BTKF method throughout the considered range of Q. This improvement is due to the proposed approaches explicitly exploiting the intrinsic geometric structure of the channel through tensor modeling, which provides an additional tensor gain and enhances estimation accuracy. In contrast, neither the LS method nor the BTKF method is able to benefit from this richer geometric representation to the same extent. Figure 7 compares the computational complexity of the proposed FORTE and FORPE methods with that of the -30 -25 -20 -15 -10 
+
+> SNR (dB)
+> 0246810 12
+
+Fig. 8: SE performance of TenFormer in comparison with the benchmark SVD-based method [36]. 0 20 40 60 80 100 
+
+> Number of Reflecting Elements
+> 10 2
+> 10 4
+> 10 6
+> 10 8
+> 10 10
+
+Fig. 9: Beamforming complexity comparison of the proposed TenFormer method and the competing method [36]. benchmark LS [8] and BTKF estimators [31]. Specifically, the complexity curves for FORTE and FORPE correspond to the plain-vanilla ALS implementations described in Algorithms 1 and 2, respectively. As illustrated in Fig. 7, both proposed tensor-based schemes are more computationally demanding than the closed-form BTKF method because they rely on iterative updates and repeated least-squares subproblems. Nevertheless, this additional complexity is justified by the superior estimation performance observed in the previous numerical results. It is also worth emphasizing that all compared methods start from an initial LS estimate, which serves as a common first-stage preprocessing step. Figure 8 compares the spectral efficiency (SE) achieved by the proposed TenFormer method and the benchmark scheme in [36], considering both true and estimated channel knowledge. As observed in the figure, the two methods exhibit similar SE performance, since both rely on SVD-based designs for the precoder, combiner, and scattering matrix when ideal composite channel information is available. Nevertheless, the proposed TenFormer method offers an important practical advantage: by exploiting the intrinsic geometric structure of the channel, it enables the precoder, combiner, and scattering matrix to be obtained in parallel with lower complexity. Figure 9 compares the computational complexity of the joint design of the precoder, combiner, and scattering matrix for the proposed TenFormer method and the SVD-based benchmark in [36]. As illustrated in the figure, the proposed method achieves 13 
+
+a significantly lower computational cost by exploiting the higher-order tensor representation of the composite channel, thereby enabling the beamforming variables to be computed in parallel rather than via a more costly sequential procedure. This advantage substantially reduces the overall processing burden. For instance, when the number of BD-RIS elements is approximately 80, the proposed TenFormer method is about 15 times less complex than the benchmark scheme, assuming the same number of antenna elements at the BS and the UE. VII. C ONCLUSIONS 
+
+This paper investigated channel estimation and beamforming design for BD-RIS-assisted MIMO systems from a deconstructive tensor modeling perspective. Instead of treating the composite BD-RIS channel as an unstructured high-dimensional matrix, we decomposed it into its directional tensor factors, thereby revealing the rich multilinear structure induced by the BS, the UE, and the two BD-RIS sides. Two tensor-based estimators were proposed: FORTE, based on a fourth-order Tucker model, and FORPE, based on a fourth-order PARAFAC model. The proposed estimators outperform competing methods across different SNR regimes and system dimensions. In particular, FORTE achieved the best NMSE performance by partially exploiting the channel geometry, while FORPE offered good accuracy with a unique estimation of channel factors. We also formulated the tensor-based TenFormer beamforming, which achieves spectral efficiency comparable to the SVD benchmark while incurring lower computational complexity. Overall, deconstructing the composite BD-RIS channel into interpretable directional factors is useful for accurate channel estimation and provides a modeling foundation for sensing-oriented parameter extraction and system optimization in future BD-RIS-aided wireless systems. REFERENCES [1] M. Jian, G. C. Alexandropoulos, E. Basar, C. Huang, R. Liu, Y. Liu, and C. Yuen, “Reconfigurable intelligent surfaces for wireless communications: Overview of hardware designs, channel models, and estimation techniques,” Intelligent and Converged Networks , vol. 3, no. 1, pp. 1–32, 2022. [2] H. Li, S. Shen, M. Nerini, and B. Clerckx, “Reconfigurable intelligent surfaces 2.0: Beyond diagonal phase shift matrices,” IEEE Communications Magazine , vol. 62, no. 3, pp. 102–108, 2024. [3] H. Li, S. Shen, and B. Clerckx, “Beyond diagonal reconfigurable intelligent surfaces: From transmitting and reflecting modes to single-, group-, and fully-connected architectures,” IEEE Transactions on Wireless Communications , vol. 22, no. 4, pp. 2311–2324, 2023. [4] S. Shen, B. Clerckx, and R. Murch, “Modeling and architecture design of reconfigurable intelligent surfaces using scattering parameter network analysis,” IEEE Transactions on Wireless Communications , vol. 21, no. 2, pp. 1229–1243, 2022. [5] M. Nerini, S. Shen, H. Li, and B. Clerckx, “Beyond diagonal reconfigurable intelligent surfaces utilizing graph theory: Modeling, architecture design, and optimization,” IEEE Transactions on Wireless Communications , vol. 23, no. 8, pp. 9972–9985, 2024. [6] A. Sousa de Sena, M. Rasti, N. Huda Mahmood, and M. Latva-aho, “Beyond diagonal ris for multi-band multi-cell MIMO networks: A practical frequency-dependent model and performance analysis,” IEEE Trans. Wireless Commun. , vol. 24, no. 1, pp. 749–766, 2025. [7] C. Pan, G. Zhou, K. Zhi, S. Hong, T. Wu, Y. Pan, H. Ren, M. D. Renzo, A. Lee Swindlehurst, R. Zhang, and A. Y. Zhang, “An overview of signal processing techniques for ris/irs-aided wireless systems,” IEEE Journal Sel. Topics Signal Process. , vol. 16, no. 5, pp. 883–917, 2022. [8] H. Li, S. Shen, Y. Zhang, and B. Clerckx, “Channel estimation and beamforming for beyond diagonal reconfigurable intelligent surfaces,” 
+
+IEEE Transactions on Signal Processing , vol. 72, pp. 3318–3332, 2024. [9] B. Zheng, C. You, W. Mei, and R. Zhang, “A survey on channel estimation and practical passive beamforming design for intelligent reflecting surface aided wireless communications,” IEEE Communications Surveys & Tutorials , vol. 24, no. 2, pp. 1035–1071, 2022. [10] X. Hu, R. Zhang, and C. Zhong, “Semi-passive elements assisted channel estimation for intelligent reflecting surface-aided communications,” 
+
+IEEE Trans. Wireless Commun. , vol. 21, no. 2, pp. 1132–1142, 2022. [11] A. Taha, M. Alrabeiah, and A. Alkhateeb, “Deep learning for large intelligent surfaces in millimeter wave and massive mimo systems,” in 
+
+2019 IEEE Global Commun. Conf. (GLOBECOM) , 2019, pp. 1–6. [12] A. L. Swindlehurst, G. Zhou, R. Liu, C. Pan, and M. Li, “Channel estimation with reconfigurable intelligent surfaces—a general framework,” Proc. IEEE , vol. 110, no. 9, pp. 1312–1338, 2022. [13] Y. Yang, B. Zheng, S. Zhang, and R. Zhang, “Intelligent reflecting surface meets ofdm: Protocol design and rate maximization,” IEEE Transactions on Communications , vol. 68, no. 7, pp. 4522–4535, 2020. [14] B. Zheng and R. Zhang, “Intelligent reflecting surface-enhanced ofdm: Channel estimation and reflection optimization,” IEEE Wireless Communications Letters , vol. 9, no. 4, pp. 518–522, 2020. [15] X. Guan, Q. Wu, and R. Zhang, “Anchor-assisted channel estimation for intelligent reflecting surface aided multiuser communication,” IEEE Trans. Wireless Commun. , vol. 21, no. 6, pp. 3764–3778, 2022. [16] Z. Wang, L. Liu, and S. Cui, “Channel estimation for intelligent reflecting surface assisted multiuser communications: Framework, algorithms, and analysis,” IEEE Transactions on Wireless Communications , vol. 19, no. 10, pp. 6607–6620, 2020. [17] G. Zhou, C. Pan, H. Ren, P. Popovski, and A. L. Swindlehurst, “Channel estimation for ris-aided multiuser millimeter-wave systems,” 
+
+IEEE Transactions on Signal Processing , vol. 70, pp. 1478–1492, 2022. [18] H. Li, S. Shen, and B. Clerckx, “Beyond diagonal reconfigurable intelligent surfaces: From transmitting and reflecting modes to single-, group-, and fully-connected architectures,” IEEE Transactions on Wireless Communications , vol. 22, no. 4, pp. 2311–2324, 2023. [19] N. A. Abbasi, J. L. Gomez, R. Kondaveti, S. M. Shaikbepari, S. Rao, S. Abu-Surra, G. Xu, J. Zhang, and A. F. Molisch, “Thz band channel measurements and statistical modeling for urban d2d environments,” 
+
+IEEE Trans. Wireless Commun. , vol. 22, no. 3, pp. 1466–1479, 2023. [20] A. L. F. de Almeida, G. Favier, and J. C. M. Mota, “PARAFAC-based unified tensor modeling for wireless communication systems with application to blind multiuser equalization,” Signal Process. , vol. 87, no. 2, pp. 337–351, 2007. [21] ——, “A constrained factor decomposition with application to MIMO antenna systems,” IEEE Trans. Signal Process. , vol. 56, no. 6, pp. 2429–2442, 2008. [22] G. Favier, M. N. da Costa, A. L. de Almeida, and J. M. T. Romano, “Tensor space–time (TST) coding for MIMO wireless communication systems,” Signal Process. , vol. 92, no. 4, pp. 1079–1092, 2012. [23] G. Favier and A. L. F. de Almeida, “Tensor space-time-frequency coding with semi-blind receivers for MIMO wireless communication systems,” 
+
+IEEE Trans. Signal Process. , vol. 62, no. 22, pp. 5987–6002, 2014. [24] ——, “Overview of constrained PARAFAC models,” EURASIP J. Adv. Signal Process. , vol. 2014, no. 1, p. 142, 2014. [25] B. Sokal, F. e Asim, and A. L. F. De Almeida, “Higher-order tensor-based joint transmit/receive beamforming and IRS optimization,” in 2023 IEEE 9th International Workshop on Computational Advances in Multi-Sensor Adaptive Processing (CAMSAP) , 2023, pp. 216–220. [26] G. T. de Ara´ ujo and A. L. F. de Almeida, “PARAFAC-based channel estimation for intelligent reflective surface assisted MIMO system,” in 
+
+Proc. Sensor Array and Multich. Signal Process. Workshop (SAM) , 2020. [27] G. T. de Ara´ ujo, A. L. F. de Almeida, and R. Boyer, “Channel estimation for intelligent reflecting surface assisted MIMO systems: A tensor modeling approach,” IEEE J. Sel. Topics Signal Process. , vol. 15, no. 3, pp. 789–802, Feb. 2021. [28] L. Wei et al., “Channel estimation for RIS-empowered multi-user MISO wireless communications,” IEEE Trans. Commun. , vol. 69, no. 6, pp. 4144–4157, 2021. [29] G. T. de Ara´ ujo, P. R. B. Gomes, A. L. F. de Almeida, G. Fodor, and B. Makki, “Semi-blind joint channel and symbol estimation in IRS-assisted multiuser MIMO networks,” IEEE Wireless Communications Letters , vol. 11, no. 7, pp. 1553–1557, 2022. [30] G. Nwalozie, A. L. F. de Almeida, and M. Haardt, “Enhanced channel estimation for double-RIS aided MIMO systems using coupled tensor decompositions,” Signal Processing , vol. 234, p. 109979, Sep. 2025. [31] A. L. F. de Almeida, B. Sokal, H. Li, and B. Clerckx, “Channel estimation for beyond diagonal RIS via tensor decomposition,” IEEE Transactions on Signal Processing , pp. 1–15, 2025. [32] F. E. Asim, B. Sokal, A. L. F. de Almeida, B. Makki, and G. Fodor, “Structured channel estimation for RIS-assisted THz communications,” 
+
+IEEE Trans. Veh. Technology , vol. 74, no. 3, pp. 5175–5180, 2025. [33] Fazal-E-Asim, A. L. F. De Almeida, B. Sokal, B. Makki, and G. Fodor, “Two-dimensional channel parameter estimation for IRS-assisted networks,” IEEE Transactions on Communications , pp. 1–1, 2024. [34] Fazal-E-Asim, F. Antreich, C. C. Cavalcante, A. L. F. de Almeida, and J. A. Nossek, “Two-dimensional channel parameter estimation for millimeter-wave systems using butler matrices,” IEEE Transactions on Wireless Communications , vol. 20, no. 4, pp. 2670–2684, 2021. [35] G. H. Golub and C. F. V. Loan, Matrix Computations , 4th ed. Baltimore: Johns Hopkins University Press, 2013. [36] E. Bj¨ ornson and ¨O. T. Demir, “Capacity maximization for mimo channels assisted by beyond-diagonal RIS,” in 2025 19th European Conference on Antennas and Propagation (EuCAP) , 2025, pp. 1–5. [37] C. Van Loan and N. Pitsianis, “Approximation with Kronecker Products,” Cornell University, Tech. Rep., 1992. [38] M. K. Samimi and T. S. Rappaport, “3-d millimeter-wave statistical channel model for 5G wireless system design,” IEEE Transactions on Microwave Theory and Techniques , vol. 64, no. 7, pp. 2207–2225, 2016.

@@ -1,0 +1,354 @@
+Title: Physics-Guided Attention in a Lightweight TCN for Efficient WiFi CSI-Based Human Activity Recognition
+
+URL Source: https://arxiv.org/pdf/2606.01834v1
+
+Published Time: Tue, 02 Jun 2026 02:15:24 GMT
+
+Number of Pages: 10
+
+Markdown Content:
+> JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 1
+
+# Physics-Guided Attention in a Lightweight TCN for Efficient WiFi CSI-Based Human Activity Recognition 
+
+Chinthaka Ranasingha, Tharindu Fernando, Member, IEEE, Sridha Sridharan, Life Senior Member, IEEE, 
+
+Clinton Fookes, Senior Member, IEEE and Harshala Gammulle, Member, IEEE. 
+
+Abstract —Human Action Recognition (HAR) using WiFi Channel State Information (CSI) has gained increasing attention due to its non-contact, low-cost, and privacy-preserving nature. However, existing learning-based approaches largely rely on deep, computationally intensive architectures to implicitly capture mo-tion dynamics from CSI measurements, thereby increasing model complexity and reducing efficiency. Instead we argue that incorporating appropriate inductive biases tailored to the physical characteristics of CSI signals enables more efficient and effective learning. In this work, we propose a compact temporal convolutional network (TCN)-based framework that explicitly incorporates motion-aware inductive biases into feature learning. Specifi-cally, we introduce a Doppler-energy-guided temporal attention mechanism in feature space to emphasize motion-salient time segments, and a variance-driven channel attention module to weight informative subcarriers based on temporal motion statis-tics adaptively. By integrating these domain-specific priors, the proposed model effectively captures motion dynamics without increasing architectural depth. Extensive experiments on multiple bench-mark datasets demonstrate that our approach achieves superior performance compared to deeper baselines, while significantly reducing parameter count and computational cost. 
+
+Index Terms —WiFi-based Human Action Recognition, Chan-nel State Information (CSI), Doppler Energy, Lightweight Models 
+
+I. I NTRODUCTION 
+
+Human Action Recognition (HAR) is the process of identi-fying human movement and behavior. Various sensors have been utilized to capture these behaviors [1]. WiFi Chan-nel State Information (CSI)-based HAR is gaining tremen-dous attention compared to uncomfortable wearable sensors and privacy-intrusive cameras [2]. Moreover, due to the cost-effective commercial WiFi devices, non-contact privacy-preserving nature of the recognition, and the ability to op-erate effectively in Non-Line-of-Sight (NLoS) environments [3], applications such as health monitoring [4], security and surveillance, and many other Internet of Things (IOT) have embraced WiFi-based HAR [5]. Human motion induces variations in wireless propagation, including amplitude fluctuations, phase changes, and Doppler frequency shifts. These motion-induced effects have been widely explored in the context of HAR. Early works, such as E-eyes, demonstrate that fine-grained CSI information contains 
+
+> The authors are with the Signal Processing, Artificial Intelligence and Vi-sion Technologies (SAIVT) Research Group, School of Electrical Engineering and Robotics, Queensland University of Technology (QUT), Brisbane, QLD 4000, Australia (e-mail: c.ranasingha@hdr.qut.edu.au). The research presented in this paper was supported partly by an Australian Research Council (ARC) Discovery grant DP200101942.
+
+sufficient motion information for HAR through statistical anal-ysis of amplitude and phase variations [6]. Subsequent studies further characterized the physical relationship between human movement and wireless channels, showing that different sub-carriers exhibit distinct sensitivity to motion [7]. To better capture motion dynamics, several works have explored time-frequency analysis of CSI. Early approaches such as WiD-ance [8] and WiSee [9] showed that Doppler and frequency-domain representations provide explicit descriptions of motion intensity and temporal evolution, enabling more discriminative activity characterization than raw signal measurements [8], [9]. Later studies incorporated short-time Fourier transform (STFT) representations into learning-based pipelines to en-hance recognition performance [10]. While effective, these approaches rely on external feature engineering and do not integrate motion structure directly into the representation learning process. To improve generalization across users and environments, recent research has increasingly adopted deep learning such as convolutional neural networks (CNNs) [11]–[13], recurrent neural networks (RNNs) [14]–[17], and hybrid CNN-RNN ar-chitectures [18]–[20]. More recently, transformer-based mod-els and multi-branch deep networks have been proposed to further improve recognition accuracy by increasing model depth and representational capacity [21]–[26]. Despite their success, state-of-the-art (SOTA) deep learning based WiFi HAR models come at the cost of significant model complexity, leading to high computational overhead and memory consumption. Such designs limit deployment on resource-constrained devices and real-time sensing platforms. Moreover, increasing model depth alone does not explicitly en-code the physical characteristics of human motion in wireless signals, forcing networks to implicitly learn motion saliency from raw or weakly processed CSI, which can be inefficient and unstable, especially with limited training data. In this work, we argue that high recognition performance does not necessarily require deep or computationally expensive models. We demonstrate that incorporating explicit, domain-specific motion biases into a compact model can yield superior performance to simply increasing network depth. Specifically, we propose a lightweight temporal convolutional network (TCN) [27] augmented with two complementary motion-guided attention mechanisms: Doppler-energy-based temporal attention and variance-driven channel attention. Rather than operating directly on raw CSI measurements, both attentions are computed in the learned feature space produced by an initial temporal encoder. This design choice allows the model first to suppress static components and hardware-induced  
+
+> arXiv:2606.01834v1 [cs.CV] 1 Jun 2026 JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 2
+
+noise, making subsequent motion saliency estimation more robust and semantically meaningful. The Doppler-energy temporal attention explicitly highlights time segments that exhibit strong motion-induced frequency shifts, enabling the model to focus on action-relevant temporal regions. In parallel, the variance-driven channel attention lever-ages temporal variance statistics to identify informative subcar-riers that are more sensitive to human motion. By jointly mod-eling temporal and channel-wise motion saliency, the proposed approach effectively captures discriminative activity patterns without increasing network depth or width. Importantly, the introduced attention modules add only minimal computational overhead compared to stacking additional convolutional or transformer layers. Extensive experiments demonstrate that the proposed model consistently outperforms several deep and parameter-heavy baseline architectures while using an order of magnitude fewer parameters and floating-point operations (FLOPs). These results highlight that carefully designed, physics- and statistics-inspired attention mechanisms can significantly im-prove recognition accuracy while maintaining computational efficiency. Our findings suggest that incorporating explicit motion priors into lightweight architectures is a promising di-rection for practical and scalable WiFi-based sensing systems. The main contributions of this paper are summarized as follows:  
+
+> •
+
+We propose a compact TCN-based HAR framework that achieves high accuracy without relying on deep or computationally expensive architectures.  
+
+> •
+
+We introduce feature-space Doppler-energy temporal at-tention to emphasize motion-salient time segments in CSI-derived features explicitly.  
+
+> •
+
+We design a variance-driven channel attention mechanism that highlights informative subcarriers based on temporal motion statistics.  
+
+> •
+
+We demonstrate that the proposed approach outperforms deeper baselines while significantly reducing parameter count and computational cost through extensive experi-ments. II. R ELATED WORKS 
+
+A. Deep Learning for CSI-based Human Action Recognition 
+
+Recent advances in WiFi CSI-based Human Action Recog-nition (HAR) have been predominantly driven by deep learn-ing models that learn discriminative representations directly from raw or minimally processed CSI measurements. CNNs are widely used for transforming CSI streams into image-like representations, thereby enabling hierarchical feature ex-traction via convolutional filters. For example, Moshiri et al. [28] convert CSI signals into pseudo-colored images and employ stacked 2D convolutions for action recognition, while subsequent works extend CNN-based designs to jointly ad-dress tasks such as action segmentation, classification, and localization [12], [29]. Recurrent architectures further model CSI as temporal se-quences to capture time-dependent dynamics. Variants such as Long Short-Term Memory (LSTM), Bidirectional LSTM (BLSTM), and more recent sequence models such as Mamba [30] have been employed to encode temporal dependencies. Several works incorporate signal preprocessing techniques, such as Discrete Wavelet Transform (DWT) or statistical feature extraction, to improve robustness prior to sequence modeling [14], [17], [22]. While these approaches enhance temporal modeling, they still rely on the network to learn motion characteristics from transformed representations. More recently, Transformer-based architectures have been introduced to capture long-range dependencies through self-attention mechanisms. These models leverage multi-head at-tention and positional encoding to model complex spatio-temporal interactions in CSI data [21], [23], [26]. Hybrid architectures combining CNNs with Transformers have also been explored to jointly encode local and global features [24], [25]. In parallel, a subset of works attempts to incorporate motion-related information through signal transformations, such as Doppler spectrograms or time–frequency represen-tations derived via Short-Time Fourier Transform (STFT) or DWT [16], [31], [32]. While these approaches introduce domain knowledge at the preprocessing stage, the extracted representations are typically treated as generic inputs to deep models, without explicitly embedding motion-aware structure within the learning architecture itself. Despite architectural diversity, these methods share a com-mon underlying paradigm: they rely on increasing model capacity to implicitly learn motion dynamics from CSI data in an end-to-end manner. In this setting, motion-related patterns arising from physical phenomena such as Doppler shifts and multipath propagation are not explicitly modeled, but are ex-pected to emerge through deep hierarchical feature extraction, which will result in over-parameterized architectures, leading to higher computational cost and a lack of interpretability of learned representation. These observations suggest that the prevailing trend of scal-ing model complexity is not well aligned with the underlying structure of CSI signals, motivating the need for approaches that explicitly integrate domain-specific motion priors into compact and efficient learning frameworks. 
+
+B. Attention Mechanisms and Feature Reweighting in HAR 
+
+Attention mechanisms have been widely adopted in HAR to enhance feature representation by adaptively reweighting informative components. In CSI-based HAR, temporal at-tention mechanisms are employed to emphasize salient time segments, while channel attention modules selectively weight subcarriers or antennas based on their contribution to recog-nition performance. Additionally, spatio-temporal attention and self-attention mechanisms, particularly in Transformer-based architectures, have been introduced to model long-range dependencies and complex interactions within CSI signals [21], [24]–[26]. Earlier works have also incorporated attention into recurrent frameworks, enabling models to dynamically focus on informative time steps and features during sequence modeling [17]. Despite their effectiveness, existing attention mechanisms are predominantly data-driven, learning feature importance JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 3
+
+solely from supervision signals without explicit consideration of the underlying physical properties of CSI measurements. Moreover, because attention is learned implicitly, it does not fundamentally reduce the reliance on deep architectures, and it further increases parameters and computational overhead. Consequently, while attention mechanisms improve perfor-mance, they do not address the absence of explicit motion-aware modeling within the network. In contrast, this work departs from purely data-driven attention by introducing motion-aware, feature-space atten-tion mechanisms that explicitly encode domain-specific priors within a compact architecture. 
+
+C. Inductive Bias and Efficient Modeling for Signal-based HAR 
+
+Other than purely data-driven approaches, another line of work has explored the use of domain knowledge to explicitly model motion dynamics in CSI-based HAR. Early methods rely on handcrafted features derived from signal processing principles, such as Doppler shifts, signal energy, variance, and correlation statistics, to characterize human motion from raw data. These approaches often transform CSI measurements into time–frequency representations using techniques such as Discrete Wavelet Transform (DWT) or Short-Time Fourier Transform (STFT), followed by conventional classifiers or shallow learning models [14], [32]–[35]. While these methods provide interpretable and physically meaningful representa-tions, they are typically constrained by fixed feature extraction pipelines, limiting their adaptability to complex and diverse activity patterns. In parallel, recent efforts have focused on improving com-putational efficiency through lightweight model designs. These approaches aim to lower computational cost and enable real-time deployment in resource-constrained environments. How-ever, efficiency in such methods is primarily achieved by re-ducing model capacity rather than improving motion represen-tation, and they continue to rely on implicit learning of motion dynamics from CSI data [36], [37]. Consequently, performance often degrades when model complexity is constrained. Above, explicit signal-driven modeling and efficient deep learning highlight a fundamental trade-off in existing CSI-based HAR systems. Methods grounded in domain knowledge introduce strong inductive bias but lack flexibility, whereas deep learning approaches provide adaptability at the cost of increased complexity and weak incorporation of physical priors, which motivates the need for systems that incorporate motion-aware inductive biases directly into compact, learnable architectures. III. P ROPOSED METHOD 
+
+Channel state information (CSI) describes how the signal propagates from the transmitter to the receiver and represents the combined effects of scattering, fading, and attenuation in MIMO-OFDM (Multiple Input Multiple Output Orthogonal Frequency Division Multiplexing) systems (e.g., commercial WiFi devices compliant with IEEE 802.11n). For each trans-mitter–receiver antenna pair and subcarrier f at time t, the frequency-domain relationship between transmitted and re-ceived signals can be expressed as: 
+
+Y (f, t ) = H(f, t )X(f, t ) + ϵ, (1) where X(f, t ) and Y (f, t ) denote the transmitted and re-ceived signals, respectively, H(f, t ) represents the complex channel response, and ϵ models measurement noise and in-terference. In WiFi sensing systems, CSI provides estimates of the complex channel response H(f, t ) across multiple subcarriers over time. The complex CSI can be represented in magnitude–phase form as: 
+
+H(f, t ) = |H(f, t )|eiϕ (f,t ), (2) where |H(f, t )| and ϕ(f, t ) denote the amplitude and phase of the channel response, respectively. Although amplitude responses provide relatively stable motion-related energy vari-ations, discriminative motion structure is not directly observ-able from raw CSI due to environmental interference and measurement instability. To model motion dynamics from WiFi CSI measurements, we consider the CSI amplitude observations collected over 
+
+T time steps and C flattened CSI feature channels. ( C =
+
+subcarriers × antennas) 
+
+X = |H(f, t )| ∈ RB×T ×C , (3) where B is the batch dimension. As illustrated in Fig. 1, our proposed framework consists of three main components: (i) a temporal convolutional en-coder that learns noise-robust motion representations from CSI amplitude sequences, (ii) motion-guided feature weighting modules that emphasize discriminative temporal and spectral patterns, and (iii) a learnable fusion and classification mod-ule. The encoder captures local temporal dependencies and suppresses static channel components, producing a compact feature representation. On top of this representation, comple-mentary temporal and channel-wise weighting mechanisms are applied to enhance motion-salient dynamics without increasing model depth. Finally, a learnable fusion mechanism fuses the learned representations with the original features via a residual connection. The design of each component is described in detail in the following subsections. 
+
+A. Temporal Convolutional Encoder 
+
+Raw CSI sequences are noisy by nature. We employ TCN blocks, composed of stacked 1D dilated convolutions, to capture temporal dependencies in CSI signals. The input tensor is permuted and processed with two sequential TCN layers, each followed by batch normalization, ReLU activation, and dropout. 
+
+H1 = Drop(ReLU(BN(Conv rd=1 (X)))) ,Z0 
+
+> b,t,c
+
+= Drop(ReLU(BN(Conv rd=2 (H1)))) (4) where Conv d(·) denotes dilated convolution with dilation factor d. We kept d = 1 for the first layer and d = 2 for the second. The first layer applies a channel reduction with JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 4STFT    
+
+> Doppler
+> Energy Eb
+> Softmax &
+> Interpolation
+> MLP( Pb,t ) &
+> Sigmoid
+> Channel Pooling Temporal
+> Convolution
+> Z0
+> Temporal Weights
+> Atemporal
+> Temporal Variance
+> Vb
+> MLP( Vb) &
+> Softmax
+> Channel Weights
+> Achannel
+> 1D Conv & Global
+> Avg. Pooling
+> Classifier
+> Doppler-Aware Temporal Attention
+> Variance-Driven Channel Attention
+> Fusion & Classification
+
+Fig. 1. Overview of the proposed method. 
+
+factor r, compressing the feature dimension from C to Cr ,while the second layer restores it back to C. This bottleneck design reduces computational cost while preserving essential temporal features. 
+
+B. Doppler-energy Attention 
+
+Human motion induces frequency shifts in wireless signals. To exploit these properties, we use a Doppler-energy-based at-tention mechanism to highlight the motion-heavy time regions. This mainly integrates Short-Time Fourier Transform (STFT)-based Doppler energy with learnable temporal attention. We perform mean pooling across the feature dimension to obtain a compact motion-sensitive signal in the temporal domain while reducing redundant information: 
+
+Pb,t = 1
+
+C
+
+> C
+
+X
+
+> c=1
+
+Z0
+
+> b,t,c
+
+. (5) This pooled signal preserves temporal motion patterns while suppressing feature-level noise. We compute the Short-Time Fourier Transform (STFT) of the pooled signal to capture local frequency variations: 
+
+Sb(f, k ) = X
+
+> t
+
+Pb,t w(t − kH ) e−j2πf t/N , (6) where Pb,t denotes the pooled CSI signal at time index t, N
+
+is the analysis window length, H is the hop size, and w(·) is a Hann window function. Here, f indexes discrete frequency bins and k indexes time-frequency segments determined by the sliding window. The Hann window is adopted to reduce spectral leakage and improve time-frequency localization for Doppler-sensitive motion analysis. Then we obtain the spectral energy representation. 
+
+Mb(f, k ) = |Sb(f, k )|2. (7) To derive a compact representation of motion intensity, we aggregate energy across frequency bins: 
+
+Eb(k) = X
+
+> f
+
+Mb(f, k ). (8) This aggregation captures overall motion-induced energy regardless of the exact Doppler frequency, providing a robust measure of temporal motion saliency. The Doppler energy is normalized using a temperature-scaled softmax: 
+
+Ab(k) = exp( Eb(k)/τ )
+
+P 
+
+> k′
+
+exp( Eb(k′)/τ ) (9) where τ > 0 is the temperature parameter controlling the sharpness of the attention distribution, k indexes the STFT frames. Since STFT produces a reduced temporal resolution ( K < T ), we upsample the Doppler attention to match the original sequence length: 
+
+ˆAb,t = I(Ab(k), T ), t = 1 , . . . , T (10) where I(·, T ) denotes 1D linear interpolation along the temporal dimension. In parallel, a lightweight temporal bottleneck MLP com-presses the temporal descriptor from T to TrA and restores it to T .
+
+AM LP b = σ(W2 ReLU (W1 Pb)) , (11) where Pb ∈ RT and W1 ∈ R TrA ×T , W 2 ∈ RT × TrA are weight matrices. σ(·) denotes the sigmoid activation. To combine physics-driven and learnable attention, we em-ploy element-wise fusion: 
+
+eAb,t = ˆAb,t · AM LP b , (12) where AM LP b ∈ RT . This design emphasizes frames with strong motion-induced Doppler energy while retaining adapt-ability to dataset-specific patterns. We further normalized attention weights to maintain numer-ical stability and consistent scaling across samples: 
+
+Atemporal b,t = eAb,t 
+
+PTt′=1 eAb,t ′ + ϵ (13) Finally, the normalized attention weights are applied to the CSI tensor. 
+
+Zdb,t,c = Z0 
+
+> b,t,c
+
+· Atemporal b,t (14) 
+
+C. Variance-based Channel Attention 
+
+Human motion-induced perturbations in wireless channels result in CSI amplitude fluctuations across subcarriers. Sub-carrier paths that make direct contact may exhibit higher JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 5
+
+variation, while static or noise-dominated subcarriers show relatively stable responses. To quantify motion sensitivity, we compute the temporal variance for each flattened feature dimension of the encoded CSI features over T time steps: 
+
+Vb,c = 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+ Z0 
+
+> b,t,c
+
+− μb,c 
+
+2 , where, (15) 
+
+μb,c = 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+Z0
+
+> b,t,c
+
+. (16) This operation aggregates temporal fluctuations and produces a compact representation that highlights dynamically responsive subcarriers. This variance descriptor is then passed through a lightweight bottleneck MLP with a reduction ratio rV .
+
+lb = W2 ReLU (W1 Vb), (17) where W1 ∈ R CrV ×C , W 2 ∈ RC× CrV . We then normalized the channel attention weights using a temperature-scaled soft-max, with temperature parameter τ .
+
+Achannel b,c = exp( lb,c /τ )
+
+PCc′=1 exp( lb,c ′ /τ ) (18) Finally, we re-weight the original encoded CSI features us-ing the computed channel attention weights, thereby enhancing motion-relevant subcarriers while suppressing noise-prone or less informative channels. 
+
+Zvb,t,c = Z0 
+
+> b,t,c
+
+· Achannel b,c . (19) 
+
+D. Dual Attention Fusion and Classification 
+
+We fuse temporal and channel attentions via a learnable modulation, with α and β trainable scalar parameters that adaptively balance Doppler-temporal and variance-channel contributions. This formulation preserves the original repre-sentation while allowing dynamic refinement. 
+
+Zb = Z0 + αZ d + βZ v (20) Then, the features are further refined using an additional lightweight temporal convolutional block, followed by global average pooling, before linear classification. 
+
+ˆZ = Drop(ReLU(Conv rd(Zb))) (21) IV. E XPERIMENTS AND ANALYSIS 
+
+A. Datasets 
+
+We evaluate our proposed model over three public datasets. The CSI-HAR dataset [28] contains seven different human activities performed by three individuals. Each activity was performed 20 times, resulting in 420 samples. The authors initially split the dataset into training and test sets in a 75% 
+
+to 25% ratio. Later, Varga [38] proposed a split in which the training set comprises the first two subjects, while the last subject is in the testing set, thereby mitigating the data leakage issue. We use the newly proposed split in our experiments. The NTU-Fi HAR [39] dataset comprises six action classes and contains 1200 samples in total. Each sample has dimension 
+
+342 , corresponding to 114 subcarriers across 3 antenna pairs. Following previous work [22], [40], we use the provided split, with 936 samples in the training set and 264 in the test set. The UT-HAR dataset [41] has seven action classes and contains 3977 and 996 samples in the training and testing sets, respectively. 
+
+B. Hyperparameter and Experiment Settings 
+
+We used PyTorch version 2.0.1. CSI-HAR: We used the Adam optimizer with an initial learning rate of 0.001 , hyper-parameters β1 = 0 .9 and β2 = 0 .99 , and a weight decay of 
+
+1e−4. The fine-tuned reduction factors in Eq. 4,11,17 were set to 2, 1, 4, respectively and is trained for 150 epochs. The temperature parameters of Eq. 9,18 were set to 1, 0.3
+
+respectively and the hyperparameter window length (N) and hop size (H) of equation 6 are 50 and 40 respectively. NTU-FI HAR: We used Adam optimizer with default parameters with reduction factors 18 , 4, 1 for Eq. 4,11,17 respectively, and both temperature parameters of Eq. 9,18 were set to 
+
+1. This was trained for 50 epochs with the hyperparameter window length (N) and hop size (H) of equation 6 as 50 
+
+and 10 respectively. UT-HAR: The Adam optimizer is used with default parameters, and the factors in Eqs. 4, 11, and 17 are 1, 12 , 3, respectively. Both Temperature parameters in Eqs. 9 and 18 were set to 1 and trained for 100 epochs. The hyperparameter window length (N) and hop size (H) of equation 6 for this dataset were set to 10 and 5 respectively. 
+
+C. Performance Comparison and Quantitative Results 
+
+We compare the proposed model with existing WiFi-based HAR methods in terms of accuracy, computational cost, and model capacity. UT-HAR: As shown in Tab. I, our proposed model outperforms Li et. al. [40] and Tan et. al. [22] by +0 .67% , +0 .18% , while reducing FLOPS by 40 .29 M, 111 .64 M and parameters by 1.508 M, 0.367 M ,respectively. On the NTU-Fi HAR dataset, our compact model matches the accuracy of Tan et al. [22] while using only 20% of the parameters and roughly 12% of the FLOPs. CSI-HAR: our approach achieves 77.18% accuracy, outperforming Li et al. [40] by +7.5% and Tan et al. [22] by +5.0%, despite using far fewer resources. Figs. 2, 3 and 4 present the confusion matrices for the UT-HAR, NTU-Fi HAR, and CSI-HAR datasets, respectively. These matrices illustrate the effectiveness of the proposed model, which correctly classifies the majority of actions. For the CSI-HAR dataset, actions with distinctive dynamics, such as stand-up ( 96 .08% ), run ( 89 .91% ), and walk ( 85 .21% ), achieve high classification accuracy. Lower performance is ob-served for temporally or spatially similar actions, such as lie-down ( 42 .98% ) and sit-down ( 72 .09% ), which are occasion-ally misclassified. These results reflect the intrinsic similarity of certain actions, highlighting our model’s effectiveness in capturing class-specific motion patterns while minimizing off-diagonal errors. JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 6
+
+UT-HAR NTU-Fi-HAR CSI-HAR Model Accuracy (%) FLOPS (M) Parameters (M) Accuracy (%) FLOPS (M) Parameters (M) Accuracy (%) FLOPS (M) Parameters (M) ResNet18* 98.11 49.93 11.180 95.31 54.19 11.180 54.59 26.404 11.183 ResNet50* 97.21 86.40 23.550 99.38 90.66 23.550 48.99 48.029 23.551 RNN* 83.53 2.51 0.010 84.64 13.09 0.027 30.54 3.808 0.008 
+
+GRU* 94.18 7.60 0.030 97.66 39.39 0.079 62.42 11.552 0.023 LSTM* 87.18 10.14 0.040 97.14 52.54 0.105 44.97 15.360 0.031 BiLSTM* 90.19 20.29 0.080 99.69 105.09 0.209 40.94 30.720 0.061 ViT* 96.53 273.10 10.580 93.75 501.64 1.052 53.69 66.604 0.663 Zhang et al. [36] 98.19 - 0.42 - - - - - -Liu et al. [42] 99.13 89.87 12.610 99.27 102.61 11.270 - - -Yi et al. [26] - - - 100.00 553.87 - - - -Luo et al. [23] 98.78 - 1.160 98.20 - 2.300 40.00 44.643 1.645 Li et al. [40] 98.44 70.97 1.760 99.69 75.02 0.570 69.69 1607.559 0.996 Tan et al. [22] 99.02 142.32 0.619 100.00 421.77 2.309 72.15 584.418 1.098 OURS 99.20 30.68 0.252 100.00 49.82 0.459 77.18 10.798 0.523 TABLE I COMPARISON OF PERFORMANCE ON THE UT-HAR, NTU-F I HAR, AND CSI-HAR DATASETS . M ETHODS MARKED WITH * ARE REPRODUCED BASED ON THE IMPLEMENTATION DESCRIBED IN [39]. R ESULTS WITH BACKGROUND COLOR PURPLE ARE GENERATED BY IMPLEMENTING THE MODELS OF CORRESPONDING PUBLICATIONS .
+
+Fig. 2. Confusion matrix for UT-HAR dataset Model Accuracy (%) Baseline 70.25 Baseline+Var 72.15 Baseline+Doppler 72.82 OURS 77.18 
+
+TABLE II ABLATION EXPERIMENTS ON THE CSI-HAR DATASET .
+
+D. Ablation Experiments and Hyperparameter Tuning 
+
+We conduct ablation experiments on the CSI-HAR dataset to evaluate the contribution of each component. As shown in Tab. II, the Baseline model, which consists only of TCN blocks, achieves an accuracy of 70 .25% . Incorporating variance-based channel attention (Baseline+Var) improves the performance to 
+
+72 .15% . Similarly, integrating Doppler-aware attention (Base-line+Doppler) increases the accuracy to 72 .82% . When both variance-based and Doppler-aware attention mechanisms are applied, the full model achieves 77 .18% , demonstrating the complementary benefits of the two components. We choose the hyperparameter window length (N) and hop size (H) of equation 6 empirically. Tab. III showcase the 
+
+Fig. 3. Confusion matrix for NTU-Fi HAR dataset 
+
+Fig. 4. Confusion matrix for CSI-HAR dataset 
+
+experimental results for the CSI-HAR dataset. We achieve the top performance with window length 50 and hop length 40 
+
+which represents 20% overlap for this dataset. JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 7                                         
+
+> Window Length 25 50 75 Overlap (%) 80 60 40 20 080 60 40 20 080 60 40 20 0Accuracy (%) 76.62 76.06 76.77 75.46 76.39 76.26 75.24 76.06 77.18 76.21 75.65 76.58 76.06 75.91 76.51 TABLE III HYPERPARAMETER WINDOW LENGTH (N) AND HOP SIZE (H) OF EQUATION 6TUNING FOR CSI-HAR DATASET .
+
+V. A TTENTION VISUALIZATION 
+
+Figs. 5–11 illustrate the learned attention behavior of the proposed framework for representative samples of the actions bend, fall, walk, run, lie-down, stand-up, and sit-down from the CSI-HAR dataset. In each figure, subfigure (a) shows the selected subcarriers along with their corresponding at-tention weights, while subfigure (b) depicts the temporal attention assigned to different time steps of the CSI signal. As observed, the proposed variance-based channel attention identifies informative CSI subcarriers by leveraging temporal variance, producing sparse attention distributions that empha-size discriminative channels while suppressing redundant ones. Concurrently, the Doppler-aware temporal attention captures motion dynamics through the Doppler spectrogram, assigning higher importance to time segments with elevated Doppler en-ergy. By jointly exploiting channel-wise variance and Doppler-induced temporal dynamics, the model effectively focuses on the most relevant spatial and temporal features for accurate activity recognition. 
+
+(a) Variance-based 
+
+(b) Doppler-aware  
+
+> Fig. 5. Attention visualization for a sample of the action class ”bend” of the CSI-HAR dataset.
+
+VI. C ONCLUSION 
+
+This paper challenges the prevailing assumption that in-creasing model capacity is sufficient for WiFi CSI-based HAR. 
+
+(a) Variance-based 
+
+(b) Doppler-aware  
+
+> Fig. 6. Attention visualization for a sample of the action class ”fall” of the CSI-HAR dataset.
+
+We show that the core limitation of existing approaches lies not in architectural depth, but in their failure to explicitly model motion dynamics inherent in CSI signals. To address this, we propose a compact TCN framework that embeds motion awareness directly into the feature space through two complementary mechanisms: Doppler-energy-based temporal attention, which selectively amplifies motion-salient temporal regions, and variance-driven channel attention, which pri-oritizes informative subcarriers based on temporal motion statistics. Unlike conventional pipelines that rely on implicit feature learning from raw or transformed CSI, the proposed approach introduces an inductive bias aligned with the physical struc-ture of the signal. This results in a model that is not only more parameter-efficient, but also more effective at capturing discriminative motion patterns. Extensive experiments demon-strate that explicit motion-aware modeling consistently outper-forms deeper, computation-heavy baselines, while significantly reducing model complexity. These findings suggest that future progress in CSI-based HAR should move beyond scaling architectures, and instead focus on integrating domain-specific motion priors into the learning process. JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 8
+
+(a) 
+
+(b) 
+
+Fig. 7. Attention visualization for a sample of the action class ”walk” of the CSI-HAR dataset. 
+
+(a) 
+
+(b) 
+
+Fig. 8. Attention visualization for a sample of the action class ”run” of the CSI-HAR dataset. 
+
+REFERENCES [1] F. Miao, Y. Huang, Z. Lu, T. Ohtsuki, G. Gui, and H. Sari, “Wi-fi sensing techniques for human activity recognition: Brief survey, potential 
+
+(a) 
+
+(b) 
+
+Fig. 9. Attention visualization for a sample of the action class ”lie-down” of the CSI-HAR dataset. 
+
+(a) 
+
+(b) 
+
+Fig. 10. Attention visualization for a sample of the action class ”stand-up” of the CSI-HAR dataset. challenges, and research directions,” ACM Computing Surveys , vol. 57, no. 5, pp. 1–30, 2025. [2] Z. Wei, W. Chen, S. Ning, W. Lin, N. Li, B. Lian, X. Sun, and J. Zhao, JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 9
+
+(a) 
+
+(b) 
+
+Fig. 11. Attention visualization for a sample of the action class ”sit-down” of the CSI-HAR dataset. “A survey on wifi-based human identification: Scenarios, challenges, and current solutions,” ACM Transactions on Sensor Networks , vol. 21, no. 1, pp. 1–32, 2025. [3] F. S. Abuhoureyah, Y. C. Wong, and A. S. B. M. Isira, “Wifi-based hu-man activity recognition through wall using deep learning,” Engineering Applications of Artificial Intelligence , vol. 127, p. 107171, 2024. [4] U. M. Khan, Z. Kabir, and S. A. Hassan, “Wireless health monitoring using passive wifi sensing,” in 2017 13th international wireless commu-nications and mobile computing conference (IWCMC) . IEEE, 2017, pp. 1771–1776. [5] W. Liang, R. Tang, S. Jiang, R. Wang, Y. Zhao, C.-Z. Xu, X. Long, Z. Chen, and X. Li, “Liwi-har: Lightweight wifi-based human activity recognition using distributed aiot,” IEEE Internet of Things Journal ,vol. 11, no. 1, pp. 597–611, 2023. [6] Y. Wang, J. Liu, Y. Chen, M. Gruteser, J. Yang, and H. Liu, “E-eyes: Device-free location-oriented activity identification using fine-grained wifi signatures,” in Proceedings of the 20th annual international conference on Mobile computing and networking , 2014, pp. 617–628. [7] W. Wang, A. X. Liu, M. Shahzad, K. Ling, and S. Lu, “Understanding and modeling of wifi signal based human activity recognition,” in 
+
+Proceedings of the 21st annual international conference on mobile computing and networking , 2015, pp. 65–76. [8] K. Qian, C. Wu, Z. Zhou, Y. Zheng, Z. Yang, and Y. Liu, “Inferring motion direction using commodity wi-fi for interactive exergames,” in 
+
+Proceedings of the 2017 CHI conference on human factors in computing systems , 2017, pp. 1961–1972. [9] Q. Pu, S. Gupta, S. Gollakota, and S. Patel, “Whole-home gesture recognition using wireless signals,” in Proceedings of the 19th annual international conference on Mobile computing & networking , 2013, pp. 27–38. [10] J. Niu, X. He, B. Fang, G. Han, X. Wang, and J. He, “Csi-f: A human motion recognition method based on channel-state-information signal feature fusion,” Sensors , vol. 24, no. 3, p. 862, 2024. [11] R. Alazrai, M. Hababeh, A. Baha’A, M. Z. Ali, and M. I. Daoud, “An end-to-end deep learning framework for recognizing human-to-human interactions using wi-fi signals,” IEEE access , vol. 8, pp. 197 695– 197 710, 2020. [12] C. Xiao, Y. Lei, Y. Ma, F. Zhou, and Z. Qin, “Deepseg: Deep-learning-based activity segmentation framework for activity recognition using wifi,” IEEE Internet of Things Journal , vol. 8, no. 7, pp. 5669–5681, 2020. [13] Y. Ma, G. Zhou, S. Wang, H. Zhao, and W. Jung, “Signfi: Sign language recognition using wifi,” Proceedings of the ACM on Interactive, Mobile, Wearable and Ubiquitous Technologies , vol. 2, no. 1, pp. 1–21, 2018. [14] J. Ding and Y. Wang, “Wifi csi-based human activity recognition using deep recurrent neural network,” IEEE Access , vol. 7, pp. 174 257– 174 269, 2019. [15] Y. Cao, F. Wang, X. Lu, N. Lin, B. Zhang, Z. Liu, and S. Sigg, “Contactless body movement recognition during sleep via wifi signals,” 
+
+IEEE Internet of Things Journal , vol. 7, no. 3, pp. 2028–2037, 2019. [16] F. Wang, W. Gong, J. Liu, and K. Wu, “Channel selective activity recognition with wifi: A deep learning approach exploring wideband information,” IEEE Transactions on Network Science and Engineering ,vol. 7, no. 1, pp. 181–192, 2018. [17] Z. Chen, L. Zhang, C. Jiang, Z. Cao, and W. Cui, “Wifi csi based passive human activity recognition using attention based blstm,” IEEE Transactions on Mobile Computing , vol. 18, no. 11, pp. 2714–2724, 2018. [18] E. Shalaby, N. ElShennawy, and A. Sarhan, “Utilizing deep learning models in csi-based human activity recognition,” Neural Computing and Applications , vol. 34, no. 8, pp. 5993–6010, 2022. [19] S. Mekruksavanich, W. Phaphan, N. Hnoohom, and A. Jitpattanakul, “Attention-based hybrid deep learning network for human activity recog-nition using wifi channel state information,” Applied Sciences , vol. 13, no. 15, p. 8884, 2023. [20] H. Zou, Y. Zhou, J. Yang, H. Jiang, L. Xie, and C. J. Spanos, “Deepsense: Device-free human activity recognition via autoencoder long-term recurrent convolutional network,” in 2018 IEEE international conference on communications (ICC) . IEEE, 2018, pp. 1–6. [21] A. Hussain, Y. Chen, A. Ullah, and S. Zhang, “Wisigpro: Transformer for elevating csi-based human activity recognition through attention mechanisms,” Expert Systems with Applications , vol. 258, p. 124976, 2024. [22] H. Tan, Y. Dao, H. Zhang, T. Guo, and W. Wang, “Wifi signal-based human activity recognition using bidirectional mamba models,” in 2025 IEEE 11th World Forum on Internet of Things (WF-IoT) . IEEE, 2025, pp. 1–6. [23] F. Luo, S. Khan, B. Jiang, and K. Wu, “Vision transformers for human activity recognition using wifi channel state information,” IEEE Internet of Things Journal , vol. 11, no. 17, pp. 28 111–28 122, 2024. [24] B. Li, W. Cui, W. Wang, L. Zhang, Z. Chen, and M. Wu, “Two-stream convolution augmented transformer for human activity recognition,” in 
+
+Proceedings of the AAAI conference on artificial intelligence , vol. 35, no. 1, 2021, pp. 286–293. [25] M. Shang and X. Hong, “Recurrent conformer for wifi activity recog-nition,” IEEE/CAA Journal of Automatica Sinica , vol. 10, no. 6, pp. 1491–1493, 2023. [26] D. Yi, H. Zhang, S. Feng, J. Fang, and W. Wang, “Probsparse attention with stacked group convolution for wireless signal-based human activity recognition,” in 2024 16th International Conference on Wireless Com-munications and Signal Processing (WCSP) . IEEE, 2024, pp. 1349– 1354. [27] C. Lea, M. D. Flynn, R. Vidal, A. Reiter, and G. D. Hager, “Tempo-ral convolutional networks for action segmentation and detection,” in 
+
+proceedings of the IEEE Conference on Computer Vision and Pattern Recognition , 2017, pp. 156–165. [28] P. F. Moshiri, R. Shahbazian, M. Nabati, and S. A. Ghorashi, “A csi-based human activity recognition using deep learning,” Sensors , vol. 21, no. 21, p. 7225, 2021. [29] J. Yan, L. Wan, W. Wei, X. Wu, W.-P. Zhu, and D. P.-K. Lun, “Device-free activity detection and wireless localization based on cnn using channel state information measurement,” IEEE Sensors Journal , vol. 21, no. 21, pp. 24 482–24 494, 2021. [30] A. Gu and T. Dao, “Mamba: Linear-time sequence modeling with selective state spaces,” in First conference on language modeling , 2024. [31] M. Yang, H. Zhu, R. Zhu, F. Wu, L. Yin, and Y. Yang, “Witransformer: A novel robust gesture recognition sensing model with wifi,” Sensors ,vol. 23, no. 5, p. 2612, 2023. [32] I. A. Showmik, T. F. Sanam, and H. Imtiaz, “Human activity recognition from wi-fi csi data using principal component-based wavelet cnn,” 
+
+Digital Signal Processing , vol. 138, p. 104056, 2023. [33] H. Zou, Y. Zhou, J. Yang, W. Gu, L. Xie, and C. Spanos, “Multiple ker-nel representation learning for wifi-based human activity recognition,” in 2017 16th IEEE International Conference on Machine Learning and Applications (ICMLA) . IEEE, 2017, pp. 268–274. JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 10 
+
+[34] L. Guo, L. Wang, C. Lin, J. Liu, B. Lu, J. Fang, Z. Liu, Z. Shan, J. Yang, and S. Guo, “Wiar: A public dataset for wifi-based activity recognition,” 
+
+IEEE Access , vol. 7, pp. 154 935–154 945, 2019. [35] J. Huang, B. Liu, C. Miao, Y. Lu, Q. Zheng, Y. Wu, J. Liu, L. Su, and C. W. Chen, “Phaseanti: An anti-interference wifi-based activity recognition system using interference-independent phase component,” 
+
+IEEE Transactions on Mobile Computing , vol. 22, no. 5, pp. 2938–2954, 2021. [36] L. Zhang, H. Kang, J. Lee, D. Cheng, D. Kim, and K.-A. Toh, “Mkfi: Temporally robust wifi csi-based activity recognition under data scarcity,” Pattern Recognition , p. 112512, 2025. [37] S. Sai, D. Sharma, M. S. Peelam, V. Chamola, M. Guizani, and D. Niyato, “Machine learning techniques for wi-fi csi-based recognition and sensing: A comprehensive review,” IEEE Internet of Things Journal ,2026. [38] D. Varga, “Mitigating data leakage in a wifi csi benchmark for human action recognition,” Sensors , vol. 24, no. 24, p. 8201, 2024. [39] J. Yang, X. Chen, H. Zou, C. X. Lu, D. Wang, S. Sun, and L. Xie, “Sensefi: A library and benchmark on deep-learning-empowered wifi human sensing,” Patterns , vol. 4, no. 3, 2023. [40] M. Li, B. Yu, C. Li, and L. Qian, “A human action recognition method based on channel state information and cross attention,” in 
+
+2025 5th International Conference on Neural Networks, Information and Communication Engineering (NNICE) . IEEE, 2025, pp. 1679–1684. [41] S. Yousefi, H. Narui, S. Dayal, S. Ermon, and S. Valaee, “A survey on behavior recognition using wifi channel state information,” IEEE Communications Magazine , vol. 55, no. 10, pp. 98–104, 2017. [42] J. Liu, “Stackfi: An ensemble learning-based model for wifi sensing classification tasks,” in 2024 4th International Conference on Consumer Electronics and Computer Engineering (ICCECE) . IEEE, 2024, pp. 265–269.
