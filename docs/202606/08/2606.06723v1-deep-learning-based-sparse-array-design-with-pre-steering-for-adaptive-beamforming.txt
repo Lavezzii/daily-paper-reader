@@ -1,0 +1,191 @@
+Title: Deep Learning Based Sparse Array Design with Pre-Steering for Adaptive Beamforming
+
+URL Source: https://arxiv.org/pdf/2606.06723v1
+
+Published Time: Mon, 08 Jun 2026 00:13:09 GMT
+
+Number of Pages: 6
+
+Markdown Content:
+# Deep Learning-Based Sparse Array Design with Pre-Steering for Adaptive Beamforming 
+
+Ian Straub ∗ and Syed A. Hamza †
+
+School of Engineering, Widener University, PA, USA Emails: ∗ ikstraub@widener.edu, † shamza@widener.edu 
+
+Abstract — This paper investigates the use of convolutional neural networks (CNNs) for learning sparse array configurations that achieve near-optimal beamforming under varying source and interference angles. Unlike conventional or convex optimization based algorithms, the proposed deep learning approach enables rapid reconfiguration of sparse arrays in highly dynamic propa-gation environments. The paper considers a single desired source and a single interference signal at arbitrary angles, analyzing scenarios with both fixed and varying desired source directions. To avoid retraining for each possible source angle, an array pre-steering strategy is introduced, whereby the network is trained only at broadside, while test inputs are pre-steered to align with the broadside direction. To account for practical imperfections, the effect of pre-steering errors is examined, and a robust error-augmented training is adopted. The approach systematically incorporates small, structured pre-steering perturbations during training, enabling the network to maintain high classification accuracy and maximize the signal-to-interference-plus-noise ratio (SINR) even under angular uncertainty. The results demonstrate that the proposed method achieves over 90 % test accuracy across wide ranges of source and interference angles, highlighting its potential for real-time, robust sparse array configuration in dynamic environments. 
+
+I. I NTRODUCTION 
+
+Sparse arrays have long been utilized in radar, sonar, and wireless communication systems due to their ability to achieve high spatial resolution and interference suppression with a reduced number of active antennas [1]–[7]. By exploiting non-uniform sensor placement, sparse arrays provide additional degrees of freedom for beamforming while maintaining low hardware complexity and cost. Conventional optimization-based methods, including iterative and semidefinite relaxation (SDR) algorithms [8]–[20] have been developed to design sparse array configurations that achieve maximum signal-to-interference-plus-noise ratio (MaxSINR) beamforming. De-spite their effectiveness, these iterative techniques are com-putationally demanding and often unsuitable for real-time operation in rapidly changing propagation environments. Recent advances in deep learning (DL) [21]–[23] have enabled data-driven approaches to sparse array beamforming and wireless communications [24]–[27], including DL-based direction-of-arrival (DOA) estimation and antenna selection [28]–[30]. Once trained, a neural network can quickly infer the optimum array configuration from the input covariance data, 
+
+> This work is funded by the National Science Foundation (NSF) Award #2347220.
+
+facilitating rapid adaptation to dynamic conditions. In prior work, convolutional neural networks (CNNs) were trained to predict optimum sparse array configurations [31]–[33], enabling MaxSINR beamforming from data-driven models. To generalize across source directions, training datasets included all possible desired angles, which, although effective, required very large datasets and substantial computational resources [34]. To overcome these limitations and to support cogni-tive/adaptive array behavior [35]–[37], we introduce a pre-steering strategy that enables a single network trained only at broadside to efficiently generalize to arbitrary desired source angles. Pre-steering is a classical technique in array processing [38]–[41] that electronically aligns the array’s sensitivity with a desired look direction prior to beamforming. By applying initial phase shifts or time delays to the received signals, the array effectively perceives the desired source as arriving from broadside, simplifying adaptive processing and improving interference suppression. However, practical implementations are often imperfect due to calibration errors, quantization, or mismatch between assumed and actual source directions, which can degrade beamforming performance. Building on this insight, we extend pre-steering into a deep learning frame-work, training the network to recognize optimal sparse array configurations under both ideal and slightly perturbed steering conditions, thereby ensuring robust performance across a wide range of source directions and interference scenarios. In this work, we implement a deep learning–based pre-steering strategy, where a single neural network is trained at broadside to predict optimal sparse array configurations, and pre-steered covariance inputs allow the network to gen-eralize effectively to arbitrary desired directions. The pre-steered covariance is processed by the trained network to obtain the optimum sparse array configuration, which is then mapped back to the original angular domain for beamforming. By systematically introducing small, structured pre-steering perturbations during training, the network learns to tolerate angular mismatches and maintain near-optimal performance even when the actual source direction deviates slightly from the assumed look direction. This strategy leverages the ro-tational symmetry of the array manifold to generalize the network’s learning from broadside to any arbitrary direction, significantly reducing training complexity and dataset size while preserving high SINR performance across a wide range 
+
+> arXiv:2606.06723v1 [eess.SP] 4 Jun 2026
+
+of source and interference angles. The approach also enhances robustness to practical errors in DOA estimation, making the framework well-suited for dynamic and uncertain propagation environments. Simulation results demonstrate that this DL-based pre-steering framework achieves over 90 % accuracy in predicting optimal sparse array configurations, even under significant pre-steering errors, confirming both its efficiency and robustness for real-time adaptive beamforming. 
+
+Contributions and Significance. The main contributions of this work are as follows:  
+
+> •
+
+We introduce a deep learning–based pre-steering frame-work that enables a single neural network trained at broadside to generalize to arbitrary desired directions, reducing training complexity and improving scalability.  
+
+> •
+
+We investigate the robustness of the pre-steering method under steering angle mismatches and demonstrate that the approach maintains high accuracy under angular uncertainty.  
+
+> •
+
+We show that the proposed method efficiently selects M
+
+active antennas from N uniformly spaced elements to maximize the output SINR for one desired source and one interference, enabling real-time sparse array adaptation. The proposed framework provides a practical pathway to-ward real-time beamforming in dynamic environments, com-bining the efficiency of pre-steering with the inference capa-bility of neural networks. The results demonstrate that the DL-based pre-steering strategy achieves near-optimal sparse array configurations with significantly reduced training overhead and enhanced robustness. This paper is organized as follows. Section II deals with the problem formulation and receive array data model. Section III explains the pre steering concept. Section IV presents simula-tion examples using enumeration and DL methods, which is followed by conclusions in Section V. II. O PTIMUM SPARSE ARRAY BEAMFORMING 
+
+Consider a desired source, which can be an emitter or a target, and L independent interfering sources whose signals impinge on a uniform linear array (ULA) with N antennas. The baseband data received at the array at sampling instance 
+
+k is given by, 
+
+x(k) = α(k)a(θs) + 
+
+> L
+
+X
+
+> i=1
+
+βi(k)a(θi) + n(k), (1) where ( α(k), βi(k)) ∈ C are the complex amplitudes of the incoming baseband signals, n(k) ∈ CN is additive Gaussian noise with variance σ2
+
+> n
+
+, and ( a(θs), a(θi)) ∈ CN are the respective steering vectors corresponding to the directions of arrival, θs and θi, of the desired source and ith interference, and are defined as, 
+
+a(θs) = [1 ej(2 π/λ )dsin (θ) ... e j(2 π/λ )d(N −1) sin (θ)]T
+
+a(θi) = [1 ej(2 π/λ )dsin (θi) ... e j(2 π/λ )d(N −1) sin (θi)]T (2) Here, d is the inter-element spacing and the superscript ‘T’ denotes matrix transpose. The received data x(k) is combined linearly by the N -sensor beamformer that strives to maximize the output SINR. The output signal y(k) of the optimum beamformer for MaxSINR is given by [42], 
+
+y(k) = wHo x(k), (3) where the superscript ‘ H’ denotes Hermitian operation and 
+
+wo is the optimum weight vector resulting in the optimum output SINR o. For statistically independent signals, the desired source correlation matrix is Rs = σ2 
+
+> s
+
+a(θs)aH (θs), where 
+
+σ2 
+
+> s
+
+= E{α(k)αH (k)}. Likewise, the interference and noise correlation matrix, Rs′ = PLi=1 (σ2 
+
+> i
+
+a(θi)aH (θi)) + σ2
+
+> n
+
+IN ×N ,with σ2 
+
+> i
+
+= E{βi(k)βHi (k)} being the power of the lth interfering source. There exists a closed form solution of the optimum beamformer and is given by wo = P{R−1 
+
+> s′
+
+Rs}. The operator P{.} computes the principal eigenvector of the input matrix, yielding the corresponding optimum output SINR o;SINR o = wHo Rswo
+
+wHo Rs′ wo
+
+= Λ max {R−1 
+
+> s′
+
+Rs}. (4) This shows that the output SINR o is given by the maximum eigenvalue ( Λmax ) associated with the product of the inverse of interference plus noise correlation matrix and the desired source correlation matrix. As indicated in [14], [43] it is clear that both the array weight vector and array configuration affect SINR, and their optimizations should optimally be pursued simultaneously. In this work, we aim to train a neural network to learn the sparse array configuration independently of the beamforming weights [44], [45]. Once the optimal array configuration is identified through network training, the corresponding beamformer weights are computed as a post-processing step. This formulation enables a focused evaluation of the network’s capability to capture the spatial structure and selectivity inherent in sparse array geometries, without the confounding influence of adaptive weight optimization. III. P RE -S TEERING 
+
+A. Pre-Steering Approach 
+
+The proposed pre-steering approach exploits the rotational symmetry of the array manifold to enable a neural network trained only at broadside to generalize to arbitrary desired source directions. In contrast to conventional training proce-dures, where the network must learn mappings for all possible source angles, the pre-steering strategy aligns the desired signal direction with the broadside reference prior to infer-ence. This is achieved by phase-rotating the received spatial covariance matrix using the steering vector corresponding to the desired direction. The transformation effectively converts the problem into an equivalent broadside scenario, allowing the trained network to infer the optimum sparse array configura-tion without additional retraining for new source angles. Once the configuration is obtained, it is mapped back to the original angular domain for beamforming. This process substantially reduces the training complexity, data storage, and generaliza-tion burden of the network while maintaining high accuracy across a wide range of angular conditions. Furthermore, by decoupling the training from explicit angle dependence, the proposed approach enhances robustness against steering angle mismatch and improves adaptability in dynamic propagation environments. Let Rx ∈ CN ×N denote the spatial covariance matrix of the received signal, which includes contributions from the desired source, interference, and noise: 
+
+Rx = σ2 
+
+> s
+
+a(θs)aH (θs) + σ2 
+
+> i
+
+a(θi)aH (θi) + σ2
+
+> n
+
+IN ×N (5) where σ2 
+
+> s
+
+, σ2 
+
+> i
+
+, and σ2 
+
+> n
+
+denote the source, interference, and noise powers, respectively. To apply pre-steering, the received data are phase-rotated such that the desired direction θs is transformed to broadside. This can be expressed as 
+
+Rpre = D(θs) Rx DH (θs), (6) where D(θs) = diag {aH (θs)} is a diagonal phase-shifting matrix that aligns the desired signal with the broadside axis. The pre-steered covariance matrix Rpre is then provided as input to the trained neural network, which outputs the optimal sparse array configuration. The final beamforming weights 
+
+w are subsequently computed using MaxSINR formulations applied to the selected configuration. It is noted that sparse array design can only have a few active sensors at a time which makes it difficult to obtain full data correlation values corresponding to the inactive sensor locations as required by the DL approaches. However, for the scope of this paper, we assume that estimates of all the correlation lags corresponding to the full aperture array are available. This can typically be achieved by employing a low rank matrix completion strategy or to sequentially estimate the missing data correlation values over different subarrays which are configured through antenna switching. Through the pre-steering transformation, the network learns only a single angular representation (broadside) during train-ing, yet remains applicable to any arbitrary desired direction during testing. This not only accelerates training and reduces the required dataset size but also enables fast and reliable array adaptation in real-time beamforming applications. IV. S IMULATION RESULTS 
+
+A. Simulation Parameters 
+
+The learning model is trained and tested on datasets simu-lated in MATLAB. We consider a scenario with N = 12 an-tennas and M = 6 RF chains, where the antenna locations are evenly spaced with a half-wavelength inter-element spacing. Selecting 6 antennas out of the 12 available antenna locations, we obtain a total of 924 possible antenna configurations. The data set is divided into samples that each recorded the optimal sparse array for the given source and interference angle. For generating the training datasets, the source angle remains fixed, while the interference angle iterates by a small angle, depending on the angle range and the number of training samples, across the angle range assumed in the field of view. The boundaries of this range and the number of samples are changed across several simulations to observe the effects. In each case, the SNR is fixed at 0 dB while the interference to noise ratio (INR) is varied between 15 and 20 dB to increase data diversity. The CNN testing datasets are similarly simulated by randomly selecting the interference angle within a given angle range and recording the optimal sparse array configuration. In some datasets, the source angle is fixed in the testing data, while in others it is also randomly selected within an angle range. 
+
+B. Machine Learning Network Topology 
+
+The employed CNN has an input dimensions of size 
+
+3×N ×N and comprises the real, imaginary parts, and phase of the N ×N correlation matrix. The output layer size depends on the number of unique sector configurations which varies depending on the training dataset. The neural network archi-tecture implements 32 parallel filters, in each layer, of size 3×3 and 7×7 and incorporating dropout and batch normalization techniques. The network output is a one-hot encoded vector. The ReLU activation function is used for all layers except the output layer, which uses a softmax function. The network training utilized a batch size of 50 with a binary cross entropy loss function. The Adam optimizer [46] is used with a cosine decay learning rate using an initial learning rate of 1−4, 10000 decay steps, and an alpha of 1−5. Up to 100 epochs are used for training, with an early stopping parameter set on the validation accuracy of the network and a patience of 25. 
+
+C. Sector Design 
+
+One of the primary challenges in training a neural network to predict the configuration of a sparse antenna array lies in the combinatorial growth of possible configurations. For a system with N = 12 possible antenna locations and M = 6 
+
+RF chains, there are ( 12 choose 6)= 924 possible array configurations. This large number of discrete configurations poses a significant classification challenge for CNNs, as the number of output classes directly impacts both training complexity and accuracy. To mitigate this issue, the field of view (FOV) is partitioned into angular bins referred to as sectors. Each sector is assigned the most frequently occurring optimal array configuration among the training interference angles samples within that angular range, rather than assigning an optimal array configuration for each interference angle. Consequently, the maximum number of CNN classes is limited by the number of sectors. In practice, multiple sectors often shared the same optimal configuration, further reducing the total number of unique classes. However, this sector-based approach may degrade array performance in terms of SINR, since the configuration selected for a sector may not be individually optimal for every sample within that sector. Fig. 1 illustrates the relationship between the optimal array SINR and the sector-assigned array SINR percentage error as a function of interference angle, ranging from 7 ◦ to 96 ◦. Each discrete blue marker represents a training data sample with a unique interference angle, while the orange vertical lines indicate the sector boundaries. For each sample, the SINR obtained using its optimal configuration is compared against the SINR achieved using the most common configuration in the corresponding sector, yielding the percentage error. Overall, the percentage error remains low across most angles, demonstrating that the sector-based approximation pro-vides acceptable performance. However, certain angles, most notably around 80 ◦, exhibit significant deviations, indicating cases where the sector configuration does not align well with the true optimum. The error spike near 80 ◦ in Fig. 1 arises because the bin lies close to broadside, where a single array configuration dominates within the limited set of 924 possibilities and, when applied to the entire bin, overrides configurations that are more optimal for angles near 80 ◦,leading to increased error. Reducing the angular span of each sector improves both the mean and maximum SINR error but increases the number of sectors, thus expanding the number of CNN output classes. Fig. 2 presents the same analysis using one-degree sectors, showing reduced error variance at the cost of increased model complexity. Using this dataset, the trained CNN achieves a testing accuracy of 94.38%. It is important to note that this model is limited to predicting array configurations for a fixed source angle of 90 ◦, with interference angles ranging from 7 ◦ to 96 ◦. To expand the operational range, additional datasets are generated for source angles of 30 ◦, 60 ◦, and 90 ◦, each comprising 8,000 samples. The combined dataset contained a total of 24,000 samples. Since the optimal array configuration varies significantly across source angles, sector assignments are recalculated independently for each source angle case, resulting in a total of 95 distinct CNN classes. The expanded dataset yields a testing accuracy of 49.96%, with the corresponding SINR percentage error plotted in Fig. 3. These results indicate that while the sector-based approach effectively reduces class complexity and maintains high accuracy for a single source angle, the method does not generalize well when extended across multiple source angles. The substantial reduction in testing accuracy highlights the sensitivity of the optimal array configuration to source direction and suggests that alternative modeling or feature representation strategies may be required for broader generalization. 
+
+D. Pre-steering design with robustness 
+
+To evaluate the proposed pre-steering method, the train-ing dataset is generated with a fixed source angle of 90 ◦
+
+(broadside), while the interference angle varies from 7 ◦ to 173 ◦. The testing dataset is constructed with source angles ranging from 7 ◦ to 87 ◦ and interference angles from 10 ◦
+
+to 87 ◦. For each test case, the resulting correlation matrix is pre-steered such that the source angle is shifted to 90 ◦,and the interference angle is transformed to a corresponding new value. As shown in Fig. 4, the pre-steering operation realigns the source to broadside and maps the interference to its corresponding shifted angle, as reflected in the resulting beampattern. As demonstrated in Table 1, the optimal array configurations remain consistent across the original, pre-steered, and error-perturbed cases; therefore, determining the optimal configura-
+
+Fig. 1: Sector array vs optimal array SINR percent error over interference angle range with 5 degree sectors. 
+
+Fig. 2: Sector array vs optimal array SINR percent error over interference angle range with 1 degree sectors. tion from the pre-steered correlation matrix directly yields the optimal configuration for the original test scenario. Table 1 lists the greatest SINR array configurations, all of which can be considered optimal since their SINR performance differs by less than 10 −14 . After pre-steering, all test samples exhibit source and interference angle relationships consistent with the training data (source at 90 ◦, interference between 7 ◦ and 173 ◦). This alignment enables the neural network to accurately categorize each test case and identify the corresponding opti-mal array configuration. Using this approach, the proposed neural network achieves a classification accuracy of 91.84%, demonstrating the effective-ness of the pre-steering strategy in improving generalization performance across varying source and interference cases. The proposed approach assumes ideal pre-steering without error; however, in practice, the pre-steering operation can introduce inaccuracies when the source angle is not accurately known. To evaluate robustness to imperfect knowledge of the desired source DOA, controlled perturbations are introduced 
+
+Fig. 3: Sector array vs optimal array SINR percent error over interference angle range from three datasets with source angles at 30, 60, and 90 combined. Fig. 4: Beampattern, source, and interference angles before and after pre-steering shift.            
+
+> Source angle ( ◦)Interference angle ( ◦)Optimal Solutions Indices Before steer 60 20 605,883,233,796,754
+> After steer 90 63.9157 233,883,796,605,864
+> After steer with error 90.25 64.1937 233,605,883,796,524
+
+TABLE I: Summarizes that optimal sparse array solutions re-main consistent after pre-steering even with pre-steering error, where the source angle does not shift exactly to broadside. to the pre-steering angle during both training and testing to assess whether the neural network can still predict the optimal antenna configuration under such errors. In the initial experiment, the training data is generated twice, once without error and once with pre-steering error. The nominal source angle, θs , is fixed at 90 ◦, while the interference angle, θi , varies from 7 ◦ to 173 ◦. For the error-added dataset, a small random perturbation of -0.2 ◦, 0 ◦, or +0.2 ◦ is added to 
+
+θs for each sample to simulate pre-steering inaccuracies. The same approach is applied to the testing dataset. During testing, θs values are randomly sampled between 7 ◦ and 87 ◦and θi values are sampled between 10 ◦ and 87 ◦. Each sample is pre-steered to make θs =90 ◦, but random pre-steering errors (-0.2 ◦, 0 ◦, +0.2 ◦) are again added to simulate misalign-ment. Using this data generation method, the trained neural network achieves a testing accuracy of 25.62% shown in the first row of Table. 2, indicating limited robustness under pre-steering error. The random perturbations introduced inconsistent optimal configurations, making learning difficult. To address this, we generated multiple samples for each configuration, all sharing the same optimal antenna configuration but with slightly different pre-steering errors. For each interference angle θi ,five samples are generated corresponding to pre-steering errors of -0.5 ◦, -0.25 ◦, 0 ◦, +0.25 ◦, and +0.5 ◦, respectively. The optimal configuration is computed only for the error-free case (0 ◦). This modified dataset improves the testing accuracy to 33.03% shown in the second row of Table. 2, demonstrating that structured pre-steering error sampling provided slightly better generalization. Next, the pre-steering error range is reduced to -0.2 ◦, -0.1 ◦,0◦, +0.1 ◦, and +0.2 ◦ to minimize excessive variance while maintaining robustness. Even when tested with a larger random error of ±0.25 ◦ ±0.25 ◦, the network achieves a significantly improved accuracy of 57.63% shown in the third row of Table. 2, suggesting that the smaller training error range enhances the model’s ability to generalize to unseen pre-steering perturbations. To further improve robustness, the size of the training dataset is doubled from 8000 to 16000 samples. The source angle θs is fixed at 90 ◦, and θi varied from 7 ◦ to 173 ◦ in increments of approximately 0.05. Five samples are generated per θi using pre-steering errors of -0.2 ◦, -0.1 ◦, 0 ◦, +0.1 ◦, and +0.2 ◦. In this configuration, the training set includes small, systematic pre-steering errors, while the testing set contained larger random errors (±1 ◦). Despite the increased test error magnitude, the network achieved a testing accuracy of 90.66%, demonstrating strong robustness to pre-steering imperfections. Table. 2, summaries the network accuracy under the various pre-steering error strategies.                
+
+> Experiment Training Error Range ( ◦)Testing Error Range ( ◦)Accuracy (%) Random small error -0.2, 0, +0.2 -0.2, 0, +0.2 25.62
+> Structured error samples -0.5, -0.25, 0, +0.25, +0.5 -0.5, 0, +0.5 33.03
+> Reduced structured error -0.2, -0.1, 0, +0.1, +0.2 -0.25, 0, +0.25 57.63
+> Expanded dataset -0.2, -0.1, 0, +0.1, +0.2 -1, 0, +1 90.66
+
+TABLE II: Summarizes the network accuracy under various pre-steering error strategies discussed. V. C ONCLUSION 
+
+The paper presented a machine learning–based approach for optimizing sparse antenna array configurations using CNNs. To address the large combinatorial space of possible array selections, sector-based labeling and correlation-matrix–based feature representations were employed to reduce model com-plexity while maintaining array performance. The results demonstrated that this strategy provides high classification accuracy for fixed source-angle scenarios and that sectorization offers an effective balance between tractability and SINR degradation. To extend the method to more practical settings in which the source angle may vary, a pre-steering transformation was introduced to map all test scenarios into a common angular reference frame. Under ideal pre-steering conditions, the neural network generalized well across wide source and in-terference angle ranges, achieving accuracies exceeding 90 %.However, this work also showed that even small pre-steering errors can significantly degrade performance if such imper-fections are not represented in the training data. To mitigate this vulnerability, structured pre-steering error augmentation was incorporated. By generating multiple training samples per interference angle with controlled perturbations, the network learned to tolerate imperfections in DOA alignment. Reducing the error range and expanding the training dataset further en-hanced performance. The proposed approach achieved strong generalization capability, maintaining over 90 % accuracy even under large, randomly generated pre-steering errors. These findings highlight the importance of structured data diversity and error-aware training strategies for achieving robust sparse array configuration prediction. REFERENCES [1] S. Haykin, Array Processing: Application to Radar . Dowden, Hutchin-son, &: Ross, Stroudsburg, Pennsylvania, 1980. [2] A. Moffet, “Minimum-redundancy linear arrays,” IEEE Transactions on Antennas and Propagation , vol. 16, p. 172–175, March 1968. [3] P. Pal and P. Vaidyanathan, “Nested arrays: A novel approach to array processing with enhanced degrees of freedom,” IEEE Transactions on Signal Processing , vol. 58, no. 8, pp. 4167–4181,. [4] S. Qin, Y. Zhang, and M. Amin, “Generalized coprime array configura-tions for direction-of-arrival estimation,” IEEE Transactions on Signal Processing , vol. 63, no. 6, pp. 1377–1390,. [5] M. Amin, X. Wang, Y. Zhang, F. Ahmad, and E. Aboutanios, “Sparse arrays and sampling for interference mitigation and DOA estimation in gnss,” Proceedings of the IEEE , vol. 104, no. 6, pp. 1302–1317,. [6] R. R. R¨ aki and V. Koivunen, “Sparse symmetric linear arrays with low redundancy and a contiguous sum co-array,” IEEE Transactions on Signal Processing , vol. 69, pp. 1697–1712. [7] M. G. Amin (Editor), Sparse Arrays for Radar, Sonar, and Communi-cations . Wiley-IEEE, December 2023. [8] Z. Zheng, Y. Fu, W.-Q. Wang, and H. C. So, “Sparse array design for adaptive beamforming via semidefinite relaxation,” IEEE Signal Processing Letters , vol. 27, pp. 925–929, 2020. [9] C. Wen, Y. Huang, J. Peng, G. Zheng, W. Liu, and J.-K. Zhang, “Reconfigurable sparse array synthesis with phase-only control via consensus-admm-based sparse optimization,” IEEE Transactions on Vehicular Technology , vol. 70, no. 7, pp. 6647–6661, 2021. [10] H. Godrich, A. Petropulu, and H. Poor, “Sensor selection in distributed multiple-radar architectures for localization: A knapsack problem for-mulation,” IEEE Transactions on Signal Processing , vol. 60, no. 1, pp. 247–260,. [11] X. Wang, E. Aboutanios, M. Trinkle, and M. Amin, “Reconfigurable adaptive array beamforming by antenna selection,” IEEE Transactions on Signal Processing , vol. 62, no. 9, pp. 2385–2396,. [12] Y. Gao, H. Vinck, and T. Kaiser, “Massive mimo antenna selection: Switching architectures, capacity bounds, and optimal antenna selection algorithms,” IEEE Transactions on Signal Processing , vol. 66, no. 5, pp. 1346–1360,. [13] E. BouDaher and A. Hoorfar, “Comparison of nature-inspired techniques in design optimization of non-uniformly spaced arrays in the presence of mutual coupling,” Digital Signal Processing , vol. 105, p. 102780, 2020, special Issue on Optimum Sparse Arrays and Sensor Placement for Environmental Sensing. [Online]. Available: https://www.sciencedirect.com/science/article/pii/S1051200420301251 [14] S. Hamza and M. Amin, “Hybrid sparse array beamforming design for general rank signal models,” IEEE Transactions on Signal Processing ,vol. 67, no. 24, pp. 6215–6226,. [15] S. A. Hamza, M. G. Amin, and G. Fabrizio, “Optimum sparse array beamforming for general rank signal models,” in 2018 IEEE Radar Conference (RadarConf18) , April 2018, pp. 1343–1347. [16] S. A. Hamza and M. G. Amin, “Hybrid sparse array design for under-determined models,” in ICASSP 2019 - 2019 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , May 2019, pp. 4180–4184. [17] S. A. Hamza, M. Amin, and G. Fabrizio, “Optimum sparse array design for maximizing signal-to-noise ratio in presence of local scatterings,” in 
+
+2018 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , April 2018. [18] S. A. Hamza and M. G. Amin, “Sparse array beamforming design for wideband signal models,” IEEE Transactions on Aerospace and Electronic Systems , pp. 1–1, 2020. [19] ——, “Sparse array design for transmit beamforming,” in 2020 IEEE International Radar Conference (RADAR) , 2020, pp. 560–565. [20] S. A. Hamza and M. G. Amin, “Sparse array design for maximizing the signal-to-interference-plus-noise-ratio by matrix completion,” Digital Signal Processing , p. 102678, 2020. [21] Y. LeCun, Y. Bengio, and G. Hinton, “Deep learning,” Nature , vol. 521, pp. 436–44, 05 2015. [22] I. Goodfellow, Y. Bengio, and A. Courville, Deep Learning . MIT Press, 2016, http://www.deeplearningbook.org. [23] J. Gu, Z. Wang, J. Kuen, L. Ma, A. Shahroudy, B. Shuai, T. Liu, X. Wang, G. Wang, J. Cai, and T. Chen, “Recent advances in convolutional neural networks,” Pattern Recognition , vol. 77, pp. 354–377, 2018. [Online]. Available: https://www.sciencedirect.com/science/article/pii/S0031320317304120 [24] X. Li, F. Dong, S. Zhang, and W. Guo, “A survey on deep learning techniques in wireless signal recognition,” Wireless Communications and Mobile Computing , vol. 2019, p. 5629572, 2019. [Online]. Available: https://doi.org/10.1155/2019/5629572 [25] Y. Shen, Y. Shi, J. Zhang, and K. B. Letaief, “LORM: learning to optimize for resource management in wireless networks with few training samples,” IEEE Trans. Wireless Communications , vol. 19, no. 1, pp. 665–679, 2020. [26] H. Sun, X. Chen, Q. Shi, M. Hong, X. Fu, and N. D. Sidiropoulos, “Learning to optimize: Training deep neural networks for interference management,” IEEE Transactions on Signal Processing , vol. 66, no. 20, pp. 5438–5453, 2018. [27] T. J. O’Shea, T. Erpek, and T. C. Clancy, “Deep learning based MIMO communications,” CoRR , vol. abs/1707.07980, 2017. [28] S. Wandale and K. Ichige, “Design of sparse arrays via deep learning for enhanced DOA estimation,” EURASIP Journal on Applied Signal Processing , vol. 2021, no. 1, p. 17, Dec. 2021. [29] S. Hamza, K. Juretus, M. Amin, and F. Ahmad, “Deep learning sparse array design using binary switching configurations,” in accepted in Proc. IEEE International Conference on Acoustics, Speech and Signal Processing .[30] S. A. Hamza and M. G. Amin, “Learning sparse array capon beamformer design using deep learning approach,” in 2020 IEEE Radar Conference (RadarConf20) , 2020, pp. 1–5. [31] J. Kobak and S. A. Hamza, “Deep learning based sparse array adaptive beamformer design under class imbalance,” in 2025 IEEE International Radar Conference (RADAR) , 2025, pp. 1–5. [32] S. A. Hamza, K. Juretus, and M. G. Amin, Sparse Array Design for Optimum Beamforming Using Deep Learning . John Wiley & Sons, Ltd, 2024, ch. 7, pp. 215–250. [Online]. Available: https://onlinelibrary.wiley.com/doi/abs/10.1002/9781394191048.ch7 [33] S. A. Hamza and M. G. Amin, “Sparse array design for optimum beamforming using deep learning,” IEEE Transactions on Aerospace and Electronic Systems , vol. 60, no. 1, pp. 133–144, 2024. [34] K. Juretus, M. Amin, and S. A. Hamza, “Deep learning of the sparse array configurations in optimum beamforming,” IEEE Transactions on Aerospace and Electronic Systems , vol. 61, no. 3, pp. 5718–5730, 2025. [35] S. A. Hamza, M. G. Amin, B. Kirk, and A. Martone, “Sparse array reconfigurability for source identification and angle estimation in cogni-tive sensing,” in International Conference on Radar Systems , Edinburgh, Scotland. [36] S. Haykin, “Cognitive dynamic systems: Radar, control, and radio,” 
+
+Proceedings of the IEEE , vol. 7, pp. 2095–2103, July 2012. [37] J. Guerci, Cognitive Radar: The Knowledge-Aided Fully Adaptive Ap-proach . Boston, MA: Artech House, 2020, vol. Second Edition. [38] J. Capon, “High-resolution frequency-wavenumber spectrum analysis,” 
+
+Proc. IEEE , vol. 2. [39] O. Frost, III, “An algorithm for linear constrained adaptive array processing,” Proc. IEEE , vol. 60, pp. 926 935,. [40] B. Friedlander, “A signal subspace method for adaptive interference cancellation,” in IEEE Transactions on Acoustics, Speech, and Signal Processing , vol. 36, no. 12, Dec. 1988, pp. 1835–1845. [41] A. Barabell, J. Capon, D. DeLong, J. Johnson, and K. Senne, “Perfor-mance comparison of superresolution array processing algorithms,” May 2014. [42] S. Shahbazpanahi, A. Gershman, Z.-Q. Luo, and K. Wong, “Robust adaptive beamforming for general-rank signal models,” IEEE Transac-tions on Signal Processing , vol. 51, no. 9, pp. 2257–2269,. [43] X. Wang, M. Amin, and X. Cao, “Analysis and design of optimum sparse array configurations for adaptive beamforming,” IEEE Transactions on Signal Processing , vol. 66, no. 2, p. 340–351. [44] S. A. Hamza, K. Juretus, and M. G. Amin, “On the roles of sparse array configuration and weights in optimum beamforming,” in IEEE Wireless Communications and Network Conference , 2024, p. pp. [45] M. G. Amin, S. A. Hamza, and K. Juretus, “Sparse array configuration analysis and deep learning classifications for beamfornming,” in 2024 IEEE Radar Conference (RadarConf24) , 2024, pp. 1–6. [46] D. P. Kingma and J. Ba, “Adam: A method for stochastic optimization,” 2014. [Online]. Available: https://arxiv.org/abs/1412.6980
