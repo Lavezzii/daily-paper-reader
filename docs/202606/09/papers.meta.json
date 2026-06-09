@@ -1,0 +1,69 @@
+{
+  "label": "2026-06-09",
+  "date": "2026-06-09",
+  "generated_at": "2026-06-09T22:03:30",
+  "count": 4,
+  "papers": [
+    {
+      "paper_id": "202606/09/2606.09085v1-mixture-of-experts-transformer-for-automatic-modulation-recognition",
+      "section": "deep",
+      "title_en": "Mixture-of-Experts Transformer for Automatic Modulation Recognition",
+      "authors": "Jiale Wang, Wupeng Xie, Yaxin Mu, Xin Liu, Zhilong Zhao, Jingwei Zhang",
+      "date": "2026-06-08",
+      "pdf": "https://arxiv.org/pdf/2606.09085v1",
+      "score": "9.0",
+      "evidence": "用于通信调制识别的MoEformer新颖架构",
+      "tldr": "传统自动调制识别方法依赖静态多尺度融合，难以适应调制信号的动态变化。本文提出MoEformer，通过时间重采样构建多尺度专家视图，利用输入依赖门控动态融合，并集成旋转位置嵌入捕获全局时间依赖。在三个基准数据集上分别达到63.74%、66.24%和64.22%的平均识别准确率，优于基线方法。该网络在性能与模型复杂度之间实现了最优权衡，为自适应调制识别提供了新方案。",
+      "tags": "query:channel-nn",
+      "abstract_en": "Automatic Modulation Recognition (AMR) is a key enabling technology for cognitive radio and intelligent spectrum management in next-generation wireless systems. However, current deep learning-based AMR methods predominantly rely on static multi-scale fusion strategies, which lack the flexibility to adapt to the highly dynamic temporal variations of modulation signals. To address this limitation, we propose MoEformer, an adaptive Multi-Scale Mixture-of-Experts Transformer network that directly processes I/Q signals to preserve their temporal and phase structures. Specifically, MoEformer constructs multi scale expert views through temporal resampling, employs an input-dependent gating mechanism for dynamic expert fusion, and integrates Rotary Position Embeddings (RoPE) within Transformer encoders to capture both local and global tem poral dependencies. Comprehensive evaluations on three widely adopted benchmarks (RadioML2016.10a, RadioML2016.10b, and RadioML2018.01A) demonstrate that MoEformer outperforms the competitive baselines, achieving superior average recognition accuracies of 63.74%, 66.24%, and 64.22%, respectively. In addition, the proposed method strikes an optimal trade-off between recognition performance and model complexity.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/09/2606.06846v1-variable-length-finite-rate-csi-feedback-with-generative-priors",
+      "section": "quick",
+      "title_en": "Variable-Length Finite-Rate CSI Feedback With Generative Priors",
+      "authors": "Yangxuan Cheng, Fanyang Meng, Jian Zou, Jiacheng Xie, Zhongqiang Zhang, Ye Wang, Yongsheng Liang",
+      "date": "2026-06-05",
+      "pdf": "https://arxiv.org/pdf/2606.06846v1",
+      "score": "7.0",
+      "evidence": "深度学习用于通信中基于生成先验的CSI反馈",
+      "tldr": "针对可变长度有限速率CSI反馈问题，提出CsiCoGen生成式反馈结构。UE将CSI映射为有序码本索引序列，BS利用共享去噪先验从部分序列递归恢复。无需联合训练编码器与码本，支持灵活控制反馈长度和量化精度。在COST2100数据集上，高码率下室内NMSE达-31 dB，室外达-20 dB，优于基线方法。",
+      "tags": "query:channel-nn",
+      "abstract_en": "This letter studies variable-length finite-rate CSI feedback from a structural perspective and proposes CsiCoGen, a novel generative feedback structure with a transferable codebook mechanism without joint training. The UE maps $H_0$ into an ordered sequence of codebook indices, while the BS recursively recovers CSI from any received partial sequence of feedback indices using a shared denoising prior. This enables flexible control of feedback sequence length and per-step quantization precision through codebook size. CsiCoGen does not require jointly training a task-specific feedback encoder or codebook with the reconstructor, and the same online structure can be paired with different pretrained denoisers. In this work, we instantiate the decoder with a generative diffusion model. Simulation results on COST2100 show favorable rate-NMSE and rate-$ρ$ tradeoffs against representative baselines, with CsiCoGen reaching about -31 dB indoor NMSE and -20 dB outdoor NMSE in the high-rate regime while demonstrating scalable decoding complexity and adjustable per-step quantization precision.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/09/2606.06861v1-modeling-nonlinear-feature-interactions-with-product-unit-residual-networks",
+      "section": "quick",
+      "title_en": "Modeling Nonlinear Feature Interactions with Product-Unit Residual Networks",
+      "authors": "Ziyuan Li, Uwe Jaekel, Babette Dellen",
+      "date": "2026-06-05",
+      "pdf": "https://arxiv.org/pdf/2606.06861v1",
+      "score": "7.0",
+      "evidence": "乘积单元残差网络用于显式非线性交互建模",
+      "tldr": "标准MLP隐式捕获特征交互导致表示纠缠。提出乘积单元残差网络(PURe)，通过乘积单元和残差连接显式建模交叉特征耦合并稳定优化。在合成与真实数据集上，PURe达到竞争性预测性能，对高斯噪声更鲁棒，低数据场景下样本效率更高。SHAP分析证实其学习到更集中一致的交互模式，增强了交互级可解释性。",
+      "tags": "query:channel-nn",
+      "abstract_en": "Understanding nonlinear feature interactions is crucial in science and engineering, yet standard multilayer perceptrons (MLPs) often capture such interactions only implicitly, leading to entangled representations that can impair robustness and interpretability. We investigate product-unit residual networks (PURe) that integrate multiplicative product units with residual connections to explicitly model cross-feature couplings while stabilizing optimization. We conduct a systematic evaluation on an interaction-driven synthetic benchmark and two real-world datasets, assessing predictive accuracy, robustness to Gaussian feature noise, and performance under limited training data, and we compare real- and complex-valued variants under a matched parameter budget. Beyond accuracy, SHapley Additive exPlanations (SHAP)-based interaction analyses show that PURe learns more concentrated and structurally coherent interaction patterns than MLP baselines. Overall, PURe achieves competitive or improved performance, better robustness and sample efficiency in low-data regimes, and enhanced interaction-level interpretability.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/09/2606.06732v1-angular-sector-based-sparse-array-design-for-adaptive-beamforming-using-deep-learning",
+      "section": "quick",
+      "title_en": "Angular Sector-Based Sparse Array Design for Adaptive Beamforming Using Deep Learning",
+      "authors": "John Kobak, Ethan Atiyeh, Syed A Hamza",
+      "date": "2026-06-04",
+      "pdf": "https://arxiv.org/pdf/2606.06732v1",
+      "score": "6.0",
+      "evidence": "深度学习用于无线通信自适应波束成形",
+      "tldr": "动态射频环境中快速干扰变化要求自适应波束成形，但稀疏阵列重构需兼顾稳定性和性能。提出基于角度扇区的稀疏阵列设计框架，通过类别减少策略生成56个代表性配置，结合CNN和ResNet50进行深度学习分类。ResNet50分类准确率达97.3%，SINR偏差低于1%（大多数情况）和低于5%（挑战角度）。实现鲁棒稀疏阵列选择，减少不必要重构，为实时认知感知提供有效方案。",
+      "tags": "query:channel-nn",
+      "abstract_en": "Efficient sparse array reconfigurability is essential for cognitive sensing in dynamic radio frequency environments, where rapid interference variations require both adaptability and stability. This work presents a framework for designing sparse arrays optimized over broad angular sectors, enabling near-optimal beamforming that maximizes the signal-to-interference-plus-noise ratio (SINR) across a range of interferer angles. Full data correlation matrices are computed for candidate configurations, and an angular-sector-based class reduction strategy is applied to merge adjacent sectors dominated by the same configuration, resulting in 56 representative classes. Controlled up- and down-sampling produce four dataset variants involving, high and low sample count, balanced and unbalanced datasets, to systematically evaluate the effects of dataset size and class distribution on neural network performance. A lightweight convolutional neural network (CNN) and a deeper ResNet 50 architecture are trained and evaluated using these datasets. Results demonstrate high classification accuracy, with ResNet 50 achieving up to 97.3%, while SINR deviations remain below 1% for most classes and below 5% even for challenging interference angles near broadside. The proposed approach enables robust sparse array selection, maintains strong SINR performance, reduces unnecessary reconfigurations, and provides an effective framework for real-time cognitive sensing and adaptive interference mitigation.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

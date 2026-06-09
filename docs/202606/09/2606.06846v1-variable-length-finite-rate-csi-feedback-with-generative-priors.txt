@@ -1,0 +1,507 @@
+Title: Variable-Length Finite-Rate CSI Feedback With Generative Priors
+
+URL Source: https://arxiv.org/pdf/2606.06846v1
+
+Published Time: Mon, 08 Jun 2026 00:22:11 GMT
+
+Number of Pages: 5
+
+Markdown Content:
+> PREPRINT 1
+
+# Variable-Length Finite-Rate CSI Feedback With Generative Priors 
+
+Yangxuan Cheng, Fanyang Meng, Jian Zou, Jiacheng Xie, Zhongqiang Zhang, Ye Wang, Member, IEEE ,and Yongsheng Liang, Member, IEEE 
+
+Abstract —This letter studies variable-length finite-rate CSI feedback from a structural perspective and proposes CsiCoGen, a novel generative feedback structure with a transferable codebook mechanism without joint training. The UE maps H0 into an ordered sequence of codebook indices, while the BS recursively recovers CSI from any received partial sequence of feedback indices using a shared denoising prior. This enables flexible control of feedback sequence length and per-step quantization precision through codebook size. CsiCoGen does not require jointly training a task-specific feedback encoder or codebook with the reconstructor, and the same online structure can be paired with different pretrained denoisers. In this work, we instantiate the decoder with a generative diffusion model. Simulation results on COST2100 show favorable rate–NMSE and rate– ρ tradeoffs against representative baselines, with CsiCoGen reaching about 
+
+−31 dB indoor NMSE and −20 dB outdoor NMSE in the high-rate regime while demonstrating scalable decoding complexity and adjustable per-step quantization precision. 
+
+Index Terms —Diffusion models, CSI feedback, massive MIMO, codebook. 
+
+I. I NTRODUCTION 
+
+# MASSIVE multiple-input multiple-output (MIMO) re-mains a key enabler for 5G-Advanced and emerging 6G systems [1], [2]. Its gains, however, rely on accurate downlink channel state information (CSI) at the base station (BS). In frequency division duplex (FDD) systems, the user equipment (UE) must estimate the downlink CSI and feed it back explicitly [3], [4], which leads to substantial overhead as antenna dimensions and bandwidth grow. This creates a practical requirement beyond raw compression accuracy: a CSI feedback scheme should remain effective across finite-rate operating points, support scalable bitrate adaptation, and avoid redesigning the entire feedback stack when the system setting changes. Recent finite-rate CSI feedback methods mainly adapt the latent interface of an autoencoder. Elastic feedback with net-
+
+This work has been submitted to the IEEE for possible publication. Copyright may be transferred without notice, after which this version may no longer be accessible. (Corresponding author: Yongsheng Liang; Fanyang Meng.) 
+
+Yangxuan Cheng is with Pengcheng Laboratory, Shenzhen, 518060, China and the School of Information Science and Technology, Harbin Institute of Technology, Shenzhen, 518055, China (e-mail: chengyx01@pcl.ac.cn). Fanyang Meng, Zhongqiang Zhang and Ye Wang are with the Pengcheng Laboratory, Shenzhen, 518060, China (e-mail: mengfy@pcl.ac.cn; zhangzhq@pcl.ac.cn; wangy02@pcl.ac.cn). Jian Zou is with the College of Applied Technology, Shenzhen University, Shenzhen, 518060, China (e-mail: zoujian250@gmail.com). Jiacheng Xie is with the School of Information Science and Technol-ogy, Harbin Institute of Technology, Shenzhen, 518055, China (e-mail: 13207303668@163.com). Yongsheng Liang is with the School of Information Science and Technol-ogy, Harbin Institute of Technology, Shenzhen, 518055, China and is also with the School of Artificial Intelligence, Shenzhen Technology University, Shenzhen 518118, China (e-mail: liangys@hit.edu.cn) Variable Complexity       
+
+> Variable Quantization
+> CSI Model VQ-based Codebook
+> CSI Data
+> CSI Model
+> CSI Data
+> Generative CSI Model
+> Transferable Codebook
+> CSI Data
+> Quantization Module
+> Variable Rate Joint Training Training Training Ordering Variable Rate Variable Rate Latent Ordering Codebook Indices
+> User Config
+> Seed
+> (a) Quantization-based (b) VQ-based scheme (c) Proposed scheme
+
+Fig. 1. Comparison of scalable finite-rate CSI feedback paradigms. 
+
+work binarization and feature quantization has been studied for lightweight design [5]; changeable-rate architectures reuse a single backbone through a feedback-overhead control unit and pluggable quantization[6]; and variable-length or ordered feed-back has been developed through principal component analysis (PCA)-based compression, ordered vector quantization, nested multi-rate codebooks, ordered finite scalar quantization, and entropy-constrained vector-quantized variational autoencoder (VQ-VAE) designs [7], [8], [9], [10], [11]. Despite their finite-rate flexibility, these methods still bind rate adaptation to spe-cific latent representations, quantizers, and decoders, limiting flexibility when the reconstruction backbone or operating point changes. Codebook-oriented designs remain attractive because they preserve stronger compatibility with existing feedback pro-cedures. Partial channel reciprocity (PCR) codebooks exploit partial reciprocity and wideband angle-delay structure [12]; environment-knowledge-aided refinement improves conven-tional codebook feedback through an NN-based post-processor [13]; and learned codebook design has been developed for 5G-NR initial access and CSI Type-II feedback without changing the standardized feedback format [14]. However, these gains are still tied to codebooks or refinement modules designed for particular channel statistics, standards, or environment knowledge, and therefore do not provide a transferable finite-rate compression interface. More recently, diffusion-based generative models [15] have opened a new direction for CSI compression. In [16], atrainable codebook is combined with a backward diffusion decoder conditioned on both the transmitted codeword and side information. This is promising, but it still treats compres-sion, conditioning, and generative reconstruction as a coupled design. From the viewpoint of explicit finite-rate feedback, it remains unclear how to convert a decoder-side generative CSI prior into a progressive index-feedback mechanism that is scalable in bitrate, decoupled from codebook training, and free of auxiliary conditional inputs. In this letter, we propose CsiCoGen, a scalable generative  
+
+> arXiv:2606.06846v1 [eess.SP] 5 Jun 2026 PREPRINT 2
+
+feedback structure for explicit finite-rate CSI feedback. Unlike quantization-based and VQ-based scalable schemes (Fig. 1), CsiCoGen decouples online compression from the generative prior through a shared Gaussian codebook regenerated by a synchronized pseudo-random number generator (PRNG). The feedback length scales with the number of transmitted indices, while the per-step quantization precision is controlled by the codebook size K without retraining the denoiser. The online rule requires no auxiliary side information and depends only on the received indices and shared recursion. With a lightweight diffusion decoder, CsiCoGen shows favorable rate–NMSE and rate– ρ tradeoffs against representative finite-rate baselines. II. S YSTEM MODEL 
+
+Consider an FDD massive MIMO system with orthogonal frequency-division multiplexing (OFDM), where the BS is equipped with Nt antennas and the UE has a single antenna. Let Nf denote the number of OFDM subcarriers. The received signal at the UE on the n-th subcarrier is given by 
+
+yn = hHn xn + zn, n = 1 , . . . , N f , (1) where hn ∈ CNt×1 is the downlink channel vector on the 
+
+n-th subcarrier, xn ∈ CNt×1 is the transmitted signal, and 
+
+zn ∼ CN (0 , σ 2 
+
+> z
+
+) is the additive noise. We assume an error-free but rate-limited uplink feedback channel. By stacking the channel vectors of all subcarriers, the spatial-frequency CSI matrix is written as 
+
+Hsf = [ h1, h2, . . . , hNf ]T ∈ CNf ×Nt . (2) To exploit channel sparsity, we transform Hsf into the angular-delay domain through a two-dimensional discrete Fourier transform (DFT) 
+
+Had = FNf Hsf FHNt , (3) where FNf and FNt are unitary DFT matrices. Due to the limited multipath delay spread, only the first ˜Nc rows of Had 
+
+contain dominant channel energy ( ˜Nc ≪ Nf ). We retain these rows to obtain the truncated CSI matrix 
+
+Htr = Had (1 : ˜Nc, :) ∈ C ˜Nc×Nt . (4) For neural processing, the truncated complex-valued CSI is converted into a raw real-valued matrix by stacking its real and imaginary parts 
+
+Hraw =
+
+ℜHtr 
+
+ℑHtr 
+
+
+
+∈ R2 ˜Nc×Nt . (5) In our implementation, the aforementioned DFT, truncation, and stacking steps are performed offline. The raw matrix is then globally standardized using the training-set mean μtrain 
+
+and standard deviation σtrain to yield H0, which serves as the direct explicit CSI target for our CsiCoGen compression pipeline. Accordingly, our goal is not to learn a fixed-rate or condition-specific latent interface, but to design a novel gen-erative feedback structure for explicit finite-rate CSI feedback that maps H0 into an ordered index sequence for uplink angle   
+
+> delay
+> angle
+> delay Feedback Bitstream
+> UE BS
+> UE: Encode BS: Decode
+> Codebook
+> Diffusion Prior
+> Codebook
+> Diffusion Prior
+> Codebook
+> Diffusion Prior
+> Codebook
+> Diffusion Prior
+> Shared Initial State Feedback
+> Fig. 2. Overview of the proposed CsiCoGen structure. The UE performs stepwise index feedback, and the BS reconstructs CSI from any received partial sequence of feedback indices using a shared recursive decoder.
+
+transmission and enables the BS to reconstruct CSI from any received partial sequence of feedback indices. In CsiCoGen, the UE-side mapping ECD produces progressive feedback indices, whereas the BS-side recursion D(t)CD yields a sequence of partial CSI estimates whose final unstandardized output is the recovered CSI. This structural viewpoint will be used throughout the sequel, and the diffusion model only serves as one implementation of the shared recursive reconstruction rule. III. P ROPOSED SOLUTION 
+
+A. Variable-Length Generative Feedback Structure 
+
+Fig. 2 illustrates CsiCoGen as a scalable generative feed-back structure between the UE and the BS. The online task is to represent H0 by a progressive se-quence of discrete indices so that the BS can output a CSI estimate after receiving any partial sequence of indices. Under a common-randomness assumption, both ends share a synchro-nized PRNG seed and noise schedule offline. These are used to locally regenerate the candidate codebooks {C t}Tt=1 and the initial Gaussian state HT , so the runtime uplink signaling only contains the feedback indices. To specify the BS-side recursive decoder, we adopt a re-verse diffusion recursion with H0-prediction. Let the forward continuous diffusion process be defined as 
+
+Ht = √¯αtH0 + √1 − ¯αtϵ, ϵ ∼ N (0 , I), (6) where ¯αt = Qts=1 αs follows a predefined noise schedule. A decoder-side denoiser predicts the clean CSI from the noisy observation ˆH0|t = fθ (Ht, t ). (7) Using the standard H0-prediction form of the diffusion reverse mean, the state update is formulated as 
+
+Ht−1 = μt(Ht, ˆH0|t) + σtξt, (8) with the deterministic mean given by 
+
+μt(Ht, ˆH0|t) = 1
+
+√αt
+
+
+
+Ht + 1 − αt
+
+1 − ¯αt
+
+√¯αt ˆH0|t − Ht
+
+
+
+.
+
+(9) PREPRINT 3
+
+The perturbation scale σt adopts the posterior standard deviation σt =
+
+q
+
+˜βt, where ˜βt = 1− ¯αt−1  
+
+> 1−¯αt
+
+βt for t > 1. For the final transition step ( t = 1 ), the update is deterministic, i.e., σ1 = 0 .To digitize the stochastic part of the recursion, CsiCoGen uses a shared Gaussian codebook Ct for each reverse step, 
+
+Ct = {Ct(1) , Ct(2) , . . . , Ct(K)}, Ct(k) ∼ N (0 , I). (10) With the common PRNG seed, both ends regenerate 
+
+{C t}Tt=1 and HT locally, so no extra runtime signaling is required beyond the feedback indices themselves. The mean-ingful reverse update is therefore driven by the transmitted index kt for t ∈ { T, . . . , 2},
+
+Ht−1 = μt(Ht, ˆH0|t) + σtCt(kt). (11) From a communication viewpoint, the UE selects kt through a greedy local surrogate. Specifically, at reverse step t, it chooses the codeword that best matches the instantaneous residual term, rather than directly optimizing the end-to-end distortion after all remaining reverse steps 
+
+kt = arg min 
+
+> k∈{ 1,...,K }
+
+H0 − ˆH0|t − σtCt(k) 2
+
+> F
+
+. (12) For isotropic Gaussian codewords, ∥Ct(k)∥2 
+
+> F
+
+concentrates around a common value, so the above objective can be efficiently implemented by the maximum inner-product search 
+
+kt = arg max 
+
+> k∈{ 1,...,K }
+
+D
+
+Ct(k), H0 − ˆH0|t
+
+E
+
+> F
+
+. (13) Since the initial state HT is fully synchronized, no initial transmission is required. Moreover, the final transition at 
+
+t = 1 is deterministic and therefore index-free. The actual feedback sequence is thus {kT , . . . , k 2}. After receiving any partial feedback sequence {kT , . . . , k t}, the BS can recursively recover the corresponding CSI estimate from the shared initial state, which makes the structure naturally compatible with multiple feedback lengths. If each stochastic reverse step uses 
+
+K-ary indexing, the cumulative effective feedback overhead corresponding to the reconstruction after step t is 
+
+Rt = ( T − t) log 2 K, t ∈ { T, . . . , 1}, (14) where Rt denotes the cumulative feedback overhead up to step t. Let d = 2 ˜NcNt denote the real CSI dimension. Then the UE-side online search complexity is O(( T − 1) Kd ) per sample, while the offline synchronization overhead is limited to the common seed used to regenerate HT and {C t}Tt=1 . The proposed scheme therefore exposes an explicit tradeoff among feedback overhead, UE search cost, synchronization cost, and reconstruction quality. 
+
+B. Lightweight Generative Model Instantiation 
+
+The proposed generative feedback structure is agnostic to the particular decoder model, as long as the decoder follows the same H0-prediction recursion. In this work, we instantiate 
+
+fθ with a lightweight timestep-conditioned residual-attention denoiser to verify the proposed structure on COST2100. 
+
+Algorithm 1: CsiCoGen Online Feedback Procedure 
+
+Input: H0, fθ , {αt}Tt=1 , μtrain , σtrain , K,synchronized PRNG seed  
+
+> 1
+
+UE-side progressive encoding ; 
+
+> 2
+
+Generate {C t}Tt=1 and HT via synchronized PRNG;  
+
+> 3
+
+for t = T, T − 1, . . . , 2 do  
+
+> 4
+
+ˆH0|t ← fθ (Ht, t ); 
+
+> 5
+
+μt ← 1√αt
+
+h
+
+Ht + 1−αt 
+
+> 1−¯αt
+
+√¯αt ˆH0|t − Ht
+
+i 
+
+; 
+
+> 6
+
+rt ← H0 − ˆH0|t; 
+
+> 7
+
+kt ← arg max k⟨Ct(k), rt⟩F ; 
+
+> 8
+
+Ht−1 ← μt +
+
+q
+
+˜βt Ct(kt); 
+
+> 9
+
+end Output: Feedback indices {kT , . . . , k 2} 
+
+> 10
+
+BS-side progressive decoding ; 
+
+> 11
+
+Generate {C t}Tt=1 and HT via synchronized PRNG;  
+
+> 12
+
+for t = T, T − 1, . . . , 2 do  
+
+> 13
+
+ˆH0|t ← fθ (Ht, t ); 
+
+> 14
+
+μt ← 1√αt
+
+h
+
+Ht + 1−αt 
+
+> 1−¯αt
+
+√¯αt ˆH0|t − Ht
+
+i 
+
+; 
+
+> 15
+
+Ht−1 ← μt +
+
+q
+
+˜βt Ct(kt); 
+
+> 16
+
+end  
+
+> 17
+
+ˆH0|1 ← fθ (H1, 1) ; 
+
+> 18
+
+Hstate 0 ← 1√α1
+
+h
+
+H1 + 1−α1 
+
+> 1−¯α1
+
+√¯α1 ˆH0|1 − H1
+
+i 
+
+; 
+
+> 19
+
+ˆHfinal raw ← Hstate 0 · σtrain + μtrain ;
+
+Output: ˆHfinal raw , { ˆH0|t}Tt=1 
+
+Specifically, after reshaping the standardized CSI into a two-channel tensor, the denoiser takes Ht ∈ R2× ˜Nc×Nt and the diffusion step t as input, and outputs the clean estimate 
+
+ˆH0|t = fθ (Ht, t ). A sinusoidal timestep embedding followed by a two-layer MLP is first generated and injected into each residual block through a learned affine modulation. The backbone starts with a 3 × 3 head convolution that lifts the input from 2 channels to 96 channels, followed by four residual blocks with GroupNorm, SiLU activation, and 3 × 3
+
+convolutions. To keep the model lightweight, spatial attention is used only once in the last block through a compact multi-head attention module. A final GroupNorm–SiLU–Conv tail maps the hidden feature back to two channels and produces the H0 prediction. The denoiser is trained with a weighted H0-prediction objective 
+
+L = EH0,ϵ,t 
+
+h
+
+λt ∥fθ (Ht, t ) − H0∥2
+
+> F
+
+i
+
+, (15) where Ht = √¯αtH0 +√1 − ¯αtϵ and λt emphasizes low-noise steps. In our implementation, training timesteps are sampled with a low-t bias, and the loss is weighted accordingly to place more emphasis on the late reverse steps that dominate the final reconstruction quality. An important advantage of the proposed framework is that the codebook is fully decoupled from denoiser training. The shared Gaussian codebook is generated offline and synchro-nized by PRNG, so it introduces no trainable parameters and PREPRINT 4
+
+TABLE I SIMULATION DATASET SETTINGS USED IN THIS PAPER .
+
+Parameter Channel Model Scenario Outdoor (nLoS) Indoor (LoS) 
+
+fc / BW 0.3 GHz / 20 MHz 5.3 GHz / 20 MHz 
+
+τmax 5 × 10 −7 s 5 × 10 −7 sNumber of paths 48 3
+
+(Nf , ˜Nc, N t) (1024 , 32 , 32) (1024 , 32 , 32) 
+
+can be refreshed without modifying the denoiser weights. Changing the codebook size K directly adjusts the per-step quantization precision. Moreover, the same online compression rule remains compatible with different scene-specific diffu-sion models. Because the greedy UE encoder and the BS decoder both reuse the same H0-prediction recursion, the same lightweight denoiser is deployed at both ends. Each copy contains only 800 ,162 trainable parameters, and the shared Gaussian codebook adds none. For reference, CH-CsiNetPro [6] reports 1,059 ,174 parameters at the UE and 1,060 ,646 at the BS for its maximum-length model. IV. S IMULATION RESULTS 
+
+We evaluate CsiCoGen on the COST2100 indoor and out-door channel models[17]. The dataset settings are summarized in Table I. Unless otherwise specified, CsiCoGen is instanti-ated with the lightweight diffusion model as the generative prior, described in Section III-B and uses codebook size 
+
+K = 256 . We use T = 100 and T = 200 diffusion steps, train with Adam at learning rate 4 × 10 −4 and batch size 200 , and run 1000 epochs for each scenario. An exponential moving average of the model weights is maintained for evaluation and inference. We compare it against representative finite-rate baselines, including CH-CsiNetPro [6], OVQ [8], OFSQ [10], and ECVQ [11]. All the experiments are conducted on a single NVIDIA RTX 4090 GPU. The channel dataset is generated using the COST2100 channel model for the indoor picocellular scenario at 5.3 GHz and the outdoor rural scenario at 300 MHz [17]. The sizes of the training, validation, and testing sets are 100000 , 30000 , and 
+
+20000 , respectively. The BS is equipped with a uniform linear array with Nt = 32 , and the OFDM system uses Nf = 1024 
+
+subcarriers. After transformation to the angular-delay domain, we retain the first ˜Nc = 32 delay bins. We use the normalized mean squared error (NMSE) to evaluate the reconstruction accuracy 
+
+NMSE = E
+
+(
+
+∥ ˆH − H∥2
+
+F
+
+∥H∥2
+
+F
+
+)
+
+. (16) We also report the normalized channel-direction correlation 
+
+ρ = E
+
+
+
+⟨ ˆH, H⟩F
+
+∥ ˆH∥F ∥H∥F
+
+ , (17) where ⟨A, B⟩F = Tr( AH B).Figs. 3(a)–4(b) show the rate–NMSE and rate– ρ tradeoffs, respectively. Unlike most baselines that only provide fixed-rate 200 400 600 800 1000 1200 1400 1600     
+
+> Feedback Overheads (Bits)
+> -35.0
+> -30.0
+> -25.0
+> -20.0
+> -15.0
+> -10.0
+> -5.0
+> 0.0
+> NMSE (dB)
+> OFSQ-CRNet OVQ-TransNet ECVQ-VAE (cons.) ECVQ-VAE (var.) VQ-VAE+Entropy VQ-VAE (CNN-II) CH-CsiNetPro CsiNetPro CsiCoGen [ T=100 ]CsiCoGen [ T=200 ]
+
+(a) Indoor scenario. 200 400 600 800 1000 1200 1400 1600 
+
+> Feedback Overheads (Bits)
+> -25.0
+> -20.0
+> -15.0
+> -10.0
+> -5.0
+> 0.0
+> NMSE (dB)
+
+(b) Outdoor scenario. 
+
+Fig. 3. Rate–NMSE comparison on COST2100 with shared codebook. 200 400 600 800 1000 1200 1400 1600     
+
+> Feedback Overheads (Bits)
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> 1.0
+> Cosine Similarity ( ρ)
+> Perfect CSI OFSQ-CRNet OVQ-CRNet OVQ-TransNet VQ-CRNet CsiCoGen [ T=100 ]CsiCoGen [ T=200 ]
+
+(a) Indoor scenario. 200 400 600 800 1000 1200 1400 1600     
+
+> Feedback Overheads (Bits)
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> 1.0
+> Cosine Similarity ( ρ)
+> Perfect CSI OFSQ-CRNet OVQ-TransNet FSQ-CRNet VQ-CRNet OVQ-CsiNet FSQ-CsiNet Mu-law-CRNet O-Mu-law-CRNet CsiCoGen [ T=100 ]CsiCoGen [ T=200 ]
+
+(b) Outdoor scenario. 
+
+Fig. 4. Cosine similarity versus feedback overhead on COST2100 with shared codebook. 
+
+operating points by using latent-space adaptation, CsiCoGen forms a smooth progressive curve as the received indices grow, and therefore inherently supports flexible bitrate adaptation without retraining. Over the shared operating range, CsiCoGen with T = 200 consistently outperforms T = 100 and achieves the best NMSE among the compared finite-rate methods in both indoor and outdoor scenarios. The same ordering is also observed for ρ, indicating that CsiCoGen preserves channel-direction fidelity more effectively than the baselines across both propagation environments. Fig. 5 visualizes the scalable property on a representative CSI sample. Starting from a coarse prior estimate at 0 bits, the PREPRINT 5Original 0 Bit 160 Bits 320 Bits 480 Bits 640 Bits 792 Bits   
+
+> NMSE (dB) 0.0009 0.1806 -7.8617 0.9112 -15.5575
+> 80 Bits -3.4014 0.7526 0.9799 -19.2710 0.9855 -21.7124
+> 0.9879 -24.0354 0.9900
+> 1.0 0.8 0.6 0.4
+> 240 Bits -12.4478 0.9626
+> 400 Bits -17.0651
+> 0.9808
+> 560 Bits -20.3035 0.9865
+> 720 Bits -23.0622 0.9893
+
+Fig. 5. Variable-length decoding visualization for a representative COST2100 outdoor CSI sample (idx14080) using CsiCoGen with T = 100 and 8-bit quantization. -35.0                  
+
+> -30.0
+> -25.0
+> -20.0
+> -15.0
+> -10.0
+> -5.0
+> 0.0
+> NMSE (dB)
+> Indoor, T=100
+> 020 40 60 80 99
+> Feedback Indices
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> 1.0
+> Cosine Similarity ( ρ)
+> 3 bits 4 bits 5 bits 6 bits 7 bits 8 bits 9 bits 10 bits
+> (a) Indoor. -20.0
+> -15.0
+> -10.0
+> -5.0
+> 0.0
+> NMSE (dB)
+> Outdoor, T=100
+> 020 40 60 80 99
+> Feedback Indices
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> 1.0
+> Cosine Similarity ( ρ)
+> 3 bits 4 bits 5 bits 6 bits 7 bits 8 bits 9 bits 10 bits (b) Outdoor.
+
+Fig. 6. Codebook-size ablation at T = 100 . Larger codebooks provide finer per-step quantization and better reconstruction quality under the same feedback-index budget. 
+
+reconstructed CSI structures are progressively refined as more indices are received, eventually reaching −24 .0354 dB NMSE and ρ = 0 .9900 at 792 bits. This directly verifies that any additional index yields a refined CSI estimate without altering the underlying feedback structure. Finally, Fig. 6 studies the effect of codebook size at fixed 
+
+T = 100 . Under the same feedback-index budget, larger code-books provide finer per-step quantization and yield consistent gains in both NMSE and ρ. The gain is most visible in the low-to-medium progressive regime and gradually saturates as the reverse trajectory approaches its full length. This further sup-ports the structural interpretation of CsiCoGen: the feedback overhead controls how many progressive updates are delivered, while the codebook size controls the quantization precision contributed by each update. V. C ONCLUSION 
+
+This letter proposed CsiCoGen, a finite-rate generative feedback structure with a transferable training-free codebook mechanism. By decoupling the progressive feedback rule from model-codebook co-training, CsiCoGen enables scalable CSI reconstruction and flexible control of both feedback sequence length and per-step quantization precision. The UE transmits ordered codebook indices, and the BS reconstructs CSI from any received partial sequence of feedback indices under shared common randomness. On COST2100 indoor and outdoor channels, CsiCoGen achieves favorable rate–NMSE and rate– 
+
+ρ tradeoffs against representative finite-rate baselines. Recon-struction quality improves steadily with increasing feedback overhead over the shared operating range. Future work will ex-plore more advanced generative priors and accelerated reverse sampling to further improve the practicality of the proposed scheme for CSI feedback. REFERENCES [1] R. M. Dreifuerst and R. W. Heath, “Massive MIMO in 5G: How beamforming, codebooks, and feedback enable larger arrays,” IEEE Commun. Mag. , vol. 61, no. 12, pp. 18–23, 2023. [2] W. Chen et al. , “5G-advanced toward 6G: Past, present, and future,” 
+
+IEEE J. Sel. Areas Commun. , vol. 41, no. 6, pp. 1592–1619, 2023. [3] C.-K. Wen, W.-T. Shih, and S. Jin, “Deep learning for massive MIMO CSI feedback,” IEEE Wireless Commun. Lett. , vol. 7, no. 5, pp. 748–751, 2018. [4] J. Zou, Q. Mao, J. Xiao, S. Liu, and Y. Liang, “Distributed learning-based channel estimation and feedback for RIS-aided wireless commu-nications,” IEEE Wireless Commun. Lett. , vol. 14, no. 2, pp. 460–464, 2025. [5] Z. Lu, X. Zhang, H. He, J. Wang, and J. Song, “Binarized aggregated network with quantization: Flexible deep learning deployment for CSI feedback in massive MIMO systems,” IEEE Trans. Wireless Commun. ,vol. 21, no. 7, pp. 5514–5525, 2022. [6] X. Liang, H. Chang, H. Li, X. Gu, and L. Zhang, “Changeable rate and novel quantization for CSI feedback based on deep learning,” IEEE Trans. Wireless Commun. , vol. 21, no. 12, pp. 10 100–10 114, 2022. [7] M. Nerini, V. Rizzello, M. Joham, W. Utschick, and B. Clerckx, “Machine learning-based CSI feedback with variable length in FDD massive MIMO,” IEEE Trans. Wireless Commun. , vol. 22, no. 5, pp. 2886–2900, 2023. [8] V. Rizzello, M. Nerini, M. Joham, B. Clerckx, and W. Utschick, “User-driven adaptive CSI feedback with ordered vector quantization,” IEEE Wireless Commun. Lett. , vol. 12, no. 11, pp. 1956–1960, 2023. [9] J. Shin, Y. Kang, and Y.-S. Jeon, “Vector quantization for deep-learning-based CSI feedback in massive MIMO systems,” IEEE Wireless Commun. Lett. , vol. 13, no. 9, pp. 2382–2386, 2024. [10] K. Liotopoulos, N. A. Mitsiou, P. G. Sarigiannidis, and G. K. Karagian-nidis, “Multi-length CSI feedback with ordered finite scalar quantiza-tion,” IEEE Commun. Lett. , 2025. [11] J. Shin, J. Park, and Y.-S. Jeon, “Entropy-constrained VQ-VAE for deep-learning-based CSI feedback,” IEEE Trans. Veh. Technol. , vol. 74, no. 6, pp. 9870–9875, 2025. [12] H. Yin and D. Gesbert, “A partial channel reciprocity-based codebook for wideband FDD massive MIMO,” IEEE Trans. Wireless Commun. ,vol. 21, no. 9, pp. 7696–7710, 2022. [13] J.-J. Guo, C. Wen, M. Chen, and S. Jin, “Environment knowledge-aided massive MIMO feedback codebook enhancement using artificial intelligence,” IEEE Trans. Commun. , vol. 70, no. 7, pp. 4527–4542, 2022. [14] R. M. Dreifuerst and R. W. J. Heath, “Machine learning codebook design for initial access and CSI type-II feedback in sub-6-GHz 5G NR,” IEEE Trans. Wireless Commun. , vol. 23, no. 6, pp. 6411–6424, 2024. [15] J. Ho, A. Jain, and P. Abbeel, “Denoising diffusion probabilistic models,” in Proc. Adv. Neural Inf. Process. Syst. (NeurIPS) , vol. 33, 2020, pp. 6840–6851. [16] H. Kim et al. , “Generative diffusion model-based compression of MIMO CSI,” in Proc. IEEE Int. Conf. Commun. (ICC) , 2025, pp. 6323–6328. [17] L. Liu et al. , “The COST 2100 MIMO channel model,” IEEE Wireless Commun. , vol. 19, no. 6, pp. 92–99, 2012.
