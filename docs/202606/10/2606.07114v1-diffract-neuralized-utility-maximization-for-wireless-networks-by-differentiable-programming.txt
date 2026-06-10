@@ -1,0 +1,1034 @@
+Title: DIFFRACT: Neuralized Utility Maximization for Wireless Networks by Differentiable Programming
+
+URL Source: https://arxiv.org/pdf/2606.07114v1
+
+Published Time: Mon, 08 Jun 2026 01:13:32 GMT
+
+Number of Pages: 10
+
+Markdown Content:
+# DIFFRACT: Neuralized Utility Maximization for Wireless Networks by Differentiable Programming 
+
+Chee Wei Tan ∗, Siya Chen †∗Nanyang Technological University, Singapore, Nanyang Ave., Singapore  
+
+> †
+
+Department of Computer Science, City University of Hong Kong, Hong Kong 
+
+> ∗
+
+cheewei.tan@ntu.edu.sg, † siyachen4-c@my.cityu.edu.hk 
+
+Abstract —Next-generation wireless networks, including satellite-to-Open RAN systems, demand agile and intelligent resource management capable of handling dynamic multi-user interference under stochastic quality of service constraints. This paper introduces DIFFRACT, a neuralized utility maximization framework that leverages differentiable programming to integrate deep learning with optimization in wireless networks. Central to our approach is the exploitation of the mathematical structure of standard interference functions, which are foundational in wireless power control. By developing a duality theory for these functions, we map iterative interference management algorithms into differentiable neural network architectures via algorithm unrolling. This enables distributed, end-to-end gradient-based learning at the network edge, supporting real-time adaptation to interference in both terrestrial and non-terrestrial environments. DIFFRACT allows for scalable and robust utility maximization by modeling complex channel dynamics and leveraging the expressiveness of differentiable models. Experimental results confirm the framework’s theoretical soundness and practical effectiveness for next-generation wireless systems. 
+
+Index Terms —Wireless networks, Deep learning, Utility max-imization, Differentiable programming 
+
+I. I NTRODUCTION 
+
+Lower satellite launch costs and growing global broadband demand have accelerated the commercialization of Low Earth orbit (LEO) satellites, spurring non-terrestrial network initia-tives such as Starlink [1], [2]. These satellite-to-cell systems are poised to become integral components of next-generation wireless infrastructure, extending reliable connectivity to re-mote and underserved areas. At the same time, emerging wireless architectures such as 6G and Open Radio Access Networks (O-RAN) are being designed to support latency-sensitive and high-throughput applications by intelligently coordinating edge resources across heterogeneous terrestrial and non-terrestrial links [3]–[5]. The coexistence of diverse wireless interfaces and unpredictable interference poses funda-mental challenges to distributed resource management. These complexities often lead to over-provisioned designs or under-utilized spectrum, limiting network efficiency. Deep learning has shown great potential for wireless re-source optimization, offering the ability to learn adaptive policies directly from data in complex and dynamic environ-ments such as non-terrestrial and satellite-to-cell networks, bypassing the need for explicit modeling of channels and interference [6]–[11]. Traditional optimization methods often struggle with intractable interference and nonconvex problem structures, whereas neural networks can generalize across a wide range of channel conditions and accelerate computation significantly through parallel processing on GPUs [8]. Yet, deep learning alone often lacks the structure, interpretability, and convergence properties offered by classical theory. This paper proposes DIFFRACT, a framework based on dif-ferentiable programming to neuralize utility maximization in uncertain, interference-limited wireless networks. By embed-ding the mathematical structure of standard interference func-tions into a differentiable computational graph, DIFFRACT enables gradient-based learning of power control policies that are both scalable and theoretically grounded. This approach is motivated by the emerging trend of differentiable program-ming , fueled by automatic differentiation in deep learning frameworks such as PyTorch and TensorFlow, which allows complex models to be trained end-to-end using gradient-based methods [12]–[14]. Inevitably, differentiable programming en-ables end-to-end optimization in AI-native wireless stacks that are GPU-compatible, e.g., NVIDIA’s 6G Sionna [8]. In particular, we present new results rooted in the sem-inal standard interference function framework [15], uncov-ering new links between monotone operator and an over-looked differentiability property, which we integrate into a broader differentiable programming paradigm. Our approach is based on advances in contractive interference mappings [16], log-convexity structures [17], and differentiable convex programming frameworks such as LLCPs [14], [18]. These insights lead to DIFFRACT, a differentiable programming framework that embeds the structure of standard interfer-ence functions into computational graphs, enabling end-to-end learning through automatic differentiation tools like PyTorch and TensorFlow [12]–[14]. DIFFRACT is useful for satellite-to-cell networks with interference patterns due to atmospheric fading [19]–[21], transforming interference-limited settings into learning systems with differentiable programming. Moreover, the differentiability of these mappings offers programmable flexibility to accurately approximate complex real-world interference patterns, thereby enabling scalable, learning-based solutions for utility maximization in wireless networks. DIFFRACT leverages differentiable programming by integrating deep learning methods–such as algorithm un-rolling [22]–[24]–with fixed-point techniques. The duality framework not only guides the optimization but also offers 
+
+> arXiv:2606.07114v1 [cs.NI] 5 Jun 2026
+
+a certificate of optimality, enabling distributed wireless net-work optimization through a “ learn to optimize " paradigm. Differentiable programming allows the embedding of iterative algorithms–such as those arising from traditional optimization problems – directly into neural networks, where parameters can be trained through end-to-end gradient descent using automatic differentiation tools [12]–[14], [24], which offers a data-driven alternative to classical optimization-theoretic methods. Furthermore, our study investigates how key design choices–such as the depth of neural networks and the degree of programmability in function approximation and unrolled algorithm iterations–affect the performance and generalization capabilities of DIFFRACT. This helps guide the develop-ment of scalable, GPU-compatible learning-based optimization strategies such as amortized optimization [25], [26], advancing new differentiable neural solvers for wireless networks. The main contributions of this paper are: 1) We establish new results in duality and differentiability for the classical standard interference function, a foun-dational concept in wireless network resource allocation. These results enable differentiable programming for an AI-native optimization stack and guide the design of scalable, principled iterative solvers. 2) We develop a data-driven methodology to learn a broad class of implicit standard interference functions using neural networks. This approach leverages the derived primal-dual iterative algorithms and extends the appli-cability of standard interference models to a wider range of utility maximization tasks, enabling accurate modeling and fast adaptation in data-centric settings. 3) We introduce DIFFRACT, a deep learning architec-ture for scalable end-to-end differentiable programming. DIFFRACT efficiently learns interference models built on PyTorch and open-source differentiable proximal solver, supporting real-time deployment in wireless networks. This paper is organized as follows. In Section II, we introduce the wireless network model and the standard in-terference functions. In Section III, we develop the duality of standard interference functions that can be applied to utility maximization for wireless networks and optimally solved using primal and dual iterative algorithms. In Section VI, we propose a parameterized neural network-based framework for learning interference functions with illustrative examples. Then, we propose DIFFRACT to enable jointly distributed learning of interference functions and utility maximization that enhances the efficiency of training and distributed computation in Section V. Finally, we conclude the paper in Section VI. Notation: Bold uppercase letters denote matrices, bold low-ercase letters denote vectors, italics denote scalars, and u ≥ v
+
+indicates componentwise vector inequality. Let (Bu )l denote the lth element of Bu . Let diag (u) be the diagonal matrix formed by u. We write B ≥ F if Bij ≥ Fij for all i, j .The Perron-Frobenius eigenvalue of a nonnegative matrix F is denoted as ρ(F), and the right and left eigenvector of F asso-ciated with ρ(F) are denoted by x(F) ≥ 0 and y(F) ≥ 0 (or, simply x and y, when the context is clear) respectively. Recall that the Perron-Frobenius eigenvalue of F is the eigenvalue with the largest absolute value. Assume that F is an irreducible nonnegative matrix. 1 Then ρ(F) is simple and positive, and 
+
+x(F), y(F) > 0 [27]. The super-script (·)⊤ denotes transpose. Denote u/v by the vector [u1/v 1, . . . , u L/v L]⊤ and the Schur product between x and y by x ◦ y = ( x1y1, . . . , x LyL)⊤. For any vector ˜γ = [˜ γ1, . . . , ˜γL]⊤ ∈ RL, let e˜γ = [ e˜γ1 , . . . , e ˜γL ]⊤,and log x denotes log x = (log x1, . . . , log xL)⊤.II. I NTERFERENCE FRAMEWORK AND SYSTEM MODEL 
+
+A. Standard Interference Function 
+
+We revisit the standard interference function framework from [15], revealing its underlying monotone operator struc-ture and differentiability properties. This enables a new class of data-driven algorithms via differentiable programming. 
+
+Definition 1 (Standard Interference Function [15]): I(p) is a standard interference function if, for all p ≥ 0, the following properties are satisfied: 1) (Monotonicity) If p1 ≥ p2, then I(p1) ≥ I(p2).2) (Scalability) For any α > 1, α I(p) > I(αp).
+
+Lemma 1: [15] If I(p) ≤ p is feasible, I(p) has a unique fixed point p∗, which can be computed by the iteration p(t +1) = I(p(t)) with geometric convergence rate. 
+
+Lemma 2: Positivity and concavity of I(p) implies scala-bility of I(p).To see this, note that for all α > 1, we have 
+
+αI(p) = αI(1 /α · (αp) + (1 − 1/α ) · 0) ≥
+
+α ((1 /α ) · I(αp) + (1 − 1/α ) · I(0)) > α ·(1 /α )·I(αp)+ 0 =
+
+I(αp) where the last two inequalities are due to concavity and positivity respectively. However, the converse does not hold; that is, positivity and scalability do not imply concavity. A counterexample is Ii(p) = p2 
+
+> i
+
++ 3 if 0 ≤ pi ≤ 1 and 
+
+Ii(p) = 2 pi + 2 if pi > 1.We first state a new result for the standard interference function framework in [15] with applications to utility maxi-mization in the next section. Suppose that I(p) is differentiable and concave in p. Denote the derivative of I(p) by: 
+
+∇I(p) = 
+
+ ∂I i(p)
+
+∂p j
+
+
+
+> L×L
+
+. (1) Observe that ∇I(p) is an irreducible nonnegative matrix whose entries are nonnegative and continuous in p. The feasibility of I(p) ≤ p can be established by the following necessary and sufficient condition. 
+
+Theorem 1: If I(p) is differentiable and concave, then 
+
+I(p) ≤ p is feasible if and only if ρ(∇I(p)) < 1 for some 
+
+p ≥ 0.
+
+Definition 2: I(p) is a log-log convex standard interference function , if it fulfills the condition of standard interference function and, in addition, in the logarithmic domain, i.e., ˜p =log p, I(e˜p) is log-convex in ˜p.             
+
+> 1A nonnegative matrix Fis said to be irreducible if there exists a positive integer msuch that the matrix Fmhas all entries positive. LLCP
+> Sample data of implicit
+> standard interference function
+> Approximation with
+> maximum of monomials
+> Repeat until convergence
+> Unrolling
+> p(t)I(p(t)) p(t+ 1)
+> with
+> Neural Network
+> I(p(t)) p(k+1) p(k)
+> Algorithm
+> Unrolling
+> Fixed point of approximate
+> standard interference function
+> Framework of DIFFRACT
+> Solutions to
+> utility maxi -
+> mization Fig. 1: DIFFRACT as a differentiable programming framework for utility optimization approximates implicit interference functions via differentiable log-convex mapping and uses algorithm unrolling to compute fixed points, enabling end-to-end learning of globally optimal solutions.
+
+We study a broad class of concave and log-log convex standard interference functions that subsume all known cases and underpin wireless utility maximization [15], [28]. Notably, as I(e˜p) is convex and monotone, I(e˜p) can be treated as a 
+
+monotone operator established as follows. 
+
+Theorem 2 (Interference Function as Monotone Opera-tor): Let I : RL 
+
+> ++
+
+→ RL 
+
+> ++
+
+be a standard interference function that is continuously differentiable, positive, mono-tone and scalable. Define Φ : RL → RL by Φ(˜ p) =˜p − log I(e˜p). Then Φ is monotone (e.g., see [29]), i.e., 
+
+(Φ(˜ p1) − Φ(˜ p2)) ⊤ (˜ p1 − ˜p2) ≥ 0 for all ˜p1, ˜p2 ∈ RL.Let us sketch the proof outline. Define Ψ(˜ p) = log I(e˜p),so Φ(˜ p) = ˜ p − Ψ(˜ p). The Jacobian is 
+
+∇Φ(˜ p) = IL − ∇ Ψ(˜ p),
+
+where IL is identity matrix, and by the chain rule with q = e˜p,
+
+∇Ψ(˜ p) = diag (I(q)) −1 · ∇ I(q) · diag (q).
+
+Now, the symmetric part of ∇Φ is 12 (∇Φ + ∇ΦT ) =
+
+IL − 12 (∇Ψ + ∇ΨT ). Since I(q) is monotone and differ-entiable, ∇I(q) is positive semi-definite, and diag (I(q)) −1,diag (q) are positive definite. Thus, ∇Ψ has a positive semi-definite symmetric part, so IL − 12 (∇Ψ + ∇ΨT ) is positive semi-definite, implying that Φ is monotone, i.e., 
+
+(Φ(˜ p1) − Φ(˜ p2)) ⊤ (˜ p1 − ˜p2) ≥ 0 for all ˜p1, ˜p2 ∈ RL [29]. Theorem 2 enables the use of operator splitting techniques such as proximal point or forward-backward methods in [29], [30] to solve equations of the form ˜p⋆ = log I(e˜p⋆
+
+) with guaranteed convergence. An example is Nesterov’s adaptive step-size rule update [30]: 
+
+˜p(k + 1) = ˜ p(k) + αk(log I(e˜p(k)) − ˜p(k)) , (2) with αk = 21+ ρ(∇I(e˜p(k)) where the distance between one and the Perron-Frobenius eigenvalue of the Jacobian, δ (i.e., 
+
+1 − ρ(∇I(e˜p)) as the Jacobian is nonnegative) governs the convergence rate [29], [30]. The error after k iterations of (2) satisfies the bound [29], [30]: ∥˜p(k) − ˜p⋆∥2 ≤ C(1 − δ)k =
+
+Cρ (∇I(e˜p(k))) k, for some positive constant C determined by the initialization. This is as competitive as the fixed-point iteration in Lemma 1! This operator perspective enables differentiable programming [13] to address a broad class of wireless network optimization efficiently, as shown in Fig. 1. 
+
+B. System Model 
+
+Consider the system model of a wireless network with L
+
+users, each comprising a transmitter-receiver pair, commu-nicating simultaneously over a shared spectrum. The vector 
+
+p = ( p1, . . . , p L)⊤ denotes the allocation of transmit power, where pl represents the transmit power of the lth user. Let 
+
+G = [ Glj ]Ll,j =1 > 0L×L represent the wireless channel gain, where Glj is the channel gain from the jth transmitter to the 
+
+lth receiver, and n = ( n1, . . . , n L)⊤ > 0, where nl is the noise power at the lth user. We define the Signal-to-Interference-and-Noise Ratio (SINR) at the lth receiver as the ratio of the received signal power to the combined interference and noise power under frequency-flat fading, given by: SINR l(p) = Gll pl
+
+PLj=1 ,j ̸ =l Glj pj + nl
+
+. (3) Next, let us define a nonnegative vector: 
+
+v =
+
+ n1
+
+G11 
+
+, n2
+
+G22 
+
+, . . . , nL
+
+GLL 
+
+T
+
+,
+
+and a nonnegative matrix F with entries: 
+
+Flj =
+
+ 0, if l = jGlj /G ll , if l̸ = j . (4) Moreover, we assume that F is irreducible, i.e., each link has at least one interferer. Then the SINR of the lth user can be rewritten as: SINR l(p) = pl
+
+PLj=1 Flj pj + vl
+
+. (5) Suppose each SINR l(p) must exceed a reliability threshold γl,i.e., SINR l(p) ≥ γl. This constraint induces the well-known standard interference function [15]: 
+
+Il(p) = 
+
+> L
+
+X
+
+> j=1
+
+γlFlj pj + γlvl ≤ pl ∀, l, (6) which is feasible if and only if ρ(diag (γ)F) < 1, as estab-lished in Theorem 1. When the wireless channels experience fading (e.g., Rayleigh fading, Rician fading or Nakagami fading), the received power from the jth transmitter at the lth receiver is given by Glj hlj pj where hlj is a random variable reflecting the fading environment. The SINR of the lth user is a random variable in terms of the channel realization: SINR l(p) = hll pl
+
+PLj=1 Flj hlj pj + vl
+
+. (7) An outage occurs when the received SINR of the lth user falls below γl, a minimum SINR threshold for reliable communica-tion. This means that when SINR l(p) ≥ γl, the transmission at the lth receiver is successful; otherwise, the transmission fails. Denote the outage probability of the lth receiver/transmitter pair for a power vector p by Ol(p) and the outage constraint for the lth user by ¯Ol. The link reliability function of the lth user is given as the complement of the outage probability: 
+
+Ol(p) = Prob( SINR l(p) < γ l) ≤ ¯Ol. (8) While a closed-form standard interference function expres-sion for (8) is available under Rayleigh fading (e.g., see [31]), such expressions are generally intractable for other fading conditions, particularly atmospheric fading in space-to-ground communication scenarios [19]–[21]. This motivates the development of a framework that can algorithmically handle implicit interference functions for utility maximization under these more complex channel conditions. III. U TILITY MAXIMIZATION WITH LOG -LOG CONVEX 
+
+INTERFERENCE FUNCTION 
+
+In this section, we study a utility maximization problem with log-log convex differentiable interference function con-straints. We adopt an operator perspective by exploiting the problem’s duality, which yields fast fixed-point algorithms. Differentiability of these operators then enables a differen-tiable programming framework to learning implicit models and paving the way for neuralized utility maximization .
+
+A. Utility Maximization and Iterative Algorithm 
+
+Let u(p) denote the network utility, representing a met-ric of network quality-of-service. The power vector p =[p1, . . . , p L]⊤ is adjusted to maximize this utility, subject to interference constraints I(p) ≤ p. Consider the wireless utility maximization problem: maximize u(p)
+
+subject to I(p) ≤ p. (9) Letting ˜p = log p, we assume that the utility function u(e˜p)
+
+is concave and monotonically increasing in terms of ˜p. One example is the minimum of a series of competitive utility functions that satisfy the following assumptions [32]. 
+
+Definition 3 (Competitive Utility Functions [32]): 
+
+1) Competitiveness: For all i, the utility ui(p) is strictly increasing with respect to pi and strictly decreasing with respect to pj for all j̸ = i, whenever pi > 0.2) Directional Monotonicity: For any s > 1 and p > 0,
+
+ui(sp) > u i(p) for all i.3) ui(e˜p) is concave and monotonically increasing for all i.Now, taking a logarithmic transformation of the variables, (9) can be reformulated as: maximize u(e˜p)
+
+subject to log( I(e˜p)) ≤ ˜p, (10) which reduces to a convex optimization problem, thus allowing (9) to be solved optimally. Suppose the constraints in (9) are feasible and there exists an ˜p that is strictly feasible, i.e., Slater’s condition [33] is satisfied. Let us introduce the dual variable λ ∈ RL 
+
+> +
+
+and form the partial Lagrangian of (10) as: 
+
+L(˜ p, λ) = −u(e˜p) + λ⊤(log( I(e˜p)) − ˜p).
+
+Applying the Karush-Kuhn-Tucker (KKT) stationarity condi-tion [33] and transforming back to the original variables, we obtain the following key result. 
+
+Theorem 3: The optimal solution p∗ of (9) and the optimal dual solution λ∗ of (10) satisfy: 
+
+λ∗
+
+> l
+
+p∗
+
+> l
+
+= − ∂u (p∗)
+
+∂p l
+
++
+
+> L
+
+X
+
+> j=1
+
+λ∗
+
+> j
+
+p∗
+
+> j
+
+∂I j (p∗)
+
+∂p l
+
+∀ l. (11) Furthermore, the following iterations compute p∗ in (9) and 
+
+λ∗ in (10) from any positive initial points p(0) and x(0) :
+
+p(t + 1) = I(p(t)) , (12) 
+
+x(t + 1) = −∇ u(p(t)) + ∇I(p(t)) x(t), (13) and 
+
+λ(t + 1) = p(t + 1) ◦ x(t + 1) 
+
+if and only if ρ(∇I(p)) < 1 for some p ≥ 0.
+
+Remark 1: The fact that the spectral radius of the Jacobian matrix ∇I(p(t)) is strictly less than one for any p(t) (as shown in Theorem 1), has been established in [34] from a control-theoretic perspective based on studying the existence of a fixed point and its convergence behaviour, which are established using the contractive interference function findings in [16], [35]. Theorem 3 offers an alternative and practical interpretation of this result by linking Theorem 1 to the use of iterative algorithms for solving optimization problems. 
+
+B. Convex Relaxation to Utility Maximization 
+
+When the problem (9) is infeasible, we consider an ap-proximate power solution that relaxes the original constraints. Specifically, we introduce the following relaxation of (9): maximize u(p)
+
+subject to 
+
+> L
+
+Y
+
+> l=1
+
+ Il(p)
+
+pl
+
+wl
+
+≤ 1, (14) where w = [ w1, · · · , w L]⊤ is a positive vector that is a convex combination of the individual constraints in (9) and satisfying PLl=1 wl = 1 and wl ≥ 0. By letting ˜p = log p, (14) can be solved by the following convex optimization problem: maximize u(e˜p)
+
+subject to 
+
+> L
+
+X
+
+> l=1
+
+wl
+
+ log Il(e˜p) − ˜pl
+
+ ≤ 0. (15) 
+
+Remark 2: The term QLl=1 
+
+ Il(p)wl in (14) is concave as it is the weighted geometric mean of concave nonnegative functions, which preserves concavity under vector composi-tion [33]. If (9) is indeed feasible, then by Theorem 1 and Theorem 3, setting w = p⋆ ◦ x⋆ in (14) recovers the solution 
+
+p⋆ of (9), and the relaxation is tight. 
+
+C. Relationship to Nonlinear Perron-Frobenius Theory 
+
+We remark that an interesting duality arises between the al-gorithms for computing p and x, which can be understood via nonlinear Perron–Frobenius theory [32], [36]–[39]: the vectors 
+
+p and x can be viewed as Perron–Frobenius eigenvectors of suitably constructed nonlinear operators. 
+
+Theorem 4 (Perron–Frobenius Theorem Characterization): 
+
+Let I : RL 
+
+> +
+
+→ RL 
+
+> +
+
+be a differentiable concave standard interference mapping and let u : RL 
+
+> +
+
+→ R be a differ-entiable utility function. Suppose p⋆ satisfies p⋆ = I(p⋆)
+
+and ρ(∇I(p⋆)) < 1. By nonlinear Perron–Frobenius theory, such a map is nonexpansive in Hilbert’s projective metric 
+
+dH (p, q) := log max i pi/q i  
+
+> min ipi/q i
+
+, and admits a unique fixed point 
+
+p⋆ up to scaling, which minimizes the projective diameter of the orbit of I(·). The fixed point p⋆ = I(p⋆) plays the role of the nonlinear Perron–Frobenius eigenvector, characterized by a Collatz–Wielandt–type formula 
+
+inf  
+
+> p>0
+
+max 
+
+> i
+
+Ii(p)
+
+pi
+
+= sup 
+
+> p>0
+
+min 
+
+> i
+
+Ii(p)
+
+pi
+
+= 1 .
+
+Furthermore, x⋆ in Theorem 3 satisfies x⋆ = ∇I(p⋆) x⋆ −∇u(p⋆), or equivalently, 
+
+x⋆ =  IL − ∇ I(p⋆)−1 −∇ u(p⋆).
+
+Moreover, since I(·) is concave, the Jacobian mapping p 7 →∇I(p) is order-preserving and concave, and the induced op-erator x 7 → ∇ I(p⋆)x belongs to the class of concave Perron– Frobenius operators. Consequently, x⋆ lies in the Perron– Frobenius cone of ∇I(p⋆).The special case where ∇u(p⋆) = −wT p and I(p) = 
+
+Fp + v leads to a solution p⋆ and x⋆ that recovers the 
+
+uplink-downlink duality and yields a PageRank-like structure, as shown in [40]. Also, the Collatz-Wielandt-type objective function is a restatement of scalability in Definition 1 [41]. 
+
+Remark 3: Since I(e˜p) is convex in ˜p, its Jacobian matrix 
+
+J(˜ p) := ∂I i(˜ p)  
+
+> ∂˜pj
+
+has nonnegative entries and satisfies 
+
+J(˜ p) = diag  I(e˜p)−1∇I(e˜p) diag  e˜p,
+
+where ∇I(·), characterized in Theorems 1 and 2, enables efficient automatic differentiation techniques studied next. …                       
+
+> Power p1
+> pLPower
+> Prob →
+> c1i
+> ω1i1
+> ω1iL
+> …
+> Power p1
+> pLPower
+> Prob →
+> …
+> ωKi 1
+> ωKiL
+> aKi 1
+> aKiL
+> bKi
+> b1i
+> a1i1
+> a1iL
+> cKi
+> z1i
+> zKi
+> Max Ii
+> pL
+> ωIi
+> ωzKi
+> =
+> {1,if K=k→
+> l
+> 0,else
+> ωIi
+> ωb1i
+> =ωIi
+> ωz1i
+> c1i
+> ωIi
+> ωa1i1
+> =ωIi
+> ωb1i
+> b1i
+> a1i1
+> ωIi
+> ωa1iL
+> =ωIi
+> ωb1i
+> b1i
+> a1iL
+> ωIi
+> ωz1i
+> =
+> {1,if 1 = k→
+> l
+> 0,else
+> ωIi
+> ωε 1i1
+> =ωIi
+> ωb1i
+> b1iln p1
+> ωIi
+> ωε 1iL
+> =ωIi
+> ωb1i
+> b1iln pL
+> ωIi
+> ωε KiL
+> =ωIi
+> ωbKi
+> bKi ln pL
+> ωIi
+> ωε Ki 1
+> =ωIi
+> ωbKi
+> bKi ln p1
+> ωIi
+> ωbKi
+> =ωIi
+> ωzKi
+> cKi
+> ωIi
+> ωaKi 1
+> =ωIi
+> ωbKi
+> bKi
+> aKi 1
+> ωIi
+> ωaKiL
+> =ωIi
+> ωbKi
+> bKi
+> aKiL
+
+Fig. 2: Computational graph of the DIFFRACT framework, implementable in PyTorch with automatic differentiation, for modeling standard interference functions (potentially non-smooth) by using Lemma 3 and Theorem 1. 
+
+IV. DIFFRACT: LLCP M ODELING AND ALGORITHM 
+
+UNROLLING FOR UTILITY MAXIMIZATION 
+
+While the standard interference function framework enables fast-converging iterative algorithms, this is limited to determin-istic closed-form expressions. To overcome this limitation, we must extend the framework to accommodate implicit standard interference functions —those that cannot be expressed in deterministic form, such as in the case of general fading in (8). To address this, we propose a data-driven framework called DIFFRACT. Specifically, we approximate a log-log convex but implicit standard interference function using the LLCP model in [14], converting it into explicit expressions with monomials. We then employ algorithm unrolling [22], [23] to transform the fixed-point iterations into a fixed-depth neural network, whose parameters are then data-optimized to maximize computational efficiency. The architecture of DIFFRACT is shown in Fig. 1. 
+
+A. Modeling Standard Interference Functions with LLCP for Stochastic Outage Probability 
+
+To approximate the implicit standard interference function in (8), we use a data-driven method in [14] to learn alog-log convex function from data, leveraging a monomial basis for its approximation as given by the following lemma. The approximation accuracy is then demonstrated through illustrative examples with validation against ground truth. 
+
+Lemma 3: Consider the standard interference function 
+
+I(p) (16) 
+
+=
+
+ max  
+
+> k=1 ,··· ,K
+
+ck1
+
+> L
+
+Y
+
+> j=1
+
+pθk1j
+
+> j
+
+ , · · · , max  
+
+> k=1 ,··· ,K
+
+ckL LY
+
+> j=1
+
+pθkLj 
+
+> j
+
+
+
+where ckl ≥ 0, θ klj ≥ 0. Suppose PLj=1 θklj + ϵ ≤ 1 for all 
+
+l, k for some positive ϵ, I(p) is feasible and log-log convex. We learn the parameters ckl and θklj in (16) from training data via the LLCP model in [14]: 
+
+ˆy(p) = argmin y 1⊤(z/y + y/z)subject to zl = max  
+
+> k=1 ,··· ,K
+
+ckl LY
+
+> j=1
+
+pθklj 
+
+> j
+
+ , ∀ l
+
+variables : y, z ∈ RL
+
+> +
+
+, (17) where ckl and θklj are the learning parameters, and pj denotes the input of the training data to (17). Suppose we have a training dataset D consisting of |D| input-output pairs 
+
+{p(i), y(i)} ∈ D. We evaluate the performance of (17) on this dataset using the following mean squared error loss: 
+
+E(c, θ) = M
+
+> K
+
+X
+
+> k=1
+> L
+
+X
+
+> l=1
+
+ϕ(
+
+> L
+
+X
+
+> j=1
+
+θklj − 1) + 1
+
+|D|
+
+X
+
+> {p(i),y(i)}∈ D
+
+∥y − ˆy(p(i)) ∥22, (18) where c = ( ckl )K×L, θ = ( θklj )K×L×L, M is a large positive number and ϕ(·) is a penalty function, e.g., ϕ(PLj=1 θklj −
+
+1) = 
+
+
+
+max 
+
+n
+
+0, PLj=1 θklj − 1
+
+o 2
+
+. The first term of (18) is differentiable (due to the square and despite max ) and ensures that PLj=1 θklj < 1, i.e., I(p) ≤ p is feasible. We minimize the training loss E(c, θ) via gradient descent, with gradients obtained through automatic differentiation (e.g., PyTorch autograd ); Fig. 2 illustrates the resulting computational graph. This is summarized in Algorithm 1. 
+
+Algorithm 1: Monomial approximation via automatic differentiation. 
+
+Input : Training dataset D with input-output pairs 
+
+(p(i), y(i)) ∈ D.
+
+Initialize : Learning parameters c(0) and θ(0) , learning rate ηc and ηθ .
+
+for i = 1 , . . . , |D| do 
+
+Obtain ˆy(p(i)) by solving (17) with c(i), θ(i) and 
+
+p(i).Use automatic differentiation (e.g., Pytorch autograd ) to compute the gradients 
+
+∇cE(c(i), θ(i)) and ∇θ E(c(i), θ(i)) .Update the parameters 
+
+c(i + 1) = c(i) − ηc∇cE(c(i), θ(i)) and 
+
+θ(i + 1) = θ(i) − ηθ ∇θ E(c(i), θ(i)) .
+
+end Output : Monomial approximation I(p) in (16) with learned c and θ.We evaluate the effectiveness of the LLCP model in (17) in approximating the implicit function I(p) in (8) with ex-plicit expressions under Rayleigh and Rician fading models relevant to satellite-terrestrial networks [19], [20], [42], [43]. Interestingly, Rayleigh fading allows closed-form deterministic functions, hence enabling direct validation of the LLCP model in (17). In contrast, Ricean fading lacks exact expressions, but can still be effectively approximated using the same model. 
+
+1) Modeling Interference Function for Outage Constraints under Rayleigh fading: Suppose both the desired signals and interference signals are subject to Rayleigh fading, then hlj 
+
+are independent and exponentially distributed with unit mean, i.e., E [Flj hlj pj ] = Flj pj [44]. The outage probability of the 
+
+ith user can be written in closed-form as [44]: 
+
+Ol(p) = Prob (SINR l(p) < γ l)= 1 − e −γlvlpl
+
+> L
+
+Y 
+
+> j=1 ,j ̸=l
+
+
+
+1 + γlFlj pj
+
+pl
+
+−1
+
+≤ ¯Ol. (19) Taking the logarithm of (19), we have: 
+
+Il(p) = 
+
+vl + pl
+
+PLj=1 ,j ̸ =l log 
+
+
+
+1 + γlFlj pj
+
+> pl
+
+
+
+log( 11− ¯Ol ) ≤ pl, (20) where Il(p) is proved to be a standard interference function in [45] and its concavity established later in [31], [32]. Besides facilitating the algorithm design development of using Il(p) in (20) to solve a broader class of utility maximization problems in (9) [32], [44], [45], the deterministic form of Il(p) in (20) gives the ground truth to evaluate the generalization error of the LLCP in (17) when fitting an unknown standard inter-ference function. Specifically, we fit the standard interference function in (20) using the maximum monomials through (17), which serves as a reference point to validate our approach. 
+
+Example 1: Consider a wireless network with two users whose transmit powers are subject to Rayleigh fading with SINR thresholds being γ1 = γ2 = 10 and the noise variance v1 = v2 = 0.1 pW. The channel gain matrix is G = [1 .19 , 2.13; 1 .69 , 1.64] ⊤. Let the outage constraints be ¯O1 = ¯O2 = 0.1. We use the LLCP model in(16) to approximate (20). Setting K = 3 in (16), we obtain c1 =[2 .1, 1.6, 6.3] , c2 = [1 .1, 1.5, 2.5] , c3 = [0 .1, 1.2, 1.3] , θ1 =[0 .23 , 0.12; 0 .50 , 0.49] ⊤, θ2 = [0 .63 , 0.16; 0 .27 , 0.46] ⊤, and 
+
+θ3 = [0 .47 , 0.25; 0 .57 , 0.26] ⊤. Fig. 3(a) and Fig. 3(b) show the effectiveness of LLCP in (16) to model outage probabilities under Rayleigh fading for User 1 and User 2. Blue scatter points show sample data; surfaces depict the approximated standard interference functions. LLCP-based monomials show a strong fit to the observed outage probabilities. 
+
+2) Modeling Interference Function for Outage Constraints under Ricean Fading: If the random variables characterizing the fading channel do not follow the independent Rayleigh distribution, but instead adhere to the Ricean or Nakagami distribution [20], [43], obtaining expressions for outage prob-abilities in a deterministic manner becomes challenging, and thus using Lemma 1 directly to obtain the fixed points of the implicit standard interference functions for the utility maximization problem in (9) becomes impractical. Under Ricean fading, the received signal envelope has a Rayleigh distribution, and the received signal power has a non-central chi-square distribution [20], [42], [43]: 
+
+F (hlj |K, Ω) = K + 1 Ω exp ( −K − (K + 1) hlj 
+
+Ω )I0(2 
+
+r K(K + 1) hlj 
+
+Ω ) ,where I0(·) is the zeroth-order modified Bessel function of the first kind. As a special case with K = 0 , Rician fading reduces to Rayleigh fading, which is known to yield a concave standard interference function [31]. We approximate Il(p)
+
+with monomial-based standard interference functions via the LLCP method, enabling the iterative algorithm in Section III to compute approximate solutions. 
+
+Example 2: Let us consider another wireless network where the transmit powers are subject to Ricean fading. Given the SINR threshold γi for each user, the outage constraint 
+
+¯Oi, the noise variance vi, and the channel gain matrix as detailed in Example 1, the sampled data generated by Il(p)
+
+in (20) is depicted in Fig. 3. Using LLCP-based monomials to model the standard interference function Il(p), the parameters in the approximation I(p) in (16) are as follows: c1 =[1 .8, 0.9, 1.6] , c2 = [1 .8, 0.8, 1.4] , and c3 = [1 .9, 0.8, 1.5] ,
+
+θ1 = [0 .13 , 0.43; 0 .65 , 0.29] ⊤, θ2 = [0 .12 , 0.42; 0 .67 , 0.30] ⊤,and θ3 = [0 .13 , 0.40; 0 .70 , 0.28] ⊤. Fig. 3(c) and Fig. 3(d) show the effectiveness of LLCP in (16) to model the I(p)
+
+in (8) under Ricean fading for users 1 and 2. The blue scatter points represent the sample data, while the surfaces illustrate the approximate standard interference functions, also exhibiting an excellent fit. p1    
+
+> 020 40 60
+> p2
+> 020 40 60 80
+> I2(p)
+> 2468
+> (a) p1
+> 020 40 60
+> p2
+> 020 40 60 80
+> I1(p)
+> 0510 15 (b) p1
+> 025 50 75 100 125 150
+> p2
+> 025 50 75 100 125 150
+> I2(p)
+> 0246
+> (c) p1
+> 025 50 75 100 125 150
+> p2
+> 025 50 75 100 125 150
+> I1(p)
+> 0246810 (d) Fig. 3: Illustration of using LLCP to approximate the outage probability constraints with monomials under Rayleigh fading ((a) and (b)) and Ricean fading ((c) and (d)).
+
+B. Differentiable Programming by Algorithm Unrolling 
+
+Algorithm unrolling is a deep learning technique that estab-lishes a link between iterative algorithms (e.g., sparse coding) and neural network architectures [22], [23] . In essence, algorithm unrolling maps each iteration to a network layer, enabling a trainable deep neural network that embeds op-timization logic within a differentiable programming frame-work, enhancing both performance and interpretability [13]. As an illustrative example, consider the stochastic outage probability problem under fading channel conditions: minimize − u(p)
+
+subject to Prob (SINR l(p) < γ l) ≤ ¯Ol ∀ l. (21) Applying the LLCP model in (17) from Section IV to the outage probability constraints, we obtain an approximation of problem (21): minimize − u(p)
+
+subject to max  
+
+> k=1 ,··· ,K
+
+ckl LY
+
+> j=1
+
+pθklj 
+
+> j
+
+ ≤ pl ∀ l. (22) According to Theorem 3, the optimal solution to the prob-lem (22) can be obtained by the following iteration: 
+
+pl(t + 1) = max  
+
+> k=1 ,··· ,K
+
+ckl LY
+
+> j=1
+
+pθklj  
+
+> j
+
+(t)
+
+ , (23) 
+
+xl(t + 1) = − ∂u (p(t)) 
+
+∂p l
+
++ ckl LY
+
+> i=1
+
+pθkli  
+
+> i
+
+(t)
+
+> L
+
+X
+
+> j=1
+
+θklj p−1 
+
+> j
+
+(t)xj (t),
+
+(24) where k = argmax ˆkcˆkl 
+
+QLj=1 pθˆklj  
+
+> j
+
+(t) for ˆk = 1 , . . . , K ,and 
+
+λl(t + 1) = pl(t + 1) xl(t + 1) . (25) We now apply algorithm unrolling to construct a fixed-depth nonlinear feedforward model, trained to approximate the optimal solution of (21). The key idea is to utilize feedforward networks whose structure corresponds to a finite number of iteration steps in (23), (24), and (25). Denote the model depth by T . We let ˜p = log p and ˜c = log c. The architecture can be interpreted as a time-unfolded recurrent neural network over steps t ≤ T , as follows: 
+
+sk(t+1) = f ( ˆ w(t+1)( θk ˜p(t) + ˜ ck)) , (26) 
+
+˜p(t+1) = max   
+
+> k=1 ,··· ,K
+
+{sk(t+1) } , (27) 
+
+x(t + 1) = f ( ˘ w(t)∇(I(p(t+1))) x(t) + ∇u(p(t+1))) ,
+
+(28) 
+
+λ(t + 1) = p(t + 1) ◦ x(t + 1) , (29) where f (·) is a nonlinear activation function (e.g., ReLU) and 
+
+∇(I(p(t))) lj = ckl LY
+
+> i=1
+
+pθkli  
+
+> i
+
+(t)θklj p−1 
+
+> j
+
+(t),
+
+where k = argmax ˆkcˆkl 
+
+QLj=1 pθˆklj  
+
+> j
+
+(t) for ˆk = 1 , . . . , K . De-note the architecture of our unrolled model by [p(T ); λ(T )] = 
+
+F(θ, c, w), where w = { ˆw(t), ˘w(t)} for t = 1, . . . , T .Suppose we are given a training set ¯D with | ¯D| training samples. For the mth sample {(θm, cm), (p∗
+
+> m
+
+, λ∗
+
+> m
+
+)} ∈ ¯D,
+
+(θm, cm) are the inputs and (p∗, λ∗) are the ground truth of outputs. The loss function is defined as the squared error between the predicted solution and the optimal solution to the problem (22): 
+
+E(w) = 1
+
+| ¯D|
+
+X 
+
+> {(θm,cm),(p∗
+> m,λ∗
+> m)}∈ ¯D
+
+∥[p∗
+
+> m
+
+; λ∗
+
+> m
+
+] − f (θm, cm, w)∥2.
+
+(30) We train the parameters w by minimizing the loss E(w),with gradients obtained via automatic differentiation (e.g., 
+
+PyTorch autograd ). Algorithm 2 presents DIFFRACT for computing approximate primal and dual solutions to (22). 
+
+Algorithm 2: DIFFRACT via Algorithm Unrolling 
+
+Input : Training dataset ¯D with input-output pairs 
+
+{D m, (p∗
+
+> m
+
+, λ∗
+
+> m
+
+)} ∈ ¯D, where Dm is a dataset with input-output pairs (pm(i), ym(i)) ∈ D m.
+
+Initialize: p(0) = 0,x(0) = 0, learning parameters 
+
+w(0) = ( w1(0) , w2(0) , b1(0) , b2(0)) and learning rate ηw.
+
+for m = 1 , . . . , | ¯D| do 
+
+Obtain cm and θm of the | ¯D| monomial vectors using Algorithm 1 with Dm.
+
+for t = 1 , . . . , T do 
+
+sk(t+1) = f ( ˆ w(t+1)( θk ˜p(t) + ˜ ck)) ,
+
+˜p(t+1) = max   
+
+> k=1 ,··· ,K
+
+{sk(t+1) } ,
+
+x(t+1) = f ( ˘ w(t)∇(I(p(t+1))) x(t)+ ∇u(p(t+1))) ,
+
+λ(t + 1) = p(t + 1) ◦ x(t + 1) .
+
+end 
+
+Use automatic differentiation (e.g., Pytorch autograd ) to compute the gradient ∇E(w(t)) 
+
+and update w(t + 1) = w(t) −ηw∇E(w(t)) .
+
+end 
+
+Implemented in PyTorch, Algorithm 2 frames the primal-dual optimization loop as a differentiable computational graph. Each iteration is modeled as a neural layer using learned monomial mappings for both primal and dual updates. Lever-aging PyTorch’s autograd engine in [18], this setup can enable end-to-end training with gradient-based optimization and GPU acceleration integrated with NVIDIA’s SONNIA framework [7], [8] by integrating Algorithm 2 with ∇-Prox [46], an ML compilation framework for generating memory-efficient differentiable solvers, thus enabling rapid prototyping and fully differentiable resource allocation under interference constraints in an AI-native wireless network stack. V. P ERFORMANCE EVALUATION 
+
+In this section, we provide numerical examples to demon-strate the effectiveness of the proposed DIFFRACT framework for solving the utility maximization problem in Section III. 
+
+A. Performance of LLCP 
+
+Consider a wireless network with eight transmitter-receiver pairs under Rayleigh, Ricean, and Nakagami fading, focusing on minimizing total power while meeting outage probability constraints in (21). For each scenario, we generate 1,000 samples of the implicit standard interference function derived from the outage probability constraints. We then apply the LLCP model to fit this sample data, allowing us to approximate the implicit standard interference functions using a maximum of monomials for each problem instance. The LLCP model for fitting the implicit standard interference functions is set as (16), where ckl and θklj for all k, l and j are learning parameters. We set the number of monomials as K = 3 , 5, 8
+
+and 10 . The loss function is defined as (18), where the penalty scalar M = 1 × 10 3. We set the learning rate as 2 × 10 −3.To assess the performance of the LLCP model in (17), we use metrics: utility accuracy and power allocation accuracy. Utility accuracy measures the ratio between the predicted utility and the maximum achievable utility, indicating the model’s ability to approximate optimal utility values. Power allocation accuracy measures the closeness of predicted to ground truth allocations, reflecting the model’s effectiveness in solving the problem. We approximate the standard interference function using Lemma 3. For Rayleigh fading, ground truth values come from the iterative algorithm in [31], while for Rician and Nakagami fading, we use exhaustive search for benchmarking. Tables I and II compare the utility and power allocation accuracy using different numbers of monomials to fit implicit standard interference functions under various fading conditions. We observe in our numerical evaluations that the LLCP model approximates these functions well at K = 8 and only marginal gains beyond that. 
+
+B. Performance of Algorithm Unrolling 
+
+We now evaluate the algorithm unrolling method for the approximate standard interference function using the maxi-mum of monomials. We consider the utility maximization problem involving eight users, with the number of monomials fixed at 8. The unrolled model for computing the maximum over monomials is given by (26) to (29). The model takes as input the vectors θk and ck, and is trained using the loss in (30). We generate 10 6 samples, splitting them into 80% 
+
+for training and 20% for testing, with 10-fold cross-validation for robustness. The validation datasets are constructed using the approximate standard interference functions defined earlier. For problem instances subject to Rayleigh fading, ground truth values are obtained using the iterative algorithm in [31]. For scenarios involving Ricean and Nakagami fading, we compute the ground truth using a brute force discretization search. We first examine how the number of layers in the unrolled model affects the approximation of standard interference func-tions for utility maximization under different fading environ-ments. Fig. 4 illustrates the maximum utility results obtained from the unrolled model across varying numbers of layers under Rayleigh fading, Ricean fading, and Nakagami fading, respectively. Interestingly, the model achieves the highest util-ities with 4 layers. We also demonstrate the unrolled model’s superior performance by comparing it against established baselines: the Adaptive Outage-based Power Control (AOPC) 020 40 60 80 
+
+> 100
+> 120
+> 140
+> 160
+> 180
+> 200
+> 220
+> 240
+> 260
+> 280
+> Epochs
+> 1.1
+> 1.2
+> 1.3
+> 1.4
+> 1.5
+> Utility
+> Rayleign fading
+> layers= 3
+> layers= 4
+> layers= 5
+> layers= 6
+
+(a) 020 40 60 80  
+
+> 100
+> 120
+> 140
+> 160
+> 180
+> 200
+> 220
+> 240
+> 260
+> 280
+> Epochs
+> 1.15
+> 1.20
+> 1.25
+> 1.30
+> 1.35
+> 1.40
+> 1.45
+> 1.50
+> Utility
+> Ricean fading
+> layers= 3
+> layers= 4
+> layers= 5
+> layers= 6
+
+(b) 020 40 60 80  
+
+> 100
+> 120
+> 140
+> 160
+> 180
+> 200
+> 220
+> 240
+> 260
+> 280
+> Epochs
+> 1.10
+> 1.15
+> 1.20
+> 1.25
+> 1.30
+> 1.35
+> 1.40
+> 1.45
+> Utility
+> Nakagami fading
+> layers= 3
+> layers= 4
+> layers= 5
+> layers= 6
+
+(c) Fig. 4: An illustration of the performance of Algorithm 2 in unrolling the standard interference function to compute the optimal utility values of the utility maximization problem under various fading conditions: Rayleigh fading (a), Ricean fading (b), and Nakagami fading (c). 
+
+Rayleigh Fading Ricean fading Nakagami fading 
+
+K = 3 0.9291 0.9248 0.9235 
+
+K = 5 0.9391 0.93497 0.9400 
+
+K = 8 0.9834 0.9876 0.9793 
+
+K = 10 0.9856 0.9909 0.9834 
+
+TABLE I: Comparison of utility accuracy across various monomials used to fit implicit standard interference functions for wireless systems in diverse fading environments. 
+
+Rayleigh Fading Ricean fading Nakagami fading 
+
+K = 3 0.9177 0.9131 0.9195 
+
+K = 5 0.9259 0.9302 0.9228 
+
+K = 8 0.9697 0.9617 0.9645 
+
+K = 10 0.9760 0.9633 0.9687 
+
+TABLE II: Comparison of power accuracy across various monomials used to fit implicit standard interference functions for wireless systems in diverse fading environments. 
+
+algorithm in [31] for Rayleigh fading, the large deviations principle (LDP) algorithm from [47] for Ricean fading, and the convex relaxation (CR) algorithm from [48] for Nakagami fading. TABLE IV summarizes the results of maximal utility under different fading environments. We observe that while our unrolled model yields slightly lower values than the ground truth, it outperforms other approximation methods. Table IV further shows that it achieves the highest efficiency compared to all baselines. TABLE IV presents the results of maximal utility across various fading environments. Although the output from our unrolled model are slightly below the ground truth values, they surpass the performance of other approximate methods. Furthermore, Table IV compares the efficiency of our proposed methods with several baselines, highlighting that the unrolled model achieves the highest efficiency. 
+
+Environment Rayleigh fading Ricean fading Nakagami fading Algorithm 1 0.9902 0.98851 0.9899 Algorithm 2 0.9704 0.9622 0.9664 AOPC [31] 1.0000 – –LDP [47] – 0.9525 –CR [48] – – 0.9434 TABLE III: Comparison of the utility accuracy performance for approximate standard interference functions using LLCP (Algorithm 1) and Algorithm Unrolling (Algorithm 2), benchmarked against different baselines based on existing state-of-the-art algorithms for various wireless fading conditions. Environment Rayleigh fading Ricean fading Nakagami fading Algorithm 1 10.9086 11.2013 11.3778 Algorithm 2 1.5690 1.6889 1.2701 AOPC [31] 9.5252 – –LDP [47] – 8.6566 –CR [48] – – 9.6425 TABLE IV: Comparison of time efficiency (seconds) for approximate standard interference functions using LLCP (Algorithm 1) and Algorithm Unrolling (Algorithm 2), benchmarked against different baselines under various fading channel conditions. 
+
+VI. C ONCLUSION 
+
+This paper presents DIFFRACT, a general differentiable programming framework for utility maximization in wire-less networks, particularly effective in managing resources under unpredictable interference, as commonly encountered in satellite-terrestrial systems. Our work reveals new dual-ity results by establishing the differentiability and monotone operator characterization of standard interference functions. This provides a nonlinear Perron-Frobenius operator perspec-tive that enables smooth integration into differentiable pro-gramming and modern deep learning frameworks with effi-cient automatic differentiation. DIFFRACT models complex interference patterns–such as outage in atmospheric fading, which is critical for space-to-ground communication–within an end-to-end trainable, AI-native stack by unrolling a util-ity maximization algorithm with implicit interference con-straints into differentiable primal-dual updates. Experiments show DIFFRACT offers theoretically sound performance and scalability for AI-native resource control in wireless network optimization. Future work will leverage the monotone operator characteristics in Theorems 2 to 4 to design deep implicit layers in the DIFFRACT framework, enabling differentiation through utility maximization via fixed-point strategies [49], [50]. This approach will integrate first-order neural accelera-tion to improve convergence and enable scalable, distributed learning in AI-native wireless networks. VII. A CKNOWLEDGEMENT 
+
+The research was supported in part by NTU startup and the Singapore Ministry of Education Academic Research Fund (MOE-T2EP20224-0009). REFERENCES [1] G. Giuliari, T. Klenze, M. Legner, D. Basin, A. Perrig, and A. Singla, “Internet backbones in space,” ACM SIGCOMM Computer Communi-cation Review , vol. 50, no. 1, pp. 25–37, 2020. [2] S. K. Sharma, S. Chatzinotas, and B. Ottersten, “Satellite cognitive com-munications: Interference modeling and techniques selection,” in 2012 6th Advanced Satellite Multimedia Systems Conference (ASMS) and 12th Signal Processing for Space Communications Workshop (SPSC) , 2012. [3] J. A. Fraire, O. Iova, and F. Valois, “Space-terrestrial integrated internet of things: Challenges and opportunities,” IEEE Communications Maga-zine , vol. 60, no. 12, pp. 64–70, December 2022. [4] R. Shafin, L. Liu, V. Chandrasekhar, H. Chen, J. Reed, and J. C. Zhang, “Artificial intelligence-enabled cellular networks: A critical path to beyond-5G and 6G,” IEEE Wireless Communications , vol. 27, no. 2, pp. 212–217, 2020. [5] M. Hosseinian, J. P. Choi, S.-H. Chang, and J. Lee, “Review of 5G NTN standards development and technical challenges for satellite integration with the 5G network,” IEEE Aerospace and Electronic Systems Magazine , vol. 36, no. 8, pp. 22–31, 2021. [6] T. O’Shea and J. Hoydis, “An introduction to deep learning for the physical layer,” IEEE Trans. Cognitive Communications and Network-ing , vol. 3, no. 4, pp. 563–575, Dec. 2017. [7] J. Hoydis, F. A. Aoudia, S. Cammerer, F. Euchner, M. Nimier-David, and S. T. Brink, “Learning radio environments by differentiable ray tracing,” 
+
+IEEE Trans. Machine Learning in Communications and Networking ,vol. 2, pp. 1527–1539, 2024. [8] J. Hoydis, F. A. Aoudia, S. Cammerer, M. Nimier-David, N. Binder, G. Marcus, and A. Keller, “Sionna rt: Differentiable ray tracing for radio propagation modeling,” in IEEE Globecom Workshop , 2023. [9] H. Sun, X. Chen, Q. Shi, M. Hong, X. Fu, and N. D. Sidiropoulos, “Learning to optimize: Training deep neural networks for interference management,” IEEE Trans. Signal Processing , vol. 66, no. 20, pp. 5438– 5453, 2018. [10] W. Cui, K. Shen, and W. Yu, “Deep learning for robust power control for wireless networks,” in IEEE ICASSP , 2020. [11] S. Chen, C. W. Tan, X. Zhai, and H. V. Poor, “Openranet: Neural-ized spectrum access by joint subcarrier and power allocation with optimization-based deep learning,” IEEE Transactions on Green Com-munications and Networking , 2025. [12] C. Olah. (2015) Neural networks, types, and functional programming. Accessed: 2025-03-08. [Online]. Available: https://colah.github.io/posts/ 2015-09-NN-Types-FP [13] M. Blondel and V. Roulet, “The Elements of Differentiable Program-ming,” arXiv preprint arXiv:2403.14606 , 2024. [14] A. Agrawal and S. Boyd, “Differentiating through log-log convex programs,” arXiv preprint arXiv:2004.12553 , 2020. [15] R. D. Yates, “A framework for uplink power control in cellular radio systems,” IEEE Journal on Selected Areas in Communications , vol. 13, no. 7, pp. 1341–1347, 1995. [16] H. R. Feyzmahdavian, M. Johansson, and T. Charalambous, “Contractive interference functions and rates of convergence of distributed power control laws,” IEEE Trans. Wireless Communications , vol. 11, no. 12, pp. 4494–4502, 2012. [17] H. Boche and M. Schubert, “A calculus for log-convex interference functions,” IEEE Trans. Information Theory , vol. 54, no. 12, pp. 5469– 5490, 2008. [18] A. Agrawal, B. Amos, S. Barratt, S. Boyd, S. Diamond, and J. Z. Kolter, “Differentiable convex optimization layers,” in NeurIPS , 2019. [19] G. Noh, H. Chung, and I. Kim, “Outage analysis for terrestrial-satellite spectrum sharing,” IEEE Communications Letters , vol. 24, no. 10, 2020. [20] T. V. Chien, E. Lagunas, T. M. Hoang, S. Chatzinotas, B. Ottersten, and L. Hanzo, “Space-terrestrial cooperation over spatially correlated channels relying on imperfect channel estimates: Uplink performance analysis and optimization,” IEEE Trans. Communications , vol. 71, no. 2, pp. 773–791, 2023. [21] Y. K. Chahine, E. J. Katz, B. E. Vyhnalek, and S. A. Tedder, “Statistical analysis of fading power vectors for real-time atmospheric channel emulation,” in Proceedings of SPIE Photonics West , 2023. [22] K. Gregor and Y. LeCun, “Learning fast approximations of sparse coding,” in 27th International Conference on Machine Learning , 2010. [23] V. Monga, Y. Li, and Y. C. Eldar, “Algorithm unrolling: Interpretable, efficient deep learning for signal and image processing,” IEEE Signal Processing Magazine , vol. 38, no. 2, pp. 18–44, 2021. [24] X. Chen, J. Liu, and W. Yin, “Learning to optimize: A tutorial for continuous and mixed-integer optimization,” arXiv preprint , 2024. [Online]. Available: https://arxiv.org/html/2405.15251 [25] A. Agrawal, S. Barratt, and S. Boyd, “Learning convex optimization models,” IEEE/CAA Journal of Automatica Sinica , vol. 8, no. 8, 2021. [26] N. Shlezinger, Y. C. Eldar, and S. P. Boyd, “Model-based deep learning: On the intersection of deep learning and optimization,” IEEE Access ,vol. 10, pp. 115 384–115 398, 2022. [27] E. Seneta, Non-negative Matrices and Markov Chains . Springer, 1981. [28] M. Chiang, P. Hande, T. Lan, and C. W. Tan, “Power control in wireless cellular networks,” Foundations & Trends in Networking , vol. 2, no. 4, pp. 381–533, 2008. [29] H. H. Bauschke and P. L. Combettes, Convex Analysis and Monotone Operator Theory in Hilbert Spaces , 2nd ed. Springer, 2017. [30] A. Beck, First-Order Methods in Optimization . Society for Industrial and Applied Mathematics (SIAM), 2017, vol. 25. [31] C. W. Tan, “Optimal power control in Rayleigh-fading heterogeneous wireless networks,” IEEE/ACM Trans. Networking , vol. 24, no. 2, pp. 940–953, 2015. [32] L. Zheng, Y.-W. P. Hong, C. W. Tan, C.-L. Hsieh, and C.-H. Lee, “Wireless max–min utility fairness with general monotonic constraints by Perron-Frobenius theory,” IEEE Trans. Information Theory , vol. 62, no. 12, pp. 7283–7298, 2016. [33] S. Boyd and L. Vandenberghe, Convex Optimization . UK: Cambridge University Press, 2004. [34] P. U. Abara, F. Ticozzi, and C. Altafini, “Spectral conditions for stability and stabilization of positive equilibria for a class of nonlinear cooperative systems,” IEEE Trans. Automatic Control , vol. 63, no. 2, pp. 402–417, 2018. [35] H. R. Feyzmahdavian, T. Charalambous, and M. Johansson, “Stability and performance of continuous-time power control in wireless net-works,” IEEE Trans. Automatic Control , vol. 59, no. 8, pp. 2012–2023, 2014. [36] C. W. Tan, “Wireless network optimization by Perron-Frobenius theory,” 
+
+Foundations & Trends in Networking , vol. 9, no. 2-3, pp. 107–218, 2015. [37] L. Zheng, D. W. Cai, and C. W. Tan, “Max-min fairness rate control in wireless networks: Optimality and algorithms by Perron-Frobenius theory,” IEEE Trans. Mobile Computing , vol. 17, no. 1, pp. 127–140, 2017. [38] J. P. Keener, “The Perron-Frobenius theorem and the ranking of football teams,” SIAM Review , vol. 35, no. 1, 1993. [39] U. Krause, “Concave Perron-Frobenius theory and applications,” Non-linear Analysis-Theory Methods and Applications , vol. 47, no. 3, pp. 1457–1466, 2001. [40] C. W. Tan, D. P. Palomar, and M. Chiang, “Energy-robustness tradeoff in cellular network power control,” IEEE/ACM Trans. Networking , vol. 17, no. 3, pp. 912–925, 2009. [41] J. C. Riedel, C. W. Tan, and G. Caire, “Deep unfolding of fixed-point based algorithm for weighted sum rate maximization,” in 2025 IEEE International Symposium on Information Theory (ISIT) , June 2025. [42] G. L. Stüber, Principles of Mobile Communication . Springer, 1996. [43] K. Dolas and M. R. Bhatnagar, “On performance of irs-assisted hybrid satellite-terrestrial cooperative communication,” IEEE Trans. Aerospace and Electronic Systems , vol. 59, no. 2, pp. 2020–2028, 2023. [44] K. Sunil and S. P. Boyd, “Optimal power control in interference-limited fading wireless channels with outage-probability specifications,” IEEE Trans. Wireless Communications , vol. 1, no. 1, pp. 46–55, 2002. [45] J. Papandriopoulos, J. Evans, and S. Dey, “Optimal power control for Rayleigh-faded multiuser systems with outage constraints,” IEEE Trans. Wireless Communications , vol. 4, no. 6, pp. 2705–2715, 2005. [46] Z. Lai, K. Wei, Y. Fu, P. Härtel, and F. Heide, “ ∇-prox: Differentiable proximal algorithm modeling for large-scale optimization,” ACM Trans-actions on Graphics (TOG) , vol. 42, no. 4, pp. 1–19, 2023. [47] C. Rao, Z. Ding, K. Cumanan, and X. Dai, “Outage performance of satellite-terrestrial channels with shadowed Rician fading via large deviations principle,” IEEE Trans. Vehicular Technology , pp. 1–6, 2024. [48] C. Fischione, M. D’Angelo, and M. Butussi, “Utility maximization via power and rate allocation with outage constraints in Nakagami-lognormal channels,” IEEE Trans. Wireless Communications , vol. 10, no. 4, pp. 1108–1120, 2011. [49] P. L. Combettes and J.-C. Pesquet, “Fixed point strategies in data science,” IEEE Trans. Signal Processing , vol. 69, pp. 3878–3905, 2021. [50] E. Winston and J. Z. Kolter, “Monotone operator equilibrium networks,” in NeurIPS , 2020.
