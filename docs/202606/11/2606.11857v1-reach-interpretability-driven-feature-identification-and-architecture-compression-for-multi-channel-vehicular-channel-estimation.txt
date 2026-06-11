@@ -1,0 +1,1009 @@
+Title: REACH: Interpretability-Driven Feature Identification and Architecture Compression for Multi-Channel Vehicular Channel Estimation
+
+URL Source: https://arxiv.org/pdf/2606.11857v1
+
+Published Time: Thu, 11 Jun 2026 00:49:39 GMT
+
+Number of Pages: 22
+
+Markdown Content:
+# REACH: I NTERPRETABILITY -D RIVEN FEATURE IDENTIFICATION AND ARCHITECTURE COMPRESSION FOR MULTI -C HANNEL 
+
+# VEHICULAR CHANNEL ESTIMATION 
+
+S. A. Ngorima 1,2,3 , A. S. J. Helberg 1 and M. H. Davel 1,2,3 1Faculty of Engineering, North-West University, South Africa 
+
+> 2
+
+Centre for Artificial Intelligence Research, South Africa 
+
+> 3
+
+National Institute for Theoretical and Computational Sciences, South Africa 
+
+aldringorima@gmail.com 
+
+ABSTRACT 
+
+Multi-channel mixed-SNR training improves out-of-distribution (OOD) generalisation of deep learn-ing channel estimators for IEEE 802.11p vehicular communications [1], yet the internal mechanism responsible for this remains unexplained. This work presents REACH (Relevance-based Expla-nation and Architectural Compression for cHannel estimators), a gradient-based interpretability framework that operates at two levels. Input-level attribution identifies a subset of time–frequency features consistently relevant across all evaluated channel conditions, enabling input dimensionality reduction with minimal performance loss. Filter-level attribution reveals a near-universal internal representation, providing a representational account of the observed OOD generalisation. Guided by the resulting filter taxonomy, relevance-guided architecture compression substantially reduces both the number of parameters and the number of floating-point operations (FLOPs) with sub-1 dB normalised mean square error (NMSE) degradation, and OOD generalisation degrades more slowly than within-distribution accuracy under increasing compression. 
+
+Keywords Vehicular communications, IEEE 802.11p, channel estimation, temporal convolutional network, interpretability, model compression, generalisation. 
+
+1 INTRODUCTION 
+
+Vehicular communication systems face a fundamental tension between estimation accuracy and computational efficiency. In high-mobility environments governed by standards such as IEEE 802.11p and emerging vehicle-to-everything ( V2X )specifications, channel state information ( CSI ) must be estimated rapidly and accurately to enable reliable data transmission. Severe Doppler spreads reaching several kHz, multipath propagation, and strict latency constraints together render classical estimators inadequate [2]. Linear interpolation fails under fast fading, while minimum mean-square error (MMSE) methods incur prohibitive complexity for real-time deployment [3]. Deep learning ( DL ) has emerged as a compelling alternative, with neural network ( NN )-based channel estimators demonstrating significant gains over classical approaches in vehicular scenarios [4, 5]. Despite this progress, the black-box nature of DL estimators obscures which features drive performance, preventing principled complexity reduction for resource-constrained vehicular hardware. Interpretability addresses this obstacle directly: by ranking input features and internal components according to their contribution to the network output, attribution methods provide a relevance ordering that can guide which features and filters to retain and which to remove, replacing magnitude heuristics and trial-and-error compression with reductions justified by the model’s own evidence of what it relies on. This paper 
+
+This work has been submitted to the IEEE for possible publication. Copyright may be transferred without notice, after which this version may no longer be accessible. 
+
+> arXiv:2606.11857v1 [eess.SP] 10 Jun 2026
+
+addresses this challenge directly. We present REACH (Relevance-based Explanation and Architectural Compression for cHannel estimators), a combined interpretability and architecture compression framework applied to a DPA-RDCNN model trained across multiple channel models [1]. The DPA-RDCNN, introduced in [1], couples data-pilot aided ( DPA )refinement of an initial pilot-based channel estimate with a residual dilated temporal convolutional backbone that processes complete orthogonal frequency-division multiplexing ( OFDM ) frames, providing deterministic inference latency suitable for real-time vehicular modems. REACH operates at two levels: input feature attribution, which identifies which time–frequency features the model relies on across channel conditions, and internal filter attribution, which reveals the representational structure responsible for out-of-distribution (OOD) generalisation. 
+
+CONTRIBUTIONS 
+
+This work introduces REACH, a gradient-based interpretability and architecture compression framework for multi-channel-trained deep learning channel estimators. Within this framework, the paper makes three contributions: 1. Input-level interpretability and dimensionality reduction. An attribution procedure that identifies cross-channel important input features consistently relevant across six vehicular channel models, enabling substantial input dimensionality reduction with minimal performance degradation. 2. Filter-level interpretability. An intermediate-layer attribution procedure that classifies the internal convo-lutional filters of a multi-channel-trained DPA-RDCNN into universal, environment-specific, and redundant categories, characterising the representational structure that supports cross-channel generalisation under multi-channel training. 3. Relevance-guided architecture compression with preserved cross-channel behaviour. A compact model family whose target filter width is set by the redundant filter fraction identified by the taxonomy, achieving up to 60.2% parameter reduction and 60.4% FLOP reduction with sub-1 dB normalised mean-square error ( NMSE )degradation, while the ID–OOD gap remains small at every compression level. 
+
+PAPER ORGANISATION 
+
+Section 2 reviews related work on channel estimation, model interpretability, and structured pruning. Section 3 establishes the system model and the channel estimator that REACH analyses. Section 4 develops the REACH attribution methodology at both the input and the filter levels. Section 5 reports attribution results, both input-level and filter-level. Section 6 applies the resulting filter taxonomy to architecture compression. Section 7 discusses findings and Section 8 concludes. 
+
+2 BACKGROUND AND RELATED WORK 
+
+2.1 DL-BASED CHANNEL ESTIMATION FOR IEEE 802.11p 
+
+DL -based estimators for IEEE 802.11p were initially developed using feedforward neural networks ( FNN s) applied to individual OFDM symbols. Ye et al. [5] introduced FNN s for OFDM channel estimation under non-linear distortion, while Soltani et al. [4] treated the time–frequency grid as an image and applied convolutional neural networks ( CNN s) to refine classical pilot-based estimates. Gizzini et al. [3] extended this line of work to IEEE 802.11p specifically, reporting NMSE and bit error rate ( BER ) gains over classical least squares ( LS ), DPA , spectral temporal averaging ( STA ), and time-domain reliable frequency-domain interpolation (TRFI) methods. For high-mobility vehicular channels, recurrent architectures have been widely applied due to their capacity to model temporal dynamics. Gizzini et al. [6] combined long short-term memory ( LSTM ) networks with temporal averaging to track rapid channel variations, and Hou et al. [7] proposed a gated recurrent unit ( GRU )-based estimator exploiting the gating mechanism to selectively retain relevant temporal information. A subsequent study [8] compared LSTM , GRU ,and bidirectional variants across multiple channel models, establishing recurrent estimators as a strong benchmark for doubly selective vehicular environments. Pan et al. [2] further investigated joint LSTM –FNN designs for multi-channel scenarios. More recently, temporal convolutional network ( TCN )-based estimators have emerged as a parallelisable alternative to recurrent architectures. Ngorima et al. [9] applied TCN s to V2X channel estimation, demonstrating competitive accuracy with reduced latency relative to LSTM baselines. The DPA-RDCNN architecture [1] builds on this direction by combining DPA channel estimation with a stack of residual dilated 1D convolutions that refine the DPA estimate, and by training jointly across multiple channel models. 2Across the architecture families surveyed above, the dominant evaluation practice remains single-channel training and testing [3, 4, 6, 7], leaving generalisation under distribution shift largely uncharacterised. Multi-channel mixed-signal-to-noise ratio ( SNR ) training has been shown to improve OOD generalisation across diverse vehicular propagation conditions [1], yet the internal mechanism responsible for this transfer remains unexplained. Furthermore, across all architecture families surveyed above, the absence of principled interpretability prevents systematic identification of which features and internal components drive estimation accuracy. 
+
+2.2 INTERPRETABILITY FOR DL CHANNEL ESTIMATION 
+
+Explainable artificial intelligence ( XAI ) methods are generally categorised into model-agnostic and model-specific approaches. Model-agnostic techniques, such as perturbation-based schemes, treat the underlying model as a black box and analyse input-output relationships by inducing noise or masking features [10]. In the context of the physical layer, explainable AI for channel estimation ( XAI-CHEST ) [11] was recently proposed as a perturbation-based scheme that identifies relevant pilot and data subcarriers by observing the BER sensitivity of the model to induced noise. Model-specific methods, by contrast, exploit the model’s internal state, such as activations and gradients at each layer, to attribute the output to specific input features and internal components, rather than inferring importance from input-output behaviour alone. Gradient-based channel estimation ( GRACE ) [12] is a notable application of gradient-based interpretability to channel estimation, employing the basic layer-wise relevance propagation ( LRP ) [13] zero-rule ( LRP z ) to explain FNN estimators operating on single frequency-domain OFDM symbols. While GRACE demonstrates that relevance-guided input filtering improves BER performance, several limitations motivate the present work. First, prior analysis has focused on single-channel environments, providing no insight into how learned representations generalise across diverse propagation conditions. Second, analysing OFDM symbols in isolation rather than entire frames makes relevance estimates sensitive to the specific channel realisation and noise sample of that symbol rather than reflecting stable underlying feature importance. Third, the basic rule does not account for modern architectural features such as residual connections or weight normalisation, restricting its applicability to simple FNN architectures. We also note that the 
+
+LRP z rule is numerically unstable when pre-activations are close to zero, a condition that arises routinely in ReLU networks. GRACE was developed to address input-level attribution, which leaves unaddressed a complementary and arguably more informative question: how the network internally represents the channel, and whether that internal representation is shared or fragmented across different propagation conditions. To the best of our knowledge, no prior work has examined the internal filter-level representations of a multi-channel-trained estimator with the aim of identifying structural redundancies and characterising the representational mechanism responsible for cross-channel generalisation. This work uses filter-level attribution both to characterise the network’s internal representations and to guide architecture compression, producing a model whose relevance structure is transparent at both the input and filter levels and whose parameter and FLOP count are reduced for resource-constrained vehicular deployment. 
+
+2.3 STRUCTURED PRUNING OF CONVOLUTIONAL NETWORKS 
+
+Structured pruning removes entire filters or channels from a network, yielding hardware-efficient architectures compati-ble with standard dense matrix multiplication libraries without requiring specialised sparse convolution kernels [14 –17]. LRP -based relevance criteria have been applied to prune image classifiers, where Yeom et al. [18] report better accuracy retention than magnitude-based and gradient-based pruning criteria at equivalent compression ratios, attributing this to the conservation property of LRP , which provides stable importance estimates without per-layer normalisation. However, the focus of that line of work is purely compression alone. The internal representational structure revealed by filter-level relevance, which underpins the present analysis of cross-channel generalisation, remains unexamined. In the TCN compression literature, Yuan et al. [19] proposed a pruned tree-structured TCN for industrial process prediction, using weight normalisation scaling factors as channel importance indicators within each block, with block-level importance derived from fully connected layer weights. Their criterion is magnitude-based and operates on output-side weights, whereas REACH applies gradient-based attribution directly to the convolutional features and analyses how the resulting filter relevance is distributed across multiple propagation conditions. The cross-channel representational question that motivates the present work therefore does not arise in their setting. The need for compression methods tailored to wireless tasks, rather than generic computer-vision heuristics, is emphasised in a recent survey of model compression for wireless networks [20], which argues that physical-layer models should be assessed with wireless-native metrics such as NMSE and BER against SNR rather than generic proxies such as top-1 accuracy or floating-point operations ( FLOPs ) alone. The same survey notes that structured sparsity, which removes whole filters or channels and preserves regular tensor shapes, translates into predictable speedups 3on deployment hardware, whereas unstructured masks rarely do. For channel estimation specifically, it identifies redundancy in residual blocks and sensitivity to aggressive compression in the first and last layers, and observes that robustness is usually validated only on a finite set of simulated channels, so generalisation to unseen propagation conditions remains an open question. Our work addresses these points directly: we evaluate compact estimators with NMSE and BER against SNR across six channel models, reduce capacity through a structured filter-width reduction rather than unstructured masking, and test generalisation explicitly on three held-out OOD channels. 
+
+3 SYSTEM MODEL AND PRELIMINARIES 
+
+This section establishes the signal model, the channel models, and the channel estimator that REACH analyses in Sections 4–6. Section 3.1 specifies the IEEE 802.11p OFDM signal model. Section 3.2 describes the complex-to-real input representation used by the deep learning estimator. Section 3.3 lists the six vehicular channel models and the in-distribution/out-of-distribution split. Section 3.4 summarises the DPA-RDCNN architecture introduced in [1], focusing on the elements that the interpretability analysis of Section 4 references. 
+
+3.1 OFDM SIGNAL MODEL 
+
+We consider an IEEE 802.11p OFDM system with 64 subcarriers, of which 52 are active (48 data and 4 pilots at MATLAB indices {7, 21 , 32 , 46 }) with a 10 MHz channel bandwidth and 50 OFDM symbols per frame. Data symbols are drawn from a 16QAM constellation with Gray-coded mapping. Coded transmission uses a rate- 12 convolutional code with constraint length 7 forward error correction ( FEC ), the standard configuration for the IEEE 802.11p physical layer. The received signal at subcarrier k and symbol n is: 
+
+Y [k, n ] = H[k, n ] X[k, n ] + W [k, n ], (1) where H[k, n ] is the complex channel frequency response, X[k, n ] is the transmitted symbol, and W [k, n ] is additive white Gaussian noise ( AWGN ) with variance σ2
+
+> w
+
+. The estimation objective is to infer ˆH[k, n ] from the four pilot subcarriers and from DPA -processed data symbol estimates. Throughout this paper, bold uppercase symbols denote matrices and higher-order tensors, bold lowercase symbols denote vectors, and plain italic symbols denote scalars and indexed scalar entries. 
+
+3.2 COMPLEX-TO-REAL REPRESENTATION 
+
+The DPA stage produces an initial channel estimate ˆHDPA [k, n ] for every subcarrier k and OFDM symbol n in the frame. This complex estimate is converted to a real-valued input tensor for the DL estimator by interleaving the real and imaginary parts along the symbol axis, producing 100 real-valued entries per subcarrier while the 52 active subcarriers are preserved. The resulting input tensor Xin ∈ R52 ×100 holds 5 200 real-valued features per frame, with rows indexing subcarriers and columns indexing the interleaved real and imaginary values, consistent with the convention used in [1]. The ground-truth channel matrix H[k, n ] from (1) is interleaved in the same way to form the regression target 
+
+Htgt ∈ R52 ×100 , so that the network learns a mapping N : Xin 7 → ˆH ∈ R52 ×100 on a common real-valued grid. 
+
+3.3 VEHICULAR CHANNEL MODELS 
+
+Table 1 lists the six vehicular channel models used in this study, drawn from the Acosta-Marum empirical characterisa-tion [21]. The first three serve as the in-distribution ( ID ) training set and the remaining three are held out entirely from training for OOD evaluation, supporting the assessment of cross-channel generalisation under realistic deployment conditions. Table 1: Vehicular channel models and training split. Channel Type Doppler (Hz) Delay (ns) Split VTV-SDWW ID 1200 302 Train RTV-SUS ID 600 701 Train VTV-EX ID 1200 401 Train VTV-UC OOD 500 401 Evaluation only RTV-UC OOD 300 501 Evaluation only RTV-EX OOD 700 401 Evaluation only 43.4 DPA-RDCNN ARCHITECTURE 
+
+The base estimator analysed in this work is the DPA-RDCNN architecture introduced in [1], where its design, hyperparameter optimisation, and benchmarking against classical and recurrent baselines are reported in full. To support the interpretability analysis that follows, we summarise here only the architectural elements that are explicitly referenced in Sections 4–6. The DPA-RDCNN processes complete OFDM frames through Nb = 5 stacked residual blocks, each containing five weight-normalised one-dimensional dilated convolutional layers with kernel size k = 4 , dilations d ∈ { 1, 2, 4, 8, 16 },and hidden channel dimension K = 256 . The first block ingests the input tensor Xin ∈ R52 ×100 defined in Section 3.2, so that the residual block input x(b) and output y(b) are both in R52 ×K for b ≥ 1. For each residual block b ∈{0, 1, . . . , N b − 1}, the output is 
+
+y(b) = ReLU 
+
+ f (b)
+
+x(b)| {z }
+
+> convolutional path
+
++ g(b)
+
+x(b)| {z }
+
+> skip path
+
+ , (2) where f (b) is the dilated convolutional stack and g(b) is a 1 × 1 convolution for block 0, where the input channel dimension differs from K, or the identity for blocks 1 to 4. Fig. 7 shows the overall arrangement of the residual blocks and the convolutional and skip paths inside each block. The baseline model has 6 484 580 trainable parameters and performs 0.6729 GFLOPs per inference frame. Training follows the multi-channel mixed- SNR strategy of [1], in which the network is trained jointly on the three ID channels at nine SNR levels spanning 0 to 40 dB in 5 dB steps. The cross-channel generalisation behaviour observed under this strategy is what REACH analyses at both the input and the filter level. 
+
+4 REACH METHODOLOGY 
+
+REACH applies gradient-based attribution to the multi-channel-trained DPA-RDCNN at two complementary levels: input feature attribution, which identifies the time-frequency components the model relies on, and internal filter attribution, which characterises the convolutional features that support cross-channel generalisation. Both levels share a common attribution rule based on the magnitude of the elementwise product of activations and their gradients, a formulation that handles residual connections, weight normalisation, and rectified linear unit ( ReLU ) non-linearities through standard automatic differentiation [22, 23]. In contrast to GRACE [12], which applies the basic LRP zero-rule to individual OFDM symbols in a single channel model, REACH constructs per-environment and per-SNR relevance maps by aggregating gradient-based attributions across B = 500 frames (Section 4.2), then combines these maps under the criteria of Section 4.3 at the input level and Section 4.4 at the filter level to produce stable estimates for multi-channel-trained models. 
+
+4.1 ATTRIBUTION RULE 
+
+REACH adopts the gradient ×input attribution rule [22, 24]. Attribution is computed with respect to a scalar function 
+
+ϕ(Xin ) = ∥ ˆH∥2 
+
+> F
+
+of the network output, where ∥ · ∥ F denotes the Frobenius norm. This function summarises the prediction without requiring access to the target Htgt during the attribution stage. For a single frame with input 
+
+Xin ∈ R52 ×100 , the relevance per-frame at grid position (k, i ) is 
+
+R(k, i ) = |Xin (k, i )| · ∂ϕ (Xin )
+
+∂X in (k, i ) , (3) which can be viewed as a first-order Taylor approximation to the change in ϕ produced by removing the input value at (k, i ). The use of absolute values discards sign information and produces a non-negative relevance score suitable for ranking and thresholding, consistent with prior work that uses gradient-based saliency for feature selection [23]. Equation (3) defines relevance for a single input frame; the per-environment and per-SNR relevance maps used throughout REACH are obtained by aggregating this per-frame quantity over B = 500 independent frames, as specified in Section 4.2. This formulation is preferred over the LRP-ϵ rule for two reasons. The ϵ stabiliser used by LRP-ϵ addresses the small-denominator instability of the basic LRP z rule in feedforward networks, but in residual architectures the issue persists in a different form. First, the residual addition in (2) sums the convolutional and skip path outputs before the 5non-linearity, so the LRP-ϵ redistribution at this junction divides each path’s relevance by f (b)(x(b)) + g(b)(x(b)) + ϵ.This sum can vanish either through sign cancellation between the two paths, or through deep-fading conditions in which both paths carry low energy simultaneously, leaving the relevance scores dominated by the ϵ stabiliser rather than by the network’s actual computation. Gradient ×input avoids this redistribution entirely, since the chain rule propagates gradients through the residual sum trivially and the parallel paths never share a denominator. Second, the weight-normalised convolutional layers in DPA-RDCNN introduce a reparametrisation not addressed by either LRP z
+
+or LRP-ϵ, whereas gradient ×input handles such reparametrisations as part of the same chain-rule computation. 
+
+4.2 TEMPORAL AND BATCH AGGREGATION 
+
+Single-frame attribution is dominated by the specific channel realisation and noise sample of that frame, producing high-variance relevance estimates. REACH suppresses this variance through multi-dimensional aggregation. For the input tensor Xin ∈ R52 ×100 defined in Section 3.2, the relevance map Rb ∈ R52 ×100 for frame b has entries Rb(k, i ),where k ∈ { 1, . . . , 52 } is the subcarrier index and i ∈ { 1, . . . , 100 } is the index along the interleaved real and imaginary axis. REACH aggregates across B = 500 independent frames drawn from a specified channel model and SNR level, 
+
+¯R(k, i ) = 1
+
+B
+
+> B
+
+X
+
+> b=1
+
+Rb(k, i ), (4) yielding stable relevance estimates ¯R ∈ R52 ×100 for each channel model and SNR combination. 
+
+4.3 INPUT FEATURE CATEGORISATION 
+
+Cross-channel important features are identified by combining the aggregated relevance maps from all six channel models. Let ¯R(e)(k, i ) denote the aggregated relevance map for channel model e ∈ { 1, . . . , 6}, and let P (e)75 denote the 75th percentile of ¯R(e) taken over all (k, i ) pairs. The 75th percentile is a fixed analytical convention chosen for interpretability rather than a value optimised against estimation accuracy, and it provides a consistent quartile-based rule for separating features that are reliably high in relevance from the remainder, which is sufficient to characterise the cross-channel structure examined in this section. The accuracy and compression trade-off is instead established empirically in Section 6, where a range of filter widths is swept and the operating point is read off from the resulting NMSE curves rather than fixed in advance by a percentile cut. A feature (k, i ) is classified as cross-channel important 
+
+when it ranks in the top quartile of every channel model for at least one SNR level: 
+
+¯R(e)(k, i ) ≥ P (e)75 ∀ e ∈ { 1, . . . , 6}. (5) Requiring top-quartile rank in all six channel models, rather than in a subset, ensures that the feature carries relevance information shared across the full set of training and held-out conditions, rather than information specific to one or two environments. The set of SNR levels considered in this analysis is {0, 20, 40} dB , providing low, mid, and high- SNR coverage of the training range. Computing relevance maps at all nine training SNRs would multiply the attribution cost without changing the qualitative cross-channel structure observed at the three sampled levels. 
+
+4.4 FILTER-LEVEL ATTRIBUTION 
+
+The input-level attribution rule of (3) extends directly to intermediate convolutional features. Let A(b) ∈ RB×K×L
+
+denote the output of the convolutional path f (b) of residual block b in (2) , where B is the batch size, K = 256 is the hidden channel dimension, and L = 52 is the subcarrier dimension. The relevance of an individual element of this tensor is 
+
+R(b) 
+
+> n,f,l
+
+= A(b) 
+
+> n,f,l
+
+· ∂ϕ ∂A (b)
+
+> n,f,l
+
+, (6) which applies the attribution rule of (3) to an intermediate tensor in place of the input tensor. Each element is captured by registering a forward hook to extract A(b) 
+
+> n,f,l
+
+and a backward hook to extract the gradient through the same tensor in a single forward–backward pass. A scalar relevance score for filter f in block b is obtained by averaging the elementwise relevance over the batch and subcarrier dimensions, 
+
+R(b) 
+
+> f
+
+= 1
+
+B · L
+
+> B
+
+X
+
+> n=1
+> L
+
+X
+
+> l=1
+
+R(b)
+
+> n,f,l
+
+, (7) 6yielding a vector r(b) ∈ RK that ranks the K = 256 filters in block b by their contribution to the network output. Because A(b) is captured before the residual addition in (2) , the score (7) attributes relevance to the convolutional path independently of the skip path that bypasses it. 
+
+4.4.1 FILTER TAXONOMY 
+
+For each block b and channel model e, the per-channel model relevance vector R(b,e ) ∈ RK is computed by restricting the average in (7) to frames drawn from channel model e. Per-channel model thresholds τ (e)75 and τ (e)25 are then computed as the 75th and 25th percentiles of R(b,e ). Filters are classified into three categories: Universal: R(b,e ) 
+
+> f
+
+≥ τ (e)75 ∀ e, (8) Redundant: R(b,e ) 
+
+> f
+
+≤ τ (e)25 ∀ e, (9) Environment-specific: otherwise. (10) Universal filters carry the cross-channel representation that supports operation on propagation conditions not seen during training. Environment-specific filters carry intermediate-relevance information that distinguishes channel conditions, the mechanistic interpretation of which is left for future work. Redundant filters can be removed without expected performance loss, providing the principled compression budget exploited in Section 6. 
+
+5 ATTRIBUTION RESULTS 
+
+This section reports the attribution results at both the input and filter levels. Section 5.1 describes the experimental setup that all subsequent results build on. Section 5.2 presents input-level relevance analysis, and Section 5.3 presents filter-level relevance analysis. 
+
+5.1 EXPERIMENTAL SETUP 5.1.1 DATASET GENERATION 
+
+Datasets are generated in MATLAB R2022b using a baseband simulation of the IEEE 802.11p physical layer ( PHY ), adapted from the open-source framework of Gizzini et al. [3]. Each of the six vehicular channel models in Table 1 is instantiated using MATLAB’s comm.RayleighChannel object with time-varying tap coefficients driven by Jakes’ Doppler spectrum, and each frame is transmitted through an independent channel realisation generated with a deter-ministic seed equal to the frame index. For each channel model, 18 000 frames are generated for training and 2 000 independently for testing, with the testing set evaluated at each Eb/N 0 point in {0, 5, . . . , 40 } dB. The multi-channel training set is the concatenation of the three ID training sets, yielding 54 000 frames spanning nine SNR levels. 
+
+5.1.2 BASELINE MODEL AND TRAINING PROTOCOL 
+
+The DPA-RDCNN baseline analysed throughout this work is the trained checkpoint released with [1], where hyper-parameter selection and training are reported in full. The optimiser is Adam ( β1=0 .9, β2=0 .999 ) with learning rate 
+
+η = 4 .77 × 10 −4, batch size 128, and StepLR scheduling with step size 11 and decay factor 0.948. Dropout with 
+
+p = 0 .228 is applied after convolutional layers, weight decay ∼ 10 −6 provides L2 regularisation, and early stopping halts training after 20 consecutive epochs without validation loss improvement. 
+
+5.1.3 COMPACT MODELS 
+
+The compact DPA-RDCNN variants evaluated in Section 6 are trained from scratch at each target filter width K′ ∈{210 , 192 , 160 , 128 , 96 }, using the same optimiser, schedule, and stopping criterion as the baseline. Each configuration is trained with five independent random seeds to quantify training variance. 
+
+5.1.4 EVALUATION PROTOCOL 
+
+NMSE and BER are reported per channel model and per SNR point, computed over the 2 000 independent test frames of the corresponding channel. For attribution, relevance maps are aggregated over B = 500 frames per channel-and-SNR combination (Section 4.2), drawn from the test partition. All models are implemented in PyTorch and trained on NVIDIA A40 and A30 graphics processing units (GPUs). 75.2 INPUT-LEVEL 
+
+This section examines which input features the network relies on across the six channel models. Two questions follow: whether the relevance patterns are shared across channel models, and whether the identified features are sufficient on their own to drive accurate estimation. 
+
+5.2.1 CROSS-CHANNEL RELEVANCE PATTERNS 
+
+Fig. 1 shows an example relevance map for the vehicle-to-vehicle same direction with wall ( VTV-SDWW ) channel model at 0 dB SNR, obtained by applying the aggregation rule in (4). 0 20 40 60 80 
+
+> OFDM Symbol
+> 0
+> 10
+> 20
+> 30
+> 40
+> 50
+> Subcarrier Index
+> 0
+> 2
+> 4
+> 6
+> 8
+> 10
+> 12
+> Relevance Score
+
+Figure 1: Input relevance map for DPA-RDCNN on VTV-SDWW at 0 dB SNR , computed from (4) . The horizontal axis indexes the 100 interleaved real and imaginary values across the 50 OFDM symbols of the frame (two columns per symbol), and the vertical axis indexes the 52 subcarriers. The colour bar gives the relevance score in arbitrary units. Relevance exhibits distinct patterns. The four pilot subcarriers form bright horizontal bands across the full frame. The first interleaved columns carry elevated relevance across all subcarriers: as the earliest data symbols in the DPA recursion, they are seeded most directly by the preamble-based initial estimate. Between the pilot bands, relevance rises with distance from the nearest pilot, lowest immediately adjacent and highest midway between. Elsewhere, it is approximately uniform and low. This pattern recurs across all six channel models and all SNR levels, varying in magnitude rather than location, motivating the cross-channel similarity quantified in Fig. 2. All pairwise correlations exceed 0.81, including those between the three ID channel models and the three OOD channel models held out from training. This provides an initial interpretability-based account of the observed OOD generalisation: the network does not rely on input patterns specific to any one channel model, but on a common time-frequency structure shared across all evaluated propagation environments. 
+
+5.2.2 CROSS-CHANNEL IMPORTANT FEATURES 
+
+Applying the criterion in (5) across SNR levels {0, 20 , 40 } dB , 1 020 of the 5 200 input features (19.6%) are cross-channel important. Fig. 3 shows the resulting binary mask, in which each cell is the real or imaginary component of one OFDM symbol at one subcarrier, so that each OFDM symbol occupies two adjacent columns. The mask is binary rather than continuous because the criterion in (5) tests whether the relevance exceeds the 75th-percentile threshold in every propagation environment, not the relevance magnitude itself. The four pilot subcarriers at indices {6, 20 , 31 , 45 } (equivalently the MATLAB indices 7, 21, 32, 46 of Section 3.1) form fully green horizontal bands, reflecting their role as channel reference anchors important in every channel model. The first few columns are also fully green, marking the earliest OFDM symbols as important across all subcarriers, and a further cluster appears mid-frame, spanning a wide range of subcarriers rather than the pilots alone. 8VTV_SDWW                               
+
+> RTV_SUS
+> VTV_EX
+> VTV_UC
+> RTV_UC
+> RTV_EX
+> VTV_SDWW
+> RTV_SUS
+> VTV_EX
+> VTV_UC
+> RTV_UC
+> RTV_EX
+> 1.00 0.90 0.89 0.90 0.89 0.89
+> 0.90 1.00 0.81 0.99 0.85 0.82
+> 0.89 0.81 1.00 0.81 0.95 0.97
+> 0.90 0.99 0.81 1.00 0.85 0.82
+> 0.89 0.85 0.95 0.85 1.00 0.96
+> 0.89 0.82 0.97 0.82 0.96 1.00
+> 0.800
+> 0.825
+> 0.850
+> 0.875
+> 0.900
+> 0.925
+> 0.950
+> 0.975
+> 1.000
+> Pearson Correlation
+
+Figure 2: Input-level cross-channel relevance correlation matrix at 20 dB SNR . All pairwise correlations exceed 0.81, including between ID and OOD channel models, indicating that the network relies on similar time–frequency patterns across all propagation environments. 0 20 40 60 80 
+
+> OFDM Symbol
+> 0
+> 10
+> 20
+> 30
+> 40
+> 50
+> Subcarrier Index
+> 0
+> 1
+> Universal (1) / Specific (0)
+
+Figure 3: Cross-channel important features in the 52 × 100 input space, identified by the criterion in (5) over SNR levels {0, 20 , 40 } dB . The horizontal axis indexes the 100 interleaved real and imaginary values across the 50 OFDM symbols (two columns per symbol), and the vertical axis indexes the 52 subcarriers. Green indicates features classified as cross-channel important, and red indicates features that do not meet the criterion. Table 2 quantifies this distribution by symbol region, a span of OFDM symbols along the horizontal axis, and by spectral region, a span of subcarriers along the vertical axis. All four pilot subcarriers are cross-channel important 9Table 2: Distribution of cross-channel important features (union over SNR levels {0, 20 , 40 } dB ). Counts are over interleaved features (the real and imaginary component of each symbol at each subcarrier); symbol regions span the OFDM-symbol axis and spectral regions span the subcarrier axis. 
+
+Feature Region Total Cross-Channel (%) 
+
+Symbol regions 
+
+Symbols 0–5 (early) 624 267 (42.8%) Symbols 6–15 (mid-early) 1 040 84 (8.1%) Symbols 16–30 (mid) 1 560 283 (18.1%) Symbols 31–49 (late) 1 976 386 (19.5%) 
+
+Spectral regions 
+
+Edge SC (0–5, 47–51) 1 100 226 (20.5%) Mid SC (6–20, 32–46) 3 000 569 (19.0%) Central SC (21–31) 1 100 225 (20.5%) 
+
+Subcarrier type 
+
+Pilot subcarriers 400 400 (100%) Data subcarriers 4 800 620 (12.9%) 
+
+Total 5 200 1 020 (19.6%) (400/400). The remaining 620 features fall on data subcarriers, consistent with the role of DPA refinement: the network relies on the pilots in every condition and additionally recruits data positions where the DPA -refined estimates carry the most informative residual channel information. The early-frame region carries a disproportionate share of this data contribution, with 42.8% of the symbols 0–5 region cross-channel important against 8.1% of the symbols 6–15 region, reflecting the proximity of the earliest OFDM symbols to the preamble-based initial estimate. 
+
+5.2.3 PILOT VS DATA SUBCARRIER CONTRIBUTIONS 
+
+Fig. 4 shows the relevance carried by the pilot and data subcarriers at each channel model and SNR level, each expressed as a fraction of the total relevance at that operating point, so that the pilot and data shares sum to one. At low SNR , pilots VTV_SDWW    
+
+> RTV_SUS
+> VTV_EX
+> VTV_UC
+> RTV_UC
+> RTV_EX
+> Channel Model
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Relevance Ratio
+> SNR = 0 dB Pilot
+> Data
+> VTV_SDWW
+> RTV_SUS
+> VTV_EX
+> VTV_UC
+> RTV_UC
+> RTV_EX
+> Channel Model
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Relevance Ratio
+> SNR = 20 dB Pilot
+> Data
+> VTV_SDWW
+> RTV_SUS
+> VTV_EX
+> VTV_UC
+> RTV_UC
+> RTV_EX
+> Channel Model
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Relevance Ratio
+> SNR = 40 dB Pilot
+> Data
+
+Figure 4: Relative relevance contributions of pilot and data subcarriers across channel models and SNR levels. Data subcarriers contribute 65–92% of total relevance, and their contribution grows with SNR as DPA -refined estimates become more reliable. The pattern is consistent across all six channel models. provide the dominant reference anchors for estimation. As SNR increases and decision-directed data estimates become more reliable, the model shifts reliance toward the denser spectral coverage of data positions, effectively increasing the virtual pilot density. This SNR -adaptive behaviour is consistent across all six channel models, including the three OOD channels. 
+
+5.2.4 CROSS-CHANNEL FEATURE VALIDATION 
+
+To verify that the 1 020 cross-channel important features are functionally sufficient for accurate estimation, we train a 
+
+cross-channel model using only these features. Training uses the same three ID channels, nine SNR levels (0–40 dB 
+
+10 in 5 dB steps), and training hyperparameters as the baseline of Section 5.1, with a single random seed. The real and imaginary components of each complex value are masked independently, each retained or zeroed according to its own entry in the cross-channel mask, so the real part of a position may be kept while the imaginary part is zeroed. Retained positions keep their original values during training and inference, and all other positions are set to zero throughout. The resulting cross-channel model is then compared against the baseline. Fig. 5 shows NMSE against SNR for all six channel models. 0 5 10 15 20 25 30 35 40                                                           
+
+> SNR (dB)
+> 10 4
+> 10 3
+> 10 2
+> NMSE
+> VTV_SDWW (ID)
+> Baseline
+> Cross-channel
+> 0510 15 20 25 30 35 40
+> SNR (dB)
+> 10 4
+> 10 3
+> 10 2
+> NMSE
+> RTV_SUS (ID)
+> Baseline
+> Cross-channel
+> 0510 15 20 25 30 35 40
+> SNR (dB)
+> 10 4
+> 10 3
+> 10 2
+> NMSE
+> VTV_EX (ID)
+> Baseline
+> Cross-channel
+> 0510 15 20 25 30 35 40
+> SNR (dB)
+> 10 4
+> 10 3
+> 10 2
+> NMSE
+> VTV_UC (OOD)
+> Baseline
+> Cross-channel
+> 0510 15 20 25 30 35 40
+> SNR (dB)
+> 10 4
+> 10 3
+> 10 2
+> NMSE
+> RTV_UC (OOD)
+> Baseline
+> Cross-channel
+> 0510 15 20 25 30 35 40
+> SNR (dB)
+> 10 4
+> 10 3
+> 10 2
+> NMSE
+> RTV_EX (OOD)
+> Baseline
+> Cross-channel
+
+Figure 5: NMSE comparison between the baseline (5 200 features) and the cross-channel model (1 020 features, 19.6%) on ID and OOD channel models. Fig. 5 compares the NMSE of the baseline against the cross-channel model on all six channel models. Across the practical SNR range (0–25 dB ), the cross-channel model remains within 2–4 dB of the baseline on all six channel models. Above 25 dB the gap widens as the baseline approaches its estimation floor more closely, with the largest deviations observed on the OOD channels at 40 dB . Fig. 6 compares BER performance across all six channel models. Up to 25 dB , the cross-channel model closely tracks the baseline. In several cases (vehicle-to-vehicle expressway ( VTV-EX ), roadside-to-vehicle suburban street ( RTV-SUS )) the cross-channel model slightly outperforms the baseline at higher SNR . A regularisation effect from removing low-relevance components is documented in the filter pruning literature [15], and provides one candidate explanation, although the conditions under which the effect arises here are not investigated in detail in this work. On the VTV-SDWW channel we additionally include three classical estimators, least squares (LS), spectral temporal averaging (STA), and time-domain reliable frequency-domain interpolation (TRFI), as a representative comparison against estimators that remain in practical use [3]. Across the full SNR range the strongest classical estimator, TRFI, does not fall below a BER of approximately 4x10 −3, while LS and STA remain close to 10 −1. Both the baseline and the cross-channel model fall several orders of magnitude lower, confirming that the deep learning estimator substantially outperforms the classical baselines on this channel. 
+
+5.3 FILTER-LEVEL 
+
+The input-level analysis of Section 5.2 established that the network relies on a common time–frequency input pattern across all six channel models. This section turns to the internal representation. Two questions follow: whether different channel models activate a shared internal filter population, and whether the resulting taxonomy supports a principled compression strategy. The analysis proceeds in four steps: a block-level relevance measurement that tests whether any residual block can be removed wholesale, a filter taxonomy that classifies every convolutional filter as universal, environment-specific, or redundant, a dilation-level breakdown that probes the temporal granularity of the attribution, and a cross-channel correlation that quantifies how similar the filter recruitment is across the six channel models. 11 0 5 10 15 20 25 30 35 40         
+
+> SNR (dB)
+> 10 -7
+> 10 -6
+> 10 -5
+> 10 -4
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+> BER
+
+VTV-SDWW (ID)                 
+
+> Perfect Channel Baseline Cross-channel TRFI STA LS
+> 0510 15 20 25 30 35 40
+> SNR (dB)
+> 10 -7
+> 10 -6
+> 10 -5
+> 10 -4
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+> BER
+
+RTV-SUS (ID)                 
+
+> Perfect Channel Baseline Cross-channel
+> 0510 15 20 25 30 35 40
+> SNR (dB)
+> 10 -7
+> 10 -6
+> 10 -5
+> 10 -4
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+> BER
+
+VTV-EX (ID)                 
+
+> Perfect Channel Baseline Cross-channel
+> 0510 15 20 25 30 35 40
+> SNR (dB)
+> 10 -7
+> 10 -6
+> 10 -5
+> 10 -4
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+> BER
+
+VTV-UC (OOD)                 
+
+> Perfect Channel Baseline Cross-channel
+> 0510 15 20 25 30 35 40
+> SNR (dB)
+> 10 -7
+> 10 -6
+> 10 -5
+> 10 -4
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+> BER
+
+RTV-UC (OOD)                 
+
+> Perfect Channel Baseline Cross-channel
+> 0510 15 20 25 30 35 40
+> SNR (dB)
+> 10 -7
+> 10 -6
+> 10 -5
+> 10 -4
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+> BER
+
+RTV-EX (OOD) 
+
+> Perfect Channel Baseline Cross-channel
+
+Figure 6: BER performance: baseline against the cross-channel model (19.6% of features) across all six channel models. On the VTV-SDWW panel the classical LS, STA and TRFI estimators are included for comparison with established practical methods. The cross-channel model closely tracks the baseline up to 25 dB , indicating functional sufficiency of the identified feature set for practical deployments. 
+
+Input 
+
+Xin 
+
+52 × 100 
+
+Residual Block 1 
+
+Residual Block 2 
+
+Residual Block 3 
+
+Residual Block 4 
+
+Residual Block 5 +
+
+1 × 1
+
+Conv Head 
+
+Output 
+
+ˆH
+
+52 × 100    
+
+> global skip ( 1×1conv)
+
+Inside each residual block: 
+
+x(b)
+
+Conv path f (b):5 dilated 1D convs 
+
+d ∈ { 1, 2, 4, 8, 16 }
+
++ ReLU 
+
+y(b) 
+
+> skip path g(b)
+
+Figure 7: Schematic of the DPA-RDCNN architecture. The five residual blocks are connected sequentially with a global skip route (top) that bypasses the entire block stack. The inset (bottom) shows the internal structure of a single residual block: a convolutional path f (b) containing five dilated 1D convolutions, and a parallel skip path g(b). The convolutional path is the subject of the filter-level analysis in Section 5.3. 
+
+5.3.1 BLOCK-LEVEL RELEVANCE 
+
+The first question concerns the relative contribution of each residual block. In the DPA-RDCNN schematic of Fig. 7, each block routes information through a convolutional path f (b) and a parallel skip path g(b) that contribute jointly to the block’s output. To isolate the contribution of the learned convolutions, we compute the per-block relevance contribution by averaging the filter-level relevance scores of (7) across all filters in the block and normalising across blocks. The result indicates how much each block’s convolutional path contributes to the prediction relative to the others, independently of the skip route that bypasses it. 12 Fig. 8 shows the convolutional-path relevance contribution per block, averaged across all six channel models and three SNR levels. 
+
+Figure 8: Convolutional-path relevance contribution per residual block of the DPA-RDCNN, averaged across all six channel models and three SNR levels. All five blocks contribute between 19.7% and 20.6% of the total, within one percentage point of uniform distribution. This contrasts with the layer-wise importance variation commonly reported for image classification networks, where shallower or deeper layers are pruned more aggressively [16, 17]. Two consequences follow. First, block-level removal is not a viable compression strategy, since each block contributes approximately one fifth of the total prediction capacity. Second, the network operates in a distributed mode in which every block participates approximately equally, motivating the filter-level analysis that follows. 
+
+5.3.2 FILTER TAXONOMY 
+
+Applying the classification criteria in (8) – (10) to the per-block, per-channel-model filter relevance scores R(b,e )
+
+> f
+
+computed from 500 frames per channel-and- SNR combination yields the taxonomy summarised in Table 3 and visualised in Fig. 9. Table 3: Filter taxonomy across all five blocks ( 5 × 256 = 1 280 filters total). Category Count Fraction Prunable Universal 305 23.8% No Environment-specific 743 58.0% No Redundant 232 18.1% Yes Total 1 280 100% Three observations follow from Table 3 and Fig. 9. First, the composition of each block is nearly identical, supporting the distributed processing structure identified in Section 5.3.1: the network has not specialised individual blocks for different aspects of the estimation problem. Second, the 58% of filters classified as environment-specific have intermediate relevance in every condition, falling neither uniformly high nor uniformly low. Whether this population encodes Doppler-adaptive or delay-spread-adaptive information is left for future work using probing or ablation methods. Third, the 18.1% of filters classified as redundant have consistently low relevance across all six channel models and three SNR levels, corresponding to 232 filters that can be removed without expected performance loss. This constitutes the principled compression budget exploited in Section 6. 
+
+5.3.3 DILATION CONTRIBUTION 
+
+Fig. 10 shows the contribution of each dilation level within each block, expressed as a fraction of the block’s total relevance and annotated with the value in each cell. Within a block of five dilations, an even split corresponds to 0.20 per dilation. 13 Figure 9: Filter taxonomy per residual block. The composition is consistent across all five blocks at approximately 23.8% universal (green), 58.0% environment-specific (orange), and 18.1% redundant (red). Blocks 1 to 3 are close to this even split, with every dilation between 0.16 and 0.26 and no single dilation dominating. From block 4 onward, the distribution tilts toward the shortest dilation: block 4 places 0.25 of its relevance at d = 1 ,and block 5 concentrates 0.36 at d = 1 against a mean of 0.16 across the four longer dilations. This d = 1 concentration in block 5 is consistent across all six channel models (0.35 to 0.37), including the three OOD channels. The network therefore distributes relevance evenly across temporal scales in the early blocks and shifts toward short-range processing in the final block, where the d = 1 convolution carries roughly twice the relevance of an even split. 
+
+Figure 10: Normalised dilation contribution per block and channel model. 
+
+5.3.4 CROSS-CHANNEL FILTER CORRELATION 
+
+The taxonomy of Section 5.3.2 indicates that all six channel models recruit a similar population of filters. Fig. 11 shows the per-channel-model filter relevance maps, in which the high-relevance filters appear at similar indices across the six channel models, including the three OOD conditions held out from training. This consistency is difficult to verify by eye at this scale, so we quantify it directly: of the 50 highest-relevance filters in each block, 95.6% on average are common to all six channel models, and 96.8% of the 125 highest-relevance filters across the whole network are shared by every channel. The high-relevance filter indices are therefore largely the same across all propagation conditions, including the held-out ones. To quantify the overall similarity, we flatten the filter relevance map of each channel model into a vector r(e) ∈ RNbK ,where Nb = 5 is the number of blocks and K = 256 is the number of filters per block, and compute the correlation between every pair of channel models. The mean pairwise Pearson correlation is r = 0 .9963 (minimum 0.9933), and the mean Spearman rank correlation is 0.96 (minimum 0.93), confirming that both the magnitude and the ranking of filter relevance are near-identical across channel models. This is substantially higher than the input-level correlation reported in Section 5.2 (mean r ≈ 0.89 , minimum r > 0.81 ), revealing a structural asymmetry: input representations are moderately similar across channel models, but internal filter representations are near-identical. Multi-channel training does not produce separate internal subnetworks for each channel condition; instead it converges to a single 14 Figure 11: Filter relevance maps for the five residual blocks and all six channel models, including the three OOD channels held out from training. High-relevance filters concentrate at similar indices across the panels, with on average 95.6% of the 50 highest-relevance filters per block common to all six channel models. 
+
+Figure 12: Cross-channel filter relevance correlation matrix. The colour map is restricted to the range 0.98–1.00 to resolve variation within the high-value region. All pairwise correlations exceed 0.99 with a mean r = 0 .9963 . The dashed lines separate the three ID channel models (top-left) from the three OOD channel models (bottom-right). shared filter representation, and the three OOD channels activate this representation with relevance patterns very close to those of the three ID channels on which the network was trained. This consistency also supports a single-mask strategy for the architecture compression of Section 6: because the relevance ranking is stable across all six channel models, a single ranking computed by averaging across them covers 15 every channel condition simultaneously. A fuller discussion of the mechanism implied by this asymmetry is deferred to Section 7. 
+
+6 RELEVANCE-GUIDED ARCHITECTURE COMPRESSION 
+
+The filter taxonomy of Section 5.3.2 indicates that approximately 18% of the filters in each residual block carry low relevance across all six channel models. This suggests that a network with a reduced number of filters per block should match the estimation accuracy of the full K = 256 baseline, provided the reduction is consistent with the relevance ranking. This section evaluates the suggestion empirically. 
+
+6.1 STRATEGY AND ARCHITECTURAL CONSIDERATIONS 
+
+We construct compact DPA-RDCNN variants by reducing the hidden filter count of every residual block from K = 256 
+
+to a smaller value K′, selected so as to retain at least the universal and environment-specific filters of the taxonomy. The hidden filter count, referred to as the filter width hereafter, is the only architectural parameter varied across configurations. The number of residual blocks ( Nb = 5 ), the number of dilated convolutions per block ( Nd = 5 ), the kernel size ( k = 4 ), the dilation pattern, and the input–output dimensions are held fixed. The taxonomy of Section 5.3.2 shows that the network can be narrowed: the redundant filters can be removed without losing the universal and environment-specific filters that carry the estimation-relevant representation, which sets a target filter width K′ for each compact model. Surgical removal of individual filters from the trained baseline is not straightforward in this architecture, however. The residual addition in (2) requires the convolutional path output and the skip path output to share the same filter dimension. Removing filters from the convolutional path alone produces a shape mismatch, and the remaining weights are co-adapted to the components that have been removed, which typically degrades performance unless the network is retrained. We therefore train a self-consistent compact model at each target filter width K′ from scratch, using the same multi-channel mixed-SNR data and training hyperparameters as the baseline. The taxonomy sets K′ rather than providing a surgical mapping from baseline filters to compact-model filters, and each configuration is trained with five independent random seeds to quantify training variance. 
+
+6.2 FLOP ANALYSIS 
+
+The FLOP count of a compact DPA-RDCNN with filter width K′ is 
+
+FLOPs( K′) = 2 NSC 
+
+ Nin K′
+
+| {z } 
+
+> global skip
+
++
+
+> Nb−1
+
+X
+
+> b=0
+
+Fb(K′) + K′Nout 
+
+| {z }
+
+> output head
+
+ , (11) with Fb(K′) = N (b)in K′k + ( Nd − 1) K′2k + 1[b = 0] Nin K′, where N (b)in = Nin for b = 0 and K′ otherwise, 
+
+NSC = 52 , Nin = Nout = 100 , k = 4 , and Nd = 5 . The three terms in Fb are the first dilated convolution, the remaining Nd − 1 dilated convolutions, and the block-0 downsample that matches the input channel count to K′. The quadratic dependence on K′ in the per-block term dominates as K′ grows, so even a modest reduction in filter width produces a substantial reduction in the number of operations. At K′ = 256 , the uncompressed baseline, the count is 0.673 GFLOPs per frame, and at K′ = 160 it is 0.267 GFLOPs. 
+
+6.3 NMSE UNDER COMPRESSION 
+
+Table 4 reports the parameter count, the FLOP count, and the NMSE degradation at 20 dB SNR for five compact configurations relative to the K′ = 256 baseline. Two configurations are of particular interest. At K′ = 210 , which corresponds to retaining roughly the 81% of filters identified as either universal or environment-specific by the taxonomy, the average NMSE degradation is 0.16 ± 0.45 dB .The standard deviation across seeds exceeds the mean, so the degradation is statistically consistent with zero at this operating point. At K′ = 160 , which reduces the parameter count by 60.2% and the FLOP count by 60.4%, the average NMSE degradation is 0.58 ± 0.36 dB . The degradation accelerates below K′ = 128 (where it reaches 1.28 ± 0.30 dB ), which suggests K′ = 160 as a practical lower bound when sub-1 dB NMSE loss is required. 
+
+6.4 BER UNDER COMPRESSION 
+
+Fig. 13 shows the coded BER of the baseline and the two practical operating points ( K′ = 210 and K′ = 160 ) across all six channel models. 16 Table 4: Compression versus NMSE trade-off. ∆NMSE values are averaged across all six channel models at 20 dB 
+
+SNR and reported as mean ± standard deviation across five training seeds. 
+
+K′ Parameters Parameter reduction (%) FLOPs (G) 
+
+∆NMSE (dB )256 6 484 580 — 0.673 —210 4 392 040 32.3 0.456 +0 .16 ± 0.45 
+
+192 3 683 812 43.2 0.382 +0 .41 ± 0.34 
+
+160 2 578 340 60.2 0.267 +0 .58 ± 0.36 
+
+128 1 669 476 74.3 0.173 +1 .28 ± 0.30 
+
+96 957 220 85.2 0.099 +2 .06 ± 0.18 0 5 10 15 20 25 30 35 40                                                                                         
+
+> SNR (dB)
+> 10 -7
+> 10 -6
+> 10 -5
+> 10 -4
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+> BER
+> VTV_SDWW (ID)
+> Perfect Channel Baseline (K=256) K=210 (32.3%) K=160 (60.2%)
+> 0510 15 20 25 30 35 40
+> SNR (dB)
+> 10 -7
+> 10 -6
+> 10 -5
+> 10 -4
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+> BER
+> RTV_SUS (ID)
+> Perfect Channel Baseline (K=256) K=210 (32.3%) K=160 (60.2%)
+> 0510 15 20 25 30 35 40
+> SNR (dB)
+> 10 -7
+> 10 -6
+> 10 -5
+> 10 -4
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+> BER
+> VTV_EX (ID)
+> Perfect Channel Baseline (K=256) K=210 (32.3%) K=160 (60.2%)
+> 0510 15 20 25 30 35 40
+> SNR (dB)
+> 10 -7
+> 10 -6
+> 10 -5
+> 10 -4
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+> BER
+> VTV_UC (OOD)
+> Perfect Channel Baseline (K=256) K=210 (32.3%) K=160 (60.2%)
+> 0510 15 20 25 30 35 40
+> SNR (dB)
+> 10 -7
+> 10 -6
+> 10 -5
+> 10 -4
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+> BER
+> RTV_UC (OOD)
+> Perfect Channel Baseline (K=256) K=210 (32.3%) K=160 (60.2%)
+> 0510 15 20 25 30 35 40
+> SNR (dB)
+> 10 -7
+> 10 -6
+> 10 -5
+> 10 -4
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+> BER
+> RTV_EX (OOD)
+> Perfect Channel Baseline (K=256) K=210 (32.3%) K=160 (60.2%)
+
+Figure 13: Coded BER of the baseline ( K′ = 256 ) and the two practical compact configurations ( K′ = 210 , 32.3% parameter reduction, and K′ = 160 , 60.2% parameter reduction) across all six channel models. Top row: ID channels. Bottom row: OOD channels. The perfect channel curve provides the BER lower bound under ideal CSI. At K′ = 210 , the BER curves of the compact model lie essentially on top of the baseline across all six channel models, consistent with the near-zero NMSE degradation reported in Table 4. At K′ = 160 , a small separation appears at high SNR , but the BER curves remain close to the baseline throughout the practical SNR range. The OOD channels show a similar pattern to the ID channels at both compression levels. The curve variability visible below a BER of roughly 
+
+10 −6 on some panels reflects the finite test set rather than a difference between configurations: each BER point is estimated from 2 000 test frames, about 1.9 × 10 7 coded bits, so a BER of 10 −6 corresponds to only of the order of ten bit errors and the estimate becomes statistically unstable. The configurations should therefore be compared above this level, where the error counts are large enough for the BER estimates to be reliable. 
+
+6.5 OOD GENERALISATION UNDER COMPRESSION 
+
+Table 4 reports the mean NMSE degradation averaged over all six channel models. Splitting this average into the ID and OOD groups reveals a small but consistent pattern: at every compression level, the OOD degradation is approximately equal to or slightly smaller than the ID degradation. At K′ = 160 , the OOD mean degradation is 0.57 ± 0.15 dB 
+
+compared with 0.59 ± 0.48 dB on ID channels. At K′ = 96 , the OOD mean is 1.90 ± 0.15 dB compared with 17 2.21 ± 0.20 dB on ID channels. The OOD standard deviation is also smaller than the ID standard deviation at every operating point, indicating that the seed-to-seed variability of the compact models is lower on the held-out channel models than on the training channel models. The reason for this asymmetry is not clear to us, and we leave its investigation for future work. Fig. 14 shows the per-channel NMSE curves with seed-to-seed confidence bands. 0 5 10 15 20 25 30 35 40                                                                 
+
+> SNR (dB)
+> 10 5
+> 10 4
+> 10 3
+> 10 2
+> NMSE
+> VTV-SDWW (ID)
+> Baseline (K=256)
+> K=210 (32.3%)
+> K=192 (43.2%)
+> K=160 (60.2%)
+> K=128 (74.3%)
+> K=96 (85.2%)
+> 0510 15 20 25 30 35 40
+> SNR (dB)
+> 10 5
+> 10 4
+> 10 3
+> 10 2
+> NMSE
+> RTV-SUS (ID)
+> Baseline (K=256)
+> K=210 (32.3%)
+> K=192 (43.2%)
+> K=160 (60.2%)
+> K=128 (74.3%)
+> K=96 (85.2%)
+> 0510 15 20 25 30 35 40
+> SNR (dB)
+> 10 5
+> 10 4
+> 10 3
+> 10 2
+> NMSE
+> VTV-EX (ID)
+> Baseline (K=256)
+> K=210 (32.3%)
+> K=192 (43.2%)
+> K=160 (60.2%)
+> K=128 (74.3%)
+> K=96 (85.2%)
+> 0510 15 20 25 30 35 40
+> SNR (dB)
+> 10 5
+> 10 4
+> 10 3
+> 10 2
+> NMSE
+> VTV-UC (OOD)
+> Baseline (K=256)
+> K=210 (32.3%)
+> K=192 (43.2%)
+> K=160 (60.2%)
+> K=128 (74.3%)
+> K=96 (85.2%)
+> 0510 15 20 25 30 35 40
+> SNR (dB)
+> 10 5
+> 10 4
+> 10 3
+> 10 2
+> NMSE
+> RTV-UC (OOD)
+> Baseline (K=256)
+> K=210 (32.3%)
+> K=192 (43.2%)
+> K=160 (60.2%)
+> K=128 (74.3%)
+> K=96 (85.2%)
+> 0510 15 20 25 30 35 40
+> SNR (dB)
+> 10 5
+> 10 4
+> 10 3
+> 10 2
+> NMSE
+> RTV-EX (OOD)
+> Baseline (K=256)
+> K=210 (32.3%)
+> K=192 (43.2%)
+> K=160 (60.2%)
+> K=128 (74.3%)
+> K=96 (85.2%)
+
+Figure 14: Per-channel NMSE against SNR for every compact configuration, plotted as mean ± standard deviation across five seeds. Top row: ID channels. Bottom row: OOD channels. 
+
+6.6 JOINT INPUT AND FILTER COMPRESSION 
+
+The preceding compression results vary the filter width K′ while the input remains the full 5 200-feature representation. The input-level analysis of Section 5.2 suggested that 1 020 of the 5 200 features are sufficient to retain the bulk of the estimation accuracy. We now combine both reductions in a single configuration: a compact model with filter width 
+
+K′ ∈ { 210 , 192 , 160 , 128 , 96 } trained on the 1 020-feature masked input, where the remaining 4 180 input positions are set to zero throughout training and inference. This joint configuration is compared against two references: the full baseline (filter width K′ = 256 , full 5 200-feature input) and the cross-channel model of Section 5.2 (filter width 
+
+K′ = 256 , 1 020-feature input). 
+
+6.6.1 NMSE PERFORMANCE 
+
+Fig. 15 shows the per-channel NMSE for the joint configurations and the two references. Across the low-to-mid SNR range, the joint configurations follow the cross-channel model closely, and the separation between the K′ = 210 and 
+
+K′ = 96 joint configurations is small. This suggests that, once the input has been restricted to the 1 020 features identified in Section 5.2, the filter width is no longer the dominant constraint on NMSE : the input mask sets a floor that the filter-width reduction does not breach. At high SNR , the joint configurations approach the same estimation floor as the cross-channel model. 
+
+6.6.2 BER 
+
+Fig. 16 shows the corresponding coded BER curves. The joint K′ = 210 and K′ = 160 configurations track the cross-channel model across the practical SNR range (0–25 dB ), with visible separation only above 30 dB where the BER falls below 10 −5. Even at K′ = 96 , the BER stays within one decade of the cross-channel model throughout the BER decay region. The OOD channels follow the same pattern as the ID channels. 18 0 10 20 30 40                                          
+
+> SNR (dB)
+> 10 -4
+> 10 -3
+> 10 -2
+> NMSE
+> VTV_SDWW (ID)
+> Baseline Cross-channel Unified K=210 Unified K=192 Unified K=160 Unified K=128 Unified K=96
+> 010 20 30 40
+> SNR (dB)
+> 10 -5
+> 10 -4
+> 10 -3
+> 10 -2
+> NMSE
+> RTV_SUS (ID)
+> Baseline Cross-channel Unified K=210 Unified K=192 Unified K=160 Unified K=128 Unified K=96
+> 010 20 30 40
+> SNR (dB)
+> 10 -4
+> 10 -3
+> 10 -2
+> NMSE
+> VTV_EX (ID)
+> Baseline Cross-channel Unified K=210 Unified K=192 Unified K=160 Unified K=128 Unified K=96
+> 010 20 30 40
+> SNR (dB)
+> 10 -5
+> 10 -4
+> 10 -3
+> 10 -2
+> NMSE
+> VTV_UC (OOD)
+> Baseline Cross-channel Unified K=210 Unified K=192 Unified K=160 Unified K=128 Unified K=96
+> 010 20 30 40
+> SNR (dB)
+> 10 -5
+> 10 -4
+> 10 -3
+> 10 -2
+> NMSE
+> RTV_UC (OOD)
+> Baseline Cross-channel Unified K=210 Unified K=192 Unified K=160 Unified K=128 Unified K=96
+> 010 20 30 40
+> SNR (dB)
+> 10 -4
+> 10 -3
+> 10 -2
+> NMSE
+> RTV_EX (OOD)
+> Baseline Cross-channel Unified K=210 Unified K=192 Unified K=160 Unified K=128 Unified K=96
+
+Figure 15: Per-channel NMSE for the joint input-masking and filter-width reduction configurations, compared with the full baseline and the input-only cross-channel model. 
+
+6.6.3 COMPRESSION ACHIEVED 
+
+The parameter and FLOP reduction of the joint configurations is determined entirely by the filter width K′. The input mask zeros the non-important positions but does not remove the corresponding arithmetic, because the cross-channel mask selects scattered individual positions across the time–frequency grid rather than whole subcarriers or symbols. The dilated convolutions require a regular grid to operate on, so the masked positions must be retained as zeros to preserve that structure, and the dense first-layer convolution therefore still processes the full 52 × 100 input. The parameter and FLOP values consequently match the filter-width-only results in Table 4. At K′ = 210 , the joint configuration retains 4 392 040 parameters (32.3% reduction) and operates at 0.456 GFLOPs per inference frame, while the input representation has been reduced to 19.6% of the original time–frequency grid. At K′ = 160 , the joint configuration retains 2 578 340 parameters (60.2% reduction) and 0.267 GFLOPs. 
+
+6.6.4 OBSERVATIONS 
+
+The joint compression results suggest two practical observations. First, the input mask determines the achievable NMSE floor in this configuration, and reducing the filter width below K′ = 160 adds parameter savings without proportionate NMSE cost relative to the cross-channel model. Second, the joint configuration at K′ = 160 achieves a 60.2% parameter reduction and a 60.4% FLOP reduction while operating on 19.6% of the time–frequency grid, which makes it a candidate operating point for deployment scenarios constrained on both compute and input pipeline cost. A joint optimisation that searches over input mask and filter width simultaneously, rather than applying the two reductions independently, is a direction we leave for future work. 
+
+7 DISCUSSION 
+
+7.1 TWO-LEVEL INTERPRETABILITY HIERARCHY 
+
+The input-level and filter-level analyses reveal a consistent two-level interpretability structure. At the input, 80.4% of features fall below the cross-channel relevance threshold and the cross-channel input correlation exceeds r > 0.81 . At the internal filter level, 18.1% of filters fall below the cross-channel relevance threshold, and the cross-channel filter 19 0 10 20 30 40                                             
+
+> SNR (dB)
+> 10 -6
+> 10 -4
+> 10 -2
+> 10 0
+> BER
+> VTV_SDWW (ID)
+> Perfect Channel Baseline Cross-channel Unified K=210 Unified K=160 Unified K=96
+> 010 20 30 40
+> SNR (dB)
+> 10 -6
+> 10 -4
+> 10 -2
+> 10 0
+> BER
+> RTV_SUS (ID)
+> Perfect Channel Baseline Cross-channel Unified K=210 Unified K=160 Unified K=96
+> 010 20 30 40
+> SNR (dB)
+> 10 -6
+> 10 -4
+> 10 -2
+> 10 0
+> BER
+> VTV_EX (ID)
+> Perfect Channel Baseline Cross-channel Unified K=210 Unified K=160 Unified K=96
+> 010 20 30 40
+> SNR (dB)
+> 10 -6
+> 10 -4
+> 10 -2
+> 10 0
+> BER
+> VTV_UC (OOD)
+> Perfect Channel Baseline Cross-channel Unified K=210 Unified K=160 Unified K=96
+> 010 20 30 40
+> SNR (dB)
+> 10 -6
+> 10 -4
+> 10 -2
+> 10 0
+> BER
+> RTV_UC (OOD)
+> Perfect Channel Baseline Cross-channel Unified K=210 Unified K=160 Unified K=96
+> 010 20 30 40
+> SNR (dB)
+> 10 -6
+> 10 -4
+> 10 -2
+> 10 0
+> BER
+> RTV_EX (OOD)
+> Perfect Channel Baseline Cross-channel Unified K=210 Unified K=160 Unified K=96
+
+Figure 16: Coded BER for the joint compression configurations ( K′ = 210 and K′ = 160 , 1 020-feature input), the full baseline ( K′ = 256 , 5 200-feature input), and the cross-channel model ( K′ = 256 , 1 020-feature input). Top row: ID channels. Bottom row: OOD channels. correlation reaches r = 0 .9963 . The network progressively concentrates the information it relies on: input patterns are moderately shared across channel models, but the internal representations are near-identical across channel models (Fig. 12). The 23.8% universal filter fraction lies in a similar range to the 19.6% cross-channel input feature fraction, which suggests an approximate conservation of the essential information fraction across levels of abstraction. This two-level picture provides a richer account of the DPA-RDCNN’s behaviour under multi-channel training than either level alone: the input-level result indicates which time–frequency positions the network attends to, and the filter-level result indicates 
+
+how the resulting representations are organised internally. 
+
+7.2 CROSS-CHANNEL GENERALISATION MECHANISM 
+
+The r = 0 .9963 filter correlation is the strongest empirical signal reported in this work. Multi-channel training does not appear to improve average performance across channel models simply by widening coverage. Instead, it converges to a shared internal filter representation, with the 58% of filters classified as environment-specific modulating activation levels to accommodate channel-to-channel variation without altering the underlying feature space. The three OOD channels engage the same internal representation, allowing the network to operate on propagation conditions it has not seen during training. The compression results of Section 6.5 are consistent with this account: at every compression level, OOD NMSE degrades approximately as fast as or slightly slower than ID NMSE (e.g., 0.57 ± 0.15 dB vs. 
+
+0.59 ± 0.48 dB at K′ = 160 ; 1.90 ± 0.15 dB vs. 2.21 ± 0.20 dB at K′ = 96 ), and the seed-to-seed variability on OOD channels is consistently lower. The BER curves of Section 6.4 reflect the same pattern qualitatively, and the NMSE results confirm the model-specific differences directly. 
+
+8 CONCLUSION 
+
+This paper presented REACH, a relevance-based interpretability and compression framework for deep-learning vehicular channel estimators, and applied it to a multi-channel-trained DPA-RDCNN at both the input and internal filter levels. The two levels reveal a structural asymmetry: input relevance patterns are moderately shared across channel conditions 20 (mean Pearson correlation ≈ 0.89 ), while internal filter relevance is near-identical ( r = 0 .9963 ). Multi-channel training therefore converges to a shared internal representation rather than maintaining distinct subnetworks for different propagation conditions, and the three OOD channels engage this representation with the same relevance ranking as the three ID channels on which the network was trained. This provides a representational account of the cross-channel generalisation behaviour observed under multi-channel training. The filter taxonomy (23.8% universal, 58.0% environment-specific, 18.1% redundant) is consistent across all five residual blocks, and block-level relevance varies by less than one percentage point. The network operates in a distributed mode in which every block contributes approximately equally, which means meaningful compression must operate at the filter level rather than the block level. Guided by this taxonomy, the compact models reduce both parameter count and FLOPs while preserving accuracy. At the practical operating point K′ = 210 , the reduction is 32.3% with an average NMSE change of +0 .16 ± 0.45 dB . At 
+
+K′ = 160 , the reduction reaches 60.2% with an NMSE change of +0 .58 ± 0.36 dB . The ID –OOD gap remains small at every compression level. Two limitations bound these findings. The compact models are retrained from scratch rather than pruned surgically from the baseline. A natural extension is online pruning via group-sparse regularisation during training, which would allow the low-relevance filters identified by the taxonomy to converge towards small magnitudes and be removed surgically without retraining a separate compact model from scratch. The same attribution framework also extends to weight-level quantisation, where universal filters would be allocated higher bit budgets than redundant filters, providing a principled basis for non-uniform quantisation in deployed vehicular receivers. Finally, the analysis is conditioned on the synthetic Acosta-Marum channel models used throughout. The extent to which the observed representational structure and compression headroom transfer to measured vehicular channels, whose statistics may differ from the simulated models, is an open question for future work. 
+
+References 
+
+[1] S. A. Ngorima, A. S. J. Helberg, and M. H. Davel, “Convolutional DPA Refinement for Real-Time Channel Estimation in High-Mobility Vehicular Networks,” IEEE Access , 2026, Under Review. [2] J. Pan, H. Shan, R. Li, Y. Wu, W. Wu, and T. Q. S. Quek, “Channel Estimation Based on Deep Learning in Vehicle-to-Everything Environments,” IEEE Communications Letters , vol. 25, no. 6, pp. 1891–1895, 2021. [3] A. K. Gizzini, M. Chafii, A. Nimr, and G. Fettweis, “Deep Learning Based Channel Estimation Schemes for IEEE 802.11p Standard,” IEEE Access , vol. 8, pp. 113 751–113 765, 2020. [4] M. Soltani, V. Pourahmadi, A. Mirzaei, and H. Sheikhzadeh, “Deep Learning-Based Channel Estimation,” IEEE Communications Letters , vol. 23, no. 4, pp. 652–655, 2019. [5] H. Ye, G. Y. Li, and B.-H. Juang, “Power of Deep Learning for Channel Estimation and Signal Detection in OFDM Systems,” IEEE Wireless Communications Letters , vol. 7, no. 1, pp. 114–117, 2018. [6] A. K. Gizzini, M. Chafii, S. Ehsanfar, and R. M. Shubair, “Temporal Averaging LSTM-Based Channel Estimation Scheme for IEEE 802.11p Standard,” in 2021 IEEE Global Communications Conference (GLOBECOM) . IEEE, 2021, pp. 01–07. [7] J. Hou, H. Liu, Y. Zhang, W. Wang, and J. Wang, “GRU-Based Deep Learning Channel Estimation Scheme for the IEEE 802.11p Standard,” IEEE Wireless Communications Letters , vol. 12, no. 5, pp. 764–768, 2023. [8] A. K. Gizzini and M. Chafii, “RNN Based Channel Estimation in Doubly Selective Environments,” IEEE Transactions on Machine Learning in Communications and Networking , vol. 2, pp. 1–18, 2024. [9] S. A. Ngorima, A. Helberg, and M. H. Davel, “A Data Pilot-Aided Temporal Convolutional Network for Channel Estimation in IEEE 802.11p Vehicle-to-Vehicle Communications,” in Southern Africa Telecommunication Networks and Applications Conference (SATNAC) , 2024. [10] A. Adadi and M. Berrada, “Peeking Inside the Black-Box: A Survey on Explainable Artificial Intelligence (XAI),” 
+
+IEEE Access , vol. 6, pp. 52 138–52 160, 2018. [11] A. K. Gizzini, Y. Medjahdi, A. J. Ghandour, and L. Clavier, “Towards Explainable AI for Channel Estimation in Wireless Communications,” IEEE Transactions on Vehicular Technology , vol. 73, no. 5, pp. 7389–7394, 2024. [12] A. K. Gizzini, Y. Medjahdi, and M. B. Mabrouk, “GRACE: Gradient-Based XAI Scheme for Channel Estimation in Wireless Communications,” in 2024 IEEE International Mediterranean Conference on Communications and Networking (MeditCom) , 2024, pp. 572–577. [13] S. Bach, A. Binder, G. Montavon, F. Klauschen, K.-R. Müller, and W. Samek, “On Pixel-Wise Explanations for Non-Linear Classifier Decisions by Layer-Wise Relevance Propagation,” PLOS ONE , vol. 10, no. 7, p. e0130140, 2015. 21 [14] H. Li, A. Kadav, I. Durdanovic, H. Samet, and H. P. Graf, “Pruning Filters for Efficient ConvNets,” in International Conference on Learning Representations (ICLR) , 2017. [15] Y. He, G. Kang, X. Dong, Y. Fu, and Y. Yang, “Soft Filter Pruning for Accelerating Deep Convolutional Neural Networks,” in Proceedings of the Twenty-Seventh International Joint Conference on Artificial Intelligence (IJCAI) ,2018, pp. 2234–2240. [16] Y. He and L. Xiao, “Structured Pruning for Deep Convolutional Neural Networks: A Survey,” IEEE Transactions on Pattern Analysis and Machine Intelligence , vol. 46, no. 5, pp. 2900–2919, 2024. [17] H. Cheng, M. Zhang, and J. Q. Shi, “A Survey on Deep Neural Network Pruning: Taxonomy, Comparison, Analysis, and Recommendations,” IEEE Transactions on Pattern Analysis and Machine Intelligence , vol. 46, no. 12, pp. 10 558–10 578, 2024. [18] S.-K. Yeom, P. Seegerer, S. Lapuschkin, A. Binder, S. Wiedemann, K.-R. Müller, and W. Samek, “Pruning by Explaining: A Novel Criterion for Deep Neural Network Pruning,” Pattern Recognition , vol. 115, p. 107899, 2021. [19] C. Yuan, Y. Xie, S. Xie, and J. Wang, “Pruned Tree-Structured Temporal Convolutional Networks for Quality Variable Prediction of Industrial Process,” Journal of Process Control , vol. 143, p. 103312, 2024. [20] F. M. A. Khan, M. Hallaq, H. Abou-Zeid, O. Erak, O. Waqar, S. A. Hassan, O. Alhussein, and E. Hossain, “Model Compression for Sustainable AI in xG Wireless Networks: Recent Advances, Challenges, and Future Directions,” 
+
+IEEE Communications Surveys & Tutorials , vol. 28, pp. 5747–5791, 2026. [21] G. Acosta-Marum and M. A. Ingram, “Six Time- and Frequency-Selective Empirical Channel Models for Vehicular Wireless LANs,” IEEE Vehicular Technology Magazine , vol. 2, no. 4, pp. 4–11, 2007. [22] M. Ancona, E. Ceolini, C. Öztireli, and M. Gross, “Towards Better Understanding of Gradient-Based Attri-bution Methods for Deep Neural Networks,” in Proceedings of the 6th International Conference on Learning Representations (ICLR) , 2018. [23] K. Simonyan, A. Vedaldi, and A. Zisserman, “Deep Inside Convolutional Networks: Visualising Image Classifica-tion Models and Saliency Maps,” in Workshop at the 2nd International Conference on Learning Representations (ICLR) , 2014. [24] A. Shrikumar, P. Greenside, and A. Kundaje, “Learning Important Features Through Propagating Activation Differences,” in Proceedings of the 34th International Conference on Machine Learning (ICML) , 2017. 22

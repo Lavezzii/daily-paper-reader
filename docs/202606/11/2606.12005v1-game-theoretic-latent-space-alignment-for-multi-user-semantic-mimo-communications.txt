@@ -1,0 +1,1507 @@
+Title: Game-Theoretic Latent Space Alignment for Multi-user Semantic MIMO Communications
+
+URL Source: https://arxiv.org/pdf/2606.12005v1
+
+Published Time: Thu, 11 Jun 2026 01:00:26 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+> 1
+
+# Game-Theoretic Latent Space Alignment for Multi-user Semantic MIMO Communications 
+
+Giuseppe Di Poce, Mattia Merluzzi, Emilio Calvanese Strinati, and Paolo Di Lorenzo 
+
+Abstract —Semantic communications enable AI-native wireless systems by mapping raw data into compressed task-oriented la-tent representations. However, independently trained agents often rely on heterogeneous latent spaces and background knowledge, leading to semantic mismatch that degrades mutual understand-ing and downstream task execution, especially in interference-limited multi-user wireless networks. This paper investigates distributed latent-space alignment in multi-user semantic MIMO interference networks with cognitive radio constraints. We con-sider primary users and semantic-aware secondary users sharing the same wireless resources, where secondary agents must simul-taneously mitigate interference and align heterogeneous semantic representations. To address this problem, we formulate semantic alignment as a non-cooperative game and derive a closed-form solution for the joint optimization of linear semantic MIMO transceivers under power and interference constraints. Exploiting the structure of the problem, we recast the original matrix-valued optimization into a lower-dimensional power-allocation game, leading to an iterative semantic water-filling algorithm. We establish sufficient conditions for existence, uniqueness, and global convergence to a Nash equilibrium, explicitly relating semantic alignment properties and physical-channel interactions. Numerical results assess the performance of the proposed frame-work, revealing key trade-offs among semantic compression, task performance, and hierarchical spectrum access. 
+
+Index Terms —Semantic Communication, Game Theory, 6G, Latent Space Alignment, Semantic Channel Equalization. 
+
+I. I NTRODUCTION 
+
+# COMMUNICATION systems have historically been engi-neered in accordance with the nature of the information being conveyed and the operational requirements of the target application. Information theory, rooted in Shannon’s seminal work [2], establishes the fundamental limits of reliable com-munication and data compression for point-to-point systems, thereby defining the theoretical foundations and ultimate per-formance bounds of communication systems [3]. Modulation and source coding schemes lie in between these extremes [4], translating theoretical limits into engineering designs. Today, the enormous data volumes, high-dimensional sens-ing modalities, and unprecedented computational capabilities, push forward the role of data-driven and model-based methods in communication system design [5], [6]. Specifically, deep 
+
+Giuseppe Di Poce, Mattia Merluzzi and Emilio Calvanese Strinati are with CEA Leti, University Grenoble Alpes, 38000 Grenoble, France (e-mail: 
+
+{giuseppe.dipoce, mattia.merluzzi, emilio.calvanese-strinati } @cea.fr). Paolo Di Lorenzo is with the Department of Information Engineering, Electronics, and Telecommunications (DIET), Sapienza University of Rome, 00184 Rome, Italy, and also with CNIT, Parma, Italy (e-mail: paolo.dilorenzo@uniroma1.it). This work has been founded by French government (2030 ANR, ref. 22-PEFT-0010) and by the SNS JU project6G-GOALSunder the EU’s Horizon program Grant Agreement No 101139232. An initial conference work appears in [1]. Manuscript received May 21, 2026; 
+
+neural networks (DNNs) effectively enable modeling the com-plex, non-linear nature of real-world data, learning compact and lower-dimensional representations from raw information sources, preserving application-relevant structure and acting as 
+
+semantic extractors [7]. In this context, communication serves as a meaning exchange, whose effectiveness is evaluated on task-relevance [8], rather than on classical bit-fidelity metrics. This paradigm-shift is captured in Semantic and Goal-Oriented communications (SC) [9], whose aim is to extract the underlying structure before information transmission, saving network resources, and enabling effective task execution [10], [11]. However, introducing semantics fundamentally alters the mere engineering problem: transmitted symbols are repre-sented by latent vectors, whose geometry is model-and-data dependent [12], and significance must be assessed jointly with the underlying physical layer. As a result, the intrinsic relation-ship between learned representations, Artificial Intelligence (AI)-native applications requirements, and physical-layer re-strictions (e.g. fading, interference and latency) remains in-sufficiently understood. Moreover, when semantic-aware users employ heterogeneous internal representations, their model-dependence induces misaligned latent spaces [13], arising 
+
+semantic noise , i.e., errors caused by mismatched logic and background knowledge. This scenario naturally arises in de-centralized semantic ecosystems composed of heterogeneous AI-native devices that do not share a common internal logic or semantic representation space. For instance, inter-operating devices produced by different vendors or manufacturers may rely on proprietary foundation models and latent represen-tations that cannot be disclosed due to intellectual property, privacy, or commercial constraints. As a consequence, trans-mitter and receiver semantic spaces may exhibit substantial mismatch, despite targeting the same downstream task. A similar situation emerges in neuromorphic and ultra-low-power edge AI platforms, such as NeuroCorgi [14], where compact hardware-oriented neural architectures are optimized for local inference under stringent energy and memory constraints. In these settings, semantic communication nodes may employ highly heterogeneous latent representations, making semantic interoperability particularly challenging and motivating adap-tive latent-space alignment mechanisms. 
+
+Related works. Semantic channel equalization (SCE) ad-dresses latent-space mismatch by aligning encoder and de-coder representations when end-to-end joint training is imprac-tical [15]. Existing approaches exploit optimal transport [16], isometry-invariant transformations [17], Parseval frames [18], and sheaf-theoretic methods that jointly learn communication topologies and alignment maps [19]. While effective, these methods mainly focus on point-to-point semantic communica-
+
+> arXiv:2606.12005v1 [cs.GT] 10 Jun 2026 2
+
+tion settings. However, practical semantic wireless systems are inherently multi-user and interference-limited, with multiple semantic-aware agents concurrently sharing network resources over interference channels without explicit coordination, as in classical and cognitive radio networks [20]. In such scenarios, semantic alignment must coexist with interference manage-ment and opportunistic spectrum access. To this end, recent works on semantic-aware source coding have investigated joint source–channel coding [21] and goal-oriented compression strategies [22]–[24], following the “learning to communicate” paradigm [25]. Nevertheless, most existing approaches still neglect multi-agent interactions over interference channels. By contrast, interference management in semantic-agnostic wireless systems has been extensively studied through bio-inspired resource allocation and self-organizing mecha-nisms [26], [27], as well as game-theoretic formulations for distributed power control and spectrum sharing [28], [29]. In these frameworks, cognitive radio nodes compete to optimize local utility functions while exploiting sensing capabilities to mitigate, or completely avoid, interference toward primary users [30], [31]. Motivated by these observations, we extend semantic communication toward cognitive multi-agent systems by introducing semantic-aware cognitive users , i.e., agents capable of processing semantic information through heteroge-neous latent representations while sensing the electromagnetic environment and opportunistically accessing shared wireless resources. This perspective calls for a unified framework jointly accounting for semantic alignment, interference man-agement, and cognitive spectrum access. Although [32] studies delay–accuracy trade-offs for goal-oriented cognitive commu-nications, semantic mismatch and multi-user interference are not considered. To the best of our knowledge, a distributed game-theoretic framework for semantic channel equalization over cognitive interference networks remain unexplored. 
+
+Contributions. This work investigates distributed semantic channel equalization in cognitive multi-user MIMO networks, where secondary semantic-aware agents operate concurrently without explicit coordination while preserving licensed users through spatial interference constraints. The problem is formu-lated as the joint optimization of semantic linear transceivers under power and interference constraints, while accounting for mutual interference among cognitive users. We model the resulting interaction as a Nash Equilibrium Problem (NEP), where each player selfishly optimizes its semantic alignment strategy through linear pre(post)-equalization transformations that jointly perform semantic compression (decompression), interference mitigation, and latent-space alignment. The main contributions of this work are summarized as follows: 
+
+i) We introduce a distributed game-theoretic framework for semantic channel equalization over cognitive MIMO interference networks, enabling latent-space alignment among heterogeneous semantic agents operating un-der mutual interference and hierarchical spectrum-access constraints. The proposed formulation jointly accounts for semantic mismatch, physical-layer interactions, and op-portunistic spectrum sharing within a unified framework. 
+
+ii) We formulate the joint design of semantic linear MIMO transceivers as a constrained non-cooperative optimiza-tion problem and derive a closed-form solution for the players’ best-response strategy. Specifically, we show that the original matrix-valued optimization problem can be equivalently recast as a lower-dimensional power-allocation game over transmit antennas and channel uses. 
+
+iii) We prove that the resulting optimal strategy admits a semantic water-filling interpretation, where the allocated power jointly depends on semantic alignment and inter-ference conditions. Building on this structure, we propose the Iterative Semantic Water-Filling (ISWF) algorithm, enabling fully distributed latent-space alignment across cognitive semantic users without centralized coordination. 
+
+iv) We establish sufficient conditions for existence, unique-ness, and global convergence to a pure-strategy Nash equilibrium. We also derive an explicit relationship between semantic alignment properties and the cross-coupling interactions among users, proving that the con-vergence of the semantic game is inherently governed by both the semantic geometry of the latent representations and the physical characteristics of the wireless channels. 
+
+v) We assess the proposed framework on image classifica-tion and reconstruction tasks using heterogeneous seman-tic models, demonstrating the effectiveness of distributed semantic alignment under interference-limited conditions. Numerical results highlight the trade-offs among semantic compression, task performance, interference mitigation, and cognitive spectrum access, while validating the pro-posed low-complexity distributed implementation. 
+
+Outline. The remainder of this paper is organized as follows. Section II introduces the considered cognitive semantic com-munication model, and Section III formulates the SCE problem under power and interference constraints. Section IV recast the problem within a game-theoretic framework and derives an equivalent lower-dimensional semantic power-allocation game. Section VI presents the proposed Iterative Semantic Water-Filling algorithm, analyzing its convergence properties and establishing sufficient conditions for uniqueness of the Nash equilibrium. Finally, Section VII provides numerical results, and Section VIII draws the conclusions. 
+
+Notation. Scalar, column vector, and matrix variables are respectively indicated by plain letters a (A), bold lowercase letters a, and bold uppercase letters A. The n-th component of a vector is indicated by [a]n. We will refer to sets with calligraphic uppercase letters A. The range space and the null space are denoted respectively by R(·) and N (·), the n-th eigenvalue of a matrix A is denoted by eig n(A). Additional notation is introduced as needed throughout the manuscript. II. S YSTEM MODEL 
+
+We consider a multi-user interference environment com-posed by a set of L semantic-aware transmitter-receiver (tx-rx) pairs, indexed by l, acting as secondary users and sharing the same set of physical resources as time, frequency and space, and a set P of primary users owning these resources. Each secondary tx-rx pair is endowed with pre-trained DNNs to encode and decode semantic information, respectively, with the common goal to execute a down-stream task at receiver 3MIMO 
+
+> Wireless Channel
+> MIMO
+> Wireless Channel
+> LATENT SPACE MISMATCH
+> PRIMARY USER
+> Preserved directions
+> toward primary users
+> Interfering link
+> Semantic noise
+> SECONDARY TX
+> TASK-SPECIFIC HEAD
+> TASK-SPECIFIC HEAD
+> INTERFERING
+> SECONDARY TX
+> SECONDARY RX
+> SECONDARY RX
+> Task Execution
+> Post-Alignment discrepancy
+
+Fig. 1: Pictorial overview of the proposed system model. 
+
+side. The described communication system coexist without direct cooperation, and no centralized master node or authority is assumed to handle the network access for secondary users. Let D be a shared dataset accessible to all tx-rx pairs, and 
+
+sTl ∈ Rdl denote the semantic feature vector extracted by the l-th transmitter from a data point z ∈ Rq , via a DNN backbone pre-trained function. The collection of latent vectors 
+
+sTl generated from all z ∈ D defines the transmitter semantic latent space, which captures the internal representation used to map raw input data into lower-dimensional task-oriented features. Each l-th receiver relies on its own latent space structure, which differs from that of its intended transmitter, and must therefore be properly aligned to ensure reliable task performance. Furthermore, simultaneous transmissions introduce multi-user interference (MUI), which degrades the quality of the transmitted latent information. The objective is to maximize the alignment between the latent spaces of each tx-rx secondary user pair, while accounting for both (semantic and physical) channel noise and MUI, without generating interference to primary users owning the spectrum. The proposed semantic equalization scheme at the l-th trans-mitter is composed of the following steps. First, assuming w.l.o.g. that dl is even, we proceed by pairing the first half of the semantic features in sTl ∈ Rdl with the second half to form complex symbols, yielding an input vector xl ∈
+
+C dl 
+
+> 2
+
+. Similarly to analog deep joint source-channel coding (DJSCC) schemes [10], [21], latent representations are trans-mitted directly over the wireless channel without conventional digital modulation and channel coding, enabling end-to-end semantic-aware communications. Then, we exploit a semantic pre-equalizer fl(·) that jointly performs semantic alignment and feature compression. Specifically, fl : C dl 
+
+> 2
+
+−→ CKN Tl
+
+performs a learnable transformation that maps the transmitter complex vector xl ∈ C dl 
+
+> 2
+
+into the compressed representation 
+
+xl ∈ CKN Tl , where NTl is the number of antennas at the 
+
+l-th transmitter, and K represents the number of channel uses. The compression factor resulting from transmitting K
+
+MIMO symbols from the original dl/2 complex values is given by ξl = Kdl/2 . The compressed vectors xl are transmitted over K channel uses through a flat-fading MIMO channel 
+
+Hl,l ∈ CNRl ×NTl , where NRl is the number of antennas at the l-th receiver. In addition, concurrent transmission causes interference to the other users through the cross-link MIMO channels, i.e., Hj,l , for all j̸ = l. Eventually, at the rx-side, a post-equalization function maps the received symbols into a complex vector ˆyl ∈ C ml 
+
+> 2
+
+via learnable transformation 
+
+gl : CKN Rl −→ C ml 
+
+> 2
+
+. Overall, the received signal over the l-th tx-rx pair can be modeled as: 
+
+ˆyl = gl
+
+
+
+Hl,l fl(xl) + X  
+
+> j̸=l
+
+Hj,l fj (xj ) + vl
+
+
+
+(1) where Hl,l = IK ⊗ Hl,l ∈ CKN Rl ×KN Tl is the direct channel of link l, Hj,l = IK ⊗ Hj,l ∈ CKN Rl ×KN Tj is the cross-channel matrix between source j and destination l, with ⊗
+
+denoting the Kronecker product; finally, vl is a zero-mean circularly symmetric complex Gaussian noise vector with covariance matrix Rvl = σ2 
+
+> vl
+
+I. The second term on the right-hand side of (1) represents the MUI perceived by the l-th destination and caused by the other active communication links. To ease notation, in the sequel we denote the MUI plus noise (MUIN) term of the l-th link in (1) as 
+
+nl = X  
+
+> j̸=l
+
+Hj,l fj (xj ) + vl.
+
+At the l-th receiver, the complex latent vector ˆyl ∈ C ml 
+
+> 2
+
+in 
+
+(1) is then converted into a real vector ˆsRl of dimension ml,by inverting the halving operation done at transmitter side. Finally, the received signal is processed by a task-specific DNN at the receiver to accomplish a desired task. 
+
+Semantic channel equalization model. The semantic mis-match problem can be addressed by minimizing a post-alignment discrepancy metric d0(·, ·) between the latent rep-resentation expected at the l-th receiver, yl, and the aligned received signal ˆyl, namely 
+
+min  
+
+> ˆyl∈S
+
+d0(yl, ˆyl) (2) 4
+
+subject to the physical communication constraints encoded in the feasible set S. The goal is to align the semantic represen-tations exchanged among AI-native devices while respecting the underlying communication constraints. Several alignment metrics can be employed for this purpose, ranging from opti-mal transport mappings to information-theoretic dissimilarity measures between distributions, such as the Kullback–Leibler divergence or the Hellinger distance [33]. In this work, we jointly optimize the learnable transformations fl and gl for each unlicensed user l, aiming to minimize the semantic discrepancy between the target latent vectors sRl and the reconstructed representations ˆsRl across all L communication links. To enable a tractable analytical formulation, we consider linear semantic pre-equalizers {fl(·)}Ll=1 , each represented by a matrix Fl ∈ CKN Tl × dl 
+
+> 2
+
+, and linear semantic equalizers 
+
+{gl(·)}Ll=1 , modeled by matrices Gl ∈ C ml  
+
+> 2×KN Rl
+
+, for all 
+
+l = 1 , . . . , L . To this end, we exploit latent training vectors as semantic pilots to enable semantic channel estimation and latent-space alignment [15]. Specifically, semantic pilots consist of paired latent representations extracted from seman-tically related data samples at transmitter and receiver side, and are used to learn the transformations required to reconcile heterogeneous semantic spaces through the wireless channel. For the l-th link, we consider a set of n labeled pilot pairs 
+
+{(xi,l , yi,l )}i∈T r , drawn from the available training dataset Tr ,where xi,l and yi,l denote the tx and rx latent representations associated with the same semantic sample. We make the following assumptions: A0) Pre-whitening: latent space vectors xl, yl are modeled as zero-mean random vectors with weighted covariance matrices R(Ω) 
+
+> x
+
+, R(Ω) 
+
+> y
+
+= I, for any diagonal weighting matrix Ω ≻ 0. Here, Ω weights the semantic pilot samples (cf. (7)), emphasizing semantically relevant ex-amples or latent directions. This assumption is without loss of generality, since the corresponding whitening transformation can always be absorbed into the semantic pre-equalizer Fl.A1) Statistically independent representations: we assume 
+
+{xl, yl} ⊥ ⊥ xj ∀ l̸ = j ∈ L. (3) with ⊥⊥ denoting independence among random variables. A2) Perfect channel state information (CSI): we assume closed loop systems with perfect CSI, with a sufficiently long channel coherence time such that channels are con-sidered static across all channel uses. Channel matrices are assumed to be full rank. The effect of imperfect CSI knowledge will be numerically assessed in Sec.VII. A3) Interference estimation: each receiver is able to estimate the covariance matrix of the locally perceived interference generated by the other communication links. Under these assumptions, the channel model over the l-th communication link (1) boils down to: 
+
+ˆyl = GlHl,l Flxl + Glnl, l = 1 , . . . , L. (4) Furthermore, for each l-th transmitter, the total average trans-mit power is constrained as: 
+
+E{|| Flxl|| 2 
+
+> F
+
+} = tr {FlFHl } ≤ KP max , ∀l ∈ L (5) where Pmax is the average power budget per channel use. Assumption A1 is well motivated in decentralized semantic networks, where heterogeneous users rely on independently trained models and uncoordinated data sources. Assumption A3 further captures cognitive semantic users with sensing capabilities, enabling adaptive transmission while limiting interference toward primary users. Motivated by this setting, we next formulate the semantic alignment problem within a cognitive multi-user communication framework. III. P ROBLEM FORMULATION 
+
+Building on the semantic communication model introduced in the previous section, the semantic channel equalization problem can be formulated as an empirical risk minimiza-tion problem under power and interference constraints. For analytical tractability, we adopt the weighted mean squared error (MSE) as post-alignment distance metric d0(·, ·) in (2). Semantic linear transceivers jointly perform semantic compression (decompression), physical-layer equalization, and latent-space alignment at transmitter (receiver) side. To pre-serve licensed users while enabling spectrum sharing, we also impose the deterministic spatial interference constraint 
+
+WHl FlFHl = 0, (6) where Wl ∈ CKN Tl ×rWl is a full-rank matrix whose columns span the protected spatial directions toward the primary users. Hence, secondary transmissions are forced to lie in the orthog-onal complement of the protected subspace, enabling spatial spectrum sharing. The resulting optimization problem is: 
+
+min 
+
+> Fl,Gl
+
+X
+
+> i∈T r
+
+E
+
+n
+
+ωi,l ∥yi,l − Gl (Hl,l Flxi,l + nl)∥2
+
+> F
+
+o
+
+(7) s.t. tr FlFHl ≤ KP max , WHl (FlFHl ) = 0,
+
+for all l = 1 , . . . , L, where Ωl ≜ diag( ωl) ∈ Rn×n contains strictly positive coefficients weighting the post-alignment dis-tortion metric. Under A0 and A1, the covariance matrix of the multi-user interference-plus-noise (MUIN) term is given by 
+
+Rnl = X 
+
+> j̸=l
+
+(Hj,l Fj )( Hj,l Fj )H + σ2 
+
+> vl
+
+R(Ωl) 
+
+> vl
+
+(8) where 
+
+R(Ωl) 
+
+> vl
+
+= tr( Ωl)I ∈ CKN Rl ×KN Rl (9) denotes the weighted noise covariance matrix. The covariance in (8) captures both thermal noise and the aggregate multi-user interference generated by the other active links, shedding light on the underlying user’s interactions. Problem (7) is challenging for two main reasons. First, the objective func-tion depends bilinearly on the semantic transceivers (Fl, Gl),yielding a non-convex optimization problem. Second, commu-nication links are mutually coupled through the interference term Glnl, since each user’s strategy depends on the semantic transmission policies adopted by the others. These interactions naturally induce a decentralized strategic behavior among semantic users. Motivated by this observation, in the next section we recast the SCE problem as a non-cooperative game, where each communication link selfishly optimizes its semantic transceiver under cognitive interference constraints. 5
+
+IV. S EMANTIC GAMES FOR LATENT SPACE ALIGNMENT 
+
+Due to the interference coupling encoded in (8), the SCE problem naturally induces a decentralized strategic interaction among communication links. Motivated by this observation, we reformulate (7) as a Nash Equilibrium Problem (NEP), modeling each communication link as a strategic player whose optimization variables depend on the strategies adopted by the other active users. Formally, the L communication links act as players, where each l-th user controls its alignment strategy 
+
+θl ≜ [Gl, Fl], with the semantic pre-equalizer constrained to the local feasible set Ql, defined as: 
+
+Ql ≜
+
+n
+
+Fl ∈ CKN Tl × dl 
+
+> 2
+
+: tr FlFHl ≤ KP max ,WHl FlFHl = 0 
+
+o
+
+.
+
+(10) Since no coupling constraints are present among players, the global feasible set is the Cartesian product Q ≜ ΠLl=1 Ql.Accordingly, the aggregated decision variable is denoted by 
+
+θ ≜ (θ1,. . ., θL) ∈ Q . Each l-th player aims to choose a profile strategy that maximizes its payoff function, denoted by pl(·):
+
+max 
+
+> θl∈Q l
+
+pl(θl, θ−l) , (11) where θ−l ≜  θ1, . . ., θl−1, θl+1 , . . ., θL
+
+ identify the align-ment strategies of interfering links. An aggregate strategy profile θ⋆ is said to be a NE if no player can improve its objective by unilaterally deviating from its own equilibrium strategy θ⋆l , given that all the other players act according to it [28]. Formally, it can be expressed as: 
+
+pl(θ⋆l , θ⋆
+
+> −l
+
+) ≥ pl(θl, θ⋆
+
+> −l
+
+), ∀θl ∈ Q l. (12) Generally, the achievability and convergence to a NE holds only under some conditions. Following Rosen’s theorem [34], a game G : ⟨L, Q, {pl}l∈L⟩ admits at least one (pure) NE if: (i) for every player, the payoff function is continuously dif-ferentiable and concave in (θl, θ−l) given the strategies of other players θ−l ;(ii) each l-th nonempty feasible set Ql is compact and convex. 
+
+In the considered setting, the objective function in (7) naturally defines the local utility of the l-th player. However, its non-convex structure hinders the analysis of the resulting NEP. Therefore, in the sequel, we derive an equivalent convex re-formulation enabling tractable optimization of semantic linear MIMO transceivers, and guaranteeing the existence of a NE. 
+
+A. Pre-Equalizer only Formulation 
+
+We start observing that, for a fixed Fl, problem (7) becomes convex in Gl. Let Xl ∈ C dl  
+
+> 2×n
+
+denote the matrix that collects all latent transmitter samples {xi,l }i∈T r , and Yl ∈ C ml  
+
+> 2×n
+
+be the matrix containing the corresponding receiver latent column vectors {yi,l }i∈T r . Then, the optimal equalizer Gl admits the closed-form solution 
+
+Gopt l = YlΩlXHl (Hl,l Fl)H (Hl,l FlFHl HHl,l + Rnl )−1 (13) that is optimal at the l-th receiver for any given semantic pre-equalizer Fl. As derived in Appendix A, exploiting (13) and defining the weighted semantic cross-covariance matrix Pl =
+
+YlΩlXHl , the l-th objective term in (7) admits the equivalent pre-equalizer-only formulation MSE l(Fl) = tr {R(Ωl) 
+
+> yl
+
+−PlPHl +Pl(FHl RHl Fl +I)−1PHl },
+
+(14) where R(Ωl) 
+
+> yl
+
+denotes the Ωl-weighted covariance matrix of the receiver latent representations, and 
+
+RHl = RHl (F−l) = HHl,l R−1 
+
+> nl
+
+Hl,l ∈ CKN Tl ×KN Tl (15) is the effective channel covariance matrix induced by the MUIN term. Since Rnl depends on the interfering pre-equalizers F−l, the matrix RHl (F−l) captures the strategic coupling among semantic users. In the sequel, we omit the explicit dependence on F−l to ease the notation. Thus, hinging on (14) and omitting constant terms, we can recast (7) as: 
+
+min 
+
+> Fl
+
+tr 
+
+n FHl RHl Fl + I−1 PHl Pl
+
+o
+
+s.t. tr FlFHl ≤ KP max , WHl (FlFHl ) = 0.
+
+(16) Although (16) depends only on the semantic pre-equalizer 
+
+Fl, the resulting optimization problem remains non-convex. In particular, the null-interference constraint couples the transmit covariance matrix with the preserved secondary-to-primary spatial directions, making a direct convex reformulation with respect to Fl challenging. To overcome this issue, in the fol-lowing we derive an equivalent lower-dimensional formulation that explicitly incorporates the interference constraints into the feasible transmit subspace. 
+
+B. Pre-Equalizer design based on Subspace Projections 
+
+Let us introduce the projection operator onto the orthogonal complement of the steering vector matrix Wl, defined as: 
+
+ΠR(Wl)⊥ = I − Wl(WHl Wl)−1WHl , (17) where R(Wl)⊥ = N (WHl ) specifies the orthogonal comple-ment of the range space of Wl, and ΠR(Wl)⊥ ∈ CKN Tl ×KN Tl .Exploiting (17), the null-interference constraint in (16) can be equivalently embedded into the tx covariance structure as 
+
+FlFHl = ( ΠR(Wl)⊥ Fl)( FHl ΠR(Wl)⊥ ), (18) which constrains the transmitted signal covariance to lie en-tirely within the subspace orthogonal to the protected spatial directions associated with the primary users. By using (18) into the objective of (16), and replacing the cross-channel matrices with their projected counterparts H⊥ 
+
+> j,l
+
+= Hj,l ΠR(Wj )⊥ , the local problem of the l-th secondary user admits the following equivalent optimization formulation: 
+
+min 
+
+> Fl
+
+tr 
+
+n FHl R⊥ 
+
+> Hl
+
+Fl + I−1 PHl Pl
+
+o
+
+s.t. tr FlFHl ≤ KP max ,
+
+(19) where the channel covariance R⊥ 
+
+> Hl
+
+∈ CKN Tl×KN Tl reads as: 
+
+R⊥ 
+
+> Hl
+
+≜ ΠR(Wl)⊥ (HHl,l R−1 
+
+> nl
+
+Hl,l )ΠR(Wl)⊥ . (20) Defining the (possibly rank-deficient) matrix H⊥ 
+
+> ll
+
+≜
+
+Hll ΠR(Wl)⊥ ∈ CKN Rl×KN Tl , with rank rH⊥ 
+
+> l
+
+, any optimal transmission strategy solving (19) belongs to the orthogonal 6
+
+complement of the null space of H⊥ 
+
+> ll
+
+, regardless of the MUIN covariance structure. Accordingly, let H⊥ 
+
+> l,l
+
+= Ml, 1Ψll DHl, 1
+
+denote the reduced singular value decomposition of H⊥
+
+> l,l
+
+,where Dl, 1 ∈ CKN Tl ×Kr H⊥ 
+
+> l
+
+is a semi-unitary matrix spanning the orthogonal complement of N (H⊥
+
+> l,l
+
+), and Ψll ≻ 0 collects the non-zero singular values. Then, without loss of optimality, the semantic pre-equalizer can be parameterized as 
+
+Fl = Dl, 1 ¯Fl
+
+with reduced-dimensional variable 
+
+¯Fl ∈ ¯Ql ≜
+
+n ¯Fl ∈ CKr H⊥ 
+
+> l
+> ×dl/2
+
+: tr { ¯Fl ¯FHl } ≤ KP max 
+
+o
+
+.
+
+(21) Substituting the factorization Fl = Dl, 1 ¯Fl into (19), we obtain the following equivalent reduced-dimensional problem: 
+
+min  
+
+> ¯Fl∈¯Ql
+
+tr 
+
+n  ¯FHl ¯RHl
+
+¯Fl + I−1 PHl Pl
+
+o
+
+, (22) where ¯RHl ≜ DHl, 1R⊥ 
+
+> Hl
+
+Dl, 1 = ¯HHl,l ¯R−1
+
+> nl
+
+¯Hl,l , and ¯Hl,l ≜
+
+H⊥ 
+
+> ll
+
+Dl, 1. By construction, ¯Hl,l ∈ CKN Rl ×rH⊥ 
+
+> l
+
+has full column rank, which implies ¯RHl ≻ 0. Similarly, defining the reduced cross-channel matrices as ¯Hj,l ≜ H⊥
+
+> jl
+
+Dj, 1, the corresponding reduced MUIN covariance matrix is given by 
+
+¯Rnl ≜ X 
+
+> j̸=l
+
+( ¯Hj,l ¯Fj )( ¯Hj,l ¯Fj )H + σ2 
+
+> vl
+
+tr( Ωl)I. (23) In the sequel, we denote by KN Tl ≜ r ¯Hl the rank of the reduced channel ¯Hl,l , corresponding to the number of admissible channel eigenmodes available to the l-th user. 
+
+Optimal solution via scalarization. Interestingly, a closed-form solution to (22) is attainable in the absence of semantic compression, i.e., when KN Tl = dl/2. However, in the more general case KN Tl < d l/2, we must instead rely on an approximate formulation of (22), which yields a closed-form expression for the optimal pre-equalizer. To this aim, let us introduce the following matrix decompositions: 
+
+¯RHl = Vhl Λhl VHhl , ˜Pl = ˜Upl
+
+˜Σpl
+
+˜QHpl , (24) where Λhl ∈ RKN Tl ×KN Tl , and ˜Pl denotes the best rank-
+
+KN Tl approximation of Pl in (16). Specifically, ˜Upl ∈
+
+C ml  
+
+> 2×KN Tl
+
+and ˜Qpl ∈ C dl  
+
+> 2×KN Tl
+
+in (24) are semi-unitary singular vector matrices, executing the best rank approxima-tion over the first KN Tl orthonormal columns, encoding the principal directions of the semantic pilots cross-covariance. Clearly, if KN Tl = dl/2, we have ˜Pl = P. Now, leveraging the decompositions in (24), we can design the semantic pre-equalizer ¯Fl ∈ CKN Tl × dl 
+
+> 2
+
+solving (22) as 1:
+
+¯Fl = Vhl diag( pΦl) ˜QHpl (25) where Φl ∈ RKN Tl×KN Tl is a diagonal matrix that specifies the power allocation across the l-th transmitter’s antennas 2, i.e.,             
+
+> 1This structure follows from jointly diagonalizing the effective channel covariance ¯RHland the semantic cross-covariance PHlPl, where Vhl
+> identifies the admissible channel eigenmodes and ˜Qplthe principal semantic alignment directions. The diagonal matrix Φlthen allocates power according to semantic relevance and channel quality.
+> 2Without any loss of generality, we consider the coefficients diag( √Φl)
+> as real, since any phase shift can be incorporated in the columns of Vhl.
+
+φl ≜ diag (Φl) = [ φl, 1,. . ., φ l,KN Tl
+
+]T . Finally, exploiting (25) and substituting Pl with ˜Pl in (24), the objective of (22) can be approximated as: 
+
+MSE l(Φl) ≈ tr 
+
+n
+
+(I + ˜Qpl ΦlΛhl
+
+˜QHpl )−1  ˜Qpl
+
+˜Σ2
+
+> pl
+
+˜QHpl
+
+o
+
+.
+
+(26) Now, invoking the matrix inversion lemma and the cyclic in-variance of the trace, (26) admits a full diagonal reformulation in Φl, leading to the equivalent power allocation problem: 
+
+max 
+
+> Φl
+
+tr 
+
+nh 
+
+(ΦlΛhl )−1 + I
+
+i−1 ˜Σ2
+
+> pl
+
+o
+
+s.t. tr {Φl} ≤ KP max . (27) Leveraging this decomposition, the l-th payoff function in (27) admits a fully diagonal pre-equalizer-only formulation. In this setting, the semantic and physical channel eigenmodes are jointly exploited to determine the optimal transmission directions over the MIMO interference channel. The resulting alignment strategy lies in the semantic subspace spanned by 
+
+˜QHpl and incorporates the null-interference projection through the isometry Vhl , while the optimization variables reduce to the per-mode power allocation vector φl = diag( Φl).Interestingly, the proposed reformulation allows us to re-cast the matrix-valued semantic channel equalization prob-lem in (7) into a lower-dimensional vector power-control game , where each player optimizes its transmit power al-location over the admissible semantic–channel eigenmodes. Specifically, defining diag( Λhl ) = [ λl, 1, . . . , λ l,KN Tl
+
+]T and 
+
+diag( ˜Σpl ) = [˜ σl, 1, . . . , ˜σl,KN Tl
+
+]T , the scalarized optimization problem associated with (27) reduces to the maximization of the concave payoff function 
+
+φ∗ 
+
+> l
+
+= arg max 
+
+> φl
+
+pl(φl) = 
+
+> KN Tl
+
+X
+
+> m=1
+
+(φl,m λl,m )˜ σ2
+
+> l,m
+
+φl,m λl,m + 1 
+
+s.t. φl,m ≥ 0, ∀m, 1T φl ≤ K P max ,
+
+(28) for all l = 1 , . . . , L . The reformulation in (28) reveals that semantic alignment is entirely characterized by the singular values of the semantic cross-covariance matrix ˜Pl, which quantify the strength of the shared latent subspaces between tx and rx representations along each admissible semantic– channel eigenmode. To exclude degenerate semantic directions and ensure that every admissible mode contributes to the align-ment process, we introduce the following mild assumption: A4) The semantic cross-covariance matrix ˜Pl is full rank, i.e., 
+
+˜σl,m > 0 for 1 ≤ m ≤ KN Tl .Assumption A4 is naturally justified in decentralized semantic systems where transmitter and receiver employ independently trained latent spaces. In this setting, the semantic pilots induce statistically distinct yet semantically correlated latent represen-tations, yielding a non-degenerate cross-covariance structure. Thus, all admissible alignment modes carry meaningful se-mantic information across the reduced latent subspace. Finally, under A4, the problem in (28) induces the concave N -person game Gsem ≜ ⟨L, ¯Q, {pl}l∈L⟩. Since each feasible set ¯Ql
+
+is nonempty, compact, and convex, and the payoff function in (28) is continuous and concave in φl for fixed φ−l,7
+
+Fig. 2: Illustration of Semantic Water-Filling . Bin heights represent λ−1 
+
+> l
+
+; the water level is given by 1√μl , satisfying the total average power constraint KP max and weighted by the environment depended water-width sl(φ−l). The blue area shows the allocated power φ⋆l across m-th transmitter antennas, over the space-time domain. the existence of at least one pure-strategy Nash equilibrium follows directly from Rosen’s theorem for concave games [34]. 
+
+Semantic Water-filling Power Allocation. By Assumption A4, problem (28) is strictly concave and admits a closed-form solution obtained from the Karush–Kuhn–Tucker (KKT) conditions [35]. Specifically, the optimal power allocation across the admissible semantic-channel eigenmodes is: 
+
+φ∗ 
+
+> l,m
+
+=
+
+"
+
+˜σl,m 
+
+pμlλl,m 
+
+− 1
+
+λl,m 
+
+#
+
+> +
+
+, 1 ≤ m ≤ KN Tl , (29) for all l = 1 , . . . , L , where [x]+ = max(0 , x ), and μl ∈ R+
+
+denotes the Lagrange multiplier associated with the power constraint. The value of μl can be efficiently computed via bi-section to satisfy 1T φl ≤ K P max . The solution in (29) reveals a semantic water-filling structure, where each player allocates power according to both the physical-channel gains λl,m and the semantic relevance coefficients ˜σl,m . In particular, each user only requires a local estimate of the MUIN covariance matrix in (23) to compute its optimal strategy. Specifically, the semantic game Gsem admits a water-filling interpretation [36], with water level 1/√μl and mode-dependent weights sl ≜
+
+˜σl/√λl ∈ RKN Tl . Defining the normalized allocation ˜φl =
+
+φl/sl, the power constraint becomes PKN Tl 
+
+> m=1
+
+˜φl,m sl,m ≤
+
+KP max , where the coefficients sl,m can be interpreted as the width of the water allocated over each semantic–channel eigenmode, as illustrated in Fig. 2. Interestingly, these weights jointly depend on the semantic alignment structure through 
+
+˜σl and on the perceived interference through λl, explicitly coupling the semantic and physical communication layers. V. V ARIATIONAL INEQUALITY REFORMULATION 
+
+The semantic game Gsem ≜ ⟨L, ¯Q, {pl}l∈L⟩ admits an equivalent reformulation as the partitioned variational inequal-ity problem VI ( ¯Q, T) [28]. This reformulation is particularly useful because it enables the analysis of equilibrium existence, uniqueness, and convergence of distributed best-response dy-namics through the structural properties of the pseudo-gradient mapping T. Specifically, the goal is to find φ⋆ ∈ ¯Q such that 
+
+(φ − φ⋆)T T(φ⋆) ≥ 0, ∀ φ ∈ ¯Q,
+
+which directly follows from the first-order optimality condi-tions of the optimization problems [28]. The pseudo-gradient operator T : ¯Q → RLKN Tl is defined block-wise as 
+
+T(φ) ≜  −∇ φl pl(φ)Ll=1 , (30) whose m-th component is given by 
+
+[Tl(φ)] m = ˜σ2
+
+> l,m
+
+λl,m (φ−l)
+
+ 1 + φl,m λl,m (φ−l)2 , (31) for all 1 ≤ m ≤ KN Tl . In particular, strong monotonicity, or more generally the uniformly P property, plays a key role in establishing uniqueness of the NE and convergence of distributed best-response dynamics [37], [38]. Specifically, 
+
+T is strongly monotone on ¯Q if there exists csm > 0 such that 
+
+(φ − z)T  T(φ) − T(z) ≥ csm ∥φ − z∥2, (32) for all φ, z ∈ ¯Q. More generally, T = ( Tl)Ll=1 is a uniformly 
+
+P -function if there exists cuP > 0 such that 
+
+max  
+
+> l∈L
+
+(φl − zl)T 
+
+Tl(φ) − Tl(z)
+
+
+
+≥ cuP ∥φ − z∥2, (33) for all φ, z ∈ ¯Q. Strong monotonicity implies the uniformly 
+
+P property, and both guarantee uniqueness of the solution of 
+
+VI( ¯Q, T) [37]. These properties can be characterized through the differential structure of the pseudo-gradient mapping T,and, in particular, through suitable positivity and diagonal dominance conditions on its Jacobian operator [37]. To this end, we characterize the Jacobian of T, which quantifies how the strategy adopted by each player affects the utility gradients of the others through the semantic interference coupling: 
+
+JT(φ) ≜  Jφj Tl(φ)Ll,j =1 ∈ RLKN Tl ×LKN Tl , (34) whose block structure is given by 
+
+JφjTl(φ)= 
+
+
+
+diag 2 ˜ σ 2
+
+> l,m
+
+λ2
+
+> l,m
+
+ 1 + φl,m λl,m 
+
+3
+
+!
+
+≻ 0, j = l, 
+
+−diag ˜σ 2
+
+> l,m
+
+1 − φl,m λl,m 
+
+ 1 + φl,m λl,m 
+
+3
+
+! ∂λ l,m 
+
+∂φ j,n 
+
+
+
+j̸ = l. 
+
+(35) The diagonal blocks correspond to the Hessian of the lo-cal payoff functions and are positive definite due to strict concavity. Conversely, the off-diagonal blocks capture the interference coupling among semantic users through the sen-sitivity terms ∂λ l,m  
+
+> ∂φ j,n
+
+, which measure how the effective channel eigenmodes vary with the rival players’ strategies. To quantify these interactions, we next derive spectral and sensitivity bounds for the reduced effective channel covariance matrix. 
+
+Theorem 1. Let λl = λl( ¯RHl ) ∈ RKN Tl denote the eigenvalues of ¯RHl , and define 
+
+ˆRnl ≜ KP max 
+
+X 
+
+> j̸=l
+
+¯Hj,l ¯HHj,l + σ2 
+
+> vl
+
+tr( Ωl)I. (36) 
+
+Then, for all 1 ≤ m ≤ KN Tl , it holds: 
+
+eig l,m 
+
+ ¯HHl,l ˆR−1
+
+> nl
+
+¯Hl,l 
+
+
+
+≤ λl,m ( ¯RHl ) ≤ eig l,m 
+
+¯HHl,l ¯Hl,l 
+
+σ2 
+
+> vl
+
+tr( Ωl)
+
+!
+
+.
+
+(37) 8
+
+Moreover, for every j̸ = l and 1 ≤ n ≤ KN Tj , the sensitivity of λl,m ( ¯RHl ) with respect to the j-th player’s power allocation satisfies 
+
+∂λ l,m 
+
+∂φ j,n 
+
+≤ ∥ ¯Hl,l ∥22∥ ¯Hj,l ∥22
+
+σ4 
+
+> vl
+
+tr( Ωl)2 . (38) 
+
+Proof. See Appendix B. ■
+
+Theorem 1 quantifies the interference coupling among se-mantic users through the sensitivity of the effective channel eigenmodes to the rival players’ strategies. These bounds will be instrumental, in the next section, to derive sufficient conditions under which the pseudo-gradient Jacobian in (34) is diagonally dominant, thereby ensuring that the pseudo-gradient mapping in (30) is a uniformly P -function and, consequently, that the game admits a unique Nash equilibrium reached by distributed best-response dynamics. Such condi-tions identify operating regimes where the self-effect of each player dominates the interference induced by the others. VI. I TERATIVE SEMANTIC WATER -FILLING 
+
+The closed-form solution in (29) naturally induces a de-centralized best-response dynamics, where each semantic user updates its power allocation according to the interference gen-erated by the other active links. Since each player only requires a local estimate of the MUIN covariance matrix in (23), the resulting strategy admits a fully distributed implementa-tion. The obtained allocation exhibits a semantic water-filling structure [36], jointly balancing semantic relevance through 
+
+˜σl and channel quality through λl across the admissible semantic–channel eigenmodes. In the following, we introduce the proposed Iterative Semantic Water-Filling algorithm and analyze its convergence properties. 
+
+A. Distributed Algorithmic Solution 
+
+Let Bl(φ−l) denote the best-response mapping of the l-th player induced by the semantic water-filling in (29), namely 
+
+Bl(φ−l) ≜ φl ∈ ¯Ql pl(φl, φ−l) ≥ pl(zl, φ−l), ∀zl ∈ ¯Ql .
+
+(39) Defining the aggregate best-response operator 
+
+B(φ) ≜ B1(φ−1) × · · · × BL(φ−L),
+
+a strategy profile φ⋆ ∈ ¯Q is a pure-strategy Nash equilibrium of Gsem if and only if it is a fixed point of the distributed best-response dynamics, i.e., φ⋆ ∈ B(φ⋆) [28], [38]. Accordingly, the distributed semantic alignment dynamics can be written as the nonlinear fixed-point iteration 
+
+φ(t+1) = B(φ(t)), t ∈ N+, (40) whose equilibrium coincides with the Nash equilibrium of the semantic game [39]. Depending on the adopted update policy, two distributed implementations can be considered [40]. In the Gauss–Seidel scheme, users update sequentially: 
+
+ˆφl = Bl
+
+ φ t+1 1 , . . . , φ t+1  
+
+> l−1
+
+, φ tl+1 , . . . , φ tL
+
+ , (41) 
+
+Algorithm 1: Iterative Semantic Water-filling 
+
+Input: F(0)  
+
+> l
+
+∼ CN (0 , 1) s.t. || Fl|| 2 
+
+> F
+
+= KP max 
+
+Output: Semantic transceivers ¯Fl,Gl
+
+for t ← 1 in game iterations do if ¯F(t) 
+
+> l
+
+satisfies termination criterion then 
+
+STOP 
+
+else 
+
+Retrieve Vhl (φ−l), ˜Qpl defined in (24) 
+
+if Bl scheme is Gauss-Seidel then 
+
+Compute (29) with the update rule (41) 
+
+else if Bl scheme is Jacobi then 
+
+Compute (29) with the update rule (42) Compute φ(t+1)  
+
+> l
+
+by (43), and set ¯F(t+1)  
+
+> l
+
+as (25) Compute G(t+1)  
+
+> l
+
+by (13) 
+
+return ¯F(t+1)  
+
+> l
+
+,G(t+1) 
+
+> l
+
+while, in the Jacobi scheme, all users update simultaneously: 
+
+ˆφl = Bl
+
+ φ t 
+
+> 1
+
+, . . . , φ tl−1, φ tl+1 , . . . , φ tL
+
+ . (42) To improve the stability of the distributed dynamics, we further employ a Krasnosel’skii–Mann relaxation step [28]: 
+
+φt+1  
+
+> l
+
+= φtl + γt  ˆφl − φtl
+
+, (43) with γt ∈ (0 , 1] , γt → 0, and P∞ 
+
+> t=1
+
+γt = +∞. The resulting Iterative Semantic Water-Filling (ISWF) algorithm is summarized in Algorithm 1. The proposed procedure can be interpreted as a distributed fixed-point iteration solving the nonlinear best-response dynamics in (40), whose convergence depends on the interference coupling among semantic users. In the next section, we derive sufficient conditions ensuring convergence of the generated sequence {(φ(t) 
+
+> l
+
+)Ll=1 }Tt=1 toward the Nash equilibrium of Gsem .
+
+B. Convergence Analysis 
+
+As discussed in Section V, convergence of the proposed Iterative Semantic Water-Filling algorithm depends on the structural properties of the pseudo-gradient Jacobian JT(φ)
+
+in (34). In particular, we seek conditions under which the self-effect of each player dominates the interference induced by the others, leading to diagonal dominance of the Jacobian operator and, consequently, to uniqueness of the Nash equilibrium and convergence of distributed best-response dynamics [28]. To formalize such diagonal dominance conditions, we introduce suitable lower and upper bounds on the Jacobian blocks in (35). Specifically, define 
+
+αmin  
+
+> l
+
+≜ inf  
+
+> φ∈Q
+
+eig min 
+
+ Jφl Tl(φ) , βmax  
+
+> lj
+
+≜ sup 
+
+> φ∈Q
+
+Jφj Tl(φ) 2
+
+(44) and introduce the condensed matrix ΥT ∈ RL×L:
+
+[ΥT]lj ≜
+
+(αmin  
+
+> l
+
+, l = j, 
+
+−βmax  
+
+> lj
+
+, l̸ = j. (45) The matrix ΥT provides a compact characterization of the worst-case interaction among semantic users encoded in the 9
+
+Jacobian operator. In particular, αmin  
+
+> l
+
+captures the minimum self-effect of player l, while βmax  
+
+> lj
+
+measures the maximum interference coupling induced by player j on player l through the off-diagonal Jacobian blocks. Since the local payoff func-tion in (28) is strictly concave, the diagonal terms satisfy 
+
+αmin  
+
+> l
+
+> 0 for all l = 1 , . . . , L . The bounds in (44) follow directly from the Jacobian structure in (35) and the sensitivity result in Theorem 1, as illustrated in the sequel: (i) Diagonal blocks: From (35) and 0 ≤ φl,m ≤ KP max ,
+
+αmin  
+
+> l
+
+≥ min  
+
+> m
+
+2˜ σ2
+
+> l,m
+
+λ2
+
+> l,m
+
+(1 + KP max λl,m )3 ≥ 2eσ2 
+
+> l, min
+
+ηl
+
+(46) where ηl ≜ min 
+
+> m
+
+λ2
+
+> l,m
+
+(1 + KP max λl,m )3 .
+
+(ii) Off-diagonal blocks: Again from (35), using sub-multiplicativity of the spectral norm and  
+
+> 1−λl,m φl,m
+> (1+ λl,m φl,m )3
+
+≤ 1, yields 
+
+βmax  
+
+> lj
+
+≤ ˜σ2 
+
+> l, max
+
+sup  
+
+> φ∈¯Q
+
+ ∂λ l,m 
+
+∂φ j,n 
+
+ 
+
+> m,n 2
+
+, j̸ = l. (47) Applying Theorem 1 (cf (38)), we finally obtain 
+
+βmax  
+
+> lj
+
+≤ ˜σ2
+
+> l, max
+
+∥ ¯Hl,l ∥22∥ ¯Hj,l ∥22
+
+σ4 
+
+> vl
+
+tr( Ωl)2 . (48) Substituting the bounds (46)-(48) into (45), we get: 
+
+[ΥT]lj =
+
+
+
+2eσ2 
+
+> l, min
+
+ηl, l = j, 
+
+− ˜σ2
+
+> l, max
+
+∥ ¯Hl,l ∥22∥ ¯Hj,l ∥22
+
+σ4 
+
+> vl
+
+tr( Ωl)2 , l̸ = j. 
+
+(49) We can now invoke the monotone NEP framework in [37] to establish convergence of the proposed semantic game. 
+
+Theorem 2. Consider the game Gsem and its equivalent VI reformulation VI ( ¯Q, T). If ΥT in (49) is a P -matrix 3, then 
+
+T is a uniformly P -function, the game admits a unique pure-strategy Nash equilibrium, and every sequence {(φ(t) 
+
+> l
+
+)Ll=1 }Tt=1 
+
+generated by Algorithm 1 converges to the unique equilibrium 
+
+φ⋆, for any feasible updating scheme. Proof. The result follows from [37, Th. 2]. In particular, the matrix ΥT provides a worst-case characterization of the diag-onal dominance properties of the pseudo-gradient Jacobian. If ΥT is a P -matrix, then T is a uniformly P -function, which guarantees uniqueness of the Nash equilibrium and convergence of the distributed best-response dynamics. ■
+
+The condensed matrix in (49) provides a tractable surrogate to study the monotonicity properties of T. In particular, sufficient conditions ensuring that ΥT is a P -matrix directly yield convergence guarantees for the proposed ISWF dy-namics. From (45), a sufficient condition is the existence of 
+
+τ = ( τ1, . . . , τ L) > 0 such that 
+
+1
+
+τl
+
+X 
+
+> j̸=l
+
+τj
+
+βmax 
+
+> lj
+
+αmin 
+
+> l
+
+< 1, ∀ l = 1 , . . . , L, (50)       
+
+> 3A matrix A∈Rn×nis a P-matrix if all its principal minors are positive.
+
+which corresponds to a weighted strict diagonal dominance condition on ΥT . Under (50), Theorem 2 guarantees global convergence of ISWF to the unique Nash equilibrium of Gsem .Substituting (46) and (48) into (50), and defining 
+
+κ( ˜Σpl ) ≜ eσl, max 
+
+eσl, min 
+
+,
+
+we obtain the sufficient condition 
+
+X 
+
+> j̸=l
+
+τj
+
+τl
+
+∥ ¯Hj,l ∥22 < 2σ4 
+
+> vl
+
+tr( Ωl)2
+
+κ( ˜Σpl )2∥ ¯Hl,l ∥22
+
+ηl, ∀ l ∈ L. (51) 
+
+Remark 1. Condition (51) explicitly links the convergence of the proposed ISWF dynamics to both the physical inter-ference topology and the semantic alignment structure. In particular, strong interference and poorly conditioned semantic subspaces, i.e., large κ( eΣpl ), shrink the convergence region and make the distributed dynamics harder to stabilize. This occurs when semantic alignment is concentrated over a few dominant latent modes, whereas well-conditioned semantic subspaces enlarge the set of operating regimes satisfying the diagonal dominance condition. Hence, (51) establishes an explicit connection between latent-space alignment geometry and the physical interference environment. VII. N UMERICAL RESULTS 
+
+This section provides numerical results to assess the per-formance of the proposed cognitive games for latent space alignment, in a multi-user MIMO system, considering Rician flat-fading channels with rice factor = 1 .5, path loss exponent 
+
+= 2 .5, and uniform linear array with NTl = NRl = 8 . Semantic communication is then implemented by transmitting latent representations, and its effectiveness with respect to the opera-tional requirements of the target application is evaluated on im-age classification and reconstruction. We consider, for the clas-sification task, the CIFAR-10 dataset ( 32 ×32 RGB samples). Among them, 42500 images were used for training and 10000 for testing, with classification across 10 labels. Considered latent representations are produced by the backbone of pre-trained models chosen from the timm Python library. Precisely, we deploy three MIMO point-to-point links, corresponding to secondary users, operating at carrier frequency fc = 3 .5 GHz, where each intended transmitter–receiver separation is 20 m, and the distance between adjacent transmitters varies from 
+
+20 m to 1200 m. Numerical simulations are evaluated by modeling the re-ceiver thermal noise with σ2 
+
+> vl
+
+= kB T B , where B denotes the noise-bandwidth, equal to 350 MHz. To modulate the strength of MUI term, let us define a MUI scaling factor αSF = d(Ti,T j )
+
+> d(Ti,R i)
+
+where the numerator represents the distance between the i-th transmitter and j-th interferer and the denominator the distance between the intended i-th transmitter-receiver. The scaling factor parametrizes the strength of the MUI term, i.e., the higher the scaling factor, the lower the MUI term. Unlicensed transmitters operate at average tx-power Pmax = 1 
+
+W per channel use, with their internal logic given by the DNNs vit small patch32, vit small patch16, levit 128s˙ fb; receivers interpret latent codes using vit base patch16, 10 0 10 20 30 Iterations    
+
+> 6.40
+> 6.45
+> 6.50
+> 6.55
+> 6.60
+> 6.65
+> 6.70
+> Network MSE
+> Gauss Seidel Jacobi
+> 010 20 30 Iterations
+> 2
+> 4
+> 6
+> 8
+> 10
+> Train MSE per player
+> Player Name vit small patch32 224 vit small patch16 224 levit 128s.fb dist in1k Method Gauss Seidel Jacobi
+
+Fig. 3: System BR-iterative behavior with NTl , N Rl = 8 , K =1, αSF = 6 . Network (left) and per player (right) MSE l(Φl)
+
+over game iterations: vit small patch16 is the tx deployed in the middle of the system, suffering the most MUI. vit tiny patch16, vit base patch32 clip. All displayed results on task performance are averaged across multiple channel realizations, and the confidence bands reflect the variability among them. For the sake of simplicity, we choose internal logic operating in transmission holding latent spaces of equal dimensions dl, defining a common compression factor ξ = Kdl
+
+(cf. sec. II). In our experiments, we employed the recursive step-size update γt+1 = γt(1 −ϵγ t), with ϵ = 10 −3, to improve the stability of the distributed dynamics. 
+
+Convergence behavior. Figs. 3 and 4 illustrate the perfor-mance evolution of the proposed Iterative Semantic Water-Filling (ISWF) algorithm in terms of semantic alignment error, decoded MUI, and downstream task accuracy. Specifically, Fig. 3 reports the evolution of the MSE associated with the latent-space alignment objective, while Fig. 4 shows the corresponding decoded MUI power and task accuracy achieved during the distributed best-response dynamics. The generated sequence exhibits stable convergence across all users, pro-gressively reducing both semantic distortion and multi-user interference. Interestingly, the communication link associated with the vit_small_patch16 backbone (orange curve in Fig. 3) experiences the largest alignment cost. This user is deployed in the central position of the network topology and is therefore subject to the strongest interference generated by the neighboring cross-links, effectively acting as the struggler 
+
+of the semantic game. Nevertheless, the proposed distributed strategy successfully adapts the semantic pre-equalizers to mitigate the interference generated toward this critical link, leading to a progressive reduction of the decoded MUI term for all users, as shown in Fig. 4. At the same time, the downstream task accuracy progressively improves over the game iterations, confirming the effectiveness of the proposed latent-space alignment strategy under interference-limited con-ditions. These numerical evaluations highlight, for both update schemes, convergence of the generated sequence toward the fixed point of the best-response dynamics defined in (40). A physical interpretation of the learned semantic pre-equalizers is provided in Fig. 5, which depicts the transmitter radiation patterns obtained under null-interference and power constraints. The reformulation introduced in (18) effectively enables the identification of spatial null directions toward the protected primary user, highlighted by the red dashed line. The 0 10 20 30 Iterations    
+
+> −70
+> −60
+> −50
+> −40
+> −30
+> Train decoded MUI power (dB)
+> Player Name vit small patch32 224 vit small patch16 224 levit 128s.fb dist in1k Method Gauss Seidel Jacobi
+> 010 20 30 Iterations
+> 0.150
+> 0.175
+> 0.200
+> 0.225
+> 0.250
+> 0.275
+> 0.300
+> 0.325
+> Down-Stream Task Accuracy
+> Gauss Seidel Jacobi
+
+Fig. 4: System BR-iterative behavior with NTl , N Rl = 8 , K =1,αSF = 6 . Decoded MUI power in dB(left)and task accuracy. displayed patterns are generated under a sufficiently large Rice factor, such that the resulting channels are close to a geometric propagation regime. Interestingly, the proposed ISWF dynam-ics simultaneously learns to preserve the protected spatial di-rections while forming approximately broadside beam patterns toward the intended receivers. This behavior reflects the joint exploitation of semantic and physical channel subspaces in the distributed power allocation process. 
+
+Task performance. To assess the proposed cognitive game-theoretic framework, we compare it against: (i) MUI-less Alignment , an ideal interference-free semantic alignment strat-egy obtained by neglecting the MUI contribution and setting 
+
+Rn = Rv ; (ii) MUI-agnostic ADMM , corresponding to the alternating optimization framework in [15], where seman-tic MIMO transceivers are designed without cognitive inter-ference management or primary-user protection constraints; and (iii) Oracle-Communication , representing the ideal upper bound corresponding to perfect semantic transmission without channel distortion. The considered schemes are evaluated on both classification and reconstruction tasks as functions of the semantic compression factor ξ and the MUI scaling factor 
+
+αSF , respectively in Figs. 6, 7, 8, and 9. For the classification task, the weighting matrix Ωl in (7) is designed using entropy-based sample weights: 
+
+ωi,l ≜ exp  ζ E(yi,l ), i ∈ T rl , ∀l ∈ L, (52) where E(yi,l ) ∈ [0 , 1] denotes the normalized entropy of the downstream classifier and ζ controls the weighting strength. The rationale is to give more importance to samples on which classification confidence is lower. In the figures, the corresponding weighted schemes are labeled as Weighted ,whereas the unweighted ISWF implementations are reported as Jacobi and Gauss–Seidel . For the reconstruction task, we simply set Ωl = I. which corresponds to the unweighted case. Fig. 6 reports latent-space MSE and classification accuracy versus the compression factor ξ. As ξ decreases, stronger compression progressively degrades the transmitted latent in-formation. Nevertheless, the proposed framework preserves robust task performance over a broad range of compres-sion levels, significantly outperforming MUI-agnostic aligners and approaching the MUI-less benchmark as the number of channel uses increases. Interestingly, entropy-based weighting slightly increases latent-space MSE while improving classifi-cation accuracy, by emphasizing semantically difficult samples 11 
+
+Fig. 5: Transmitter radiation pattern of secondary user, under null interference and power constraint. Displayed allocated power for the sequential scheme with K = 1 , NTl = 8 and αSF = 6 . The red dashed line identifies spatial direction toward primary user. 23     
+
+> Test Network MSE (dB)
+> Alignment Methods:
+> Gauss Seidel Jacobi MUI-Agnostic-ADMM MUI-less-alignment Oracle-Communication weighted Gauss Seidel weighted Jacobi weighted MUI-less-alignment
+> 2.0% 4.0% 6.0% 8.0% 10.0% 12.0%
+
+Compression Factor ξ
+
+> 20%
+> 40%
+> 60%
+> 80%
+> 100%
+> Test Network Accuracy
+> 80.0%
+> 85.0%
+> 90.0%
+> 95.0%
+
+Fig. 6: Task Accuracy-MSE vs. ξ, with NTl = NRl = 8 and αSF = 6 .
+
+during alignment. This behavior is further confirmed in Fig. 7, which reports classification accuracy as a function of the MUI scaling factor αSF under different antenna configurations. As interfering links get closer (smaller αSF ), the proposed semantic game maintains reliable task execution, whereas interference-unaware schemes experience severe degradation due to the inability to suppress the MUI contribution. Finally, Fig. 8 reports MNIST reconstruction performance in terms of MSE and per-pixel reconstruction error, while Fig. 9 shows representative reconstruction examples. Even in this simple setting, the proposed semantic game substantially improves reconstruction quality compared to interference-agnostic approaches, despite simultaneously enforcing spatial protection constraints toward the primary users. 
+
+Resilience to Imperfect CSI. Fig.10 provides classification performance of Algorithm (1) with imperfect CSI, relaxing Assumption A2. The estimated channel is modeled as in [41], such that ˆH = p1−ρ2H(0) + ρ ˜H, where H(0) is the initial known channel, ˜H denotes an independent Gaussian 0 10 20 30 40 50 60 
+
+MUI Scaling factor 
+
+30% 
+
+40% 
+
+50% 
+
+60% 
+
+70% 
+
+80% 
+
+90% 
+
+> Test Network Accuracy
+> Method Gauss-Seidel Jacobi MUI-agnostic-ADMM Oracle-Communication weighted-Gauss-Seidel weighted-Jacobi weighted-MUI-less-alignment Antennas Transmitter 68
+
+Fig. 7: Network classification Accuracy vs. αSF (MUI scaling factor), with NTl = NRl = 6 , 8 and wireless channel usage K = 4 .0.5     
+
+> 1.0
+> 1.5
+> 2.0
+> 2.5
+> 3.0
+> 3.5
+> Test Network MSE (dB)
+> Alignment Methods:
+> Gauss Seidel Jacobi MUI-Agnostic-ADMM MUI-less-alignment Oracle-communication
+> 2.0% 4.0% 6.0% 8.0% 10.0% 12.0%
+
+Compression Factor ξ
+
+> 4.0%
+> 6.0%
+> 8.0%
+> Test Reconstruction Error
+
+Fig. 8: Per-pixel reconstruction error and MSE vs. ξ, consid-ering MNIST dataset with NTl = NRl = 8 and αSF = 6 .12 
+
+Fig. 9: Reconstruction task example on MNIST, considering 
+
+K = 12 and αSF = 6 at the struggler player (vit tiny patch 16 receiver). The first row represents the target test set. channel estimation error and ρ ∈ [0 , 1] quantifies the estimation accuracy. From Fig. Fig.10, we can notice that, also with high estimation error ( ρ ≈ 0.8), the performance degradation is tolerable. This further highlights the effectiveness of the proposed design for semantic transceivers, which resides in the joint exploitation of physical and semantic channel (25). VIII. C ONCLUSIONS 
+
+In this paper, we proposed a novel framework for cognitive semantic communications that jointly addresses latent-space misalignment and semantic coexistence under interference and power constraints, through end-to-end optimized MIMO se-mantic transceivers. Restricting attention to linear transforma-tions, we derived the optimal semantic equalizers up to a best rank approximation over the semantic alignment subspaces. A key outcome of this work is the characterization of the semantic channel equalization problem over interference chan-nels through a semantic water-filling structure, which enables the original matrix-valued latent-space alignment problem to be recast as a lower-dimensional vector power-control game. Building on this reformulation, we provided a complete game-theoretic characterization of the proposed semantic interaction, deriving sufficient conditions for existence, uniqueness, and convergence of the proposed Iterative Semantic Water-Filling algorithm. Extensive numerical results validate the effective-ness of the proposed framework, highlighting the interplay among semantic compression, interference mitigation, and latent-space alignment in AI-native wireless systems. APPENDIX ABy simply plugging in the closed-form solution of Gopt l by 
+
+(13) in the objective function of problem (7) , the mean square error with respect to Fl can be expressed as: MSE l(Fl) = tr {R(Ω) 
+
+> yl
+
+−Pl
+
+SHl (Rnl +SlSHl )−1Sl
+
+ PHl } (53) with Pl = YlΩlXHl and Sl = Hl,l Fl. Expanding by Woodbury identity, the inversion term reads as: 
+
+(Rnl +SlSHl )−1 = R−1 
+
+> nl
+
+−R−1 
+
+> nl
+
+Sl(I+SHl R−1 
+
+> nl
+
+Sl)−1SHl R−1 
+
+> nl
+
+(54) and by Searle Set of identities [42], equation (53) becomes: MSE l(Fl) = tr {R(Ω) 
+
+> yl
+
+−PlPHl + Pl(FHl RHl Fl + I)−1PHl }.0.0 0.2 0.4 0.6 0.8 1.0 
+
+> CSI Estimation Accuracy parameter ρ
+> 20%
+> 40%
+> 60%
+> 80%
+> Test Network Accuracy  Method Gauss-Seidel Jacobi MUI-agnostic-ADMM MUI-less-alignment Oracle-Communication weighted-Gauss-Seidel weighted-Jacobi weighted-MUI-less-alignment Antennas Transmitter 8
+
+Fig. 10: Resilience of Algorithm 1 to imperfect CSI estimation, with K = 12 , α SF = 6 , N Tl = 8 .APPENDIX BFrom (25), we have ¯Fj ¯FHj = PKN Tj 
+
+> m=1
+
+φj,m νhj,m νHhj,m ,
+
+where νhj,m denotes the m-th column of Vhj . Since 
+
+{νhj,m }m is an orthonormal set, νhj,m νHhj,m ⪯ I for all 
+
+m, and therefore ¯Fj ¯FHj ⪯ (P 
+
+> m
+
+φj,m ) I. Using the power constraint in (28), P 
+
+> m
+
+φj,m ≤ KP max , we obtain 
+
+¯Fj ¯FHj ⪯ KP max I. (55) Substituting (55) into the reduced MUIN covariance matrix in (23) yields 
+
+σ2 
+
+> vl
+
+tr( Ωl)I ⪯ ¯Rnl ⪯ KP max 
+
+X 
+
+> j̸=l
+
+¯Hj,l ¯HHj,l + σ2 
+
+> vl
+
+tr( Ωl)I.
+
+Defining ˆRnl in (36), we have σ2 
+
+> vl
+
+tr( Ωl)I ⪯ ¯Rnl ⪯ ˆRnl .
+
+Since matrix inversion reverses the Loewner order over posi-tive definite matrices, i.e., A ⪯ B ⇒ B−1 ⪯ A−1, we get 
+
+ˆR−1 
+
+> nl
+
+⪯ ¯R−1 
+
+> nl
+
+⪯  σ2 
+
+> vl
+
+tr( Ωl)−1I. (56) Now, recalling the effective channel covariance matrix 
+
+¯RHl = ¯HHl,l ¯R−1
+
+> nl
+
+¯Hl,l , (57) premultiplying and postmultiplying (56) by ¯HHl,l and ¯Hl,l ,respectively, gives 
+
+¯HHl,l ˆR−1
+
+> nl
+
+¯Hl,l ⪯ ¯RHl ⪯  σ2 
+
+> vl
+
+tr( Ωl)−1 ¯HHl,l ¯Hl,l .
+
+The eigenvalue bounds in (37) then follow by monotonicity of the eigenvalues under Loewner ordering [43, Cor. 9.9]. Next, we derive the eigenvalue sensitivity bound in (38). Differentiating (57) with respect to φj,n , and using ∂ ¯R−1 
+
+> nl
+
+=
+
+− ¯R−1 
+
+> nl
+
+(∂ ¯Rnl ) ¯R−1 
+
+> nl
+
+, yields 
+
+∂ ¯RHl
+
+∂φ j,n 
+
+= − ¯HHl,l ¯R−1
+
+> nl
+
+ ∂ ¯Rnl
+
+∂φ j,n 
+
+
+
+¯R−1
+
+> nl
+
+¯Hl,l . (58) By eigenvalue perturbation theory [42, Eq. 67], the derivative of the m-th eigenvalue of ¯RHl with respect to φj,n is 
+
+∂λ l,m 
+
+∂φ j,n 
+
+= νHl,m 
+
+∂ ¯RHl
+
+∂φ j,n 
+
+νl,m , (59) where νl,m is the eigenvector associated with λl,m . Substitut-13 
+
+ing (58) into (59) gives 
+
+∂λ l,m 
+
+∂φ j,n 
+
+= −νHl,m ¯HHl,l ¯R−1
+
+> nl
+
+ ∂ ¯Rnl
+
+∂φ j,n 
+
+
+
+¯R−1
+
+> nl
+
+¯Hl,l νl,m .
+
+Combining (59) and (58) with |aH Ba | ≤ ∥ B∥2∥a∥22 yields 
+
+∂λ l,m 
+
+∂φ j,n 
+
+≤ ∥ ¯Hl,l ∥22∥ ¯R−1 
+
+> nl
+
+∥22
+
+∂ ¯Rnl
+
+∂φ j,n 2
+
+. (60) Moreover, differentiating (23) gives 
+
+∂ ¯Rnl
+
+∂φ j,n 
+
+= ¯Hj,l νhj ,n νHhj ,n ¯HHj,l , (61) and therefore 
+
+∂ ¯Rnl
+
+∂φ j,n 2
+
+= ∥ ¯Hj,l νhj ,n ∥22 ≤ ∥ ¯Hj,l ∥22. (62) Furthermore, from (56), 
+
+∥ ¯R−1 
+
+> nl
+
+∥2 ≤ 1
+
+σ2 
+
+> vl
+
+tr( Ωl) . (63) Finally, substituting (62) and (63) into (60) yields 
+
+∂λ l,m 
+
+∂φ j,n 
+
+≤ ∥ ¯Hl,l ∥22∥ ¯Hj,l ∥22
+
+σ4 
+
+> vl
+
+tr( Ωl)2 ,
+
+which proves (38). REFERENCES [1] G. Di Poce, M. Merluzzi, E. Calvanese Strinati, and P. Di Lorenzo, “Distributed semantic alignment over interference channels: A game-theoretic approach,” International Conference of Communication , 2026. [2] C. E. Shannon, “A mathematical theory of communication,” The Bell system technical journal , vol. 27, no. 3, pp. 379–423, 1948. [3] T. Cover, Elements of information theory . John Wiley & Sons, 1999. [4] N. Tishby and N. Zaslavsky, “Deep learning and the information bottle-neck principle,” in IEEE information theory workshop , 2015, pp. 1–5. [5] L. Qiao et al. , “Token communications: A large model-driven frame-work for cross-modal context-aware semantic communications,” IEEE Wireless Communications , vol. 32, no. 5, pp. 80–88, 2025. [6] T. J. O’Shea, T. Erpek, and T. C. Clancy, “Deep learning based mimo communications,” arXiv preprint arXiv:1707.07980 , 2017. [7] H. Xie, Z. Qin, G. Y. Li, and B.-H. Juang, “Deep learning enabled semantic communication systems,” IEEE transactions on signal pro-cessing , vol. 69, pp. 2663–2675, 2021. [8] S. Ma et al. , “Task-oriented explainable semantic communications,” 
+
+IEEE trans. on wireless communic. , vol. 22, no. 12, pp. 9248–9262, 2023. [9] E. Calvanese Strinati and S. Barbarossa, “6g networks: Beyond shannon towards semantic and goal-oriented communications,” Computer Net-works , vol. 190, p. 107930, 2021. [10] D. G¨ und¨ uz et al. , “Beyond transmitting bits: Context, semantics, and task-oriented communications,” IEEE Journal on Selected Areas in Communications , vol. 41, no. 1, pp. 5–41, 2022. [11] E. Calvanese Strinati, P. Di Lorenzo et al. , “Goal-oriented and semantic communication in 6G AI-native networks: The 6G-GOALS approach,” in Proc. of EuCNC/6G Summit . IEEE, 2024, pp. 1–6. [12] A. Lobashev, D. Guskov, M. Larchenko, and M. Tamm, “Hes-sian geometry of latent space in generative models,” arXiv preprint arXiv:2506.10632 , 2025. [13] S. Kornblith, M. Norouzi, H. Lee, and G. Hinton, “Similarity of neural network representations revisited,” in International conference on machine learning . PMlR, 2019, pp. 3519–3529. [14] I. M. Panades et al. , “A 772 μj/frame imagenet feature extractor accel-erator on hd images at 30fps,” in APCCAS-Asia Pacific Conference on Circuits and Systems , 2024. [15] M. E. Pandolfo, S. Fiorellino, E. Calvanese Strinati, and P. Di Lorenzo, “Latent space alignment for AI-native MIMO semantic communica-tions,” IEEE International Joint Conference on Neural Networks, Rome, Italy , 2025. [16] D. Alvarez-Melis, S. Jegelka, and T. S. Jaakkola, “Towards optimal transport with global invariances,” in The 22nd International Conference on Artificial Intelligence and Statistics . PMLR, 2019, pp. 1870–1879. [17] L. Moschella et al. , “Relative representations enable zero-shot latent space communication,” arXiv preprint arXiv:2209.15430 , 2022. [18] S. Fiorellino, C. Battiloro, E. Calvanese Strinati, and P. Di Lorenzo, “Frame-based zero-shot semantic channel equalization for ai-native com-munications,” IEEE Trans.onCognitiveCommunicationsand Networking ,2026. [19] E. Grimaldi, M. E. Pandolfo, G. D’Acunto, S. Barbarossa, and P. Di Lorenzo, “Learning network sheaves for ai-native semantic com-munication,” in 2025 59th Asilomar Conference on Signals, Systems, and Computers . IEEE, 2025, pp. 1692–1696. [20] M. Merluzzi and M. C. Filippou, “Goal-oriented spectrum sharing: Trading edge inference power for data streaming performance,” arXiv preprint arXiv:2503.11552 , 2025. [21] E. Bourtsoulatze, D. B. Kurka, and D. G¨ und¨ uz, “Deep joint source-channel coding for wireless image transmission,” IEEE Transactions on Cognitive Communication and Netw. , vol. 5, no. 3, pp. 567–579, 2019. [22] J. Shao, Y. Mao, and J. Zhang, “Learning task-oriented communication for edge inference: An information bottleneck approach,” IEEE Journal on Selected Areas in Communications , vol. 40, no. 1, pp. 197–211, 2021. [23] Z. Wang, N. Li, Y. Deng, and A. H. Aghvami, “Goal-oriented semantic communications for metaverse construction via generative ai and optimal transport,” arXiv preprint arXiv:2411.16187 , 2024. [24] P. Di Lorenzo, M. Merluzzi, F. Binucci, C. Battiloro, P. Banelli, E. Cal-vanese Strinati, and S. Barbarossa, “Goal-oriented communications for the iot: System design and adaptive resource optimization,” IEEE Internet of Things Magazine , vol. 6, no. 4, pp. 26–32, 2023. [25] T. O’shea and J. Hoydis, “An introduction to deep learning for the physical layer,” IEEE Transactions on Cognitive Communications and Networking , vol. 3, no. 4, 2017. [26] F. Dressler and O. B. Akan, “A survey on bio-inspired networking,” 
+
+Computer networks , vol. 54, no. 6, pp. 881–900, 2010. [27] P. Di Lorenzo, S. Barbarossa, and A. H. Sayed, “Bio-inspired de-centralized radio access based on swarming mechanisms over adaptive networks,” IEEE Trans. on Signal Processing , vol. 61, no. 12, 2013. [28] G. Scutari, D. Palomar, F. Facchinei, and J.-S. Pang, “Convex opti-mization, game theory, and variational inequality theory,” IEEE Signal Processing Magazine , vol. 27, no. 3, pp. 35–49, 2010. [29] D. E. Charilas and A. D. Panagopoulos, “A survey on game theory applications in wireless networks,” Computer Networks , vol. 54, no. 18, pp. 3421–3430, 2010. [30] G. Scutari, D. Palomar, and S. Barbarossa, “Competitive design of multiuser mimo systems based on game theory: A unified view,” IEEE Journal on Selected Areas in Communications , vol. 26, no. 7, pp. 1089– 1103, 2008. [31] J.-S. Pang, G. Scutari, D. Palomar, and F. Facchinei, “Design of cognitive radio systems under temperature-interference constraints: A variational inequality approach,” IEEE Transactions on Signal Processing , vol. 58, no. 6, pp. 3251–3271, 2010. [32] J. Souza, M. Merluzzi, M. P. Mota, B. Soret, and P. Popovski, “Low-latency task-oriented image transmission with opportunistic spectrum access,” Submitted to IEEE SPAWC , 2026. [33] Y. Polyanskiy and Y. Wu, Information theory: From coding to learning .Cambridge university press, 2025. [34] J. B. Rosen, “Existence and uniqueness of equilibrium points for concave n-person games,” Econometrica: Journal of the Econometric Society , pp. 520–534, 1965. [35] S. P. Boyd and L. Vandenberghe, Convex optimization . Cambridge university press, 2004. [36] D. Palomar and J. R. Fonollosa, “Practical algorithms for a family of waterfilling solutions,” IEEE transactions on Signal Processing , vol. 53, no. 2, pp. 686–695, 2005. [37] G. Scutari, D. Palomar, F. Facchinei, and J. Pang, “Monotone games for cognitive radio systems,” in Distributed decision making and control .Springer, 2012, pp. 83–112. [38] F. Facchinei and J. Pang, Finite-dimensional variational inequalities and complementarity problems . Springer, 2003. [39] P. Combettes and J. Pesquet, “Fixed point strategies in data science,” 
+
+IEEE Transactions on Signal Processing , vol. 69, pp. 3878–3905, 2021. [40] D. Bertsekas and J. Tsitsiklis, Parallel and distributed computation: numerical methods . Athena Scientific, 2015. [41] G. R. d. L. Tejerina and I. Atzeni, “Sum of Squared Extended η-μ and 
+
+κ-μ RVs: A New Framework Applied to FR3 and Sub-THz Systems,” 
+
+arXiv preprint arXiv:2502.02092 , 2025. [42] K. B. Petersen, M. S. Pedersen et al. , “The matrix cookbook,” Technical University of Denmark , vol. 7, no. 15, p. 510, 2008. [43] J. A. Tropp, “ACM 204: Matrix Analysis,” 2022.

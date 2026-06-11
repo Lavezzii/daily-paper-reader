@@ -1,0 +1,394 @@
+Title: STCC: A Unified Source-Channel Semantic Token Coding Framework for Semantic Communications
+
+URL Source: https://arxiv.org/pdf/2606.11819v1
+
+Published Time: Thu, 11 Jun 2026 00:54:19 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+> JOURNAL OF L ATEX CLASS FILES, VOL. XX, NO. XX, XXX 2023 1
+
+# STCC—A Unified Source-Channel Semantic Token Coding Framework for Semantic Communications 
+
+Zhicheng Bao, Chen Dong ∗, Sen Wang, Long Liu, Nan Ma, Member, IEEE , Hao Chen, Member, IEEE , Xi-aodong Xu, Senior Member, IEEE , Yinqiu Liu, Ping Zhang, Fellow, IEEE 
+
+Abstract —Deep Joint Source-Channel Coding (JSCC) has emerged as a promising paradigm for overcoming the “cliff effect” in wireless communications. However, existing Deep JSCC frameworks operate directly on raw analog data such as image pixels rather than the discrete semantic tokens that foundation models require. Moreover, traditional systems employ fixed, hand-designed constellations that treat all tokens equally, leading to catastrophic random errors under channel noise. In this paper, the Semantic Token Codebook Communication (STCC) is proposed as a unified source-channel semantic token coding framework designed to transmit the discrete semantic tokens of foundation models over noisy channels. The core of STCC is the Semantic Token Codec (STC). It accepts discrete tokens as input, which maintains compatibility with foundation models while employing a residual multiple layer perceptron, i.e., MLP-based encoder that learns geometrically structured constellations optimized with a triple-loss objective. This learned mapping forces the channel topology to align with the semantic embedding space, ensuring that channel noise results in topological errors rather than random corruption. This phenomenon is theoretically and empirically characterized, identifying “Semantic Drift” in symbolic modalities and “Structural Distortion” in perceptual modalities, where errors shift predictions to semantically or structurally similar tokens. Extensive experiments demonstrate that STCC significantly outperforms traditional systems in low-SNR regimes, effectively converting channel noise into semantic variations without requiring receiver-side modification. 
+
+Index Terms —Semantic communication, semantic token code-book communication, semantic token coding, semantic drift, structural distortion, generalized framework 
+
+I. I NTRODUCTION This work is supported in part by the Beijing Natural Science Foundation under Grant L251035, in part by the National Natural Science Foundation of China No. 62401303, in part by the National Science and Technology Major Project-Mobile Information Networks under Grant No. 2024ZD1300700, in part by Beijing University of Posts and Telecommunications-China Mobile Communications Group Co., Ltd. Joint Institute. ( Corresponding authors: Chen Dong )Zhicheng Bao, Nan Ma and Xiaodong Xu are with the State Key Lab-oratory of Networking and Switching Technology, Beijing University of Posts and Telecommunications, Beijing 100876, China, and also with the Department of Broadband Communication, Peng Cheng Laboratory, Shenzhen 518000, China. (e-mail: zhicheng bao@bupt.edu.cn; manan@bupt.edu.cn; xuxiaodong@bupt.edu.cn) Chen Dong, and Ping Zhang are with the State Key Laboratory of Networking and Switching Technology, Beijing University of Posts and Telecommunications, Beijing 100876, China. (e-mail: dongchen@bupt.edu.cn; pzhang@bupt.edu.cn). Long Liu and Hao Chen are with the Department of Broadband Com-munication, Peng Cheng Laboratory, Shenzhen 518000, China (email: liul05@pcl.ac.cn; chenh03@pcl.ac.cn). Sen Wang is with China Mobile Research Institute, Beijing, China. (email: wangsenyjy@chinamobile.com) Yinqiu Liu is with the College of Computing and Data Science, Nanyang Technological University, Singapore (email: yinqiu001@e.ntu.edu.sg). 
+
+# SEMANTIC communications are evolving as a beyond-Shannon-type communication paradigm, expected to be a pivotal technology for future wireless systems [1], [2]. Unlike traditional systems that focus on the accurate transmission of bit sequences, semantic communications prioritize the convey-ing of meaning or the effectiveness of task execution. Recently, the rapid proliferation of foundation models, such as Large Language Models (LLMs) and Large Vision Models (LVMs), has fundamentally transformed this landscape. These systems have demonstrated unprecedented capabilities in un-derstanding and generating content across diverse modalities. A critical, unifying characteristic of these modern generative AI systems is their reliance on a standardized data interface: the discrete semantic token. Whether representing a sub-word unit in text via tokenizers like WordPiece in BERT [3], a spatial patch in an image via Vector Quantized networks like VQ-GAN [4] or MaskGIT [5], tokens are the atomic, discrete units that transformers process to capture underlying semantic patterns. However, a critical disconnect exists between the native discrete format of foundation models and current wireless infrastructure. Traditional systems, relying on the separation principle, treat token indices as arbitrary bit sequences. While effective for data integrity, they suffer from a sharp “cliff effect,” where slight channel noise causes random bit errors that flip a token to a completely unrelated index (e.g., using LDPC [6]). To address this, Deep Joint Source-Channel Coding (JSCC) has emerged as a paradigm shift, utilizing neural networks to map data directly to continuous symbols for graceful degradation [7], [8]. Yet, a critical gap remains: existing JSCC methods predominantly operate on raw analog data (e.g., pixels) rather than discrete tokens, creating an integra-tion barrier with pre-trained foundation models. Meanwhile, conventional systems that do accept discrete tokens employ fixed constellations (e.g., QPSK) that lack semantic awareness, inevitably leading to random semantic corruption. There is a pressing need for a unified communication frame-work that is natively compatible with discrete tokens while being semantically aware to inherit the robustness benefits of JSCC. Such a system should accept discrete tokens from foundation models, map them to learned channel constellations that preserve semantic structure, and ensure that inevitable channel corruption results in soft, meaningful variations rather than catastrophic random failures.  
+
+> arXiv:2606.11819v1 [cs.IT] 10 Jun 2026 JOURNAL OF L ATEX CLASS FILES, VOL. XX, NO. XX, XXX 2023 2
+
+II. R ELATED WORKS 
+
+A. Deep Joint Source-Channel Coding 
+
+Deep JSCC revolutionizes wireless transmission by learn-ing direct source-to-channel mappings, effectively bypassing the separation principle [9], [10]. This paradigm has been successfully adapted across diverse modalities, including text [11], speech [12], images [13], [14], video [15], and 3D point clouds [16], demonstrating superior robustness against the “cliff effect.” Beyond data reconstruction, task-oriented sys-tems have been developed to minimize latency by transmitting only features relevant for specific tasks like transcription [17] or control [18], with multi-task architectures [19]–[21] further optimizing efficiency. However, these methods predominantly operate on raw continuous data, preventing direct interfacing with the discrete semantic tokens of modern foundation mod-els. 
+
+B. Discrete Semantic Communications 
+
+To bridge the gap between semantic robustness and digital infrastructure, recent research addresses the mismatch between analog features and discrete modulation. Several approaches quantize latent representations to predefined constellations [22]–[24], while others employ non-linear quantization [25] or semantic-aware frameworks like sDAC [26]. Advanced schemes integrate OFDM [27], mixed analog-digital archi-tectures [28], or channel-adaptive strategies [29]. While suc-cessful in digitizing transmission, these methods typically rely on fixed constellations (e.g., QPSK) that ignore semantic geometry. In contrast, our proposed STC explicitly learns the topological structure of the constellation, ensuring that phys-ical channel geometry aligns with the semantic embedding space. 
+
+C. Semantic Communications for Foundation Models 
+
+The advent of foundation models has spurred interest in Token Communications, a paradigm formally introduced by [30], where the discrete token serves as the fundamental unit of information exchange. This framework leverages the cross-modal context of pre-trained MLLMs to enable semantic source compression, channel coding, and network protocols that reduce retransmissions by predicting lost tokens. Building on this concept, recent research has focused on optimizing the efficiency of token transmission. Devoto et al. 
+
+[31] proposed an adaptive token communication scheme for edge inference, introducing a mechanism to dynamically iden-tify and transmit only task-relevant tokens based on bandwidth constraints, discarding less informative ones. In the domain of multiple access, Qiao et al. [32] introduced Token-Domain Multiple Access (ToDMA). By exploiting the “semantic or-thogonality” of tokens from different users, ToDMA allows simultaneous transmission over shared resources, utilizing receiver-side LLMs to separate collided signals and achieve latency gains over orthogonal schemes. Parallel efforts have addressed error resilience through pack-etization and auxiliary guidance. In [33], the SemPA-GBeam algorithm was developed, which uses genetic beam search to optimize token packetization, ensuring that packet losses over erasure channels result in minimal semantic similarity degradation. Taking a different approach, [34] proposed a text-guided image transmission scheme. By transmitting text descriptions as robust auxiliary information and utilizing stan-dard 5G NR Polar codes with CRC, their receiver detects corrupted tokens and repairs them using a text-conditioned generative transformer MaskGen. 
+
+D. Motivations and Contributions 
+
+To address the limitations of existing works, which typ-ically rely on fixed constellations (e.g., Polar codes [34]) or expensive receiver-side generative repair, we propose the STCC. STCC is a unified framework designed to bridge the gap between discrete foundation model tokens and continu-ous channel transmission. The core STC employs a residual MLP to learn geometrically structured constellations where physical proximity reflects semantic similarity. Unlike generic mappings, STC aligns the channel topology with the seman-tic embedding space, ensuring that channel noise results in meaningful topological errors, specifically “Semantic Drift” in symbolic modalities and “Structural Distortion” in perceptual modalities, rather than catastrophic failure. The primary contributions of this paper are summarized as follows: (1) Semantic Token Codebook Communication (STCC) Framework : A generalized system model is introduced that treats the semantic token as the universal interface, unifying the transmission of different modalities into a single discrete coding paradigm. This approach achieves Deep JSCC ro-bustness while maintaining full compatibility with foundation model token representations. (2) Semantic Token Codec (STC) : A novel and highly ef-ficient discrete source-channel coding framework is proposed to transmit foundation model tokens over noisy channels. It employs a residual MLP-based mapper optimized with a specific triple loss objective, which learns a geometrically structured continuous constellation where the physical channel symbols inherit the high-dimensional semantic topology of the source embeddings. (3) Topological Error Characterization : Two novel phe-nomena are theoretically and empirically characterized: Se-mantic Drift in symbolic modalities (e.g., text), where er-rors shift to synonymous tokens, and Structural Distortion in perceptual modalities (e.g., images), where errors shift to perceptually similar patches. This analysis proves that STC successfully converts random channel noise into topologically bounded semantic variations. (4) Performance Validation : The efficacy of the proposed STC is validated on standard benchmarks. Experimental re-sults demonstrate that STC significantly outperforms tradi-tional separated communication systems and existing semantic Deep JSCC baselines in low-SNR regimes, validating its ability to maintain high semantic fidelity through learned topological error shaping. JOURNAL OF L ATEX CLASS FILES, VOL. XX, NO. XX, XXX 2023 3        
+
+> Fig. 1. System model of the proposed STCC. At both sides are the semantic extraction and recovery framework driven by Foundation Models. Between them are the STC transceiver architecture, which transforms semantic embeddings eiinto learned continuous channel symbols xifor transmission over a noisy channel and recovers them as ˆei. The shared Token Codebook Vis embedded in the system, serving as a unified interface that maps discrete Token IDs to their continuous Token Embeddings and specific semantic meanings.
+
+III. S YSTEM MODEL 
+
+In this section, the unified system model of the proposed STCC and STC is presented. First, an architectural overview of STCC is provided. Then, the physical channel model used for transmission is specified. Following this, the end-to-end communication process from discrete token generation to semantic reconstruction is formalized. Finally, the generalized optimization goal that guides the training of the system is defined. 
+
+A. STCC Architecture 
+
+The architecture of the STCC is illustrated in Fig. 1. It is composed of three primary blocks: the Foundation Models, the STC Module, and the Noisy Channel. The Foundation Models represent any pre-trained token-based model, e.g., BERT for text or VQ-GAN for images, that processes information in the form of discrete semantic tokens. Unlike traditional systems that view these tokens as arbitrary data to be compressed, the system treats them as the fundamental units of semantic information. Crucially, these models interface with the system via a shared Token Codebook, which is shown at the bottom of Fig. 1. It acts as a unified dictionary mapping discrete indices to continuous semantic representations. The STC Module serves as the core interface between the discrete semantic domain and the continuous physical channel domain. It consists of a Semantic Token Encoder at the transmitter and a Semantic Token Decoder at the receiver. The encoder employs a learned mapping that transforms high-dimensional discrete token embeddings into geometrically structured continuous channel symbols, where the constella-tion topology reflects the semantic relationships in the embed-ding space. The decoder recovers the semantic features from noisy received signals and maps them back to discrete tokens. This design creates a unified discrete token interface with learned semantic-aware continuous constellations, making it simultaneously compatible with foundation models and robust to channel noise. 
+
+B. Channel Model 
+
+To simulate the physical transmission environment, the wireless link is modeled as a continuous-valued channel. Let 
+
+xi ∈ CL denote the complex-valued symbol vector generated by the STC encoder for a given i-th semantic token, where L
+
+represents the number of channel uses per token, which defines the bandwidth expansion ratio. The received signal y ∈ CL at the destination is modeled as: 
+
+y = hx + n, (1) where h represents the channel gain coefficient, and n ∼N (0 , σ 2
+
+> n
+
+IL) denotes the additive white Gaussian noise vector with variance σ2
+
+> n
+
+.JOURNAL OF L ATEX CLASS FILES, VOL. XX, NO. XX, XXX 2023 4
+
+The transmitted symbols are subject to an average power constraint to maximize energy efficiency: 
+
+1
+
+L E[|| x|| 22] ≤ P, (2) where P is the maximum allowable average power. The channel condition is quantified by the SNR, defined as SNR =10 log 10 ( Pσ2
+
+> n
+
+) dB. 
+
+C. End-to-End Communication Process 
+
+The entire end-to-end communication process can be math-ematically formalized as a sequence of transformations map-ping the source token space to the reconstructed token space. Let the source sequence be S = [ s1, s 2, . . . , s K ], where each si ∈ V is a discrete index selected from a standardized token codebook V. As detailed in Fig. 1, this codebook acts as a lookup table containing aligned triples: the discrete Token ID 
+
+si, the continuous Token Embeddings, and the corresponding Token Semantics. First, the foundation model’s embedding layer E(·) accesses this codebook to map the discrete index si into a dense semantic vector ei ∈ RD :
+
+ei = E(si), (3) where D denotes the embedding dimension. The semantic token encoder, denoted as fθ (·), learns a mapping from this embedding to a continuous channel symbol vector xi. Unlike fixed constellations that assign symbols arbitrarily, fθ is optimized to preserve the semantic topology of the embedding space: 
+
+xi = fθ (ei), (4) where θ represents the trainable parameters of the encoder. After transmission through the noisy channel defined in Eq. (1), the receiver obtains the noisy vector yi. The semantic token decoder, denoted as gϕ(·), attempts to recover the original semantic embedding: 
+
+ˆei = gϕ(yi), (5) where ϕ represents the trainable parameters of the decoder. Finally, the recovered discrete token ˆsi is determined by searching the codebook V for the embedding that maximizes the cosine similarity with the estimated embedding ˆei. This mapping operation, denoted as E−1, is formalized as: 
+
+ˆsi = arg max 
+
+> k∈V
+
+ˆei · E(k)
+
+∥ˆei∥2∥E(k)∥2
+
+, (6) where E(k) represents the reference embedding for the k-th token in the codebook. The end-to-end chain is thus: 
+
+siE
+
+−→ eifθ
+
+−→ xi
+
+> Channel
+
+−−−−→ yigϕ
+
+−→ ˆeiE−1
+
+−−−→ ˆsi. (7) 
+
+D. Optimization Goal 
+
+The fundamental goal of the STCC is to maximize the semantic fidelity of the reconstructed tokens under varying channel conditions. Unlike traditional communication systems that minimize Bit Error Rate (BER) with fixed constellations, STCC jointly learns the constellation mapping and semantic recovery to minimize the semantic distance between the trans-mitted embedding ei and the received embedding ˆei.Formally, the system is trained to minimize a composite objective function LST C over the parameters θ and ϕ:
+
+(θ∗, ϕ ∗) = arg min  
+
+> θ,ϕ
+
+Es∼S ,h, n[LST C (e, ˆe)] . (8) The loss function LST C is designed to enforce geometric consistency in the channel space, ensuring that the learned constellation aligns with semantic structure such that channel noise results in topological shifts to semantically similar tokens rather than catastrophic random errors. The specific composition of this loss function is detailed in Section IV. IV. P ROPOSED METHOD : T OPOLOGY -P RESERVING TOKEN 
+
+CODEC 
+
+To bridge the gap between discrete foundation models and continuous physical channels, the STC learns a topology-preserving mapping using two core modules: a residual MLP-based encoder and a Transformer-based decoder. This is a simple yet effective design that balances model capacity and computational efficiency. 
+
+A. Semantic Token Encoder 
+
+The encoder fθ (·) maps the high-dimensional embedding 
+
+ei ∈ RD to complex channel symbols xi ∈ CL. To capture non-linear semantic geometry, it employs a stack of Nb
+
+residual blocks (Linear - LN - GELU - Linear - LN) following an initial projection to hidden dimension dh. A final linear layer adjusts the output to 2L, representing real and imaginary components. Crucially, a parameter-free Layer Normalization is applied last to strictly enforce the average power constraint 
+
+P in Eq. (2) by normalizing the output to unit variance. 
+
+B. Semantic Token Decoder 
+
+Since semantic meaning is context-dependent, the decoder 
+
+gϕ(·) employs a Transformer [35] to recover tokens from the noisy sequence Y. The input symbols CL are concatenated into R2L, projected to model dimension dm, and augmented with positional embeddings. Self-attention layers then exploit global context to denoise the sequence, producing refined embeddings [ˆ e1, . . . , ˆeK ] for the nearest-neighbor retrieval defined in Eq. (6). 
+
+C. Topological Shaping via Triple Loss Function 
+
+The core innovation of the proposed STC is its ability to learn a channel constellation whose geometry mirrors the semantic topology of the source data. This addresses a fundamental geometric mismatch between the physical and semantic domains: JOURNAL OF L ATEX CLASS FILES, VOL. XX, NO. XX, XXX 2023 5
+
+1) The Channel Noise Geometry: Under the AWGN as-sumption, the additive noise perturbation is isotropic, meaning the error vector n is equally likely to displace the transmitted symbol in any direction within the high-dimensional hypersphere. 2) The Semantic Manifold: The source data lies on acomplex, non-linear manifold where directions are not uniform. Euclidean proximity does not strictly equate to semantic similarity due to the “hubness” phenomenon, where certain generic tokens become universal nearest neighbors in the embedding space. Fixed constellations assign symbols arbitrarily without re-gard to semantic structure, causing random channel perturba-tions to produce catastrophic semantic errors. Standard MSE-based autoencoders often fail to preserve the complex topology of semantic embeddings, leading to “semantic collapse” where small, random channel perturbations push the signal into undefined regions of the semantic space. Conversely, using only Cross-Entropy (CE) ignores the geometric layout entirely, failing to shape the learned constellation structure. To enforce topology-preserving transmission, a Triple Loss Function is introduced that simultaneously optimizes for ge-ometric fidelity, directional alignment, and classification deci-siveness. The total loss LSTC is defined as: 
+
+LSTC = LCE + λ1LMSE + λ2LCos , (9) where λ1 and λ2 are weighting hyperparameters. 
+
+1) Cross-Entropy Loss ( LCE ) – The Semantic Anchor: 
+
+While the channel transmission uses continuous symbols, the recovery target is discrete. LCE acts as the semantic anchor, forcing the decoder’s output to align with the specific decision boundaries of the correct token index si.It operates on the logits zi = WTemb ˆei, where Wemb is the fixed vocabulary embedding matrix: 
+
+LCE = −
+
+> K
+
+X
+
+> i=1
+
+log exp( zi,s i /τ )
+
+P 
+
+> j∈V
+
+exp( zi,j /τ ) . (10) Here, τ is a temperature parameter ( τ < 1) used to sharpen the probability distribution. In high-dimensional spaces, a standard Softmax ( τ = 1 ) often results in a smeared probability mass across many semantically related neighbors. This allows the decoder to cheat by producing a reconstructed embedding ˆei
+
+that sits in the safe geometric center of a cluster of tokens. For example, the average of “cat,” “dog,” and “pet”, which can be a meaningless embedding rather than pointing to a specific valid token. By lowering τ , a hard argmax operation is approximated during training, penalizing these ambiguous average representations and forcing the encoder to map the signal towards the precise centroid of the target token si in the learned constellation. 
+
+2) Mean Squared Error Loss ( LMSE ) – Global Regulariza-tion: MSE forces the reconstructed vector ˆei to be Euclidean-close to the original embedding ei. Its primary role is to constrain the global energy scale of the learned constellation: 
+
+LMSE = 1
+
+K
+
+> K
+
+X
+
+> i=1
+
+|| ei − ˆei|| 22. (11) Since the magnitude of a semantic vector often encodes feature intensity, LMSE prevents the exploding embedding phe-nomenon where the encoder artificially inflates signal power to overcome noise, ensuring the system respects the power constraints defined in Eq. (2). 
+
+3) Cosine Embedding Loss ( LCos ) – Directional Alignment: 
+
+Modern foundation models (e.g., BERT, CLIP) predominantly rely on the angle between vectors to encode semantic rela-tionships. Two tokens are semantically similar if their vectors share the same direction, regardless of magnitude. To capture this, LCos explicitly minimizes the angular devi-ation: 
+
+LCos = 1
+
+K
+
+> K
+
+X
+
+> i=1
+
+(1 − sim (ei, ˆei)) , (12) where sim (u, v) = uT v 
+
+> || u|||| v||
+
+. This term is crucial for robustness in the learned constellation; it shapes the noise tolerance regions into cones rather than spheres. This ensures that even if channel noise alters the magnitude of the received vector, which happens frequently in fading channels, the semantic identity encoded in the angle is preserved. By jointly optimizing these three objectives, STC achieves topological shaping: it learns a channel constellation where the isotropic Gaussian noise balls in the physical channel map onto semantically tolerant regions in the embedding space. Unlike fixed constellations that cause arbitrary errors, the learned mapping ensures that even if the signal is perturbed, the decoded token ˆsi effectively drifts to a synonym rather than an unrelated concept. V. T OPOLOGICAL ANALYSIS OF CHANNEL ERRORS 
+
+We classify modalities into two broad categories based on the nature of their data representation: Symbolic Modalities and Perceptual Modalities. Symbolic modalities, such as text, code, or knowledge graphs, consist of discrete, abstract sym-bols where meaning is defined by semantic and syntactic rela-tionships rather than physical similarity. Perceptual modalities, such as images, audio, and video, consist of continuous signals (though discretized for processing) where meaning is derived from structural, spatial, or temporal patterns. The proposed STC framework demonstrates distinct but topologically con-sistent error behaviors for both categories. 
+
+A. Theoretical Basis: Angular Topology Determines Error Type 
+
+For analytical tractability, the theoretical analysis focuses on the AWGN channel ( h = 1 in Eq. (1)), which isolates the fundamental topological properties of the learned constellation without the additional complexity of fading statistics. The key insights that angular proximity on the learned hypersphere determines error patterns generalize to fading channels, as empirically validated in Section VI. Under fading, the effective noise is scaled by 1/|h|, but the angular relationships between constellation points remain preserved through the decoder’s normalization operations. In traditional communication systems, semantic tokens are mapped to arbitrary bit sequences through fixed constellations. JOURNAL OF L ATEX CLASS FILES, VOL. XX, NO. XX, XXX 2023 6   
+
+> Fig. 2. UMAP projection of learned channel symbols for the target word “chickens” and its confusion words under 200 times noisy channel transmission (SNR = 0 dB, L= 32 ). Each point represents a confusion word’s high-dimension constellation, with labels showing confusion frequency. The color coding indicates confusion rate categories, along with correct predictions (green) and other incorrect predictions (pink). The target word “chickens” (red) clusters with semantically related animal terms (“animals”, “chicken”, “birds”) in the lower region, while semantically distant words (“children”, “parents”, “babies”, “kids”) form a separate cluster in the upper region, demonstrating that learned constellation topology encodes semantic relationships.
+
+A single bit flip during transmission (e.g., 1011 → 1010 )causes a jump to a random vocabulary index. Since standard constellation assignments are semantically arbitrary, the erro-neous token is statistically likely to be orthogonal in meaning to the original, e.g., replacing “chickens” with “banana”, resulting in catastrophic semantic failure. In contrast, STC learns a semantic-aware constellation C =
+
+{c1, . . . , cV } ⊂ CL, where each ci = fθ (ei) represents the channel symbol for token si. Through the power normalization enforced by LayerNorm in the encoder’s final layer, all channel symbols are constrained to a hypersphere: 
+
+|| ci|| 22 = L ∀i ∈ { 1, . . . , V }, (13) where L is the number of complex channel symbols per token. On this hypersphere, the relevant distance metric is angular rather than Euclidean. The triple loss function detailed in Section IV shapes the learned constellation such that angular separation between channel symbols corresponds to semantic dissimilarity: 
+
+θij = arccos 
+
+ ci · cj
+
+|| ci|| · || cj || 
+
+
+
+∝ Dist sem (si, s j ), (14) where Dist sem (·, ·) denotes semantic distance. This geometric structure emerges from the combined effect of the three loss components: cross-entropy enforces semantic decision bound-aries, MSE constrains the global scale, and cosine similarity aligns angular structure with semantic relationships. When a transmitted symbol x = ci is corrupted by additive noise n, the received signal becomes y = ci +n. Following the demapper and token recovery process defined in Eq. (6), the system performs nearest-neighbor search via cosine similarity. Geometrically, this finds the nearest neighbor on the semantic hypersphere in terms of angular distance. Under additive noise at moderate SNR, the corrupted vector 
+
+y experiences primarily angular perturbation rather than radial displacement, since the decoder’s context-aware processing and the final cosine similarity computation discount magnitude variations. Consequently, y most likely points toward an angular neighbor of c. Due to the learned topological shaping, these angular neighbors are semantic neighbors. Therefore, STC errors are not random but rather bounded angular shifts within local semantic clusters, an contrast to fixed constella-tions where errors are uniformly distributed across the entire JOURNAL OF L ATEX CLASS FILES, VOL. XX, NO. XX, XXX 2023 7 
+
+> Fig. 3. Similarity matrices between target word “chickens” and confusion words showing (a) cosine similarity and (b) chamfer similarity. The target word exhibits high cosine similarity with semantically related words, such as “animals”: 0.47, “chicken”: 0.73, “birds”: 0.50, “sheep”: 0.48, while showing lower similarity with unrelated words. Chamfer similarity values remain relatively uniform (0.53–0.61), confirming that STC encodes semantic structure through angular relationships rather than simple geometric shape clustering.
+
+vocabulary. 
+
+B. Symbolic Modalities: Semantic Drift 
+
+In symbolic modalities, represented here by text, channel noise induces a phenomenon termed Semantic Drift. Because the STC constellation encodes semantic relationships into angular proximity, decoding errors tend to shift the predicted token to a semantically or syntactically related symbol, often preserving overall sentence coherence despite precision loss. To quantify the relationship between learned constellation geometry and decoding errors, channel symbols ci, cj ∈
+
+CL (with L = 32 in this analysis) were extracted for the target word “chickens” and each confusion word us-ing the template sentence: “Don’t count your {} before they hatch.” Each constellation is represented as r =[I1, I 2, . . . , I L, Q 1, Q 2, . . . , Q L] ∈ R2L, where Ik and Qk
+
+are the in-phase and quadrature components of the k-th complex symbol. Two complementary similarity metrics were computed: 1) Cosine Similarity : The decoder’s native metric, mea-suring angular distance on the hypersphere: 
+
+Scos (ri, rj ) = ri · rj
+
+∥ri∥2 · ∥ rj ∥2
+
+. (15) 2) Chamfer Similarity : Treats each constellation as a2-D point cloud Pi = {(Ik, Q k)}Lk=1 and computes bidirectional nearest-neighbor distances: 
+
+Schamfer (ci, cj ) = 11 + dchamfer (Pi, Pj ) , (16) where dchamfer is defined as: 
+
+dchamfer (Pi, Pj ) = 1
+
+L
+
+X
+
+> p∈P i
+
+min 
+
+> q∈P j
+
+∥p − q∥2
+
++ 1
+
+L
+
+X
+
+> q∈P j
+
+min 
+
+> p∈P i
+
+∥q − p∥2, (17) To visualize the high-dimensional learned channel symbols, they were projected onto a 2-D manifold using Uniform Manifold Approximation and Projection (UMAP) [36], anonlinear dimensionality reduction technique that preserves local neighborhood structure while revealing global cluster topology in Fig. 2. Under 0 dB SNR, the target word clusters tightly with semantic neighbors. Errors predominantly drift to close synonyms (e.g., “animals,” “birds”), while severe cor-ruption extends to weaker but still coherent associations (e.g., “children”, “kids,” and “parents”). This clustering confirms that the learned constellation maps semantic relationships into topological proximity. Fig. 3 quantitatively validates this mechanism. Confusion frequency correlates strongly with cosine similarity in the constellation space. Although stochastic noise causes minor deviations (e.g., “animals” ranking), the nearest neighbors are consistently semantic synonyms. Conversely, Chamfer simi-larity remains uniform, confirming that STC encodes meaning through angular alignment rather than simple geometric shape or magnitude. Tables I and II further demonstrate context-awareness using the homonym “bank.” Under 0 dB SNR, error patterns diverge significantly based on context: financial contexts trigger drifts toward institutional entities, while geographic contexts shift toward landscape terms. High correction rates confirm that STC prioritizes precision, ensuring that inevitable errors man-ifest only as contextually appropriate synonyms rather than random failures. 
+
+C. Perceptual Modalities: Structural Distortion 
+
+The perceptual modalities, represented here by images, exhibit an analogous error phenomenon under the STC frame-work, which is termed Structural Distortion. Instead of random JOURNAL OF L ATEX CLASS FILES, VOL. XX, NO. XX, XXX 2023 8
+
+Fig. 4. Visual analysis of structural distortion in image transmission under noisy channel conditions (SNR = 0 dB, L = 32 ). (a) UMAP projection of learned channel symbols for target token 945 and its confusion tokens, with each point displaying the corresponding VQ-VAE reconstructed patch thumbnail. Points are colored by confusion rate categories, and labels show confusion frequency. (b) Full image reconstruction comparison showing: correct prediction maintaining target token 945, the isolated correct token patch, incorrect prediction where token 945 was replaced by token 766, 554 and 240 demonstrating graceful degradation. Unlike random bit-flip errors in digital systems with fixed constellations, confused tokens exhibit strong visual similarity to the target, preserving texture and color coherence. TABLE I CONTEXT -DEPENDENT SEMANTIC DRIFT 
+
+Context Confusion Word Similarity Corr. 
+
+Financial bank (correct) — 99.0% court 0.45 0.5% government 0.37 0.5% Geographic bank (correct) — 99.0% river 0.39 0.5% house 0.35 0.5% 
+
+pixel noise, channel errors manifest as coherent alterations 
+
+TABLE II DETAILED CONSTELLATION SIMILARITY BREAKDOWN ACROSS CONTEXTS .
+
+Context Pair Scos Schamf 
+
+Financial bank–court 0.38 0.61 bank–government 0.25 0.60 Geographic bank–river 0.36 0.58 bank–house 0.20 0.54 
+
+in visual patterns that preserve overall image semantics. However, unlike discrete word substitutions in symbolic text, JOURNAL OF L ATEX CLASS FILES, VOL. XX, NO. XX, XXX 2023 9
+
+perceptual tokens represent local visual patterns, making dis-tortions continuous in the visual domain rather than categorical in the semantic domain. To analyze structural distortion, a test image was encoded into a sequence of visual tokens using VQ-VAE tokenization, resulting in a grid of discrete token indices. This sequence was transmitted through the STC system under 0dB noisy conditions and a target patch was selected for analysis. The image was transmitted 200 times, tracking which tokens the target patch confused with due to channel noise. Critically, the constellation extraction maintains full image context: when computing channel symbols ci ∈ CL for each confusion token, only the target patch token was replaced while preserving all other patches at their original values. This ensures that constellation analysis reflects the context-dependent nature of the learned representation, as identical tokens may produce different channel symbols depending on surrounding visual content, which is similar to the context-awareness observed in text. Using the similarity metrics defined in Eqs. (15) and (16), cosine and chamfer similarity were computed between the target token’s constellation and each confusion token’s con-stellation. As visualized in Fig. 4(a), confusion tokens cluster tightly around patches with similar textures and colors. Quantitative analysis, which is similar to text experiment, also corroborates this: confusion frequency correlates strongly with angular similarity, whereas geometric similarity remains uniform. This confirms that STC encodes perceptual structure primarily through angular topology. Consequently, as shown in Fig. 4(b), errors result in visually similar substitutions that blend nat-urally with the surrounding content, validating the system’s ability to achieve graceful degradation through topological error shaping. In summary, structural distortion in the image modality mirrors semantic drift in text: both phenomena arise from the learned hyperspherical constellation topology, which enforces that angular proximity reflects semantic or perceptual similar-ity. This fundamental property enables STC to achieve graceful degradation under noisy channel conditions, which is a crit-ical advantage over traditional communication systems with fixed constellations that exhibit catastrophic failure modes. The performance benefits of this topological error shaping are quantitatively validated in the next experimental results section. VI. E XPERIMENTS 
+
+In this section, the proposed STCC framework is compre-hensively evaluated across various channel conditions, seman-tic tasks, and bandwidth configurations. Specifically, the experimental setup, including datasets, comparison schemes, and evaluation metrics, is detailed in Subsection-A. Subsection-B analyzes the reconstruction per-formance of STCC under varying SNR in both AWGN and Fading channels. To validate the practical utility of the de-coded semantics, Subsection-C evaluates the performance on downstream tasks, including sentiment analysis and image classification. Subsection-D investigates the trade-off between channel bandwidth usage and system performance. Finally, Subsection-E presents a computational complexity analysis to demonstrate the efficiency of the proposed module. 
+
+A. Experimental setup 1) Implementation Details: To validate the generalizability of the proposed framework, a unified STC architecture and hyperparameter set is maintained for both text and image modalities. Specifically, the STC encoder is configured with 
+
+Nb = 5 residual blocks, each with a hidden dimension of 
+
+dh = 512 . The decoder consists of 4 Transformer encoder layers with a model dimension of dm = 512 and 8 attention heads. All models are trained with a batch size of 32 using the AdamW optimizer [37] with a learning rate of 5×10 −5. The β
+
+values, ϵ, and weight decay for AdamW are set to (0 .9, 0.999) ,
+
+10 −8, and 0.01 , respectively. The weighting hyperparameters in the triple loss function are set to λ1 = 10 .0 and λ2 = 2 .0.During training, the SNR is randomly sampled from a uniform distribution SNR dB ∼ U (5 , 15) to simulate varying channel conditions. For the text modality, the pre-trained BERT-base model is employed as the foundation model, utilizing its WordPiece tokenizer to generate discrete semantic tokens. It has the codebook size of 30522 × 768. The system is trained on the Wikitext-103 [38] dataset with a maximum sequence length of 64. For the image modality, the MaskGIT (VQ-GAN) archi-tecture is adopted as the discrete tokenizer and reconstructor. It has the codebook size of 1024 × 256, which is much smaller than the text modality to validate the generalizability of the STC across different codebook size. The ImageNet [39] dataset is utilized, resizing images to 256 × 256 pixels before tokenization into a discrete grid of visual indices. In our experiments, we maintain the STCC framework architecture fixed and replace only the internal token processing module STC with other communication schemes to ensure a fair comparison. 
+
+2) Comparison Schemes: To demonstrate the superiority of the proposed framework, STC is compared against two traditional separated communication baselines and a Deep JSCC baseline:  
+
+> •
+
+1/2 LDPC + BPSK : A standard digital system employing a rate of 1/2 LDPC code for error correction and Binary Phase Shift Keying (BPSK) modulation.  
+
+> •
+
+1/2 LDPC + QPSK : A similar digital system utilizing QPSK to increase spectral efficiency.  
+
+> •
+
+JSCC : A standard semantic communication baseline without topological shaping. It treats semantic tokens as continuous vectors, directly maps them to channel symbols, and is trained with an MSE loss to minimize reconstruction error. For a fair comparison, all schemes are evaluated under iden-tical average symbol power constraints and bandwidth condi-tions. 
+
+3) Evaluation Metrics: Performance is evaluated using the following metrics: For the text modality, token accuracy (Acc) is used to measure the percentage of correctly decoded tokens; JOURNAL OF L ATEX CLASS FILES, VOL. XX, NO. XX, XXX 2023 10 
+
+Fig. 5. Performance comparison under AWGN and Rayleigh Fading channels for text and image modality. Top two rows: AWGN channel results for text and image. Bottom two rows: Fading channel results. For simplicity, we denote the high-bandwidth configuration with L = 30 complex symbols per token is denoted as STC H and JSCC H, 1/2 LDPC + BPSK as Traditional H; similarly, the low-bandwidth configuration with L = 15 complex symbols per token is denoted as STC L and JSCC L, 1/2 LDPC + QPSK as Traditional L. For LPIPS metric, lower values indicate better perceptual similarity, the y-axis is inverted for clarity. STCC demonstrates graceful degradation in low-SNR regimes compared to the “cliff effect” observed in traditional baselines. 
+
+the 4-gram BLEU score [40] to assess the quality of gener-ated text against reference sentences; and semantic similarity using Eq. (15) to quantify semantic fidelity. For the image modality, the same token accuracy metric is used, but Peak Signal-to-Noise Ratio (PSNR) and Learned Perceptual Image Patch Similarity (LPIPS) [41] are also included to evaluate reconstruction precision and perceptual similarity, respectively. For the downstream tasks, accuracy is measured on the SST-2 sentiment analysis dataset [42] for text and Top-1 accuracy on ImageNet classification for images. JOURNAL OF L ATEX CLASS FILES, VOL. XX, NO. XX, XXX 2023 11 
+
+B. Performance under varying SNR 
+
+The proposed STC algorithm is evaluated against the base-line schemes over AWGN and Rayleigh Fading channels. The performance comparisons for text and image modalities are illustrated in Fig. 5. For simplicity, the high-bandwidth configuration with L = 30 complex symbols per token is denoted as STC H and JSCC H, 1/2 LDPC + BPSK as Traditional H; similarly, the low-bandwidth configuration with 
+
+L = 15 complex symbols per token is denoted as STC L and JSCC L, 1/2 LDPC + QPSK as Traditional L. 
+
+1) Robustness in Low-SNR Regimes: The most significant advantage of STC is observed in the low-SNR regime, where traditional systems suffer from the catastrophic “cliff effect”. As shown in Fig. 5, the traditional schemes exhibit a sharp performance drop-off when the channel condition falls below their decoding thresholds. For instance, in the text modality under AWGN, the accuracy of the QPSK baseline collapses from near 100% to below 10% as the SNR drops below 4 dB. In contrast, the proposed STC exhibits graceful degradation. Even at an extremely low SNR of 0 dB, the high-bandwidth STC (STC H) maintains a token accuracy of 86.91% for text and 82.39% for images, whereas the baselines are effectively non-functional. This confirms that STC successfully converts channel noise into semantic perturbations rather than complete decoding failures. Meanwhile, although the perfect reconstruction is unattain-able at very low SNR, STC still preserves a significant portion of semantic content, as evidenced by semantic metrics remaining above 0.9 for text and LPIPS scores below 0.3 for images at 0 dB SNR. 
+
+2) Comparison with JSCC Baseline: STC also consistently outperforms the standard JSCC baseline across all metrics. In the text modality, the JSCC baseline struggles to map continuous channel outputs back to discrete tokens effectively, plateauing at a significantly lower accuracy due to the huge codebook dimension. The proposed STC, employing topolog-ical error shaping, achieves a performance gain of over 40% in accuracy compared to JSCC. This highlights the necessity of the proposed triple loss objective, which ensures that the received symbols remain clustered around valid semantic tokens in the constellation space. 
+
+3) Fading Channel Performance: The resilience of STC is further validated under Rayleigh Fading conditions in Fig. 5, bottom row. While fading induces severe fluctuations that disrupt the baselines, STC maintains a steady recovery curve. Specifically, at 0 dB SNR in the fading channel, STC H achieves a text similarity above 0.9, significantly surpassing the BPSK baseline, which can hardly work and only achieve about 0.22 similarity. 
+
+C. Semantic Task Adaptivity 
+
+Beyond raw reconstruction metrics, the system’s ability to preserve high-level semantic utility for downstream machine intelligence tasks is evaluated. This property is crucial for semantic communication, where the goal is often to convey meaning rather than exact bits. The pre-trained BERT model 
+
+> Fig. 6. Downstream task performance vs. SNR. (a) SST-2 Sentiment Analysis accuracy for text. (b) ImageNet Top-1 accuracy for images. The shaded regions indicate the standard deviation. STC maintains high task utility in low-SNR regimes where baselines collapse, verifying that decoding errors are topologically bounded and semantically meaningful.
+
+is employed for Sentiment Analysis (SST-2 dataset) on the de-coded text and a ResNet-50 classifier for Image classification (ImageNet) on the reconstructed images. Both experiments are conducted under fading channel conditions. To illustrate the stability of the proposed method, the standard deviation across multiple runs is depicted as a shaded region surrounding the main performance curve. The results are summarized in Fig. 6. 
+
+1) Text: Sentiment Preservation: The results in Fig. 6(a) highlight a critical advantage of the proposed STC. At a low SNR of 0 dB, STC achieves a sentiment classification accuracy of 65.55%, significantly outperforming other baselines. This corroborates the theoretical analysis of Semantic Drift: while STC may not recover the exact original words at low SNR, it tends to decode them into semantically related synonyms, thereby preserving the overall sentiment polarity. In contrast, the traditional baseline yields a negligible ac-curacy of 9.08% at 0 dB, as the bit errors corrupt the token indices, resulting in gibberish that is unintelligible to the BERT classifier. Notably, the standard JSCC baseline flatlines near 48% accuracy across the SNR range. Similar as before, this is because JSCC outputs continuous approximations that, when forcibly discretized, often fail to map to valid or syntactically coherent tokens, confusing the downstream foundation model. 
+
+2) Image: Semantic Recognition: A similar trend is ob-served in the image modality in Fig. 6(b). At 0 dB, STC achieves a Top-1 accuracy of 14.27% on ImageNet, whereas JOURNAL OF L ATEX CLASS FILES, VOL. XX, NO. XX, XXX 2023 12   
+
+> Fig. 7. Impact of channel bandwidth cost ( L) on reconstruction performance. Increasing Lsignificantly enhances robustness, particularly in low-SNR regimes, by allowing for more redundant topological shaping.
+
+the traditional system fails completely around 0.20%. As the SNR increases to 5 dB, STC reaches 52.87%, comparable to the noise-free performance of standard classifiers, while the traditional scheme remains near 0% until the cliff point at 7 dB. This demonstrates that STC prioritizes the transmission of semantic features such as object shapes and textures over high-frequency pixel details, ensuring that the reconstructed images remain machine-interpretable even under severe chan-nel constraints. 
+
+D. Bandwidth-Performance Trade-off ( L)
+
+The impact of channel bandwidth usage on system perfor-mance is investigated by varying the channel sequence length 
+
+L ∈ {16 , 20 , 24 , 28 , 32 }. In this context, L represents the number of discrete channel symbols allocated to transmit the semantic tokens, serving as a direct proxy for the bandwidth cost. The performance trade-off is illustrated in Fig. 7. As expected, increasing the bandwidth cost L consistently improves performance across all metrics. However, the critical advantage of higher bandwidth becomes most apparent in the severe noise regime. As shown in Fig. 7, under harsh conditions of -5 dB, the model with minimal bandwidth struggles with a token accuracy of only 30.63%. In contrast, increasing the bandwidth to L = 32 nearly doubles the performance to 57.05%. This trend continues at 0 dB, where 
+
+L = 32 achieves an accuracy of 89.73% compared to 66.06% for L = 16 , representing a substantial gain. This indicates that the proposed STC effectively utilizes the additional bandwidth to expand the geometric spacing between semantic clusters in the channel space, thereby maintaining intelligibility even when the signal power is lower than the noise floor. Furthermore, the BLEU score demonstrates a similar re-silience. At 0 dB, the system with L = 32 achieves a score of 0.67, significantly outperforming the L = 16 configuration, which drops to 0.29. This confirms that higher bandwidth allows the decoder to recover finer semantic details and syn-tactic structures that are otherwise lost in noise. These results demonstrate the flexibility of the STC framework, which can dynamically adjust L to balance transmission reliability and spectral efficiency based on channel capacity. 
+
+E. Complexity Analysis 
+
+Finally, the computational complexity of the proposed STC framework is analyzed. The evaluation is conducted on the image modality, utilizing discrete tokens derived from 
+
+256 × 256 input images via the MaskGIT tokenizer. With the default configuration of Nb = 5 residual blocks and a hidden dimension of dh = 512 , the STC module requires only 0.73G Multiply-Accumulate operations (MACs) and contains 2.85M parameters for the combined encoder and decoder. To put this in perspective, it is compared against a standard ResNet-18 backbone, which typically requires 0.89G MACs and 11.7M parameters. The proposed STC module consumes significantly fewer resources, approximately 18% less compu-tation and 75% fewer parameters than the ResNet-18 baseline. This demonstrates that the STC framework is lightweight and can be integrated into existing semantic token communication systems without introducing significant computational over-head or latency. VII. C ONCLUSION 
+
+In this paper, the Semantic Token Codebook Communica-tion (STCC), a unified framework that bridges the gap between discrete foundation model tokens and continuous physical channels, was proposed. The STCC framework employs the Semantic Token Codec (STC) as its core engine. By treating the semantic token as a universal interface and employing a novel residual MLP-based mapper with topological error shaping, STC effectively converts random channel noise into bounded semantic variations. Theoretical and empirical analyses identified two similar error mechanisms, Semantic Drift in text and Structural Dis-tortion in images, demonstrating that STC preserves high-level semantic utility even when exact reconstruction is impossible. Experimental results confirmed that STC significantly outper-forms traditional baselines and existing JSCC methods, partic-ularly in low-SNR regimes where it eliminates the catastrophic “cliff effect”. Furthermore, it was verified that STC maintains high accuracy on downstream tasks, such as sentiment analysis and image classification, while incurring low computational complexity suitable for deployment. JOURNAL OF L ATEX CLASS FILES, VOL. XX, NO. XX, XXX 2023 13 
+
+REFERENCES [1] X. Luo, H.-H. Chen, and Q. Guo, “Semantic Communications: Overview, Open Issues, and Future Research Directions,” IEEE Wireless Communications , vol. 29, no. 1, pp. 210–219, 2022. [2] K. Niu, J. Dai, S. Yao, S. Wang, Z. Si, X. Qin, and P. Zhang, “A Paradigm Shift toward Semantic Communications,” IEEE Communica-tions Magazine , vol. 60, pp. 113–119, 2022. [3] J. Devlin, M.-W. Chang, K. Lee, and K. Toutanova, “BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding,” in 
+
+North American Chapter of the Association for Computational Linguis-tics , 2019. [4] P. Esser, R. Rombach, and B. Ommer, “Taming Transformers for High-Resolution Image Synthesis,” 2021 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pp. 12 868–12 878, 2020. [5] H. Chang, H. Zhang, L. Jiang, C. Liu, and W. T. Freeman, “MaskGIT: Masked Generative Image Transformer,” 2022 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pp. 11 305–11 315, 2022. [6] T. J. Richardson and S. Kudekar, “Design of Low-Density Parity Check Codes for 5G New Radio,” IEEE Communications Magazine , vol. 56, pp. 28–34, 2018. [7] M. Fresia, F. P´ erez-Cruz, H. V. Poor, and S. Verd´ u, “Joint Source and Channel Coding,” IEEE Signal Processing Magazine , vol. 27, pp. 104– 113, 2010. [8] A. Guyader, ´ E. Fabre, C. M. Guillemot, and M. Robert, “Joint source-channel turbo decoding of entropy-coded sources,” IEEE J. Sel. Areas Commun. , vol. 19, pp. 1680–1696, 2001. [9] E. Bourtsoulatze, D. B. Kurka, and D. G¨ und¨ uz, “Deep Joint Source-Channel Coding for Wireless Image Transmission,” IEEE Transactions on Cognitive Communications and Networking , vol. 5, pp. 567–579, 2019. [10] H. Xie, Z. Qin, G. Y. Li, and B.-H. Juang, “Deep Learning Enabled Semantic Communication Systems,” IEEE Transactions on Signal Pro-cessing , vol. 69, pp. 2663–2675, 2020. [11] N. Farsad, M. Rao, and A. Goldsmith, “Deep Learning for Joint Source-Channel Coding of Text,” in 2018 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , 2018, pp. 2326– 2330. [12] X. Chen, J. Wang, L. Xu, J. Huang, and Z. Fei, “A perceptually mo-tivated approach for low-complexity speech semantic communication,” 
+
+IEEE Internet of Things Journal , vol. 11, no. 12, pp. 22 054–22 065, 2024. [13] M. Yang, C. Bian, and H.-S. Kim, “Deep Joint Source Channel Coding for Wireless Image Transmission with OFDM,” ICC 2021 - IEEE International Conference on Communications , pp. 1–6, 2021. [14] C. Dong, H. Liang, X. Xu, S. Han, B. Wang, and P. Zhang, “Semantic Communication System Based on Semantic Slice Models Propagation,” 
+
+IEEE Journal on Selected Areas in Communications , vol. 41, pp. 202– 213, 2023. [15] Z. Bao, H. Liang, C. Dong, C. Li, X. Xu, and P. Zhang, “MD-VSC—Efficient Wireless Model Division Video Semantic Communi-cation,” IEEE Internet of Things Journal , vol. 12, no. 2, pp. 1109–1124, 2025. [16] X. Liu, H. Liang, Z. Bao, C. Dong, and X. Xu, “A Semantic Com-munication System for Point Cloud,” IEEE Transactions on Vehicular Technology , vol. 74, no. 1, pp. 894–910, 2025. [17] Z. Weng, Z. Qin, and G. Y. Li, “Robust Semantic Communications for Speech Transmission,” in ICASSP 2025 - 2025 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , 2025, pp. 1–5. [18] D. Chen and W. Hua, “Hierarchical VAE Based Semantic Communica-tions for POMDP Tasks,” in ICASSP 2024 - 2024 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , 2024, pp. 5540–5544. [19] M. Wang, Z. Zhang, J. Li, M. Ma, and X. Fan, “Deep Joint Source-Channel Coding for Multi-Task Network,” IEEE Signal Processing Letters , vol. 28, pp. 1973–1977, 2021. [20] M. Jankowski, D. G¨ und¨ uz, and K. Mikolajczyk, “Wireless Image Re-trieval at the Edge,” IEEE Journal on Selected Areas in Communications ,vol. 39, pp. 89–100, 2020. [21] W. F. Lo, N. Mital, H. Wu, and D. G¨ und¨ uz, “Collaborative Semantic Communication for Edge Inference,” IEEE Wireless Communications Letters , vol. 12, pp. 1125–1129, 2023. [22] T.-Y. Tung, D. B. Kurka, M. Jankowski, and D. G¨ und¨ uz, “DeepJSCC-Q: Channel Input Constrained Deep Joint Source-Channel Coding,” in ICC 2022 - IEEE International Conference on Communications , 2022, pp. 3880–3885. [23] K. Ma, S. Shao, and M. Tao, “Image Semantic Communication over Fading Channel: A Learned Broadcast Approach,” in 2023 IEEE 24th International Workshop on Signal Processing Advances in Wireless Communications (SPAWC) , 2023, pp. 66–70. [24] Y. Bo, Y. Duan, S. Shao, and M. Tao, “Joint Coding-Modulation for Digital Semantic Communications via Variational Autoencoder,” IEEE Transactions on Communications , vol. 72, no. 9, pp. 5626–5640, 2024. [25] L. Guo, W. Chen, Y. Sun, and B. Ai, “Device-Edge Digital Semantic Communication with Trained Non-Linear Quantization,” in 2023 IEEE 97th Vehicular Technology Conference (VTC2023-Spring) , 2023, pp. 1– 5. [26] Z. Bao, H. Liang, X. Liu, C. Li, C. Dong, X. Xu, C. Guo, H. Chen, and P. Zhang, “sDAC—Semantic Digital Analog Converter for Semantic Communications,” IEEE Transactions on Communications , vol. 73, no. 11, pp. 11 061–11 077, 2025. [27] C. Liu, C. Guo, Y. Yang, W. Ni, and T. Q. S. Quek, “OFDM-Based Digital Semantic Communication With Importance Awareness,” IEEE Transactions on Communications , vol. 72, no. 10, pp. 6301–6315, 2024. [28] J. Dai, P. Zhang, K. Niu, S. Wang, Z. Si, and X. Qin, “Communica-tion Beyond Transmitting Bits: Semantics-Guided Source and Channel Coding,” IEEE Wireless Communications , vol. 30, pp. 170–177, 2021. [29] J. Park, Y. Oh, S. Kim, and Y.-S. Jeon, “Joint Source-Channel Coding for Channel-Adaptive Digital Semantic Communications,” IEEE Trans-actions on Cognitive Communications and Networking , vol. 11, no. 1, pp. 75–89, 2025. [30] L. Qiao, M. B. Mashhadi, Z. Gao, R. Tafazolli, M. Bennis, and D. Niy-ato, “Token Communications: A Large Model-Driven Framework for Cross-Modal Context-Aware Semantic Communications,” IEEE Wireless Communications , vol. 32, no. 5, pp. 80–88, 2025. [31] A. Devoto, J. Pomponi, M. Merluzzi, P. D. Lorenzo, and S. Scardapane, “Adaptive Semantic Token Communication for Transformer-based Edge Inference,” ArXiv , vol. abs/2505.17604, 2025. [32] L. Qiao, M. B. Mashhadi, Z. Gao, R. Schober, and D. G¨ und¨ uz, “ToDMA: Large Model-Driven Token-Domain Multiple Access for Semantic Com-munications,” ArXiv , vol. abs/2505.10946, 2025. [33] S. Lee, J. Park, J. Choi, and H. Park, “Semantic Packet Aggregation for Token Communication via Genetic Beam Search,” in 2025 IEEE 26th International Workshop on Signal Processing and Artificial Intelligence for Wireless Communications (SPAWC) , 2025, pp. 1–5. [34] B. Liu, L. Qiao, Y. Wang, Z. Gao, Y. Ma, K. Ying, and T. Qin, “Text-Guided Token Communication for Wireless Image Transmission,” in 
+
+2025 IEEE/CIC International Conference on Communications in China (ICCC) , 2025, pp. 1–6. [35] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, L. Kaiser, and I. Polosukhin, “Attention is All you Need,” in Neural Information Processing Systems , 2017. [36] L. McInnes and J. Healy, “UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction,” ArXiv , vol. abs/1802.03426, 2018. [37] I. Loshchilov and F. Hutter, “Decoupled Weight Decay Regularization,” in International Conference on Learning Representations , 2017. [38] S. Merity, C. Xiong, J. Bradbury, and R. Socher, “Pointer Sentinel Mixture Models,” ArXiv , vol. abs/1609.07843, 2016. [39] J. Deng, W. Dong, R. Socher, L.-J. Li, K. Li, and L. Fei-Fei, “ImageNet: A large-scale hierarchical image database,” in 2009 IEEE Conference on Computer Vision and Pattern Recognition , 2009, pp. 248–255. [40] K. Papineni, S. Roukos, T. Ward, and W.-J. Zhu, “Bleu: a Method for Automatic Evaluation of Machine Translation,” in Annual Meeting of the Association for Computational Linguistics , 2002. [41] R. Zhang, P. Isola, A. A. Efros, E. Shechtman, and O. Wang, “The Un-reasonable Effectiveness of Deep Features as a Perceptual Metric,” 2018 IEEE/CVF Conference on Computer Vision and Pattern Recognition , pp. 586–595, 2018. [42] R. Socher, A. Perelygin, J. Wu, J. Chuang, C. D. Manning, A. Ng, and C. Potts, “Recursive Deep Models for Semantic Compositionality Over a Sentiment Treebank,” in Conference on Empirical Methods in Natural Language Processing , 2013.

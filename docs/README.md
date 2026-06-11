@@ -6,35 +6,40 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-10
-- 运行时间：2026-06-10 22:43:14 UTC
+- 最新运行日期：2026-06-11
+- 运行时间：2026-06-11 22:22:32 UTC
 - 运行状态：成功
-- 本次总论文数：5
-- 精读区：2
-- 速读区：3
+- 本次总论文数：6
+- 精读区：4
+- 速读区：2
 
 ### 今日简报（AI）
-今天深入阅读了5篇论文，重点聚焦短到中程有线链路与WiFi车载信道的高分研究。最值得关注的方向是非线性均衡器与时序卷积信道估计，两者均获8分评价；速读中稀疏门控小线性专家模型也颇具亮点。建议优先精读这两篇高分论文，可掌握信道补偿与车载通信的最新实用方法。
-- 详情：[/202606/10/README](/202606/10/README)
+今日精读4篇速读2篇，聚焦WiFi车载通信信道估计与语义通信框架两大高价值方向。  
+最值得关注的是《Simplified Temporal Convolutional-Based Channel Estimation》与《STCC》两篇9.0分工作，分别简化了时序卷积信道估计并提出了统一语义Token编码框架。  
+建议进一步关注这些方法在低延迟车联网与语义通信系统中的应用细节。
+- 详情：[/202606/11/README](/202606/11/README)
 
 ### 精读区论文标签
-1. [Feedforward Nonlinear Equalizer for Short- to Medium-Reach Wireline Links](/202606/10/2606.08313v1-feedforward-nonlinear-equalizer-for-short--to-medium-reach-wireline-links)  
-   标签：评分：8.0/10、query:channel-nn
-   evidence：前馈非线性均衡器用于有线链路
-2. [Simplified Temporal Convolutional-Based Channel Estimation for a WiFi Vehicular Communication Channel](/202606/10/2606.10511v1-simplified-temporal-convolutional-based-channel-estimation-for-a-wifi-vehicular-communication-channel)  
-   标签：评分：8.0/10、query:channel-nn
-   evidence：基于TCN的车载通信信道估计
+1. [Simplified Temporal Convolutional-Based Channel Estimation for a WiFi Vehicular Communication Channel](/202606/11/2606.10511v2-simplified-temporal-convolutional-based-channel-estimation-for-a-wifi-vehicular-communication-channel)  
+   标签：评分：9.0/10、query:channel-nn
+   evidence：简化的时间卷积网络用于车联网WiFi通信的信道估计
+2. [STCC: A Unified Source-Channel Semantic Token Coding Framework for Semantic Communications](/202606/11/2606.11819v1-stcc-a-unified-source-channel-semantic-token-coding-framework-for-semantic-communications)  
+   标签：评分：9.0/10、query:channel-nn
+   evidence：提出用于语义通信的统一源信道语义令牌编码框架，是深度学习在通信中的应用
+3. [REACH: Interpretability-Driven Feature Identification and Architecture Compression for Multi-Channel Vehicular Channel Estimation](/202606/11/2606.11857v1-reach-interpretability-driven-feature-identification-and-architecture-compression-for-multi-channel-vehicular-channel-estimation)  
+   标签：评分：9.0/10、query:channel-nn
+   evidence：神经网络用于通信信道建模
+4. [Game-Theoretic Latent Space Alignment for Multi-user Semantic MIMO Communications](/202606/11/2606.12005v1-game-theoretic-latent-space-alignment-for-multi-user-semantic-mimo-communications)  
+   标签：评分：9.0/10、query:channel-nn
+   evidence：研究多用户语义MIMO通信中的分布式潜在空间对齐，是深度学习在通信中的应用
 
 ### 速读区论文标签
-1. [Sparsely gated tiny linear experts](/202606/10/2606.07414v1-sparsely-gated-tiny-linear-experts)  
+1. [SirenFNO: Efficient and Full Frequency Learning of Fourier Neural Operators](/202606/11/2606.11518v1-sirenfno-efficient-and-full-frequency-learning-of-fourier-neural-operators)  
    标签：评分：7.0/10、query:channel-nn
-   evidence：提出一种新型高效架构：稀疏门控线性神经元（sgatlin）
-2. [DIFFRACT: Neuralized Utility Maximization for Wireless Networks by Differentiable Programming](/202606/10/2606.07114v1-diffract-neuralized-utility-maximization-for-wireless-networks-by-differentiable-programming)  
+   evidence：新颖的神经网络架构实现FNO全频学习，可迁移至信道建模
+2. [CANS: Accelerating Multiuser Collaborative Edge Inference via Cooperative Autodidactic NeuroSurgeon](/202606/11/2606.09175v1-cans-accelerating-multiuser-collaborative-edge-inference-via-cooperative-autodidactic-neurosurgeon)  
    标签：评分：6.0/10、query:channel-nn
-   evidence：通过可微编程将干扰管理算法神经网络化用于无线网络
-3. [LLM-Guided Neural Architecture Search for Robust Co-Design of Physical Neural Networks](/202606/10/2606.10294v1-llm-guided-neural-architecture-search-for-robust-co-design-of-physical-neural-networks)  
-   标签：评分：6.0/10、query:channel-nn
-   evidence：LLM引导的神经架构搜索，可自适应设计高效神经网络
+   evidence：多用户无线边缘推理中的深度学习技术
 
 
 <div class="dpr-home-promo-card">
