@@ -6,40 +6,31 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-11
-- 运行时间：2026-06-11 22:22:32 UTC
+- 最新运行日期：2026-06-12
+- 运行时间：2026-06-12 21:40:25 UTC
 - 运行状态：成功
-- 本次总论文数：6
-- 精读区：4
+- 本次总论文数：2
+- 精读区：0
 - 速读区：2
 
 ### 今日简报（AI）
-今日精读4篇速读2篇，聚焦WiFi车载通信信道估计与语义通信框架两大高价值方向。  
-最值得关注的是《Simplified Temporal Convolutional-Based Channel Estimation》与《STCC》两篇9.0分工作，分别简化了时序卷积信道估计并提出了统一语义Token编码框架。  
-建议进一步关注这些方法在低延迟车联网与语义通信系统中的应用细节。
-- 详情：[/202606/11/README](/202606/11/README)
+今日聚焦2篇速读论文，一篇7分傅里叶神经算子新方法，一篇6分动态推理网络重构。
+
+最值得看的是FNO结合rank-1格点和双曲交叉的研究，它能高效逼近高维函数，适合科学计算场景。
+
+建议你优先阅读FNO这篇，了解如何利用稀疏采样降低计算复杂度，适合对物理模拟感兴趣的读者。
+- 详情：[/202606/12/README](/202606/12/README)
 
 ### 精读区论文标签
-1. [Simplified Temporal Convolutional-Based Channel Estimation for a WiFi Vehicular Communication Channel](/202606/11/2606.10511v2-simplified-temporal-convolutional-based-channel-estimation-for-a-wifi-vehicular-communication-channel)  
-   标签：评分：9.0/10、query:channel-nn
-   evidence：简化的时间卷积网络用于车联网WiFi通信的信道估计
-2. [STCC: A Unified Source-Channel Semantic Token Coding Framework for Semantic Communications](/202606/11/2606.11819v1-stcc-a-unified-source-channel-semantic-token-coding-framework-for-semantic-communications)  
-   标签：评分：9.0/10、query:channel-nn
-   evidence：提出用于语义通信的统一源信道语义令牌编码框架，是深度学习在通信中的应用
-3. [REACH: Interpretability-Driven Feature Identification and Architecture Compression for Multi-Channel Vehicular Channel Estimation](/202606/11/2606.11857v1-reach-interpretability-driven-feature-identification-and-architecture-compression-for-multi-channel-vehicular-channel-estimation)  
-   标签：评分：9.0/10、query:channel-nn
-   evidence：神经网络用于通信信道建模
-4. [Game-Theoretic Latent Space Alignment for Multi-user Semantic MIMO Communications](/202606/11/2606.12005v1-game-theoretic-latent-space-alignment-for-multi-user-semantic-mimo-communications)  
-   标签：评分：9.0/10、query:channel-nn
-   evidence：研究多用户语义MIMO通信中的分布式潜在空间对齐，是深度学习在通信中的应用
+- 本次无精读推荐。
 
 ### 速读区论文标签
-1. [SirenFNO: Efficient and Full Frequency Learning of Fourier Neural Operators](/202606/11/2606.11518v1-sirenfno-efficient-and-full-frequency-learning-of-fourier-neural-operators)  
+1. [Fourier Neural Operators with rank-1 lattice points and hyperbolic cross](/202606/12/2606.08871v1-fourier-neural-operators-with-rank-1-lattice-points-and-hyperbolic-cross)  
    标签：评分：7.0/10、query:channel-nn
-   evidence：新颖的神经网络架构实现FNO全频学习，可迁移至信道建模
-2. [CANS: Accelerating Multiuser Collaborative Edge Inference via Cooperative Autodidactic NeuroSurgeon](/202606/11/2606.09175v1-cans-accelerating-multiuser-collaborative-edge-inference-via-cooperative-autodidactic-neurosurgeon)  
+   evidence：基于秩1格点和双曲交叉的高效傅里叶神经算子新架构
+2. [Sigma-Branch: Hierarchical Single-Path Network Reconstruction for Dynamic Inference with Reduced Active Parameters](/202606/12/2606.09924v1-sigma-branch-hierarchical-single-path-network-reconstruction-for-dynamic-inference-with-reduced-active-parameters)  
    标签：评分：6.0/10、query:channel-nn
-   evidence：多用户无线边缘推理中的深度学习技术
+   evidence：通过分层树结构减少活跃参数的高效神经网络设计
 
 
 <div class="dpr-home-promo-card">

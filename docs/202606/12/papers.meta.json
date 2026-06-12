@@ -1,0 +1,39 @@
+{
+  "label": "2026-06-12",
+  "date": "2026-06-12",
+  "generated_at": "2026-06-12T21:40:33",
+  "count": 2,
+  "papers": [
+    {
+      "paper_id": "202606/12/2606.08871v1-fourier-neural-operators-with-rank-1-lattice-points-and-hyperbolic-cross",
+      "section": "quick",
+      "title_en": "Fourier Neural Operators with rank-1 lattice points and hyperbolic cross",
+      "authors": "Jakob Dilen, Alexander Keller, Frances Y. Kuo, Dirk Nuyens",
+      "date": "2026-06-07",
+      "pdf": "https://arxiv.org/pdf/2606.08871v1",
+      "score": "7.0",
+      "evidence": "基于秩1格点和双曲交叉的高效傅里叶神经算子新架构",
+      "tldr": "傅里叶神经算子（FNO）学习函数空间映射，但传统的张量积网格导致高计算和泛化误差。本文提出基于rank-1格点和双曲交叉频率索引的改进FNO，用一维快速傅里叶变换替代多维变换。通过理论推导和实验证明，该方法在更少网络参数、空间点和训练样本下实现更精确高效的近似，泛化误差更优。架构简化，在环面椭圆PDE上验证了有效性。",
+      "tags": "query:channel-nn",
+      "abstract_en": "The \\emph{Fourier neural operator} (FNO) is a neural network architecture that learns mappings between function spaces. Its efficient implementation is based on the multi-dimensional Fourier transform. By deriving general regularity bounds for the FNO with respect to both the spatial and parametric variables, we prove that the generalization error of the FNO can be improved by replacing spatial tensor product grids with purpose-built rank-1 lattice points, and by using a second lattice carefully constructed as training points in the parametric space. We achieve more accurate and efficient approximations from fewer network parameters, fewer spatial points, and fewer training samples. In addition, the architecture is simplified, because the high-dimensional Fourier transform on rank-1 lattices requires only a \\emph{one-dimensional fast Fourier transform}, and we can use a \\emph{hyperbolic cross} frequency index set with lattice points. We demonstrate the benefits of our \\emph{lattice-based hyperbolic-cross FNOs} for an elliptic PDE on the torus.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/12/2606.09924v1-sigma-branch-hierarchical-single-path-network-reconstruction-for-dynamic-inference-with-reduced-active-parameters",
+      "section": "quick",
+      "title_en": "Sigma-Branch: Hierarchical Single-Path Network Reconstruction for Dynamic Inference with Reduced Active Parameters",
+      "authors": "Kohga Tanaka, Hiroaki Nishi",
+      "date": "2026-06-07",
+      "pdf": "https://arxiv.org/pdf/2606.09924v1",
+      "score": "6.0",
+      "evidence": "通过分层树结构减少活跃参数的高效神经网络设计",
+      "tldr": "针对内存受限边缘设备上深度网络推理时需加载全部权重导致存储瓶颈的问题，提出Sigma-Branch框架，将预训练密集网络重构为分层二叉树结构。通过激活球面k均值聚类分配权重并联合初始化路由和分支通道，经软路由微调后推理仅执行单根到叶路径，活跃参数减少58-60%，ImageNet Top-1精度损失仅1.72百分点，优于静态结构化剪枝14-23百分点，实现了推理内存流量与总参数量的解耦。",
+      "tags": "query:channel-nn",
+      "abstract_en": "Deploying deep neural networks on memory-constrained edge accelerators is bottlenecked by per-inference off-chip weight transfer rather than computation: the dense network cannot be retained on-chip, and every parameter must be loaded for every input. Existing model compression reduces this transfer only at the cost of permanent capacity loss. We propose Sigma-Branch (SigmaB), a framework that restructures a pretrained dense network into a hierarchical binary tree composed of a shared backbone, hierarchical routers, and specialized leaves. Pretrained weights are distributed across the tree via activation-based spherical k-means clustering, which jointly initializes router weights and per-branch channel allocations; soft-routing fine-tuning then aligns each leaf with its routed input subset. At inference, the resulting network executes only a single root-to-leaf path, reducing the active-parameter footprint while storing the complete dense parameter set in memory. Across CIFAR-100 / ResNet-50, ImageNet-1K / ResNet-50, and ModelNet40 / PointNet++, SigmaB-Net reduces per-inference active parameters by 58-60% while remaining within 1.72 percentage points (pp) of the dense baseline Top-1. At comparable ImageNet-1K Top-1, the active-parameter reduction exceeds static structured pruning (FPGM, HRank) by 14-23 pp. The cross-modal evaluation, spanning 2D vision and 3D point-cloud backbones, substantiates a framework-level claim that decouples per-inference memory traffic from the total parameter count.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
