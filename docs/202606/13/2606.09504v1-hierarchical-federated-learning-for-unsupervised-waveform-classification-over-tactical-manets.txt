@@ -1,0 +1,242 @@
+Title: Hierarchical Federated Learning for Unsupervised Waveform Classification over Tactical MANETs
+
+URL Source: https://arxiv.org/pdf/2606.09504v1
+
+Published Time: Tue, 09 Jun 2026 02:23:01 GMT
+
+Number of Pages: 6
+
+Markdown Content:
+# Hierarchical Federated Learning for Unsupervised Waveform Classification over Tactical MANETs 
+
+Charles E. Thornton and Daniel J. Jakubisin 
+
+∗Virginia Tech National Security Institute, Blacksburg, VA (cthorn14 @vt.edu) 
+
+Abstract —Distributed radio frequency sensing in contested tactical environments demands collaborative learning across mo-bile nodes. In ad-hoc networks, learning must occur without per-sistent backhaul, ground truth labels, or reliable communication links. Traditional federated learning approaches assume either ideal link conditions or supervised training objectives, neither of which holds in practice for deployed MANET platforms. This paper presents a hierarchical federated learning framework for unsupervised waveform classification over tactical MANETs subject to Rayleigh fading, random waypoint mobility, and multi-hop routing loss. Each node trains a local denoising convolutional autoencoder on raw IQ observations without label exchange, learning compact representations through a self-supervised reconstruction objective. A two-stage aggregation protocol elects connectivity-based relay aggregators consistent with OLSR multipoint relay selection, compressing cluster-level model updates before forwarding to a mobile server proxy. Simulation results demonstrate that in-network aggregation reduces attempted transmission bits relative to relay-forward federated averaging by around 12% at equivalent classification performance. Notably, stochastic channel-driven subsampling under non-IID data acts as an implicit regularizer, with both MANET conditions matching or exceeding ideal federated aver-aging on unsupervised representation quality. This suggests that moderate link loss can partially compensate for client drift in heterogeneous networks. Performance is assessed on analysis of the learned latent embeddings using KMeans normalized mutual information and linear probe accuracy. 
+
+I. I NTRODUCTION 
+
+Mobile ad-hoc networks (MANETs) present a fundamental challenge for distributed machine learning. Namely, the envi-ronments in which collaborative inference is most valuable are those in which the infrastructure assumptions under-pinning conventional learning techniques break down most severely. In MANETs, nodes are mobile, communication links are intermittent and time-varying, and the electromagnetic environment is dynamic and potentially contested. In such settings, the standard approach of routing observations to a central server for batch training is untenable, due to a lack of persistent backhaul and the risk of transmitting raw sensor data. Distributed learning must therefore occur at the edge, under the same link conditions that make centralized approaches impractical. Sidelink communication, standardized in 3GPP Release 16 and extended in Release 17 for operation outside network coverage [1], enables direct device-to-device transmission 
+
+This work was supported by The Boeing Company under agreement no. 2022-540. 
+
+without infrastructure support, making it a natural candi-date for tactical MANET deployments. Military adaptations of sidelink-style architectures, including waveforms such as Soldier Radio Waveform (SRW) and the emerging family of JADC2-aligned tactical data links, provide multi-hop routing and peer discovery in denied environments [2]. Cognitive radio and dynamic spectrum access techniques have further extended these capabilities by enabling nodes to sense and adapt to the local electromagnetic environment [3]. How-ever, the machine learning components of these systems are typically trained offline on curated datasets and deployed as fixed classifiers, with no mechanism for nodes to col-laboratively refine their models in response to the evolving signal environment they collectively observe. The result is a system that is adaptive at the waveform layer but static at the inference layer, a gap that becomes increasingly problematic as adversaries field agile, low-probability-of-intercept emitters that fall outside the support of any fixed training distribution. Federated learning (FL) [4] has emerged as a promising framework for distributed model training, replacing raw data exchange with the aggregation of locally computed model updates. FedAvg [4] demonstrated that a global model can be learned from non-IID data distributed across many clients by averaging local gradient updates. Subsequent work has extended this foundation in several directions. Convergence guarantees under heterogeneous data distributions have been established in [5], while communication efficiency has been addressed through gradient sparsification [6], quantization [7], and partial participation [4]. FedProx [8] introduced a proximal regularization term to explicitly bound client drift under strong data heterogeneity, establishing a theoretical connection between non-IID distri-bution and convergence degradation that motivates our inves-tigation of channel-induced subsampling as a complementary mechanism. Hierarchical FL [9] introduced a client-edge-cloud aggregation architecture that reduces communication burden on the global server by introducing intermediate aggregation tiers; subsequent work extended this to mobility-aware settings [10], though both assume infrastructure-based topologies with fixed or statistically modeled edge server reachability rather than the dynamic peer-to-peer link struc-ture of a MANET. In wireless communications, FL over fading channels has been studied extensively for infrastructure-based uplinks [11], with particular attention to over-the-air computation 
+
+> arXiv:2606.09504v1 [eess.SP] 8 Jun 2026
+
+and bandwidth-constrained gradient transmission. The conver-gence behavior of FL under packet erasure has been analyzed in [12], with results showing that FL can converge even under sustained packet loss—a finding consistent with our empirical observations but derived under tighter infrastructure assumptions. In the RFML domain, supervised federated approaches to AMR have been proposed in [13], [14], demonstrating that FL can reduce data privacy risk relative to centralized AMR while maintaining classification accuracy under class imbalance and varying channel conditions. However, these approaches assume nodes possess labeled training data—an assumption that is untenable when observing unknown or adversarial emitters in a contested spectrum. Unsupervised representation learning from raw RF signals has been ex-plored in centralized settings [15], and self-supervised learn-ing has been shown to substantially improve label efficiency for AMR [16]. Most recently, FedSSL-AMC [17] proposed federated self-supervised pretraining for AMC under non-IID distributions, demonstrating that contrastive representation learning can be effectively federated without label exchange. While FedSSL-AMC addresses label scarcity in a federated setting, it assumes reliable uplink delivery and does not model multi-hop routing loss, topology dynamics, or node mobility. To our knowledge, no existing work simultaneously addresses unsupervised federated waveform classification, hierarchical in-network aggregation, and physically realistic MANET channel modeling. This paper addresses these gaps through the following contributions:  
+
+> •
+
+A hierarchical FL protocol over tactical MANETs with SINR-aware routing, degree-based relay aggregator elec-tion consistent with OLSR MPR selection, and 8-bit quantized delta compression, reducing attempted trans-mission bits by up to 12% relative to relay-forward feder-ated averaging at equivalent classification performance.  
+
+> •
+
+A self-supervised denoising CAE trained entirely on unlabeled IQ observations distributed across heteroge-neous MANET nodes, enabling downstream waveform classification with only a small labeled reference set required at inference time.  
+
+> •
+
+Empirical evidence that stochastic channel-driven sub-sampling under non-IID data distributions acts as an implicit regularizer, with MANET conditions matching or exceeding ideal FedAvg on unsupervised representa-tion quality—a finding with broader implications for FL system design in heterogeneous tactical networks.  
+
+> •
+
+A controlled simulation study comparing hierarchical relay-aggregate FL, flat relay-forward FL, ideal FedAvg, and a centralized upper bound across channel severity conditions, evaluated using KMeans normalized mutual information and linear probe accuracy on learned latent embeddings without requiring labeled data during dis-tributed training. II. S YSTEM MODEL 
+
+We consider a MANET consisting of N nodes deployed within a bounded square area of length darea meters. Nodes are heterogeneous in their local signal environments and oper-ate without fixed infrastructure or persistent backhaul. Each node assumes one of three roles within a given federation round: a client that trains a local model on observed IQ data; a relay-aggregator that receives, compresses, and forwards cluster-level model updates; or a server proxy that performs global model aggregation. Role assignment is dynamic and determined at the start of each round based on current link state, as described in Section III. All nodes participate as clients; the relay-aggregator and server proxy roles are additionally assigned to a subset of nodes based on adjacency degree. Node positions evolve according to the Random Waypoint (RWP) mobility model [18], in which each node indepen-dently draws a destination uniformly at random within the deployment area and travels toward it at a speed drawn uni-formly from [vmin , v max ] m/s. Upon reaching its destination, a node pauses with probability ppause before drawing a new waypoint, or immediately draws a new destination otherwise. One federation round corresponds to a duration of Tround 
+
+seconds during which each node advances toward its current waypoint by a distance of v · Tround meters, where v is instantaneous speed. Node positions are updated at the start of each round, yielding a time-varying topology that reflects the mobility dynamics of dismounted or light-vehicle tactical platforms. 
+
+A. Channel Model 
+
+Communication between nodes i and j separated by dis-tance dij is modeled as a Rayleigh flat-fading channel with path loss. The instantaneous received power is given by 
+
+Pr = Pt · h · d−αij , (1) where Pt is the transmit power, h ∼ Exp(1) is the Rayleigh fading envelope power (exponentially distributed with unit mean), and α is the path loss exponent. The receiver noise power is given by N0 = kT 0B · F , where kT 0 is the thermal noise density at 290K, B is the channel bandwidth, and F is the receiver noise figure. A transmission is successfully decoded if the instantaneous SNR γ = Pr /N 0 exceeds a threshold γth . Since h ∼ Exp(1) ,the outage probability for a single hop of length dij has closed form 
+
+Pout (dij ) = 1 − exp − γth N0
+
+Ptd−αij 
+
+!
+
+. (2) For a multi-hop route of H hops with distances 
+
+{d1, ..., d H }, the end-to-end delivery probability under inde-pendent per-hop fading is: 
+
+Psuccess =
+
+> H
+
+Y
+
+> k=1
+
+[1 − Pout (dk)] (3) A Bernoulli outcome is drawn from Psuccess at transmission time to determine whether a given model update is delivered. The channel model assumes narrowband flat fading consistent with a single-carrier tactical radio waveform, and does not model co-channel interference, implicitly assuming a TDMA or FDMA protocol. 
+
+B. Adjacency and Routing 
+
+At the start of each round, after node positions are updated, a link (i, j ) is admitted to the adjacency graph if the single-hop delivery probability exceeds threshold padmit 
+
+Aij = 1[1 − Pout (dij ) > p admit ], (4) where 1{·} is the indicator function, and padmit represents the minimum acceptable long-run link reliability for inclusion in the routing graph. This is consistent with the hello-message based neighbor discovery used in OLSR. Routes are limited to a maximum of Hmax hops; packets for which no route exists within this constraint are dropped. A propagation delay model assigns a delay of ⌊(H −1) /H delay ⌋ rounds to updates traversing H hops, capped at Dmax rounds, reflecting the latency of store-and-forward multi-hop delivery in a low-duty-cycle tactical environment. 
+
+C. Signal and Data Model 
+
+Each node observes IQ frames of length L samples drawn from one of C waveform classes. In this work, we consider 
+
+C = 2 classes: linear frequency modulated (LFM) chirp and orthogonal frequency division multiplexing (OFDM), as rep-resentative tactical emitter types corresponding to radar and communications waveforms respectively. Each frame is sub-jected to RF impairments including carrier frequency offset (CFO), IQ imbalance, timing offset, and AWGN at a per-node SNR drawn from a heterogeneous bucket [SNR i
+
+> min
+
+, SNR i
+
+> max
+
+]
+
+assigned at initialization. Waveform class proportions per node are drawn from a Dirichlet distribution with concen-tration parameter αD , yielding non-IID data across nodes, with heterogeneity controlled by αD . Smaller values of αD
+
+produce more skewed per-node class distributions. A key limitation is that no node has access to class labels during federation; labels are used only at evaluation time to assess the quality of learned representations. III. P ROPOSED METHOD 
+
+Each node maintains a local denoising CAE that maps noisy IQ observations to a compact latent representation. The encoder fθ : R2×L 7 → Rdz consists of three strided 1D convolutional layers with batch normalization and ReLU activations, projecting to a latent vector of dimension dz = 64 
+
+after a fully connected layer with normalization. The decoder 
+
+gθ : Rdz 7 → R2×L mirrors the encoder with transposed convolutions. IQ frames are represented as two-channel real tensors with in-phase and quadrature components along the channel dimension. 
+
+TABLE I: System Model Parameters                                         
+
+> Category Parameter Symbol Value
+> Federation No. nodes N16 FL rounds R80 Dirichlet param. αD1.5 Channel Area darea 2500 m2
+> Trans. power Pt20.5 dBm Noise figure F7.0 dB Path loss exp. α4.0 SINR thresh. γth 5.5 dB Link admit thresh. padmit 0.3 Mobility Min node speed vmin 1.0 m/s Max node speed vmax 15.0 m/s Pause probability ppause 0.1 Round duration Tround 10 s Max routing hops Hmax 3Signal IQ frame length L128 samples Waveform classes C2 (LFM, OFDM) Samples per node S512 Max aggr. delay Dmax 2 rounds
+
+The training objective is the mean squared reconstruction error between decoder output and clean impaired frame, given by 
+
+L(θ) = E(˜ x,x )
+
+∥gθ (fθ (˜ x)) − x∥22
+
+ , (5) where ˜x is the noisy observation and x is the normalized signal prior to noise addition. This denoising objective forces the encoder to capture underlying signal structure rather than noise-specific features. Each node trains for E local epochs using Adam with gradient clipping, producing updated parameters θ(r) 
+
+> i
+
+at the end of round r.
+
+A. Quantized Delta Compression 
+
+To reduce uplink communication cost, each node transmits a quantized parameter delta rather than full model weights. At the end of local training, node i computes 
+
+∆ri = θ(r) 
+
+> i
+
+− θ(r)global . (6) Each parameter tensor is independently quantized to 8-bit integers using symmetric per-tensor scalar quantization with scale factor sk = max |∆[ k]|/127 , which reduces uplink payload ≈ 4× relative to float32 transmission. The scale factor is transmitted along with the quantized tensor for exact dequantization at the receiver. At the relay-aggregator, the cluster average delta is re-quantized before stage 2 trans-mission, introducing a bounded second quantization error that is accepted in exchange for communication savings of compressed forwarding. 
+
+B. Hierarchical Aggregation 
+
+The proposed protocol proceeds in two stages per federa-tion round over the MANET topology of Section II. 
+
+Server Proxy and Relay-Aggregator Election: After posi-tions are updated and adjacency graph A(r) is computed, the server proxy is elected as the node with the highest adjacency degree. A set of K relay-aggregators is then elected from participating clients by the same criterion: selecting the top-
+
+K nodes by degree. Each remaining client is assigned to its geographically nearest relay-aggregator, minimizing expected Stage 1 hop count. 
+
+Stage 1, Client to Relay-Aggregator: Each client routes its quantized delta to its assigned relay-aggregator via greedy ge-ographic forwarding. A Bernoulli delivery outcome is drawn with success probability Psuccess as defined in Section II-C. Delivered updates are accumulated at the relay-aggregator. Dropped updates are lost for the round. 
+
+Stage 2, Relay-Aggregator to Server Proxy: Each relay-aggregator computes a sample-count weighted average of received Stage 1 updates: 
+
+¯∆(r) 
+
+> a
+
+=
+
+P 
+
+> i∈Ga
+
+ni ˆ∆(r)
+
+> i
+
+P 
+
+> i∈Ga
+
+ni
+
+, (7) where Ga is the set of clients whose updates were received and ni is the local dataset of client i. The cluster average is re-quantized and routed to the server proxy subject to a further Bernoulli delivery outcome, with a propagation delay of δa = ⌊(Ha − 1) /H delay ⌋ rounds capped at Dmax . A Stage 2 failure silently discards all updates aggregated within that cluster. 
+
+Global Aggregation: The server proxy applies arriving updates using a FedAvgM-style server optimizer with mo-mentum β and server learning rate ηs, reducing to standard FedAvg when β = 0 . Delayed updates from prior rounds are applied upon arrival. Attempted transmission bits are charged per hop regardless of delivery outcome, capturing the full network cost of both successful and failed routing attempts. IV. E XPERIMENTAL SETUP AND BASELINES 
+
+All experiments are implemented in PyTorch and executed on a single workstation with one NVIDIA GPU. Local client training is parallelized across a multiprocessing worker pool, with each worker receiving a copy of the current global model state at the start of each round. The MANET channel, mobility engine, and routing protocol are implemented in a custom Python simulation framework interfaced directly with the FL training loop, enabling tight coupling between physical layer dynamics and federation round timing. 
+
+A. Baselines and Experimental Conditions 
+
+Four experimental conditions are evaluated:  
+
+> •
+
+Hierarchical MANET FL (proposed): Two-stage relay-aggregate protocol with degree-based aggregator election, Rayleigh fading channel, and RWP mobility as described in Section III.  
+
+> •
+
+Flat MANET FedAvg (relay-forward): Identical chan-nel parameters, mobility seed, and client specifications to the proposed method, but each client routes its update directly to the server proxy without intermediate aggre-gation. All channel and data variables are fixed.  
+
+> •
+
+Ideal FedAvg: Standard FedAvg [4] with all updates delivered every round, no channel effects, no routing de-lay, and no drop. Represents the upper bound achievable under perfect communication.  
+
+> •
+
+Centralized: A single model trained on a pooled dataset of equivalent size to the total federated data. Represents the upper bound when data locality constraints are re-moved entirely. To ensure a controlled comparison between the two MANET conditions, client selection schedules are precomputed using a shared random seed and held identical per round. 
+
+B. Data Generation 
+
+Training data is generated on-the-fly at each client during local training using a synthetic IQ signal generator. LFM frames are generated with randomized chirp rate and initial frequency drawn uniformly within the normalized bandwidth, and a random initial phase. OFDM frames use a 32-subcarrier IFFT with QPSK subcarrier mapping and a cyclic prefix of 25% of the FFT length, tiled or truncated to L = 128 samples. All frames are normalized to unit power before impairment application. RF impairments are applied to each frame inde-pendently: CFO drawn from U(−5×10 −4, 5×10 −4) normal-ized frequency, random initial phase offset ϕ0 ∼ U(0 , 2π), IQ gain imbalance g ∼ U(−0.003 , 0.003) , IQ phase imbalance 
+
+ϑ ∼ U(−0.003 , 0.003) , and a small integer timing offset. AWGN is then added at the per-node SNR drawn from the assigned bucket. For the denoising objective, the network input is the impaired noisy frame ˜x and the reconstruction target is the impaired frame prior to noise addition x, ensuring the model learns to suppress channel noise while preserving waveform-specific structure introduced by the impairments. Node class proportions are drawn from a Dirichlet distribu-tion Dir( αD 1C ) with αD = 1 .5, producing moderate non-IID heterogeneity across nodes. SNR buckets are assigned cycli-cally across nodes from the set {[−5, 5] , [5 , 10] , [5 , 10] } dB, introducing heterogeneity in channel quality in addition to class distribution. 
+
+C. Evaluation Metrics and Hyperparameters 
+
+At every Eeval = 10 rounds, the global model is evaluated on a held-out test set of 800 frames per class generated under the full SNR range. Two metrics are computed from the frozen latent embeddings Z = fθ (Xtest ):
+
+KMeans NMI: KMeans clustering with K = C = 2 is applied directly to Z without label information. Normalized mutual information (NMI) between the cluster assignments and ground truth labels measures the degree to which the unsupervised latent geometry aligns with waveform class structure. NMI ranges from 0 (random alignment) to 1(perfect alignment) and does not require label access during training or inference. 
+
+Linear Probe Accuracy: A logistic regression classifier is trained on a 50% stratified split of the test embeddings using ground truth labels and evaluated on the remaining 50%. This measures the linear separability of the learned representation — the ceiling of what a lightweight downstream classifier could achieve with minimal labeled supervision. Importantly, Fig. 1: KMeans NMI (left) and linear probe accuracy (right) versus FL round for hierarchical MANET FL, flat relay-forward MANET FedAvg, and ideal FedAvg. Both MANET conditions match or exceed ideal FedAvg on NMI, and converge to within 2% of ideal FedAvg on linear probe accuracy despite 40–50% per-round drop rates. 
+
+labels are used only at evaluation time and are never trans-mitted between nodes during federation. Local training uses the Adam optimizer with learning rate 
+
+η = 0 .01 , weight decay 10 −8, batch size 64, and E = 1 
+
+local epoch per round. The server optimizer uses β = 0 
+
+(plain FedAvg aggregation) and ηs = 1 .0. The number of relay-aggregators is K = 4 , self-updates at aggregators are included, and the maximum aggregation delay is Dmax = 2 
+
+rounds. Full participation is used (ρ = 1.0) across all conditions. The centralized baseline trains for ⌊R · ρ⌋ = 80 
+
+epochs to match the effective data exposure of the federated conditions. V. R ESULTS AND DISCUSSION 
+
+A. Convergence Under Channel Impairments 
+
+Fig. 1 shows KMeans NMI and linear probe accuracy versus federation round for the three FL conditions. Despite sustaining 40–50% per-round update drop rates, the proposed hierarchical MANET FL matches ideal FedAvg on linear probe accuracy, reaching approximately 89% by round 80. Both MANET conditions converge to within 2% of ideal FedAvg on linear probe accuracy while operating under mean link outage probabilities exceeding 0.75, demonstrating that the denoising CAE learns discriminative waveform represen-tations under sustained channel impairment. Notably, both MANET conditions match or exceed ideal FedAvg on KMeans NMI throughout training. We attribute this to a regularization effect induced by stochastic channel-driven subsampling: under non-IID data distributions with 
+
+αD = 1 .5, applying all client updates every round ampli-fies client drift, whereas random update filtering under the MANET channel implicitly reduces gradient variance at the server. This finding is consistent with the packet erasure convergence results of [12], and suggests that moderate link 
+
+> Fig. 2: t-SNE projection of latent embeddings learned by hierarchical MANET FL at round 80. Clear separation between LFM (blue) and OFDM (orange) waveform classes emerges without label supervision during distributed training, with residual overlap concentrated at the class boundary consistent with the observed linear probe accuracy of 90.5%.
+
+loss can partially compensate for client drift in heterogeneous networks: a result with broader implications for FL system design. Fig. 2 shows a t-SNE projection of the learned latent embeddings at round 80, confirming that clear class separation between LFM and OFDM waveforms emerges from the de-noising objective without label supervision during federation. 
+
+B. Communication Efficiency 
+
+Fig. 3 shows cumulative attempted transmission bits versus FL round. The hierarchical protocol reduces attempted bits by approximately 12% relative to flat relay-forward MANET Fe-dAvg through shorter Stage 1 hop distances and compressed Stage 2 cluster averaging. Ideal FedAvg accumulates fewer bits than either MANET condition as single-hop delivery incurs no multi-hop replication cost. Fig. 3: Cumulative attempted bits versus FL round. Flat relay-forward MANET FedAvg incurs highest communication cost due to 16 individual multi-hop transmission attempts per round. Hier-archical MANET FL reduces attempted bits by approximately 12% through shorter Stage 1 hop distances and compressed Stage 2 cluster averaging. Ideal FedAvg accumulates fewer total bits than either MANET condition with no multi-hop overhead. 
+
+C. Discussion 
+
+The results demonstrate that unsupervised waveform clas-sification is viable in a distributed MANET setting without label exchange, and that hierarchical in-network aggregation improves communication efficiency without sacrificing rep-resentation quality under moderate channel conditions. The centralized upper bound remains ≈ 10% ahead on linear probe accuracy, reflecting the federated penalty attributable to non-IID data heterogeneity rather than channel impairment, which narrows with additional rounds. Under the harsh chan-nel conditions tested ( α = 4 .0, γth = 5 .5 dB, mean outage 
+
+≈ 0.75 ), the hierarchical protocol performs comparably to flat relay-forward FL. Preliminary experiments at higher outage probabilities indicate that the cluster-silencing failure mode— in which a Stage 2 drop discards all updates aggregated within a cluster—can cause convergence degradation relative to flat routing under severe channel conditions. Adaptive switching between relay-aggregate and relay-forward modes based on real-time outage estimation is a natural extension and is left for future work. VI. C ONCLUSION 
+
+This paper presented a hierarchical federated learning framework for unsupervised waveform classification over tac-tical MANETs subject to Rayleigh fading, random waypoint mobility, and multi-hop routing loss. A two-stage relay-aggregate protocol with connectivity-based aggregator elec-tion reduces attempted transmission bits by approximately 12% relative to relay-forward federated averaging, while a self-supervised denoising CAE enables waveform representa-tion learning without label exchange across nodes. Simulation results demonstrate that the proposed method matches ideal FedAvg on linear probe accuracy despite sustaining 40–50% per-round update drop rates, and that stochastic channel-driven subsampling acts as an implicit regularizer under non-IID data distributions, with MANET conditions matching or exceeding ideal FedAvg on unsupervised representation qual-ity. Future work will investigate adaptive protocol switching between relay-aggregate and relay-forward modes based on real-time outage estimation, extension to larger waveform class sets including open-set recognition of unknown emitters, and convergence analysis under the asymmetric staleness introduced by the two-stage delay model. REFERENCES [1] M. Harounabadi et al. , “V2x in 3gpp standardization: Nr sidelink in release-16 and beyond,” IEEE Communications Standards Magazine ,vol. 5, no. 1, pp. 12–21, 2021. [2] C. E. Thornton et al. , “On the role of 5G and beyond sidelink communication in multi-hop tactical networks,” in IEEE MILCOM Workshops , 2023. [3] A. F. Martone et al. , “Closing the loop on cognitive radar for spectrum sharing,” IEEE Aerospace and Electronic Systems Magazine , vol. 36, no. 9, pp. 44–55, 2021. [4] B. McMahan et al. , “Communication-efficient learning of deep net-works from decentralized data,” in Artificial intelligence and statistics .Pmlr, 2017, pp. 1273–1282. [5] T. Li et al. , “Federated learning: Challenges, methods, and future directions,” IEEE Signal Process. Mag. , vol. 37, no. 3, pp. 50–60, 2020. [6] X. Lin et al. , “Joint gradient sparsification and device scheduling for federated learning,” IEEE Trans. on Green Commun. and Netw. , vol. 7, no. 3, pp. 1407–1419, 2023. [7] D. Alistarh et al. , “Qsgd: Communication-efficient sgd via gradient quantization and encoding,” Advances in Neural Information Process-ing Systems , vol. 30, 2017. [8] T. Li et al. , “Federated optimization in heterogeneous networks,” Proc. of Machine Learning and Systems , vol. 2, pp. 429–450, 2020. [9] L. Liu, J. Zhang, S. Song, and K. B. Letaief, “Client-edge-cloud hier-archical federated learning,” in IEEE International Conf. on Commun. 
+
+IEEE, 2020, pp. 1–6. [10] C. Feng et al. , “Mobility-aware cluster federated learning in hierarchical wireless networks,” IEEE Trans. on Wireless Commun. , vol. 21, no. 10, pp. 8441–8458, 2022. [11] M. M. Amiri and D. G¨ und¨ uz, “Federated learning over wireless fading channels,” IEEE Trans. on Wireless Commun. , vol. 19, no. 5, pp. 3546– 3557, 2020. [12] A. Rodio et al. , “Federated learning with packet losses,” in WPMC .IEEE, 2023, pp. 1–6. [13] Y. Wang et al. , “Federated learning for automatic modulation classifi-cation under class imbalance and varying noise condition,” IEEE Trans. on Cogn. Commun. and Netw. , vol. 8, no. 1, pp. 86–96, 2021. [14] Y. Dong et al. , “A novel distributed solution for automatic modulation classification based on federated learning and modified lstm,” IEEE Trans. on Veh. Techn. , vol. 74, no. 8, pp. 12 290–12 302, 2025. [15] T. J. O’Shea, J. Corgan, and T. C. Clancy, “Unsupervised representation learning of structured radio communication signals,” in Intl. Workshop on Sensing, Processing and Learning for Intell. Mach. (SPLINE) .IEEE, 2016, pp. 1–5. [16] K. Davaslioglu et al. , “Self-supervised rf signal representation learning for nextg signal classification with deep learning,” IEEE Wireless Commun. Letters , vol. 12, no. 1, pp. 65–69, 2022. [17] U. Akram, Y. Chen, and H. Vikalo, “Federated self-supervised learning for automatic modulation classification in heterogeneous settings,” in 
+
+IEEE SPAWC . IEEE, 2025, pp. 1–5. [18] C. Bettstetter, H. Hartenstein, and X. P´ erez-Costa, “Stochastic prop-erties of the random waypoint mobility model,” Wireless Networks ,vol. 10, no. 5, pp. 555–567, 2004.

@@ -6,31 +6,34 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-12
-- 运行时间：2026-06-12 21:40:25 UTC
+- 最新运行日期：2026-06-13
+- 运行时间：2026-06-13 21:19:04 UTC
 - 运行状态：成功
-- 本次总论文数：2
+- 本次总论文数：3
 - 精读区：0
-- 速读区：2
+- 速读区：3
 
 ### 今日简报（AI）
-今日聚焦2篇速读论文，一篇7分傅里叶神经算子新方法，一篇6分动态推理网络重构。
+今日速读3篇关于高维非线性系统学习、生成式AI与数字孪生协同无线网络、以及战术自组网分层联邦学习的论文，均获6分评价。
 
-最值得看的是FNO结合rank-1格点和双曲交叉的研究，它能高效逼近高维函数，适合科学计算场景。
+最值得关注的是生成式AI与数字孪生结合提升无线网络智能化的方向，以及分层联邦学习在军事移动自组网中实现无监督波形分类的潜力。
 
-建议你优先阅读FNO这篇，了解如何利用稀疏采样降低计算复杂度，适合对物理模拟感兴趣的读者。
-- 详情：[/202606/12/README](/202606/12/README)
+建议未来可优先深入阅读生成式AI和数字孪生的应用论文，这是当前通信领域的热点。
+- 详情：[/202606/13/README](/202606/13/README)
 
 ### 精读区论文标签
 - 本次无精读推荐。
 
 ### 速读区论文标签
-1. [Fourier Neural Operators with rank-1 lattice points and hyperbolic cross](/202606/12/2606.08871v1-fourier-neural-operators-with-rank-1-lattice-points-and-hyperbolic-cross)  
-   标签：评分：7.0/10、query:channel-nn
-   evidence：基于秩1格点和双曲交叉的高效傅里叶神经算子新架构
-2. [Sigma-Branch: Hierarchical Single-Path Network Reconstruction for Dynamic Inference with Reduced Active Parameters](/202606/12/2606.09924v1-sigma-branch-hierarchical-single-path-network-reconstruction-for-dynamic-inference-with-reduced-active-parameters)  
+1. [Theory of learning of high-dimensional controlled non-linear dynamical systems (I): models and methods](/202606/13/2606.07247v1-theory-of-learning-of-high-dimensional-controlled-non-linear-dynamical-systems-i-models-and-methods)  
    标签：评分：6.0/10、query:channel-nn
-   evidence：通过分层树结构减少活跃参数的高效神经网络设计
+   evidence：新颖的神经ODE框架用于动力系统
+2. [Towards Intelligent Wireless Networks: The Synergy of Generative AI and Digital Twins](/202606/13/2606.09113v1-towards-intelligent-wireless-networks-the-synergy-of-generative-ai-and-digital-twins)  
+   标签：评分：6.0/10、query:channel-nn
+   evidence：生成式AI与数字孪生框架用于主动无线优化，将深度学习应用于通信
+3. [Hierarchical Federated Learning for Unsupervised Waveform Classification over Tactical MANETs](/202606/13/2606.09504v1-hierarchical-federated-learning-for-unsupervised-waveform-classification-over-tactical-manets)  
+   标签：评分：6.0/10、query:channel-nn
+   evidence：深度学习用于战术移动自组网中的波形分类
 
 
 <div class="dpr-home-promo-card">
