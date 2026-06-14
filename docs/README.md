@@ -6,34 +6,29 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-13
-- 运行时间：2026-06-13 21:19:04 UTC
+- 最新运行日期：2026-06-14
+- 运行时间：2026-06-14 21:21:04 UTC
 - 运行状态：成功
 - 本次总论文数：3
-- 精读区：0
-- 速读区：3
+- 精读区：1
+- 速读区：2
 
 ### 今日简报（AI）
-今日速读3篇关于高维非线性系统学习、生成式AI与数字孪生协同无线网络、以及战术自组网分层联邦学习的论文，均获6分评价。
-
-最值得关注的是生成式AI与数字孪生结合提升无线网络智能化的方向，以及分层联邦学习在军事移动自组网中实现无监督波形分类的潜力。
-
-建议未来可优先深入阅读生成式AI和数字孪生的应用论文，这是当前通信领域的热点。
-- 详情：[/202606/13/README](/202606/13/README)
+今日精读1篇分子通信约束信道编码论文，速读2篇无线生成通信与神经网络误差传播研究。最值得关注的是《Masked Neural Detection for Constrained Channel Coding in Molecular Communication》（8.0分）提出的掩码神经检测方法，以及《JSCGC: Joint Source-Channel-Generation Coding for Wireless Generative Communications》（7.0分）的联合编码框架。建议普通读者优先了解分子通信与生成式通信的交叉进展，同时关注模块化神经网络中能量守恒约束对误差传播的抑制效果。
+- 详情：[/202606/14/README](/202606/14/README)
 
 ### 精读区论文标签
-- 本次无精读推荐。
+1. [Masked Neural Detection for Constrained Channel Coding in Molecular Communication](/202606/14/2606.12489v1-masked-neural-detection-for-constrained-channel-coding-in-molecular-communication)  
+   标签：评分：8.0/10、query:channel-nn
+   evidence：分子通信中的神经检测用于均衡
 
 ### 速读区论文标签
-1. [Theory of learning of high-dimensional controlled non-linear dynamical systems (I): models and methods](/202606/13/2606.07247v1-theory-of-learning-of-high-dimensional-controlled-non-linear-dynamical-systems-i-models-and-methods)  
+1. [JSCGC: Joint Source-Channel-Generation Coding for Wireless Generative Communications](/202606/14/2606.12858v1-jscgc-joint-source-channel-generation-coding-for-wireless-generative-communications)  
+   标签：评分：7.0/10、query:channel-nn
+   evidence：将深度学习应用于无线通信系统设计
+2. [Energy-Conserved Neural Pipelines: Attenuating Error Propagation in Modular Neural Networks via Physical Conservation Constraints](/202606/14/2606.11341v1-energy-conserved-neural-pipelines-attenuating-error-propagation-in-modular-neural-networks-via-physical-conservation-constraints)  
    标签：评分：6.0/10、query:channel-nn
-   evidence：新颖的神经ODE框架用于动力系统
-2. [Towards Intelligent Wireless Networks: The Synergy of Generative AI and Digital Twins](/202606/13/2606.09113v1-towards-intelligent-wireless-networks-the-synergy-of-generative-ai-and-digital-twins)  
-   标签：评分：6.0/10、query:channel-nn
-   evidence：生成式AI与数字孪生框架用于主动无线优化，将深度学习应用于通信
-3. [Hierarchical Federated Learning for Unsupervised Waveform Classification over Tactical MANETs](/202606/13/2606.09504v1-hierarchical-federated-learning-for-unsupervised-waveform-classification-over-tactical-manets)  
-   标签：评分：6.0/10、query:channel-nn
-   evidence：深度学习用于战术移动自组网中的波形分类
+   evidence：具有物理能量守恒约束的新型神经网络结构
 
 
 <div class="dpr-home-promo-card">

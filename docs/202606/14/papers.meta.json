@@ -1,0 +1,54 @@
+{
+  "label": "2026-06-14",
+  "date": "2026-06-14",
+  "generated_at": "2026-06-14T21:21:11",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202606/14/2606.12489v1-masked-neural-detection-for-constrained-channel-coding-in-molecular-communication",
+      "section": "deep",
+      "title_en": "Masked Neural Detection for Constrained Channel Coding in Molecular Communication",
+      "authors": "Melih Şahin, Ozgur B. Akan",
+      "date": "2026-06-10",
+      "pdf": "https://arxiv.org/pdf/2606.12489v1",
+      "score": "8.0",
+      "evidence": "分子通信中的神经检测用于均衡",
+      "tldr": "分子通信受扩散记忆严重影响，传统阈值检测性能不佳。本文提出掩码神经检测，采用滑动双向递归神经网络（SBRNN）结合运行长度受限的ISI缓解（RLIM）码，并设计RLIM定制训练掩码。在59个测试点中，RLIM-SBRNN在46个点上优于最佳未编码接收机，平均增益达10.36倍；掩码进一步在236个比较中改进227个，平均增益3.267倍。紧凑掩码RLIM-SBRNN无需信道知识即可与信道状态感知MLSE竞争，为分子通信提供高效方案。",
+      "tags": "query:channel-nn",
+      "abstract_en": "Molecular communication (MC) suffers from severe diffusion memory because molecules released for one symbol may arrive during later symbols. Neural sequence detectors, especially sliding bidirectional recurrent neural networks (SBRNNs), can substantially outperform threshold detectors in such channels. This raises a central question for MC channel coding: does a code whose advantage was established under threshold detection retain it when both coded and uncoded transmission are evaluated with neural detection? This letter answers this question for run-length-limited ISI-mitigation (RLIM) codes, a class of constrained codes previously shown to provide large BER gains in MC. Across the tested operating points, the best RLIM-SBRNN receiver beats the best uncoded receiver, chosen between threshold and SBRNN detection, in $46$ of $59$ cases, with a mean gain of $10.36\\times$ over those wins. We also propose an RLIM-tailored training mask for compact SBRNN detectors, improving the unmasked RLIM-SBRNN in $227$ of $236$ comparisons with $3.267\\times$ mean gain when masking is beneficial. Finally, the compact masked RLIM-SBRNN is competitive with channel-state-aware MLSE despite using no channel knowledge.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/14/2606.12858v1-jscgc-joint-source-channel-generation-coding-for-wireless-generative-communications",
+      "section": "quick",
+      "title_en": "JSCGC: Joint Source-Channel-Generation Coding for Wireless Generative Communications",
+      "authors": "Tong Wu, Zhiyong Chen, Guo Lu, Li Song, Feng Yang, Meixia Tao, Wenjun Zhang",
+      "date": "2026-06-11",
+      "pdf": "https://arxiv.org/pdf/2606.12858v1",
+      "score": "7.0",
+      "evidence": "将深度学习应用于无线通信系统设计",
+      "tldr": "传统通信系统基于率失真理论，失真度量无法反映人类视觉感知，导致重建模糊。本文提出联合源信道生成编码（JSCGC），用接收端生成模型替代解码器，将接收信号作为条件控制采样，实现感知约束下最大化互信息的受控生成。通过统一联合训练和高效随机采样，在潜在空间图像传输中显著改进特征、语义和分布质量，且错误行为表现为语义不一致而非失真。这为无线生成通信提供了新范式。",
+      "tags": "query:channel-nn",
+      "abstract_en": "Conventional communication systems, including both separation-based coding and learning-based joint source-channel coding (JSCC), are typically designed under Shannon's rate-distortion theory. However, relying on generic distortion metrics fails to capture complex human visual perception, often resulting in blurred or unrealistic reconstructions. In this paper, we propose Joint Source-Channel-Generation Coding (JSCGC), a generative communication paradigm that replaces the conventional decoder with a generative model at the receiver. The received signal is treated as a condition that controls the sampling process into the learned conditional distribution, reformulating communication from deterministic reconstruction for distortion minimization to controlled generation for mutual information maximization under perceptual constraints. Based on this formulation, we develop a unified joint training and efficient stochastic sampling framework, and provide theoretical analysis of its effectiveness in both learning and inference stages. Extensive experiments on latent-space image transmission demonstrate that the JSCGC consistently improves feature-based, semantic-level, and distributional quality across diverse channel conditions, while exhibiting a distinct error behavior characterized by semantic inconsistency rather than distortion.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/14/2606.11341v1-energy-conserved-neural-pipelines-attenuating-error-propagation-in-modular-neural-networks-via-physical-conservation-constraints",
+      "section": "quick",
+      "title_en": "Energy-Conserved Neural Pipelines: Attenuating Error Propagation in Modular Neural Networks via Physical Conservation Constraints",
+      "authors": "David Young, Swan Yi Htet",
+      "date": "2026-06-09",
+      "pdf": "https://arxiv.org/pdf/2606.11341v1",
+      "score": "6.0",
+      "evidence": "具有物理能量守恒约束的新型神经网络结构",
+      "tldr": "模块化神经网络管道因模块间噪声传播导致错误累积。本文引入物理能量守恒硬约束，强制模块边界激活能量的L2范数不变，使网络只能重分配能量而不能增减。在CIFAR-10上，噪声σ=0.2时保留77.4%准确率（基线35.1%）；对深度不敏感，深度2~5保持93.3%；在系统偏差、高斯、对抗噪声上均显著提升，对dropout无负面影响。在真实机器人管线中，Monocular-depth风格噪声下平均提升18.9个百分点。理论证明守恒噪声能量严格小于输入噪声能量。",
+      "tags": "query:channel-nn",
+      "abstract_en": "Modular neural network pipelines suffer from error compounding: noise at any module boundary propagates and potentially amplifies through subsequent modules. We introduce energy conservation as a hard physical constraint on inter-module information flow. Activation energy (the squared L2 norm of feature vectors) is enforced to be exactly preserved at every module boundary. Unlike soft energy penalties, conservation is an inviolable law: the network may redistribute energy across neurons but cannot create or destroy it. Four experiments on CIFAR-10 demonstrate: (1) conservation retains 77.4% of clean accuracy at noise sigma=0.2, versus 35.1% for baselines and 30.9% for energy-penalized models (p<0.001, 5 seeds); (2) pipelines become depth-invariant, retaining 93.3% at depths 2 through 5 with noise at every boundary; (3) the advantage generalizes to systematic bias (+45.1%), Gaussian (+40.4%), and adversarial noise (+4.8%), with a principled non-effect on dropout (-0.3%); (4) on ResNet-18, the conservation advantage scales inversely with intrinsic normalization: +0.3 pp with BatchNorm, +26.2 pp without at sigma=0.2, reaching +58.0 pp at sigma=0.5. Experiment 5 validates the operator on a real modular robotic pipeline (MuJoCo physics, Franka Panda). Across three independent runs on separate machines (90 trials per cell), conservation provides +18.9 pp average advantage on monocular-depth-style noise. A formal bound proves conserved noise energy is strictly less than input noise energy.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
