@@ -6,29 +6,24 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-14
-- 运行时间：2026-06-14 21:21:04 UTC
+- 最新运行日期：2026-06-15
+- 运行时间：2026-06-15 22:52:29 UTC
 - 运行状态：成功
-- 本次总论文数：3
-- 精读区：1
-- 速读区：2
+- 本次总论文数：1
+- 精读区：0
+- 速读区：1
 
 ### 今日简报（AI）
-今日精读1篇分子通信约束信道编码论文，速读2篇无线生成通信与神经网络误差传播研究。最值得关注的是《Masked Neural Detection for Constrained Channel Coding in Molecular Communication》（8.0分）提出的掩码神经检测方法，以及《JSCGC: Joint Source-Channel-Generation Coding for Wireless Generative Communications》（7.0分）的联合编码框架。建议普通读者优先了解分子通信与生成式通信的交叉进展，同时关注模块化神经网络中能量守恒约束对误差传播的抑制效果。
-- 详情：[/202606/14/README](/202606/14/README)
+今日推荐1篇速读论文，揭示U-Net去混响模型其实是隐式房间脉冲响应编码器。值得关注：去混响任务中模型学会的RIR表征可迁移至其他声学场景理解。建议进一步实验该编码器在说话人定位或房间参数估计等下游任务上的有效性。
+- 详情：[/202606/15/README](/202606/15/README)
 
 ### 精读区论文标签
-1. [Masked Neural Detection for Constrained Channel Coding in Molecular Communication](/202606/14/2606.12489v1-masked-neural-detection-for-constrained-channel-coding-in-molecular-communication)  
-   标签：评分：8.0/10、query:channel-nn
-   evidence：分子通信中的神经检测用于均衡
+- 本次无精读推荐。
 
 ### 速读区论文标签
-1. [JSCGC: Joint Source-Channel-Generation Coding for Wireless Generative Communications](/202606/14/2606.12858v1-jscgc-joint-source-channel-generation-coding-for-wireless-generative-communications)  
-   标签：评分：7.0/10、query:channel-nn
-   evidence：将深度学习应用于无线通信系统设计
-2. [Energy-Conserved Neural Pipelines: Attenuating Error Propagation in Modular Neural Networks via Physical Conservation Constraints](/202606/14/2606.11341v1-energy-conserved-neural-pipelines-attenuating-error-propagation-in-modular-neural-networks-via-physical-conservation-constraints)  
+1. [Your U-Net Dereverberation Model is Secretly an RIR Encoder](/202606/15/2606.09557v1-your-u-net-dereverberation-model-is-secretly-an-rir-encoder)  
    标签：评分：6.0/10、query:channel-nn
-   evidence：具有物理能量守恒约束的新型神经网络结构
+   evidence：U-Net隐式编码房间脉冲响应，可迁移至信道建模
 
 
 <div class="dpr-home-promo-card">

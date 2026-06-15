@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-06-15 <!--dpr-date:20260615-->
+    * 速读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202606/15/2606.09557v1-your-u-net-dereverberation-model-is-secretly-an-rir-encoder" data-sidebar-item="{&quot;title&quot;: &quot;Your U-Net Dereverberation Model is Secretly an RIR Encoder&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2606.09557v1-your-u-net-dereverberation-model-is-secretly-an-rir-encoder&quot;, &quot;score&quot;: &quot;6.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;channel-nn&quot;}], &quot;evidence&quot;: &quot;U-Net隐式编码房间脉冲响应，可迁移至信道建模&quot;}">Your U-Net Dereverberation Model is Secretly an RIR Encoder</a>
   * 2026-06-14 <!--dpr-date:20260614-->
     * 精读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202606/14/2606.12489v1-masked-neural-detection-for-constrained-channel-coding-in-molecular-communication" data-sidebar-item="{&quot;title&quot;: &quot;Masked Neural Detection for Constrained Channel Coding in Molecular Communication&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2606.12489v1-masked-neural-detection-for-constrained-channel-coding-in-molecular-communication&quot;, &quot;score&quot;: &quot;8.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;channel-nn&quot;}], &quot;evidence&quot;: &quot;分子通信中的神经检测用于均衡&quot;}">Masked Neural Detection for Constrained Channel Coding in Molecular Communication</a>
