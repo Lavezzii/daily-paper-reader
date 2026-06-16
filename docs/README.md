@@ -6,24 +6,38 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-15
-- 运行时间：2026-06-15 22:52:29 UTC
+- 最新运行日期：2026-06-16
+- 运行时间：2026-06-16 23:06:51 UTC
 - 运行状态：成功
-- 本次总论文数：1
-- 精读区：0
-- 速读区：1
+- 本次总论文数：6
+- 精读区：1
+- 速读区：5
 
 ### 今日简报（AI）
-今日推荐1篇速读论文，揭示U-Net去混响模型其实是隐式房间脉冲响应编码器。值得关注：去混响任务中模型学会的RIR表征可迁移至其他声学场景理解。建议进一步实验该编码器在说话人定位或房间参数估计等下游任务上的有效性。
-- 详情：[/202606/15/README](/202606/15/README)
+今日共处理6篇论文，精读1篇基于RWKV的移动信道预测方法，速读涵盖CSI压缩与CNN滤波器改进等方向。最值得关注的是RWKV方法以9.0高分在信道预测中创新融合全局模式与时间建模，以及上下文感知马尔可夫VAE在无线系统中压缩效率提升。建议优先精读RWKV论文，后续可关注模型剪枝与特征组合优化以提升实际部署效果。
+- 详情：[/202606/16/README](/202606/16/README)
 
 ### 精读区论文标签
-- 本次无精读推荐。
+1. [Synergizing Global Pattern Learning and Time Order Characterization in Mobile Channel Prediction: An RWKV-Based Approach](/202606/16/2606.16170v1-synergizing-global-pattern-learning-and-time-order-characterization-in-mobile-channel-prediction-an-rwkv-based-approach)  
+   标签：评分：9.0/10、query:channel-nn
+   evidence：使用RWKV神经网络进行移动信道预测
 
 ### 速读区论文标签
-1. [Your U-Net Dereverberation Model is Secretly an RIR Encoder](/202606/15/2606.09557v1-your-u-net-dereverberation-model-is-secretly-an-rir-encoder)  
+1. [Context-Aware Markov VAE for CSI Compression in Wireless Systems](/202606/16/2606.16607v1-context-aware-markov-vae-for-csi-compression-in-wireless-systems)  
+   标签：评分：7.0/10、query:channel-nn
+   evidence：用于无线MIMO信道的神经CSI压缩
+2. [Connections Between Pairs of Filters Improve the Accuracy of Convolutional Neural Networks](/202606/16/2606.13736v1-connections-between-pairs-of-filters-improve-the-accuracy-of-convolutional-neural-networks)  
    标签：评分：6.0/10、query:channel-nn
-   evidence：U-Net隐式编码房间脉冲响应，可迁移至信道建模
+   evidence：具有成对滤波器连接的新型CNN架构
+3. [Squeeze-Release: Iterative Pruning with Exact Structural Minimization](/202606/16/2606.14346v1-squeeze-release-iterative-pruning-with-exact-structural-minimization)  
+   标签：评分：6.0/10、query:channel-nn
+   evidence：迭代剪枝方法可用于压缩通信中的神经网络，提高效率
+4. [Explainable Task-Oriented Token Communication for AI-Native 6G Networks](/202606/16/2606.14808v1-explainable-task-oriented-token-communication-for-ai-native-6g-networks)  
+   标签：评分：6.0/10、query:channel-nn
+   evidence：面向6G任务导向图像传输的深度学习框架
+5. [Scaling Adaptive Depth with Norm-Agnostic Residual Networks](/202606/16/2606.16112v1-scaling-adaptive-depth-with-norm-agnostic-residual-networks)  
+   标签：评分：6.0/10、query:channel-nn
+   evidence：新型范数不可知残差架构
 
 
 <div class="dpr-home-promo-card">
