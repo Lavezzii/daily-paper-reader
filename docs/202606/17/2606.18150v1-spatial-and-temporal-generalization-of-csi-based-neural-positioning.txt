@@ -1,0 +1,602 @@
+Title: Spatial and Temporal Generalization of CSI-based Neural Positioning
+
+URL Source: https://arxiv.org/pdf/2606.18150v1
+
+Published Time: Wed, 17 Jun 2026 01:19:30 GMT
+
+Number of Pages: 6
+
+Markdown Content:
+# Spatial and Temporal Generalization of CSI-based Neural Positioning 
+
+Till-Yannic Müller, Frederik Zumegen, Reinhard Wiesmayr, and Christoph Studer 
+
+ETH Zürich, Switzerland; e-mail: fzumegen@ethz.ch 
+
+Abstract —Channel state information (CSI)-based neural po-sitioning learns a mapping from CSI measurements to user equipment (UE) positions using neural networks. However, most existing performance evaluations utilize randomly partitioned train/test CSI-dataset splits, which fail to reflect the gener-alization requirements of practical deployments and present optimistic results. In this paper, we study the spatial and temporal generalization of neural positioning with standard-compliant Wi-Fi and 5G NR systems for three real-world CSI datasets acquired in indoor and outdoor environments. We assess generalization with two different architectures, a conventional multilayer perceptron (MLP) and a novel transformer architecture, to unseen spatial regions, unseen UE trajectories, and CSI measurement campaigns separated by one week. Our experiments show that both architectures generalize well in space and time, and the proposed transformer consistently outperforms the MLP in positioning accuracy while requiring fewer model parameters. 
+
+I. I NTRODUCTION 
+
+Channel state information (CSI)-based user equipment (UE) positioning is believed to be a key technology that lever-ages integrated sensing and communication (ISAC) in next-generation wireless networks [1], [2]. While global navigation satellite systems are unreliable indoors and in dense urban environments [3] and their position estimates are unavailable to network operators, off-device positioning from measured receive signals provides a viable alternative. In particular, neural network (NN)-based approaches have emerged as a powerful tool for off-device positioning, in which a mapping from CSI measurements to UE position is learned in a data-driven manner [4]–[12]. Such neural positioning methods typically rely on fully-connected multilayer perceptrons (MLPs) [9]– [12]; only recently, transformer-based architectures have been proposed for channel charting [13]–[15]. A common shortcoming of existing work on neural posi-tioning is the use of randomly partitioned train/test dataset splits [4]–[11], which does not reflect a practical use-case: in practice, a positioning system must generalize to unseen locations and temporal variations not present during training. Reference [16] is an exception and studies the generalization of an MLP and K-nearest-neighbor-based methods to spatially unseen regions and trajectories. Their analysis, however, is confined to a single small-scale indoor dataset covering a 
+
+> This work was supported in part by the Swiss National Science Foundation (SNSF) grant 200021_207314 and by CHIST-ERA grant for the project CHASER (CHIST-ERA-22-WAI-01) through the SNSF grant 20CH21_218704. We acknowledge NVIDIA for its sponsorship of this research.
+
+4 m ×2 m table and does not consider modern neural position-ing architectures, diverse wireless standards, or temporally separated measurement campaigns. 
+
+A. Contributions 
+
+We systematically study the generalization capability of neural positioning. Our main contributions are as follows. We investigate the efficacy of neural positioning to unseen spatial regions, unseen UE trajectories, and measurement campaigns separated by one week. We consider two neural network architectures: a fully-connected MLP representing the state of the art and a novel transformer architecture. We evaluate both architectures on three real-world datasets spanning indoor and outdoor environments, line-of-sight and non-line-of-sight conditions, varying measurement area sizes, and different wireless standards (Wi-Fi and 5G NR). Our experiments demonstrate that (i) neural positioning generalizes in both space and time and (ii) the proposed transformer architecture outperforms the MLP in terms of generalization across all datasets and with fewer model parameters. II. N EURAL POSITIONING 
+
+We start by outlining the basics of neural positioning, followed by describing how (i) a fully-connected MLP and (ii) a transformer network can be utilized for this task. To arrive at a fair comparison between both network architectures, we extensively optimized their respective architectures (e.g., number of layers, activations, etc.) and training procedures. 
+
+A. Basics 
+
+We consider an orthogonal frequency-division multiplex-ing (OFDM) wireless uplink system operating over W sub-carriers with a single-antenna UE transmitting to B access points (APs), each equipped with A antennas. The corre-sponding CSI tensor at sample instant n ∈ { 1, . . . , N } is denoted Hn ∈ CB×A×W . Here, N denotes the total number of measured CSI samples. From each CSI estimate Hn, we extract the nth feature vector fn ∈ RF of dimension F = BAW by taking the element-wise absolute values of Hn and normalizing its vectorized version so that ∥fn∥ = 1 .We train a positioning function gθ : RF → RD with parameters θ that maps the CSI feature vector fn to a position estimate ˆxn = gθ (fn) of the corresponding ground-truth position xn ∈ RD in D-dimensional space (we focus on D = 2 
+
+in this paper). The positioning function is trained by minimizing 
+
+> arXiv:2606.18150v1 [eess.SP] 16 Jun 2026
+
+<latexit sha1_base64="5piyk0bwFdrs+kLa0SRhh3e9vQU=">AAAB+3icbVBNS8NAFHypX7V+1Xr0EiyCp5KIVI8FPXisYGuhCWWz3bRLN5uw+yKWkL/ixYMiXv0j3vw3btsctHVgYZh5jzc7QSK4Rsf5tkpr6xubW+Xtys7u3v5B9bDW1XGqKOvQWMSqFxDNBJesgxwF6yWKkSgQ7CGYXM/8h0emNI/lPU4T5kdkJHnIKUEjDao1b0ww8yKC4yDMkjwfGLHuNJw57FXiFqQOBdqD6pc3jGkaMYlUEK37rpOgnxGFnAqWV7xUs4TQCRmxvqGSREz72Tx7bp8aZWiHsTJPoj1Xf29kJNJ6GgVmchZSL3sz8T+vn2J45WdcJikySReHwlTYGNuzIuwhV4yimBpCqOImq03HRBGKpq6KKcFd/vIq6Z433GajeXdRb90UdZThGE7gDFy4hBbcQhs6QOEJnuEV3qzcerHerY/FaMkqdo7gD6zPH9z1lQA=</latexit> ˆpn
+
+<latexit sha1_base64="dNQot/nKdg+ROdIFsmuPzZFhg74=">AAAB+3icbVDLSsNAFL2pr1pftS7dDBbBVUlEqsuCLlxWsA9oQplMJ+3QySTMTKQl5FfcuFDErT/izr9x0mahrQcGDufcyz1z/JgzpW372yptbG5t75R3K3v7B4dH1eNaV0WJJLRDIh7Jvo8V5UzQjmaa034sKQ59Tnv+9Db3e09UKhaJRz2PqRfisWABI1gbaVituROsUzfEeuIH6SzLhkas2w17AbROnILUoUB7WP1yRxFJQio04VipgWPH2kux1IxwmlXcRNEYkyke04GhAodUeekie4bOjTJCQSTNExot1N8bKQ6Vmoe+mcxDqlUvF//zBokObryUiTjRVJDloSDhSEcoLwKNmKRE87khmEhmsiIywRITbeqqmBKc1S+vk+5lw2k2mg9X9dZdUUcZTuEMLsCBa2jBPbShAwRm8Ayv8GZl1ov1bn0sR0tWsXMCf2B9/gDpNZUI</latexit> ˆxn
+
+<latexit sha1_base64="31spx5pkj7flcjUl2y2G+3M4t64=">AAAB9XicbVDLSgMxFL3xWeur6tJNsAiuyoxIdVnQhcsK9gHtWDJppg3NZIYko5Rh/sONC0Xc+i/u/Bsz7Sy09UDgcM693JPjx4Jr4zjfaGV1bX1js7RV3t7Z3duvHBy2dZQoylo0EpHq+kQzwSVrGW4E68aKkdAXrONPrnO/88iU5pG8N9OYeSEZSR5wSoyVHtJ+SMzYD9IgywZyUKk6NWcGvEzcglShQHNQ+eoPI5qETBoqiNY914mNlxJlOBUsK/cTzWJCJ2TEepZKEjLtpbPUGT61yhAHkbJPGjxTf2+kJNR6Gvp2Mg+pF71c/M/rJSa48lIu48QwSeeHgkRgE+G8AjzkilEjppYQqrjNiumYKEKNLapsS3AXv7xM2uc1t16r311UGzdFHSU4hhM4AxcuoQG30IQWUFDwDK/whp7QC3pHH/PRFVTsHMEfoM8fPNuTBA==</latexit> fn
+
+<latexit sha1_base64="oeDhEQB1JLJxf/v7XX9UCvM+LFw=">AAAB9XicbVDLSsNAFL2pr1pfVZduBovgqiQi1WVBF11WsA9oY5lMJ+3QySTMTJQQ8h9uXCji1n9x5984abPQ1gMDh3Pu5Z45XsSZ0rb9bZXW1jc2t8rblZ3dvf2D6uFRV4WxJLRDQh7KvocV5UzQjmaa034kKQ48Tnve7Cb3e49UKhaKe51E1A3wRDCfEayN9JAOA6ynnp+2smwkRtWaXbfnQKvEKUgNCrRH1a/hOCRxQIUmHCs1cOxIuymWmhFOs8owVjTCZIYndGCowAFVbjpPnaEzo4yRH0rzhEZz9fdGigOlksAzk3lItezl4n/eINb+tZsyEcWaCrI45Mcc6RDlFaAxk5RonhiCiWQmKyJTLDHRpqiKKcFZ/vIq6V7UnUa9cXdZa94WdZThBE7hHBy4gia0oA0dICDhGV7hzXqyXqx362MxWrKKnWP4A+vzBw7rkuY=</latexit> Hn
+
+MLP 
+
+<latexit sha1_base64="MtcIegC5uXwMbw7LjLqQ7Mboblk=">AAAB/HicbVBNS8NAFNzUr1q/oj16CRbBU0lEqseCHjxWsLXQhLDZbpqlm03YfRFCqH/FiwdFvPpDvPlv3LQ5aOvAwjDzHm92gpQzBbb9bdTW1jc2t+rbjZ3dvf0D8/BooJJMEtonCU/kMMCKciZoHxhwOkwlxXHA6UMwvS79h0cqFUvEPeQp9WI8ESxkBIOWfLPpxhiiICyimV+4EFHAM99s2W17DmuVOBVpoQo93/xyxwnJYiqAcKzUyLFT8AosgRFOZw03UzTFZIondKSpwDFVXjEPP7NOtTK2wkTqJ8Caq783ChwrlceBniyjqmWvFP/zRhmEV17BRJoBFWRxKMy4BYlVNmGNmaQEeK4JJpLprBaJsMQEdF8NXYKz/OVVMjhvO5125+6i1b2p6qijY3SCzpCDLlEX3aIe6iOCcvSMXtGb8WS8GO/Gx2K0ZlQ7TfQHxucPn8eVbQ==</latexit> hω
+
+<latexit sha1_base64="m6/x9xDbKgqmqpJaLL6mXp4T6lo=">AAAB8XicbVDLSgMxFL1TX7W+qi7dBIvgqsyIVJcVXbisYB/YlpJJM21oJjMkd4Qy9C/cuFDErX/jzr8x085CqwcCh3PuJeceP5bCoOt+OYWV1bX1jeJmaWt7Z3evvH/QMlGiGW+ySEa641PDpVC8iQIl78Sa09CXvO1PrjO//ci1EZG6x2nM+yEdKREIRtFKD72Q4tgP0qvZoFxxq+4c5C/xclKBHI1B+bM3jFgScoVMUmO6nhtjP6UaBZN8VuolhseUTeiIdy1VNOSmn84Tz8iJVYYkiLR9Cslc/bmR0tCYaejbySyhWfYy8T+vm2Bw2U+FihPkii0+ChJJMCLZ+WQoNGcop5ZQpoXNStiYasrQllSyJXjLJ/8lrbOqV6vW7s4r9Zu8jiIcwTGcggcXUIdbaEATGCh4ghd4dYzz7Lw574vRgpPvHMIvOB/frdKQ8g==</latexit> A
+
+<latexit sha1_base64="XX3f9Q9uy32GLOACEyMnv80DTuk=">AAACA3icbZDNSsNAFIUn9a/Wv6g73QSL4KokItVlwY3LCrYVmhAm00kzdDIJMzdCCYFufBU3LhRx60u4822ctBW09cDAx7l3uPeeIOVMgW1/GZWV1bX1jepmbWt7Z3fP3D/oqiSThHZIwhN5H2BFORO0Aww4vU8lxXHAaS8YXZf13gOViiXiDsYp9WI8FCxkBIO2fPPIjTFEQZhH/g+5EFHAReGbdbthT2UtgzOHOpqr7Zuf7iAhWUwFEI6V6jt2Cl6OJTDCaVFzM0VTTEZ4SPsaBY6p8vLpDYV1qp2BFSZSPwHW1P39I8exUuM40J3lnmqxVpr/1foZhFdezkSaARVkNijMuAWJVQZiDZikBPhYAyaS6V0tEmGJCejYajoEZ/HkZeieN5xmo3l7UW+1JrM4qugYnaAz5KBL1EI3qI06iKAJekIv6NV4NJ6NN+N91lox5hEeoj8yPr4BRs2Y/Q==</latexit> hω
+
+<latexit sha1_base64="YqHBQ3B5sWWPsh6W/dkepkv7row=">AAACBXicbZDLSsNAFIYn9VbrLepSF8EiuCqJSHVZcOOygr1AE8JkOmmHTiZx5kQoISBufBU3LhRx6zu4822ctBW09YeBj/+c4ZzzBwlnCmz7yygtLa+srpXXKxubW9s75u5eW8WpJLRFYh7LboAV5UzQFjDgtJtIiqOA004wuizqnTsqFYvFDYwT6kV4IFjICAZt+eahG2EYBmF262c/6MKQAs7z3Derds2eyFoEZwZVNFPTNz/dfkzSiAogHCvVc+wEvAxLYITTvOKmiiaYjPCA9jQKHFHlZZMrcutYO30rjKV+AqyJ+/tHhiOlxlGgO4tF1XytMP+r9VIIL7yMiSQFKsh0UJhyC2KriMTqM0kJ8LEGTCTTu1pkiCUmoIOr6BCc+ZMXoX1ac+q1+vVZtdG4n8ZRRgfoCJ0gB52jBrpCTdRCBD2gJ/SCXo1H49l4M96nrSVjFuE++iPj4xsuhpoS</latexit> qω
+
+<latexit sha1_base64="dNQot/nKdg+ROdIFsmuPzZFhg74=">AAAB+3icbVDLSsNAFL2pr1pftS7dDBbBVUlEqsuCLlxWsA9oQplMJ+3QySTMTKQl5FfcuFDErT/izr9x0mahrQcGDufcyz1z/JgzpW372yptbG5t75R3K3v7B4dH1eNaV0WJJLRDIh7Jvo8V5UzQjmaa034sKQ59Tnv+9Db3e09UKhaJRz2PqRfisWABI1gbaVituROsUzfEeuIH6SzLhkas2w17AbROnILUoUB7WP1yRxFJQio04VipgWPH2kux1IxwmlXcRNEYkyke04GhAodUeekie4bOjTJCQSTNExot1N8bKQ6Vmoe+mcxDqlUvF//zBokObryUiTjRVJDloSDhSEcoLwKNmKRE87khmEhmsiIywRITbeqqmBKc1S+vk+5lw2k2mg9X9dZdUUcZTuEMLsCBa2jBPbShAwRm8Ayv8GZl1ov1bn0sR0tWsXMCf2B9/gDpNZUI</latexit> ˆxn
+
+<latexit sha1_base64="oeDhEQB1JLJxf/v7XX9UCvM+LFw=">AAAB9XicbVDLSsNAFL2pr1pfVZduBovgqiQi1WVBF11WsA9oY5lMJ+3QySTMTJQQ8h9uXCji1n9x5984abPQ1gMDh3Pu5Z45XsSZ0rb9bZXW1jc2t8rblZ3dvf2D6uFRV4WxJLRDQh7KvocV5UzQjmaa034kKQ48Tnve7Cb3e49UKhaKe51E1A3wRDCfEayN9JAOA6ynnp+2smwkRtWaXbfnQKvEKUgNCrRH1a/hOCRxQIUmHCs1cOxIuymWmhFOs8owVjTCZIYndGCowAFVbjpPnaEzo4yRH0rzhEZz9fdGigOlksAzk3lItezl4n/eINb+tZsyEcWaCrI45Mcc6RDlFaAxk5RonhiCiWQmKyJTLDHRpqiKKcFZ/vIq6V7UnUa9cXdZa94WdZThBE7hHBy4gia0oA0dICDhGV7hzXqyXqx362MxWrKKnWP4A+vzBw7rkuY=</latexit> Hn
+
+<latexit sha1_base64="N2br14Zz/B0+IWQzwpJlQh9xMS8=">AAAB/HicbVDLSsNAFJ3UV62vaJduBovgQkoiUl0WdOGygn1AG8pkOmmHTiZh5kYoIf6KGxeKuPVD3Pk3TtostPXAwOGce7lnjh8LrsFxvq3S2vrG5lZ5u7Kzu7d/YB8edXSUKMraNBKR6vlEM8ElawMHwXqxYiT0Bev605vc7z4ypXkkH2AWMy8kY8kDTgkYaWhX00FIYOIHKWTZMJXnboaHds2pO3PgVeIWpIYKtIb212AU0SRkEqggWvddJwYvJQo4FSyrDBLNYkKnZMz6hkoSMu2l8/AZPjXKCAeRMk8Cnqu/N1ISaj0LfTOZJ9XLXi7+5/UTCK69lMs4ASbp4lCQCAwRzpvAI64YBTEzhFDFTVZMJ0QRCqaviinBXf7yKulc1N1GvXF/WWveFnWU0TE6QWfIRVeoie5QC7URRTP0jF7Rm/VkvVjv1sditGQVO1X0B9bnD9pelOo=</latexit> tn, 1
+
+<latexit sha1_base64="lLHlmjx8LbZNKRbrTCnaB/aK3I0=">AAAB/HicbVDLSsNAFJ34rPVV7dLNYBFcSEmkVJcFXbisYB/QhjCZTtqhk0mYuRFCiL/ixoUibv0Qd/6N0zYLbT0wcDjnXu6Z48eCa7Dtb2ttfWNza7u0U97d2z84rBwdd3WUKMo6NBKR6vtEM8El6wAHwfqxYiT0Bev505uZ33tkSvNIPkAaMzckY8kDTgkYyatUs2FIYOIHGeS5l8mLRo69Ss2u23PgVeIUpIYKtL3K13AU0SRkEqggWg8cOwY3Iwo4FSwvDxPNYkKnZMwGhkoSMu1m8/A5PjPKCAeRMk8Cnqu/NzISap2GvpmcJdXL3kz8zxskEFy7GZdxAkzSxaEgERgiPGsCj7hiFERqCKGKm6yYTogiFExfZVOCs/zlVdK9rDvNevO+UWvdFnWU0Ak6RefIQVeohe5QG3UQRSl6Rq/ozXqyXqx362MxumYVO1X0B9bnD97wlO0=</latexit> tn, 4
+
+> ……
+
+<latexit sha1_base64="rUt9RAvpzswDcaX1G2GYd4klfvY=">AAAB6HicbVDLSgNBEOyNrxhfUY9eBoMgCGFXJHoMeNFbAuYByRJmJ73JmNnZZWZWCCFf4MWDIl79JG/+jZNkD5pY0FBUddPdFSSCa+O6305ubX1jcyu/XdjZ3ds/KB4eNXWcKoYNFotYtQOqUXCJDcONwHaikEaBwFYwup35rSdUmsfywYwT9CM6kDzkjBor1S96xZJbducgq8TLSAky1HrFr24/ZmmE0jBBte54bmL8CVWGM4HTQjfVmFA2ogPsWCpphNqfzA+dkjOr9EkYK1vSkLn6e2JCI63HUWA7I2qGetmbif95ndSEN/6EyyQ1KNliUZgKYmIy+5r0uUJmxNgSyhS3txI2pIoyY7Mp2BC85ZdXSfOy7FXKlfpVqXqfxZGHEziFc/DgGqpwBzVoAAOEZ3iFN+fReXHenY9Fa87JZo7hD5zPH3cyjME=</latexit> +
+
+<latexit sha1_base64="rUt9RAvpzswDcaX1G2GYd4klfvY=">AAAB6HicbVDLSgNBEOyNrxhfUY9eBoMgCGFXJHoMeNFbAuYByRJmJ73JmNnZZWZWCCFf4MWDIl79JG/+jZNkD5pY0FBUddPdFSSCa+O6305ubX1jcyu/XdjZ3ds/KB4eNXWcKoYNFotYtQOqUXCJDcONwHaikEaBwFYwup35rSdUmsfywYwT9CM6kDzkjBor1S96xZJbducgq8TLSAky1HrFr24/ZmmE0jBBte54bmL8CVWGM4HTQjfVmFA2ogPsWCpphNqfzA+dkjOr9EkYK1vSkLn6e2JCI63HUWA7I2qGetmbif95ndSEN/6EyyQ1KNliUZgKYmIy+5r0uUJmxNgSyhS3txI2pIoyY7Mp2BC85ZdXSfOy7FXKlfpVqXqfxZGHEziFc/DgGqpwBzVoAAOEZ3iFN+fReXHenY9Fa87JZo7hD5zPH3cyjME=</latexit> +
+
+> ……
+
+<latexit sha1_base64="0CYJ/v1ku/MO4zE+rodzRSmHcvU=">AAAB83icbVDLSsNAFL2pr1pfVZduBovgqiQi1WVBFy4r2Ac0pUymN+3QySTMTIQS+htuXCji1p9x5984abPQ6oGBwzn3cs+cIBFcG9f9ckpr6xubW+Xtys7u3v5B9fCoo+NUMWyzWMSqF1CNgktsG24E9hKFNAoEdoPpTe53H1FpHssHM0twENGx5CFn1FjJ9yNqJkGY4XzoDas1t+4uQP4SryA1KNAaVj/9UczSCKVhgmrd99zEDDKqDGcC5xU/1ZhQNqVj7FsqaYR6kC0yz8mZVUYkjJV90pCF+nMjo5HWsyiwk3lGverl4n9ePzXh9SDjMkkNSrY8FKaCmJjkBZARV8iMmFlCmeI2K2ETqigztqaKLcFb/fJf0rmoe4164/6y1rwt6ijDCZzCOXhwBU24gxa0gUECT/ACr07qPDtvzvtytOQUO8fwC87HNxGHkbo=</latexit> e1
+
+<latexit sha1_base64="RIoj4t4Xp3QZCbTrNMPmAyyrmA4=">AAAB83icbVDLSsNAFL2pr1pfVZdugkVwVRIp1WVBFy4r2Ac0oUymN+3QySTMTIQS+htuXCji1p9x5984abPQ1gMDh3Pu5Z45QcKZ0o7zbZU2Nre2d8q7lb39g8Oj6vFJV8WppNihMY9lPyAKORPY0Uxz7CcSSRRw7AXT29zvPaFULBaPepagH5GxYCGjRBvJ8yKiJ0GY4XzYGFZrTt1ZwF4nbkFqUKA9rH55o5imEQpNOVFq4DqJ9jMiNaMc5xUvVZgQOiVjHBgqSITKzxaZ5/aFUUZ2GEvzhLYX6u+NjERKzaLATOYZ1aqXi/95g1SHN37GRJJqFHR5KEy5rWM7L8AeMYlU85khhEpmstp0QiSh2tRUMSW4q19eJ92rutusNx8atdZdUUcZzuAcLsGFa2jBPbShAxQSeIZXeLNS68V6tz6WoyWr2DmFP7A+fwAWE5G9</latexit> e4
+
+> ……
+
+<latexit sha1_base64="lHR63v0RBiyycOs//SbphlBXLLE=">AAACE3icbVBNS8NAEN3Ur1q/oh69BEtBREoiUj0W9OCxgq2FNoTNZtMu3WzC7kQoIf/Bi3/FiwdFvHrx5r9x20bQ1gcDj/dmmJnnJ5wpsO0vo7S0vLK6Vl6vbGxube+Yu3sdFaeS0DaJeSy7PlaUM0HbwIDTbiIpjnxO7/zR5cS/u6dSsVjcwjihboQHgoWMYNCSZx7X+sB4QLN+hGHohxnkuZeJEyev/ChhIXhm1a7bU1iLxClIFRVoeeZnP4hJGlEBhGOleo6dgJthCYxwqhekiiaYjPCA9jQVOKLKzaY/5VZNK4EVxlKXAGuq/p7IcKTUOPJ15+RONe9NxP+8XgrhhZsxkaRABZktClNuQWxNArICJikBPtYEE8n0rRYZYokJ6BgrOgRn/uVF0jmtO4164+as2rwq4iijA3SIjpCDzlETXaMWaiOCHtATekGvxqPxbLwZ77PWklHM7KM/MD6+AY9Anps=</latexit> fn, 1
+
+<latexit sha1_base64="emX6eWwmzYiouGlMZLT2HJDR7x4=">AAACE3icbVBNS8NAEN3Ur1q/oh69LJaCiJRESvVY0IPHCvYD2lI22027dLMJuxOhhPwHL/4VLx4U8erFm//GbVpBWx8MPN6bYWaeFwmuwXG+rNzK6tr6Rn6zsLW9s7tn7x80dRgryho0FKFqe0QzwSVrAAfB2pFiJPAEa3njq6nfumdK81DewSRivYAMJfc5JWCkvn1a6gIXA5Z0AwIjz08gTfuJPHPTwo/iZ0Il7dtFp+xkwMvEnZMimqPetz+7g5DGAZNABdG64zoR9BKigFPBzIJYs4jQMRmyjqGSBEz3kuynFJeMMsB+qExJwJn6eyIhgdaTwDOd0zv1ojcV//M6MfiXvYTLKAYm6WyRHwsMIZ4GhAdcMQpiYgihiptbMR0RRSiYGAsmBHfx5WXSPC+71XL1tlKsXc/jyKMjdIxOkIsuUA3doDpqIIoe0BN6Qa/Wo/VsvVnvs9acNZ85RH9gfXwDk8+eng==</latexit> fn, 4
+
+> two-layer MLP embedding
+
+multi-head self attention 
+
+add & norm 
+
+add & norm 
+
+feed-forward network 
+
+> regression
+> head
+
+<latexit sha1_base64="i+C3E/BvGfcuNk9ApI1uH9ESk2s=">AAACAXicbVBNS8NAEN34WetX1IvgJVgED1ISkeqxoAePFewHNCFstpt26WYTdidCCfHiX/HiQRGv/gtv/hs3bQ7a+mDg8d4MM/OChDMFtv1tLC2vrK6tVzaqm1vbO7vm3n5HxakktE1iHstegBXlTNA2MOC0l0iKo4DTbjC+LvzuA5WKxeIeJgn1IjwULGQEg5Z889AFxgc0cyMMoyDMIM/9TJw5uW/W7Lo9hbVInJLUUImWb365g5ikERVAOFaq79gJeBmWwAinedVNFU0wGeMh7WsqcESVl00/yK0TrQysMJa6BFhT9fdEhiOlJlGgO4tD1bxXiP95/RTCKy9jIkmBCjJbFKbcgtgq4rAGTFICfKIJJpLpWy0ywhIT0KFVdQjO/MuLpHNedxr1xt1FrXlTxlFBR+gYnSIHXaImukUt1EYEPaJn9IrejCfjxXg3PmatS0Y5c4D+wPj8AT0zl2o=</latexit> ˜tn, 1
+
+<latexit sha1_base64="fDV517KY4MGEip1/INMCn22yjvo=">AAACAXicbVBNS8NAEN3Ur1q/ql4EL4tF8CAlkVI9FvTgsYL9gLaEzWbTLt1swu5EKCFe/CtePCji1X/hzX/jts1BWx8MPN6bYWaeFwuuwba/rcLK6tr6RnGztLW9s7tX3j9o6yhRlLVoJCLV9YhmgkvWAg6CdWPFSOgJ1vHG11O/88CU5pG8h0nMBiEZSh5wSsBIbvmoD1z4LO2HBEZekEKWuak8r2VuuWJX7RnwMnFyUkE5mm75q+9HNAmZBCqI1j3HjmGQEgWcCpaV+olmMaFjMmQ9QyUJmR6ksw8yfGoUHweRMiUBz9TfEykJtZ6EnumcHqoXvan4n9dLILgapFzGCTBJ54uCRGCI8DQO7HPFKIiJIYQqbm7FdEQUoWBCK5kQnMWXl0n7ourUq/W7WqVxk8dRRMfoBJ0hB12iBrpFTdRCFD2iZ/SK3qwn68V6tz7mrQUrnzlEf2B9/gBBwpdt</latexit> ˜tn, 4
+
+> ……
+> concatenation
+
+<latexit sha1_base64="jND3D82d4RkRBrO1WDMQmn/dTJ4=">AAACEXicbVDLSsNAFJ3UV62vqEs3wVLoQkoiUl0WdOGygn1AG8pkOmmHTiZh5kaoIb/gxl9x40IRt+7c+TdO2gjaemDgcM69d+49XsSZAtv+Mgorq2vrG8XN0tb2zu6euX/QVmEsCW2RkIey62FFORO0BQw47UaS4sDjtONNLjO/c0elYqG4hWlE3QCPBPMZwaClgVmt9IHxIU36AYax5yeQpoNEnDhp6Ue5z4R0YJbtmj2DtUycnJRRjubA/OwPQxIHVADhWKmeY0fgJlgCI5zq8bGiESYTPKI9TQUOqHKT2UWpVdHK0PJDqZ8Aa6b+7khwoNQ08HRltqVa9DLxP68Xg3/hJkxEMVBB5h/5MbcgtLJ4rCGTlACfaoKJZHpXi4yxxAR0iCUdgrN48jJpn9aceq1+c1ZuXOVxFNEROkZV5KBz1EDXqIlaiKAH9IRe0KvxaDwbb8b7vLRg5D2H6A+Mj2+2+p4+</latexit> zn
+
+positional 
+
+encoding 
+
+Transformer 
+
+encoder 
+
+<latexit sha1_base64="BFGRKpKHhqwxnlb4QY7ogLTxa5Y=">AAACA3icbZDNSsNAFIUn9a/Wv6g73QwWwVVJRKrLghuXFWwrNKFMppN26GQSZm6EEgLd+CpuXCji1pdw59s4aSto64GBj3PvcO89QSK4Bsf5skorq2vrG+XNytb2zu6evX/Q1nGqKGvRWMTqPiCaCS5ZCzgIdp8oRqJAsE4wui7qnQemNI/lHYwT5kdkIHnIKQFj9ewjLyIwDMJs0PshD4YMSJ737KpTc6bCy+DOoYrmavbsT68f0zRiEqggWnddJwE/Iwo4FSyveKlmCaEjMmBdg5JETPvZ9IYcnxqnj8NYmScBT93fPzISaT2OAtNZ7KkXa4X5X62bQnjlZ1wmKTBJZ4PCVGCIcREI7nPFKIixAUIVN7tiOiSKUDCxVUwI7uLJy9A+r7n1Wv32otpoTGZxlNExOkFnyEWXqIFuUBO1EEUT9IRe0Kv1aD1bb9b7rLVkzSM8RH9kfXwDRTiY/A==</latexit> gωFig. 1. Neural positioning architectures: fully-connected MLP trained with probability maps and BCE loss (left); transformer trained with MSE loss (right). 
+
+a loss function ℓ over the training dataset D ⊆ { 1, . . . , N } with CSI and ground-truth-location datapoint tuples {(fn, xn)}n∈D .
+
+1) MSE-based Loss: A common choice for the loss function is the mean squared error (MSE) loss defined as 
+
+ℓMSE (θ) = 1
+
+|D| 
+
+X
+
+n∈D 
+
+∥xn − gθ (fn)∥2 , (1) which directly penalizes the square distance between the predicted position ˆxn and the ground-truth UE position xn.
+
+2) Probability-Map-based Loss: Another choice for the loss function put forward in [9] represents user positions as a probability map pn ∈ [0 , 1] K , which is a probability mass vector at time instant n. Here, the physical space is discretized using K fixed grid-point locations {ak}Kk=1 , and the UE position is given by xn = Ap n with A = [ a1, . . . , aK ].The positioning function ˆpn = qθ (fn), where qθ : RF → RK
+
+maps the CSI feature fn ∈ RF to the estimated probability map ˆpn, is trained via a binary cross-entropy (BCE) loss between a ground-truth probability map pn and the estimated probability map ˆpn; see [9] for the details. 
+
+3) Neural Positioning: For both approaches, position esti-mates are obtained either directly from gθ or from qθ followed by ˆxn = Aˆpn using CSI features from a test dataset T .
+
+B. Architecture 1: Fully-Connected MLP 
+
+The fully-connected MLP implements qθ using the probability-map approach from [9], which achieves state-of-the-art positioning performance; the architecture is illustrated on the left of Fig. 1. The MLP consists of four hidden layers and one output layer with dimensions {F, 512 , 512 , 512 , 512 , K },where K = 484 assuming a rectangular 22 × 22 spatial grid as in [9]. We use batch normalization after the first layer; all hidden layers use ReLU activations; the output layer applies softmax, so that the entries in ˆp sum to one. For training, we minimize the BCE loss between ˆpn and 
+
+pn (which are computed from the reference positions xn,
+
+n ∈ D ), and, for testing, we obtain the final position estimate as ˆxn = Aˆpn ∈ RD , n ∈ T .
+
+C. Architecture 2: Transformer 
+
+The proposed transformer implements gθ by casting each AP as a token and processing the resulting sequence via self-attention; the architecture is illustrated on the right of Fig. 1. 
+
+TABLE I TRANSFORMER ENCODER HYPERPARAMETERS 
+
+Parameter Value 
+
+Embedding dimension ( d) 128 Number of encoder layers 2Number of attention heads 4FFN hidden dimension ( dff ) 512 FFN activation ReLU Dropout rate 0.1 
+
+Each AP b contributes one token tn,b ∈ Rd, obtained by projecting fn,b ∈ RAW through a two-layer MLP embedding with ReLU activations; a learned positional encoding eb ∈ Rd
+
+is added to inject AP identity, giving ˜tn,b = tn,b +eb. The token sequence {˜tn,b }Bb=1 ∈ RB×d is passed through two transformer encoder layers, each consisting of multi-head self-attention with four heads followed by a feed-forward network (FFN) of hidden dimension dff = 512 ; the encoder hyperparameters are summarized in Table I. The outputs of all B encoder tokens are concatenated 1 to form zn ∈ RBd , which is passed through a four-layer regression head with ReLU activations and a final sigmoid activation, producing normalized position estimates 2 ˆxn ∈ [0 , 1] 2 in the normalized region [0 , 1] 2.For transformer training, we minimize the MSE loss be-tween ˆxn and ground-truth positions xn normalized to the region [0 , 1] 2; the final position estimate is recovered by inverting the normalization step. We note that a probability-map-based output head with BCE-based training resulted in inferior performance compared to MSE-based training. 
+
+D. Training 
+
+The training parameters are summarized in Table II. Both architectures use Kaiming uniform weight initialization [17]; the MLP is optimized with Adam [18] with training parameters summarized in Table II. The MLP employs a step-decay learning rate schedule, while the transformer uses cosine annealing with a minimum learning rate of 10 −6. The MLP is trained for 30 epochs with a batch size of Bbatch = 10 
+
+1We note that concatenating all encoder token outputs consistently outper-formed mean pooling and CLS-token extraction in our experiments. 
+
+2Reference position normalization was found critical for stable transformer training; The MLP did not exhibit this sensitivity. random partitioning  spatial generalization  temporal generalization 
+
+unseen regions  cross week unseen trajectory                           
+
+> week 1 week 2
+> train samples
+> test samples Fig. 2. Illustration of the used testing scenarios for assessing positioning performance: conventional random partitioning baseline (left); proposed testing scenarios for assessing spatial and temporal generalization of neural positioning (right). TABLE II SUMMARY OF TRAINING PARAMETERS .
+> Parameter MLP Transformer
+> Weight initialization Kaiming uniform Kaiming uniform Loss function BCE MSE Optimizer Adam AdamW Weight decay n.a. 10 −4
+> Learning rate 10 −410 −4
+> LR scheduler step decay cosine annealing Minimum learning rate n.a. 10 −6
+> Epochs 30 1000
+> Batch size 10 32
+> Trainable param. (5G) 3 274 212 1 098 402
+> Trainable param. (Wi-Fi) 1 888 740 752 290
+
+minimizing the BCE loss between the predicted probability map ˆpn and its ground-truth counterpart pn; the transformer is trained for 1000 epochs 3 with a batch size of Bbatch = 32 
+
+by minimizing (1) on normalized coordinates. All models are trained on an NVIDIA RTX 4070 GPU using PyTorch [19]. As shown in Table II, the transformer has fewer than half the number of parameters compared to the MLP. III. M ETRICS AND GENERALIZATION SCENARIOS 
+
+We now introduce the error metrics used for evaluation and the considered baseline and generalization scenarios. 
+
+A. Positioning Error Metrics 
+
+We evaluate positioning performance using three metrics, which are all based on the absolute error (AE) between estimated position and ground-truth position: en = ∥xn − ˆxn∥.All metrics are reported in meters; an overview of all testing scenarios is provided in Fig. 2. The mean absolute error (MAE) averages the AE over all samples from the test dataset T :
+
+MAE = 1
+
+|T | 
+
+X
+
+> n∈T
+
+en. (2) The median error is the 50 th percentile of {en}n∈T , providing a measure of typical positioning performance robust to outliers. The 95 th-percentile error is the value ¯e95 such that 95% of the AEs in the test dataset T satisfy en ≤ ¯e95 .  
+
+> 3Training the MLP beyond 30 epochs yields no further improvement.
+
+As a reference, we also include a single-best-guess baseline with respect to the geometric median of the training positions, i.e., the point x⋆ ∈ R2 minimizing the sum of distances to all training samples as follows: 
+
+x⋆ = arg min 
+
+> c∈R2
+
+X
+
+> n∈D
+
+∥xn − c∥. (3) Since (3) admits no closed-form solution, we numerically compute x⋆ via Weiszfeld’s algorithm [20]. By construction, x⋆
+
+minimizes the MAE over all single-best-guess predictors. 
+
+B. Baseline Scenario: Random Partitioning 
+
+As a baseline scenario, we randomly partition the full dataset into 80% for training and retain the remaining 20% for testing; this split serves as the reference against which all subsequent generalization scenarios are compared. Note that this is the de-facto standard scenario used to evaluate neural positioning methods [4]–[11]. Fig. 2 (left) illustrates the resulting training and test sample distributions. 
+
+C. Generalization Scenarios in Space and Time 1) Unseen Regions: In order to assess spatial generalization, we withhold multiple circular regions of radius r = 0 .44 m(which is 5× the wavelength of the 5G NR system) entirely from training and use them exclusively for testing. Thereby, the neural network never observes CSI from the UE located within these test regions during training. Fig. 2 (middle-left) illustrates the corresponding training and testing sample distributions. 
+
+2) Unseen Trajectory: In order to assess temporal general-ization, we withhold a contiguous UE trajectory entirely from training and use it exclusively for testing. Thereby, the neural network never observes CSI along this UE trajectory during training. Fig. 2 (middle-right) illustrates the corresponding train-ing and testing sample distributions. For each measured dataset (described in Section IV), the unseen trajectory comprises 1% of the total dataset (roughly 1 min CSI acquisition) and is extracted from the center of each measurement sequence. The trajectory lengths are 21 m (5G Hallway), 41 m (5G Outdoor), 13 m (Wi-Fi Office Week 1), and 8 m (Wi-Fi Office Week 2). 
+
+3) Cross-Week Consistency: In order to assess temporal generalization over larger time spans, we conduct two mea-surement campaigns in the same office environment one week apart, and we evaluate three configurations: (i) training on (a) (b) Measurement area   
+
+> Desk
+> Desk
+> Desk
+> Desk
+> Desk
+> Desk
+> Desk
+> Desk
+> Desk  Desk
+> Desk  Desk
+> Door
+> Door
+> Window Window
+> Window
+> Wi -Fi
+> Sniffer
+> Wi -Fi
+> Sniffer
+> Wi -Fi
+> Sniffer
+> Wi -Fi
+> Sniffer
+> Room 1 Room 2
+> 10m
+> 8m
+
+(c) Measurement area  
+
+> 50m
+> 30m
+> O-RU
+> O-RU O-RU
+> O-RU
+
+(d) Fig. 3. Measurement areas (top) and floorplans (bottom) for the new Wi-Fi Office dataset (left) and the new 5G Hallway dataset (right). 
+
+data from Week 1 and testing on Week 2, (ii) training on data from Week 2 and testing on Week 1, and (iii) training and testing on randomly partitioned data from both weeks. Fig. 2 (right) illustrates the corresponding training and testing sample distributions. IV. M EASURED CSI D ATASETS 
+
+In order to assess the generalization capability of the two proposed neural positioning architectures, we consider three CSI datasets from real-world over-the-air measurements. The datasets cover Wi-Fi and 5G NR deployments across three indoor and outdoor environments. The Wi-Fi and 5G testbeds used to extract CSI as well as ground-truth position information are described in detail in [21] and [12], respectively. The key properties of each dataset are summarized in Table III. For the two 5G datasets, the full 3 276 subcarriers are first low-pass filtered and then downsampled by a factor of 12 prior to training, yielding 273 active subcarriers; we found that using the full number of subcarriers yields no performance gains. 
+
+A. New CAEZ-WIFI-OFFICE-2WEEKS Dataset 
+
+The “Wi-Fi Office” dataset was acquired with our Wi-Fi testbed in an indoor office space in a measurement area of 
+
+13 .7 m × 10 .6 m with 4 APs and 4 antennas per AP. The dataset consists of two measurement campaigns conducted in the same environment with a separation of one week, each of which was recorded for slightly more than one hour at a CSI sampling rate of 17 Hz. We collected CSI at all APs from the Wi-Fi uplink channel and used all 104 active subcarriers. Note that in the week between the two measurement campaigns, APs and other objects were slightly displaced due to regular laboratory work. During both measurement campaigns, multiple humans were present (and moving) in the close vicinity of the UE and APs. Fig. 3 depicts the floorplan and measurement area. 
+
+TABLE III OVERVIEW OF CSI D ATASETS .                                             
+
+> Wi-Fi Office 5G Hallway 5G Outdoor
+> Wireless standard IEEE 802.11a 5G NR 5G NR Carrier freq. 5.23 GHz 3.45 GHz 3.45 GHz Bandwidth 40 MHz 100 MHz 100 MHz Samples N113 716 / 96 170 a288 180 301 172 Duration 1 h 51 min / 1 h 36 min a1 h 35 min 1 h 38 min Sample rate 17 Hz 51 Hz 51 Hz APs B444Antennas A444Active subcarriers 104 3 276 3 276 Downsampling factor n.a. 12 ×12 ×
+> Used subcarriers W104 273 273 Covered area 13 .7×10 .6m252 .8×29 .4m29.9×10 .1m2
+> aWeek 1 / Week 2.
+
+B. New CAEZ-5G-HALLWAY Dataset 
+
+The “5G Hallway” dataset was acquired with our 5G NR testbed indoors on a large floor spanning 52 .8 m × 29 .4 m, with 4 5G Open RAN Radio Units (O-RUs) and 4 antennas per O-RU. The dataset was recorded over more than one hour at a CSI sampling rate of 51 Hz. As for the “Wi-Fi Office” dataset, multiple humans were present (and moving) during the measurement campaign. Fig. 3 depicts the floorplan and measurement area. 
+
+C. Existing CAEZ-5G-OUTDOOR Dataset 
+
+The “5G Outdoor” dataset is an existing dataset that was acquired with our 5G NR testbed outdoors in a courtyard in a measurement area of size 9.9 m × 10 .1 m, with 4 O-RUs and 
+
+4 antennas per O-RU. The dataset was recorded over more than one hour at a CSI sampling rate of 51 Hz. For a detailed description of this dataset, we refer the reader to [12]. V. R ESULTS 
+
+We now evaluate the generalization capabilities of the fully-connected MLP and the transformer introduced in Section II-B and Section II-C , respectively, and benchmark against two baselines: the single-best-guess (predictor baseline) and random partitioning (testing scenario baseline). Fig. 4 summarizes the positioning accuracy for both proposed architectures across all datasets: the Wi-Fi Office dataset (Week 1 and Week 2, top left and right, respectively), the 5G Hallway dataset (bottom left), and the 5G Outdoor dataset (bottom right). The single-best-guess baseline is shown as brown horizontal lines, and results for random partitioning, unseen regions, and an unseen trajectory are shown in each subfigure. 
+
+A. Spatial Generalization 
+
+The mean, median, and 95th-percentile positioning errors on the unseen regions are reported in Fig. 4. Positioning performance on unseen regions falls below that of random partitioning across all datasets. This confirms that random partitioning produces overly optimistic results and does not 
+
+reflect realistic deployment conditions. Despite this perfor-mance gap, both considered neural positioning architectures demonstrate meaningful generalization to unseen regions, with 0
+
+2
+
+4
+
+6
+
+8
+
+> positioning error [m]
+> 0.31
+> 0.10
+> 1.38
+> 0.32
+> 0.11
+> 1.27
+
+MLP transf. 
+
+random 
+
+partition 
+
+> 2.71
+> 1.03
+> 4.82
+> 1.12
+> 0.80
+> 3.26
+
+MLP transf. 
+
+unseen 
+
+regions 
+
+> 1.27
+> 0.78
+> 3.51
+> 0.97
+> 0.55
+> 3.08
+
+MLP transf. 
+
+unseen 
+
+trajectory 
+
+> mean: 4.40 m
+> median: 4.39 m
+> 95p: 7.52 m
+
+(a) Wi-Fi Office Week 1 0
+
+2
+
+4
+
+6
+
+8
+
+> positioning error [m]
+> 0.28
+> 0.11
+> 1.15
+> 0.25
+> 0.10
+> 0.92
+
+MLP transf. 
+
+random 
+
+partition 
+
+> 1.22
+> 0.77
+> 4.49
+> 1.00
+> 0.79
+> 2.25
+
+MLP transf. 
+
+unseen 
+
+regions 
+
+> 1.15
+> 0.96
+> 2.74
+> 1.20
+> 1.07
+> 2.69
+
+MLP transf. 
+
+unseen 
+
+trajectory  
+
+> mean: 4.13 m
+> median: 4.11 m
+> 95p: 7.57 m
+
+(b) Wi-Fi Office Week 2 0
+
+10 
+
+20 
+
+30 
+
+> positioning error [m]
+> 0.26
+> 0.21
+> 0.60
+> 0.17
+> 0.15
+> 0.35
+
+MLP transf. 
+
+random 
+
+partition 
+
+> 0.79
+> 0.52
+> 2.27
+> 0.45
+> 0.38
+> 1.07
+
+MLP transf. 
+
+unseen 
+
+regions 
+
+> 0.83
+> 0.44
+> 3.03
+> 0.44
+> 0.31
+> 1.09
+
+MLP transf. 
+
+unseen 
+
+trajectory 
+
+> mean: 15.24 m
+> median: 15.21 m
+> 95p: 31.27 m
+
+(c) 5G Hallway 0
+
+2
+
+4
+
+6
+
+> positioning error [m]
+> 0.08
+> 0.06
+> 0.18
+> 0.08
+> 0.07
+> 0.17
+
+MLP transf. 
+
+random 
+
+partition 
+
+> 0.47
+> 0.33
+> 1.29
+> 0.28
+> 0.23
+> 0.64
+
+MLP transf. 
+
+unseen 
+
+regions 
+
+> 0.21
+> 0.13
+> 0.64
+> 0.15
+> 0.11
+> 0.41
+
+MLP transf. 
+
+unseen 
+
+trajectory  
+
+> mean: 3.51 m
+> median: 3.56 m
+> 95p: 5.49 m
+
+(d) 5G Outdoor MLP mean      
+
+> MLP median
+> MLP p95
+> transf. mean
+> transf. median
+> transf. p95
+> single best guess mean
+> single best guess median
+> single best guess 95p
+
+Fig. 4. Positioning error for the MLP (blue) and transf. (red) architectures across four datasets and three testing scenarios: random partitioning, unseen regions, and unseen trajectory; mean, median, and 95th-percentile errors are reported. Both architectures remain consistently below the single-best-guess baseline (brown), and the transf. outperforms the MLP across all datasets despite having fewer parameters. test: 
+
+Week 1 
+
+test: 
+
+Week 2 
+
+test: 
+
+Week 1 
+
+test: 
+
+Week 2 
+
+test: 
+
+Week 1 
+
+test: 
+
+Week 2 
+
+0
+
+2
+
+4
+
+6
+
+8
+
+> positioning error [m]
+
+single best guess mean: 4.27 m 
+
+single best guess median: 4.25 m 
+
+single best guess p95: 7.54 m 
+
+trained: Week 1 trained: Week 2 trained: Both weeks 
+
+0.32 0.11 
+
+1.27 0.97 0.67 
+
+2.83 
+
+1.16 0.73 
+
+3.61 
+
+0.25 0.10 
+
+0.92 0.24 0.13 0.70 0.21 0.13 0.59 
+
+mean error 
+
+median error 
+
+95th percentile error 
+
+Fig. 5. Positioning error for the transformer architecture grouped by training set on the Wi-Fi Office Dataset; mean, median, and 95th-percentile errors are shown for same-week testing, cross-week testing, and joint training and testing on data from both weeks. Single-week training suffers a significant performance degradation when evaluated on the held-out week; joint training on both weeks yields the lowest errors across all metrics. positioning errors remaining noticeably and consistently below the single-best-guess baseline. The transformer outperforms the fully-connected MLP on all datasets despite having fewer parameters. Moreover, we see that the 5G datasets yield lower positioning errors than their Wi-Fi counterparts. 
+
+B. Temporal Generalization 
+
+The mean, median, and 95th-percentile positioning errors on the unseen trajectories are reported in Fig. 4. Positioning performance on the unseen trajectories falls below that of random partitioning but remains consistently below the single-best-guess baseline across all datasets, again confirming that both architectures retain meaningful localization capability un-der temporal domain shift. Again, the transformer consistently outperforms the MLP on all three datasets. Fig. 5 shows the cross-week positioning performance only of our proposed transformer 4 reporting results for training on the Wi-Fi Office dataset Week 1 only (red), Week 2 only (orange), and both weeks jointly (purple). Single-week training leads to a significant performance degradation on the held-out week; both architectures nonetheless outperform the single-best-guess baseline, indicating that temporal domain shift reduces but does not eliminate localization capability. Furthermore, we see that joint training on both measurement weeks consistently outper-forms single-week training across all metrics and architectures, demonstrating that temporal generalization is best addressed by augmenting the training set with measurements over large time periods; such augmentation also improves robustness to slight variations in the RF environment. VI. C ONCLUSIONS 
+
+We have investigated the generalization capabilities of neural positioning to spatially unseen regions, temporally unseen tra-jectories, and measurement campaigns separated by one week. Both the fully-connected MLP and the proposed transformer architecture achieve strong results across all three scenarios. Our results have shown that the transformer outperforms the MLP in all generalization scenarios despite having fewer trainable parameters, demonstrating that the token-based, per-AP processing of CSI features yields more generalizable representations than traditional neural positioning architectures. A key limitation of neural positioning is the requirement for labeled reference position measurements during training. However, our results indicate that measurements over long time spans significantly improve positioning performance. Thus, eliminating the need for labeled references, e.g., via the recent relative positioning approach in [8], would enable such long-term measurements and potentially improve neural positioning and its generalization capabilities. Upon acceptance of this paper, we will make the new Wi-Fi Office and 5G Hallway datasets, as well as the code to perform our experiments, available to the public. 
+
+> 4
+
+The MLP exhibits slightly higher positioning errors but demonstrates identical qualitative trends as the proposed transformer. 
+
+REFERENCES [1] A. Bourdoux, A. N. Barreto, B. van Liempd, C. de Lima, D. Dardari, D. Belot, E.-S. Lohan, G. Seco-Granados, H. Sarieddeen, H. Wymeersch, J. Suutala, J. Saloranta, M. Guillaud, M. Isomursu, M. Valkama, M. R. K. Aziz, R. Berkvens, T. Sanguanpuak, T. Svensson, and Y. Miao, “6G white paper on localization and sensing,” arXiv:2006.01779 , Jun. 2020. [Online]. Available: https://arxiv.org/abs/2006.01779 [2] F. Liu, Y. Cui, C. Masouros, J. Xu, T. X. Han, Y. C. Eldar, and S. Buzzi, “Integrated sensing and communications: Toward dual-functional wireless networks for 6G and beyond,” IEEE J. Sel. Areas Commun. , vol. 40, no. 6, pp. 1728–1767, 2022. [3] G. Seco-Granados, J. López-Salcedo, D. Jiménez-Baños, and G. López-Risueño, “Challenges in indoor global navigation satellite systems: Unveiling its core features in signal processing,” IEEE Signal Process. Mag. , vol. 29, no. 2, pp. 108–131, 2012. [4] M. Arnold, J. Hoydis, and S. ten Brink, “Novel massive MIMO channel sounding data applied to deep learning-based indoor positioning,” in SCC Int. ITG Conf. on Systems, Communications and Coding , Feb. 2019. [5] J. Vieira, E. Leitinger, M. Sarajlic, X. Li, and F. Tufvesson, “Deep convolutional neural networks for massive MIMO fingerprint-based positioning,” in Proc. IEEE Int. Symp. Personal, Indoor, Mobile Radio Commun. (PIMRC) , Oct. 2017. [6] B. Zhang, H. Sifaou, and G. Y. Li, “CSI-fingerprinting indoor localization via attention-augmented residual convolutional neural network,” IEEE Trans. Wireless Commun. , vol. 22, no. 8, pp. 5583–5597, 2023. [7] V. Savic and E. G. Larsson, “Fingerprinting-based positioning in distributed massive MIMO systems,” in Proc. IEEE Veh. Technol. Conf. (VTC) , Sep. 2015. [8] T.-Y. Müller, F. Zumegen, R. Wiesmayr, E. Gönülta¸ s, and C. Studer, “Neural positioning without external reference,” arXiv:2511.16352 , Nov. 2025. [Online]. Available: https://arxiv.org/abs/2511.16352 [9] E. Gönülta¸ s, E. Lei, J. Langerman, H. Huang, and C. Studer, “CSI-based multi-antenna and multi-point indoor positioning using probability fusion,” 
+
+IEEE Trans. Wireless Commun. , vol. 21, no. 4, pp. 2162–2176, 2022. [10] E. Gönülta¸ s, S. Taner, H. Huang, and C. Studer, “Feature learning for neural-network-based positioning with channel state information,” in 
+
+Asilomar Conf. Signals, Syst., Comput. , Nov. 2021. [11] P. Huang, E. Gönülta¸ s, M. Arnold, K. P. Srinath, J. Hoydis, and C. Studer, “Attacking and defending deep-learning-based off-device wireless positioning systems,” IEEE Trans. Wireless Commun. , vol. 23, no. 8, pp. 8883–8895, 2024. [12] R. Wiesmayr, F. Zumegen, S. Taner, C. Dick, and C. Studer, “CSI-based user positioning, channel charting, and device classification with an NVIDIA 5G testbed,” in Proc. Asilomar Conf. Signals, Syst., Comput. ,Oct. 2025. [13] J. Pirkl, J. Ott, M. Stahlke, G. Yammine, T. Feigl, and C. Mutschler, “Resilient channel charting under varying radio link availability,” in Proc. Asilomar Conf. Signals, Syst., Comput. , Oct. 2025. [14] T. Zhang, D. Zhang, and Y. Chen, “Towards CSI localization at scale: Unsupervised representation learning for fingerprint retrieval,” IEEE Trans. Mobile Comput. , vol. 25, no. 2, pp. 1–14, 2026. [15] H. Park, P. Garau Burguera, and H. Al-Tous, “Lightweight channel chart informed transformer for localization,” in Proc. IEEE Veh. Technol. Conf. (VTC) , Jan. 2026. [16] A. Sobehy, E. Renault, and P. Mühlethaler, “Generalization aspect of accurate machine learning models for CSI-based localization,” Annals of Telecommunications , vol. 77, no. 5–6, pp. 345–357, 2022. [17] K. He, X. Zhang, S. Ren, and J. Sun, “Delving deep into rectifiers: Surpassing human-level performance on ImageNet classification,” in 
+
+Proc. IEEE Int. Conf. Computer Vision (ICCV) , Dec. 2015. [18] D. P. Kingma and J. Ba, “Adam: A method for stochastic optimization,” in Int. Conf. on Learning Representations , May 2015. [19] A. Paszke, S. Gross, F. Massa, A. Lerer, J. Bradbury, G. Chanan, T. Killeen, Z. Lin, N. Gimelshein, L. Antiga, A. Desmaison, A. Kopf, E. Yang, Z. DeVito, M. Raison, A. Tejani, S. Chilamkurthy, B. Steiner, L. Fang, J. Bai, and S. Chintala, “PyTorch: An imperative style, high-performance deep learning library,” in Advances in Neural Information Processing Systems , Dec. 2019. [20] E. Weiszfeld, “Sur le point pour lequel la somme des distances de n
+
+points donnés est minimum,” Tôhoku Mathematical Journal , vol. 43, pp. 355–386, 1937. [21] F. Zumegen and C. Studer, “A software-defined and distributed Wi-Fi channel-state information acquisition testbed,” in Asilomar Conf. Signals, Syst., Comput. , Oct 2024.

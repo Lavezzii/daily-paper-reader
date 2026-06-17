@@ -1,0 +1,433 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-17T21:45:06.352746+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 6,
+    "deep_cap": 6,
+    "deep_selected": 6,
+    "quick_candidates": 5,
+    "quick_skim_target": 11,
+    "quick_selected": 5
+  },
+  "deep_dive": [
+    {
+      "id": "2606.17893v1",
+      "source": "arxiv",
+      "title": "Condition-Wise Sinkhorn Drifting for One-Shot Learned Channel Simulation",
+      "abstract": "Learned communication systems may evaluate stochastic channel surrogates millions of times inside differentiable training loops, making diffusion-style reverse sampling expensive. This paper proposes condition-wise Sinkhorn drifting, a one-shot channel surrogate that preserves the transmitted symbol and transports only the conditional output laws \\(p(y\\mid x)\\). We formulate a conditional Sinkhorn objective over repeated outputs at the same transmitted symbol and train the generator with finite-sample barycentric velocities followed by detached particle regression. Experiments on additive white Gaussian noise (AWGN), Rayleigh fading, solid-state power amplifier (SSPA) nonlinearity, and a compact tapped-delay-line (TDL) channel compare direct drifting, joint Sinkhorn drifting, condition-wise Sinkhorn drifting, conditional denoising diffusion probabilistic modeling (DDPM), denoising diffusion implicit modeling (DDIM), and Wasserstein generative adversarial network (WGAN) references. Within the evaluated one-shot drifting-family variants, condition-wise Sinkhorn is strongest under conditional diagnostics and symbolic-coding checks, while diffusion remains strongest on the hardest downstream symbol-error-rate (SER) curves. The resulting operating point is a condition-preserving one-shot simulator for settings where repeated channel calls make diffusion-style sampling too costly.",
+      "authors": [
+        "Rick Fritschek",
+        "Rafael F. Schaefer"
+      ],
+      "primary_category": "eess.SP",
+      "categories": [
+        "eess.SP"
+      ],
+      "published": "2026-06-16T13:13:49+00:00",
+      "link": "https://arxiv.org/pdf/2606.17893v1",
+      "tags": [
+        "keyword:channel-nn",
+        "query:channel-nn"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "One-shot learned channel simulation using conditional Sinkhorn drifting, directly targets channel modeling",
+      "llm_evidence_cn": "基于条件Sinkhorn漂移的一次性学习信道仿真，直接针对信道建模",
+      "llm_evidence": "基于条件Sinkhorn漂移的一次性学习信道仿真，直接针对信道建模",
+      "canonical_evidence": "基于条件Sinkhorn漂移的一次性学习信道仿真，直接针对信道建模",
+      "llm_tldr_en": "Proposes condition-wise Sinkhorn drifting for one-shot learned channel simulation, enabling efficient differentiable channel surrogates for AWGN, fading, and nonlinearity channels.",
+      "llm_tldr_cn": "针对学习通信系统中信道替代模型需要大量采样的问题，提出条件式Sinkhorn漂移方法，一次性训练生成器来仿真条件输出分布，在AWGN、瑞利衰落、非线性功放和TDL信道上验证了其有效性，为可微信道模拟提供了高效方案。",
+      "llm_tldr": "针对学习通信系统中信道替代模型需要大量采样的问题，提出条件式Sinkhorn漂移方法，一次性训练生成器来仿真条件输出分布，在AWGN、瑞利衰落、非线性功放和TDL信道上验证了其有效性，为可微信道模拟提供了高效方案。",
+      "llm_tags": [
+        "query:channel-nn"
+      ],
+      "matched_query_tag": "query:channel-nn",
+      "matched_query_text": "neural networks for communication channel modeling",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.17927v1",
+      "source": "arxiv",
+      "title": "KANLib -- An Modular, Extensible and Fast Kolmogorov-Arnold Network Implementation",
+      "abstract": "Kolmogorov-Arnold Networks (KANs) have recently emerged as a promising alternative to traditional multilayer perceptrons by replacing linear weights with learnable univariate functions. Despite their theoretical advantages in interpretability and expressiveness, practical research of KANs remains difficult due to high computational costs and inconsistent feature support across existing frameworks. This paper introduces KANLib, a modular, extensible, and computationally efficient framework for developing and evaluating KAN architectures. KANLib unifies core concepts from existing implementations, including PyKAN, EfficientKAN, and FastKAN, within a consistent software architecture that emphasizes flexibility, feature parity, and high performance. The framework supports two basis function types, adaptive grid rescaling, grid extension, and fine-grained architectural customization while maintaining compatibility with standard PyTorch workflows. Experimental evaluation on the California Housing benchmark demonstrates that KANLib reproduces the predictive behavior of established reference KAN implementations while achieving competitive computational efficiency. Furthermore, the framework enables the exploration of architectural variations beyond standard KAN formulations with only minor impacts on predictive performance. Overall, KANLib provides a robust foundation for future research on scalable and extensible KAN architectures.",
+      "authors": [
+        "Julian Hoever",
+        "Gregor Schiele"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-06-16T13:38:58+00:00",
+      "link": "https://arxiv.org/pdf/2606.17927v1",
+      "tags": [
+        "keyword:channel-nn",
+        "query:channel-nn"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "KANLib: modular and fast implementation of Kolmogorov-Arnold Networks",
+      "llm_evidence_cn": "KANLib：模块化、快速的Kolmogorov-Arnold网络实现",
+      "llm_evidence": "KANLib：模块化、快速的Kolmogorov-Arnold网络实现",
+      "canonical_evidence": "KANLib：模块化、快速的Kolmogorov-Arnold网络实现",
+      "llm_tldr_en": "Introduces KANLib, a modular and computationally efficient framework for developing Kolmogorov-Arnold Networks, unifying existing implementations.",
+      "llm_tldr_cn": "Kolmogorov-Arnold网络在可解释性和表达能力上具有优势，但现有实现计算成本高且功能不一致。本文提出KANLib，一个模块化、可扩展且高效的计算框架，统一了PyKAN、EfficientKAN等核心概念。该框架支持快速开发和评估KAN架构，为通信系统等领域的应用提供了基础工具。",
+      "llm_tldr": "Kolmogorov-Arnold网络在可解释性和表达能力上具有优势，但现有实现计算成本高且功能不一致。本文提出KANLib，一个模块化、可扩展且高效的计算框架，统一了PyKAN、EfficientKAN等核心概念。该框架支持快速开发和评估KAN架构，为通信系统等领域的应用提供了基础工具。",
+      "llm_tags": [
+        "query:channel-nn"
+      ],
+      "matched_query_tag": "query:channel-nn",
+      "matched_query_text": "Kolmogorov-Arnold networks in communication",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.18150v1",
+      "source": "arxiv",
+      "title": "Spatial and Temporal Generalization of CSI-based Neural Positioning",
+      "abstract": "Channel state information (CSI)-based neural positioning learns a mapping from CSI measurements to user equipment (UE) positions using neural networks. However, most existing performance evaluations utilize randomly partitioned train/test CSI-dataset splits, which fail to reflect the generalization requirements of practical deployments and present optimistic results. In this paper, we study the spatial and temporal generalization of neural positioning with standard-compliant Wi-Fi and 5G NR systems for three real-world CSI datasets acquired in indoor and outdoor environments. We assess generalization with two different architectures, a conventional multilayer perceptron (MLP) and a novel transformer architecture, to unseen spatial regions, unseen UE trajectories, and CSI measurement campaigns separated by one week. Our experiments show that both architectures generalize well in space and time, and the proposed transformer consistently outperforms the MLP in positioning accuracy while requiring fewer model parameters.",
+      "authors": [
+        "Till-Yannic Müller",
+        "Frederik Zumegen",
+        "Reinhard Wiesmayr",
+        "Christoph Studer"
+      ],
+      "primary_category": "eess.SP",
+      "categories": [
+        "eess.SP",
+        "cs.IT"
+      ],
+      "published": "2026-06-16T16:48:06+00:00",
+      "link": "https://arxiv.org/pdf/2606.18150v1",
+      "tags": [
+        "keyword:channel-nn",
+        "query:channel-nn"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "neural networks for communication channel modeling using CSI",
+      "llm_evidence_cn": "利用CSI进行通信信道建模的神经网络",
+      "llm_evidence": "利用CSI进行通信信道建模的神经网络",
+      "canonical_evidence": "利用CSI进行通信信道建模的神经网络",
+      "llm_tldr_en": "Studies spatial and temporal generalization of CSI-based neural positioning using MLP and a novel transformer architecture, revealing that random train/test splits overestimate performance.",
+      "llm_tldr_cn": "本文研究基于信道状态信息（CSI）的神经定位在空间和时间上的泛化能力，使用标准Wi-Fi和5G NR系统在真实室内外数据集上进行评估。不同于以往随机划分数据集的做法，该工作测试了模型对未见空间区域和新用户轨迹的泛化性能，并对比了传统MLP和新型Transformer架构。结果表明随机划分会高估性能，而实际泛化有显著差距，为通信信道建模中的神经网络评估提供了更真实的基准。",
+      "llm_tldr": "本文研究基于信道状态信息（CSI）的神经定位在空间和时间上的泛化能力，使用标准Wi-Fi和5G NR系统在真实室内外数据集上进行评估。不同于以往随机划分数据集的做法，该工作测试了模型对未见空间区域和新用户轨迹的泛化性能，并对比了传统MLP和新型Transformer架构。结果表明随机划分会高估性能，而实际泛化有显著差距，为通信信道建模中的神经网络评估提供了更真实的基准。",
+      "llm_tags": [
+        "query:channel-nn"
+      ],
+      "matched_query_tag": "query:channel-nn",
+      "matched_query_text": "neural networks for communication channel modeling",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.15634v1",
+      "source": "arxiv",
+      "title": "Sparse Channel Estimation for SIM-based mmWave Near-Field Communications",
+      "abstract": "In this paper, we address the channel estimation (CE) problem in SIM-based multi-user (MU) millimeter-wave (mmWave) near-field communication systems. To address the severe path loss and blockage in mmWave communication systems, many meta-atoms are typically integrated into each layer of the SIM. Then, the number of radio frequency (RF) chains at the base station (BS) is fewer than that of meta-atoms per layer, resulting in an underdetermined problem. Additionally, the increase in the number of meta-atoms in each layer expands the SIM's near-field region, leading to the user equipment (UEs) being mostly situated in this region, necessitating precise modeling of the channel under the spherical wavefront assumption. To address these issues, we introduce a compressed sensing (CS)-based CE protocol to tackle the underdetermined problem. In contrast to the traditional CS-based estimation framework, we investigate a polar-domain channel representation to tackle the severe energy spread effect of the classical angular-domain channel representation in near-field communication systems. Specifically, we design a novel polar-domain transform matrix for uniform planar arrays (UPAs), thereby transforming the CE problem into a sparse recovery task of the paths' support set and complex gains. To overcome the limitations of the sparse Bayesian learning (SBL) framework in tackling high-dimensional dictionaries, we propose a low-complexity polar-domain SBL (LCPD-SBL) algorithm, which significantly reduces computational complexity without compromising estimation accuracy.",
+      "authors": [
+        "Jiancheng An",
+        "Enyu Shi",
+        "Jiayi Zhang",
+        "Lu Gan",
+        "Michail Matthaiou",
+        "Symeon Chatzinotas",
+        "Marco Di Renzo"
+      ],
+      "primary_category": "cs.IT",
+      "categories": [
+        "cs.IT",
+        "eess.SP"
+      ],
+      "published": "2026-06-14T06:55:52+00:00",
+      "link": "https://arxiv.org/pdf/2606.15634v1",
+      "tags": [
+        "keyword:channel-nn",
+        "query:channel-nn"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Sparse channel estimation for SIM-based mmWave near-field communications",
+      "llm_evidence_cn": "基于SIM的毫米波近场通信稀疏信道估计",
+      "llm_evidence": "基于SIM的毫米波近场通信稀疏信道估计",
+      "canonical_evidence": "基于SIM的毫米波近场通信稀疏信道估计",
+      "llm_tldr_en": "Addresses channel estimation in SIM-based mmWave near-field systems using sparse methods, handling underdetermined problem and spherical wavefront.",
+      "llm_tldr_cn": "毫米波近场通信中SIM层集成大量超原子导致信道估计欠定问题。本文针对基于SIM的多用户毫米波近场通信系统，提出考虑球面波前的稀疏信道估计方法。通过利用信道稀疏性和SIM结构，有效解决了射频链数少于超原子数的问题，提升了估计精度。",
+      "llm_tldr": "毫米波近场通信中SIM层集成大量超原子导致信道估计欠定问题。本文针对基于SIM的多用户毫米波近场通信系统，提出考虑球面波前的稀疏信道估计方法。通过利用信道稀疏性和SIM结构，有效解决了射频链数少于超原子数的问题，提升了估计精度。",
+      "llm_tags": [
+        "query:channel-nn"
+      ],
+      "matched_query_tag": "query:channel-nn",
+      "matched_query_text": "neural networks for communication channel modeling",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.15669v1",
+      "source": "arxiv",
+      "title": "Z-Plane Neural Networks: Bounded Geometric Activation Replaces ReLU and LayerNorm",
+      "abstract": "Modern deep neural networks rely on Euclidean scalar activations (e.g., ReLU) and global normalization techniques (e.g., LayerNorm) to prevent gradient instability in deep architectures. However, these mechanisms inherently cause dead neurons, discard critical directional information, and destroy the orthogonality of feature representations. Inspired by the frequency-modulation transmission of biological axons, we propose the Z-Plane Neural Network, which maps hidden states into 2D phasor bundles on a hypersphere. We introduce a novel geometric activation function, Radial Bounding($\\mathbf{x} / \\max(1, \\|\\mathbf{x}\\|_2)$), which limits the energy magnitude while preserving the phase (direction). We demonstrate mathematically that this isotropic activation maintains 1-Lipschitz continuity and prevents gradient vanishing by preserving tangential gradients. Empirically, a 100-layer Z-Plane Multi-Layer Perceptron (MLP)-entirely devoid of ReLU and LayerNorm-successfully converges on the MNIST dataset with 98.34% accuracy and absolute numerical stability, proving that bounded geometric activation alone is sufficient for stable deep learning.",
+      "authors": [
+        "Sungwoo Goo",
+        "Hwi-yeol Yun",
+        "Sangkeun Jung"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-06-14T08:22:28+00:00",
+      "link": "https://arxiv.org/pdf/2606.15669v1",
+      "tags": [
+        "keyword:channel-nn",
+        "query:channel-nn"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "novel neural network architecture with geometric activation",
+      "llm_evidence_cn": "具有几何激活函数的新型神经网络架构",
+      "llm_evidence": "具有几何激活函数的新型神经网络架构",
+      "canonical_evidence": "具有几何激活函数的新型神经网络架构",
+      "llm_tldr_en": "Proposes Z-Plane Neural Networks that map hidden states to 2D phasor bundles, using a Radial Bounding activation that preserves phase information while limiting magnitude, replacing ReLU and LayerNorm.",
+      "llm_tldr_cn": "本文提出Z平面神经网络，将隐藏状态映射到超球面上的二维相量束，采用Radial Bounding几何激活函数限制能量幅度并保留相位（方向）信息，从而替代ReLU和层归一化。数学证明该方法具有各向同性，避免了死神经元和特征表示正交性破坏的问题。该架构为深度学习提供了一种新的几何驱动范式，有望应用于通信信道建模等需要保留相位信息的任务。",
+      "llm_tldr": "本文提出Z平面神经网络，将隐藏状态映射到超球面上的二维相量束，采用Radial Bounding几何激活函数限制能量幅度并保留相位（方向）信息，从而替代ReLU和层归一化。数学证明该方法具有各向同性，避免了死神经元和特征表示正交性破坏的问题。该架构为深度学习提供了一种新的几何驱动范式，有望应用于通信信道建模等需要保留相位信息的任务。",
+      "llm_tags": [
+        "query:channel-nn"
+      ],
+      "matched_query_tag": "query:channel-nn",
+      "matched_query_text": "novel neural network architectures",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.17737v1",
+      "source": "arxiv",
+      "title": "Deep CSI Feedback for FDD Massive MIMO Systems: A Curvelet Learning Approach",
+      "abstract": "Downlink channel state information (CSI) feedback plays a key role in frequency division duplex (FDD) massive multiple-input multiple-output (mMIMO) systems. The growth of antennas in ultra-massive MIMO increases the difficulty and overhead of CSI feedback, which poses significant challenges for conventional downlink CSI feedback mechanisms. To address the limitations of existing CSI feedback approaches, this paper proposes a novel curvelet learning based framework termed SwinCANet, comprising a frequency-domain information processing module and a denoising module. The frequency-domain information processing module employs curvelet transform to decompose CSI into low-frequency and high-frequency components. Subsequently, Swin Transformer and channel-wise attention block are utilized for extracting the low-frequency and high-frequency representations, respectively, thereby enhancing reconstruction quality. Notably, an additional Swin Transformer facilitates the fusion of multi-scale frequency components, enhancing capabilities across different angular resolutions and spatial directions. Furthermore, we develop a variant (De-SwinCANet), which employs a Sigmoid threshold function to effectively suppress noise coefficients, thereby mitigating various channel impairments and nonlinear distortions. Numerical simulation results demonstrate that the proposed methodology achieves superior performance compared to existing benchmarks while maintaining robust performance under challenging propagation conditions.",
+      "authors": [
+        "Mengli Tao",
+        "Jiancun Fan",
+        "Huiqiang Xie",
+        "Kai Xie"
+      ],
+      "primary_category": "eess.SP",
+      "categories": [
+        "eess.SP"
+      ],
+      "published": "2026-06-16T09:56:11+00:00",
+      "link": "https://arxiv.org/pdf/2606.17737v1",
+      "tags": [
+        "keyword:channel-nn",
+        "query:channel-nn"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "neural network for channel modeling via CSI feedback in massive MIMO",
+      "llm_evidence_cn": "大规模MIMO中基于神经网络的信道状态信息反馈用于信道建模",
+      "llm_evidence": "大规模MIMO中基于神经网络的信道状态信息反馈用于信道建模",
+      "canonical_evidence": "大规模MIMO中基于神经网络的信道状态信息反馈用于信道建模",
+      "llm_tldr_en": "SwinCANet proposes a novel curvelet learning framework for deep CSI feedback in FDD massive MIMO, using Swin Transformer and channel attention to improve feedback accuracy and reduce overhead.",
+      "llm_tldr_cn": "在大规模MIMO系统中，天线数量增长导致CSI反馈开销巨大。本文提出基于Curvelet学习的SwinCANet框架，结合Swin Transformer和通道注意力机制，有效处理CSI的频域信息并降噪，显著提升反馈精度，降低开销，为超大规模MIMO信道建模提供了新方案。",
+      "llm_tldr": "在大规模MIMO系统中，天线数量增长导致CSI反馈开销巨大。本文提出基于Curvelet学习的SwinCANet框架，结合Swin Transformer和通道注意力机制，有效处理CSI的频域信息并降噪，显著提升反馈精度，降低开销，为超大规模MIMO信道建模提供了新方案。",
+      "llm_tags": [
+        "query:channel-nn"
+      ],
+      "matched_query_tag": "query:channel-nn",
+      "matched_query_text": "neural networks for communication channel modeling",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.18151v1",
+      "source": "arxiv",
+      "title": "Channel Charting for Position and Orientation",
+      "abstract": "Channel charting (CC) in real-world coordinates is a recently proposed self-supervised machine learning method that maps high-dimensional channel state information (CSI) to user equipment (UE) position. In this paper, we extend CC to also estimate UE orientation, which can further assist tasks such as beamfinding, precoding, and beam- and cell-assignment. To this end, we propose a novel orientation triplet loss that accounts for angle periodicity and an alignment loss that embeds estimated orientations in real-world coordinates in a self-supervised fashion. Using real-world CSI measurements from a standard-compliant 5G NR system, we demonstrate that the proposed method achieves position and orientation estimation accuracy close to that of supervised approaches trained with ground-truth labels.",
+      "authors": [
+        "Daniel Richner",
+        "Reinhard Wiesmayr",
+        "Frederik Zumegen",
+        "Christoph Studer"
+      ],
+      "primary_category": "eess.SP",
+      "categories": [
+        "eess.SP",
+        "cs.IT"
+      ],
+      "published": "2026-06-16T16:48:31+00:00",
+      "link": "https://arxiv.org/pdf/2606.18151v1",
+      "tags": [
+        "keyword:channel-nn",
+        "query:channel-nn"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "self-supervised neural network for CSI to position/orientation estimation",
+      "llm_evidence_cn": "自监督神经网络用于CSI到位置/朝向估计",
+      "llm_evidence": "自监督神经网络用于CSI到位置/朝向估计",
+      "canonical_evidence": "自监督神经网络用于CSI到位置/朝向估计",
+      "llm_tldr_en": "Extends channel charting to jointly estimate UE position and orientation using self-supervised learning on real-world 5G NR CSI, achieving accuracy close to supervised methods.",
+      "llm_tldr_cn": "该论文将信道图表技术扩展到同时估计用户设备的位置和朝向。通过提出新颖的朝向三元组损失和对齐损失，在自监督框架下利用真实5G NR CSI数据实现了接近监督方法的精度。该方法有助于波束赋形、预编码等通信任务。",
+      "llm_tldr": "该论文将信道图表技术扩展到同时估计用户设备的位置和朝向。通过提出新颖的朝向三元组损失和对齐损失，在自监督框架下利用真实5G NR CSI数据实现了接近监督方法的精度。该方法有助于波束赋形、预编码等通信任务。",
+      "llm_tags": [
+        "query:channel-nn"
+      ],
+      "matched_query_tag": "query:channel-nn",
+      "matched_query_text": "neural networks for communication channel modeling",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.16290v1",
+      "source": "arxiv",
+      "title": "An affordable hardware-aware neural architecture search for deploying convolutional neural networks on ultra-low-power computing platforms",
+      "abstract": "Hardware-aware neural architecture search (HW-NAS) allows the integration of Convolutional Neural Networks (CNNs) in microcontrollers devices by automatically designing neural architectures that can fit prearranged hardware constraints. However, state-of-the-art HW-NAS target high-performance microcontrollers, whose power consumption does not meet sensing nodes requirements. This work presents a HW-NAS generating tiny CNNs that can run on ultra-low-power microcontrollers, featuring a lightweight search procedure enabling its execution even on embedded devices. Empirical results on three well-known benchmarks for tiny computer vision proved that the proposed HW-NAS was able to generate tiny CNNs while preserving state-of-the-art classification accuracy.",
+      "authors": [
+        "Andrea Mattia Garavagno",
+        "Edoardo Ragusa",
+        "Antonio Frisoli",
+        "Paolo Gastaldo"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-06-15T06:51:53+00:00",
+      "link": "https://arxiv.org/pdf/2606.16290v1",
+      "tags": [
+        "keyword:channel-nn",
+        "query:channel-nn"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "efficient neural architecture search for ultra-low-power platforms",
+      "llm_evidence_cn": "面向超低功耗平台的高效神经架构搜索",
+      "llm_evidence": "面向超低功耗平台的高效神经架构搜索",
+      "canonical_evidence": "面向超低功耗平台的高效神经架构搜索",
+      "llm_tldr_en": "Proposes a hardware-aware neural architecture search (HW-NAS) method to generate tiny CNNs for ultra-low-power microcontrollers, with a lightweight search procedure executable on embedded devices.",
+      "llm_tldr_cn": "本文提出一种硬件感知神经架构搜索方法，专门用于在超低功耗微控制器上部署卷积神经网络。该方法具有轻量级搜索过程，甚至可在嵌入式设备上运行，自动生成符合硬件约束的极小CNN。在三个小视觉基准上，生成的网络在极低功耗下达到良好性能，为通信系统中边缘节点的神经网络定制提供了自动化工具。",
+      "llm_tldr": "本文提出一种硬件感知神经架构搜索方法，专门用于在超低功耗微控制器上部署卷积神经网络。该方法具有轻量级搜索过程，甚至可在嵌入式设备上运行，自动生成符合硬件约束的极小CNN。在三个小视觉基准上，生成的网络在极低功耗下达到良好性能，为通信系统中边缘节点的神经网络定制提供了自动化工具。",
+      "llm_tags": [
+        "query:channel-nn"
+      ],
+      "matched_query_tag": "query:channel-nn",
+      "matched_query_text": "efficient neural network designs for communication",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.16575v1",
+      "source": "arxiv",
+      "title": "RepNet: Tackling spectral bias in deep neural networks via parameter reparameterization",
+      "abstract": "Deep neural networks (DNNs) have achieved remarkable success in scientific computing, yet they often suffer from spectral bias in capturing oscillatory and multiscale behaviors. In this study, we investigate this limitation by examining the failure of shallow ReLU neural networks in fitting high-frequency functions. This observation identifies two important factors in resolving rapid oscillations: the initial slope scale and the distribution of partition points induced by the networks. Motivated by this analysis, we propose RepNet, a reparameterized DNN model for ReLU and tanh networks designed for high-frequency and multiscale problems. The key idea is to reparameterize the weights and biases in the first hidden layer, which enables effective control of the initial slope scale and provides an appropriate distribution of the initial partition points. Furthermore, treating the reparameterized weights and biases as trainable parameters allows the DNN to achieve adaptive frequency scaling during training. In addition, we derive quantitative estimates for the output and slope magnitudes of the reparameterized DNN to guide the initialization of the proposed method. Numerical experiments, including multiscale one- and four-dimensional function approximation, forward and inverse PDE problems in combination with physics-informed neural networks (PINNs), and operator learning, demonstrate that RepNet improves the predicted accuracy of vanilla DNNs in capturing highly oscillatory features with slightly additional computational cost. These results indicate that RepNet provides an effective and flexible approach for overcoming spectral bias and applying DNNs to multiscale problems.",
+      "authors": [
+        "Yong Wang",
+        "Tao Zhou",
+        "Xuhui Meng"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "math-ph"
+      ],
+      "published": "2026-06-15T11:21:04+00:00",
+      "link": "https://arxiv.org/pdf/2606.16575v1",
+      "tags": [
+        "keyword:channel-nn",
+        "query:channel-nn"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "novel RepNet architecture reparameterizing weights to overcome spectral bias",
+      "llm_evidence_cn": "通过权重重参数化的新颖RepNet架构克服频谱偏差",
+      "llm_evidence": "通过权重重参数化的新颖RepNet架构克服频谱偏差",
+      "canonical_evidence": "通过权重重参数化的新颖RepNet架构克服频谱偏差",
+      "llm_tldr_en": "Proposes RepNet, a reparameterized DNN that reparameterizes first-layer weights and biases to capture high-frequency functions, addressing spectral bias in scientific computing.",
+      "llm_tldr_cn": "该论文提出RepNet架构，通过重参数化第一个隐藏层的权重和偏置，使得神经网络能够有效拟合高频和多尺度函数，克服了传统DNN的频谱偏差问题。实验表明RepNet在科学计算问题中表现优越。该架构对通信信道建模中可能遇到的高频信号具有潜在应用价值。",
+      "llm_tldr": "该论文提出RepNet架构，通过重参数化第一个隐藏层的权重和偏置，使得神经网络能够有效拟合高频和多尺度函数，克服了传统DNN的频谱偏差问题。实验表明RepNet在科学计算问题中表现优越。该架构对通信信道建模中可能遇到的高频信号具有潜在应用价值。",
+      "llm_tags": [
+        "query:channel-nn"
+      ],
+      "matched_query_tag": "query:channel-nn",
+      "matched_query_text": "novel neural network architectures",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.17249v1",
+      "source": "arxiv",
+      "title": "From Compression to Deployment: Real-Time and Energy-Efficient FastGRNN on Ultra-Constrained Microcontrollers",
+      "abstract": "The dominant trajectory of modern machine learning has been to scale up: larger models, larger accelerators, larger memory budgets. Yet a multi-year global semiconductor supply constraint and the growing energy and carbon cost of always-online inference expose the fragility of this trajectory and motivate the opposite direction: refactoring AI and ML algorithms to fit the small, ubiquitous microcontrollers already in mass production in wearables, sensors, and edge appliances. We present an end-to-end open-source reproduction of FastGRNN, a compact gated recurrent cell, deployed on two bare-metal targets: the 8-bit Arduino (ATmega328P) and the 16-bit MSP430 (no hardware multiplier; 16 KB Flash; 512 B SRAM). Our compression pipeline combines low-rank weight factorization, iterative hard-thresholding sparsity, and per-tensor Q15 post-training quantization with explicit activation calibration. The deployed model occupies 566 bytes of weights and achieves macro F1 = 0.918 (seed 0; five-seed Q15 mean 0.853+-0.107) on the HAPT test set. It matches a PyTorch reference at 100% prediction agreement across 3,399 test windows (MCU seed 0; 99.91-100% C-equivalent across five seeds). Both platforms sustain real-time 50 Hz streaming inference (9.21 ms per sample on Arduino; 13 ms on MSP430), where a 256-entry sigmoid/tanh look-up table delivers a 30.5x speedup on the multiplier-less MSP430. Four contributions extend the original FastGRNN paper: (i) cross-platform bit-equivalent deterministic inference; (ii) characterization of recurrent warm-up latency (median 74 samples, 1.48 s; worst-case 125 samples, 2.50 s over 100 test windows); (iii) a deployable look-up-table recipe for multiplier-less embedded targets; and (iv) hardware energy characterization showing 17.7 mW active inference power, <0.09 mW idle power, and 96.7% energy reduction with the LUT.",
+      "authors": [
+        "Emre Can Kizilates"
+      ],
+      "primary_category": "cs.AR",
+      "categories": [
+        "cs.AR",
+        "cs.LG",
+        "cs.NE",
+        "eess.SP"
+      ],
+      "published": "2026-06-15T19:49:38+00:00",
+      "link": "https://arxiv.org/pdf/2606.17249v1",
+      "tags": [
+        "keyword:channel-nn",
+        "query:channel-nn"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "efficient neural network design for deployment on microcontrollers",
+      "llm_evidence_cn": "面向微控制器部署的高效神经网络设计",
+      "llm_evidence": "面向微控制器部署的高效神经网络设计",
+      "canonical_evidence": "面向微控制器部署的高效神经网络设计",
+      "llm_tldr_en": "Reproduces FastGRNN, a compact gated recurrent cell, deployed on ultra-constrained microcontrollers (8-bit Arduino, 16-bit MSP430), achieving real-time and energy-efficient inference.",
+      "llm_tldr_cn": "本文在资源极度受限的微控制器上（8位Arduino，16位MSP430，仅16KB闪存，512B SRAM）复现并部署了紧凑型门控循环单元FastGRNN。通过端到端优化实现了实时低功耗推理，证明即使在最严苛的硬件约束下也能运行有效神经网络。这为通信系统中边缘设备上的高效时序处理提供了可行方案。",
+      "llm_tldr": "本文在资源极度受限的微控制器上（8位Arduino，16位MSP430，仅16KB闪存，512B SRAM）复现并部署了紧凑型门控循环单元FastGRNN。通过端到端优化实现了实时低功耗推理，证明即使在最严苛的硬件约束下也能运行有效神经网络。这为通信系统中边缘设备上的高效时序处理提供了可行方案。",
+      "llm_tags": [
+        "query:channel-nn"
+      ],
+      "matched_query_tag": "query:channel-nn",
+      "matched_query_text": "efficient neural network designs for communication",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.17886v1",
+      "source": "arxiv",
+      "title": "Monotonic Kolmogorov-Arnold Networks: A Theoretical and Empirical Study of Monotonicity as an Inductive Bias",
+      "abstract": "Monotonicity has been a long-running architectural inductive bias for neural networks, motivated by tabular, scientific, and economic settings where outputs are known to respond monotonically to certain inputs. Existing approaches are MLP- or flow-based and lack per-edge functional transparency; the only Kolmogorov--Arnold Network (KAN) variant with monotonicity, MonoKAN, enforces the constraint only on a restricted parameter subset and requires a projection-style training procedure. We close this gap with \\textbf{MKAN}, a KAN with hard monotonicity guaranteed for \\emph{all} parameter values via exponential reparameterization of B-spline coefficients, positive edge weights, and a monotone base activation. Training reduces to standard unconstrained gradient descent. Our headline theoretical contribution is a \\emph{representation-cost} theorem: any $C^K, K >0$ feature extractor inducing a ball-shaped semantic-neighborhood partition admits a monotone realization of the equivalent neighborhood structure at $N' = N^* + k \\le 2N^*$, where $k$ is the number of non-monotone coordinates of the original. The bound is architecture-agnostic and gives a principled sizing rule for monotone encoders. Empirically, MKAN is competitive with state-of-the-art monotone NNs on the SMM/ICML-2024 benchmark while being the only method that combines hard unconstrained monotonicity with KAN's per-edge functional transparency; the $2N^*$ prediction is validated in a self-supervised feature-size sweep on four real datasets, and on a controlled monotone-generative dataset MKAN recovers ground-truth factors with substantially higher Spearman alignment than KAN, MLP, and linear baselines.",
+      "authors": [
+        "Mikhail Krasnov",
+        "Carolina Fortuna",
+        "Blaž Bertalanič"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-06-16T13:06:22+00:00",
+      "link": "https://arxiv.org/pdf/2606.17886v1",
+      "tags": [
+        "keyword:channel-nn",
+        "query:channel-nn"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "novel Kolmogorov-Arnold network variant with monotonicity inductive bias",
+      "llm_evidence_cn": "具有单调性归纳偏置的新型Kolmogorov-Arnold网络变体",
+      "llm_evidence": "具有单调性归纳偏置的新型Kolmogorov-Arnold网络变体",
+      "canonical_evidence": "具有单调性归纳偏置的新型Kolmogorov-Arnold网络变体",
+      "llm_tldr_en": "MKAN introduces a Kolmogorov-Arnold network variant with hard monotonicity guarantee for all parameters via exponential reparameterization, suitable for applications requiring monotonic constraints.",
+      "llm_tldr_cn": "现有KAN的单调性变体(MonoKAN)仅在部分参数上施加约束且需投影训练。本文提出MKAN，通过指数重参数化B样条系数、正边权值和单调基激活函数，保证所有参数严格单调。实验证明MKAN在单调性任务上表现优异，其透明性和灵活性有望用于通信等领域的可解释建模。",
+      "llm_tldr": "现有KAN的单调性变体(MonoKAN)仅在部分参数上施加约束且需投影训练。本文提出MKAN，通过指数重参数化B样条系数、正边权值和单调基激活函数，保证所有参数严格单调。实验证明MKAN在单调性任务上表现优异，其透明性和灵活性有望用于通信等领域的可解释建模。",
+      "llm_tags": [
+        "query:channel-nn"
+      ],
+      "matched_query_tag": "query:channel-nn",
+      "matched_query_text": "Kolmogorov-Arnold networks in communication",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

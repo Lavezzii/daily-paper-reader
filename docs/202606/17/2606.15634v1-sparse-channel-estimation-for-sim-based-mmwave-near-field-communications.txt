@@ -1,0 +1,1490 @@
+Title: Sparse Channel Estimation for SIM-based mmWave Near-Field Communications
+
+URL Source: https://arxiv.org/pdf/2606.15634v1
+
+Published Time: Tue, 16 Jun 2026 01:20:28 GMT
+
+Number of Pages: 17
+
+Markdown Content:
+DRAFT 1
+
+# Sparse Channel Estimation for SIM-based mmWave Near-Field Communications 
+
+Xianghao Yao, Jiancheng An, Senior Member, IEEE, Enyu Shi, Jiayi Zhang, Senior Member, IEEE, Lu Gan, Member, IEEE, Michail Matthaiou, Fellow, IEEE, Symeon Chatzinotas, Fellow, IEEE, and Marco Di Renzo, Fellow, IEEE 
+
+Abstract—Accurate acquisition of channel state information (CSI) is essential for fully harnessing the potential of stacked intelligent metasurfaces (SIMs) in communication systems. In this paper, we address the channel estimation (CE) problem in SIM-based multi-user (MU) millimeter-wave (mmWave) near-field communication systems. To address the severe path loss 
+
+This work was supported by the National Natural Science Foun-dation of China (NSFC) under Grant 62471096. The work of M. Matthaiou was supported by the European Research Council (ERC) under the European Union’s Horizon 2020 research and innovation programme (grant agreement No. 101001331). This paper has been presented in part at the IEEE International Conference on Commu-nications (ICC), June 2025 [1]. (Corresponding Author: Jiancheng An.) X. Yao and L. Gan are with the School of Information and Communication Engineering, University of Electronic Science and Technology of China (UESTC), Chengdu, Sichuan 611731, China, and also with the Yibin Institute of UESTC, Yibin 644000, China (e-mail: xianghao_yao@163.com; ganlu@uestc.edu.cn). J. An is with the School of Electronic Science and Engineering, University of Electronic Science and Technology of China (UESTC), Chengdu, 611731, China (e-mail: jiancheng.an@uestc.edu.cn). E. Shi and J. Zhang are with the State Key Laboratory of Advanced Rail Autonomous Operation, and also with the School of Electronics and Information Engineering, Beijing Jiaotong University, Beijing 100044, P. R. China (e-mail: enyushi, jiayizhang@bjtu.edu.cn). M. Matthaiou is with the Centre for Wireless Innovation (CWI), Queen’s University Belfast, BT3 9DT Belfast, U.K. (email: m.matthaiou@qub.ac.uk). S. Chatzinotas is with SnT, University of Luxembourg, 1855 Luxembourg City, Luxembourg, and with College of Electronics & Information, Kyung Hee University, Yongin-si, 17104, Republic of Korea (e-mail: symeon.chatzinotas@uni.lu). M. Di Renzo is with CNRS and CentraleSupélec, Institute of Electronics and Digital Technologies (IETR), Avenue de la Boulaie, 35576 Cesson-Sévigné, France (marco.direnzo@centralesupelec.fr), and with King’s College London, Department of Engineering - Cen-tre for Telecommunications Research, WC2R 2LS London, United Kingdom (marco.di_renzo@kcl.ac.uk). The work of M. Di Renzo was supported in part by the Euro-pean Research Council (ERC) under the European Union’s Horizon Europe Programme WePhICom (agreement number 101225119), as well as by the European Union through the Horizon Europe project COVER under grant agreement number 101086228, the Horizon Eu-rope project UNITE under grant agreement number 101129618, the Horizon Europe project INSTINCT under grant agreement number 101139161, and the Horizon Europe project TWIN6G under grant agreement number 101182794, as well as by the Agence Nationale de la Recherche (ANR) through the France 2030 project ANR-PEPR Networks of the Future under grant agreement NF-PERSEUS 22-PEFT-004, and by the CHIST-ERA project PASSIONATE under grant agreements CHIST-ERA-22-WAI-04 and ANR-23-CHR4-0003-01. Also, the work of M. Di Renzo was supported in part by the Engineering and Physical Sciences Research Council (EPSRC), part of UK Research and Innovation, and the UK Department of Science, Innovation and Technology through the CHEDDAR Telecom Hub under grant EP/Y037421/1, through the HASC Telecom Hub under grant EP/Y037197/1, and through the TITAN Telecom Hub under grant EP/Y037243/1. 
+
+and blockage in mmWave communication systems, many meta-atoms are typically integrated into each layer of the SIM. Then, the number of radio frequency (RF) chains at the base station (BS) is fewer than that of meta-atoms per layer, resulting in an underdetermined problem. Additionally, the increase in the number of meta-atoms in each layer expands the SIM’s near-field region, leading to the user equipment (UEs) being mostly situated in this region, necessitating precise modeling of the channel under the spherical wavefront assumption. To address these issues, we introduce a compressed sensing (CS)-based CE protocol to tackle the underdetermined problem. In contrast to the traditional CS-based estimation framework, we investigate a polar-domain channel representation to tackle the severe energy spread effect of the classical angular-domain channel representation in near-field communication systems. Specifically, we design a novel polar-domain transform matrix for uniform planar arrays (UPAs), thereby transforming the CE problem into a sparse recovery task of the paths’ support set and complex gains. To overcome the limitations of the sparse Bayesian learning (SBL) framework in tackling high-dimensional dictionaries, we propose a low-complexity polar-domain SBL (LCPD-SBL) algorithm, which significantly re-duces computational complexity without compromising esti-mation accuracy. Numerical simulation results demonstrate that the proposed polar-domain transform matrix yields abetter estimation accuracy than traditional angular-domain approaches. Additionally, the proposed LCPD-SBL algorithm can be faster than existing SBL methods by up to 4× while sustaining the same estimation performance. Index Terms—Channel estimation (CE), millimeter-wave (mmWave), near-field, stacked intelligent metasurface (SIM), sparse Bayesian learning (SBL). 
+
+I. Introduction A. Background Millimeter-wave (mmWave) communication systems op-erating in the 30 −300 GHz range offer higher data trans-mission rates and lower latency [2], [3]. However, mmWave communication faces significant challenges due to high atmospheric attenuation from oxygen absorption and poor diffraction when encountering obstacles, resulting in severe path loss and blocking/outage phenomena [4]. Fortu-nately, the smaller wavelength enables the transmitters and receivers to deploy more antenna elements, facili-tating multiple-input multiple-output (MIMO) systems that combat path loss with beamforming gain [2]. This, however, introduces complexity for hardware design and results in increased power consumption and cost for radio-frequency (RF) chains. This discussion underscores the  
+
+> arXiv:2606.15634v1 [cs.IT] 14 Jun 2026 DRAFT 2
+
+pressing necessity for advanced transceiver technology with high energy efficiency [5]. To address these issues, the disruptive stacked intelli-gent metasurface (SIM) technology has emerged thanks to its fewer RF chains and low power consumption [6]– [18]. Specifically, an SIM consists of multiple stacked layers of programmable metasurfaces, each layer equipped with many low-cost nearly-passive meta-atoms [19]–[23]. Within the multi-layered structure of the SIM, electro-magnetic (EM) waves transmitted through the preceding layer’s meta-atoms serve as secondary point sources, ir-radiating all subsequent layers’ meta-atoms, following the Huygens–Fresnel principle [24]. Each meta-atom in an SIM can function as a reprogrammable artificial neuron with adjustable weights, resembling a fully connected artificial neural network, allowing the SIM to adjust the EM response of each meta-atom by tunning the bias voltage of the attached control circuit [10]–[17]. Additionally, by properly configuring each layer’s meta-atom complex-valued transmission coefficients, the SIM can manipulate the EM waves propagating at the speed of light in a layer-by-layer manner enabling it to accomplish advanced signal processing tasks [25]–[27]. 1
+
+Leveraging the wave-domain beamforming capabilities, recent research has focused on integrating SIMs with transceivers, replacing expensive active components with programmable metasurfaces to achieve signal processing during the wireless propagation [6]–[17]. More specifically, An et al. proposed an SIM-based holographic MIMO (HMIMO) framework [19], where EM waves transmitted through the SIM automatically undergo transmit pre-coding and receive combining. This architectural design significantly reduces the number of RF chains [19]. By capitalizing on this advanced framework, Papazafeiropou-los et al. proposed a projected gradient ascent (PGA) algorithm to simultaneously optimize the transmitted signal covariance matrix and the SIM’s phase shifts to effectively maximize the achievable rate [7]. Furthermore, Shi et al. applied SIM technology to a cell-free massive MIMO network, aiming to enhance both spectral and energy efficiency [29]. Although the advantages of SIM-based communication systems have been preliminarily validated via both theo-retical analysis and experimental results, significant chal-lenges remain in practical deployments [30]–[32]. Specifi-cally, precise channel state information (CSI) is indispens-able for realizing wave-domain beamforming and desired signal processing functions. However, a large number of meta-atoms are typically integrated into each layer of the SIM to achieve effective wave-based beamforming and fully exploit array gains to mitigate path loss in mmWave communications [19], [25]. This imposes two critical obstacles to channel estimation (CE) within SIM-based mmWave communication systems:  
+
+> 1In recent studies, SIM prototypes have been shown to be able to implement MIMO precoding, direction of arrival (DoA) estimation, etc. within the wave domain [28].
+> •
+
+Underdetermined Problem: Due to the passive nature of meta-atoms, SIMs generally lack the capability to actively sense or estimate the individual wireless channels associated with each meta-atom. As a result, the base station (BS) does not have prior knowledge of the effective channel subspace. Moreover, the large-scale deployment of meta-atoms leads to a substantial increase in the channel dimensionality. Given the limited number of RF chains available at the BS, CE for a large number of meta-atoms naturally results in an underdetermined estimation problem.  
+
+> •
+
+Expansion of Near-Field Region: In SIM-aided sys-tems, the increased number of meta-atoms in each layer results in an enlargement of the aperture and expands the near-field region [33]. Hence, precise modeling of the spherical wavefronts is indispensable for integrating the SIM technology in mmWave com-munication systems. B. Related Works Some recent studies have proposed various solutions to partially tackle the aforementioned challenges [37], [38]. For instance, Yao et al. proposed a CE protocol for multi-user (MU) multiple-input single-output (MISO) systems, where different user equipment (UEs) transmit mutually orthogonal pilot sequences to the BS over multiple pilot blocks [37]. In this approach, the BS alleviates the un-derdetermined nature of the CE problem by collecting multiple replicas of the pilot signals, thereby effectively increasing the number of observations. However, the number of required pilot blocks scales linearly with the number of meta-atoms in the last SIM layer, which leads to excessive pilot overhead and limits the scalability of the conventional CE scheme in large-scale SIM-assisted systems. Additionally, Nadeem et al. developed a hybrid digital-wave domain CE framework, which first processes the received training symbols in the wave domain by configuring the SIM, followed by low-complexity digital-domain processing [38]. The wave-domain estimator is optimized via a gradient descent algorithm that iteratively minimizes the channel estimator’s mean squared error (MSE). Notably, the linear CE approaches in [37], [38] still incur substantial pilot overhead. In conventional mmWave communication systems without SIMs, to reduce the pilot overhead, several CE schemes incorporating compressed sensing (CS) techniques have been developed [34]–[36]. Specifically, Lee et al. exploited the channel sparsity in the angular domain by establishing a parameterized channel model with quantized angles of departure/arrival (AoDs/AoAs). This approach converts the CE problem into a sparse signal recovery task. To solve this task, an orthogonal matching pursuit (OMP) algorithm was applied to efficiently estimate the AoDs/AoAs and their corresponding gains in [34]. However, this approach as-sumes that AoDs/AoAs are discrete (on-grid), and thus the accuracy is limited by the grid resolution. To address DRAFT 3                                          
+
+> TABLE I Comparison Between the Proposed CE Scheme and Related Works Reference System SIM Near/Far-field Transform Array Algorithms Lee et al. [34] MIMO ×Far-field Angular domain UPA OMP Mishra et al. [35] MIMO ×Far-field Angular domain UPA SBL Cui et al. [36] MIMO ×Near-field Polar domain ULA P-SOMP, P-SIGW Yao et al. [37] MU MISO ✓Far-field ×UPA Codebook Nadeem et al. [38] MU MISO ✓Far-field ×UPA Gradient descent This paper MU MISO ✓Near-field Polar domain UPA LCPD-SBL
+> P-SOMP: Polar-domain simultaneous orthogonal matching pursuit algorithm. P-SIGW: Polar-domain simultaneous iterative gridless weighted algorithm.
+
+this issue, Mishra et al. conceived a sparse Bayesian learning (SBL)-based CE framework for hybrid mmWave MIMO systems, which achieves significant performance gains over OMP in both on-grid and practical scenarios [35]. However, existing low-overhead CE schemes rely heavily on the channel sparsity in the angular domain [34]–[36]. Such sparsity may be unachievable in SIM-based near-field communication systems, as the classical angular-domain channel representation introduces severe energy spread effect [36]. Specifically, the energy of a single near-field path component spreads across multiple angles, causing the angular-domain representation of the near-field channel to no longer be sparse. To deal with this issue, Cui et al. [36] designed a polar-domain transform matrix to convert the near-field channel into a polar-domain representation that simultaneously considers angular and distance dimensions, ensuring the near-field channel spar-sity in the polar domain. However, the designed polar-domain transform matrix is only applicable to uniform linear arrays (ULAs). C. Motivation and Contributions In a nutshell, existing CE schemes cannot be directly implemented in our system due to the following reasons: 1) Current CE schemes for SIM-based communication systems typically lead to significant pilot overhead. 2) Most low-overhead CE methods in mmWave com-munication systems rely on the channel sparsity in the angular domain. Although [36] accounted for the energy spread effect in the near field, the polar-domain transform matrix proposed was designed for ULAs, whereas SIMs are typically implemented by uniform planar arrays (UPAs). 3) Due to the large-scale deployment of meta-atoms on each SIM layer, the channel in our system is inherently high-dimensional. Therefore, conven-tional SBL-based CE schemes, which involve high-dimensional matrix inversion and storage, are com-putationally intensive and impractical. To address these issues, we design a novel polar-domain transform matrix for UPAs to transform the CE problem into a sparse recovery task of the paths’ support set and corresponding complex gains. To elaborate, we have summarized the comparison between our contributions and related works in Table I. The specific contributions of our work are outlined below: 1) We introduce a CE protocol for SIM-based up-link mmWave near-field communication systems. To mitigate MU interference, we employ mutually orthogonal pilot sequences sent from multiple UEs to the BS. Furthermore, we leverage the CS framework to effectively tackle the underdetermined problem. Multiple successive blocks of pilot signals are ac-quired for enhancing uplink CE performance. 2) We develop a polar-domain representation of the near-field channel, thereby transforming the CE problem into a sparse recovery task of the paths’ support set and complex gains. Additionally, to minimize the column coherence of the polar-domain transform matrix, we propose effective angular and distance sampling methods to construct a polar-domain transform matrix for the UPAs. 3) The SBL framework is employed to solve the sparse signal recovery task. To alleviate the computational burden of the SBL’s inference process, we pro-pose a low-complexity polar-domain SBL (LCPD-SBL) algorithm by introducing a cost-efficient covariance-free expectation-maximization (CoFEM) algorithm to replace the predominant expectation-maximization algorithm in the SBL’s inference pro-cess. 4) Finally, numerical results are presented to demon-strate the performance superiority of the CE meth-ods based on the proposed polar-domain transform matrix over the existing angular-domain approaches. Moreover, the proposed LCPD-SBL algorithm can be faster than existing SBL methods by up to 4×
+
+while achieving the same normalized mean squared error (NMSE) performance. D. Organization and Notations The remainder of this paper is structured as follows: In Section II, the SIM-based mmWave near-field communi-cation system, channel model, and CE protocol are intro-duced. In Section III, the polar-domain representation of the near-field channel and the design method of the polar-domain transform matrix are given. Section IV presents DRAFT 4                       
+
+> TABLE II Major Symbols and Their Definitions Symbol Meaning
+> L/K/Q Number of SIM layers / UEs / propagation paths
+> λ/σ 2
+> n/κ Wavelength / Noise power / Control parameter
+> M/N Number of BS antennas / meta-atoms on each layer
+> NH/N VNumber of meta-atoms per row / column
+> ΨNumber of pilot blocks
+> τpLength of pilot sequences
+> ∆Distance between adjacent meta-atoms
+> pkAverage power of the k-th UE’s pilot signals
+> NGNumber of sampled near-field array response vectors
+> sk/ΠPilot sequence sent by the k-th UE / Sensing matrix
+> b(·)Near-field array response vector
+> BProposed polar-domain transform matrix
+> ΦlTransmission coefficient matrix for the l-th SIM layer
+> GSIM-based wave-domain beamforming matrix
+> hHkPropagation channel from the last SIM layer to the k-th UE
+
+the LCPD-SBL algorithm. We provide numerical results in Section V, while Section VI summarizes the paper’s findings and concludes the work. Notations: Table II summarizes the key notations and their definitions used in this paper. Scalar variables are denoted by lower-case letters (e.g., x), column vectors by bold lower-case letters (e.g., x), and matrices by bold upper-case letters (e.g., X). For any vector x, its ℓp-norm takes the form ∥x∥p. For any matrix X, its transpose, conjugate transpose, and inverse are denoted as XT , XH ,and X−1, respectively; IN denotes the N × N identity matrix; CM ×N denotes the space of all complex M × N
+
+matrices. Vertical concatenation of matrices X and Y
+
+is denoted by [X; Y], while horizontal concatenation is denoted by [X, Y]. A complex Gaussian random variable with mean μ and covariance Σ is denoted by CN (μ, Σ),whereas a uniform distribution between a and b is denoted by U(a, b ). The expectation operator is denoted by E {·} ,and the operator diag (a) denotes the construction of a diagonal matrix from the vector a. The absolute value of a scalar is denoted by |·| , and the symbol ∼ indicates “distributed as”. Finally, ⌈x⌉ is defined as the smallest integer greater than or equal to x.II. System and Channel Models In this section, we introduce the system model, channel model, and CE protocol for an SIM-based uplink mmWave near-field communication system. A. System Model As illustrated in Fig. 1, a BS equipped with a ULA having M antennas serves K single-antenna UEs. The SIM is integrated with the radome of the BS and connected        
+
+> Fig. 1. The SIM-based MU mmWave near-field communication system.
+
+to an intelligent controller, such as a field programmable gate array (FPGA) board. This configuration enables the SIM to impose a separate and adjustable phase shift to the EM waves propagated through each meta-atom. Thanks to the multi-layer structure, the SIM can perform advanced signal processing tasks directly within the wave domain [25]. Specifically, the SIM consists of L metasurface layers, with each layer modeled as a UPA containing N meta-atoms, where we have N ≫ M [25]. The number of meta-atoms in each row and each column of the SIM in each layer is denoted as NH and NV , respectively, resulting in N = NH × NV . Also, ∆ denotes the distance between adjacent meta-atoms, while each meta-atom has a length of dx and a width of dy . The index sets 
+
+L = {1, 2, . . . , L }, M = {1, 2, . . . , M }, N = {1, 2, . . . , N }
+
+and K = {1, 2, . . . , K } are defined to correspond to the metasurface layers, antennas at the BS, meta-atoms on each SIM layer, and UEs, respectively. Additionally, ˇrn,m 
+
+denotes the spacing between the m-th antenna and the 
+
+n-th meta-atom of the first SIM layer; dt denotes the horizontal distance between the antenna array and the first SIM layer; dLayer denotes the spacing between two adjacent SIM layers. The transmission coefficient of the n-th meta-atom on the l-th SIM layer is denoted by ejθ ln , where θln ∈ [0 , 2π).As shown in Fig. 1, we assume that all layers of the SIM are parallel to each other, and the centers of all metasurface layers are in the same horizontal line in this paper. Furthermore, the transmit antenna array is arranged in parallel with the SIM, with all UEs positioned within the near-field region [39]. According to [25], the transmission coefficient matrix for the l-th SIM layer is given by 
+
+Φl = diag 
+
+(
+
+ejθ l 
+
+> 1
+
+, e jθ l 
+
+> 2
+
+, . . . , e jθ lN
+
+)
+
+∈ CN ×N . (1) Moreover, Wl ∈ CN ×N , ∀l̸ = 1, l ∈ L denotes the transmission matrix from the (l − 1) -th to the l-th SIM layer. Based on Rayleigh-Sommerfeld’s diffraction theory [40], we obtain the (n, n ′)-th element of Wl is 
+
+wln,n ′ = dxdy dLayer 
+
+(
+
+dln,n ′
+
+)2
+
+(
+
+12πd ln,n ′
+
+− 1
+
+λ j
+
+)
+
+ej2πd ln,n ′ /λ , (2) DRAFT 5
+
+where dln,n ′ denotes the propagation distance from the 
+
+n′-th meta-atom on the (l − 1) -th SIM layer to the n-th meta-atom on the l-th SIM layer. Additionally, the transmission vector w1 
+
+> m
+
+∈ CN ×1 from the m-th antenna to the first SIM layer can be calculated by replacing dln,n ′
+
+and dLayer in (2) with ˇrn,m and dt.Consequently, the SIM-based wave-domain beamform-ing matrix can be written as follows 
+
+G = ΦLWL · · · Φ2W2Φ1 ∈ CN ×N . (3) Remark 1: We assume that the transmission coefficients among neighboring SIM layers are ideal. In reality, devia-tions in the inter-layer transmission coefficients may exist due to the manufacturing precision limitations of meta-material elements and deformations during assembly [41]. Consideration of joint inter-layer transmission coefficient calibration and CE will be pursued in our future research. B. Propagation Channel Model As a reasonable case study, we adopt a narrowband quasi-static flat fading channel model [42]. Since the mmWave channel generally has a restricted number of scatterers, we adopt a clustered channel model comprising 
+
+Q scattering clusters, where each cluster has a propaga-tion path between the UE and the SIM. Therefore, the mmWave channel from the k-th UE to the last SIM layer can be expressed as [3], [43], [44] 
+
+hk =
+
+√
+
+NQ
+
+> Q
+
+∑
+
+> q=1
+
+βq,k b (ϑq,k , γ q,k , r q,k ) , (4) where βq,k is the complex gain corresponding to the q-th path of the k-th UE, ϑq,k ∈ [− π 
+
+> 2
+
+, π
+
+> 2
+
+] , γ q,k ∈ [− π 
+
+> 2
+
+, π
+
+> 2
+
+] are the associated azimuth and elevation AoAs, and rq,k is the distance between the UE (scatterer) and the center of the last SIM layer associated with the q-th path of the 
+
+k-th UE. Unlike the far-field array response vector derived under the planar wave assumption, the near-field array response vector is formulated based on the more accurate spherical wave assumption, expressed as [36] 
+
+b (ϑq,k , γ q,k , r q,k )= 1
+
+√N
+
+[
+
+e−j 2πλ (r1  
+
+> q,k −rq,k
+
+); . . . ; e−j 2πλ (rNq,k −rq,k )]
+
+, (5) where rnq,k denotes the propagation distance between the 
+
+k-th UE (scatterer) and the n-th meta-atom on the last SIM layer associated with the q-th path. Note that rnq,k 
+
+can be derived from ϑq,k , γ q,k , and rq,k , where the details will be provided in Section III-B. C. CE Protocol We address uplink CE in SIM-based mmWave commu-nication systems in this paper. As depicted in Fig. 2, the estimation stage involves multiple blocks. In each block, 
+
+K UEs send mutually orthogonal pilot sequences of length  
+
+> Fig. 2. The proposed CE protocol.
+
+τp to the BS. The pilot signal transmitted by the k-th UE during the t-th time slot sk,t satisfies 
+
+> τp
+
+∑
+
+> t=1
+
+sk,t s∗ 
+
+> k′,t
+
+=
+
+{
+
+τp, if k = k′,
+
+0, if k̸ = k′. (6) It is worth noting that to generate K orthogonal se-quences, sk’s length must satisfy τp ≥ K. In this paper, to minimize the orthogonal pilot overhead, we set τp = K
+
+[37]. As shown in Fig. 2, during the t-th time slot of the 
+
+ψ-th block, the signal received by the m-th antenna can be expressed as 
+
+ym,ψ,t = (w1
+
+> m
+
+)H GHψK∑
+
+> k′=1
+
+hk′
+
+√pk′ sk′,t + nm,ψ,t , (7) where pk denotes the average power of the k-th UE’s pilot signal, Gψ ∈ CN ×N denotes the SIM-based wave-domain beamforming matrix in the ψ-th block, nm,ψ,t ∼CN (0, σ 2
+
+> n
+
+) denotes the noise received at the m-th antenna during the t-th time slot of the ψ-th block, while σ2 
+
+> n
+
+is the noise power. Upon collecting the output signals associated with M antennas during the t-th time slot of the ψ-th block, we arrive at 
+
+yψ,t = WH GHψK∑
+
+> k′=1
+
+hk′
+
+√pk′ sk′,t + nψ,t , (8) where yψ,t = [ y1,ψ,t ; y2,ψ,t ; . . . ; yM,ψ,t ] ∈ CM ×1 denotes the received signal, W = [w11, w12, . . . , w1
+
+> M
+
+] ∈ CN ×M
+
+denotes the transmission matrix from the BS to the first SIM layer, and nψ,t = [ n1,ψ,t ; n2,ψ,t ; . . . ; nM,ψ,t ] ∈ CM ×1
+
+denotes the noise vector, during the t-th time slot of the 
+
+ψ-th block, respectively. After collecting the received signals over τp time slots in the ψ-th block, we have 
+
+Yψ = WH GHψK∑
+
+> k′=1
+
+hk′
+
+√pk′ sTk′ + Nψ , (9) where Yψ = [yψ, 1, yψ, 2, . . . , yψ,τ p
+
+] ∈ CM ×τp denotes the received signal, sk = [sk, 1; sk, 2; . . . ; sk,τ p
+
+] ∈ Cτp×1
+
+denotes the pilot sequence sent by the k-th UE, and 
+
+Nψ = [nψ, 1, nψ, 2, . . . , nψ,τ p
+
+] ∈ CM ×τp denotes the noise in τp time slots of the ψ-th block, respectively. Next, the DRAFT 6
+
+k-th UE’s signal in the ψ-th block can be obtained by right-multiplying s∗ 
+
+> k
+
+on both sides of ( 9), yielding 
+
+¯yk,ψ = √pkτpWH GHψ hk + Nψ s∗
+
+> k
+
+, (10) where ¯yk,ψ = Yψ s∗ 
+
+> k
+
+∈ CM ×1 denotes the received signal vector of the k-th UE within the ψ-th block, corresponding to M antennas. Note that the dimension of the channel ( N ) is higher than that of the observation signal ( M ), thereby creating an underdetermined problem. Hence, directly applying the conventional CE methods often results in substantial pilot overhead [37], [38]. To tackle this issue, we consider leveraging the CS technique to effectively reduce the pilot overhead. Additionally, to enhance the CE performance, we stack observations over Ψ blocks, yielding 
+
+˜yk = √pkτpPh k + ˜ nk, (11) where ˜yk = [¯yk, 1; ¯yk, 2; . . . ; ¯yk, Ψ] ∈ CΨM ×1 denotes the received signal vector of the k-th UE, P =[WH GH 
+
+> 1
+
+; WH GH 
+
+> 2
+
+; . . . ; WH GH
+
+> Ψ
+
+] ∈ CΨM ×N denotes the transmission matrix from the last SIM layer to the BS, and ˜nk = [ N1s∗
+
+> k
+
+; N2s∗
+
+> k
+
+; . . . ; NΨs∗
+
+> k
+
+] ∈ CΨM ×1 denotes the noise, over Ψ successive blocks, respectively. In the next section, we will introduce the polar-domain representation of the channel hk, leveraging the channel sparsity in the polar domain to reformulate and solve the CE problem in (11). III. Polar-Domain Representation for SIM-based Communication Systems In this section, we investigate the polar-domain repre-sentation of the mmWave channel between the UE and the last layer of the SIM. We aim to construct a polar-domain transform matrix that can approximately represent the near-field channels of all UEs without requiring prior knowledge of their exact propagation parameters. To this end, we further propose angular and distance sampling methods to generate the polar-domain transform matrix for UPAs that yields the optimal estimation performance. A. Polar-Domain Representation of the Near-Field Chan-nel Specifically, the near-field channel defined in (4) can be expressed in a more concise form as [44] 
+
+hk = Bkβk, (12) where βk =
+
+√ NQ [β1,k ; β2,k ; . . . ; βQ,k ] ∈ CQ×1, Bk =[b (ϑ1,k , γ 1,k , r 1,k ) , . . . , b (ϑQ,k , γ Q,k , r Q,k )] ∈ CN ×Q rep-resents the transform matrix that contains the near-field array response vectors corresponding to the last SIM layer. From (5), it can be observed that the phase of each element in the near-field array response vector is non-linear to the meta-atom index n. Therefore, we cannot directly convert the channel to its angular domain via a Fourier transform matrix to obtain a sparse repre-sentation of hk [36]. Taking this into account, next we aim to design a uniform polar-domain transform matrix 
+
+B = [b ( ¯ϑ1, ¯γ1, ¯r1
+
+) , . . . , b ( ¯ϑNG , ¯γNG , ¯rNG
+
+)] ∈ CN ×NG for the UPA to transform the channel into its polar-domain representation, where NG is the number of the sampled near-field array response vectors, while ¯ϑq , ¯γq , and ¯rq
+
+are the corresponding channel parameters at the sampled points. It can be observed that when NG is sufficiently large, we can reasonably assume that the polar-domain transform matrix B is capable of covering all the actual near-field array response vectors present in the mmWave channels of the K UEs. Therefore, the polar-domain representation of the near-field channel between the k-th UE and the last SIM layer can be given by 
+
+hk = B ¯βk, (13) where ¯βk =
+
+√ NQ
+
+[ ¯β1,k ; ¯β2,k ; . . . ; ¯βNG,k 
+
+] ∈ CNG×1, with each of its entries denoting the complex gain associated with the corresponding path of the k-th UE. Therefore, ¯βk
+
+is a sparse vector with Q non-zeros entries. Substituting (13) into (11), we have 
+
+˜yk = √pkτpPB ¯βk + ˜ nk
+
+= Π ¯βk + ˜ nk, (14) where Π = √pkτpPB ∈ CΨM ×NG is the sensing matrix. In (14), the CE problem is reformulated as a sparse recovery task of the paths’ support set and complex gains. Hence, several classical CS techniques, such as SBL, can be used to estimate the sparse vector ¯βk [45]. However, in the CS framework [46], stable channel recovery accuracy is guaranteed by minimizing the column coherence μ of the polar-domain transform matrix B, which is defined as [36], [46] 
+
+μ ∆
+
+= max p̸ =q f (ϑp, ϑ q , γ p, γ q , r p, r q ) , (15) where f (ϑp,ϑ q ,γ p,γ q ,r p,r q ) ∆
+
+=
+
+∣∣∣b (ϑp, γ p, r p)H b (ϑq , γ q , r q )
+
+∣∣∣
+
+characterizes the column coherence between two near-field array response vectors in the polar-domain transform matrix. Crucially, the effectiveness of a low column coherence design is predicated on the mmWave near-field channel being sufficiently sparse in the polar domain, such that a polar-domain transform matrix B, with finely sampled near-field array response vectors, yields well-separated sampling points in the space. Although increasing the size of B and reducing its coherence both tend to improve estimation accuracy, finer angular and distance sampling usually increases column coherence of the sensing matrix, revealing an intrinsic trade-off between dictionary size and recoverability. To mitigate this, we propose effective angular and distance sampling methods to reduce μ of the polar-domain transform matrix. B. Column Coherence of the Polar-Domain Transform Matrix As shown in Fig. 3, by setting the center of the last SIM layer as the origin, the coordinates of the n-th meta-atom DRAFT 7  
+
+> Fig. 3. The near-field channel model with the q-th path.
+
+relative to this origin are given by (0 , Y n, Z n). Moreover, 
+
+Yn and Zn denote the horizontal and vertical distances of the n-th meta-atom from the origin, respectively, which can be calculated as 
+
+Yn =
+
+(
+
+H (n) − NH + 1 2
+
+)
+
+∆, (16) 
+
+Zn =
+
+(
+
+V (n) − NV + 1 2
+
+)
+
+∆, (17) where H (n) = mod (n − 1, N H ) + 1 and V (n) = ⌈n/N H ⌉
+
+denote the horizontal and vertical indices of meta-atom 
+
+n, respectively. For simplicity, we define ν ∆
+
+= sin (γ), and 
+
+ι ∆
+
+= cos ( γ) sin ( ϑ). Therefore, the propagation distance between the q-th scatterer and the n-th meta-atom of the last SIM layer can be given by 2
+
+rnq =
+
+√
+
+r2 
+
+> q
+
+− 2rq ιq Yn − 2rq νq Zn + Y 2 
+
+> n
+
++ Z2
+
+> n
+> (a)
+
+≈ rq − ιq Yn − νq Zn + Y 2 
+
+> n
+
++ Z2
+
+> n
+
+2rq
+
+,
+
+(18) where (a)
+
+≈ is derived by applying the Taylor approximation √1 + x ≈ 1 + x 
+
+> 2
+
+[47], [48]. Inserting (18) into the function f (·) defined in (15), we obtain 
+
+¯f (νp, ν q , ι p, ι q , r p, r q )
+
+≈ 1
+
+N
+
+∣∣∣∣∣
+
+> N
+
+∑
+
+> n=1
+
+ej π(Y 2 
+
+> n+Z2
+> n
+
+)        
+
+> λ
+> (1
+> rp −1
+> rq
+> )
+> −j2πYn λ(ιp−ιq)−j2πZn λ(νp−νq)
+
+∣∣∣∣∣ .
+
+(19) Therefore, by adopting appropriate angular and distance sampling methods, we can reduce the column coher-ence between any two distinct near-field array response vectors in the polar-domain transform matrix B, thus improving the CS-based CE performance. However, it can be observed that obtaining angular and distance sampling methods directly from (19) is challenging [36]. To facilitate the subsequent analysis, next we will decouple the exponent term in (19) into two parts and obtain the individual sampling methods to minimize the column coherence of matrix B.
+
+> 2It is worth noting that when the propagation distance is large, the last term in (18) can be neglected, which yields the far-field array response vector.
+
+C. Proposed Sampling Method In this subsection, we present the angular and distance sampling methods to generate NG sampling points in the polar-domain transform matrix. Lemma 1 (Angular Sampling): For a given propagation distance, sampling the azimuth and elevation AoAs 
+
+νi = iλ − NV ∆
+
+NV ∆ , i = 1 , 2, . . . , 
+
+⌊ 2NV ∆
+
+λ
+
+⌋
+
+, (20a) 
+
+ιi = iλ − NH ∆
+
+NH ∆ , i = 1 , 2, . . . , 
+
+⌊ 2NH ∆
+
+λ
+
+⌋
+
+, (20b) 
+
+ι2 
+
+> i
+
++ ν2 
+
+> i
+
+≤ 1, (20c) yields that the column coherence asymptotically ap-proaches zero. Proof: Please refer to Appendix A. It is important to note that the angular sampling method for ULAs is a special case of Lemma 1. When the spacing is configured as ∆ = λ/ 2, the difference between any two elevation AoAs is |sin ( γp) − sin ( γq )| = 2iNV , for 
+
+i = 1 , 2, . . . , N V , which aligns with the existing angular sampling method designed for ULAs [36]. Unfortunately, the quadratic phase in (19) makes it difficult to derive the explicit distance sampling method. Therefore, we introduce a control parameter to obtain the distance sampling method to ensure the column coherence is below a given threshold. Lemma 2 (Distance Sampling): For an arbitrary thresh-old ϵ, one can find a control parameter κϵ to satisfy 
+
+> ⌢
+
+G (κϵ) = |G (ϖH )| × | G (ϖV )| ≤ ϵ, (21) where ⌢
+
+G (κϵ) is the theoretical column coherence of the polar-domain transform matrix corresponding to κϵ,
+
+ϖH = NH ∆√ κϵ 
+
+> 2λ
+
+, ϖV = NV ∆√ κϵ 
+
+> 2λ
+
+, while G (·) is given in Appendix B. If the sampling distances satisfy 
+
+ri = 1
+
+iκ ϵ
+
+, i = 1 , 2, . . . , (22) the column coherence of any two near-field array response vectors sampled at different distances is guaranteed to be less than or equal to ϵ. The proposed design of the polar-domain transform matrix differs from those in [36], [49], since the latter requires searching for each angular pair 
+
+(ν, ι ) to satisfy the distance ring (1 −ν)2(1 −ι)2 
+
+> r
+
+= c, where c
+
+is a constant. Proof: Please refer to Appendix B. D. Design of the Polar-Domain Transform Matrix According to the above observations, the polar-domain transform matrix’s column coherence is guaranteed to be lower than the threshold ϵ when the angular pairs (ν, ι )
+
+satisfy the uniform sampling method in (20a), (20b), (20c), and the distance r satisfies the non-uniform sampling method in (22). For illustration purposes, Fig. 4 shows the sampling points for a 128 × 32 metasurface corresponding to the last layer of the SIM, with a carrier frequency of 30 GHz .Additionally, the spacing between adjacent meta-atoms is DRAFT 8       
+
+> (a) Sampling points. (b) Sampling points for γ= 0 .(c) Sampling points for ϑ= 0 .
+> Fig. 4. Illustration of the sampling points based on the proposed polar-domain codebook for UPAs, where the blue points denote the sampling points, and the red lines denote the sampling azimuth and elevation angles, respectively.
+
+Algorithm 1 The generation of the polar-domain transform matrix B
+
+Input: Number of meta-atoms in each row NH ; number of meta-atoms in each column NV ; meta-atom spacing 
+
+∆; wavelength λ; threshold ϵ.Output: Polar-domain transform matrix B. 
+
+> 1:
+
+Compute the Fresnel and Rayleigh distance rF and 
+
+rR. 
+
+> 2:
+
+Compute the control parameter κϵ from (21).  
+
+> 3:
+
+Initialize u = 0 ; ir = 0 ; r = 1 / (ir κϵ). 
+
+> 4:
+
+while r > r F & r < r R do  
+
+> 5:
+
+for i = 1 , 2, . . . , ⌊ 2NV ∆
+
+> λ
+
+⌋ do  
+
+> 6:
+
+Select νi from (20a) .  
+
+> 7:
+
+for j = 1 , 2, . . . , ⌊ 2NH ∆
+
+> λ
+
+⌋ do  
+
+> 8:
+
+Select ιj from (20b) .  
+
+> 9:
+
+if ν2 
+
+> i
+
++ ι2 
+
+> j
+
+≤ 1 then  
+
+> 10:
+
+u ← u + 1 . 
+
+> 11:
+
+Construct bu (νi, ι j , r ) from (5).  
+
+> 12:
+
+end if  
+
+> 13:
+
+end for  
+
+> 14:
+
+end for  
+
+> 15:
+
+ir ← ir + 1 ; r = 1 / (ir κϵ) 
+
+> 16:
+
+end while  
+
+> 17:
+
+B = [ b1, b2, . . . , bu]; NG = u. 
+
+> 18:
+
+return B.set to ∆ = λ/ 4. Fig. 4a demonstrates that the sampling points are located on multiple spheres with the center at the last SIM layer and the radius determined by the non-uniform distance sampling method. Figs. 4b and 4c show that the angular sampling points are uniformly distributed on each ring. After determining the polar-domain transform matrix, CE can be reformulated by recovering the propagation paths’ array response vector and complex gains. Nonethe-less, the CE accuracy is limited by the resolution of the polar-domain transform matrix, which can be represented by the number of sampling points NG = ia × ir , where 
+
+ia is the number of angular samples on each sphere, and 
+
+ir is the number of spheres along the distance dimension. In this paper, we limit the range of the distance sampling  
+
+> Fig. 5. Flowchart of the proposed near-field CE scheme.
+
+points to (rF , r R), where rF and rR denote the Fresnel and Rayleigh distances in the SIM-based mmWave near-field communication system [39]. The proposed polar-domain transform matrix’s generation procedure is summarized in Algorithm 1. IV. Proposed Near-Field CE Scheme In this section, we propose a CE scheme within the SBL framework by leveraging the near-field channel sparsity in the polar domain. Furthermore, the LCPD-SBL algorithm is developed by replacing the inversion computation with a linear system solver to reduce the computational and spatial complexity. A. Proposed SBL-Based CE Scheme As shown in Fig. 5, by utilizing the proposed CE protocol in Section II-C, the CE problem for each UE is independent of each other. Without loss of generality, next we will consider an arbitrary UE. Based on the polar-domain channel representation in Section III-A, the CE problem is transformed into a sparse recovery task of the paths’ support set and complex gains. In this paper, the advanced SBL framework is invoked to achieve superior sparse signal recovery. DRAFT 9
+
+Normally, in the SBL framework, a parameterized Gaus-sian prior is assigned to the weight vector ¯βk as follows [35], [45] 
+
+p ( ¯βk|ω) =
+
+> NG
+
+∏
+
+> i=1
+
+(2 πω i)− 12 e− ¯β2 
+
+> k,i
+> 2ωi
+
+, (23) where ω = [ ω1; ω2; . . . ; ωNG ] ∈ CNG×1, while the hyper-parameter ωi denotes the variance corresponding to the 
+
+i-th element of the weight vector ¯βk,i . It is worth noting that the Gaussian prior in (23) is imposed on the entire coefficient vector and does not require prior knowledge of the channel’s sparsity level or support set. Moreover, as 
+
+ωi → 0, the corresponding coefficient ¯βk,i → 0, indicating that the hyperparameter vector ω naturally encodes the channel sparsity. Therefore, estimating ¯βk reduces to estimating the hyperparameter vector ω.Generally, the expectation-maximization algorithm is utilized to estimate the hyperparameters within the SBL framework [35], [50]. Specifically, the fundamental idea of the expectation-maximization algorithm involves alter-nating iterations of the Expectation step (E-step) and the Maximization step (M-step). The E-step in the t-th iteration treats ¯βk as a hidden variable, and computes the log-likelihood function L (ω|ω(t−1) )
+
+L
+
+(
+
+ω|ω(t−1) )
+
+= Ep( ¯βk |˜yk ,ω(t−1) )
+
+{log p (˜yk, ¯βk|ω)} , (24) where ω(t−1) denotes the solution of the (t − 1) -th iter-ation. In the M-step, the t-th iteration’s solution ω(t) is obtained by maximizing L (ω|ω(t−1) ) with respect to ω
+
+[45] 
+
+ω(t) =
+
+arg max 
+
+> ω
+
+
+
+> NG
+
+∑
+
+> i=1
+
+log 
+
+(
+
+2πω (t−1) 
+
+> i
+
+)− 12
+
+−
+
+∣∣∣[
+
+μ(t)¯βk
+
+]
+
+> i
+
+∣∣∣2
+
++
+
+[
+
+Σ(t)¯βk
+
+]
+
+> i,i
+
+2ω(t−1) 
+
+> i
+
+ ,
+
+(25) where 
+
+[
+
+μ(t)¯βk
+
+]
+
+> i
+
+and 
+
+[
+
+Σ(t)¯βk
+
+]
+
+> i,i
+
+is the i-th element of the mean vector μ(t)¯βk
+
+and the (i, i )-th element of the covariance matrix Σ(t)¯βk
+
+corresponding to the posterior distribution over the weight vector in the t-th iteration, respectively, that can be obtained by [45] 
+
+μ(t)¯βk
+
+= Σ(t)¯βk
+
+ΠH ˜yk
+
+τpσ2
+
+> n
+
+, (26) 
+
+Σ(t)¯βk
+
+=
+
+( ΠH Π
+
+τpσ2
+
+> n
+
++ Ω(t−1) −1
+
+)−1
+
+, (27) where Ω(t−1) = diag (ω(t−1) ). Note that the maximization problem in (25) can be divided into NG single-variable maximization problems involving only a single element of the hyperparameter vector. Therefore, we can obtain the optimal solution for each element individually, yielding 
+
+ω(t) 
+
+> i
+
+=
+
+∣∣∣[
+
+μ(t)¯βk
+
+]
+
+> i
+
+∣∣∣2
+
++
+
+[
+
+Σ(t)¯βk
+
+]
+
+> i,i
+
+. (28) This procedure is repeated until ∥∥ω(t) − ω(t−1) ∥∥2 ≤ ϵs
+
+or t ≥ T , where ϵs is the tolerable threshold and 
+
+T is the maximum number of iterations. Finally, the weight vector ¯βk, with each of its entries denoting the corresponding complex gain associated with the k-th UE can be estimated as ˆ¯βk = μ(t)¯βk
+
+. Thus, the SIM-based near-field mmWave channel from the k-th UE to the last SIM layer can be obtained by 
+
+ˆhk = Bˆ¯βk = Bμ(t)¯βk
+
+. (29) Notably, many meta-atoms are deployed on each layer of the SIM to implement effective wave-domain signal processing, thereby increasing the number of the sam-pled near-field array response vectors NG. Moreover, the expectation-maximization algorithm requires inver-sion and storage operations for the covariance matrix 
+
+Σ ¯βk ∈ CNG×NG in each iteration, leading to significant computational resources. B. Proposed LCPD-SBL Algorithm To overcome the limitations of the SBL framework for high-dimensional problems, we introduce a CoFEM algorithm as an alternative to the traditional expectation-maximization algorithm, and accordingly propose an LCPD-SBL algorithm to reduce the computational and spatial complexity [50]. In each iteration, the mean vector 
+
+μ ¯βk can be derived by solving a linear system, and the diagonal elements of covariance matrix Σ ¯βk can be obtained through a diagonal estimation rule in [50]. Specifically, after initializing the hyperparameters, in each iteration, we first rewrite (26) as 
+
+Aμ ¯βk = d, (30) where A = ΠH Π
+
+> τpσ2
+> n
+
++ Ω−1 ∈ CNG×NG and d = ΠH ˜yk
+
+> τpσ2
+> n
+
+∈
+
+CNG×1, transforming the computation of μ ¯βk into solving a linear system of equations. Moreover, based on the diagonal estimation rule, we can directly calculate the required diagonal elements of the covariance matrix without the need to invert the high-dimensional matrix to obtain the entire covariance matrix 
+
+Σ ¯βk and only the required covariance matrix’s diagonal elements need to be stored [50]. Specifically, we generate CNG-dimensional probing vectors d1, d2, . . . , dC following the Rademacher distribution, where each element of a probing vector is equally likely to be −1 or +1 to achieve an unbiased estimation of the diagonal elements of Σ ¯βk
+
+[50]. As a result, the (i, i )-th element of the covariance matrix Σ ¯βk can be estimated as 
+
+[Σ ¯βk
+
+] 
+
+> i,i
+
+= 1
+
+C
+
+> C
+
+∑
+
+> c=1
+
+Di,c · Xi,c , (31) where Di,c denotes the (i, c )-th element of D =[d1, . . . , dC , d] ∈ CNG×(C+1) , and Xi,c denotes the (i, c )-th element of X = [x1, . . . , xC , μ ¯βk
+
+] ∈ CNG×(C+1) , where 
+
+X is the matrix to be updated during each iteration. The mean vector μ ¯βk required for each iteration can be DRAFT 10 
+
+Algorithm 2 The proposed low-complexity polar-domain SBL algorithm Input: Received signal ˜yk ∈ CΨM ×1; maximum number of iterations T ; number of probe vectors C; tolerable threshold ϵs.Output: The estimated weight vector ˆ¯βk. 
+
+> 1:
+
+Construct the transmission matrix P according to (11).  
+
+> 2:
+
+Construct the proposed polar-domain transform ma-trix B by applying Algorithm 1.  
+
+> 3:
+
+Compute the sensing matrix Π = √pkτpPB . 
+
+> 4:
+
+Initialize ω(−1)  
+
+> i
+
+= 0 , ω(0)  
+
+> i
+
+= 1 for i = 1 , . . . , N G; t = 0 . 
+
+> 5:
+
+while t < T and ∥∥ω(t) − ω(t−1) ∥∥2 > ϵ s do  
+
+> 6:
+
+Update t ← t + 1 . 
+
+> 7:
+
+Define A = ΠH Π
+
+> τpσ2
+> n
+
++ Ω(t−1) −1, d = ΠH ˜yk
+
+> τpσ2
+> n
+
+. 
+
+> 8:
+
+Draw d1, d2, . . . , dC ∼ Rademacher distribution.  
+
+> 9:
+
+Construct D = [ d1,. . ., dC ,d], X =
+
+[
+
+x1,. . . , xC ,μ(t)
+
+> ¯βk
+
+]
+
+. 
+
+> 10:
+
+Solve AX = D by applying the PCG algorithm.  
+
+> 11:
+
+Update 
+
+[
+
+Σ(t)
+
+> ¯βk
+
+]
+
+> i,i
+
+according to (31).  
+
+> 12:
+
+Update ω(t) 
+
+> i
+
+according to (28).  
+
+> 13:
+
+end while  
+
+> 14:
+
+return ˆ¯βk = μ(t)¯βk
+
+.obtained by solving C + 1 separate linear systems, i.e., 
+
+AX = D [50]. To reduce the computation complexity of the LCPD-SBL algorithm, we use a parallel conjugate gradient (PCG) algorithm, which is an extension of the preconditioned conjugate gradient method for solving multiple linear systems [50]. The proposed LCPD-SBL algorithm’s details are described in Algorithm 2. C. Complexity Comparisons Compared to the iterative expectation-maximization algorithm requiring O (N 3
+
+> G
+
+)-time and O (N 2
+
+> G
+
+)-space in each iteration, the proposed LCPD-SBL algorithm’s com-plexity is reduced to O (U Cτ D )-time and O (NG)-space, where U denotes the maximum number of iterations of the PCG algorithm, and τD denotes the time required for matrix-vector multiplication [50]. If the condition number λmax (A) /λ min (A) is small, we have U ≪ NG,where λmax (A) and λmin (A) denote the largest and smallest eigenvalues of A, respectively [51]. However, in the iteration of Algorithm 2, most of the hyperparameters are equal to 0, which would increase the condition number. To address this issue, we introduce a Jacobi preconditioner matrix M = diag 
+
+(
+
+[A]1,1 , [A]2,2 , . . . , [A]NG,N G
+
+)
+
+to trans-form the problem of solving for X in AX = D into the equivalent problem of solving for X′ in A′X′ = D′, where 
+
+A′ = M−1/2AM −1/2, X′ = M1/2X, and D′ = M−1/2D
+
+[50], [52]. Moreover, it has been confirmed that a small number of detection vectors C is sufficient in practice [50]. In our simulations, we set C = 8 .0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9                 
+
+> 00.2 0.4 0.6 0.8 1
+> (a) Column coherence against κ.0.3 0.4 0.5 0.6 0.7 0.8 0.9 1
+> 0123456789
+> (b) The number of samples along the distance dimension iragainst
+> ϵ.
+> Fig. 6. Verification of our distance sampling method, where we consider a 128 ×32 UPA working at 30 GHz .
+
+V. Simulation Results In this section, we present simulation results to assess the performance of the proposed near-field CE scheme. A. Simulation Setup We consider an SIM-based mmWave near-field com-munication system. The BS is configured with M = 4 
+
+antennas, and each is connected to a dedicated RF chain. The spacing between adjacent antennas is set to λ/ 2.Moreover, the SIM comprises four layers, while each metasurface layer is modeled as a UPA with NH = 128 
+
+meta-atoms per row, NV = 32 meta-atoms per column. Each meta-atom has dimensions of dx = dy = λ/ 8. The distance between adjacent meta-atoms is set to ∆ = λ/ 4.The horizontal distance between the BS and the first SIM layer and the spacing between each metasurface layer are identical and set to dt = dLayer = 5 λ/L . We assume that the phase shift of the transmission coefficient in each block satisfies θln ∼ U [0 , 2π) for ∀n ∈ N , ∀l ∈ L . For the mmWave channel, the complex gain βq,k is modeled by CN 
+
+(
+
+0, 1/ (4 πr q,k /λ )2)
+
+[3]. The azimuth and elevation AoAs are both distributed as U (− π 
+
+> 3
+
+, π
+
+> 3
+
+). The number of propagation paths is Q = 6 .DRAFT 11 
+
+Additionally, the carrier frequency is 30 GHz , cor-responding to the wavelength of λ = 0.01 m . Then, the array aperture is D = √N 2 
+
+> H
+
++ N 2 
+
+> V
+
+∆ ≈ 0.33 m .The Fresnel distance and the Rayleigh distance are obtained as rF = 12
+
+√D3/λ ≈ 0.95 m and rR =2D2/λ ≈ 21 .78 m . Thus, the radiating near-field re-gion in the SIM-based mmWave communication system is (0 .95 m , 21 .78 m) . The signal-to-noise ratio (SNR) is defined as 10 log 10 
+
+(
+
+E
+
+{
+
+∥˜y − ˜n∥22
+
+}
+
+/E
+
+{
+
+∥˜n∥22
+
+}) 
+
+. Further-more, the performance is evaluated via NMSE, yielding NMSE = E
+
+{∥∥∥h − ˆh
+
+∥∥∥22
+
+/ ∥h∥22
+
+}
+
+, (32) where ˆh denotes the estimate of the true channel h.First, in Fig. 6a, we show the practical and theoretical column coherence of the polar-domain transform matrix corresponding to the control parameter κ. As the control parameter κ increases, the column coherence of polar-domain transform matrix μ consistently remains below the theoretical column coherence ⌢
+
+G (κ). Additionally, we also show the column coherence under uniform dis-tance sampling μU for comparison. It can be observed that the proposed non-uniform distance sampling method significantly reduces the column coherence of the polar-domain transform matrix compared to the uniform sam-pling approach. This demonstrates the effectiveness of our angular and distance sampling methods in controlling column coherence. Additionally, as shown in Fig. 6b, a low threshold ϵ yields a high control parameter κ,which leads to a reduction in ir that can be selected within the range of (rF , r R). When ϵ decreases beyond a certain threshold, the value of ir drops to one, and the column coherence of the matrix B approaches zero. In this case, all sampling points collapse onto the angular dimension, which substantially reduces the granularity of the polar-domain transform matrix B along the distance dimension. This implication not only diminishes the rep-resentational richness of the transform matrix but also sharply decreases the total number of sampling points NG.Such a reduction in NG significantly weakens the ability of B to capture the near-field array manifold, thereby degrading the channel estimation accuracy. Therefore, the threshold ϵ must be carefully chosen to strike a proper balance between implementation complexity and channel estimation performance. Then, we verify the proposed LCPD-SBL algorithm’s convergence behavior in Fig. 7. Note that the NMSE decreases monotonically as the iterations of the LCPD-SBL algorithm proceed, which fully demonstrates that the proposed algorithm can continuously enhance the estimation accuracy during the iterations. Moreover, the proposed algorithm’s convergence is guaranteed under different setups. We observe that the required number of iterations for the proposed algorithm to converge decreases as the control parameter κ and the number of pilot blocks 
+
+Ψ increase. 0 20 40 60 80 100 Number of iterations        
+
+> -10 -5 0510 NMSE [dB]
+> Fig. 7. NMSE against the number of iterations. 0.3 0.35 0.4 0.45 0.5
+> 0.0625 0.125 0.25 Time [s]
+> Fig. 8. Computation time with respect to κunder different tolerable thresholds.
+
+Additionally, to verify the effectiveness of the proposed LCPD-SBL algorithm in reducing the computational com-plexity, Fig. 8 presents the average computation time required for estimating the channel corresponding to each meta-atom, where we consider the existing SBL algorithm [45] and the LCPD-SBL algorithm under different setups. As the control parameter κ increases, the computation time needed by both the SBL algorithm and the proposed LCPD-SBL algorithm decreases. This is because the in-crease in κ will result in a reduction in the number of samples along the distance dimension ir , thereby causing a reduced dimension NG of the weight vector ¯βk that needs to be recovered in the SBL framework. Moreover, under different tolerable thresholds, the computation time for the LCPD-SBL algorithm to reach convergence is significantly lower than that of the SBL algorithm. Considering the performance and complexity of the pro-posed LCPD-SBL algorithm, we set the control parameter 
+
+κ = 0 .4. We set the number of pilot blocks to Ψ = 128 .Accordingly, the number of measurements is 128 × M for an N -dimensional channel, leading to a compression ratio of 1/8. The maximum number of iterations is T = 50 ,while the tolerable threshold is ϵs = 10 −8 in the following simulations unless otherwise specified. In Figs. 9a and 9b, we evaluate the NMSE performance DRAFT 12 0 2 4 6 8 10 SNR [dB]           
+
+> -10 -8 -6 -4 -2 0NMSE [dB]
+> OMP - angular
+> OMP - polar
+> SBL - angular
+> SBL - polar
+> LCPD - SBL
+> (a) NMSE performance comparisons of different schemes against SNR, where multiple near-field UEs (scatterers) are located in the range of (rF,10 m) .0246810 SNR [dB]
+> -8 -7 -6 -5 -4 -3 -2 NMSE [dB]
+> OMP - angular
+> OMP - polar
+> SBL - angular
+> SBL - polar
+> LCPD - SBL
+> (b) NMSE performance comparisons of different schemes against SNR, where multiple far-field UEs (scatterers) are located in the range of (80 m ,100 m) .
+
+Fig. 9. NMSE performance comparison of different distances. 
+
+with respect to the SNR for UEs (scatterers) in near-field and far-field scenarios, respectively. We compare the proposed LCPD-SBL algorithm with the existing OMP [36] and SBL [45] algorithms based on both the angular-domain transform matrix and the proposed polar-domain transform matrix. As shown in Fig. 9a, we validate the effectiveness of the proposed CE scheme in the SIM-assisted mmWave communication system. When the UEs (scatterers) are uniformly distributed within the near-field region at a distance of ( rF , 10 m ), all CS-based algorithms, relying on the proposed polar-domain trans-form matrix, outperform their counterparts relying on the existing angular-domain transform matrix. This is because converting the near-field channel to the angular-domain representation introduces a severe energy spread effect, making the channel sparsity in the angular-domain not achievable [36]. In contrast, the proposed polar-domain transform matrix effectively enhances the channel sparsity by representing the near-field channel in the polar-domain. In Fig. 9b, when the UEs (scatterers) are uniformly distributed within the far-field region at a propagation distance of ( 80 m , 100 m ), the CS-based algorithms relying on the proposed polar-domain transform matrix achieve 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1
+
+> -5 -4 -3 -2 -1 0
+> NMSE [dB]
+> OMP - angular
+> OMP - polar
+> FISTA - angular
+> FISTA - polar
+> LCPD - SBL
+
+Fig. 10. NMSE of different schemes against κ.2 4 6 8 10 12 14 16 18 Number of propagation paths 
+
+> -8 -6 -4 -2 02NMSE [dB]
+> OMP - angular
+> OMP - polar
+> FISTA - angular
+> FISTA - polar
+> LCPD - SBL
+
+Fig. 11. NMSE of different schemes against Q.100 200 300 400 500 Number of pilot blocks 
+
+> -10 -8 -6 -4 -2 02
+> NMSE [dB]
+> OMP - angular
+> OMP - polar
+> FISTA - angular
+> FISTA - polar
+> LCPD - SBL
+
+Fig. 12. NMSE of different schemes against Ψ.
+
+performance similar to their counterparts relying on the existing angular-domain transform matrix. This is be-cause, as the distance increases, the accuracy advantage of the near-field channel modeling diminishes. Nonetheless, in both near-field and far-field regions, the proposed LCPD-SBL algorithm performs similarly to the SBL algorithm based on the polar-domain transform matrix. In Fig. 10, we assess the NMSE performance of the DRAFT 13 0 2 4 6 8 10 SNR [dB]   
+
+> -4 -3.5 -3 -2.5 -2 -1.5 -1 -0.5 0NMSE [dB]
+> Fig. 13. NMSE of different schemes against ϵ.
+
+proposed LCPD-SBL channel estimator as well as of the existing OMP and fast iterative shrinkage-thresholding algorithm (FISTA) [53] against the control parameter κ.The SNR is set to 5 dB , and the distance between the SIM and UEs (scatterers) follows U (rF , 10 m) . As shown in Fig. 10, as the parameter κ increases, the NMSE of both the proposed LCPD-SBL algorithm and the OMP algorithm (based on the polar-domain transform matrix) increases. Nonetheless, the LCPD-SBL algorithm consis-tently outperforms both the OMP and FISTA. Moreover, as κ increases, the NMSE performance gap between the OMP algorithms based on the polar domain and the angular domain transform matrices is narrowed. This is because an increase in κ reduces the number of sampling points NG, leading to a decrease in grid resolution of the spatial sampling points. Figure 11 evaluates the estimation performance against the number of propagation paths Q. It should be noted that as the number of propagation paths increases, the NMSE performance of all algorithms deteriorates. This is because a larger number of propagation paths leads to more non-zero elements of the wireless channel in the sparse domain, thus degrading the performance of the CS-based channel estimators. However, the proposed LCPD-SBL algorithm still provides a 4 dB gain compared to both the OMP and FISTA algorithms. Moreover, in Fig. 12, as the number of pilot blocks increases, all algorithms’ NMSE performance improves, which is due to the increase in the compression ratio from 1/16 to 
+
+1/2. In this context, the proposed LCPD-SBL algorithm demonstrates a more significant advantage in improving the NMSE performance. Finally, to verify the benefits of the reduced column coherence of the polar-domain transform matrix on the channel recovery accuracy, we assess the NMSE perfor-mance attained by the LCPD-SBL algorithm in Fig. 13, with the polar-domain transform matrix designed by dif-ferent column coherence thresholds. The UEs (scatterers) are uniformly distributed at a distance of ( 0 m , 10 m ) to contain all the distance sampling points. Figure 13 illus-trates that the polar-domain transform matrix constructed by using a lower column coherence threshold can enhance the ability of the CS framework to discriminate the paths’ support set, thus improving the proposed LCPD-SBL algorithm’s NMSE performance. VI. Conclusions In this paper, we addressed the underdetermined near-field CE problem in SIM-based mmWave communication systems. Specifically, we designed a novel polar-domain transform matrix for UPAs and provided the polar-domain representation of the channel to transform the near-field CE problem into a sparse recovery task of the paths’ support set and complex gains. Based on the near-field channel sparsity in the polar domain, we proposed an LCPD-SBL algorithm for estimating near-field channels, which can be up to 4× faster than existing SBL meth-ods. Simulation results indicated that, in the near-field region, the algorithms based on the proposed polar-domain transform matrix outperform those based on the angular-domain transform matrix. Moreover, the proposed LCPD-SBL algorithm also performed well in the far-field region. Appendix A Proof of Lemma 1 For two different elevation angles νp and νq , we can approximate the column coherence as [49] 
+
+¯f (νp, ν q , ι, ι, r, r ) ≈ 1
+
+N
+
+∣∣∣∣∣
+
+> NV
+
+∑
+
+> n=1
+
+e−j 2π(n− NV +1 2 )∆  
+
+> λ(νp−νq)
+
+∣∣∣∣∣
+
+> (a)
+
+= 1
+
+N
+
+∣∣∣∣∣
+
+sin ( NV ∆πλ (νp − νq ))
+
+sin ( ∆πλ (νp − νq ))∣∣∣∣∣ ,
+
+(33) where (a)
+
+= is derived by 1−e−jN V Γ 
+
+> 1−e−jΓ
+
+= e−j (NV −1)Γ2  
+
+> sin
+> (NVΓ2
+> )
+> sin
+
+( Γ2 ) ,and Γ = 2π∆( νp−νq ) 
+
+> λ
+
+. To make the column coherence asymptotically approach zero, ν = sin (γ) should satisfy (20a). Similarly, for the case with νp = νq , rp = rq , ιp̸ = ιq ,we can approximate the column coherence as 
+
+¯f (ν, ν, ι p, ι q , r, r ) ≈ 1
+
+N
+
+∣∣∣∣∣
+
+> NH
+
+∑
+
+> n=1
+
+e−j 2π(n− NH +1 2 )∆  
+
+> λ(ιp−ιq)
+
+∣∣∣∣∣
+
+> (b)
+
+= 1
+
+N
+
+∣∣∣∣∣
+
+sin ( NH ∆πλ (ιp − ιq ))
+
+sin ( ∆πλ (ιp − ιq ))∣∣∣∣∣ ,
+
+(34) where (b)
+
+= is derived by 1−e−jN H κ 
+
+> 1−e−jκ
+
+= e−j (NH −1)κ 
+
+> 2
+> sin
+> (NH κ
+> 2
+> )
+> sin
+
+( κ 
+
+> 2
+
+) ,
+
+κ = 2π∆( ιp−ιq ) 
+
+> λ
+
+. To make the column coherence asymp-totically approach zero, ι = cos (γ) sin (ϑ) should satisfy (20b). Finally, we consider the case with rp = rq , νp̸ = νq ,
+
+ιp̸ = ιq , and approximate the column coherence as 
+
+¯f (νp, ν q , ι p, ι q , r, r )
+
+≈
+
+∣∣∣∣∣
+
+sin ( NH ∆πλ (ιp − ιq ))
+
+N sin ( ∆πλ (ιp − ιq ))∣∣∣∣∣×
+
+∣∣∣∣∣
+
+sin ( NV ∆πλ (νp − νq ))
+
+sin ( ∆πλ (νp − νq ))∣∣∣∣∣ . (35) It can be inferred that when νp, νq satisfy (20a) or ιp, ιq
+
+satisfy (20b), the column coherence becomes 0. Therefore, DRAFT 14 
+
+if we sample the angular from all possible ν and ι in (20a), (20b), and make sure ι2 + ν2 = 1 − cos 2 (γ) cos 2 (ϑ) ≤ 1
+
+[49], the column coherence of the above three cases can be effectively eliminated, which concludes the proof. Appendix B Proof of Lemma 2 The column coherence of two array response vectors in the same direction can be approximated as [36] 
+
+¯f (ν, ν, ι, ι, r p, r q )
+
+> (c)
+
+≈
+
+∣∣∣∣∣∫ 12 
+
+> −12
+
+ej     
+
+> πN 2
+> H∆2(
+> 1
+> rp −1
+> rq
+> )
+> λt2
+
+dt 
+
+∣∣∣∣∣ ×
+
+∣∣∣∣∣∫ 12 
+
+> −12
+
+ej     
+
+> πN 2
+> V∆2(
+> 1
+> rp −1
+> rq
+> )
+> λt2
+
+dt 
+
+∣∣∣∣∣
+
+= |G (ϖH )| × | G (ϖV )| ,
+
+(36) where (c)
+
+≈ is derived by the definition of a definite integral, 
+
+ϖH =
+
+√      
+
+> N2
+> H∆2
+> ∣∣∣1
+> rp −1
+> rq
+> ∣∣∣
+> 2λ
+
+, and ϖV =
+
+√      
+
+> N2
+> V∆2
+> ∣∣∣1
+> rp −1
+> rq
+> ∣∣∣
+> 2λ
+
+. The function G (ϖ) = C(ϖ)+ jS (ϖ) 
+
+> ϖ
+
+is composed of two Fres-nel integrals, where C (ϖ) = ∫ ϖ 
+
+> 0
+
+cos 
+
+( πt 2
+
+> 2
+
+)
+
+dt , S (ϖ) = 
+
+∫ ϖ 
+
+> 0
+
+sin 
+
+( πt 2
+
+> 2
+
+)
+
+dt [54]. By assuming ηH = πN 2    
+
+> H∆2(1
+> rp −1
+> rq
+> )
+> λ
+
+and ηV = πN 2     
+
+> V∆2(1
+> rp −1
+> rq
+> )
+> λ
+
+, then the column coherence considering ιp̸ = ιq , νp̸ = νq , and rp̸ = rq can be approximated as 
+
+¯f (νp, ν q , ι p, ι q , r p, r q ) (d)
+
+≈
+
+∣∣∣∣e−j π2i2
+
+> ιηH
+
+∣∣∣∣∣∣∣∣∣∫ 12−πiι ηH 
+
+> −12−πiι ηH
+
+ejη H u2
+
+du 
+
+∣∣∣∣∣
+
+×
+
+∣∣∣∣e−j π2i2
+
+> νηV
+
+∣∣∣∣∣∣∣∣∣∫ 12−πiν ηV 
+
+> −12−πiν ηV
+
+ejη V u2
+
+du 
+
+∣∣∣∣∣ ,
+
+(37) where (d)
+
+≈ is derived by the definition of a definite integral. By using the sampling method of angular parameters of (20a), (20b), we obtain the terms ιp − ιq = iιλNH ∆ , |iι| <
+
+⌈ 2NH ∆
+
+> λ
+
+⌉ − 1, and νp − νq = iν λNV ∆ , |iν | < ⌈ 2NV ∆
+
+> λ
+
+⌉ − 1. As 
+
+NH → ∞ , and NV → ∞ , we have πi ι 
+
+> ηH
+
+→ 0, and πi ν 
+
+> ηV
+
+→ 0.Therefore, we can approximate the column coherence as 
+
+¯f (νp, ν q , ι p, ι q , r p, r q ) ≈
+
+∣∣∣∣∣∫ 12 
+
+> −12
+
+ejη H u2
+
+du 
+
+∣∣∣∣∣×
+
+∣∣∣∣∣∫ 12 
+
+> −12
+
+ejη V u2
+
+du 
+
+∣∣∣∣∣
+
+= |G (ϖH )| × | G (ϖV )| .
+
+(38) For simplicity, we define a function 
+
+> ⌢
+
+G (κ) ∆
+
+= |G (ϖH )| × | G (ϖV )| , (39) where κ =
+
+∣∣∣ 1 
+
+> rp
+
+− 1
+
+> rq
+
+∣∣∣ is the control parameter. For a given column coherence threshold ϵ, we can obtain a minimum 
+
+κϵ to ensure ⌢
+
+G (κϵ) ≤ ϵ. Assuming that an initial sampling distance point r0 → ∞ , we can obtain (22), which ensures that the column coherence of two array response vectors sampled at different distances is less than or equal to ϵ.References 
+
+[1] X. Yao, J. An, L. Gan, B. Clerckx, and M. Di Renzo, “Sparse Bayesian learning based channel estimation for SIM-assisted near-field communications,” in Proc. IEEE ICC, Jun. 2025, pp. 1–5. [2] M. Xiao et al., “Millimeter wave communications for future mobile networks,” IEEE J. Sel. Areas Commun., vol. 35, no. 9, pp. 1909–1935, Jun. 2017. [3] X. Li, J. Fang, H. Li, and P. Wang, “Millimeter wave channel estimation via exploiting joint sparse and low-rank structures,” IEEE Trans. Wireless Commun., vol. 17, no. 2, pp. 1123–1133, Nov. 2017. [4] I. F. Akyildiz, C. Han, and S. Nie, “Combating the distance problem in the millimeter wave and terahertz frequency bands,” IEEE Commun. Mag., vol. 56, no. 6, pp. 102–108, Jun. 2018. [5] J. Zhang, E. Björnson, M. Matthaiou, D. W. K. Ng, H. Yang, and D. J. Love, “Prospective multiple antenna technologies for beyond 5G,” IEEE J. Sel. Areas Commun., vol. 38, no. 8, pp. 1637–1660, Jun. 2020. [6] J. An, M. Debbah, T. J. Cui, Z. N. Chen, and C. Yuen, “Emerging technologies in intelligent metasurfaces: Shaping the future of wireless communications,” IEEE Trans. Antenna Propag., vol. 74, no. 5, pp. 3913–3928, May 2026. [7] A. Papazafeiropoulos, J. An, P. Kourtessis, T. Ratnarajah, and S. Chatzinotas, “Achievable rate optimization for stacked intelli-gent metasurface-assisted holographic MIMO communications,” IEEE Trans. Wireless Commun., vol. 23, no. 10, pp. 13 173– 13 186, May 2024. [8] A. Papazafeiropoulos, P. Kourtessis, S. Chatzinotas, D. I. Kaklamani, and I. S. Venieris, “Performance of double-stacked intelligent metasurface-assisted multiuser massive MIMO com-munications in the wave domain,” IEEE Trans. Wireless Com-mun., vol. 24, no. 5, pp. 4205–4218, May 2025. [9] A. Papazafeiropoulos, P. Kourtessis, D. I. Kaklamani, and I. S. Venieris, “Channel estimation for stacked intelligent metasur-faces in rician fading channels,” IEEE Wireless Commun. Lett., vol. 14, no. 5, pp. 1411–1415, May 2025. [10] G. Huang, J. An, Z. Yang, L. Gan, M. Bennis, and M. Debbah, “Stacked intelligent metasurfaces for task-oriented semantic communications,” IEEE Wireless Commun. Lett., vol. 14, no. 2, pp. 310–314, Feb. 2025. [11] H. Niu, X. Lei, J. An, L. Zhang, and C. Yuen, “On the efficient design of stacked intelligent metasurfaces for secure SISO transmission,” IEEE Trans. Inf. Forensics Secur., vol. 20, pp. 60–70, Jan. 2025. [12] D. Darsena, F. Verde, I. Iudice, and V. Galdi, “Design of stacked intelligent metasurfaces with reconfigurable amplitude and phase for multiuser downlink beamforming,” IEEE Open J. Commun. Soc., vol. 6, pp. 531–550, Jan. 2025. [13] S. Lin, J. An, L. Gan, and M. Debbah, “UAV-mounted SIM: A hybrid optical-electronic neural network for DoA estimation,” in Proc. IEEE ICASSP, Apr. 2025, pp. 1–5. [14] E. Shi, J. Zhang, J. An, G. Zhang, Z. Liu, C. Yuen, and B. Ai, “Joint AP-UE association and precoding for SIM-aided cell-free massive MIMO systems,” IEEE Trans. Wireless Commun., vol. 24, no. 6, pp. 5352–5367, Jun. 2025. [15] J. An, M. Di Renzo, M. Debbah, H. V. Poor, and C. Yuen, “Stacked intelligent metasurfaces for multiuser downlink beam-forming in the wave domain,” IEEE Trans. Wireless Commun., vol. 24, no. 7, pp. 5525–5538, Jul. 2025. [16] H. Liu, J. An, G. C. Alexandropoulos, D. W. K. Ng, C. Yuen, and L. Gan, “Multi-user MISO with stacked intelligent meta-surfaces: A DRL-based sum-rate optimization approach,” IEEE Trans. Cog. Commun. Net., vol. 12, pp. 251–266, Apr. 2025. [17] A. Javed, N. U. Hassan, M. Di Renzo, and C. Yuen, “SIM-IPS: Stacked intelligent metasurface-based indoor positioning system,” IEEE Open J. Commun. Soc., vol. 6, pp. 3528–3542, Apr. 2025. [18] J. An, C. Yuen, M. Di Renzo, M. Bennis, M. Debbah, and L. Hanzo, “Stacked intelligent metasurface-aided wave-domain signal processing: From communications to sensing and com-puting,” arXiv preprint arXiv:2601.16030, Jan. 2026. [19] J. An et al., “Stacked intelligent metasurfaces for efficient holographic MIMO communications in 6G,” IEEE J. Sel. Areas Commun., vol. 41, no. 8, pp. 2380–2396, Jun. 2023. DRAFT 15 
+
+[20] ——, “Stacked intelligent metasurface-aided MIMO transceiver design,” IEEE Wireless Commun., vol. 31, no. 4, pp. 123–131, Aug. 2024. [21] H. Niu, J. An, A. Papazafeiropoulos, L. Gan, S. Chatzinotas, and M. Debbah, “Stacked intelligent metasurfaces for integrated sensing and communications,” IEEE Wireless Commun. Lett., vol. 13, no. 10, pp. 2807–2811, Oct. 2024. [22] N. S. Perović and L.-N. Tran, “Mutual information optimization for sim-based holographic MIMO systems,” IEEE Commun. Lett., vol. 28, no. 11, pp. 2583–2587, Nov. 2024. [23] X. Yao, J. An, G. Huang, H. Liu, L. Gan, and C. Yuen, “Sparse channel estimation for stacked intelligent metasurface-assisted mmwave communications,” in Proc. IEEE APWCS, Aug. 2024, pp. 1–5. [24] X. Lin et al., “All-optical machine learning using diffractive deep neural networks,” Science, vol. 361, no. 6406, pp. 1004–1008, Jul. 2018. [25] J. An et al., “Two-dimensional direction-of-arrival estimation using stacked intelligent metasurfaces,” IEEE J. Sel. Areas Commun., vol. 42, no. 10, pp. 2786–2802, Oct. 2024. [26] Q. Huai, Y. Liang, and W. Yuan, “Stacked intelligent metasurfaces-aided rate splitting multiple access system,” IEEE Wireless Commun. Lett., vol. 14, no. 7, pp. 2224–2228, Jul. 2025. [27] C. Pei, K. Huang, L. Jin, X. Xu, Y. Zhou, and Y. Guo, “Stacked intelligent metasurfaces assisted integrated-sensing-and-resistance anti jamming,” IEEE Commun. Lett., vol. 29, no. 2, pp. 383–387, Feb. 2025. [28] C. Liu et al., “A programmable diffractive deep neural network based on a digital-coding metasurface array,” Nat. Electron., vol. 5, no. 2, pp. 113–122, Feb. 2022. [29] E. Shi, J. Zhang, Y. Zhu, J. An, C. Yuen, and B. Ai, “Uplink performance of stacked intelligent metasurface-enhanced cell-free massive MIMO systems,” IEEE Trans. Wireless Commun., vol. 24, no. 5, pp. 3731–3746, May 2025. [30] M. Nerini and B. Clerckx, “Physically consistent modeling of stacked intelligent metasurfaces implemented with beyond diagonal RIS,” IEEE Commun. Lett., vol. 28, no. 7, pp. 1693– 1697, May 2024. [31] Z. Wang et al., “Multi-user ISAC through stacked intelligent metasurfaces: New algorithms and experiments,” arXiv preprint arXiv:2405.01104, May 2024. [32] Q. Li, M. El-Hajjar, C. Xu, J. An, C. Yuen, and L. Hanzo, “Stacked intelligent metasurfaces for holographic MIMO aided cell-free networks,” IEEE Trans. Commun., vol. 72, no. 11, pp. 7139–7151, May 2024. [33] P. Ramezani and E. Björnson, “Near-field beamforming and multiplexing using extremely large aperture arrays,” in Fun-damentals of 6G Communications and Networking. Springer, Jun. 2023, pp. 317–349. [34] J. Lee, G.-T. Gil, and Y. H. Lee, “Channel estimation via orthogonal matching pursuit for hybrid MIMO systems in mil-limeter wave communications,” IEEE Trans. Commun., vol. 64, no. 6, pp. 2370–2386, Apr. 2016. [35] A. Mishra, A. Rajoriya, A. K. Jagannatham, and G. Ascheid, “Sparse bayesian learning-based channel estimation in millime-ter wave hybrid MIMO systems,” in Proc. IEEE SPAWC, Jul. 2017, pp. 1–5. [36] M. Cui and L. Dai, “Channel estimation for extremely large-scale MIMO: Far-field or near-field?” IEEE Trans. Commun., vol. 70, no. 4, pp. 2663–2677, Apr. 2022. [37] X. Yao, J. An, L. Gan, M. Di Renzo, and C. Yuen, “Channel estimation for stacked intelligent metasurface-assisted wireless networks,” IEEE Wireless Commun. Lett., vol. 13, no. 5, pp. 1349–1353, Feb. 2024. [38] Q.-U.-A. Nadeem, J. An, and A. Chaaban, “Hybrid digital-wave domain channel estimator for stacked intelligent metasurface enabled multi-user MISO systems,” in Proc. IEEE WCNC, Sep. 2023, pp. 1–6. [39] C. You et al., “Near-field beam management for extremely large-scale array communications,” arXiv preprint arXiv:2306.16206, Jun. 2023. [40] X. Lin et al., “All-optical machine learning using diffractive deep neural networks,” Sci., vol. 361, no. 6406, pp. 1004–1008, Jul. 2018. [41] H. Liu et al., “Stacked intelligent metasurfaces for wireless sens-ing and communication: Applications and challenges,” arXiv preprint arXiv:2407.03566, Jul. 2024. [42] D. Tse and P. Viswanath, Fundamentals of Wireless Commu-nication. Cambridge University Press, 2005. [43] A. Alkhateeb, O. El Ayach, G. Leus, and R. W. Heath, “Channel estimation and hybrid precoding for millimeter wave cellular systems,” IEEE J. Select. Top. Signal Processing, vol. 8, no. 5, pp. 831–846, Jul. 2014. [44] O. El Ayach, S. Rajagopal, S. Abu-Surra, Z. Pi, and R. W. Heath, “Spatially sparse precoding in millimeter wave MIMO systems,” IEEE Trans. Wireless Commun., vol. 13, no. 3, pp. 1499–1513, Jan. 2014. [45] M. E. Tipping, “Sparse Bayesian learning and the relevance vector machine,” Journal of Machine Learning Research, vol. 1, no. Jun, pp. 211–244, 2001. [46] W. U. Bajwa, J. Haupt, A. M. Sayeed, and R. Nowak, “Com-pressed channel sensing: A new approach to estimating sparse multipath channels,” Proc. IEEE, vol. 98, no. 6, pp. 1058–1076, Apr. 2010. [47] M. Haghshenas, P. Ramezani, M. Magarini, and E. Björnson, “Parametric channel estimation with short pilots in RIS-assisted near-and far-field communications,” IEEE Trans. Wireless Com-mun., vol. 23, no. 8, pp. 10 366–10 382, Mar. 2024. [48] L. J. Ziomek, “Three necessary conditions for the validity of the Fresnel phase approximation for the near-field beam pattern of an aperture,” IEEE J. Oceanic Engineering, vol. 18, no. 1, pp. 73–75, 1993. [49] Ö. T. Demir and E. Björnson, “A new polar-domain dictionary design for the near-field region of extremely large aperture arrays,” in Proc. IEEE CAMSAP, Dec. 2023, pp. 251–255. [50] A. Lin, A. H. Song, B. Bilgic, and D. Ba, “Covariance-free sparse Bayesian learning,” IEEE Trans. Signal Process., vol. 70, pp. 3818–3831, Jun. 2022. [51] M. R. Hestenes and E. Stiefel, Methods of Conjugate Gradients for Solving Linear Systems. NBS Washington, DC, 1952, vol. 49, no. 1. [52] J. R. Shewchuk et al., “An introduction to the conjugate gradient method without the agonizing pain,” 1994. [53] A. Beck and M. Teboulle, “A fast iterative shrinkage-thresholding algorithm for linear inverse problems,” SIAM Journal on Imaging Sciences, vol. 2, no. 1, pp. 183–202, 2009. [Online]. Available: https://doi.org/10.1137/080716542 [54] J. Sherman, “Properties of focused apertures in the Fresnel region,” IRE Trans. Antennas Propag., vol. 10, no. 4, pp. 399– 408, Jul. 1962. 
+
+Xianghao Yao received the B.E. degree from Jiangxi Normal University, Nanchang, China, in 2022, and the M.S. degree in information and communication engineering from the Uni-versity of Electronic Science and Technology of China (UESTC), Chengdu, China, in 2025. His research interests include stacked intel-ligent metasurfaces, channel estimation, and compressed sensing. He was a recipient of the Talent Development Fund of Ouyang Minggao Academician Workstation in 2024. DRAFT 16 
+
+Jiancheng An (Senior Member, IEEE) re-ceived the B.S. degree in Electronics and In-formation Engineering and the Ph.D. degree in Information and Communication Engineer-ing from the University of Electronic Science and Technology of China (UESTC), Chengdu, China, in 2016 and 2021, respectively. From 2019 to 2020, he was a Visiting Scholar with the Next-Generation Wireless Group, Uni-versity of Southampton, Southampton, U.K. From 2021 to 2023, he was a Post-Doctoral Research Fellow with the Engineering Product Development (EPD) Pillar, Singapore University of Technology and Design (SUTD), Sin-gapore. From 2023 to 2026, he was a Research Fellow with the School of Electrical and Electronics Engineering, Nanyang Technological University (NTU), Singapore. He is currently a Professor with the School of Electronic Science and Engineering, UESTC, Chengdu, China. Dr. An received the IEEE International Conference on Communi-cations (ICC) 2023 Best Paper Award. He is the co-inventor of six patents and has published over 100 research papers in peer-reviewed international journals and conferences. His research interests include stacked intelligent metasurfaces (SIM), flexible intelligent metasur-faces (FIM), and electromagnetic neural networks (EMNN). Dr. An serves as an Editor for IEEE Transactions on Communications, IEEE Open Journal of the Communications Society, and IEEE Wireless Communications Letters. He is also the Lead Guest Editor for the Special Issue on “Stacked Intelligent Metasurface-Empowered Advanced Signal Processing Paradigm for 6G and Beyond” in IEEE Wireless Communications. 
+
+Enyu Shi (Member, IEEE) received the B.S. and Ph.D. degrees in communication engineer-ing from Beijing Jiaotong University, Beijing, China, in 2019 and 2025, respectively. He was a Visiting Student with the School of Electrical and Electronic Engineering, Nanyang Tech-nological University, Singapore, from 2024 to 2025. He is currently a Post-Doctoral Re-search Fellow with Beijing Jiaotong Univer-sity. His research interests include cell-free massive MIMO, RIS/SIM, signal processing, and artificial intelligence of wireless systems. He received the Best Paper Award at IEEE WCSP 2024. 
+
+Jiayi Zhang (Senior Member, IEEE) received the B.Sc. and Ph.D. degrees in communication engineering from Beijing Jiaotong University, China, in 2007 and 2014, respectively. From 2012 to 2013, he was a Visiting Scholar with the Wireless Group, University of Southampton, U.K. From 2014 to 2015, he was also a Humboldt Research Fellow with the In-stitute for Digital Communications, Friedrich-Alexander University of Erlangen–Nuremberg (FAU), Germany. From 2014 to 2016, he was a Post-Doctoral Research Associate with the Department of Electronic Engineering, Tsinghua University, China. Since 2016, he has been a Professor with the School of Electronic and Information Engineering, Beijing Jiaotong University. His current research interests include cell-free massive MIMO, reconfigurable intelligent surface (RIS), XL-MIMO, near-field communications, and applied mathematics. He re-ceived the Best Paper Award from IEEE OPEN JOURNAL OF THE COMPUTER SOCIETY in 2023, the Best Paper Awards at IEEE ICC 2023 and WCSP 2024, the URSI Young Scientist Award in 2020, and the IEEE ComSoc Asia–Pacific Outstanding Young Researcher Award in 2020. He was the Lead Guest Editor of the Special Issue on “Multiple Antenna Technologies for Beyond 5G” of IEEE JOURNAL ON SELECTED AREAS IN COMMUNICATIONS, the Lead Guest Editor of the Special Issue on “Semantic Communications for the Metaverse” of IEEE WIRELESS COMMUNICATIONS, an Editor of IEEE COMMUNICATIONS LETTERS from 2016 to 2021, and an Editor of IEEE TRANSACTIONS ON COMMUNICATIONS from 2019 to 2024. He serves as an Associate Editor for IEEE TRANSACTIONS ON WIRELESS COMMUNICATIONS. 
+
+Lu Gan (Member, IEEE) received the M.S. and Ph.D. degrees from the University of Electronic Science and Technology of China (UESTC), Chengdu, China, in 2002 and 2006, respectively. From September 2012 to Septem-ber 2013, he was a Visiting Researcher with the University of Concordia, Montreal, QC, Canada. Since August 2014, he has been a Professor with UESTC. His research inter-ests include signal detection and classification, array signal processing, compressive sensing, passive radar, and reconfigurable intelligent surfaces. DRAFT 17 
+
+Michail Matthaiou (Fellow, IEEE) received the Ph.D. degree from the University of Edin-burgh, U.K., in 2008. He is currently a Professor of Communica-tions Engineering and Signal Processing and the Deputy Director of the Centre for Wire-less Innovation (CWI), Queen’s University Belfast, U.K. He is also an Eminent Scholar at Kyung Hee University, Republic of Korea. He has held research/faculty positions at Munich University of Technology (TUM), Germany, and Chalmers University of Technology, Sweden. He holds the ERC Consolidator Grant BEATRICE (2021–2027), focused on the interface between information and electromagnetic theories. His research interests span signal processing for wireless communications, beyond massive MIMO, reflecting intelligent surfaces, mm wave/THz systems, and AI-empowered communications. He is an AAIA Fellow. He and his co-authors received the IEEE Communications Society (ComSoc) Leonard G. Abraham Prize in 2017. To date, he has re-ceived the prestigious 2023 Argo Network Innovation Award, the 2019 EURASIP Early Career Award, and the 2018/2019 Royal Academy of Engineering/The Leverhulme Trust Senior Research Fellowship. His team was also the Grand Winner of the 2019 Mobile World Congress Challenge. He was a recipient of the 2011 IEEE ComSoc Best Young Researcher Award for the Europe, Middle East, and Africa Region. He was a co-recipient of the 2006 IEEE Communications Chapter Project Prize for the best M.Sc. dissertation in the area of communications. He has co-authored papers that received best paper awards at the 2018 IEEE WCSP and 2014 IEEE ICC. In 2014, he received the Research Fund for International Young Scientists from the National Natural Science Foundation of China. He is the Editor-in-Chief of Physical Communication (Elsevier), a Senior Editor of IEEE WIRELESS COMMUNICATIONS LETTERS and IEEESig-nal Processing Magazine, an Area Editor of IEEE TRANSACTIONS ON COMMUNICATIONS, and the Editor-in-Large of IEEE OPEN JOURNAL OF THE COMMUNICATIONS SOCIETY. 
+
+Symeon Chatzinotas (Fellow, IEEE) is cur-rently Full Professor / Chief Scientist I and Head of the research group SIGCOM in the Interdisciplinary Centre for Security, Relia-bility and Trust, University of Luxembourg. In parallel, he is an Adjunct Professor in the Department of Electronic Systems, Norwegian University of Science and Technology, an Em-inent Scholar of the Kyung Hee University, Korea and a Collaborating Scholar of the In-stitute of Informatics & Telecommunications, National Center for Scientific Research “Demokritos”. In the past, he has been a Visiting Professor at EPFL, Switzerland and University of Parma, Italy and contributed in numerous R&D projects for the Institute of Telematics and Informatics, Center of Re-search and Technology Hellas and Mobile Communications Research Group, Center of Communica tion Systems Research, University of Surrey. He has received the M.Eng. in Telecommunications from Aristotle University of Thessaloniki, Greece and the M.Sc. and Ph.D. in Electronic Engineering from University of Surrey, UK in 2003, 2006 and 2009 respectively. He has authored more than 800 technical papers in refereed international journals, conferences and scientific books and has received numerous awards and recognitions, including the IEEE Fellowship, IEEE Distinguished Contributions Award and IEEE Harry Rowe Mimno Award. He has served in the editorial board of npj Wireless Technology, IEEE Transactions on Communications, IEEE Open Journal of Vehicular Technology and the International Journal of Satellite Communications and Networking. 
+
+Marco Di Renzo (Fellow, IEEE) received the Laurea (cum laude) and Ph.D. degrees in electrical engineering from the University of L’Aquila, Italy, in 2003 and 2007, respectively, and the Habilitation à Diriger des Recherches (Doctor of Science) degree from University Paris-Sud (currently Paris-Saclay University), France, in 2013. Currently, he is Chair Pro-fessor of Telecommunications Engineering, the Director of the Centre for Telecommunications Research, and the Head of the Telecommuni-cations Group, Department of Engineering, King’s College London, London, United Kingdom. He is also a CNRS Research Director (Professor) with the Institute of Electronics and Digital Technologies (IETR) at CNRS-CentraleSupélec, Rennes, France. He was a France-Nokia Chair of Excellence in ICT at the University of Oulu (Finland), a Tan Chin Tuan Exchange Fellow in Engineering at Nanyang Technological University (Singapore), a Fulbright Fellow at The City University of New York (USA), a Nokia Foundation Visiting Professor at Aalto University (Finland), and a Royal Academy of Engineering Distinguished Visiting Fellow at Queen’s University Belfast (U.K.). He is a Fellow of the IEEE, IET, EURASIP, and AAIA; an Academician of AIIA; an Ordinary Member of the European Academy of Sciences and Arts, an Ordinary Member of the Academia Europaea, and an Ordinary Member of the Italian Academy of Technology and Engineering; an Ambassador of the European Association on Antennas and Propagation; and a Highly Cited Researcher. He has received several distinctions, including the Michel Monpetit Prize conferred by the French Academy of Sciences, the IEEE Communications Society Heinrich Hertz Award, and the IEEE Communications Society Marconi Prize Paper Award in Wireless Communications. Also, he is a principal investigator of an ERC Synergy grant on metasurface-based information processing. He served as the Editor-in-Chief of IEEE Communications Letters from 2019 to 2023, and as the Director of Journals and Chair of the Publications Misconduct Ad Hoc Committee of the IEEE Communications Society from 2024 to 2025. Currently, he sits on the IEEE-COMSOC Fellow Evaluation Standing Committee and on the Editorial Board of the Proceedings of the IEEE.

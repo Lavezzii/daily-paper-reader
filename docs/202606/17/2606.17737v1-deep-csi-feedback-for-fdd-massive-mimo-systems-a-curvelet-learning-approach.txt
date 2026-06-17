@@ -1,0 +1,704 @@
+Title: Deep CSI Feedback for FDD Massive MIMO Systems: A Curvelet Learning Approach
+
+URL Source: https://arxiv.org/pdf/2606.17737v1
+
+Published Time: Wed, 17 Jun 2026 00:49:59 GMT
+
+Number of Pages: 14
+
+Markdown Content:
+> 1
+
+# Deep CSI Feedback for FDD Massive MIMO Systems: A Curvelet Learning Approach 
+
+Mengli Tao, Jiancun Fan, Senior Member, IEEE, Huiqiang Xie, Member, IEEE, Kai Xie 
+
+Abstract—Downlink channel state information (CSI) feed-back plays a key role in frequency division duplex (FDD) massive multiple-input multiple-output (mMIMO) systems. The growth of antennas in ultra-massive MIMO increases the difficulty and overhead of CSI feedback, which poses significant challenges for conventional downlink CSI feedback mechanisms. To address the limitations of existing CSI feed-back approaches, this paper proposes a novel curvelet learning based framework termed SwinCANet, comprising a frequency-domain information processing module and a denoising module. The frequency-domain information processing module employs curvelet transform to decompose CSI into low-frequency and high-frequency components. Subsequently, Swin Transformer and channel-wise attention block are utilized for extracting the low-frequency and high-frequency representations, respec-tively, thereby enhancing reconstruction quality. Notably, an additional Swin Transformer facilitates the fusion of multi-scale frequency components, enhancing capabilities across different angular resolutions and spatial directions. Furthermore, we develop a variant (De-SwinCANet), which employs a Sigmoid threshold function to effectively suppress noise coefficients, thereby mitigating various channel impairments and non-linear distortions. Numerical simulation results demonstrate that the proposed methodology achieves superior performance compared to existing benchmarks while maintaining robust performance under challenging propagation conditions. Index Terms—Massive MIMO, FDD, CSI feedback, Deep learning, Curvelet Transform. 
+
+I. Introduction 
+
+# Massive Multiple-Input Multiple-Output (mMIMO) represents a pivotal technology in wireless com-munication systems, where both the base station (BS) and user equipment (UE) are equipped with substan-tially more antenna elements compared to conventional MIMO systems. Through the deployment of large-scale antenna arrays at both ends, mMIMO effectively enhances throughput, extends coverage range, and ensures the reli-ability of networks. This architectural advancement yields significant improvements in system capacity and spectral efficiency [1], making it indispensable for meeting the stringent performance requirements of future applications. 
+
+This work was supported by the National Natural Science Foundation of China under Grants No. 61671367 and No. 62401227. (Corresponding author: Jiancun Fan.) M. Tao and J. Fan are with the School of Information and Communication Engineering, Xi’an Jiaotong University, Xi’an, Shanxi 710049, P. R. China (e-mail: taoml@stu.xjtu.edu.cn; fanjc0114@gmail.com) H. Xie is with the School of Information Science and Technology, Jinan University, Guangzhou, Guangdong 510632, P. R. China (e-mail: huiqiangxie@jnu.edu.cn) Kai Xie is with Laboratory of Electromagnetic Space Cognition and Intelligent Control Technology, Beijing 100191, China (e-mail: eeixiekai@163.com) 
+
+Nevertheless, mMIMO systems encounter a fundamental challenge in practical deployment: optimal transmission performance is contingent upon the availability of highly accurate channel state information (CSI). In Frequency Division Duplex (FDD) systems, which are widely adopted in 5G networks, the principle of channel reciprocity becomes inapplicable due to the utilization of distinct frequency bands for uplink and downlink transmissions. Consequently, the BS cannot directly acquire downlink CSI and must rely on explicit feedback mechanisms from UE. The exponential increase in antenna array dimen-sions imposes substantial feedback overhead requirements that scale proportionally with the number of antenna elements, and aggravates the proportion of uplink resource consumption in FDD mode. Therefore, it is essential to develop efficient CSI feedback solutions to reduce feedback overhead and create effective techniques for compressing CSI matrices. Recently, deep learning (DL) has been widely adopted for channel feedback in massive MIMO systems [2]– [7], mitigating the stringent sparsity assumptions of conventional compressed sensing (CS). Research efforts have focused on convolutional neural networks (CNNs) and Transformers. Among CNN-based approaches, CsiNet [2] pioneered DL-based CSI feedback by employing an encoder at the UE for compression and a decoder at the BS for reconstruction, outperforming CS methods. Subsequent enhancements include CsiNet+ [3], which im-proves performance via refined convolutional kernels; More recently, CRNet [4] extracts multi-resolution features and highlights the importance of tailored training strategies for CSI feedback tasks. Ji et al. [5] introduced CLNet, which processes CSI in a physically meaningful complex-valued form via a pseudo-complex input layer and incorporates spatial attention to enhance performance. In [6], they fur-ther proposed a deep joint source-channel coding scheme employing nonlinear transformations for CSI compression, demonstrating advantages over separate source-channel coding. Wan et al. [7] developed a plug-and-play approach to reduce training and storage overhead in CSI feedback. Despite these advances, CNN-based networks remain lim-ited in capturing global dependencies—a critical drawback in massive MIMO systems where long-range correlations across antenna pairs are prevalent. Due to constrained kernel sizes and hierarchical structures, CNNs primarily capture local features, potentially compromising recon-struction accuracy and system performance. Motivated by Transformer’s capacity for global information modeling, researchers have explored Transformer-based architectures 
+
+> arXiv:2606.17737v1 [eess.SP] 16 Jun 2026 2
+
+for CSI feedback. CsiTransformer [8] first applied Trans-former [9] to this task, achieving marginal gains over CsiNet. Subsequently, TransNet [10] adopted a dual-layer Transformer design to improve feedback accuracy. More recently, SwinCFNet [11], a Swin Transformer-based autoencoder, was proposed to effectively extract long-range dependencies in CSI. However, in practical massive MIMO systems, the escalation of antenna arrays from dozens to hundreds induces geometric growth in CSI dimensionality and a cor-responding surge in feedback overhead. The resultant high dimensionality and intricate spatial correlations impose significant adaptive limitations on conventional neural network approaches. These challenges manifest primarily in two aspects: First, the dimensionality catastrophe leads to quadratic parameter growth, rendering compu-tational complexity intractable for practical implementa-tion. Second, the extremely high-dimensional input space significantly impedes training convergence and increases susceptibility to local optima. Third, existing architectures show limited robustness in learning the intrinsic structured characteristics of mMIMO channels when the number of transmit antennas grows substantially. Consequently, the development of specialized neural network architectures tailored to the unique characteristics of large-scale antenna arrays represents a critical research imperative. Such archi-tectures must enhance CSI reconstruction accuracy while providing robust theoretical foundations and technical enablers for the advancement of mMIMO technologies. To address noise arising from feedback distortions and delays in CSI feedback, Jiang et al. [12] investigated deep autoencoder (AE)-based mechanisms explicitly con-sidering these non-ideal factors in FDD massive MIMO systems. Concurrently, substantial research has targeted noise originating from channel estimation [13]–[15]. Sun et al. [13] introduced AnciNet, a deep neural network designed to extract noise-free features from noisy CSI samples. Rahman et al. [15] proposed ResCBDNet, aresidual convolutional blind denoising network incorpo-rating accurate channel estimation models. To mitigate noise effects within codewords, Alam et al. [16] developed DCsiNet, where the decoder jointly performs decompres-sion and denoising to enhance overall feedback accuracy. To mitigate quantization distortion introduced by digital feedback channels, several studies have explored optimiza-tion within the joint source-channel coding (JSCC) frame-work. Guo et al. [17] proposed a CNN-based multi-rate CSI feedback scheme that reduces quantization effects via network optimization. Chen et al. [18] designed a quantizer with an offset network to compensate for quantization errors, albeit requiring multi-stage training. DeepCMC [19] integrates quantization and entropy coding into end-to-end optimization, though its performance saturates at moderate-to-low compression ratios. Ravula et al. [20] introduced an autoencoder with an entropy bottleneck layer, which simulates quantization via uniform noise during training and employs uniform scalar quantization with arithmetic coding during inference. This enables joint optimization of quantization, entropy coding, and recon-struction, achieving superior rate-distortion performance across diverse bit rates. Despite the demonstrated excel-lence of DL-based approaches in denoising applications, their inherent lack of model explanation presents signifi-cant limitations. The absence of interpretability not only impedes comprehensive understanding of model behavior but also constrains opportunities for systematic model optimization and theoretical advancement. Although end-to-end neural networks can theoretically learn arbitrary transform domains, for massive MIMO channels with complex spatial non-stationarity, the large number of antennas will introduce the curse of dimensionality and increase the learning complexity. In this paper, a novel channel feedback approach based on the curvelet transform is proposed to address the above challenges. The method utilizes the curvelet transform to decompose the CSI into low-frequency (global informa-tion) and high-frequency (local information) components. Specifically, we propose De-SwinCANet, which synergisti-cally captures both global dependency patterns and local spatial characteristics of channels. Meanwhile, we also design a threshold function to process the channel feedback results to suppress the noise and improve the accuracy of the channel feedback. Finally, the CSI of the feedback is reconstructed by the inverse curvelet transform. The main contributions can be summarized as follows: 
+
+• This paper proposes a channel feedback denoising network called De-SwinCANet. This network is the first to apply the curvelet transform to the feedback and denoising of channels. 
+
+• In the CSI feedback, we employ the curvelet trans-form to decompose CSI into low-frequency and high-frequency components, utilizing Swin Transformer to extract global structural features and channel-wise attention modules to enhance the utilization of local features, respectively. This separate processing method can improve the efficiency and accuracy of information extraction. By fusing low-frequency and high-frequency information with additional Swin Transformer blocks, it not only enhances the ex-pressiveness of high-frequency information, but also provides rich multi-scale and directional features. 
+
+• With theoretical analysis of noise in frequency do-main, we design a Sigmoid threshold function to smoothly suppress small coefficients while preserv-ing large coefficients, achieving effective signal-noise separation for denoising purposes, thereby enhancing the model’s interpretability. 
+
+• Experiments demonstrate that under all signal-to-noise ratio (SNR) and compression ratio (CR) condi-tions, our model outperforms existing deep learning-based CSI reconstruction networks and reconstruc-tion networks with denoising capabilities in CSI reconstruction, and the proposed method exhibits greater robustness across various channel conditions. The remainder of the paper is organized as follows. 3
+
+In Section II, the system model is introduced. Section III introduces the architecture of the proposed model and introduces the curvelet transform. Simulations are provided in Section IV, and conclusions are drawn in Section V. 
+
+N otation : Throughout this paper, bold letters are used to denote vectors or matrices, and regular letters are used to denote variables. Z, R, and C denote the integer field, the real field, and the complex field, respectively. (·)T
+
+and (·)H denotes the transpose and conjugate transpose, respectively; and w ∼ CN (0 , σ 2
+
+> n
+
+) denotes that the variable 
+
+w follows the circularly complex Gaussian distribution with zero mean and covariance σ2
+
+> n
+
+.II. System Model Framework This work considers the downlink single cell frequency division duplex (FDD) mMIMO communication system, consisting of Nt antennas at the BS and a single antenna at the MS. The system employs orthogonal frequency division multiplexing (OFDM) with Nc subcarriers. The CSI of the downlink can be expressed as, 
+
+˜H = [ ˜h1, ˜h2, ..., ˜hNc ]T , (1) where ˜H ∈ CNc×Nt , and ˜hn ∈ CNt×1 denotes the channel vector at the n-th subcarrier. To design the precoding vector, the BS needs to obtain accurate CSI. In FDD systems, the UE transmits ˜H back to the BS via the feedback link. However, direct feed-back of the channel matrix ˜H incurs enormous feedback overhead. Specifically, ˜H contains NcNt elements, which is prohibitive for capacity-limited feedback links and may severely constrain system performance. To reduce the overhead of channel feedback, we exploit the sparsity of the channel matrix ˜H in the angular delay domain. Specifically, we first transform ˜H into the angular delay domain using a two-dimensional (2D) discrete Fourier transform (DFT). With this transform, the energy can be concentrated on a few coefficients, thus achieving effective compression of the channel information and reduction of the feedback overhead, and we can obtain, 
+
+¯H = Fc ˜HF Ht , (2) where Fc and Ft represent the DFT matrices with dimensions ˜Nc × ˜Nc and Nt × Nt, respectively. For the angular-delay domain channel matrix ¯H, only the first Na
+
+rows contain significant values, while the remaining rows consist of elements close to zero, which can be omitted with minimal information loss. For ease of understanding, we denote the first Na rows of ¯H as H.Despite H being smaller than ¯H, NaNt remains large, requiring further compression. However, angular pruning makes H dense rather than sparse, limiting CS-based compression effectiveness. NN-based methods overcome this limitation by learning nonlinear channel character-istics and achieving superior reconstruction even under low sparsity, outperforming CS-based approaches in both accuracy and feedback performance. g  
+
+> Noisy
+> Feedback
+> gCSI Decoder CSI Encoder
+> Noise
+> Compressed Codeword
+> Noisy Codeword
+> H
+> ˆH
+> Fig. 1. The Structure of the CSI feedback model.
+
+Fig. 11 illustrates the feedback process of CSI. First, the UE side extracts the key features of H through the encoder and outputs the compressed codeword as follows: 
+
+g = Fε(H; Θ ε), (3) where g ∈ RM denotes the compressed codeword, and Fε
+
+and Θε denote the coding process and a set of parameters of the encoder, respectively. When M < 2NaNt, the compression ratio γ = M/ 2NaNt.We adopt the JSCC framework for CSI feedback due to its lower quantization errors and greater robustness, in which the encoder’s codewords are transmitted directly over the wireless channel. The codeword g output by the encoder is transmitted directly through the wireless chan-nel. The channel effect can be modeled as additive white Gaussian noise (AWGN) with fading characteristics [21], which is treated as an additional component superimposed on the codeword, 
+
+y =
+
+{ g + n, AWGN channel ,hg + n, slow fading channel , (4) where h ∈ C denotes the channel gain and n ∈ C
+
+represents the AWGN term. In practical systems, the receiver performs channel estimation using pilot signals. Considering the presence of estimation errors, let the estimated channel gain be ˆh = h + ∆ h, where ∆h ∼CN (0 , σ 2 
+
+> e
+
+) denotes the channel estimation error, with σ2
+
+> e
+
+depending on the pilot power, the number of pilots, and the channel estimation algorithm. Using the estimated channel gain ˆh for equalization, the receiver obtains 
+
+˜g = y 
+
+> ˆh
+
+= hh+∆ h y + n 
+
+> h+∆ h
+
+.After receiving the noisy codeword ˜g, the UE recon-structs the channel matrix using the decoder, that is, 
+
+ˆH = Fχ(˜ g; Θ χ), (5) where ˆH denotes the reconstructed codeword, Fχ and Θχ
+
+denote the decoding process and a set of parameters of the decoder, respectively. Existing CS-based channel feedback methods suffer from two fundamental limitations. First, their perfor-mance relies heavily on the channel being strictly sparse, and significant degradation may occur in practical scenar-ios where the channel exhibits non-strict sparsity [22]. Sec-ond, these methods lack robustness, as the reconstruction algorithms are highly sensitive to noise and interference in the feedback link, making accurate channel recovery dif-ficult in non-zero-noise environments [15]. Although DL-based denoising methods can achieve certain effectiveness, 4Curvelet Transform           
+
+> SwinCANet Encoder Wireless Channel
+> Threshold Function
+> Inverse Curvelet Transform
+> Angle Delay
+> Angle Delay
+> ( ; )
+> HH 4 
+> SwinCANet Decoder
+> ( ; )
+> FF 4 
+> Feature Extraction Denoising Feature Recovery
+> Transmitter Receiver
+> FC FC
+> Feature Compression Feature Decompression
+> HˆH
+> Fig. 2. The proposed De-SwinCANet model.
+
+they exhibit high computational complexity and lack solid theoretical foundation. Therefore, this paper proposes a curvelet transform-based deep CSI feedback network. III. Design of De-SwinCANet In this section, we first describe the framework of the proposed De-SwinCANet. The proposed De-SwinCANet consists of the SwinCANet for channel feedback and the threshold function for denoising. Our introduction follows this order: First, we elaborate on the theoretical foundation of the curvelet transform; next, we describe the network architecture of SwinCANet in detail; finally, we introduce the Sigmoid threshold function used to implement the denoising function. A. Structure of De-SwinCANet 1) Overview and Settings: Fig. 2 shows the framework of the proposed De-SwinCANet. Specifically, the encoder consists of two parts: the feature extraction part and the feature compression part. The feature extraction part is implemented by curvelet transform and SwinCANet encoder. The input CSI matrix H of size 2 × Na × Nt,obtained via DFT, subsequently undergoes frequency domain information decomposition through the curvelet transform (thus the curvelet transform is applied after the DFT in this work), yielding the curvelet coefficient matrix. Next, the curvelet coefficient matrix is processed through the SwinCANet encoder. The feature compression stage reduces feature dimensions through fully connected (FC) layers. The compressed signal is subsequently transmitted through the noisy channel. The decoder is divided into two stages: feature decom-pression and feature recovery. The feature decompression stage uses FC layers to realize feature upscaling, while the feature recovery stage consists of the SwinCANet decoder, denoising module, and inverse curvelet transform. The SwinCANet decoder first decodes the noisy codeword ˜g to recover the original features. Then, the denoising module filters the obtained curvelet coefficient matrix to remove small coefficients and suppress noise. Finally, the denoised CSI matrix is reconstructed through the inverse curvelet transform. /2            
+
+> 2j
+> 2j
+> 1
+> w
+> 2
+> w
+> 2j-
+> /2
+> 2j-
+> 500
+> 400
+> 300
+> 200
+> 100
+> 500 400 300 200 100 x
+> y
+> -0.50 -0.25 0.00 0.25 0.50 -0.50 -0.25 0.00 0.25
+> 0.50
+> (a) (b)
+> Fig. 3. (a) Wedges in wavenumber domain; (b) The spatial domain curvelets correspond to wedges in the wavenumber domain.
+
+B. Curvelet Transform The curvelet transform [23], proposed by Candes and Donoho in 1999, is a multi-scale, multi-directional math-ematical transform that provides near-optimal sparse representations for signals with curve-like singularities. Compared to wavelet transforms, curvelets offer superior directional selectivity, making them particularly effective for representing edge-like features in 2D signals. To our knowledge, our work is the first to apply the curvelet transform to CSI feedback in wireless communications. We employ the discrete curvelet transform based on the wrapping technique [24] to decompose the CSI matrix H
+
+into multi-scale components. The transform first performs a 2D FFT on H to obtain the Fourier samples H′. For each scale and angle pair (j, l j ), the Cartesian window 
+
+˜Uj,l j [na, n t] is multiplied with the Fourier samples to obtain: 
+
+Qj, l j [na, n t] = ˜Uj,l j [na, n t]H′[na, n t]. (6) Then, the wrapping operation maps the wedge-shaped regions to rectangular regions around the origin: 
+
+H′ 
+
+> j,l j
+
+[na, n t] = Wrapping (H′[na, n t]) = W (Qj,l j )[ na, n t].
+
+(7) As shown in Fig. 3(b), this step maps information from a specific scale and angle (purple region) to a rectangular region around the origin. Due to the 2D Fourier trans-form’s periodicity, this mapping preserves all information without loss. 5Angle  
+
+> Delay
+> (a)
+> Angle
+> Delay
+> (b)
+> Angle
+> Delay
+> (c)
+> 00.2 0.4 0.6 0.8 11.2
+> Fig. 4. CSI and its reconstruction results at different scales (a) Original signal; (b) First-scale (low-frequency) reconstruction results; (c) Second-scale (high-frequency) reconstruction results.
+
+After applying 2D-IFFT on each wrapped frequency domain data, we obtain the complete discrete curvelet coefficient set: 
+
+C = Curvelet J (H′) = 
+
+{
+
+C0, {Cj }J−1
+
+> j=1
+
+}
+
+, (8) where C0 ∈ RCa×Cb×2 represents the coarse-scale coeffi-cients capturing low-frequency components, and {Cj }J−1
+
+> j=1
+
+with Cj ∈ RSaj ×Sbj ×2 represents the fine-scale coefficients containing high-frequency details. The inverse transform reconstructs the signal as: 
+
+ˆH = Inv _Curvelet J (C). (9) The specific implementation steps are summarized in Algorithm 1. Algorithm 1 The process of the curvelet transform. Input: For the CSI H in the angle-delay domain to be fed back, set up a J-level curvelet transform.  
+
+> 1:
+
+Obtain the discrete Fourier sampling H′ of the CSI matrix through 2D FFT. Take the Cartesian window and multiply it with the Fourier samples:  
+
+> 2:
+
+for each (j, l j ) do:  
+
+> 3:
+
+obtain Qj,l j through eq (6).  
+
+> 4:
+
+end for Periodically map the wedge regions to rectangular regions:  
+
+> 5:
+
+for each (j, l j ) do:  
+
+> 6:
+
+Obtain the coefficients of Qj,l j wrapped around the origin of the Cartesian coordinate system through eq (7).  
+
+> 7:
+
+end for Apply 2D-IFFT on each wrapped frequency domain data:  
+
+> 8:
+
+for each (j, l j ) do:  
+
+> 9:
+
+Obtain the discrete curvelet coefficients through eq (8).  
+
+> 10:
+
+end for Output: Complete discrete curvelet coefficients: C =
+
+{C0, {Cj }J−1 
+
+> j=1
+
+}
+
+As shown in Fig. 3(b), this step maps information from a specific scale and angle (purple region in upper left) to a rectangular region around the origin. The wrapping technique translates all frequency domain regions to a rectangular affine region at the origin. Due to the 2D Fourier transform’s periodicity, this mapping preserves all information without loss. Fig. 3(b) demonstrates curvelet spatial domain characteristics. When the spatial scale is 
+
+2−j (Fig. 3(a)), the corresponding curvelet has support length 2−j/ 2 and width 2−j . The parabolic relationship 
+
+width ≈ length 2 reveals curvelets’ significant directional and anisotropic properties. Curvelet coefficients are orga-nized as unit arrays with scale- and orientation-specific matrices of varying sizes. Transform implementation in-volves inverse transforms on beam domain signals: the beam domain partition grids in Fig. 3(a) convert to spatial domain curvelets in Fig. 3(b), where purple and blue regions correspond to wedge window functions at the fourth and third scales, respectively. To assess the curvelet transform’s feature extraction and reconstruction efficacy in multi-scale signal anal-ysis, this study employs scale-wise reconstruction for quantitative evaluation, emphasizing the impact of edge signal recovery across frequency scales. Utilizing the CSI matrix (Fig. 4(a)), a two-level curvelet decomposition is performed to derive multi-scale coefficient representations, followed by independent reconstruction of each scale to validate the transform’s scale separation properties. The reconstruction outcomes (Fig. 4(b)-4(c)) illustrate the curvelet transform’s proficient separation of multi-scale signal features. Coarse-scale reconstruction retains global contours and low-frequency information, demonstrating robust macroscopic structure characterization (Fig. 4(b)). In contrast, fine-scale reconstruction highlights local de-tails and microscopic variations, sensitively capturing edge effects from boundary truncation discontinuities in the measurement domain (Fig. 4(c)). The experimental results validate the curvelet transform’s capability for multi-scale decomposition, effectively separating global structures from local details (including truncation edge effects) across different coefficients. This scale-adaptive 6
+
+property establishes a theoretical foundation for refined analysis of complex signals. C. Structure of SwinCANet 1) Design of the Architecture: In the feature extraction stage, the low-frequency and high-frequency components of the CSI are effectively separated by the curvelet trans-form. We can obtain the coarse-scale coefficient matrix (characterizing the low-frequency component of the signal) 
+
+C0 and the set of fine-scale directional subbands (char-acterizing the high-frequency component of the signal) 
+
+{Cj }J−1 
+
+> j=1
+
+}. Except for the coarse scale C0, each scale contains multiple directional components, which represent the local structural information in different directions at that scale. Curvelet transform’s low-frequency coefficients serve as Swin Transformer input, achieving multi-level collabora-tive optimization. The curvelet transform decomposes the CSI into low-frequency and high-frequency components. Among these, the low-frequency coefficients capture the global structure and macro trends of the channel matrix [24], which naturally aligns with Swin Transformer’s strength in modeling long-range dependencies [25]. More-over, the low-frequency coefficients preserve the primary energy of the signal while reducing dimensionality. Using these low-resolution, low-redundancy low-frequency com-ponents as input to the Swin Transformer, rather than the original high-dimensional CSI, can significantly alleviate the computational burden on the Swin Transformer. Fur-thermore, since signal energy is concentrated in the low-frequency band while noise energy is dispersed across the entire frequency band [26], the low-frequency components inherently possess a higher SNR, thereby providing amore robust feature representation for subsequent DL models. This combined mathematical transform and deep learning approach provides an effective balance between accuracy and efficiency for low-frequency information pro-cessing. Besides, high-frequency coefficients contain rich local information, which is crucial for signal reconstruction and detail enhancement. The high-frequency components exhibit strong sparsity, with most coefficients being zero or close to zero. This structured frequency-domain represen-tation naturally supports a high compression ratio and sig-nificantly reduces the input dimensionality for subsequent neural processing. We introduce a channel-wise attention mechanism [27] that adaptively learns the importance distribution of each channel and dynamically reweights the high-frequency coefficients. This mechanism effectively enhances the representation of key local features while suppressing noise and redundant components, thereby achieving a synergistic optimization of detail preservation and redundancy reduction. Next we describe the proposed SwinCANet in detail, as shown in Fig. 5, the system consists of an encoder on the UE and a decoder on the BS. Unlike models that only use Swin Transformer, we add a channel-wise attention block to the model for extracting higher-scale high-frequency information. The low-frequency information is then fused with high-frequency information in the Swin Transformer block in the second stage to enhance the feature repre-sentation. In this way, we are able to efficiently perform multi-scale learning and extract orientation information. 2) Coarse-scale Feature Extraction with Swin Trans-former: The coarse-scale information in the curvelet do-main is represented as a 3D input image of size Ca ×Cb ×2,where the last dimension 2 represents the real and imaginary parts of the coarse-scale curvelet coefficients, respectively. In the encoder part, the coarse-scale curvelet coefficient matrix is processed by the patch partition module of 3 × 3, which splits the matrix into multiple patches and treats each patch as a token to realize the conversion to sequence embedding. The patch partition module divides the coarse-scale coefficient matrix into  
+
+> Ca
+> 3
+
+× Cb 
+
+> 3
+
+non-overlapping patches. With this division method, the feature dimension of each patch becomes 
+
+3×3×2. Subsequently, the patch embedding layer projects the patch features into a predefined embedding dimension 
+
+E1, yielding z0. Then passes through N1 Swin Transformer blocks to maintain the number of tokens. Unlike convenional Multi-Head Self-Attention (MSA) modules, the Swin Transformer block [25] is constructed based on shifted windows. As shown in Fig. 5, two successive Swin Transformer blocks are illustrated, where each block consists of a Layer Normalization (LN) layer, a multi-head self-attention module, a residual connection, and a two-layer MLP with GELU activation. Specifi-cally, a Window-based Multi-Head Self-Attention (W-MSA) module and a Shifted Window-based Multi-Head Self-Attention (SW-MSA) module are alternately applied in two successive Transformer blocks, enabling efficient local modeling while achieving cross-window information interaction through window shifting. Following this win-dow partitioning approach, continuous Swin Transformer blocks can be designed as, 
+
+ˆzk = W-MSA (LN (zk−1)) + zk−1,
+
+zk = MLP (LN (ˆ zk)) + ˆ zk,
+
+ˆzk+1 = SW-MSA (LN (zk)) + zk,
+
+zk+1 = MLP (LN (ˆ zk+1 )) + ˆ zk+1 ,
+
+(10) where ˆzk and zk denote the outputs of the (S)W-MSA module and the MLP module in the k-th block, respec-tively. The self-attention is computed as follows: 
+
+fSA (zk) = softmax( QK T
+
+√d )V , (11) where Q = zkW Q, K = zkW K , and V = zkW V , in which W Q, W K , and W V are the learnable weights across different windows. The operator softmax( ·) represents the softmax activation function. After passing through N1 Swin transformer blocks, then is fed into a patch merging layer to reduce the feature size. 3) Fine-scale information extraction via channel-wise attention mechanism: For the high-frequency components 7Curvelet Transform          
+
+> Patch Partition
+> Swin Transformer Block ×
+> Swin Transformer Block
+> Patch Merging
+> FC
+> Noisy Feedback
+> +
+> Noisy
+> FC
+> Curveband#1
+> Patch Partition
+> Channel-wise Attention Encoder
+> Concat ×Swin Transformer Block ×
+> Patch Expanding
+> Patch Expanding
+> Swin Transformer Block
+> Inverse Curvelet Transform
+> Patch Fusion
+> Split
+> Concat
+> Threshold Function
+> Channel-wise Attention Decoder
+> MLP
+> LN
+> W-MSA
+> LN
+> MLP
+> LN
+> W-MSA
+> LN
+> Two successive Swin Transformer Blocks
+> Transmitter Receiver
+> Channel-wise Attention Decoder Channel-wise Attention Encoder
+> ×
+> +
+> :Channel-wise Multiplication :Element-wise Addition :Concatenation cc
+> H
+> ˆH
+> 1N
+> 2N
+> 1N
+> ×2N
+> Uplink Channel
+> Patch Embedding
+> k
+> z
+> 1k+
+> z
+> 1
+> ˆk+
+> z
+> ˆk
+> z
+> 1k-
+> z
+> k
+> z
+> ˆˆ
+> SwinCANet Encoder SwinCANet Decoder
+
+Fig. 5. The overall architecture of the proposed De-SwinCANet. 
+
+of CSI, the system adopts a multi-angle cyclic processing architecture for processing. The coefficient matrix at the jth scale is represented as a 3D input image of 
+
+Saj × Sbj × 2, where the last dimension 2 denotes the real and imaginary parts of the curvelet coefficients, respectively. After the reshaping operation is also first processed by the patch division module to realize the sequence embedding to obtain ¯Cj ∈ RS′ 
+
+> aj
+
+×S′ 
+
+> bj
+
+×2, and then enters the channel-wise attention module processing, which performs adaptive reweighting of high-frequency coefficients. In this process, each channel corresponds to a specific feature map, and these feature maps are generated through learnable filters, representing different learned feature patterns respectively [27], [28]. Therefore, the purpose of the channel-wise attention mechanism is to highlight important high-frequency detail information. Next, we will introduce the detailed architecture of the channel-wise attention mechanism. On the encoder side, we first apply convolutional kernels with varying window sizes to the input ¯Cj to capture multi-scale spatial features. The resulting feature maps are processed through both max pooling (MP) and average pooling (AP) operations to extract complementary spatial information, which are then concatenated and further refined using a convolutional block. A simple gating mech-anism, implemented via two fully connected layers with a sigmoid activation in between, is used to generate channel attention weights. These attention weights are applied to the normalized features via channel-wise multiplication. The attended features are then transposed, and a final 2D convolutional layer is used to reconstruct the channel domain. Finally, a residual connection adds the original input ¯Cj back to the processed features to obtain the final output of the channel-wise attention mechanism. And the channel-wise attention mechanism at the j-th subbands consists of the following components, 
+
+fCA (¯Cj ) = LN( f C5 (sigmoid( W2W3(MP(LN( f C4 ([MP( ¯Cj ); AP( ¯Cj )]))))) ⊙ ˜Cj )T + ¯Cj ) ,
+
+(12) where f (·) is the 2D convolutional layer, ˜Cj =
+
+δ[C1; C2; C3], C1 = f C1 (¯Cj ), C2 = f C2 (¯Cj ), and C3 =
+
+f C3 (¯Cj ), where f C1
+
+i (·), f C2
+
+i (·), and f C3
+
+i (·) are the 2D convolutional layers with different kernel sizes, and δ(·)
+
+represent the ReLU activate function. W2 and W3 are two FC layers, representing a simple gating mechanism used to obtain the attention weights for each channel, capturing the dependencies between channels to effectively capture the key feature information of the CSI. The high-frequency information from the channel-wise attention module is concatenated with the preprocessed low-frequency information, forming inputs that integrate directional features and global context. To fully capture multi-angle directional characteristics, N2 Swin Trans-former blocks are cascaded, corresponding to the number of angles. Following the layer-by-layer progressive mech-anism of Swin Transformer, features from each angle are iteratively processed by the corresponding blocks, where the output of each stage serves as the input for the next. This recurrent refinement enables mutual interaction and progressive fusion of directional features across different angles. Each processing step performs feature refinement and enhancement based on the previous step, ultimately forming a comprehensive feature representation containing rich directional information, which provides a high-quality feature foundation for subsequent curvelet coefficient re-construction and signal recovery. Finally, a fully connected layer is used to obtain the compressed codeword g.After passing through the wireless channel, we obtain the noise signal ˜g. On the decoding side, the SwinCANet decoder Fχ(·; Θ χ) is designed as a symmetric part with the encoder Fε(·; Θ ε). First, decompression is performed 8                
+
+>     
+> D
+>   
+>     
+> E
+>   
+>    
+> F
+> 6LJPRLG  W
+> WW
+> 1RUPDOL]HG 6LJPRLG  W
+> Fig. 6. (a) Sigmoid function; (b) Normalized Sigmoid function ( T
+> = 2); (c) Sigmoid threshold function ( T= 2).
+
+through an FC layer. Feature recovery comprises patch ex-panding layers, Swin Transformer blocks, and channel-wise attention decoding modules. The decoding process uses pre-specified Swin Transformer blocks and patch expand-ing layers for upsampling to recover compressed features to appropriate scales. The system employs cyclic decoding ar-chitecture to progressively reconstruct curvelet coefficients for each angle. Data feeds into angle-corresponding Swin Transformer blocks, processed cyclically following stan-dard Swin Transformer decoding procedures. After each Swin Transformer block, data splits into low-frequency and high-frequency components. Low-frequency information passes to the next block as basic information for sub-sequent angle processing. Through cyclic decoding across all blocks, the system gradually separates and reconstructs coefficient matrices for all angles, achieving step-by-step decomposition from comprehensive features to specific angle coefficients. High-frequency information ˆCj enters the channel-wise attention decoding module for feature recovery, where attention mechanisms restore directional detail features for each angle. The corresponding decoding process can be described by the following formula, 
+
+fCA (ˆCj ) = LN( f C7 (sigmoid( W4W5(MP( δ(f C6 
+
+> i
+
+(ˆCj ))))) ·
+
+˜ˆCj )T + ˆCj ),
+
+(13) where ˜ˆCj = δ(C5), C5 = f C5 (ˆCj ), f C6 
+
+> i
+
+(·) and f C7 
+
+> i
+
+(·) are the 2D convolutional layers, and W4 and W5 denote the FC layers, respectively. Finally, through patch fusion modules and reshaping operations, the reconstructed high-frequency curvelet coef-ficients are obtained. Meanwhile, the ultimately separated low-frequency information is processed by patch expand-ing layers for upsampling to obtain reconstructed low-frequency coefficients. Eventually, the coefficient matrices from all angles, together with the separated low-frequency information, constitute a complete curvelet coefficient representation, providing an accurate coefficient founda-tion for subsequent inverse curvelet transform and signal reconstruction. D. The Setting of the Threshold Function According to Candes and Donoho [29], when the signal features match the curvelet basis functions well, the corresponding curvelet coefficients are large; conversely, when the match is poor, the coefficients are small. Since the major components of a useful signal typically exhibit D E F 
+
+> Fig. 7. (a) Original channel ; (b) The noisy channel (SNR = 10 dB); (c) The denoised channel using curvelets.
+
+regular and smooth variations, they can be described by larger curvelet coefficients. In contrast, noise often exhibits random oscillatory characteristics and is described by smaller curvelet coefficients. Based on this property, we set thresholds at each scale in the curvelet domain to filter out coefficients related to noise, and then reconstruct the remaining curvelet coefficients back into the spatial domain for denoising. Based on the above analysis, we know that the choice of threshold function is crucial, as it determines whether the curvelet coefficients of the useful signal and random noise can be accurately separated. If the selected threshold is too small, it may result in residual noise, making the denoising incomplete. Similarly, if the threshold is too large, while noise is effectively suppressed, some useful signal may also be damaged. After investigation, we introduce the Sigmoid function as our threshold function. The Sigmoid function can be expressed as, 
+
+δ(t) = 11 + e−t . (14) As shown in Fig. 6(a), when t > 0, δ(t) rapidly approaches 1 as t increases. Conversely, when t < 0, δ(t) rapidly approaches 0 as t decreases. Before constructing the Sigmoid threshold function, it is necessary to normalize it, placing it within the desired interval, thus obtaining a function that can be truncated (Fig. 6(b)). The truncation position is determined by the threshold T . The normalized Sigmoid function can be expressed as, 
+
+δ(t) = 11 + e −10( |t|− T )
+
+> T
+
+. (15) Subsequently, we multiply eq(27) by the wave coefficient 
+
+C to obtain the final Sigmoid threshold function, that is, 
+
+δ(C) = 11 + e −10( |C|− T )
+
+> T
+
+C. (16) To validate the effectiveness of curvelet denoising, we adopt the same public dataset from the first deep learning-based Massive MIMO CSI feedback work [2], in Fig. 7, we compare the grayscale images of the reconstructed channel at the BS when there is feedback noise, i.e., when eq(5) holds. Fig. 7(a) shows the original channel image, Fig. 7(b) shows the channel image after adding noise, and Fig. 7(c) shows the channel image after denoising with curvelets. It can be observed that Sigmoid function effectively separate the signal and noise. 9-5 0 5 10 15 20                    
+
+> SNR(dB)
+> -30 -25 -20 -15 -10 -5 0
+> Normalized Mean Square Error (dB)  (a) Proposed
+> SwinCFNet
+> CLNet
+> CRNet
+> TransNet
+> CsiNet
+> DCsiNet
+> -5 0510 15 20
+> SNR(dB)
+> -25 -20 -15 -10 -5 0
+> Normalized Mean Square Error (dB)  (b) Proposed
+> SwinCFNet
+> CLNet
+> CRNet
+> TransNet
+> CsiNet
+> DCsiNet
+> -5 0510 15 20
+> SNR(dB)
+> -20 -15 -10 -5 0
+> Normalized Mean Square Error (dB)  (c) Proposed
+> SwinCFNet
+> CLNet
+> CRNet
+> TransNet
+> CsiNet
+> DCsiNet
+> -5 0510 15 20
+> SNR(dB)
+> -15 -10 -5 05
+> Normalized Mean Square Error (dB)  (d) Proposed
+> SwinCFNet
+> CLNet
+> CRNet
+> TransNet
+> CsiNet
+> DCsiNet
+
+Fig. 8. NMSE Performance Comparison of Various CSI Reconstruction Methods with the Proposed Model under Channel Noise at Different Compression Ratios: (a) CR = 1/4, (b) CR = 1/8, (c) CR = 1/16, and (d) CR = 1/32. -5 0 5 10 15 20                
+
+> SNR(dB)
+> 0.8 0.84 0.88 0.92 0.96 1
+> Cosine Similarity
+> (a)
+> Proposed
+> SwinCFNet
+> CLNet
+> CRNet
+> TransNet
+> CsiNet
+> DCsiNet
+> -5 0510 15 20
+> SNR(dB)
+> 0.7 0.75 0.8 0.85 0.9 0.95 1
+> Cosine Similarity
+> (b)
+> Proposed
+> SwinCFNet
+> CLNet
+> CRNet
+> TransNet
+> CsiNet
+> DCsiNet
+> -5 0510 15 20
+> SNR(dB)
+> 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1
+> Cosine Similarity
+> (c)
+> Proposed
+> SwinCFNet
+> CLNet
+> CRNet
+> TransNet
+> CsiNet
+> DCsiNet
+> -5 0510 15 20
+> SNR(dB)
+> 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1
+> Cosine Similarity
+> (d)
+> Proposed
+> SwinCFNet
+> CLNet
+> CRNet
+> TransNet
+> CsiNet
+> DCsiNet
+
+Fig. 9. Cosine Similarity Performance Comparison of Various CSI Reconstruction Methods with the Proposed Model under Channel Noise at Different Compression Ratios: (a) CR = 1/4, (b) CR = 1/8, (c) CR = 1/16, and (d) CR = 1/32. 
+
+E. Training of De-SwinCANet To train the proposed De-SwinCANet, we employ an end-to-end approach. To minimize the difference between the original H and the reconstructed ˆH, the loss function we use for training is the mean squared error (MSE), which can be computed as follows: 
+
+L(H, ˆH) = E[|| H − ˆH|| 22]. (17) The training process of the whole system is given in Algorithm 2. The network is trained over epochs, which will converge with the training process. Algorithm 2 Training Process of CSI Feedback Based on De-SwinCANet Network. Input: Feedback of batch size n, CSI H.
+
+1: while the training stop criterion is not met do Transmitter: 
+
+2: Curvelet transform: Curvelet J (H) → C.
+
+3: SwinCANet encoder: Fε(C; Θ ε) → g.
+
+4: Transmit g over the channel → ˜g.Receiver: 
+
+5: SwinCANet decoder: Fχ(˜g; Θ χ) → ˜C.
+
+6: Sigmoid threshold function: δ(˜C) → ˆC.
+
+7: Inverse curvelet transform: Inv _Curvelet J (ˆC) →
+
+ˆHa.
+
+8: Calculate the gradient based on (27). 
+
+9: Train the network by gradient descent. 
+
+10: end while Output: The whole network 
+
+Fε(·), Fχ(·).IV. Simulation Results A. Simulation Settings 1) Data Generation: In our simulation, to more real-istically evaluate the performance of the proposed CSI feedback denoising algorithm, we regenerated a dataset based on the COST2100 channel model [30]. Existing public datasets are limited in scale and scenarios, making them insufficient to fully reflect the challenges of high CSI dimensions and large feedback overheads in large-scale antenna systems. To address this, we constructed an indoor picocellular scenario operating at 5.3 GHz, where the system utilized a uniform linear array (ULA) with 256 antennas and 1024 subcarriers, placed at the center of a 
+
+20 m×20 m square area. The UE was randomly distributed within this square area, and other parameters followed the default settings in [5]. The generated dataset contains a total of 100,000 samples, with 50,000 for training, 30,000 for validation, and 20,000 for testing. The generated CSI matrix was transformed into the angular-delay domain using 2D-DFT, and we selected the initial 32 rows, i.e., 
+
+Na = 32 , converting the channel matrix into a 32 × 256 
+
+complex matrix in the angle-delay domain. 2)Setting of training parameters and Evaluation Met-ric: In our experiments, unless otherwise specified, the number of scales for the curvelet transform is set to 
+
+⌈log 2(min( Na, N t)) − 3⌉. For both the indoor and outdoor scenarios, the window size of the proposed method is set to 7 and the patch size is set to 3 × 3. For all experiments, the number of attention heads in each layer is set to [4, 8], and the expansion factor of each MLP layer is set to 4. The number of Swin Transformer blocks is configured as [N1, N 2] = [4, 16]. The batch size and number of epoch are set to 200 and 1000, respectively. We used the Adam 10 
+
+optimizer with a learning rate of 0.00005 and employed MSE as the loss function to improve training accuracy. In this study, the channel estimation performance is evaluated using the normalized mean squared error (NMSE), 
+
+NMSE ∆
+
+= E
+
+∥∥∥H − ˆH
+
+∥∥∥22
+
+∥H∥22
+
+ . (18) Cosine similarity in the spatial-frequency domain is also employed as a metric to assess and compare the effectiveness of different approaches, which is given by, 
+
+ρ = E
+
+
+
+1˜Nc
+
+> ˜Nc
+
+∑
+
+> n=1
+
+|ˆ˜hHn ˜hn||| ˆ˜hHn || 2|| ˜hn|| 2
+
+ , (19) where ˜hn and ˆ˜hn denote the original and reconstructed channel vector of the n-th subcarrier, respectively. 3)Benchmarks: For the baseline, we compare the pro-posed system with the benchmarks as follows:  
+
+> •
+
+CsiNet [2] integrates deep learning for CSI feedback, compressing downlink CSI via an encoder for trans-mission.  
+
+> •
+
+CRNet [4] adopts a multi-resolution architecture within its network design and highlights the signifi-cance of an effective training scheme  
+
+> •
+
+CLNet [5] treats CSI as a physically meaningful complex-valued signal  
+
+> •
+
+SwinCFNet [11] based on the Swin Transformer  
+
+> •
+
+TransNet [10] adopts a dual-layer Transformer archi-tecture  
+
+> •
+
+DCsiNet [16] is a deep learning model that incorpo-rates a decoder for simultaneous CSI decompression and denoising, enhancing feedback accuracy in noise-contaminated environments. Note that all benchmark methods were retrained by us on the newly generated dataset (256 antennas × 1024 subcarriers) to ensure fair and comparable experimental evaluation. B. Performance Comparison Fig. 8 compares the NMSE performance of various methods under different SNR and compression ratio (CR) conditions. As expected, performance improves with in-creasing CR and SNR. The proposed De-SwinCANet con-sistently outperforms existing CSI reconstruction methods and the denoising-enabled DCsiNet across all settings, exhibiting superior robustness even under high com-pression or strong noise. The main reason is that the proposed method decomposes the CSI into low-frequency and high-frequency components by curvelet transform [23] and encodes and decodes the low-frequency and high-frequency components by using Swin Transform and channel-wise attention module. Such separation enhances feature extraction efficiency, integrates global semantics with local details, reduces information redundancy, and optimizes computational resource allocation. Moreover, 0.05 0.1 0.15 0.2 0.25      
+
+> Compression Ratio
+> -30 -25 -20 -15 -10 -5 0
+> Normalized Mean Square Error (dB)
+> De-SwinCANet
+> SwinCFNet
+> CLNet
+> CRNet
+> TransNet
+> CsiNet
+> DCsiNet
+> 0.05 0.1 0.15 0.2 0.25
+> Compression Ratio
+> -30 -25 -20 -15 -10 -5 0
+> Normalized Mean Square Error (dB)
+> De-SwinCANet
+> SwinCFNet
+> CLNet
+> CRNet
+> TransNet
+> CsiNet
+> DCsiNet
+> Fig. 10. NMSE comparison of different models under varying CRs at an SNR = 10dB: (a) AWGN channels and (b) Rayleigh fading channels.
+
+the incorporation of a thresholding function mitigates noise in the feedback loop, further improving reconstruc-tion accuracy. Notably, at SNR = 10 dB, the proposed method surpasses all competing methods operating at SNR = 20 dB across all CRs, underscoring its exceptional robustness and generalization capability. Meanwhile, we further present the comparison of ρ
+
+values under different SNR conditions and CR across various methods in Fig. 9. Consistent with the NMSE performance under the same conditions in Fig. 8, the proposed method also shows a gradual improvement in ρ
+
+values as the compression ratio and SNR increase. In con-trast, thanks to the introduction of the curvelet transform, our approach employs the Swin Transformer and channel-wise attention mechanism to model the low- and high-frequency components of CSI, respectively, significantly enhancing feature extraction accuracy. Additionally, the use of a thresholding function effectively suppresses noise interference, enabling our method to outperform other approaches across all compression ratios. Notably, in challenging scenarios such as high compression or severe noise conditions, the proposed method maintains high re-11 0.05 0.1 0.15 0.2 0.25      
+
+> Compression Ratio
+> 0.8 0.85 0.9 0.95 1
+> Cosine Similarity
+> De-SwinCANet
+> SwinCFNet
+> CLNet
+> CRNet
+> TransNet
+> CsiNet
+> DCsiNet
+> 0.05 0.1 0.15 0.2 0.25
+> Compression Ratio
+> 0.8 0.85 0.9 0.95 1
+> Cosine Similarity
+> De-SwinCANet
+> SwinCFNet
+> CLNet
+> CRNet
+> TransNet
+> CsiNet
+> DCsiNet
+> Fig. 11. Cosine similarity comparison of different models under varying CRs at an SNR = 10dB: (a) AWGN channels and (b) Rayleigh fading channels.
+
+construction accuracy, demonstrating superior robustness against compression and noise. To evaluate robustness, Fig. 10 compares the NMSE performance of the proposed De-SwinCANet against ex-isting CSI feedback networks and the denoising model DCsiNet under AWGN and Rayleigh fading channels at SNR = 10 dB across compression ratios of 1/32, 1/16, 1/8, and 1/4. As expected, NMSE improves with increasing CR for all methods. The proposed method consistently outperforms others, particularly at lower CRs, achieving NMSE below −20 dB at CR = 1/4. This advantage is attributed to curvelet transform-based decomposition of CSI into low- and high-frequency components, pro-cessed separately via Swin Transformer and channel-wise attention, alongside a thresholding function for noise suppression. Under fading channels, all methods exhibit performance degradation relative to AWGN; however, the proposed method demonstrates superior stability, with only approximately 1 dB increase in NMSE, validating its robustness. The separate processing strategy enhances generalization and resilience in complex CSI environments. Fig. 11 presents a comparison of the NMSE and ρ
+
+performance at SNR = 10 dB of the proposed De-SwinCANet with the associated CSI feedback networks under different compression ratios over AWGN channel and fading channel for CSI feedback. The compression ratios are set to 1/32, 1/16, 1/8, and 1/4. From the figure, we can observe that the ρ values for all methods increases as the compression ratio increases and our method outperform all other methods, especially at lower compression ratios. And we can get the same conclusion as Fig. 11, all other methods show performance degradation under fading channel with respect to AWGN channel, while the proposed method remains basically stable, which proves the robustness of the proposed method. To evaluate the scalability of the proposed method with respect to antenna array size, comparative experi-ments were conducted under AWGN channels (CR=1/4, SNR=10dB) across various antenna configurations, with results summarized in Table I. The proposed method exhibits favorable scalability in both computational com-plexity and reconstruction performance. In terms of com-plexity, its FLOPs increase approximately linearly with the number of antennas. While SwinCFNet and DsiNet also display linear growth, their absolute computational costs remain substantially higher. TransNet incurs mod-erate complexity but suffers from more rapid perfor-mance degradation as antenna count grows. Regarding reconstruction quality, the proposed method achieves the best or near-best NMSE across all configurations, with performance degradation notably smaller than that of competing approaches such as SwinCFNet and TransNet. These results demonstrate that the proposed method strikes an effective balance between performance and com-plexity, achieving superior reconstruction accuracy with moderate computational overhead, rendering it well-suited for large-scale MIMO systems with stringent efficiency requirements. C. Performance Analysis of Quantization and Entropy Coding In practical communication systems, the compressed codeword g needs to be quantized before being trans-mitted over digital feedback channels. To verify the applicability of the proposed method in practical bit-level transmission scenarios, this section introduces an entropy bottleneck layer [20], [31] to analyze the impact of quantization and entropy coding on system performance. We adopt the training configuration outlined in Section IV-A throughout our experiments. The compression ratio is fixed at 1/4, corresponding to an encoder output dimension of k = 4096 . The training is performed under AWGN channel conditions with a SNR of 10 dB. To characterize the rate-distortion performance, we train multiple networks with the regularization parameter λ
+
+logarithmically distributed over the interval [10 −1, 10 5].The quality of channel reconstruction is quantified by the NMSE defined in Eq. (18). The principles of quantization and entropy coding are described in detail. 1                                                                                                    
+
+> 1https://github.com/MenliTao/Principles-of-Quantization-and-Entropy-Coding/blob/main/Supplementary%20Materials.pdf 12
+> TABLE I Performance and Complexity Comparison of Methods under Antenna Configurations (CR=1/4, SNR=10dB, AWGN) Antennas Proposed SwinCFNet CLNet TransNet DsiNet NMSE FLOPS NMSE FLOPS NMSE FLOPS NMSE FLOPS NMSE FLOPS 32 -28.1 80.671M -24.4 624.12M -23.5 4.05M -26.2 35.75M -25.7 292.864M 64 -27.7 152.742M -23.3 1.287G -22.1 13.271M -24.9 75.694M -24.9 745.268M 128 -27.1 319.03M -21.2 2.540G -20.6 43.319M -22.8 168.165M -24.1 1.685G 256 -25.6 511.576M -18.8 5.045G -18.97 153.748M -20.3 403.44M -21.2 4.032G TABLE II Comparison of NMSE and ρin ablation experiments under different compression ratios at SNR=20dB. CR cr=1/4 cr=1/8 cr=1/16 cr=1/32 Performance NMSE ρNMSE ρNMSE ρNMSE ρ
+> De-SwinCANet −25 .90.99 −21 .50.99 −15 .60.98 −12 .50.96
+> Without curvelet transform −23 .70.99 −18 .90.99 −13 .60.96 −10 .10.93 Without CAB −22 .10.99 −18 .00.98 −13 .10.96 −9.60.93 Without threshold function −24 .50.99 −19 .90.99 −14 .50.97 −11 .00.94
+
+Fig. 12 shows the rate-distortion performance compar-ison of different CSI feedback methods. As shown in Fig. 12, we compared the rate-distortion performance of the proposed method with six benchmark methods across a bits per pixel (BPP) range from 0.5 to 2. In terms of the NMSE metric, the proposed method outperforms all comparison methods throughout the entire BPP range. Specifically, at BPP=0.5, the proposed method achieves an NMSE of approximately -18 dB, which is about 8 dB lower than SwinCFNet and nearly 12 dB lower than CsiNet. When BPP increases to 2, the proposed method reaches approximately -24 dB, maintaining a performance gap of about 5 dB compared to SwinCFNet. Notably, methods such as CsiNet, TransNet, and CRNet exhibit relatively slow NMSE reduction as BPP increases, whereas the proposed method demonstrates a steeper downward trend, indicating its ability to utilize additional bits more efficiently. The cosine similarity results further validate the above findings. The proposed method maintains high similarity across all BPP values. Although the similarity of all methods tends to converge at BPP=2, the performance gap at lower BPP values highlights the superior compres-sion efficiency of the proposed method. In summary, the proposed method demonstrates the best rate-distortion trade-off performance among all evaluated methods.                         
+
+> TABLE III Complexity comparison between series of CSI feedback network and the proposed De-SwinCANet Method FLOPs (G) Params (M) NMSE (dB) SwinCFNet 5.045 7.541 -18.8 TransNet 0.403 2.629 -20.3 CLNet 0.154 134.240 -18.97 CRNet 0.161 134.241 -18.4 DCsiNet 4.032 789.213 -21.2 CsiNet 0.096 67.129 -16.3 Proposed 0.512 2.107 -25.6
+
+D. Ablation Experiment To verify the effectiveness and necessity of each compo-nent in the model, we conducted three groups of ablation experiments in this section: (1) Ablation of curvelet trans-form (Without curvelet transform): directly applying the proposed SwinCANet to the CSI feedback task; (2) Abla-tion of channel-wise attention module (Without CAM): using Swin Transformer to process the low-frequency and high-frequency information decomposed by curvelet transform for feedback; (3) Ablation of threshold function (Without threshold function): removing the use of thresh-old function, where the curvelet coefficients recovered by SwinCANet decoder directly undergo inverse curvelet transform to obtain the reconstructed CSI matrix. Table II presents ablation results for curvelet transform, channel-wise attention module, and threshold function under different CRs. Ablating each component causes performance degradation in both NMSE and ρ, with NMSE decline being more pronounced. The ablation of the curvelet transform results in the most significant NMSE increase because it plays a fundamental role in frequency-domain decomposition, effectively separating low-frequency information (main structural features) from high-frequency information (edge and texture details) for differentiated processing. Without the curvelet transform, the model is forced to process all frequency components uniformly, substantially reducing its ability to capture the complex frequency characteristics of CSI. This result demonstrates that the multi-scale and multi-directional decomposition capability provided by the curvelet trans-form cannot be effectively replaced by end-to-end neural network learning, as the curvelet transform provides a mathematically optimized framework whose anisotropic characteristics are highly matched with massive MIMO channel properties, while learning such complex structures from scratch requires enormous model capacity and train-ing data. After removing the channel-wise attention mod-ule, using only Swin Transformer to process the curvelet-transformed information also leads to performance degra-13 0.5 1 1.5 2              
+
+> BPP
+> -25 -20 -15 -10 -5 0
+> Normalized Mean Square Error (dB)
+> (a)
+> Proposed
+> SwinCFNet
+> CLNet
+> CRNet
+> TransNet
+> CsiNet
+> DCsiNet
+> 0.5 11.5 2
+> BPP
+> 0.7 0.75 0.8 0.85 0.9 0.95 1
+> Cosine Similarity
+> (b)
+> Proposed
+> SwinCFNet
+> CLNet
+> CRNet
+> TransNet
+> CsiNet
+> DCsiNet
+> Fig. 12. Rate-distortion performance comparison of different CSI feedback methods at an SNR =10dB: (a) NMSE; (b) Cosine similarity.
+
+dation. This is because high-frequency information has characteristics of strong locality and dramatic variations, requiring sophisticated local feature capture capabilities. The channel-wise attention module is specifically designed to capture local details in high-frequency information, while Swin Transformer’s window attention mechanism is mainly suitable for processing low-frequency information with global structural characteristics and cannot ade-quately capture local detail features in high-frequency components. Although removing the threshold function results in relatively mild performance degradation, it still causes performance loss. The threshold function plays an important denoising role in the curvelet domain, adaptively suppressing noise coefficients and redundant in-formation while preserving the most important coefficients for signal reconstruction. Without the threshold function, coefficients containing noise accumulate errors during the reconstruction process, reducing the reconstruction quality of the CSI matrix. In summary, ablation studies validate the effectiveness and necessity of each model component. The curvelet transform, channel-wise attention module, and threshold function fulfill irreplaceable roles in frequency-domain decomposition, local feature extraction, and denoising, respectively. Their synergy underpins CSI feedback per-formance, and removing any component degrades results, confirming the rationality and efficiency of the proposed architecture. E. Complexity Analysis Table III compares the computational complexity of the proposed method with existing CSI feedback approaches at CR = 1/4. In terms of parameter count, the proposed method requires only 2.107M parameters, significantly fewer than CNN-based methods such as CLNet, CR-Net, and CsiNet, and also more efficient than TransNet (2.629M), demonstrating a clear lightweight advantage suitable for resource-constrained mobile devices. From the perspective of floating-point operations (FLOPs), the computational load of the proposed method is 0.512G. Al-though slightly higher than CLNet, CRNet, and TransNet, it is substantially lower than Transformer-based architec-tures such as SwinCFNet and DCsiNet. Notably, FLOPs are not a practical bottleneck in CSI feedback systems [10]; the core objective remains reconstruction accuracy. The proposed method achieves superior NMSE performance while maintaining low parameter overhead, validating the effectiveness of its architectural design. Overall, it strikes a favorable balance between computational efficiency and high-precision reconstruction. V. Conclusion In this paper, we proposed a channel feedback denoising model named De-SwinCANet for FDD massive MIMO systems. The proposed De-SwinCANet was based on the curvelet transform to separate the low-frequency and multi-scale high-frequency information of CSI, which can reduce the learning difficulties of CSI compression. Then, we processed this information by using SwinTransformer and the designed channel-wise attention module for low-frequency and high-frequency components, respectively. Furthermore, we fused the processed features with another SwinTransformer to remove redundancy between low-frequency and high-frequency components. At the receiver, we designed the denoising threshold function to remove the channel noise and improve the accuracy of the received CSI. The numerical results shown that the proposed De-SwinCANet achieves the state-of-the-art performance in terms of NMSE with fewer transmitted symbols and is more robust in low SNR regions. References   
+
+> [1] L. Lu, G. Y. Li, A. L. Swindlehurst, A. Ashikhmin, , and R. Zhang, “An overview of massive mimo: Benefits and chal-lenges,” IEEE J. Sel. Topics Signal Process.., vol. 8, no. 5, p. 105–110, Dec. 2022. [2] C.-K. Wen, W.-T. Shih, and S. Jin, “Deep learning for massive mimo csi feedback,” IEEE Wireless Commun. Lett., vol. 7, no. 5, pp. 748–751, Oct. 2018. 14
+
+[3] J. Guo et al., “Convolutional neural network-based multiple-rate compressive sensing for massive mimo csi feedback: Design, simulation, and analysis,” IEEE Trans. Wireless Commun., vol. 19, no. 4, pp. 2827–2840, Apr. 2020. [4] Z. Lu, J. Wang, and J. Song, “Multi-resolution csi feedback with deep learning in massive mimo system,” in Proc. IEEE Int. Conf. Commun. (ICC), Jun. 2020, pp. 1–6. [5] S. Ji and M. Li, “Clnet: Complex input lightweight neural net-work designed for massive mimo csi feedback,” IEEE Commun. Lett., vol. 10, no. 10, pp. 2318–2322, Oct. 2021. [6] J. Xu, B. Ai, N. Wang, and W. Chen, “Deep joint source-channel coding for csi feedback: An end-to-end approach,” IEEE J. Sel. Areas Commun., vol. 41, no. 1, pp. 260–273, Nov. 2023. [7] W. Wan, W. Chen, S. Wang, G. Y. Li, and B. Ai, “Deep plug-and-play prior for massive mimo systems,” arXiv preprint arXiv:2308.04728, Dec. 2023. [8] Y. Xu, M. Yuan, and M.-O. Pun, “Transformer empowered csi feedback for massive mimo systems,” in Proc. 30th Wireless Opt. Commun. Conf. (WOCC), Oct 2021, pp. 157–161. [9] A. Vaswani, “Attention is all you need,” Proc. 31st Adv. Neural Inf. Process. Syst. (NIPS), vol. 30, pp. 1–11, 2017. [10] Y. Cui, A. Guo, and C. Song, “Transnet: Full attention network for csi feedback in fdd massive mimo system,” IEEE Wireless Commun. Lett., vol. 11, no. 5, pp. 903–907, May. 2022. [11] J. Cheng et al., “Swin transformer-based csi feedback for massive mimo,” in 2023 IEEE 23rd International Conference on Communication Technology (ICCT). IEEE, Oct. 2023, pp. 809–814. [12] Y. Jang et al., “Deep autoencoder based csi feedback with feed-back errors and feedback delay in fdd massive mimo systems,” IEEE Wireless Commun. Lett., vol. 8, no. 3, pp. 833–836, Jun. 2019. [13] Y. Sun et al., “Ancinet: An efficient deep learning approach for feedback compression of estimated csi in massive mimo systems,” IEEE Wireless Commun. Lett., vol. 9, no. 12, pp. 2192–2196, Dec. 2020. [14] A. Lee et al., “Practical denoising autoencoder for csi feedback without clean target in massive mimo networks,” IEEE Wireless Commun. Lett., Nov. 2023. [15] M. H. Rahman et al., “Channel estimation for indoor massive mimo visible light communication with deep residual convolu-tional blind denoising network,” IEEE Trans. Cogn. Commun. Netw., vol. 9, no. 3, pp. 683–694, Feb. 2023. [16] S. S. Alam et al., “Dcsinet: Effective handling of noisy csi in fdd massive mimo system,” IEEE Wireless Commun. Lett., Jul. 2024. [17] J. Guo et al., “Convolutional neural network-based multiple-rate compressive sensing for massive mimo csi feedback: Design, simulation, and analysis,” IEEE Trans. Wireless Commun., vol. 19, no. 4, pp. 2827–2840, Apr. 2020. [18] T. Chen, J. Guo, S. Jin, C.-K. Wen, and G. Y. Li, “A novel quantization method for deep learning-based massive mimo csi feedback,” in 2019 IEEE Global Conference on Signal and Information Processing (GlobalSIP), 2019, pp. 1–5. [19] Q. Yang, M. B. Mashhadi, and D. Gündüz, “Deep convolutional compression for massive mimo csi feedback,” in 2019 IEEE 29th International Workshop on Machine Learning for Signal Processing (MLSP), 2019, pp. 1–6. [20] S. Ravula and S. Jain, “Deep autoencoder-based massive mimo csi feedback with quantization and entropy coding,” in 2021 IEEE Global Communications Conference (GLOBECOM), Dec. 2021, pp. 1–6. [21] L. Xu et al., “On the uplink achievable rate of massive mimo system with low-resolution adc and rf impairments,” IEEE Commun. Lett., vol. 23, no. 3, pp. 502–505, Jan. 2019. [22] G. YE HY, J. QIAN et al., “Deep learning-based denoise network for csi feedback in fdd massive mimo systems [j],” IEEE Commun. Lett., vol. 24, no. 8, pp. 1742–1746, Apr. 2020. [23] E. J. Candes, D. L. Donoho et al., Curvelets: A surprisingly effective nonadaptive representation for objects with edges. Department of Statistics, Stanford University Stanford, CA, USA, 1999. [24] E. Candès et al., “Fast discrete curvelet transforms,” Multiscale Model. Sim, vol. 5, no. 3, pp. 861–899, 2006. [25] Z. Liu et al., “Swin transformer: Hierarchical vision transformer using shifted windows,” in Proc. IEEE/CVF Int. Conf. Comput. Vis. (ICCV), Oct. 2021, pp. 10 012–10 022. [26] J.-L. Starck, E. Candes, and D. Donoho, “The curvelet trans-form for image denoising,” IEEE Transactions on Image Pro-cessing, vol. 11, no. 6, pp. 670–684, Jun. 2002. [27] J. Hu, L. Shen, and G. Sun, “Squeeze-and-excitation networks,” in Proc. Conf. Comput. Vis. Pattern Recognit. (CVPR), Jun. 2018, pp. 7132–7141. [28] M. Tao, J. Fan, J. Luo, and H. Xie, “Coarse-to-fine semantic communication systems for text transmission,” IEEE Trans. Veh. Technol., pp. 1–6, Apr. 2025. [29] E. J. Candès and D. L. Donoho, “New tight frames of curvelets and optimal representations of objects with piecewise c2 singu-larities,” Communications on Pure and Applied Mathematics: A Journal Issued by the Courant Institute of Mathematical Sciences, vol. 57, no. 2, pp. 219–266, 2004. [30] L. Liu et al., “The cost 2100 mimo channel model,” IEEE Wireless Commun., vol. 19, no. 6, pp. 92–99, Dec. 2012. [31] J. Balle, D. Minnen, S. Singh, S. J. Hwang, and N. Johnston, “Variational image compression with a scale hyperprior,” in International Conference on Learning Representations, May. 2018.

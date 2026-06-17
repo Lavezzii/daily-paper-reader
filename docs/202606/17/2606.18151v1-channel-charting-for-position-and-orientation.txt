@@ -1,0 +1,221 @@
+Title: Channel Charting for Position and Orientation
+
+URL Source: https://arxiv.org/pdf/2606.18151v1
+
+Published Time: Wed, 17 Jun 2026 01:27:38 GMT
+
+Number of Pages: 6
+
+Markdown Content:
+# Channel Charting for Position and Orientation 
+
+Daniel Richner, Reinhard Wiesmayr, Frederik Zumegen, and Christoph Studer 
+
+ETH Zürich, Switzerland; e-mail: wiesmayr@iis.ee.ethz.ch 
+
+Abstract —Channel charting (CC) in real-world coordinates is a recently proposed self-supervised machine learning method that maps high-dimensional channel state information (CSI) to user equipment (UE) position. In this paper, we extend CC to also estimate UE orientation, which can further assist tasks such as beamfinding, precoding, and beam- and cell-assignment. To this end, we propose a novel orientation triplet loss that accounts for angle periodicity and an alignment loss that embeds estimated orientations in real-world coordinates in a self-supervised fashion. Using real-world CSI measurements from a standard-compliant 5G NR system, we demonstrate that the proposed method achieves position and orientation estimation accuracy close to that of supervised approaches trained with ground-truth labels. 
+
+I. I NTRODUCTION 
+
+Future wireless communication systems are expected to incorporate user equipment (UE) localization capabilities [1]. Channel charting (CC) is a self-supervised pseudo-positioning method that maps high-dimensional channel-state information (CSI) to a low-dimensional representation associated with UE position without requiring ground-truth labels during training [2]. The recent approach in [3] further enables positioning in real-world coordinates. Existing CC methods, however, focus solely on position estimation and ignore inherent UE orientation dependence of CSI [4]–[6]. Information on UE orientation promises significant benefits for wireless networks. In particular, orientation information can assist beamfinding, precoding, beam- and cell-assignment, and UE trajectory prediction. Furthermore, when combined with information on the UE antenna placement, orientation estimates can indicate the heading (i.e., UE movement direction) of vehicles on the ground or in the air that carry the UE. 
+
+A. Contributions 
+
+We propose a new CC pipeline that maps a single CSI feature not only to a UE position estimate but also to an orientation estimate, as illustrated in Fig. 1. Our training pipeline builds on triplet-based CC [7] in real-world coordinates [3] and extends it with (i) a novel orientation triplet loss and (ii) a novel alignment loss. Using a new 5G NR measurement dataset, we first demonstrate that CSI depends strongly on the UE orientation. We then evaluate the proposed method on measured CSI from a commercial-off-the-shelf (COTS) UE using the CAEZ-5G-OUTDOOR dataset presented in [4]. 
+
+This work was supported in part by the Swiss National Science Foundation (SNSF) grant 200021_207314 and by CHIST-ERA grant for the project CHASER (CHIST-ERA-22-WAI-01) through the SNSF grant 20CH21_218704. We acknowledge NVIDIA for its sponsorship of this research. We also acknowledge António Maia Barros for his support in our experimental analysis on uplink transmit precoding configurations. movement 
+
+> 5G NR O-RU
+> 5G NR O-RU
+> 5G NR O-RU
+> 5G NR O-RU
+> orientation
+> position
+
+Fig. 1. Moving UE in multi-cell 5G NR system used for position and orientation estimation. We propose a neural-network-based single-shot method that estimates UE position p and yaw angle ψ with self-supervised training. 
+
+B. Relevant Prior Art 
+
+The existing literature largely reports CC only for positioning, where most work focuses on two dimensions (2D) [3], [4]; the recent work in [6] also studies CC in three dimensions (3D). In contrast, we propose a novel CC-based positioning pipeline that also provides orientation information from single-shot CSI measurements (i.e., by mapping one CSI feature to position and orientation estimates). While one could extract the heading of a moving UE from its motion trajectory using multi-shot CC (i.e., by mapping a time-series of CSI features to a trajectory), we extract orientation information from a single CSI feature. Recent work in [8] proposes supervised position and heading estimation from delay-Doppler features of synthetic CSI data, so that training requires ground-truth labels. In contrast, our method relies on self-supervised training. Furthermore, we evaluate our method using real-world CSI measurements in a standard-compliant 5G New Radio (5G NR) system. II. CSI D EPENDS ON ORIENTATION 
+
+As already mentioned in [5, Sec. II], CSI depends on UE orientation. We now experimentally confirm this statement using measured CSI from the 5G NR physical uplink shared channel (PUSCH) that leverages demodulation reference signals (DMRSs) transmitted by COTS UEs. In general, UEs do not transmit radio frequency (RF) signals in an ideal om-nidirectional pattern, but instead transmit with an orientation-dependent antenna radiation pattern. To characterize this angular dependency, we utilize a COTS UE that transmits PUSCH with one spatial stream (layer), and we measure wideband CSI with four distributed multi-antenna COTS open RAN radio units (O-RUs). We observe that the measured CSI varies with UE orientation, and that this angular dependency is reproducible for repeated measurements at the same location.  
+
+> arXiv:2606.18151v1 [eess.SP] 16 Jun 2026 Fig. 2. Photo of the rotation table and the UE used for CSI measurements.
+
+A. 5G NR Testbed at ETH Zurich 
+
+We use the 5G NR testbed at ETH Zurich [4], which is based on the NVIDIA Aerial Testbed (ATB) [9]. This testbed is a full-stack software-defined 5G NR system with COTS UEs and four COTS O-RUs, in which one O-RU is used for communication and the others are passive listeners. We use the same setup, configuration, and acquisition pipeline as detailed in [4]. The CSI measurements are acquired in the Swiss private 5G band with a bandwidth of 100 MHz centered at 3.45 GHz and 30 kHz subcarrier spacing. Our testbed configuration with enabled CSI reference signal (CSI-RS) and disabled sounding reference signal (SRS) leads to static uplink precoding with only the UE’s primary transmit antenna active. This configuration ensures that, for a fixed UE position, any change in CSI during UE rotation is caused by the UE’s orientation. 
+
+B. CAEZ-5G-ORIENTATION Dataset 
+
+We measured a new 5G NR CSI dataset called CAEZ-5G-ORIENTATION, in which each CSI sample is labeled with the ground-truth UE position and orientation, analogous to the existing CSI acquisition at ETH Zurich (CAEZ) datasets [4]. The key dataset properties are listed in Tbl. I. We use a measurement environment similar to that of the CAEZ-5G-INDOOR dataset in [4, Fig. 3c], where the O-RUs were placed at the corners of a small laboratory room. We obtain ground-truth position and orientation labels using the same WorldViz precision position tracking (WorldViz PPT) system as in [4]. During measurements, a UE mounted on a rotating table, as shown in Fig. 2, rotates at a constant angular velocity of approximately 15 .8 ◦/s. This setup enables CSI measurements with varying UE orientation at fixed positions. We collected five measurements of the rotating UE at four different positions in the measurement area shown in [4, Fig. 3c]. We recorded the first and the last (fifth) measurement at the same location with a time difference of 18 min in order to evaluate CSI measurement reproducibility. In the last measurement, we introduced human movement and moved a metallic table in front of O-RU 6 to investigate the effect of a dynamic RF environment. The CAEZ-5G-ORIENTATION dataset and code will be made publicly available at https://caez.ethz.ch upon acceptance of this paper. 
+
+C. Orientation Dependence of Measured CSI 
+
+We investigate the orientation dependence of CSI by ana-lyzing the subcarrier CSI magnitude |Hω [k]| of a fixed O-RU                                    
+
+> TABLE I SUMMARY OF THE MEASURED CAEZ-5G-ORIENTATION AND
+> CAEZ-5G-OUTDOOR CSI DATASETS .
+> CAEZ-5G ORIENTATION OUTDOOR [4] Duration 20 min 1h38 min Area 4m×4m10 m×10 m# of samples 132 981 303 189
+> UE type Samsung Galaxy S23 Samsung Galaxy S23 Vehicle rotational table custom robot Position tagged yes yes Rotation tagged yes yes PUSCH every 10 ms 20 ms
+
+antenna. Here, ω is the subcarrier index and k is the orthogonal frequency division multiplexing (OFDM) symbol index; we associate each OFDM symbol index with the UE orientation from WorldViz PPT. For each subcarrier and uplink slot, we average |Hω [k]| over three DMRS symbols in the same slot. Fig. 3a shows |Hω [k]| on subcarrier ω = 1000 of the first antenna of O-RU 6 over all UE orientations. The measured CSI depends strongly on the UE orientation, and this orientation-dependent pattern is consistent over multiple revolutions and remains largely reproducible across repeated measurements. In particular, the measurement recorded 18 min later at the same position exhibits a similar CSI pattern, which indicates temporal consistency. Human movement and the displacement of a metallic table introduce additional fluctuations, but the dominant orientation-dependent structure remains visible. Fig. 3b extends the same experiment to all subcarriers, which are visualized on the y-axis. The orientation-dependent behavior is visible across all subcarriers. These observations confirm that UE orientation information is embedded in measured CSI. III. C HANNEL CHARTING FOR POSITION AND 
+
+ORIENTATION 
+
+We now summarize the basics of state-of-the-art CC in real-world coordinates [3] and the triplet loss [7], and then detail the steps that extend CC to also extract orientation information. 
+
+A. Basics of Channel Charting 
+
+CC is a self-supervised machine learning (ML) method that maps high-dimensional CSI to a low-dimensional latent space that resembles the spatial geometry of UE position. Without loss of generality, we focus on two coordinates (x, z ) and detail our extension using only the yaw angle ψ as the UE orientation. Our approach could naturally be extended to 3D position and 2D (or 3D) orientation estimation. Triplet-based CC [7] learns a parametric mapping that transforms CSI features into a low-dimensional latent space by exploiting structure in the measured training data, specifically, closeness of UE position in space and time. Instead of relying on ground-truth position labels for training, this method forms triplets of anchor ( a), close ( c), and far ( f ) CSI samples, where temporal proximity provides a self-supervised cue on spatial proximity. Therefore, analogous to [7], we form triplets for both position and orientation training based on two time 0 30 60 90 120 150 180 210 240 270 300 330 360              
+
+> UE orientation [°]
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Normalized | H = 1000 |
+> t=0 min, static environment
+> t=18 min, static environment
+> t=19 min, dynamic environment (a)
+> (b) Fig. 3. Dependence of CSI on UE orientation. (a) CSI magnitudes vs. UE orientation for O-RU 6(cell 51 ), antenna 1, and subcarrier ω= 1000 , all measured at the same position at different times. (b) CSI magnitudes from the fifth measurement for all subcarriers vs. UE orientation. The environment was static during the first three rotations (shown on the left of the vertical red line) and dynamic during the final two rotations (shown on the right). Time
+> Anchor Close Far
+> Fig. 4. Illustration of triplet construction with anchor ( a), close ( c), and far ( f)sample from the time intervals Tcand Tf; figure inspired by [7, Fig. 4].
+
+thresholds Tc and Tf, which define the close and far intervals, respectively. For a given anchor CSI sample, we select close CSI samples within the interval Tc and far CSI samples outside the Tc interval but within the Tf interval; see Fig. 4. In order to align a channel chart with the physical space, reference [3] proposes the bilateration loss, which utilizes known O-RU positions and the relative received signal powers at each O-RU. The basic idea is to place the low-dimensional embeddings closer to the O-RU that measures higher receive power. The CC function that maps CSI features to UE positions is typically implemented by a fully-connected multilayer perceptron (MLP) [3], [4], [10]. 
+
+B. Channel Charting for Orientation Estimation 
+
+In order to extend channel charting to orientation estimation, we build upon the idea of triplet-based CC [7]. Orientation estimation has one fundamental difference to position estima-tion in Euclidean space: the orientation angle ψ is 2π-periodic. For triplet-based CC, we thus require a measure of angular dissimilarity that accounts for this periodicity. Furthermore, to extract absolute orientation in real-world coordinates, we also require a novel loss function that aligns the orientation estimate ˆψ with the global UE orientation. 
+
+1) Triplet Loss for Orientation Training: As for conventional triplet-based CC [7], we assume that CSI feature samples close in time have more similar orientations than CSI feature samples far in time. Hence, the yaw angle orientation estimate of the anchor sample ˆψa should be closer to the angle of the close sample ˆψc than to the angle of the far sample ˆψf by a margin parameter MO, i.e., 
+
+d( ˆψa, ˆψc) + MO ≤ d( ˆψa, ˆψf), (1) for some suitable dissimilarity metric d.In order to design a suitable dissimilarity metric that accounts for the 2π-periodicity of angles, we first convert the angles ψ1 and ψ2 into the unit orientation vectors o1 =[cos( ψ1), sin( ψ1)] T and o2 = [cos( ψ2), sin( ψ2)] T. We then compute the following dissimilarity 
+
+d(ψ1, ψ 2) = 12 ∥o1 − o2∥2 = 1 − ⟨ o1, o2⟩, (2) where ⟨· , ·⟩ denotes the inner product. Note that the right-hand side is the cosine dissimilarity between o1 and o2, or, equivalently, in terms of angles: d(ψ1, ψ 2) = 1 − cos( ψ1 − ψ2).In our implementation, the CC function does not output an estimate of the orientation angle ˆψ, but rather an estimate of the 
+
+unnormalized orientation vector ˆo, which is not necessarily of unit length. Our dissimilarity metric is then obtained as follows: For two unnormalized orientation vectors ˆo1 = [ˆ ox,1 , ˆoz,1 ]T and 
+
+ˆo2 = [ˆ ox,2 , ˆoz,2 ]T, we first normalize these orientation vectors followed by computing the cosine dissimilarity as 
+
+dc(ˆ o1, ˆo2) = 1 − ⟨ˆo1, ˆo2⟩∥ˆo1∥ ∥ ˆo2∥ . (3) which is minimal (zero) if the unnormalized orientation vectors ˆo1 and ˆo2 are perfectly aligned, i.e., the corresponding orientation angles are equal, and maximal (two) if these orien-tation vectors are antipodal, i.e., the orientation angles are π
+
+apart. We note that unnormalized orientation vectors can be converted into yaw orientation angles using ˆψ = atan2(ˆ oz, ˆox).
+
+Using the dissimilarity from (3) , we define our orientation triplet loss directly on the unnormalized orientation vectors as 
+
+Ltri-ψ (ˆ oa, ˆoc, ˆof) = [ dc(ˆ oa, ˆoc) + MO − dc(ˆ oa, ˆof) ] + , (4) where [x]+ = max {x, 0} stands for the rectified linear unit (ReLU) activation function. 
+
+2) Alignment Loss for Absolute Orientation Training: While the triplet loss in (4) enables CC for orientation, the resulting angles ψ are not yet aligned to real-world coordinates. To remedy this situation, we use absolute position estimates obtained from CC in real-world coordinates [3]. For the training data only, we assume that the orientation of the UE is aligned with its heading, i.e., its motion direction, which itself varies only slowly. As such, the orientations or and on associated with two CSI samples that are close in time, the reference ( r)and the near ( n) sample, should be similar. In order to exploit this insight, we define the chord vector be-tween the positions pr and pn associated with the reference ( r)and the near ( n) sample as follows: c = pn − pr. Without loss of generality, we assume that the time associated with the near sample is after the time associated with the reference sample, i.e., tn > t r, so that the chord vector c points in the time-forward direction from the ( r) to the ( n) sample. Thus, the chord vector serves as a proxy for the UE heading between the reference ( r) and the near ( n) sample. Since we assume that the UE heading and UE orientation are aligned for the training data, the chord vector c also serves as a proxy for the orientations or and on associated with the reference and the near sample, respectively. When the corresponding positions pr
+
+and pn are in real-world coordinates, the chord vector c is globally aligned and is therefore an orientation approximation in real-world coordinates. We illustrate this concept in Fig. 5. We now use the globally aligned chord vector c to define a loss term that penalizes non-alignment between the orientation estimates and the chord vector. To remain self-supervised, instead of using the ground-truth position labels pr and pn,we use the position estimates ˆpr = [ˆ xr, ˆzr]T and ˆpn = [ˆ xn, ˆzn]T
+
+from the CC function in real-world coordinates [3] to compute an estimate ˆc = ˆ pn − ˆpr of the chord vector c. We further compute the (unnormalized) average orientation vector 
+
+ˆoavg = 12
+
+ ˆor
+
+∥ˆor∥ + ˆon
+
+∥ˆon∥
+
+
+
+(5) between the orientation estimates ˆor = [ˆ ox,r , ˆoz,r ]T and ˆon =[ˆ ox,n , ˆoz,n ]T from the CC function. We then compute the cosine dissimilarity (3) between ˆoavg and the estimated chord vector 
+
+ˆc, which corresponds to our proposed alignment loss 
+
+Lalign-ψ = dc(ˆ oavg , ˆc) = 1 − ⟨ˆoavg , ˆc⟩∥ˆoavg ∥ ∥ ˆc∥ . (6) This alignment loss is minimal (zero) if the chord vector ˆc
+
+and the average estimated orientation vector ˆoavg are perfectly aligned, i.e., the corresponding orientation angles are equal, and maximal (two) if these vectors are antipodal, i.e., the corresponding orientations are π apart. We emphasize that our method remains self-supervised as it relies on the position estimates provided by the proposed channel charting function and not on ground-truth positions. However, for this concept to work, the channel chart must be sufficiently aligned with real-world coordinates, which we achieve by using the bilateration loss from [3]. 1
+
+Above, we have described the alignment loss for a reference sample ( r) and a near sample ( n). In our implementation, we use the anchor ( a) sample and the close ( c) sample from the triplets of the triplet loss (4) , in correct temporal order, as the reference ( r) and the near ( n) sample, respectively. Furthermore, since errors on short chord vectors have a larger impact on 
+
+> 1The bilateration loss is weakly supervised in a sense that it necessitates knowledge of the O-RU positions; this is typically known at deployment time.
+
+c
+
+pr
+
+pn
+
+or
+
+on
+
+oavg                  
+
+> Fig. 5. Visualization of the chord vector cbetween the two positions pr
+> and pn, the orientation vectors orand on, and the average orientation oavg .The orientations are closely aligned with the chord vector, which enables us to create an alignment loss that penalizes non-alignment between chord vector c
+> and average orientation vector oavg .anchor close far shared weights
+> triplet loss for orientation
+> alignment loss for real-world orientation NN NN NN CSI feature inputs:
+> Real-world CC: bilateration + triplet loss for position
+> Fig. 6. Self-supervised training for joint position and orientation estimation. Our method extends channel charting in real-world coordinates [3] by an alignment and triplet loss for orientation estimation in real-world coordinates.
+
+orientation than errors on long chord vectors, we only utilize chord vectors for which ∥ˆc∥ > c min for some parameter cmin .
+
+C. Neural Network Architecture 
+
+For joint position and orientation estimation, we adapt the MLP architecture from [3], [4]. The neural network consists of seven layers with dimensions (800 , 192 , 96 , 48 , 48 , 48 , 4) and four outputs [ˆ x, ˆz, ˆox, ˆoz]T ∈ R4. We use ReLU activations for all hidden layers and linear activation for the output layer. Fig. 6 illustrates the combination of the MLP and the loss function, which consists of the sum of a triplet loss for posi-tion [7], a bilateration loss for absolute position in real-world coordinates [3], the proposed triplet loss for orientation (4) ,and the proposed alignment loss for orientation (6). 
+
+D. Training Method 
+
+To learn the neural network parameters, we use stochastic gradient descent (SGD) to minimize the weighted sum of (i) the triplet loss for position from [7], (ii) the bilateration and box loss from [3], (iii) the triplet loss for orientation (4) , and (iv) the real-world alignment loss for orientation (6) . We scale the individual loss terms by suitable hyperparameters, whose choice we discuss in Sec. IV-A4. IV. R ESULTS 
+
+We now evaluate our method using measured CSI from the CAEZ-5G-OUTDOOR real-world 5G NR dataset [4]. 
+
+A. Evaluation Methods 1) Training and Testing Dataset: We use the publicly available CAEZ-5G-OUTDOOR dataset, which was measured at ETH Zurich in an outdoor courtyard environment using a Samsung Galaxy S23 UE carried by a remote-controlled (a) (b) (c) Fig. 7. Ground truth-positions and orientations (a), results of the neural positioning and orientation estimation baseline (b), and results of the proposed CC for position and orientation method (c). The grayscale arrows indicate the positions and orientations of every 20 th sample of the last 1000 test samples. 
+
+robot vehicle. We summarize the key features of the dataset in Tbl. I and refer to [4] for the details. During CSI acquisition, the robot continuously moved forward on smooth trajectories and the UE heading was aligned with the direction of motion. Thus, we can directly mine triplets from the CSI time series, as described in Sec. III-B . As CSI features, we use down-sampled OFDM-domain absolute values, as described in [4, Sec. IV-B2]. We exclude the last 10 4 samples from the entire dataset and refer to them as the “test dataset.” We then partition the remaining data into a training and a validation dataset, applying a random split of 80 % to 20 %, respectively. 
+
+2) Performance Metrics: To evaluate position estimation quality, we measure trustworthiness (TW), continuity (CT), and Kruskal stress (KS) [2]. We also report the mean, median, and 95th percentile of the per-sample distance error 
+
+epos ,i = ∥ˆpi − pi∥ (7) between estimated position ˆpi and ground-truth position pi,where i is the sample index. Ground-truth position information is only used for performance evaluation—not for training. To evaluate orientation estimation quality, we use the mean, median, and 95th percentile over all per-sample absolute angle errors. Concretely, we first estimate the angle ˆψi =atan2(ˆ oz,i , ˆox,i ) and then report the minimum angle error 
+
+eψ,i = min 
+
+> n∈Z
+
+ˆψi − ψi − 2πn , (8) which we finally convert into degrees. This performance metric allows the following interpretation: (i) identical orientations yield an error of 0◦, (ii) uniformly random orientations yield an expected error of 90 ◦, and (iii) antipodal orientations yield an error of 180 ◦. We evaluate all metrics, with respect to both position and orientation, from single-shot estimates on both test datasets, i.e., the validation dataset samples from random partitioning and the test dataset from the last 10 4 samples. 
+
+3) Baseline Methods: As a baseline for positioning only, we use supervised neural positioning and self-supervised CC 
+
+without orientation estimation , as implemented in [4]. For neural positioning, we use an MLP that directly outputs position estimates, which we train using a mean squared error (MSE) loss and ground-truth position labels. As a baseline for joint po-sition and orientation estimation, we also use supervised neural positioning with orientation estimation . To this end, we train the neural network (NN) proposed in Sec. III-C with ground-truth position and orientation labels. From the ground-truth orientation ψi, we compute the orientation [cos( ψi), sin( ψi)] T
+
+and apply the cosine dissimilarity loss from (3). 
+
+4) Training Methods: We train the MLP described in Sec. III-C using PyTorch [11], the Adam optimizer [12], and a StepLR learning-rate scheduler. We train the network for 200 epochs with a batch size of 2048 anchors, where for each anchor we mine two triplets, i.e., two close and two far samples. We obtain a well-performing set of hyperparameters using the Optuna optimization framework [13] together with the Optuna AutoSampler [14]. The hyperparameter optimization involves the weights of all loss terms, the loss margins, the close and far time thresholds used for triplet mining, the learning rate, and the scheduler step size. The optimization objective comprises TW, CT, KS, mean absolute errors of position and orientation, and the cosine distance between predicted and ground-truth orientations. Based on these objectives, Optuna constructs a Pareto-optimal front using non-dominated sorting. We use the validation dataset for hyperparameter optimization, while the additional test data (the last 10 4 samples) is used for performance evaluation only. 
+
+B. Position Estimation Results 
+
+We summarize the results of our experiments in Tbl. II. We observe that joint position and orientation estimation achieves positioning performance similar to that of the position-only counterparts. Compared to the results reported in [4], we see slightly worse TW but similar CT and slightly better KS, while the absolute error of the estimated positions increases only slightly. Fig. 7 compares the ground-truth positions in Fig. 7a with the estimates from the joint neural positioning and orientation estimation baseline in Fig. 7b, and with the estimates from the proposed CC for position and orientation method in Fig. 7c. We color-code the samples from the validation dataset by a green-to-red color gradient. Furthermore, we visualize a trajectory of every 20 th of the last 1 000 test samples by a TABLE II RESULTS OF CC FOR POSITION AND ORIENTATION COMPARED TO BASELINE METHODS ( INDICATES LARGE IS GOOD ;  INDICATES SMALL IS GOOD )TW  CT  KS  Absolute error of ˆp [cm]  Min. angle error eψ [°] 
+
+Mean Median 95th % Mean Median 95th % 
+
+Evaluated on validation dataset 
+
+Baseline neural positioning 0.992 0.992 0.077 30 23 79 – – –Baseline channel charting 0.982 0.974 0.167 73 64 158 – – –Baseline joint neural pos. with orientation 0.992 0.992 0.080 32 25 79 14 7.3 42 CC for position and orientation (ours) 0.975 0.974 0.160 75 68 156 20 11 71 
+
+Evaluated on test dataset (last 10 4 samples) 
+
+Baseline joint neural pos. with orientation 0.971 0.973 0.148 50 39 127 20 8.9 125 CC for position and orientation (ours) 0.960 0.957 0.207 82 74 168 22 11 108 
+
+Fig. 8. Cumulative distribution function (CDF) of the minimum yaw angle error for the joint neural positioning and orientation estimation baseline, as well as for the proposed CC-based method. The CDFs were computed for the test and validation datasets with respect to the ground-truth yaw angles. 
+
+white-to-black color gradient, which captures both UE position and orientation. Fig. 7c exhibits higher estimation noise than the supervised baseline shown in Fig. 7b. 
+
+C. Orientation Estimation Results 
+
+We summarize the results of our experiments in Tbl. II. For yaw estimation on the test dataset, orientation-aware CC achieves orientation estimation performance comparable to that of the joint neural positioning and orientation estimation pipeline, with a difference of only 2° in mean minimum angle error. Fig. 7 compares the ground-truth orientations in Fig. 7a with the estimates from the joint neural positioning and orientation estimation baseline in Fig. 7b, and with the estimates from the proposed CC for position and orientation method in Fig. 7c. Furthermore, Fig. 8 shows the CDF of the minimum angle error in (8) with respect to the ground-truth yaw angle, both for neural positioning and orientation estimation and for CC for position and orientation, evaluated on the validation and test datasets. Fig. 8 demonstrates that the proposed CC method for position and orientation closely approaches the accuracy of supervised joint neural positioning and orientation estimation while being trained in a self-supervised fashion—without the use of any ground-truth position or orientation labels. V. C ONCLUSIONS 
+
+We have extended state-of-the-art CC in real-world coordi-nates [3] to joint single-shot estimation of UE position and orientation. Our training method aligns the orientation to real-world coordinates in a self-supervised manner by using the position estimates in real-world coordinates obtained from the bilateration loss. Our experiments with real-world CSI measurements have revealed that the orientation estimation performance closely approaches that of a supervised neural positioning baseline. Furthermore, the proposed CC for position and orientation method comes at only a negligible degradation in positioning performance. These results demonstrate that resolving the orientation dependence of measured CSI further improves the expressivity of CC, with the potential to assist and improve beamfinding, precoding, beam- and cell-assignment, UE trajectory prediction, and many more tasks. REFERENCES [1] A. Bourdoux, A. N. Barreto, B. van Liempd, C. de Lima, D. Dar-dari, D. Belot et al. , “6G white paper on localization and sensing,” 
+
+arXiv:2006.01779 , Jun. 2020. [2] C. Studer, S. Medjkouh, E. Gonulta¸ s, T. Goldstein, and O. Tirkkonen, “Channel charting: Locating users within the radio environment using channel state information,” IEEE Access , vol. 6, pp. 47 682–47 698, 2018. [3] S. Taner, V. Palhares, and C. Studer, “Channel charting in real-world coordinates with distributed MIMO,” IEEE Trans. Wireless Commun. ,vol. 24, no. 9, pp. 7286–7300, 2025. [4] R. Wiesmayr, F. Zumegen, S. Taner, C. Dick, and C. Studer, “CSI-based user positioning, channel charting, and device classification with an NVIDIA 5G testbed,” in Proc. Asilomar Conf. Signals, Syst., Comput. ,Oct. 2025. [5] P. Stephan, F. Euchner, and S. ten Brink, “Angle-delay profile-based and timestamp-aided dissimilarity metrics for channel charting,” IEEE Trans. Commun. , vol. 72, no. 9, pp. 5611–5625, 2024. [6] ——, “Three-dimensional radio localization: A channel charting-based approach,” in Proc. Asilomar Conf. Signals, Syst., Comput. , Oct. 2025. [7] P. Ferrand, A. Decurninge, L. G. Ordóñez, and M. Guillaud, “Triplet-based wireless channel charting: Architecture and experiments,” IEEE J. Sel. Areas Commun. , vol. 39, no. 8, pp. 2361–2373, 2021. [8] Y. Zhao, Z. Jin, J. Tang, L. You, C. Sun, X.-G. Xia et al. , “Joint localization and orientation with triple-beam fingerprints in massive MIMO-OFDM,” arXiv:2605.26549 , May 2026. [9] NVIDIA, “Aerial Testbed (ATB),” https://docs.nvidia.com/aerial/testbed/ latest/index.html, 2026, accessed: 2026-06-14. [10] P. Ferrand, A. Decurninge, and M. Guillaud, “DNN-based localization from channel estimates: Feature design and experimental results,” in 
+
+Proc. IEEE Global Telecommun. Conf. (GLOBECOM) , Dec. 2020. [11] A. Paszke, S. Gross, S. Chintala, G. Chanan, E. Yang, Z. DeVito et al. ,“Automatic differentiation in PyTorch,” Oct. 2017. [12] D. P. Kingma and J. Ba, “Adam: A method for stochastic optimization,” 
+
+arXiv:1412.6980 , Jan. 2017. [13] T. Akiba, S. Sano, T. Yanase, T. Ohta, and M. Koyama, “Optuna: A next-generation hyperparameter optimization framework,” in 25th ACM SIGKDD Int’l’ Conf. Knowledge Discovery Data Mining , Aug. 2019. [14] Y. Ozaki, S. Watanabe, and T. Yanase, “OptunaHub: A platform for black-box optimization,” arXiv:2510.02798 , Apr. 2026.
