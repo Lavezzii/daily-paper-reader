@@ -1,0 +1,769 @@
+Title: A Perception vs. Distortion Perspective on Score-Based Generative Channel Estimation
+
+URL Source: https://arxiv.org/pdf/2606.16815v1
+
+Published Time: Tue, 16 Jun 2026 02:45:46 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+> 1
+
+# A Perception vs. Distortion Perspective on Score-Based Generative Channel Estimation 
+
+Marco Skocaj*, Lukas Eller*, Mate Boban 
+
+Abstract —Driven by their remarkable success in computer vision and inverse problem solving, score-based models are increasingly applied to wireless communications, where they show promise across a range of physical-layer tasks. However, despite this growing interest, the current literature often lacks a rigorous analysis of when score-matching offer a tangible advantage over traditional discriminative learning. This paper aims to address this gap through the use-case of channel estimation, a fundamental inverse problem in wireless systems. We present a theoretically grounded interpretation of score-based channel estimation through the lens of the perception–distortion tradeoff, identifying the conditions where score matching excels as well as its key limitations. In particular, by modeling downstream wireless tasks (e.g., capacity maximization) as functionals of the channel estimation process, we quantify the excess risk incurred by standard distortion-minimization approaches. Extensive nu-merical results show that under high predictive uncertainty, the large excess risk gap can be offset by score-based estimation, en-abling near Bayesian-optimal precoding via the learned posterior, whereas in the low predictive uncertainty regime, discriminative distortion-minimization approaches are preferable due to lower complexity and more efficient use of model capacity. 
+
+Index Terms —Channel Estimation, Diffusion Models, MIMO, Perception-Distortion Tradeoff, Score-based Generative Models. 
+
+I. I NTRODUCTION 
+
+Diffusion Models (DMs) [1], [2] — or more generally score-based generative models (SGMs) [3] — recently emerged as a dominant class of generative models, achieving state-of-the-art performance across a wide range of computer vision tasks and, more broadly, in solving ill-posed inverse problems. Their success stems from a combination of expressive modeling capacity, remarkable robustness to noise and model mismatch, and the ability to incorporate complex priors through learned data distributions. These properties have naturally motivated their rapid adoption in wireless communications, where inverse problems are pervasive and channel estimation remains a central — and arguably the most critical — task. In the context of channel estimation, SGMs offer several ap-pealing advantages over classical and discriminative learning-based estimators. By learning an implicit prior over channel realizations, DMs can regularize severely underdetermined estimation problems, exhibit robustness to noise and model mismatch, and operate effectively in regimes characterized by limited pilot resources or low signal-to-noise ratio (SNR). These properties have led a growing body of work to position 
+
+*Marco Skocaj and Lukas Eller contributed equally to this work. All authors are with the Advanced Wireless Technology Laboratory, Huawei Heisenberg Research Centre, Munich, Germany. Emails: name .surname @huawei.com 
+
+generative channel estimation as a superior alternative to classical and discriminative learning-based estimators [4]– [12], often reporting substantial empirical gains in distortion-based metrics (e.g., mean squared error (MSE)). While the existing literature provides valuable insights, we argue that this prevailing focus on distortion minimization, overlooks the primary strength of generative score-based ap-proaches: their capacity to produce highly plausible sam-ples from learned conditional posterior distributions. Unlike standard discriminative estimators that collapse to the Con-ditional Mean Estimator (CME), generative models maintain full distributional awareness. As conceptually illustrated in Fig. 1, the iterative denoising process prevents the model from outputting physically implausible, averaged hypotheses. While the distinction between perceptual fidelity and distortion minimization is widely understood in computer vision through the perception-distortion tradeoff [13], we aim to shed light on its significance within the wireless domain. This distinction’s practical importance becomes clear when considering the effect of channel estimation on downstream communication tasks. Indeed, in wireless systems, the ultimate goal is seldom the accurate reconstruction of the channel itself. Instead, the focus is on optimizing channel-dependent functionals [14], such as achievable rates, outage probabilities, or MIMO capacity. As expanded upon in the following sections, the discrepancy between distortion minimization and functional optimization is fundamentally explained by the Jensen gap [15]: except in the special case of linear task functionals, the two objectives do not coincide. SGMs, by providing access to well-matched posterior samples, are therefore suited to this problem, as they enable direct evaluation or optimization of task-relevant functionals in ways that point estimators inherently cannot. In this work, we argue that the widespread characterization of SGMs as optimal direct estimators is both conceptually and practically limiting. Instead, we advocate for a reframing of their role as generative engines for channel-aware decision-making , prioritizing downstream task utility over traditional distortion-based metrics. II. R ELATED WORK & C ONTRIBUTION 
+
+A. Related Work 
+
+In computer vision, DMs [1], [2] and SGMs [3] have emerged as the state-of-the-art solution for generative tasks, replacing the long-standing dominance of Generative Adver-sarial Networks (GANs) in image synthesis [16]. Their superi-ority stems from improved training stability and a lack of mode  
+
+> arXiv:2606.16815v1 [eess.SP] 15 Jun 2026 2
+> (a) Comparison between Generative AI and Discriminative Learning frameworks. (b) Diffusion process.
+
+Fig. 1: SGMs provide samples from the posterior distribution through iterative refinement in the denoising process. collapse, allowing them to effectively capture complex, high-dimensional data distributions [17]. Driven by this success, SGMs have been rapidly integrated into the wireless domain, proving effective across a range of applications as categorized in recent surveys [8], [18]–[20]. In the physical layer, these models have demonstrated their potential in channel modeling, estimation, and extrapolation [7], [9], [21], as well as signal detection [10], [22]. DMs have also been shown to facilitate high-fidelity synthetic data generation for radio map estimation [23]–[25] and digital twin construction [12], [26]. Beyond estimation and synthesis, they support network management tasks — for instance, by enabling trajectory sampling for reinforcement learning [27] or acting as powerful network optimizers through inverse problem-solving [28]. Furthermore, DMs have been explored as wireless foundation models [18]. This paradigm is particularly effective for Multiple-Input-Multiple-Output (MIMO) channel estimation, as pre-trained generative priors can be integrated with analytical likelihood functions for received pilot signals. Recent studies have demonstrated that such approaches achieve competitive reconstruction performance compared to both classical and other machine learning (ML)-based methods [4], [7], [9]. Notably, since the generative prior is measurement-agnostic, these frameworks are inherently robust to sensing environment changes [4], [29]. This modularity allows the analytical likeli-hood to be exchanged at test-time to match specific hardware or pilot configurations without retraining the model. Despite these promising results, a notable trend in the cur-rent literature is the reliance on distortion measures — specif-ically MSE — as the primary evaluation metric for wireless DMs [4]–[12]. Studying distortion minimization properties for SGMs is motivated by their inherent advantages in gen-eralization, robustness, and “plug-and-play” versatility [30]. However, we would argue that training via score-matching is inherently inefficient for distortion minimization, because the model must learn to denoise at every intermediate step of the forward process. As a consequence, significant model capacity is consumed by these intermediate steps, which do not necessarily improve the model’s ability to perform the direct denoising task. Instead, it is understood that SGMs can flexibly traverse the Pareto frontier of the perception-distortion tradeoff — sacrificing distortion for perceptual quality [31]. Notably, this has been also addressed in other wireless research, as in the denoinsing use case in [32], which identifies the noise injected during the reverse process as a critical lever, allowing the DM to prioritize either probabilistic accuracy or MSE optimality. While variance scaling is one approach, several studies have shown that the number of inference steps acts as a primary lever for this balance. As shown in [33], perceptual quality — and thus distributional fidelity — typically improves with additional steps, often at the cost of increased distortion. This inverse relationship likely explains why improved MSE in wireless tasks is frequently reported for models with reduced steps [12] or single-step predictors [11]. However, in this edge case, a single-step inference score-based model becomes func-tionally equivalent to a discriminative one-step denoiser [11]. This equivalence necessitates a direct comparison between the MSE performance of diffusion-based models and identical backbones trained in a discriminative setting — a baseline that remains underexplored in prior work. Moving away from distortion metrics toward full distri-butional awareness more effectively highlights the unique strengths of generative AI in the wireless domain — specifi-cally for uncertainty-aware optimization where point-estimates prove insufficient. For instance, recent work demonstrates how diffusion models can be integrated into stochastic optimiza-tion frameworks to account for channel uncertainties [34]. Similarly, in beamforming and precoding, utilizing the full distribution via variational autoencoders (VAEs) enables robust strategies that outperform traditional methods under imperfect CSI [35]. Even classical approaches like Gaussian mixture models (GMMs) have shown that maintaining a probabilistic view of the channel is essential in challenging regimes, such as channel estimation with sparse pilots [36]. 
+
+B. Contribution 
+
+Our contributions can be summarized as follows: 
+
+i) We provide a theoretically grounded interpretation of score-based channel estimation through the lens of the per-ception–distortion tradeoff. In doing so, we address a critical gap in the literature by identifying both the regimes where 3
+
+score matching excels and its fundamental limitations. Further-more, we characterize the performance gap between generative score-matching and discriminative models when optimizing downstream task functionals, demonstrating that the resulting 
+
+excess risk arises naturally from Jensen’s inequality. 
+
+ii) Through extensive numerical experiments using MIMO precoding as a representative downstream task, we show how score-based estimation can outperform discriminative models in terms of achievable spectral efficiency (SE), enabling ap-proximate Bayesian-optimal precoding via the learned poste-rior distribution. Furthermore, we show how such approach can almost entirely match the performance of ad-hoc trained End-to-End (E2E) models on the MIMO capacity loss as an empirical upper bound not affected by excess risk. 
+
+iii) Finally, we draw a connection between the excess risk incurred by discriminative models and mutual information (MI). Using classifier free guidance (CFG)’s guidance scale parameter λ as a MI proxy, we show that the achievable spectral efficiency gap with score-matching is amplified in low-information regimes, where CMEs suffer structural col-lapse. On the other hand, we show that in the high mutual-information regime, discriminative distortion-minimization ap-proaches is typically preferable due to lower complexity and more efficient use of model capacity. The remainder of this paper is organized as follows: Sec-tions III and IV provide the theoretical foundations of score-based generative models and the perception-distortion tradeoff. Section V details the application of these concepts to MIMO channel estimation, before our proposed algorithmic solutions and experimental results are presented in Section VII. Final conclusions are drawn in Section VIII. III. P RELIMINARIES 
+
+With the aim of making the paper self-contained, we review the theoretical background of DMs, focusing specifically on Denoising Diffusion Probabilistic Models (DDPMs) and how they can be formally interpreted through the lens of SGMs. 
+
+A. Denoising Diffusion Probabilistic Models 
+
+DDPMs [2] are a class of generative latent variable models that learn a data distribution q(x0) by reversing a gradual noise-injection process. The framework is defined by two primary Markov chain processes: the forward diffusion process and the reverse generative process. 
+
+1) Forward Diffusion Process: The forward process, de-noted by q, progressively transforms a data sample x0 ∼ q(x0)
+
+into latent variables x1, . . . , xT by adding Gaussian noise according to a predefined variance schedule β1, . . . , β T :
+
+q(xt|xt−1) = N (xt; p1 − βtxt−1, β tI). (1) A key property of this formulation is that it allows for sampling xt at any arbitrary timestep t directly from the original data x0. Defining αt = 1 − βt and ¯αt = Qts=1 αs,the distribution of xt conditioned on x0 is given by: 
+
+q(xt|x0) = N (xt; √¯αtx0, (1 − ¯αt)I). (2) Using the reparameterization trick, this can be expressed as: 
+
+xt = √¯αtx0 + √1 − ¯αtϵ, ϵ ∼ N (0 , I). (3) As T → ∞ , the final latent variable xT converges to an isotropic Gaussian distribution. 
+
+2) Reverse Generative Process: The generative model aims to learn the reverse transition pθ (xt−1|xt) to recover the data from noise. This reverse process is also modeled as a Gaussian transition: 
+
+pθ (xt−1|xt) = N (xt−1; μθ (xt, t ), Σθ (xt, t )) . (4) The neural network is trained to estimate the mean μθ ,while the covariance is typically kept as a fixed constant 
+
+Σθ (xt, t ) = ˜βtI with ˜βt = 1− ¯αt−1  
+
+> 1−¯αt
+
+βt. Rather than predicting the mean directly, the model is parameterized to predict the noise ϵ added at timestep t, such that: 
+
+μθ (xt, t ) = 1
+
+√αt
+
+
+
+xt − βt
+
+√1 − ¯αt
+
+ϵθ (xt, t )
+
+
+
+. (5) 
+
+3) Training Objective and Parameterization: The param-eters θ are optimized by minimizing a simplified version of the variational upper bound on the negative log-likelihood, typically defined as the mean squared error in the noise space: 
+
+LDM (θ) = Et, x0,ϵ
+
+∥ϵ − ϵθ (xt, t )∥2 . (6) where t is sampled uniformly from {1, . . . , T }. While the standard DDPM objective focuses on predicting the noise ϵ,it is mathematically equivalent to predicting the original clean data x0. Given the forward diffusion relationship in (3), the clean signal can be estimated from the predicted noise as: 
+
+ˆx0 = 1
+
+√¯αt
+
+ xt − √1 − ¯αtϵθ (xt, t ) . (7) Conversely, the network can be designed to predict the clean signal x0 directly, from which the corresponding noise can be algebraically derived. As expanded upon in the next section, this objective allows the model to learn the score of the data distribution, enabling the generation of high-fidelity samples from pure Gaussian noise during inference. 
+
+B. Score-based Generative Models 
+
+SGMs [37] take a complementary perspective to diffusion-based approaches: rather than explicitly modeling reverse-time conditionals, they learn the score function of the noise-corrupted data distribution at each time step, 
+
+sθ (xt, t ) ≈ ∇ xt log q(xt), (8) i.e., the gradient of the log-density of xt. Given an estimate of the score, samples can be generated by integrating a reverse-time stochastic differential equation (SDE) or by performing Langevin dynamics. Song et al. [3] subsequently showed that DDPMs can be interpreted as a discrete-time approximation of such reverse-time SDEs, thereby establishing diffusion models as discretized score-based generative models. Under Gaus-sian noise schedules, the DDPM noise-prediction objective is exactly equivalent to a weighted denoising score-matching loss, formalizing the connection between denoising and score 4
+
+estimation originally identified by Vincent [38]. In the DDPM parameterization [2], this relationship takes the explicit form 
+
+∇xt log p(xt) = − ϵθ (xt, t )
+
+√1 − ¯αt
+
+. (9) 
+
+C. Conditional Diffusion Sampling 
+
+Conditional generation aims to sample from the posterior 
+
+p(xt|y), where y represents a conditioning signal such as a class label, text prompt or in the context of wireless channel estimation, pilot observations. According to Bayes’ rule, the gradient of the log-posterior (i.e., the score) decomposes into: 
+
+∇xt log p(xt|y) = ∇xt log p(xt) + ∇xt log p(y|xt). (10) In classifier guidance, an external noisy classifier p(y|xt)
+
+provides the guidance gradient. Under an explicit measure-ment model, it is also possible to derive a guidance term in closed form from direct observations, as in [4]. Substituting 
+
+∇xt log p(xt) as in Eq. (9), the noise estimate ˆϵ with guidance scale w becomes: 
+
+ˆϵ = ϵθ (xt, t ) − w√1 − ¯αt∇xt log p(y|xt). (11) The negative sign ensures the update moves toward regions of higher classifier confidence. Alternatively, CFG eliminates the need for an external model by jointly training on conditional and unconditional objectives. During training, y is periodically replaced by a null token ∅ (e.g., a zero vector) to represent the unconditional state. At inference, the model extrapolates from the unconditional baseline: 
+
+ˆϵ = ϵθ (xt, t, ∅) + λ (ϵθ (xt, t, y ) − ϵθ (xt, t, ∅)) . (12) This implicitly approximates the classifier gradient and serves as the input for the standard DDPM reverse step. IV. MSE O PTIMALITY AND THE 
+
+PERCEPTION -D ISTORTION TRADEOFF 
+
+In this section, we study the statistical properties of SGMs through a Bayesian lens and contrast them with discriminative learning under the perception–distortion tradeoff. We show that while the CME is optimal for MSE, it is generally suboptimal for nonlinear downstream functionals, with the resulting excess risk arising from Jensen’s inequality. 
+
+A. Conditional Mean Estimation vs. Posterior Sampling 
+
+It is a well-known result from estimation theory that, under an MSE distortion measure, the optimal estimator — also referred to as the minimum mean squared error (MMSE) estimator — is given by the CME [39]: 
+
+ˆxCME = E[x | y] = 
+
+Z
+
+> X
+
+xp(x | y) dx. (13) In a discriminative setting, a Supervised Learning (SL) model fθ is trained via Empirical Risk Minimization (ERM) under an MSE loss to obtain a finite-sample approximation of the CME: 
+
+min  
+
+> θ
+
+E(x,y)∼D (x,y)
+
+∥x − fθ (y)∥2, (14) where D(x, y) denotes the empirical training distribution. While ERM aims for the CME, factors such as finite data and limited model capacity mean that fθ only approximates the optimal estimator, reaching it only in the asymptotic limit under consistent ERM with sufficiently expressive models, as characterized by the universal approximation theorem [40]. In contrast, an SGM learns an explicit representation of the data prior p(x), the conditional distribution p(x | y),or both, as in CFG. Upon observation of a conditioning signal y, inference consists of drawing a stochastic sample 
+
+x′ ∼ pθ (x | y). Because ˆxCME is the unique minimizer of the MSE, any individual sample x′ from the SGM will necessarily yield a higher MSE than the CME. The total error of a sample can be decomposed into the MMSE and the sampling variance: 
+
+E[∥x − x′∥2] = E[∥x − ˆxCME ∥2]
+
+| {z }
+
+> MMSE
+
++ E[∥x′ − ˆxCME ∥2]
+
+| {z }
+
+> Sampling Variance
+
+(15) The second term represents the inherent tradeoff between distributional fidelity and point-wise accuracy. While this sam-pling variance facilitates the generation of plausible channel realizations, it prevents a single sample from matching the MSE of the CME. Although a single posterior sample is not MSE-optimal, an SGM can, in principle, recover the approximate CME. For instance, through Monte Carlo averaging over samples from the learnt posterior: 
+
+ˆxCME ≈ 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+x(i), x(i) ∼ pθ (x|y) (16) As N → ∞ , this average converges to Epθ (x|y)[x]. Therefore, generative models inherently generalize standard regression, as the minimum-risk point estimate can be derived directly from the full posterior. Beyond Monte Carlo averaging, efficient sampling strategies can force an SGM to yield MSE-optimal estimates for pure denoising tasks. Whether through modified reverse trajectories [32] or single-step inference [11], these approaches share a common mechanism: they systematically remove stochasticity from the generation process. By effec-tively collapsing the diverse posterior into a single conditional mean, these methods achieve minimal distortion precisely by sacrificing the model’s generative properties. This dynamic is a direct manifestation of the perception–distortion tradeoff [13], which formalizes the fundamental incompatibility between distortion-optimal estimation (e.g., MMSE) and perceptually faithful reconstruction (e.g., maximizing log-likelihood). 
+
+B. Functional Suboptimality & Excess Risk 
+
+Let us define x ∈ X as a target variable (e.g., the channel state), y ∈ Y as the observable data (e.g., received pilots), and 
+
+ˆx = f (y) as the estimation of x given y. Let us further define 
+
+w = g(ˆ x) as a task-specific action (e.g., precoding matrix selection) contingent upon the estimate. In many wireless systems, ˆx is treated as an intermediate latent representation used to solve for the final action w, supporting diverse downstream tasks. The system performance is expressed as a functional T (x, w), representing the utility achieved when 51. Estimation Objective 2. Downstream Task Definition 3. Action Optimization                     
+
+> y
+> Observation
+> Discriminative (SL / CME)
+> Generative (DM)
+> Point-Estimate Task
+> ˆT(w)≜T(E[x|y],w)
+> Marginalized Task
+> ¯T(w)≜Ex|y[T(x,w)]
+> max
+> w
+> ˆT(w)
+> max
+> w
+> ¯T(w)
+> max
+> wT(E[x|y],w)
+> Suboptimal due to Jensen gap
+> max
+> wEx|y[T(x,w)]
+> Bayesian-Optimal (E2E equivalent)
+> ˆxCME
+> p(x|y)
+
+Fig. 2: Distortion-optimal estimation leads to excess risk for downstream tasks, resolvable through posterior marginalization. action w is applied to the true state x. We define the Bayes risk as the expected loss over the joint distribution: 
+
+R(f, g ) = Ep(x,y)
+
+ − T (x, g (f (y)))  . (17) The task-optimal action w⋆ for a given observation y is found by maximizing the posterior expected utility: 
+
+w⋆(y) = arg max  
+
+> w
+
+Ep(x|y)
+
+T (x, w) (18) In practice, the standard discriminative approach relies on the CME ˆx = E[x | y], and selects an action wcme = g(ˆ x) that is optimal only for that specific mean state. However, unless T is affine with respect to x, this results in a suboptimal approach. Because the true performance is governed by the ground-truth 
+
+x, Jensen’s inequality [15] reveals a systemic gap between the utility of the average state and the average utility of the state: 
+
+T (E[x | y], w)̸ = Ex|y[T (x, w)] . (19) This discrepancy results in an excess risk . Relying on the CME provides an action wcme that is optimized for a rep-resentative point rather than the actual distribution, leading to an expected performance that is offset by ∆ ≥ 0 from the true optimal solution w⋆. While this gap can be closed by E2E frameworks that learn a direct mapping w = gθ (y),such approaches often sacrifice modularity and generality. The Bayesian-optimal decision, which avoids this excess risk, is achieved by marginalizing out the unknown channel over its posterior distribution p(x | y):
+
+w∗ = arg max 
+
+> w
+
+Z
+
+T (x, w)p(x | y)dx . (20) SGMs provide a powerful mechanism to overcome the in-tractability of this integral. By enabling efficient sampling from the posterior, SGMs allow us to approximate the ob-jective via Monte Carlo integration: 
+
+w∗ ≈ arg max 
+
+> w
+
+1
+
+N
+
+> N
+
+X
+
+> i=1
+
+T (x(i), w), x(i) ∼ pθ (x | y). (21) As demonstrated in Appendix A, maximizing the posterior expected utility via a generative model is mathematically equivalent to the optimal solution of a fully E2E framework. Consequently, provided the downstream optimization over w
+
+is solvable, the generative approach theoretically closes the performance gap to E2E systems, as illustrated in Fig. 2. This yields a profound architectural advantage: SGMs function as 
+
+general-purpose channel estimators that preserve the modular-ity of classical communication pipelines while simultaneously unlocking the potential of task-specific, E2E learning. This theoretical equivalence is further validated numerically in Sec-tion VII, where we demonstrate that the proposed generative approach successfully closes the performance gap between classical modular architectures and fully E2E-trained systems. V. P ROBLEM FORMULATION 
+
+We extend the principles established in Section IV to the task of MIMO precoding. Our analysis focuses specifically on a 5G New Radio (NR) Time Division Duplex (TDD) system, examining Downlink (DL) precoding based on Uplink (UL) Sounding Reference Signal (SRS) measurements — a use-case of particular interest within 3GPP R20/21, e.g., [41]. 
+
+A. MIMO Channel Estimation 
+
+We consider a point-to-point MIMO system with Ntx trans-mit and Nrx receive antennas, transmitting over Nf frequency subcarriers. To capture the temporal evolution of the channel, we observe the system over a sequence of Nt discrete past time steps, {t1, t 2, . . . , t Nt }. Under practical 5G NR configurations, SRS transmissions employ an interleaved comb structure in the frequency domain and hop across different sub-bands. Consequently, at each time step tm, Np pilot symbols are transmitted only on a specific subset Pm ⊂ { 1, . . . , N f } of subcarriers. The UL received pilot signal tensor at the BS at time tm, denoted as Y(p) 
+
+> m
+
+∈ CNrx ×Np×| Pm|, is modeled as: 
+
+Y(p) 
+
+> m
+
+= A(m) 
+
+> P
+
+(Hm) + Nm, m = 1 , . . . , N t, (22) where Hm ∈ CN rx ×Ntx ×Nf is the unknown true channel tensor at the past time tm (with the UL channel being its transpose due to TDD reciprocity), and Pm ∈ CNtx ×Np×| Pm| is the pilot matrix. The tensor Nm ∈ CNrx ×Np×| Pm| contains additive white Gaussian noise with i.i.d. entries ni,j,k ∼ CN (0 , η 2),and A(m) 
+
+> P
+
+denotes the time-specific linear pilot observation mapping, defined such that A(m) 
+
+> P
+
+(Hm):,:,k = Hm, :,:,k Pm, :,:,k 
+
+for k ∈ Pm. Based on the history of sparse, sequentially hopped observations, the ultimate goal is to predict the full wideband channel to perform DL precoding at the current transmission time t ≥ tNt . To align our physical model with the generative framework in Section IV, we define the observation history y and the ground-truth target state x as: 
+
+y ↔ Y(p) ≜ Y(p)1 , Y(p)2 , . . . , Y(p) 
+
+> Nt
+
+,
+
+x ↔ H ≜ Ht ∈ CNrx ×Ntx ×Nf . (23) 6                                                        
+
+> Category Parameter Value Category Parameter Value Scenario Setup
+> Environment 3GPP UMa
+> Node Config.
+> BS Height 25 .0mCarrier Frequency 3.7GHz UT Height 1.5mInter-Site Distance 300 mUT Vel. (Low Mob.) 3km/h (Out) / 0.5km/h (In) SNR Range UL: [-10, 10], DL: UL + 7dB UT Vel. (High Mob.) 18 km/h (Out) / 3km/h (In)
+> Antenna Arrays
+> BS Array 4×8, Dual-Pol. ( 64 elem.)
+> Grid & Pilots
+> Subcarrier Spacing 30 kHz UT Array 1×2, Dual-Pol. ( 4elem.) PRB Allocation 272 PRBs ( 100 MHz) BS Elem. Spacing 2.01 λ(V), 0.5λ(H) SRS Config. 40 ms Period., 17 Hops ( 16 PRBs/hop) Antenna Pattern 3GPP TR 38.901 Prediction Target Full band, 20 ms after last SRS
+
+TABLE I: Simulation Scenario and System Parameters 
+
+B. Precoding as the Downstream Task 
+
+To evaluate the downstream impact of the channel estima-tion strategy, we consider wideband DL spatial multiplexing. At the current transmission time, the Base Station (BS) uses the predicted channel to map data streams onto its Ntx anten-nas. For a specific subcarrier k, let Hk ∈ CNrx ×Ntx denote the 
+
+k-th subcarrier slice of our true target channel tensor H. The received DL data signal at the UE is modeled as: 
+
+Y(s) 
+
+> k
+
+= HkWkSk + Nk, k = 1 , . . . , N f , (24) where Wk ∈ CNtx ×NL is the precoding matrix, Sk contains the transmitted data symbols, and Nk is the DL additive noise. The ultimate objective of the BS is to design the wideband precoder W = {Wk}Nf 
+
+> k=1
+
+to maximize the achievable MIMO sum-capacity: 
+
+T (H, W) ≜
+
+> Nf
+
+X
+
+> k=1
+
+log 2 det 
+
+
+
+INrx + 1
+
+η2 HkWkWHk HHk
+
+
+
+,
+
+(25) where power allocation is absorbed into Wk under a sum-power constraint. With perfect Channel State Information (CSI), the optimal precoder is Wk = Vk, obtained from the Singular Value Decomposition (SVD) Hk = UkΣkVHk . How-ever, inferring H from sparse, outdated UL observations Y(p)
+
+introduces uncertainty, which can not be resolved through the CME estimate, but requires proper marginalization of the capacity functional over the posterior p(H | Y(p)):
+
+W∗ = arg max 
+
+> W
+
+Z
+
+T (H, W)p(H | Y(p)) dH. (26) VI. A LGORTIHMS 
+
+Since (26) is analytically intractable, we approximate the optimal precoding matrix using Monte Carlo integration based on the learned posterior from the DM. 
+
+W∗ ≈ arg max 
+
+> W
+
+1
+
+N
+
+> N
+
+X
+
+> i=1
+
+T (H(i), W), H(k) ∼ pθ (H | Y(p))
+
+(27) The optimization problem in (27) can be cast as a manifold-constrained optimization, where each feasible W ∈ CNtx ×NL
+
+has orthonormal columns. Consequently, the optimal solution lies on the complex Stiefel manifold [42], and standard Riemannian optimization techniques, such as the conjugate gradient method can be employed to solve it. 
+
+Algorithm 1 Precoder Design via Generative Learning (DM) 
+
+Require: Sparse observation history Y(p), sample count N .
+
+1: Sample the channel posterior: {H(i)}Ni=1 ∼ pθ (H | Y(p)).
+
+2: for each subcarrier k = 1 , . . . , N f do 
+
+3: Construct the expected Gramian: 
+
+ˆRk = 1
+
+> N
+
+PNi=1 (H(i) 
+
+> k
+
+)H H(i) 
+
+> k
+
+.
+
+4: Compute W∗ 
+
+> k
+
+as the NL dominant eigenvectors of ˆRk.
+
+5: end for 
+
+6: return Wideband precoder W∗ = {W∗
+
+> k
+
+}Nf
+
+> k=1
+
+.0 40 80 120 160 200 240 280 320 360 400 440 480 520 560 600 640 680 
+
+> Time (ms)
+> 0
+> 16
+> 32
+> 48
+> 64
+> 80
+> 96
+> 112
+> 128
+> 144
+> 160
+> 176
+> 192
+> 208
+> 224
+> 240
+> 256
+> 272
+> Frequency (PRBs)
+> SRS
+> Target
+
+Fig. 3: Time-frequency allocation of SRS pilots and target channel. However, for the DM-based precoding approach, we con-sider the solution to the related MIMO objective of maximiz-ing the received energy: 
+
+˜T (H, W) ≜
+
+> Nf
+
+X
+
+> k=1
+
+∥HkWk∥2 
+
+> F
+
+=
+
+> Nf
+
+X
+
+> k=1
+
+tr  WHk HHk HkWk
+
+ ,
+
+(28) This objective is preferred because: (i) it affords a closed-form solution for the Bayesian precoder, (ii) it offers lower implementation complexity compared to the conjugate gradi-ent method, and (iii) it empirically produces precoding ma-trices that yield nearly identical achievable SE to the original capacity task (25). By the linearity of the expectation and trace operators, the optimal Bayesian precoder for a given subcarrier 
+
+k is then given by the NL dominant eigenvectors of the expected posterior Gramian defined as Rk = EH|Y(p) [HHk Hk]
+
+— see Appendix C for details. This yields Algorithm 1, where the DM constructs the expected Gramian Rk through Monte Carlo approximation, drawing a set of samples from the posterior. 7Y(p)
+
+> Sparse obs.
+
++psrs 
+
+> SRS pos. enc.
+> Transformer Encoder
+> input encoding
+> Transformer Decoder
+> latent context
+
++ Query  
+
+> pquery
+> Query pos. enc.
+> ˆH
+> Prediction (output)
+> Iterative state Ht−1
+> (DM only)
+> Shared encoder (conditioning)
+> Shared decoder (prediction / sampling)
+
+Fig. 4: Used backbone model for DM and SL mode. VII. E XPERIMENTS 
+
+To comprehensively evaluate the utility of generative DMs against discriminative baselines, we conduct a series of exper-iments designed to assess MSE performance, characterize the perception-distortion tradeoff, and quantify the incurred excess risk of discriminative solutions in MIMO precoding. Our simulations adopt the system parameter configurations detailed in Table I and are implemented using the Sionna open source library [43]. Specifically, we consider two ref-erence scenario of increasing difficulty: i) low mobility (3
+
+/ 0.5 km/h) and ii) high mobility (18 / 3 km/h). In both settings, the BS conducts wideband UL channel estimation based on a sequence of Nt = 17 SRS hops with a 40 ms periodicity, as illustrated in Fig. 3. The predictive challenge is defined by a fixed temporal gap of 20 ms between the final SRS observation and the target wideband channel H.Assuming UL-DL channel reciprocity, the predicted channel is directly utilized for the subsequent DL precoding task. This setup represents a realistic channel aging scenario, currently considered in several 3GPP study items (e.g., [41]) where the BS is forced to perform downstream optimization based on severely outdated measurements. For a controlled comparison, both the discriminative SL model and the generative DM share the identical Transformer backbone sketched in Fig. 4, which employs an encoder to process the history of sparse observations into a latent context. In the discriminative SL model — trained via MSE to approxi-mate the CME — the decoder generates a single point-estimate using a query sequence consisting purely of target positional encodings. Conversely, during DM inference, the encoder remains fixed while the decoder runs in an iterative loop where the input combines target positional encodings with the current intermediate denoised state. This iterative refinement allows the generative model to recover the structural details of the channel that are inherently lost in the averaging process of the discriminative SL model trained via MSE. We refer the interested reader to Appendix B for a detailed description of the model architecture and training procedure. 
+
+Scenario Model NMSE ↓ GCS ↑
+
+Low Mobility SRS Baseline 1.866 0.381 
+
+SL Model 0.431 0.750 
+
+DM Model 0.984 0.602 
+
+High Mobility SRS Baseline 1.994 0.276 
+
+SL Model 0.809 0.534 
+
+DM Model 1.581 0.405 
+
+TABLE II: Channel Estimation Performance (Distortion). 
+
+A. Empirical Perception vs. Distortion Analysis 
+
+First, we conduct a set of experiments to characterize the implications of the perception-distortion tradeoff in the context of wireless channel estimation. Table II presents the normalized mean squared error (NMSE) and Generalized Cosine Similarity (GCS) metrics for the evaluated models 1. Notably, despite sharing the exact same neural network backbone, the discriminative SL model con-sistently and substantially outperforms the posterior samples generated by the DM across both mobility regimes 2. While this substantial performance gap might initially seem counter-intuitive given the strong focus on DM MSE capabilities in the literature (as discussed in Section II-A), it is a perfect physical manifestation of the perception-distortion tradeoff. By training via ERM, the discriminative model is strictly encouraged to minimize distortion. Conversely, the DM learns the true underlying data distribution, inherently prioritizing perceptual quality (i.e., physical channel realism) over absolute point-wise accuracy during inference. This phenomenon is visually evident in the illustrative channel predictions shown in Fig. 5, which compares the ground-truth channels against the DM and the discriminative SL model estimates. In the low mobility scenario (Fig. 5a–c), both models produce seemingly accurate estimates. However, closer inspection reveals distinct structural differences. The DM successfully captures fine-grained, high-frequency physi-cal details — particularly noticeable in the left half of Fig. 5b. In contrast, the discriminative SL model visibly smooths out these variations. While the generative approach actively maps its estimate to the manifold of physically realistic channels, the discriminative model defaults to a safer, blurred CME. The divergence between the two paradigms is particularly pronounced in the significantly more challenging high mo-bility scenario (Fig. 5d–f). Under severe uncertainty — which manifests specifically for the resource blocks more affected by channel aging — the discriminative model predictably falls back to the statistical mean. This results in heavily washed-out predictions that approach zero (visualized as dark, featureless regions in Fig. 5f). The DM, however, avoids collapsing to the mean, successfully generating a complete, structurally coherent channel (Fig. 5e) that maintains the physical textures of the ground truth. Despite the DM’s clear           
+
+> 1NMSE is defined as || H−ˆH|| 2
+> F/|| H|| 2
+> F, while GCS is computed as
+> |⟨ H,ˆH⟩| ∥H∥F∥ˆH∥F
+> , measuring the alignment independent of scaling.
+> 2Table II also includes the SRS baseline, which is obtained by collecting the wideband estimate from the observations Y(p)without any processing. 8
+
+(a) Ground Truth - Low Mobility (b) DM Estimate, NMSE=0.41, CS=0.80. (c) SL Estimate, NMSE=0.20, CS=0.90. 
+
+(d) Ground Truth - High Mobility (e) DM Estimate, NMSE=1.96, CS=0.50. (f) SL Estimate, NMSE=0.79, CS=0.71. 
+
+Fig. 5: The perception-distortion tradeoff visualized in the context of channel estimation. superiority in generating plausible channels, these fine-grained structural variations are statistically difficult to predict with exact point-wise precision. A minor phase or spatial shift in a highly detailed prediction incurs a MSE penalty compared to a safe, conservative mean prediction. This illustrates why a properly trained, physically realistic DM should inherently exhibit higher distortion compared to a discriminative baseline specifically trained via MSE. Despite this suboptimality of generative models in terms of absolute distortion, recent literature frequently reports com-petitive NMSE performance using DMs (see Section II-A). This apparent contradiction can be explained by examining the internal dynamics of the inference process. As also identified by [32], a trained DM implicitly embeds an MSE-optimal estimator within its reverse trajectory. Specifically, at the very first step of the reverse process ( t = T ), the model receives pure Gaussian noise that carries zero information about the target channel 3. Consequently, the network is forced to predict the underlying clean channel based entirely on the conditioning Y(p), effectively acting as a CME. This                            
+
+> 3At t=T,the “jump-to-clean” prediction ˆx0=1√¯αT(xT−√1−¯αTϵθ(xT, T, Y(p))) relies on xT∼ N (0,I). Because the noise input is uninformative, the objective in (6) forces ϵθto minimize the MSE solely based on the conditioning Y(p).
+
+explains why reducing (or totally suppressing) sampling vari-ance, taking fewer steps, or extracting early ˆx0 predictions yields solid MSE performance, albeit at the deliberate sacrifice of the perceptual quality the DM is inherently designed to achieve. To empirically evaluate this, we analyze the inference trajectories of our trained DM across the diffusion steps of the reverse process. As shown in Fig. 6, we first exam-ine standard stochastic sampling, which follows the learned transition kernel, and contrast it with a deterministic variant [32]. The deterministic approach 4 suppresses stochasticity by propagating only the conditional mean μθ (Ht, t ), serving as a mechanism to evaluate the estimate when forced to minimize exploration of the posterior distribution. For both variants, we track the iterative state Ht and the predicted “jump-to-clean” start ˆH0. The resulting trajectories in Fig. 6 provide an empirical characterization of the trade-off between distortion and structural integrity. In the stochastic case (red lines), we observe a severe deterioration in NMSE and GCS as the inference approaches the final step ( t → 0). This occurs be-cause the model “commits” to a specific, physically plausible channel realization. While this iterative refinement restores   
+
+> 4Fesl et al. [32] formally utilized this deterministic approach for asymptotic denoising, we employ it here as an analytical tool to characterize the strict limits of iterative distortion performance. 9
+> (a) NMSE trajectory for low mobility scenario. (b) NMSE trajectory for high mobility scenario.
+> (c) Cosine Similarity trajectory for low mobility scenario. (d) Cosine Similarity trajectory for high mobility scenario.
+
+Fig. 6: Inference trajectories of the DM over the reverse diffusion process. Stochastic Sampling (Red): Structural refinement inherently increases distortion, illustrating the perception-distortion tradeoff. Deterministic Sampling (Blue): Propagating only the mean limits this degradation, but peak performance remains strictly inferior to the SL baseline (black). sharp structural details (improving perception), it inevitably introduces spatial and phase “hallucinations” relative to the exact ground truth, causing a sharp penalty in distortion. In the deterministic variant (blue lines), the trajectories predictably remain much closer to the statistical mean. Still, the absolute best distortion for this variant is achieved at the very ear-liest stages of inference (high t), where the DM objective effectively acts as the aforementioned discriminative MSE predictor. However, even the best performance achieved by the DM remains inferior to that of the discriminative base-line (dash-dotted line). This performance ceiling highlights a fundamental capacity gap : whereas the discriminative SL model dedicates its entire parameter budget strictly to direct distortion minimization, the DM must distribute its capacity to learn the complex transition score across the entire noise schedule. Furthermore, we observe a subsequent decline in the deterministic trajectory over time, which we attribute to the negative impact of accumulated error propagation across the iterative steps. Ultimately, these trajectory dynamics confirm that the computational overhead of iterative diffusion is not intended to minimize MSE. Rather, it is designed to navigate the posterior manifold toward physically plausible realizations that a point-estimator cannot represent. Consequently, when designing wireless systems, generative approaches must be carefully benchmarked against classical discriminative models to ensure that the tradeoff between statistical accuracy and distributional fidelity aligns with the specific downstream task. 
+
+B. Characterizing Jensen Gap for Precoding 
+
+Despite SGMs’ inherent suboptimality in point-wise distor-tion, their true utility emerges when considering non-linear downstream tasks of the estimation process such as the DL precoding introduced Section V-B. In this section, we evaluate the DM-based precoding strategy described in Algorithm 1 against a conventional baseline that involves SVD-based precoding derived from the discriminative SL channel estimate 
+
+ˆH = E[H | Y(p)]. To observe the effect of Monte Carlo marginalization, we test the DM using ensemble sizes of 
+
+N = 1 (a single random posterior draw) and N = 50 samples. To systematically evaluate the capability of the DM to offset the excess risk for DL precoding, we further compare our 10 
+
+(a) Low mobility. (b) High mobility. 
+
+Fig. 7: Downlink SE performance under different mobility regimes. (a) Low Mobility: Under low structural uncertainty, the conditional posterior is tightly concentrated, rendering the Jensen gap negligible. (b) High Mobility: Under severe uncertainty, the deterministic SL point-estimate falls victim to the Jensen gap. Fully marginalizing over the posterior via the DM ensemble (N = 50 ) closes this gap, matching the E2E upper bound without sacrificing modularity. generative method against a fully E2E trained model 5, acting as an empirical upper bound. All variants are evaluated on their achievable MIMO spectral efficiency, assuming equal power allocation across NT X = 4 spatial layers. The resulting SE performance is characterized in Table III, with detailed curves over the SNR provided in Fig. 7. For the low mobility scenario in Fig. 7a, channel aging is minimal, meaning predictive uncertainty is low and the conditional posterior remains tightly concentrated around its mean. Consequently, the excess risk is practically negligible. The discriminative SL baseline achieves virtually identical SE to the E2E and DM models, demonstrating that a stan-dard CME is entirely sufficient for optimal precoding when uncertainty is strictly bounded 6. However, the limitations of deterministic estimation are exposed in the high mobility scenario in Fig. 7b. Under severe channel aging, the poste-rior distribution widens significantly. As dictated by Jensen’s inequality, plugging the washed-out conditional mean of the SL baseline directly into the non-linear capacity functional noticeably penalizes the achievable rate. As detailed in Table III, this creates a 8.95% performance penalty relative to the empirical E2E upper bound. To illustrate the necessity of proper posterior marginalization, we include the performance of a single generative draw ( N = 1). While this single physically realistic sample avoids the structural smoothing of the CME, it fails to capture the full statistical volume of the posterior uncertainty, remaining clearly insufficient to reach the optimal bound (yielding a 9.85% deficit). Crucially, it is only by evaluating the expected posterior Gramian via the larger ensemble ( N = 50 ) that the generative approach closes the Jensen gap. By fully marginalizing over the uncertainty,                                                    
+
+> 5The E2E baseline employs a task-aware objective, extracting the precoder
+> Wfrom a latent estimate ˆHvia a differentiable eigen-decomposition of its Gramian. It is trained end-to-end to maximize the same energy functional as the DM, max P
+> k∥HkWk∥2
+> F, naturally enforcing WHkWk=INL.
+> 6Note, that with 0.61% the SL model achieves a smaller gap than the DM with 2.02% . We relate this to the capacity gap discussed in Section VII-A.
+> Scenario Model SE [bps/Hz] ↑∆to E2E ↑
+> Low Mobility Perfect CSI 21 .556 –End-to-End Model 18 .078 ref. SRS Baseline 13 .786 –SL Model 17 .968 −0.61 %
+> DM Model ( T= 50 )17 .713 −2.02%
+> DM Model ( T= 1 )16 .696 −7.65%
+> High Mobility Perfect CSI 21 .268 –End-to-End Model 16 .583 ref. SRS Baseline 12 .044 –SL Model 15 .100 −8.95%
+> DM Model ( T= 50 )16 .442 −0.85 %
+> DM Model ( T= 1 )14 .949 −9.85%
+
+TABLE III: Downlink SE. The gap ( ∆) is calculated relative to the empirical upper bound established by the E2E model. the DM strictly matches the performance trajectory of the specialized E2E baseline — shrinking the performance gap to a mere 0.85% . This validates that generative models can achieve global E2E optimality while preserving the modularity and interpretability of classical communication pipelines. 
+
+C. Link Between Mutual Information and Generative Gain 
+
+The contrasting performance between the low and high mobility regimes in Table III suggests a broader statistical trend: the utility of the generative approach — and the severity of the Jensen gap — appears fundamentally linked to the uncertainty of the estimation problem and the informativeness of the pilot observations regarding the true channel. This notion can be formalized through the concept of mutual information (MI), which is defined as the expected Kullback-Leibler (KL) divergence between the posterior and the prior and satisfies the entropy reduction identity: 
+
+I(H; Y(p)) = EY(p)
+
+h
+
+DKL 
+
+
+
+p(H | Y(p)) ∥ p(H)
+
+i 
+
+(29) 
+
+= H(H) − EY(p)
+
+h
+
+H(H | Y(p))
+
+i
+
+, (30) 11 
+
+which demonstrates that conditioning on Y(p) reduces the entropy H of the channel on average. This lens clarifies our empirical results. Under high MI (e.g., low mobility), the posterior concentrates, and the CME remains a structurally accurate channel estimate. However, as mobility increases and information drops, the posterior broadens. In such low-information regimes — approaching the zero-information limit of pilot-free precoding — deterministic estimators must av-erage over diverging hypotheses to minimize MSE. This smoothing distorts the spatial structure of the channel, leading to a significant reduction in spectral efficiency. Interestingly, DMs provide a way to artificially control the precision of the information flow during inference. This lets us study such relationship without being tied to the actual phys-ical mobility of the channel. This is achieved through CFG, where the guidance scale λ ∈ [0 , 1] serves as a controllable dial for the conditioning signal. As described in (12), setting 
+
+λ = 1 recovers standard conditional sampling, exploiting all available MI. Conversely, setting λ = 0 completely severs the conditioning, effectively simulating the extreme zero-information limit ( I(H; Y(p)) = 0 ) by forcing the model to sample strictly from the unconditional prior p(H).Fig. 8 tracks the resulting SE across this information con-tinuum, comparing the properly marginalized DM ensemble (N = 50 ) against a purely deterministic DM estimate 7. At full information ( λ = 1 ), the performance gap between the two approaches is relatively small 8. However, as λ decreases — simulating a progressively less informative conditioning signal — the smoothing of the conditional mean rapidly degrades the deterministic estimate. Its performance plummets significantly earlier than the Bayesian precoder, causing the Jensen gap to expand drastically in the mid-to-low information regime. By contrast, the generative DM sustains higher SE by preserving structural diversity through proper statistical sampling. As 
+
+λ → 0, the gap inherently narrows. At this extreme uncon-ditional limit, both models converge toward the theoretical minimum dictated by the baseline spatial entropy H(H) of the UMa dataset, aligning with the pilotless precoding case — given by uniform power allocation across all antennas, with zero directional information. Ultimately, this parameter sweep confirms our core hypothesis: the computational overhead of generative marginalization yields its highest dividends outside of high-information environments, where deterministic point-estimators inherently suffer structural collapse. VIII. C ONCLUSION 
+
+In this work, we have reframed the role of DMs in wireless communications, moving beyond the pursuit of MSE opti-mality. Our results demonstrate that while generative models are inherently penalized by the perception-distortion tradeoff in terms of point-wise accuracy, their true value lies in               
+
+> 7Via CFG, the modified noise estimate is given by ˆϵ=ϵθ(Ht, t, ∅) +
+> λ ϵθ(Ht, t, Y(p))−ϵθ(Ht, t, ∅). Analogous to the evaluation in Section IV, we again build the deterministic estimator by propagating only the mean
+> 8Note that a baseline gap at λ= 1 remains here because the deterministic DM exhibits a slightly worse NMSE than a dedicated discriminative model trained via MSE loss, due to the model capacity and error propagation effects discussed in Section VII-A
+
+Fig. 8: The Jensen gap evaluated over a mutual information proxy (CFG λ) for the low mobility case. As the conditioning becomes less informative ( λ < 1), the deterministic estimate collapses, massively widening the performance gap compared to the properly marginalized DM ensemble. their ability to resolve structural uncertainty. By providing access to the full channel posterior, DMs serve as general-purpose engines for channel-aware decision-making, capable of optimizing non-linear functionals that are mathematically out of reach for deterministic estimators. Crucially, our find-ings show that generative marginalization bridges the gap between the global optimality of E2E learning and the practical necessity of modular communication pipelines. This ”train once, estimate many” paradigm allows for the deployment of a single generative channel estimation module that can be used for various downstream tasks such as SRS-based pre-coding — without the rigid task-dependency of E2E models. While the current computational overhead of iterative diffusion remains a challenge for real-time chip implementation, this work validates the generative framework as a powerful new alternative to traditional estimation. To translate these gener-ative gains into next-generation hardware, future work must prioritize efficiency improvements such as distilled sampling. Furthermore, extending this framework to several downstream tasks like decoding, equalization, and detection will be key, requiring new optimization strategies specifically tailored to these diverse downstream objectives. APPENDIX AEND -TO -E ND LEARNING VS . P OSTERIOR 
+
+MARGINALIZATION 
+
+An E2E model directly maximizes the global task functional 
+
+T (x, w). By the law of total expectation, and under the assumption of unlimited model capacity, this global objective decomposes exactly into the expected posterior utility: 
+
+max  
+
+> w=g(y;θ)
+
+Ex,y
+
+T (x, w)
+
+= Ey
+
+h
+
+max  
+
+> w
+
+Ex|y[T (x, w)] 
+
+i
+
+=
+
+Z
+
+> Y
+
+
+
+max 
+
+> w
+
+Z
+
+> X
+
+T (x, w)p(x | y)dx
+
+| {z }
+
+> Posterior Expected Utility
+
+p(y)dy.
+
+(31) 12 
+
+Module Configuration 
+
+Shared Transformer Backbone 
+
+Input Patching 128 (64 × 2 real/imag. BS antennas) Embedding Linear Projection R128 → R512 
+
+Positional Encoding Learnable additive encoding Transformer Encoder 3 Layers, nhead = 8 , dff = 1024 
+
+Transformer Decoder 3 Layers, nhead = 8 , dff = 1024 
+
+Attention / Dropout Multi-Head (Self/Cross) / 0.1
+
+Output Head Linear Projection R512 → R128 
+
+Discriminative Baseline (SL) 
+
+Learning Framework ERM Loss Function MSE 
+
+Generative Model (DM) 
+
+Objective Score Matching (predicting H0)Noise Schedule Cosine Schedule ( T = 1000 steps) Inference Iterative Denoising (fixed encoder) 
+
+Training & Dataset Details 
+
+Optimizer / Learning Rate Adam / 10 −4
+
+Training Dataset Size 100k Samples Test Dataset Size 5k Samples 
+
+TABLE IV: Model Architecture and Training Parameters This reveals that an E2E network implicitly solves for the posterior expected utility at every observation y, yet its learned mapping remains rigidly bound to the specific choice of T .In contrast, the generative approach explicitly decouples estimation from optimization. By learning the target distri-bution p(x | y; θ∗) ≈ p(x | y) independently of the downstream objective, the model acts as a general-purpose estimator. During inference, the optimal action w∗(y) for any 
+
+arbitrary task is found by explicitly evaluating the identical inner objective: 
+
+w∗(y) = arg max 
+
+> w
+
+Z
+
+> X
+
+T (x, w)p(x | y; θ∗)dx. (32) Therefore, provided the true posterior is accurately learned and the downstream optimization over w is tractable, posterior marginalization theoretically achieves the exact global opti-mality of E2E training while strictly preserving the modularity of classical communication pipelines. APPENDIX BMODEL ARCHITECTURE AND TRAINING PROCEDURE 
+
+Both the DM and the discriminative model share an identical PyTorch transformer encoder/decoder structure, which closely follows the original architecture proposed in [44]. As detailed in Table IV, the tokens are formed by patching the input channel into real-valued 128 -dimensional tensors, which are then linearly projected into a 512 -dimensional embedding. The discriminative baseline is trained via ERM with an MSE loss, while the DM minimizes a score-matching objective with a cosine noise-schedule to approximate the full posterior distribution. APPENDIX COPTIMAL PRECODING FOR EXPECTED RECEIVED ENERGY 
+
+Let Wk ∈ CNtx ×NL denote the precoding matrix for subcarrier k, constrained to the Stiefel manifold such that 
+
+WHk Wk = INL . To maximize the expected received energy under the posterior channel distribution p(H | Y(p)), we formulate the problem as the maximization of E∥HkWk∥2
+
+> F
+
+.Using the definition of the Frobenius norm, we can commute the expectation and trace operators as follows: 
+
+EH|Y(p)
+
+h
+
+∥HkWk∥2
+
+> F
+
+i
+
+= EH|Y(p)
+
+h
+
+tr  WHk HHk HkWk
+
+ i
+
+= tr  WHk EH|Y(p)
+
+HHk Hk
+
+ Wk
+
+
+
+= tr  WHk RkWk
+
+ , (33) where Rk ≜ EH|Y(p) [HHk Hk] is the expected posterior Gramian. The optimization problem thus simplifies to: 
+
+max 
+
+> Wk
+
+tr (WHk RkWk) subject to WHk Wk = INL . (34) Maximizing the trace of a projected Hermitian matrix under orthonormal constraints is a standard result in matrix analysis [45, Sec. 4.3]. It is well established that the maximum is achieved when the column space of Wk is spanned by the principal eigenvectors of Rk. Consequently, the opti-mal Bayesian precoder W∗ 
+
+> k
+
+is constructed directly from the 
+
+NL dominant eigenvectors. Notably, in the case of a single posterior sample, where the expectation simplifies to the instantaneous channel estimate, this solution is mathematically equivalent to the standard SVD-based precoder. REFERENCES [1] J. Sohl-Dickstein, E. Weiss, N. Maheswaranathan, and S. Ganguli, “Deep unsupervised learning using nonequilibrium thermodynamics,” in Proceedings of the 32nd International Conference on Machine Learning , ser. Proceedings of Machine Learning Research, F. Bach and D. Blei, Eds., vol. 37. Lille, France: PMLR, 07–09 Jul 2015, pp. 2256–2265. [Online]. Available: https://proceedings.mlr.press/v37/sohl-dickstein15.html [2] J. Ho, A. Jain, and P. Abbeel, “Denoising diffusion probabilistic models,” 
+
+Advances in neural information processing systems , vol. 33, pp. 6840– 6851, 2020. [3] Y. Song, J. Sohl-Dickstein, D. P. Kingma, A. Kumar, S. Ermon, and B. Poole, “Score-based generative modeling through stochastic differ-ential equations,” arXiv preprint arXiv:2011.13456 , 2020. [4] M. Arvinte and J. I. Tamir, “Mimo channel estimation using score-based generative models,” IEEE Transactions on Wireless Communications ,vol. 22, no. 6, pp. 3698–3713, 2022. [5] X. Ma, Y. Xin, Y. Ren, D. Burghal, H. Chen, and J. C. Zhang, “Diffusion model based channel estimation,” in 2024 IEEE International Conference on Communications Workshops (ICC Workshops) , 2024, pp. 1159–1164. [6] M. Letafati, S. Ali, and M. Latva-aho, “Diffusion models for wireless communications,” 2025. [Online]. Available: https://arxiv.org/abs/2310.07312 [7] X. Zhou, L. Liang, J. Zhang, P. Jiang, Y. Li, and S. Jin, “Generative diffusion models for high dimensional channel estimation,” IEEE Trans-actions on Wireless Communications , vol. 24, no. 7, pp. 5840–5854, 2025. [8] X. Xu, X. Mu, Y. Liu, H. Xing, Y. Liu, and A. Nallanathan, “Generative artificial intelligence for mobile communications: A diffusion model perspective,” IEEE Communications Magazine , vol. 63, no. 7, pp. 98– 105, 2025. [9] Z. Chen, H. Shin, and A. Nallanathan, “Generative diffusion model-based variational inference for mimo channel estimation,” IEEE Trans-actions on Communications , vol. 73, no. 10, pp. 9254–9269, 2025. [10] N. Zilberstein, A. Swami, and S. Segarra, “Joint channel estimation and data detection in massive mimo systems based on diffusion models,” in ICASSP 2024 - 2024 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , 2024, pp. 13 291–13 295. [11] F. Strasser, M. B¨ aro, and W. Utschick, “Enhancements in score-based channel estimation for real-time wireless systems,” in 2025 28th Interna-tional Workshop on Smart Antennas (WSA) . IEEE, 2025, pp. 140–146. 13 
+
+[12] X. Wang, P. Zheng, N. Cheng, R. Sun, J. Chen, K. Tao, Z. Yin, Z. Liu, and Y. Zeng, “Radiodiff-turbo: Lightweight generative large electromagnetic model for wireless digital twin construction,” in IEEE INFOCOM 2025-IEEE Conference on Computer Communications Work-shops (INFOCOM WKSHPS) . IEEE, 2025, pp. 1–6. [13] Y. Blau and T. Michaeli, “The perception-distortion tradeoff,” in Pro-ceedings of the IEEE conference on computer vision and pattern recognition , 2018, pp. 6228–6237. [14] T. N. Ha and D. Romero, “Bayesian radio map estimation: Fun-damentals and implementation via diffusion models,” arXiv preprint arXiv:2508.06037 , 2025. [15] T. M. Cover and J. A. Thomas, Elements of Information Theory , 2nd ed. Hoboken, NJ, USA: Wiley-Interscience, 2006. [16] P. Dhariwal and A. Nichol, “Diffusion models beat gans on image synthesis,” Advances in neural information processing systems , vol. 34, pp. 8780–8794, 2021. [17] A. Q. Nichol and P. Dhariwal, “Improved denoising diffusion probabilis-tic models,” in International conference on machine learning . PMLR, 2021, pp. 8162–8171. [18] D. Fan, R. Meng, X. Xu, Y. Liu, G. Nan, C. Feng, S. Han, S. Gao, B. Xu, D. Niyato, T. Q. S. Quek, and P. Zhang, “Generative diffusion models for wireless networks: Fundamental, architecture, and state-of-the-art,” 2025. [Online]. Available: https://arxiv.org/abs/2507.16733 [19] N. C. Luong, N. D. Hai, D. V. Le, H. T. Nguyen, T.-H. Vu, T. Huynh-The, R. Zhang, N. D. D. Anh, D. Niyato, M. D. Renzo, D. I. Kim, and Q.-V. Pham, “Diffusion models for future networks and communications: A comprehensive survey,” 2025. [Online]. Available: https://arxiv.org/abs/2508.01586 [20] N. Van Huynh, J. Wang, H. Du, D. T. Hoang, D. Niyato, D. N. Nguyen, D. I. Kim, and K. B. Letaief, “Generative ai for physical layer communications: A survey,” IEEE Transactions on Cognitive Communications and Networking , vol. 10, no. 3, pp. 706–728, 2024. [21] R. Li, J. Sun, and J. Xue, “Generative diffusion-based bayesian modeling for universal channel estimation,” IEEE Journal on Selected Areas in Communications , pp. 1–1, 2025. [22] S. Bhattacharya, M. A. Mohsin, K. Rajabalifardi, and J. M. Cioffi, “Successive interference cancellation-aided diffusion models for joint channel estimation and data detection in low rank channel scenarios,” in ICASSP 2025 - 2025 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , 2025, pp. 1–5. [23] Z. Liu, S. Zhang, Q. Liu, H. Zhang, and L. Song, “Wifi-diffusion: Achieving fine-grained wifi radio map estimation with ultra-low sam-pling rate by diffusion models,” IEEE Journal on Selected Areas in Communications , vol. 43, no. 11, pp. 3796–3812, 2025. [24] X. Luo, L. Zhizhen, Z. Peng, X. Dongkuan, and Y. Liu, “Rm-gen: Conditional diffusion model-based radio map generation for wireless networks,” in 2024 IFIP Networking Conference (IFIP Networking) ,2024, pp. 543–548. [25] X. Luo, Z. Li, Z. Peng, M. Chen, and Y. Liu, “Denoising diffusion probabilistic model for radio map estimation in generative wireless networks,” IEEE Transactions on Cognitive Communications and Net-working , vol. 11, no. 2, pp. 751–763, 2025. [26] X. Gong, X. Liu, A.-A. Lu, X. Gao, X.-G. Xia, C.-X. Wang, and X. You, “Digital twin of channel: Diffusion model for sensing-assisted statistical channel state information generation,” IEEE Transactions on Wireless Communications , vol. 24, no. 5, pp. 3805–3821, 2025. [27] X. Zhang and J. Yu, “Improve the training efficiency of drl for wireless communication resource allocation: The role of generative diffusion models,” IEEE Transactions on Wireless Communications , vol. 25, pp. 11 593–11 608, 2026. [28] R. Liang, B. Yang, P. Chen, X. Li, Y. Xue, Z. Yu, X. Cao, Y. Zhang, M. Debbah, H. V. Poor et al. , “Diffusion models as network optimizers: Explorations and analysis,” IEEE Internet of Things Journal , 2025. [29] A. Jalal, M. Arvinte, G. Daras, E. Price, A. G. Dimakis, and J. Tamir, “Robust compressed sensing mri with deep generative priors,” Advances in neural information processing systems , vol. 34, pp. 14 938–14 954, 2021. [30] A. Graikos, N. Malkin, N. Jojic, and D. Samaras, “Diffusion models as plug-and-play priors,” Advances in Neural Information Processing Systems , vol. 35, pp. 14 715–14 728, 2022. [31] Y. Wang, S. Bi, Y.-J. A. Zhang, and X. Yuan, “Traversing distortion-perception tradeoff using a single score-based generative model,” in Pro-ceedings of the Computer Vision and Pattern Recognition Conference ,2025, pp. 2377–2386. [32] B. Fesl, B. B¨ ock, F. Strasser, M. Baur, M. Joham, and W. Utschick, “On the asymptotic mean square error optimality of diffusion models,” arXiv preprint arXiv:2403.02957 , 2024. [33] Z. Fabian, B. Tinaz, and M. Soltanolkotabi, “Diracdiffusion: Denoising and incremental reconstruction with assured data-consistency,” 2024. [Online]. Available: https://arxiv.org/abs/2303.14353 [34] S. Zhang, Y. Xue, Z. Tang, H. Wang, C. Shen, Q. Shi, and T.-H. Chang, “Robust network optimization by deep generative models and stochastic optimization,” IEEE Transactions on Wireless Communications , vol. 24, no. 7, pp. 6069–6084, 2025. [35] Y. Li, Z. Lin, K. Li, and M. M. Zhang, “Online/offline learning to enable robust beamforming: Limited feedback meets deep generative models,” 
+
+Journal of Communications and Networks , pp. 1–13, 2026. [36] F. Weißer, A. Kasibovic, B. B¨ ock, and W. Utschick, “No pilots, no problem: A generative model for position-based downlink precoding,” in 2025 28th International Workshop on Smart Antennas (WSA) , 2025, pp. 127–132. [37] Y. Song and S. Ermon, “Generative modeling by estimating gradients of the data distribution,” Advances in neural information processing systems , vol. 32, 2019. [38] P. Vincent, “A connection between score matching and denoising au-toencoders,” Neural Computation , vol. 23, no. 7, pp. 1661–1674, 2011. [39] S. M. Kay, Fundamentals of Statistical Signal Processing: Estimation Theory . Englewood Cliffs, NJ, USA: Prentice-Hall, 1993. [40] K. Hornik, M. Stinchcombe, and H. White, “Multilayer feedforward networks are universal approximators,” Neural networks , vol. 2, no. 5, pp. 359–366, 1989. [41] Huawei and HiSilicon, “Discussion on inference, data collection, and monitoring related aspects for CSI compression,” 3GPP, Gothenburg, Sweden, 3GPP TSG-RAN WG1 Meeting #124 R1-2600079, Feb. 2026. [42] P.-A. Absil, R. Mahony, and R. Sepulchre, Optimization algorithms on matrix manifolds . Princeton University Press, 2008. [43] J. Hoydis, S. Cammerer, F. A. Aoudia, A. Vem, N. Binder, G. Marcus, and A. Keller, “Sionna: An open-source library for next-generation physical layer research,” arXiv preprint arXiv:2203.11854 , 2022. [44] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, Ł. Kaiser, and I. Polosukhin, “Attention is all you need,” Advances in neural information processing systems , vol. 30, 2017. [45] R. A. Horn and C. R. Johnson, Matrix Analysis , 2nd ed. Cambridge University Press, 2012.

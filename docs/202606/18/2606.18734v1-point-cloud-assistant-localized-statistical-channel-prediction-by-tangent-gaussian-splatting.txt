@@ -1,0 +1,1464 @@
+Title: Point-Cloud-Assistant Localized Statistical Channel Prediction by Tangent Gaussian Splatting
+
+URL Source: https://arxiv.org/pdf/2606.18734v1
+
+Published Time: Thu, 18 Jun 2026 00:32:49 GMT
+
+Number of Pages: 15
+
+Markdown Content:
+> 1
+
+# Point-Cloud-Assistant Localized Statistical Channel Prediction by Tangent Gaussian Splatting 
+
+Ye Xue, Member, IEEE , Yiheng Wang, Graduate Student Member, IEEE, Xinhua Shao, Qi Yan, Shutao Zhang, Graduate Student Member, IEEE , and Tsung-Hui Chang, Fellow, IEEE 
+
+Abstract —Accurate, site-specific channel information is crucial for optimizing next-generation wireless networks. Among various approaches, localized statistical channel modeling (LSCM), which models the channel multipath angular power spectrum (APS) from the reference signal received power (RSRP) measurement, has emerged as a state-of-the-art method tailored for efficient network optimization. However, despite its effectiveness, LSCM cannot predict APS at the vast majority of locations where no measurements are available, which significantly restricts its applicability in large-scale, real-world scenarios. To address this challenge, we present point-cloud-assisted tangent Gaussian splatting (PC-TGS), the first framework to extrapolate APS to unmeasured outdoor grids by integrating sparse radio measure-ments with dense LiDAR-based geometry. PC-TGS represents environmental scatterers as anisotropic 3D Gaussians, initialized and refined through a relaxed-mean reparameterization of the raw point cloud. A tangent-plane projection accurately maps each Gaussian into the local angular domain, while a depth-aware elec-tromagnetic splatting process aggregates their contributions. To ensure practical deployment, we derive a closed-form Gaussian-weighted average (GWA) for APS bin integration and provide a provable error bound. Evaluations on a LiDAR-scanned city-scale dataset (5M points, 6,310 RSRP samples) demonstrate that PC-TGS achieves better APS and RSRP prediction performance compared to state-of-the-art baselines and faster inference time for APS extrapolation task. These results highlight the potential of PC-TGS to enable geometry-aware and data-efficient channel prediction in large-scale wireless digital twins. 
+
+Index Terms —Channel Modeling, Radio Environment, 3D Gaussian Splatting, Point Cloud. 
+
+I. I NTRODUCTION 
+
+With the rapid development of next-generation mobile communication systems, wireless network optimization has 
+
+The work was supported in part by the National Key Research and Development Program of China under Grant 2024YFA1014202; in part by the National Natural Science Foundation of China under Grant 62301334, Grant 62031008; in part by the Shenzhen Science and Technology Program under Grant RCIC20210609104448114 and Grant ZDSYS20230626091302006; in part by Hetao Shenzhen-Hong Kong Science and Technology Innovation Cooperation Zone Project (No. HZOSWSKCCYB-2024016); in part by the Guangdong Major Project of Basic and Applied Basic Research (No. 2023B0303000001); Ye Xue is with the School of Intelligent Systems Engineering, Shen-zhen Campus of Sun Yat-sen University, Shenzhen 518107, China (e-mail: xuey57@mail.sysu.edu.cn). Yiheng Wang and Tsung-Hui Chang are with the Shenzhen Research Institute of Big Data, and also with the School of Artificial Intelligence, The Chinese University of Hong Kong-Shenzhen, Guangdong 518172, China (email: yihengwang1@link.cuhk.edu.cn, tsunghui.chang@ieee.org). Xinhua Shao is with China Telecom, China. (shaoxh@chinatelecom.cn). Qi Yan and Shutao Zhang are with Networking and User Experience Lab, Huawei Technologies, China (email: yanqi1@huawei.com, zhang-shutao2@huawei.com). 
+
+become a fundamental approach for improving the quality of user experience [1], [2]. Despite significant investments by network operators, network performance can deteriorate if system parameters are not properly tuned to the real envi-ronment. In modern networks, the challenge is compounded by the proliferation of parameters, including those related to antennas, handovers, beams, and carrier settings—all of which must be meticulously configured to fully realize the potential of wireless network systems. Traditionally, network optimization has relied on engineer-ing heuristics and repeated field measurements such as drive tests (DTs) [3]. However, these methods are time-consuming, costly, environmentally unsustainable, and limited to assessing only the current network configuration. To address these challenges and reduce operational risks, digital twin-based network optimization [4]–[6] has recently gained attention, enabling the modeling and simulation of wireless networks without manual intervention [7]. Despite these advances, a significant gap remains between the simulation and the real-world radio environment, primarily due to the difficulty of accurately capturing site-specific environmental effects and complex multi-path phenomena. Without precise modeling of the true radio environment, the performance gains achieved in simulation may fail to materialize in practice. Existing channel models commonly used in 5G networks are not sufficient for this task. Geometry-based stochastic models (GBSM) [8] are typically designed for broad scenario types, such as indoor, outdoor, rural, or urban, but lack the ability to represent localized environmental features. Deterministic models, such as ray tracing [9], provide site-specific accuracy but require detailed map information and incur prohibitive computational costs. Simplified empirical models, such as the COST231-Hata model [10], are computationally efficient but cannot characterize multi-path effects or sufficient channel properties for network optimization. To address these limitations, localized statistical channel modeling (LSCM) [11], [12] has emerged as a promising alternative tailored for efficient network optimization. Unlike traditional approaches that rely on high-dimensional chan-nel impulse response (CIR) measurements, LSCM uses low-overhead reference signal received power (RSRP) data from multiple transmit beams obtained from the network layer. This enables the efficient estimation of the angular power spectrum (APS) at measured locations, revealing localized multi-path structure and environmental topography, while significantly reducing data collection requirements. Despite its effectiveness, a critical and often misunderstood 
+
+> arXiv:2606.18734v1 [eess.SP] 17 Jun 2026 2
+
+limitation of LSCM is its lack of spatial generalization: it can only reconstruct APS at locations where RSRP mea-surements are directly available. LSCM cannot interpolate or extrapolate APS to unmeasured regions. While one can interpolate RSRP at unmeasured points using spatial methods (e.g., Kriging [13]) and then apply LSCM, this approach enables only mild interpolation and relies on the presence of nearby measurements. True extrapolation that predicts APS in regions with no measurements at all remains fundamentally unsolved and requires strong environmental priors and model generalization. This limitation significantly restricts the utility of LSCM for large-scale simulation, network planning, and digital twin construction. To overcome this barrier, we introduce localized statis-tical channel prediction (LSCP): extrapolating the APS at unmeasured locations by leveraging both low-overhead RSRP data and environmental priors (such as LiDAR point clouds). Unlike LSCM, LSCP aims to infer the spatial distribution of APS everywhere, including regions without any signal measurements. In LSCM, APS is recovered at a location with its own RSRP, but in LSCP, the model must predict APS at completely unmeasured locations, transferring knowledge from measured regions to the unknown. This demands a model capable of true spatial extrapolation, robust generalization, and effective use of environmental structure. 
+
+A. Related Work 
+
+To contextualize the LSCP problem, we review three lines of related research. We begin with LSCM and sparse recovery methods that estimate APS at measured locations, then discuss radio map prediction methods that attempt spatial generaliza-tion of signal strength, and finally examine physics-based and neural scene representations that model wireless propagation. 
+
+1) APS Recovery at Measured Locations: LSCM [11], [12] recovers the APS x from low-overhead RSRP measurements by solving an ill-conditioned linear inverse problem y = Ax 
+
+at locations where RSRP y and system parameters A are known. Within this framework, several sparse recovery algo-rithms can be adopted. WNOMP [11] uses greedy orthog-onal matching pursuit, while temporally correlated MSBL (TMSBL) [14] provides a principled probabilistic framework for the multiple measurement vector (MMV) problem, of-fering improved accuracy by grouping spatially or signal-similar samples to exploit joint sparsity with a higher com-putational cost. Although effective at measured locations, all these methods fundamentally operate only where measure-ments exist. Hence, they cannot generalize APS predictions to unmeasured regions. Even when combined with spatial interpolation of RSRP (e.g., via Kriging), the recovered APS remains constrained to mild interpolation and degrades rapidly in measurement-free areas. 
+
+2) Spatial Radio Map Prediction: A complementary line of research focuses on predicting radio signal strength at unmea-sured locations. Classical spatial interpolation methods such as inverse distance weighting (IDW) [15] and Kriging [13] estimate RSRP using proximity-weighted averaging, while deep learning approaches such as RadioUNet [16] leverage convolutional neural networks to predict path-loss maps from building geometry. However, all these methods predict signal power values rather than the high-dimensional channel APS, and thus cannot capture the angular multipath structure es-sential for network optimization tasks such as beamforming and antenna configuration. Consequently, they address a less informative prediction target than the proposed LSCP. 
+
+3) Physics-Based and Neural Scene Representation Meth-ods: Deterministic ray tracing [17] provides site-specific APS prediction by simulating electromagnetic wave propagation through a geometric scene model. While physics-grounded and capable of producing the full APS, ray tracing relies on precise material parameters and incurs high per-query computational cost, limiting its scalability for large-scale network optimiza-tion. Recent advances in neural scene representation have adapted techniques from computer vision to wireless channel model-ing. NeRF-based models such as NeRF 2 [18] and NeWRF [19] reconstruct radio maps or channel impulse responses (CIRs) by capturing fine spatial and multipath effects. However, these approaches are computationally intensive and, crucially, require dense ground-truth APS or CIR labels for training which can rarely be satisfied in practical outdoor deployments. To improve efficiency, 3D Gaussian Splatting (3DGS) [20] and its wireless adaptation WRF-GS [21] offer real-time performance with anisotropic Gaussian basis functions [22]– [24], but still assume access to dense APS data for training and do not leverage environmental geometry for beamspace representation, limiting their applicability to controlled indoor settings. In summary, no existing method can directly address the LSCP task which requires extrapolating APS at unmeasured locations using only low-dimensional sparse RSRP and envi-ronmental priors. 
+
+B. Contribution 
+
+To address the aforementioned challenges, we propose a unified, environment-aided 3DGS-based framework called 
+
+point-cloud-assisted tangent Gaussian splatting (PC-TGS), which enables geometry-aware APS extrapolation at unmea-sured outdoor locations by integrating sparse radio measure-ments with dense LiDAR-derived environmental priors. The main contributions of this work are as follows:  
+
+> •
+
+localized statistical channel prediction (LSCP) frame-work based on 3D Gaussian Splatting (3DGS): We formally define the localized statistical channel prediction (LSCP) problem and propose PC-TGS, a framework that repurposes 3D Gaussian splatting for the radio domain with a rigorous physical foundation. Each 3D Gaussian ellipsoid serves as a physical scatterer proxy , whose po-sition and anisotropic covariance (μ, Σ) encode both the location and effective scattering area of an environmental object, while its spherical harmonic (SH) coefficients capture angle-dependent scattering intensity consistent with electromagnetic scattering principles. Furthermore, the splatting accumulation is reinterpreted as multipath superposition : Gaussian opacities represent per-scatterer 3
+
+signal attenuation, and the rendering aggregation sums multipath components arriving at the receiver, replacing the RGB alpha blending of visual 3DGS with a physi-cally meaningful signal composition pipeline. This dual reinterpretation establishes that PC-TGS is not a direct application of vision-based 3DGS but a fundamentally redesigned framework grounded in radio propagation physics.  
+
+> •
+
+Efficient point cloud-based scatterer modeling: We tackle the significant challenges of using real-world LiDAR data, which is typically both extremely dense and inherently noisy. Our proposed relaxed-mean repa-rameterization algorithm efficiently selects and refines a compact set of representative virtual scatterers directly from the raw point cloud, filtering out irrelevant and noisy points. This process preserves the most informa-tive geometric features for radio propagation modeling, suppresses measurement noise, and reduces the compu-tational load, ultimately enabling PC-TGS to robustly bridge real environmental structure with wireless mul-tipath effects even in the presence of imperfect sensing data.  
+
+> •
+
+Tangent-plane projection and GWA-based APS syn-thesis: We introduce a scalable tangent-plane projection that rigorously aligns environmental scatterers with the antenna angular domain, which is fundamentally different from the camera-based projections in 3DGS used in vision tasks. To further ensure efficient and accurate APS computation, we derive a closed-form Gaussian weighted average (GWA) bin integration formula, together with a provable error bound, enabling fast and mathematically principled APS synthesis on large-scale datasets.  
+
+> •
+
+Unified, robust, and scalable pipeline: By jointly in-tegrating sparse radio measurements, dense point cloud priors, and differentiable electromagnetic modeling into a single end-to-end framework, PC-TGS achieves robust and physically interpretable APS prediction in realistic, data-sparse environments. Extensive experiments on city-scale datasets demonstrate that PC-TGS consistently out-performs state-of-the-art baselines in both accuracy and robustness, while delivering practical inference speed. The remainder of this paper is organized as follows. Sec-tion II summarizes the preliminaries of LSCP and reviews the 3DGS technique. Section III details the proposed PC-TGS framework, including relaxed-mean reparameterization, attribute construction, tangent-plane projection, electromag-netic splatting, and derives an efficient GWA-based integration formula with a provable error bound. Section IV reports extensive experiments that compare PC-TGS with state-of-the-art alternatives. Finally, Section V concludes the paper and outlines promising future research directions. 
+
+Notations: R, C and B stand for the set of real numbers, the set of complex numbers, and the set of binary numbers (0 and 1), respectively. [N ] is the set of integers {1, 2, . . . , N }. The operators (·)T, ∥ · ∥ 0, ∥ · ∥ 1, and ∥ · ∥ 2 represent transpose, ℓ0-Norm, ℓ1-Norm, and the ℓ2-Norm respectively. E[·] denotes the expectation. The multivariate Gaussian distribution with `  
+
+> BS
+> Scatterer 1
+> Scatterer 2
+> Receiver
+> Scatterer 3
+> Scatterer 4
+> Base Station
+> Grid with RSRP
+> Grid without RSRP
+> Buildings, Walls, etc. Beam Channel Path Grid
+
+Fig. 1: Illustration of the system scenario and channel mod-eling task. Left: Front and top views of a 3D point cloud of an outdoor environment in City A of China, showing the spatial distribution of buildings and measurement grids. Grids with available RSRP measurements (red) and unmeasured grids (yellow) are highlighted, along with the location of the base station (green). Right: The base station broadcasts the multi-beam reference signals, which are then distorted by major environmental scatterers. Then, the receiver obtains the reference signal and reports the corresponding signal power. mean vector μ ∈ Rd and covariance matrix Σ ∈ Rd×d is denoted by N (x; μ, Σ).II. P RELIMINARIES 
+
+A. Localized Statistical Channel Prediction 
+
+Accurately predicting the spatial distribution of wireless channel characteristics is a fundamental challenge in next-generation network design. Fig. 1 illustrates the overall system scenario and the channel prediction problem considered in this work. Specifically, we consider a wireless communication network where the base station (BS) is equipped with a uniform planar array (UPA) of NT = NX ×NY antennas. The tilt and azimuth angles of departure (AoDs) are discretized uniformly into NV
+
+and NH values, denoted as θp (1 ≤ p ≤ NV ) and φq (1 ≤
+
+q ≤ NH ), respectively. The downlink channel coefficient for the (x, y )-th antenna is modeled as follows [25]: 
+
+hx,y =
+
+> NV
+
+X
+
+> p=1
+> NH
+
+X
+
+> q=1
+
+pβp,q × gp,q × e−j2π dxx λ cos θp sin φq
+
+× e−j2π dy y λ sin θp × e−jω p,q −jω x,y , (1) where βp,q is the channel power of the path in the AoDs 
+
+(θp, φ q ), gp,q is the antenna gain, λ is the carrier wavelength, 
+
+dx and dy denote antenna spacings, and ωp,q , ωx,y represent random phase errors. In downlink, the BS transmits M directional reference signal beams that sweep across the angular domain. The precoding matrix for the m-th beam is B(m) ∈ CNX ×NY ,4
+
+with B(m) 
+
+> x,y
+
+= ejϕ (m) 
+
+> x,y
+
+. The received signal strength (RSRP) for beam m at a user location is then 
+
+rsrp (m) = Ptx 
+
+> NX
+
+X
+
+> x=1
+> NY
+
+X
+
+> y=1
+
+hx,y B(m)
+
+> x,y
+> 2
+
+, (2) where Ptx is the transmit power. Note that rsrp (m) depends on three random variables: 
+
+ωp,q , ωx,y , and βp,q . By taking the expectation over the random phase errors, we relate the measured RSRP to the angular power spectrum (APS) x = E[β], where β =[β1,1, . . . , β NV ,N H ]T ∈ RNA and NA = NV × NH . Letting 
+
+rsrp = [ rsrp (1) , . . . , rsrp (M )]T ∈ RM , the expected multi-beam RSRP y and APS x satisfy [11] the relationship 
+
+y = E[rsrp ] = Ax , (3) where A ∈ RM ×NA is the measurement matrix determined by the antenna and beam settings. In practice, the sample mean is used to approximate y.Given the sparse nature of wireless channels due to limited scattering [26], classical LSCM seeks, at measured location grids l ∈ L k, to estimate the APS xl by solving 
+
+min 
+
+> xl
+
+∥Ax l − yl∥22
+
+s.t. ∥xl∥0 ≤ P, 
+
+xl ≥ 0, l ∈ L k,
+
+(4) where yl is the measured RSRP and P is the maximum number of channel paths. A key advantage of LSCM is its ability to separate the site-specific channel statistics (APS xl) from the system configuration (antenna/beam settings, encoded in A). Since the APS xl is determined solely by the physical environment, it remains invariant under different BS configurations, provided the environment does not change. This property enables a powerful application that, once the APS xl is estimated from RSRP measurements under one set of system parameters A,one can predict the RSRP under a different set of parameters 
+
+Ar by simply computing 
+
+yrl = Ar xl. (5) This capability is fundamental to network optimization since it allows for the simulation and evaluation of new antenna or beam configurations without requiring new drive tests or channel measurements, provided that a reliable APS estimate is available. In practice, RSRP can only be measured at a sparse subset of spatial grids Lk (e.g., via drive tests), leaving the APS unknown at most locations Lo (such as urban blocks or private areas), as illustrated in Fig. 1. This motivates the problem of 
+
+localized statistical channel prediction (LSCP) to predict the APS ˆxl at all unmeasured grids l ∈ L o, given Inputs: {yl}l∈L k , A, priors Output: { ˆxl}l∈L o . (6) In other words, LSCP seeks a mapping 
+
+F : ( {yl}l∈L k , A, priors ) → { ˆxl}l∈L o (7) that infers the spatial distribution of APS at all unmeasured locations using only limited RSRP and environmental knowl-edge. 
+
+Remark 1 (Practical Scenario Justification) . The assumed scenario where dense point clouds paired with sparse, low-dimensional RSRP measurements is practically well motivated for the following reasons. 
+
+1) In network layer, only RSRP is accessible via the Minimization of Drive Tests (MDT) or drive test (DT) protocol [27]. Each RSRP measurement yields a vector of dimension M (the number of reference signal beams, typically 1 ∼ 8), whereas the APS lives in RNA with thousands potential angular bins. Because M ≪ NA,recovering the high-dimensional APS from the low-dimensional RSRP is an inherently ill-posed inverse problem that must exploit the sparsity of the wireless channel. 
+
+2) RSRP is an in-situ measurement which means the re-ceiver can only report signal strength at its exact phys-ical location. Drive-test vehicles are confined to road networks, therefore, RSRP samples are available only at scattered points along accessible routes, leaving the vast majority of the service area unmeasured. 
+
+3) In contrast, LiDAR is a remote sensing modality that captures 3D geometry over a large volume per scan (radius up to 150 m per pass [28]). A single data-collection vehicle therefore produces dense environmen-tal geometry over a wide area while simultaneously col-lecting only trajectory-constrained radio measurements. Even when dedicated LiDAR is unavailable, image-based reconstruction methods such as DUSt3R [29] can produce point clouds of sufficient accuracy (0.1–0.5 m) for our framework. This asymmetry between dense geometry and sparse, low-dimensional radio data is therefore natural and consistent with modern network optimization workflows. B. 3D Gaussian Splatting (3DGS) 
+
+3DGS [20] is an explicit radiance field-based scene repre-sentation in computer vision that models a radiance field using a large number of total I 3D anisotropic balls, the i-th 3D Gaussian is defined as: 
+
+Gi(z) = e− 12 (z−μi)TΣ−1 
+
+> i(z−μi)
+
+, (8) where z = ( z0, z 1, z 2) denotes the three-dimensional spatial coordinates of the Gaussian point and μi ∈ R3 and Σi ∈ R3×3
+
+denote the mean and variance of the Gaussian representation. Besides, the i-th anisotropic ball is also characterized by the Spherical Harmonics (SH) coefficients τi ∈ R3×(k+1) 2
+
+(where 
+
+k is the degree of the SH function sh (·, k )) [30] for modeling view-dependent color. Specifically, the color of the i-th 3D Gaussian at the view direction vi is 
+
+ci = sh (τi, vi, k ) ∈ R3. (9) During the rendering phase, the 3D Gaussians {Gi(z)}Ii=1 
+
+are projected (rasterized) onto the image plane, forming 5Grid 
+
+> Location w/o
+> RSRP BS
+
+P
+
+> BS
+> Location
+
+{ , }l oP l  
+
+> Point Cloud raw
+
+P
+
+> Grid
+> Location w/
+> RSRP BS
+
+P
+
+> BS
+> Location
+
+{ , }l kP l  
+
+Attributes  Construction 
+
+Tangent -Plane 
+
+Projection 
+
+APS S ynthesis 
+
+Loss 
+
+Training 
+
+Forward 
+
+Flow 
+
+Training 
+
+Backward 
+
+Flow 
+
+Prediction 
+
+Flow 
+
+> Measured
+> Multi -Beam
+> RSRP
+
+{ , }l kl y 
+
+> BS
+> Parameters
+
+Relaxed -Mean (RM) 
+
+Reparameterization raw P( )Simplex T Bμraw P( )Simplex T Bμμ   
+
+> Point
+> Cloud Soft Selection Refine Bias Relaxed
+> Mean nαn
+
+G   
+
+> BS
+> RSRP
+> Measurement
+> Attenuation
+> Directional
+> Gain nnμ,Σ
+> Geometry PC-TGS
+
+Γ( ) ( )                                                       
+
+> ,()()(), (), ()()
+> 1
+> 1( ) 2
+> ()()()
+> 1
+> (,,,)(,)
+> 1(,)
+> |
+> ()|
+> N
+> ll
+> p q nnpqnlnlnn
+> n
+> nl
+> mmm
+> m
+> xGwp q L
+> wp q L
+> 
+> 
+> 
+> 
+> =
+> −
+> =
+> =
+> −
+> 
+> 
+
+wfinal A
+
+Fig. 2: Overview of the proposed PC-TGS (Point-Cloud-Assisted Tangent Gaussian Splatting) framework. Given sparse, low-dimensional RSRP measurements, base station information, and dense 3D point clouds, PC-TGS extracts a set of mean positions of the virtual scatterers via relaxed-mean reparameterization, constructs physical and signal attributes, projects them onto the local tangent plane at each angular bin, and synthesizes the APS via differentiable electromagnetic splatting. This pipeline enables accurate, environment-aware channel prediction at unmeasured locations. 2D Gaussian splats, which can be expressed as {wi(κ) = 
+
+Proj (Gi(z)) }Ii=1 at the κ-th pixel, as described in [20]. The 2D Gaussian splats are sorted from front to back tile-wisely, and the alpha -blending algorithm is applied to approximate the κ-th pixel RGB value C(κ) ∈ R3 as 
+
+C(κ) = X
+
+> i∈Iκ
+
+ciαi · wi(κ)
+
+> i−1
+
+Y
+
+> j=1
+
+(1 − αj · wj (κ)) , (10) where Iκ is the set of splats that contribute to the κ-th pixel, 
+
+αi ∈ R is the opacity of the i-th anisotropic 3D Gaussian ball. After computing the color for each pixel, the rendered image is compared to the ground-truth image to calculate the pixel-wise loss. This loss is then used to update the model’s properties parameters Φ = {(μi, Σi, α i, τi), i ∈ [I]}, ensuring the rendered scene aligns closely with the target, where [I]
+
+denotes the vector consisting of [1 , · · · , I ].III. P ROPOSED FRAMEWORK : P OINT -C LOUD -A SSISTED 
+
+TANGENT GAUSSIAN SPLATTING 
+
+A. Framework Overview 
+
+Building upon the LSCP problem setting in Section II, our goal is to enable accurate APS prediction at unmeasured locations by leveraging both sparse RSRP measurements and detailed environmental priors. To address the spatial extrap-olation challenge, we develop a unified, physically-consistent PC-TGS framework. PC-TGS extends 3DGS to the wireless domain by designing virtual scatterers using 3D Gaussians to represent the influ-ence of the environment on the radio propagation. PC-TGS integrates (1) sparse RSRP measurement yl ∈ RM with location Pl ∈ R3 from drive tests or reports {yl, Pl}l∈L k ,(2) known base station locations PBS and BS parameters A,and (3) dense 3D point cloud data Praw ∈ RR×3 describing environmental geometry to provide a physical interpretable modeling to address LSCP. As illustrated in Fig. 2, the PC-TGS pipeline consists of four core modules: 1) Relaxed-Mean Reparameterization: A relaxed-mean reparameterization algorithm selects the position means of N 3D Gaussians to represent the location of key virtual scatterers from the dense point cloud, reducing complexity while preserving key geometric features. 2) Attributes Construction: Each virtual scatterer is as-signed a set of learnable physical and electromagnetic attributes (e.g., location, shape, attenuation, and complex gain), modeling its interaction with the wireless channel and enabling APS synthesis. 3) Tangent-Plane Projection: For each angular bin, all virtual scatterers are projected onto the local tangent plane that aligns environmental geometry with the an-gular domain used for APS computation. 4) APS Synthesis: The projected scatterers’ contributions are aggregated via a depth-aware, differentiable splatting rule, producing the predicted APS at each location grid in a way that is both physically grounded and amenable to end-to-end learning. To realize the LSCP objective defined in (7), PC-TGS operates via two key mappings: 
+
+F train : ( {yl, Pl}l∈L k , A, Praw , PBS ) 7 → ΓPC-TGS , (11a) 
+
+F predict  
+
+> ΓPC-TGS
+
+: ( PBS , {Pl}l∈L o ) 7 → { ˆxl}l∈L o , (11b) where ΓPC-TGS is the set of all learnable model parameters, and ˆxl ∈ RNA×1 is the predicted APS at location l (with NA
+
+angular bins). By tightly coupling sparse measurements with LiDAR-based geometry and a physics-inspired differentiable pipeline, PC-TGS enables accurate, scalable APS extrapolation to address the core challenge of LSCP. 6
+
+B. Relaxed-Mean Reparameterization for Virtual Scatterer Extraction 
+
+A crucial step in the PC-TGS framework is the extraction of the position of 3D Gaussians that represent key virtual scatterers, such as building outlines or major reflectors, that dominate multipath propagation. Given a dense and noisy 3D point cloud Praw ∈ RR×3, where R is the number of raw points, the objective is to select N representative scatterer locations {μn}Nn=1 that are both physically plausible and maximally informative for APS modeling. Ideally, this selection can be formulated as a constrained optimization problem: Find {μn}Nn=1 ∈ RN ×3, (12a) s.t. PN ⊂ Praw , (12b) 
+
+∥{ μn}Nn=1 − PN ∥2 ≤ ϵ1, (12c) 
+
+∥PN − PBS ∥2 ≤ ϵ2, (12d) where PN is a subset of the raw point cloud, the second constraint enforces proximity of the final scatterer positions to their selected anchors, aiming to mitigate noise, and the third constraint prioritizes scatterers closer to the BS, as they contribute to dominant signal paths. However, this combinatorial selection is non-differentiable and thus not suitable for gradient-based learning. To address this, PC-TGS adopts a relaxed-mean (RM) reparameterization, in which each scatterer position is expressed as a soft, trainable aggregation of the raw point cloud: 
+
+{μn}Nn=1 = T P raw + B, (13) where T ∈ RN ×R is a trainable assignment matrix and B ∈
+
+RN ×3 is a bias term for denoising and refinement. Each row 
+
+Tn, : assigns non-negative weights to the R points, subject to the simplex constraint, 
+
+T ∈ S =
+
+(
+
+T ∈ RN ×R : Tn,r ≥ 0,
+
+> R
+
+X
+
+> r=1
+
+Tn,r = 1 , ∀n
+
+)
+
+.
+
+(14) This formulation allows T P raw = PN to act as a soft selection of anchor points for each scatterer. To ensure that each scatterer is associated predominantly with a single region or point, a maximum element constraint (MEC) is imposed, requiring the largest entry in each row of T to strongly dominate all others: 
+
+max  
+
+> r
+
+Tn,r ≫ Tn,r ′ , ∀n, r ′̸ = arg max  
+
+> r
+
+Tn,r . (15) With this reparameterization, the original hard constraints are relaxed and encoded as regularization terms in the objective. Specifically, the proximity constraint ∥PN −
+
+PBS ∥2 ≤ ϵ2 is promoted by the penalty λ1∥T P raw − PBS ∥22,which favors scatterers near the BS. The denoising con-straint ∥{ μn}Nn=1 − PN ∥2 ≤ ϵ1 is enforced by the term 
+
+λ2∥B∥22, ensuring the bias remains small and μn stays close to its anchor. The MEC requirements are promoted by 
+
+λMEC 
+
+qPNn=1 max r∈[R](Tn,r − 1) 2 + λsparsity ∥T ∥1, which penalizes deviation from a one-hot vector in each row. Then, the resulting optimization problem for the RM module is given by 
+
+min   
+
+> T,B,ΦPC −TGS \{ μn}
+
+LAPS + Lreg , (16) s.t. {μn}Nn=1 = T P raw + B, T ∈ S, (17) where the regularization term is 
+
+Lreg = λ1∥T P raw − PBS ∥22 + λ2∥B∥22
+
++ λMEC 
+
+vuut NX
+
+> n=1
+
+max 
+
+> r∈[R]
+
+(Tn,r − 1) 2 + λsparsity ∥T ∥1,
+
+(18) with each term corresponding directly to the respective relaxed constraint above. LAPS will be specified in (30). This relaxed yet physically motivated approach to virtual scatterer selection provides a robust geometric foundation for subsequent APS attribute learning and tangent-plane projec-tion, thus enabling PC-TGS to bridge raw sensing data and statistical channel prediction in complex environments. 
+
+C. Attributes Construction 
+
+Once the positions of the N key virtual scatterers {μn}Nn=1 
+
+have been extracted, PC-TGS models the physical interaction between each scatterer and the wireless propagation channel using a set of learnable signal attributes. These attributes are designed to capture both the geometric and electromagnetic effects that influence the local angular power spectrum (APS) at each location. 
+
+PC-TGS Attributes: Considering the channel reciprocity, each virtual scatterer n is parameterized by  
+
+> •
+
+μn ∈ R3, which is the spatial position of the n-th scatterer, extracted via RM in subsection III-B.  
+
+> •
+
+Σn ∈ R3×3, which is the covariance matrix, encoding the anisotropic spatial uncertainty and effective spatial extent of the scatterer. This model shows that real-world scatterers are not point-like but have orientation and spread in space.  
+
+> •
+
+αn ∈ C, which is the intrinsic, distance-dependent complex attenuation coefficient of the n-th scatterer, mod-eling both amplitude attenuation and phase shift imparted by the scatterer. This parameter captures the inherent electromagnetic interaction strength of the scatterer with the radio wave, determined by its material, geometry, and other physical factors. We parameterize αn as 
+
+αn = an ejφ n (19) where an ≥ 0 is the magnitude attenuation and φn ∈
+
+[−π, π ] is the phase shift induced by scatterer n. To explicitly model the geometric path loss effects, such as distances from the base station to scatterer, dBS ,n , both an
+
+and φn are treated as the outputs of one encoder-decoder designed MLP as 
+
+(an, φ n) = MLP (γ(dBS ,n ); Θ1) , (20) 7
+
+with learnable parameters Θ1 optimized jointly with other scatterer attributes. To enhance spatial resolu-tion, we encode the distance information using a po-sition encoding function inspired by [31] γ(dBS ,n ) = [sin( πd BS ,n ), · · · , sin( πV dBS ,n ), cos( πV dBS ,n )] , where 
+
+V is the order of the encoding. Physically, αn serves as an effective composite attenuation factor that holistically encodes overall electromagnetic interaction mechanisms for the n-th Gaussian scatterer. Since αn is geometrically anchored to the Gaussian primitive whose mean μn is initialized from the point cloud, the learned attenuation is spatially localized to specific physical structures, enabling generalization to nearby unmeasured locations.  
+
+> •
+
+To rigorously account for the directionality dependence, we define Gn(θBS ,n , ϕ BS ,n , θ n,l , ϕ n,l ) as the complex gain function to describe the complex gain caused by the n-th virtual scatterers from the BS to scatterer n in departure direction (θBS ,n , ϕ BS ,n ) and from scatterer n
+
+to grid l in arrival direction (θn,l , ϕ n,l ). According to the complex spherical harmonic (SH) expansion of a radio wave [32], each gain can be expanded as 1
+
+Gn(θBS ,n , φ BS ,n , θ n,l , φ n,l ) = 
+
+> S
+
+X
+
+> s=0
+> s
+
+X
+
+> t=−s
+
+τn,st Yst (θBS ,n , φ BS ,n ) Yst (θn,l , φ n,l ), (21) where τn,st are the intrinsic learnable complex SH coef-ficients and 
+
+Yst (θ, φ ) = 
+
+s
+
+2s + 1 4π
+
+(s − t)! (s + t)! P |t| 
+
+> s
+
+(cos θ)eitφ ,
+
+and P |t| 
+
+> s
+
+(·) is the associated Legendre function [33]. Collectively, the set of attributes for all scatterers is denoted as 
+
+ΓP C −T GS = {μn, Σn, α n, G n}Nn=1 .
+
+D. Tangent-Plane Projection 
+
+To render the APS for the AoD from the BS, we must map the 3D Gaussian scatterers to the 2D angular domain as viewed from PBS . We present a physically-grounded projection ap-proach leveraging the tangent plane to the unit sphere at each angular bin (θp, φ q ), corresponding to the discretized angular bins defined in Section II-A. The key idea of the tangent-plane projection is to treat the tangent plane at each angular bin as a virtual receiving plane, as shown in Fig.3. Projecting all the 3D Gaussians onto each tangent plane and aggregating the projected results leads to the channel coefficients in each angular bin and produces the APS. The detailed procedures are as follows: 1) Step 1. Construct the tangent plane basis: With the BS at the origin, the tangent plane basis at angular bin 
+
+(θp, φ q ) is given by 
+
+Up,q = [ up,q, 1 up,q, 2], (22)      
+
+> 1The order of SH expansion Sis a hyperparameter and we use S= 4 in this paper.
+
+X
+
+Y
+
+Z
+
+> p,q
+
+p
+
+> p,q
+
+U
+
+> 1
+
+μ
+
+> 3
+
+μ
+
+> q
+
+ 
+
+> p
+> 2
+
+μ
+
+Tangent Plane 
+
+3D Gaussians 
+
+Fig. 3: Illustration of the tangent-plane projection. where 
+
+up,q, 1 =
+
+cos θp cos φq
+
+cos θp sin φq
+
+− sin θp
+
+ , up,q, 2 =
+
+− sin φq
+
+cos φq
+
+0
+
+
+
+are the tangent plane basis vectors. 2) Step 2. Project each 3D Gaussian to the tangent plane: For each scatterer n, the projected mean and co-variance on the tangent plane corresponding to (θp, φ q )
+
+are μp,q,n = U ⊤ 
+
+> p,q
+
+(μn − pp,q )
+
+Σp,q,n = U ⊤ 
+
+> p,q
+
+ΣnUp,q , (23) where pp,q = PBS + np,q and 
+
+np,q =
+
+sin θp cos φq
+
+sin θp sin φq
+
+cos θp
+
+ . (24) After projection, each 3D Gaussian becomes a 2D Gaussian on the local tangent plane at (θp, φ q ) with density 
+
+fp,q,n (yp,q ) = N (yp,q ; μp,q,n , Σp,q,n ) , (25) where yp,q denotes 2D coordinates in the tangent plane. This 2D Gaussian in the tangent plane forms the basis for rigorous APS synthesis as illustrated in the following subsection. 
+
+E. APS Synthesis via Integration-aided Rendering 
+
+To compute the APS for each angular bin, we integrate each projected 2D Gaussian density over the corresponding tangent plane, and aggregate all integration results to obtain the final APS. 
+
+1) Spherical-Patch Integration: Let fp,q,n (yp,q ) denote the 
+
+n-th projected 2D Gaussian PDF on the tangent plane at 
+
+(θp, φ q ). The corresponding spherical patch (angular bin) is 
+
+R =
+
+n
+
+(θ′, φ ′) : θ′ ∈ [θp − ∆θ, θ p + ∆ θ],φ′ ∈ [φq − ∆φ, φ q + ∆ φ]
+
+o (26) 8
+
+Each angle in R is mapped onto the tangent plane by 
+
+g(θ′, φ ′) = U ⊤
+
+> p,q
+
+ 1
+
+n′⊤ np,q 
+
+n′ − np,q 
+
+
+
+, (27) where n′ = [sin θ′ cos φ′, sin θ′ sin φ′, cos θ′]⊤ is the 3D unit direction. The integration of the n-th projected Gaussian on the tangent plane at (θp, φ q ) over R can be expressed as 
+
+wexact  
+
+> n
+
+(p, q ) = 
+
+Z Z 
+
+> R
+
+fp,q,n 
+
+ g(θ′, φ ′) |det Jg(θ′, φ ′)| dθ ′dφ ′,
+
+(28) where Jg is the 2 × 2 Jacobian of g(θ′, φ ′).
+
+2) APS Synthesis: We now explain how the previously pro-jected 2-D Gaussian footprints are combined into an angular-power-spectrum (APS) estimate at a target grid l. For each scatterer n ∈ [N ] we already know its complex weight on beam (p, q ), wexact  
+
+> n
+
+(p, q ) in (28), its intrinsic attenuation magnitude–phase pair αn in (19), and its direction-dependent gain Gn(θBS ,n , φ BS ,n , θ n,l , φ n,l ) obtained from (21). A further distance-based factor 2 L(l) 
+
+> n
+
+= d−γ1 
+
+> BS ,n
+
+d−γ2 
+
+> n,l
+
+captures free-space loss along the two-hop path from the BS to the scatterer and then to the l-th grid. Because nearer scatterers can partially mask farther ones, we must decide a front-to-back compositing order before the final synthesis. Following the radio propagation path, all scatterers are therefore sorted in ascending depth—i.e., by the distance dn,l of their means μn
+
+towards Pl. The resulting permutation π : [ N ] → [N ] defines the depth-ordered list Ip,q = {π(1) , π (2) , . . . , π (N )} for every beam. Given this order, the power received at the l-th grid from bin (θp, φ q ) is 
+
+x(l) 
+
+> p,q
+
+=
+
+> N
+
+X
+
+> n=1
+
+απ(n)Gπ(n)(θp, φ q , θ π(n),l , φ π(n),l )wexact 
+
+> π(n)
+
+(p, q )L(l)
+
+> π(n)
+
+×
+
+> n−1
+
+Y
+
+> m=1
+
+ 1 − απ(m)wexact 
+
+> π(m)
+
+(p, q )L(l)
+
+> π(m)
+
+ 2
+
+.
+
+(29) Repeating (29) over the full NV × NH beam grid and concatenating the results yields the APS vector ˆxl =[x(l)1,1, . . . , x (l)  
+
+> NV,N H
+
+]⊤.
+
+F. Learning Objective and Recursive Fine-Tuning 
+
+The model jointly learns all parameters involved in the APS synthesis and RSRP mapping. The full set of trainable parameters is denoted as 
+
+ΓPC-TGS = {Σn, {τn,st }0≤s≤S, −s≤t≤s}Nn=1 , B, T , Θ1 ,
+
+where B and T reparameterize {μn}Nn=1 ,
+
+{τn,st }0≤s≤S, −s≤t≤s}Nn=1 reparameterize {Gn}Nn=1 , and Θ1
+
+reparameterizes {αn}Nn=1 . These parameters are optimized by       
+
+> 2The path-loss factors γ1and γ2are set to be 2in this paper.
+
+minimizing a composite loss over the measured grid locations 
+
+l ∈ L k:
+
+Lfinal = X
+
+> l∈L k
+
+∥yl − A ˆxl∥22 + λTV 
+
+X
+
+> l
+
+∥ ˆxl − ˆxKN N (l)∥1
+
+| {z }
+
+> LAPS
+
++Lreg ,
+
+(30) where yl is the measured RSRP vector at grid l ∈ Lk,
+
+ˆxl = [ x(l)1,1, . . . , x (l)  
+
+> NV,N H
+
+] is the predicted APS vector for l (see Section III-E2), A is the linear mapping from APS to RSRP, 
+
+KN N (l) denotes the K-nearest neighbors of l in the grid, λTV 
+
+is a hyperparameter controlling the total variation (TV) loss for spatial smoothness, and Lreg includes regularizers on the model parameters specified in Section III-B. This loss is minimized via mini-batch gradient descent, balancing accuracy, spatial coherence, and model regularity. To further enhance generalization and extrapolation, we employ a recursive fine-tuning scheme , inspired by boundary-propagation strategies: 1) Initial Training: Optimize the model on the initial training set Lk, where RSRP is measured, using the loss in (30). 2) Boundary Prediction: Select a set of unmeasured grids near the current training region boundary, denoted LD ⊆Lo (within D = 4 .5 grids of distance). 3) Expansion: Predict APS and RSRP at these boundary grids LD using the current model, and augment the training set: Lk ← L k ∪ L D , Lo ← L o \ L D .4) Recursive Refinement: Retrain or fine-tune the model on the expanded set Lk, repeating steps 2–3 until all unmeasured grids are covered. This recursive procedure allows the model to iteratively prop-agate learned multipath and environmental structure from measured regions into previously unseen areas. During testing, hardening of T is applied, and the final trained model is used to predict APS at all unmeasured target locations. 
+
+Remark 2 (Justification of Adapting 3DGS to Radio Prop-agation) . The adaptation of 3DGS to the radio domain rests on two physical correspondences. First, each 3D Gaussian ellipsoid (μn, Σn) serves as a virtual scatterer cluster : its mean encodes the scatterer location, its anisotropic covariance captures the effective spatial extent and orientation of the reflecting or diffracting surface which is consistent with the cluster concept in geometry-based stochastic channel models, and its spherical-harmonic gain Gn endows the cluster with an angle-dependent complex scattering pattern. Second, the re-ceived radio signal is the coherent sum of attenuated multipath components (MPCs). The depth-ordered accumulation in (29) 
+
+directly realizes this principle in a differentiable pipeline. Each Gaussian contributes one MPC whose amplitude is governed by the learned attenuation αn, while the front-to-back ordering naturally accounts for progressive shadowing and occlusion which can be regarded as the radio counterpart of volumetric opacity in visual rendering. G. GWA-based Integration Approximation 
+
+The bin integral in (28) generally lacks a closed form due to the nonlinear spherical-to-tangent mapping, complicating 9
+
+deployment. This subsection derives a tractable, closed-form approximation of each bin contribution and quantifies its error by (i) locally linearizing the spherical-to-tangent map over the bin; and (ii) replacing the hard-edged parallelogram footprint by a moment-matched Gaussian window (GWA), yielding a closed form. For sufficiently small angular bins, we linearize g(θ′, φ ′) in (27) at the bin center by 
+
+g(θ′, φ ′) ≈ Jg(θp, φ q )
+
+ θ′ − θp
+
+φ′ − φq
+
+
+
+, (31) where Jg(θp, φ q ) is the Jacobian at the center. Under this lin-earization, the integration region in the tangent plane becomes a parallelogram, and (28) can be converted to 
+
+wlin  
+
+> n
+
+(p, q ) = 
+
+Z Z  
+
+> ˆyp,q ∈R ˆyp,q
+
+N (ˆ yp,q ; μp,q,n , Σp,q,n ) dˆyp,q 
+
+=
+
+Z Z 
+
+> R2
+
+N (ˆ yp,q ; μp,q,n , Σp,q,n ) IRˆyp,q (ˆ yp,q )dˆyp,q 
+
+(32) where ˆyp,q is defined as the linearized tangent-plane coordi-nate, 
+
+ˆyp,q = Jg(θp, φ q )
+
+ θ′ − θp
+
+φ′ − φq
+
+
+
+, (33) and Rˆyp,q is the image of the angular bin R under this linearized mapping, i.e., 
+
+Rˆyp,q =
+
+n
+
+ˆyp,q = Jg(θp, φ q )
+
+δθ δφ 
+
+
+
+: δθ ∈ [−∆θ, ∆θ],δφ ∈ [−∆φ, ∆φ]
+
+o
+
+(34) which is a parallelogram in the tangent plane. However, due to the hard indicator IRˆyp,q (ˆ yp,q ), manipulation on wlin  
+
+> n
+
+(p, q )
+
+is still intractable. Therefore, we propose the following GWA-based approximation to replace the hard indicator. The hard indicator in (32) can be viewed as an unnormalized uniform density over the angular bin as it assigns equal weight to all points within the bin and zero elsewhere, physically aggregating scatterer energy over each discrete direction. To enable closed-form analysis, we approximate this uniform distribution with a Gaussian window that matches both its area and second central moments. This moment-matched GWA preserves the total energy and spatial spread of the bin, providing a computationally efficient and physically faithful surrogate for the original integration. Concretely, we replace IRˆyp,q (ˆ yp,q ) with a Gaussian win-dow, 
+
+W (ˆ yp,q ) = Aˆyp,q N  ˆyp,q ; 0, Sˆyp,q 
+
+, (35) where the normalization and covariance are given by 
+
+Aˆyp,q = Area( Rˆyp,q ) = 4 ∆ θ ∆φ det Jg(θp, φ q ) , (36) 
+
+Sˆyp,q = Jg(θp, φ q ) Sang Jg(θp, φ q )⊤, (37) 
+
+Sang =
+
+∆θ2/3 00 ∆φ2/3
+
+
+
+. (38) Substituting W (ˆ yp,q ) into (32) yields 
+
+ewn(p, q ) = 
+
+Z
+
+> R2
+
+fp,q,n (ˆ yp,q ) W (ˆ yp,q ) dˆ yp,q 
+
+= Aˆyp,q 
+
+Z
+
+> R2
+
+N (ˆ yp,q ; μp,q,n , Σp,q,n ) N (ˆ yp,q ; 0, Sˆyp,q ) dˆ yp,q ,
+
+(39) which, by Gaussian convolution, simplifies to the closed-form 
+
+ewn(p, q ) = Aˆyp,q N  0; μp,q,n , Σp,q,n + Sˆyp,q 
+
+. (40) Replacing wexact  
+
+> n
+
+(p, q ) in (29) by ewn(p, q ) yields an efficient and accurate APS synthesis. We analyze the accuracy of the GWA-based approximation in (40) relative to the exact bin integral (28). Before stating the main error bound, we establish two key regularity results. 
+
+Lemma 1 (Regularity of the spherical-to-tangent mapping) .
+
+Let δ ≜ (θ′ − θp, φ ′ − φq )⊤ denote the angular displacement from the bin center (θp, φ q ). There exists a neighborhood 
+
+R of (θp, φ q ) and finite positive constants CJ and Cg ,depending only on R, such that g(θ′, φ ′) from (27) is infinitely differentiable ( C∞) in R, and its Jacobian and Hessian are uniformly bounded: 
+
+sup 
+
+> (θ′,φ ′)∈R
+
+∥Jg(θ′, φ ′)∥ ≤ CJ , sup 
+
+> (θ′,φ ′)∈R
+
+∥D2g(θ′, φ ′)∥ ≤ Cg .
+
+(41) 
+
+Moreover, for all (θ′, φ ′) ∈ R , the Taylor expansion up to second order holds: 
+
+g(θ′, φ ′) = g(θp, φ q ) + Jg(θp, φ q )δ + 12 Q(δ) + Rg(δ),
+
+with ∥Q(δ)∥ ≤ Cg ∥δ∥2 and ∥Rg(δ)∥ ≤ Cg ∥δ∥3.Proof. Proof in Appendix A. 
+
+Lemma 2 (Regularity of the integration region) . Suppose the Jacobian Jg(θp, φ q ) at (θp, φ q ) is invertible. Then there exists r > 0 such that, for any rectangle R as in (26) with 
+
+max {∆θ, ∆φ} < r , the mapping g(θ′, φ ′) is a C1 diffeo-morphism from R onto its image g(R), and | det Jg(θ, φ )| is bounded below by a positive constant for all (θ, φ ) ∈ R . The linear image Rˆyp,q in (34) is a nondegenerate parallelogram in the tangent plane. Proof. Proof in Appendix B. With these technical ingredients, we state the main result: 
+
+Theorem 1 (Approximation error of tangent-linearized GWA bin integration) . There exist constants C3, C 4 > 0 such that 
+
+wexact  
+
+> n
+
+(p, q ) − ewn(p, q ) ≤C3
+
+ ∆θ3 + ∆ φ3
+
++ C4
+
+ ∆θ4 + ∆ φ4 + ∆ θ2∆φ2 .
+
+(42) 10 
+
+Here, wexact  
+
+> n
+
+(p, q ) is the exact bin integral (28) , and ewn(p, q )
+
+is the GWA approximation (40) .Proof. Proof in Appendix C. 
+
+Remark 3 (Numerical Validation of Theorem 1) . We validate the error bound with the following settings: PBS = 0,
+
+Σn = σ2I3 (σ = 0 .15 rad), μn = [1 .2, 0.030 , −0.045] ⊤,and ∆θ = ∆φ = ∆. Fig. 4 plots the absolute error 
+
+|wexact  
+
+> n
+
+(p, q ) − ewn(p, q )| vs. ∆ on log–log axes at the equa-torial bin (θp, φ q ) = (π/ 2, 0) . The result shows that the empirical slope ( ≈ 3.9) exceeds the theoretical slope of 3, confirming the O(∆ θ3 + ∆ φ3) bound and showing the GWA is empirically tighter than guaranteed. 10 2             
+
+> Bin half-width (rad, ==)
+> 10 8
+> 10 7
+> 10 6
+> 10 5
+> 10 4
+> |wexact  w|
+> actual slope 3.9
+> |wexact w| (actual)
+> C3(Theorem 1)
+
+Fig. 4: Numerical validation of Theorem 1: log–log plot of 
+
+|wexact  
+
+> n
+
+(p, q )− ewn(p, q )| vs. bin half-width ∆ (∆θ = ∆ φ = ∆ )at the equatorial bin. The empirical slope ( ≈ 3.9) exceeds the theoretical cubic bound slope of 3. This error analysis provides rigorous, quantitative guaran-tees for the GWA bin integration method, ensuring that the approximation is reliable for practical bin widths. IV. E XPERIMENT RESULTS AND DISCUSSION 
+
+A. Experimental Setup 
+
+We evaluate PC-TGS on a city-scale, multi-modal dataset collected in City A, China. The dataset contains over five million LiDAR points and |L| = 6,310 beam-wise RSRP samples within a 1,000 ×1,200 m2 area. The area is discretized into 10 × 10 m2 grids at a receiver height of 1 m. The base station (BS) transmits M = 32 reference beams. We collect two rounds of measurements from the same BS with different parameter settings:  
+
+> •
+
+Round 1 (training configuration): RSRP vectors {yℓ ∈
+
+RM | ℓ ∈ L} under measurement matrix A ∈ RM ×NA . 
+
+> •
+
+Round 2 (rotated configuration): RSRP vectors {yrℓ ∈
+
+RM | ℓ ∈ L} under Ar ∈ RM ×NA .Model training uses only a subset of Round-1 RSRPs from measured grids Lk with |L k| = 5 ,566 , as shown in the red region of Fig. 1. Unless otherwise stated, we discretize the angular domain into NA = NV × NH = 72 × 91 = 6 ,552 
+
+bins. All experiments are carried out on an NVIDIA A100 40 GB GPU. We implement PC-TGS in PyTorch 2.8.0 and Python 3.13.5. PC-TGS uses N = 2 ,000 virtual scatterers and is trained with the Adam optimizer [34] using the loss in (30). All baselines are retrained on our dataset and evaluated on the same test splits. 
+
+B. Baseline Methods and Evaluation Metrics 
+
+We benchmark PC-TGS against state-of-the-art methods and ablated variants. Methods are categorized as Offline (require a training phase, then fast inference) or Online (solved per-query at inference time, no training):  
+
+> •
+
+WNOMP [11] (Online) : An orthogonal matching pursuit-based method for recovering APS from RSRP. For un-measured regions, it is combined with Kriging [13].  
+
+> •
+
+TMSBL [14] (Online) : Temporally correlated Multiple Sparse Bayesian Learning, which groups spatially or signal-similar samples to exploit joint sparsity for APS recovery via a learned cross-measurement covariance structure.  
+
+> •
+
+Ray Tracing [17] (Online) : A deterministic physics-based propagation simulator using differentiable ray trac-ing to predict APS from geometric scene models.  
+
+> •
+
+RadioUNet [16] (Offline) : A CNN-based deep learning model for radio map prediction from sparse RSRP mea-surements and building geometry.  
+
+> •
+
+MM-LSCM [35] (Offline) : A dual-branch neural radio radiance field multi-modal model integrating RSRP and LiDAR data for the LSCP task.  
+
+> •
+
+SM-LSCM [35] (Offline) : A single-modal variant of MM-LSCM using only RSRP data, without LiDAR inte-gration.  
+
+> •
+
+PC-TGS (Offline) : The proposed framework incorporat-ing the recursive fine-tuning (RFT) scheme, serving as the default model for best extrapolation accuracy.  
+
+> •
+
+PC-TGS w/o RFT (Offline) : A lighter variant of PC-TGS that omits the recursive fine-tuning scheme, offering re-duced training time with a favorable accuracy–efficiency trade-off.  
+
+> •
+
+SM-PC-TGS (Offline) : A single-modal variant in which the scatterer means {μn}Nn are initialized from a uniform distribution without using point cloud data, and the RM scheme is omitted.  
+
+> •
+
+SM-PC-TGS w/o RFT (Offline) : A single-modal variant in which the scatterer means {μn}Nn are initialized from a uniform distribution without using point cloud data, and the RM scheme and RFT are both omitted. We evaluate the performance of the proposed PC-TGS approach across three prediction tasks: 11  
+
+> •
+
+Sub-Task 1 (ST-1): Predicting rotated RSRPs ˆyrl =
+
+Ar ˆxl in measured regions {l ∈ L k} with |L k| = 5 ,566 . 
+
+> •
+
+Sub-Task 2 (ST-2): Predicting RSRPs ˆyl = A ˆxl in unmeasured regions {l ∈ L o} with |L o| = 744 . 
+
+> •
+
+Sub-Task 3 (ST-3): Predicting rotated RSRPs ˆyrl =
+
+Ar ˆxl in unmeasured regions {l ∈ L o}.Note that the original training set only includes RSRPs data on the measured region {yl|l ∈ L k}. Performance is evaluated using mean absolute error (MAE) for RSRP prediction as MAE = 1
+
+M
+
+1
+
+|L o|
+
+> M
+
+X
+
+> m=1
+
+X
+
+> l∈L o
+
+|10 log( ˆ ym,l ) − 10 log( ym,l )|,
+
+(43) where |L o| is the total number of grids in the test dataset and 
+
+ˆyl denotes the predicted RSRP at the l-th grid. 
+
+C. Ablation and Sensitivity Analysis 
+
+Before comparing PC-TGS to external baselines, we first validate the internal design choices and characterize the model’s sensitivity to key parameters. 
+
+1) Physical Plausibility of Learned Scatterers: Fig. 5overlays the estimated scatterer locations on the raw point cloud of City A. The 3D Gaussians exhibit strong alignment with prominent environmental structures (building facades, corners), confirming that the relaxed-mean reparameterization successfully anchors scatterers to physically meaningful loca-tions. 
+
+Fig. 5: Visualization of extracted virtual scatterers by PC-TGS in City A, China. 
+
+2) Sensitivity to the Number of Virtual Scatterers: As shown in Table I, performance improves as N increases from 500 to 2000 and stabilizes in the range 1000–2000 (e.g., Sub-Task 2: 7.99 dB at N =500 vs. 7.45 dB at N =2000 ). Further increasing to N =3000 degrades accuracy and raises inference TABLE I: Sensitivity to the Number of Virtual Scatterers                          
+
+> N500 1000 1500 2000 3000 ST-1 (dB) 6.56 6.23 5.78 5.57 5.85 ST-2 (dB) 7.99 7.76 7.64 7.45 11.23 ST-3 (dB) 8.13 8.02 7.82 7.57 11.58 Time (ms) 28.91 47.99 67.42 73.55 129.29
+
+time significantly (from 73 .55 ms to 129 .29 ms ), indicating that N =2000 captures the dominant propagation structure. Crucially, N controls the model’s representational capacity rather than scaling with the geographic size of the environ-ment. For larger environments, a patch-wise deployment is recommended. TABLE II: Sensitivity to LiDAR Sparsification             
+
+> LiDAR Setting ST-1 (dB) ST-2 (dB) ST-3 (dB) 100% (Full) 5.57 7.45 7.57 50% (Random) 5.64 7.84 8.00 None (SM-PC-TGS) 5.84 8.44 8.79
+
+3) Sensitivity to LiDAR Point Density and Geometric Noise: 
+
+As shown in Table II, randomly halving the point cloud causes only modest degradation, indicating that coarse geometric priors suffice. Removing LiDAR entirely (SM-PC-TGS) leads to a larger drop, confirming the value of even sparse geometric information. To assess compatibility with image-based reconstruction (e.g., DUSt3R [29] with typical outdoor accuracy 0.1–0.5 m vs. LiDAR at 0.01–0.05 m), we simulate reconstruction noise by adding zero-mean Gaussian noise at three levels: Table III TABLE III: Sensitivity to the Point-Cloud Geometric Noise                 
+
+> Noise σST-1 (dB) ST-2 (dB) ST-3 (dB) 0 (LiDAR) 5.57 7.45 7.57 0.1 m 5.61 7.43 7.83 0.5 m 5.67 7.70 8.21 1.0 m 5.79 8.05 8.45
+
+shows that PC-TGS remains robust across all noise levels, supporting the practical use of image-derived point clouds as a LiDAR alternative. TABLE IV: Sensitivity to the Angular Resolution             
+
+> Resolution 72 ×91 36 ×91 72 ×45
+> ST-1 (dB) 5.57 6.37 6.48 ST-2 (dB) 7.45 8.39 8.57 ST-3 (dB) 7.57 8.55 8.68
+
+4) Sensitivity to Angular Resolution: As shown in Table IV, halving one angular dimension causes only moderate degra-dation, demonstrating that the geometric 3D representation provides robustness even under substantially coarser angular discretization. 
+
+5) Sensitivity to RSRP Measurement Density: As shown in Fig. 6 and Table V, reducing the training data ratio from 88% to 50% increases MAE. However, PC-TGS at 50% measurement density ( 9.25 dB) still outperforms RadioUNet 12    
+
+> (a) 88% (Origin) (b) 50%
+
+Fig. 6: Training/test data splits. Red: training; yellow: test. TABLE V: Sensitivity to the Training Data Ratio         
+
+> Training Ratio 88% (Origin) 50% ST-1 (dB) 5.57 5.79 ST-2 (dB) 7.45 9.25 ST-3 (dB) 7.57 9.67
+
+trained at full density ( 10 .31 dB, Table VI), demonstrating that geometry-informed 3D representation substantially reduces the measurement burden. 
+
+6) RFT Effectiveness: As shown in Table VI, the asymmet-ric gains of PC-TGS over PC-TGS w/o RFT—improvements of 0.78 dB in Sub-Task 2 (from 8.23 to 7.45 dB) and 1.05 dB in Sub-Task 3 (from 8.62 to 7.57 dB), with only a +0 .14 dB change in Sub-Task 1 (from 5.43 to 5.57 dB)—confirm that the boundary-expansion fine-tuning primarily benefits extrap-olation while preserving performance on the original training region. This asymmetry is the expected signature of controlled boundary expansion and is inconsistent with runaway error drift. 
+
+D. Performance Comparison 
+
+Table VI summarizes the performance of PC-TGS and all baselines in three prediction tasks where the training set con-tains only RSRP data from the explored region {yl | l ∈ L k}.The results in Table VI demonstrate that PC-TGS achieves the lowest MAE in the extrapolation sub-tasks (7.45 dB in Sub-Task 2 and 7.57 dB in Sub-Task 3), while PC-TGS w/o RFT achieves the best performance in Sub-Task 1 (5.43 dB). This reflects that the recursive fine-tuning primarily benefits extrapolation. Among offline-trained baselines, MM-LSCM (9.12/9.94 dB) and SM-LSCM (10.02/11.14 dB) are outper-formed by a large margin in Sub-Tasks 2–3, attributable to PC-TGS’s geometric initialization via point clouds and 3DGS pipeline which ensure physically consistent scatterer place-ment and radio propagation mechanism. RadioUNet (10.31 dB, Sub-Task 2), despite its CNN-based design, cannot lever-age 3D propagation geometry and is limited to predicting scalar RSRP rather than the full APS. Among online meth-ods, WNOMP (13.35/15.07 dB), TMSBL (11.69/11.77 dB), 
+
+> 2Ray Tracing is included in Sub-Tasks 2 and 3 only, as Sub-Task 1 shares the training footprint and this baseline cannot be meaningfully evaluated there. RadioUNet cannot handle the task where the APS needs to be recovered from the RSRP, hence is not included in Sub-Tasks 1 and 3.
+
+and Ray Tracing (14.37/16.77 dB) are substantially worse in the extrapolation sub-tasks. We can infer that WNOMP and TMSBL cannot predict beyond measured locations, and Ray Tracing suffers from assumed material parameters that diverge from true propagation physics. These results confirm that PC-TGS achieves superior accuracy by jointly learning a geometry-aware 3D propagation representation from measure-ments and environmental priors. 
+
+E. Complexity Analysis 
+
+As shown in Table VI, PC-TGS requires 3.55 hours of offline training (including the RFT phase), after which infer-ence takes around 74 ms per query, approximately representing a 5× speedup over MM-LSCM and 1.3× over SM-LSCM. While WNOMP has negligible per-query cost in Sub-Task 1 (1.49 ms), it requires > 8 s per query when applied to extrapo-lation via Kriging in Sub-Tasks 2–3. TMSBL and Ray Tracing similarly incur 7.5–10 s per query. The lighter variant PC-TGS w/o RFT reduces training to 3.03 hours by omitting the RFT phase while keeping inference time unchanged. These results confirm that PC-TGS achieves a favorable accuracy–efficiency trade-off among all methods that can address the LSCP task. V. C ONCLUSION 
+
+We proposed point-cloud-assisted tangent Gaussian splat-ting (PC-TGS), a physically grounded framework that extrap-olates the channel APS to grids where no signal measurements are available. PC-TGS fuses LiDAR geometry and RSRP data in an end-to-end differentiable pipeline integrating relaxed-mean scatterer parameterization, tangent-plane projection, and depth-aware electromagnetic synthesis. This is made possible by a novel GWA-based closed-form bin integration. Experi-ments on a city-scale data set show clear accuracy gains over existing single- and multi-modal baselines. Future work will extend PC-TGS to multi-site scenarios, incorporate temporal dynamics, pursue further runtime optimisation for real-time digital-twin applications, and investigate adaptive mechanisms for selecting the number of virtual scatterers N based on scene complexity. APPENDIX 
+
+A. Proof of Lemma 1 
+
+For any (θ′, φ ′) ∈ R the geodesic distance γ between n′
+
+and n0 satisfies γ ≤ ρ. We assume the bin is sufficiently small so that ρ < π/ 2. Hence, we have 
+
+s(θ′, φ ′) = n′⊤ n0 = cos γ ≥ cos ρ =: c0 > 0.
+
+This gives a uniform positive lower bound on s over R.Therefore, the quotient h = n′/s − n0 is smooth on R.Since that the orthogonality of Up,q and linear projection by 
+
+P preserve smoothness, g is smooth on R.Next, we bound the first-order derivative at any i ∈ { θ, φ }
+
+by 
+
+∥∂ih∥ ≤ ∥∂in′∥
+
+c0
+
++ |∂is|
+
+c20
+
+≤ ∥∂in′∥
+
+c0
+
++ ∥∂in′∥
+
+c20
+
+≤ 1
+
+c0
+
++ 1
+
+c20
+
+.
+
+(44) 13 
+
+TABLE VI: Performance and Complexity Comparison                                                                                   
+
+> Method Type Training Time Sub-Task 1 Sub-Task 2 Sub-Task 3
+> MAE (dB) Infer. Time MAE (dB) Infer. Time MAE (dB) Infer. Time
+> PC-TGS Offline 3.55 h 5.57 73.97 ms 7.45 73.55 ms 7.57 73.69 ms PC-TGS w/o RFT Offline 3.03 h 5.43 73.81 ms 8.23 73.54 ms 8.62 73.60 ms SM-PC-TGS w/o RFT Offline 2.96 h 5.75 73.50 ms 9.18 73.42 ms 10.04 72.66 ms MM-LSCM [35] Offline 4.21 h 5.76 384.40 ms 9.12 379.43 ms 9.94 379.38 ms SM-LSCM [35] Offline 3.31 h 5.89 98.96 ms 10.02 99.24 ms 11.14 97.39 ms RadioUNet [16] Offline 0.8 h ––10.31 2.08 ms ––WNOMP [11] Online –6.12 1.49 ms 13.35 8031.95 ms 15.07 8016.62 ms TMSBL [14] Online –6.03 133.71 ms 11.69 9,743.23 ms 11.77 9,729.18 ms Ray Tracing [17] Online –––14.37 8099.93 ms 16.77 7521.13 ms
+
+Let ∇h = [∂θ h, ∂φh] ∈ R3×2 be the Jacobian. Since 
+
+g = P U ⊤ 
+
+> p,q
+
+h, we have Jg = P U ⊤ 
+
+> p,q
+
+∇h. Because Up,q is orthogonal, ∥U⊤ 
+
+> p,q
+
+∥2 = 1, and since P is a row-selector, 
+
+∥P ∥2 ≤ 1. Hence 
+
+∥Jg ∥2 ≤ ∥∇ h∥2. (45) A conservative bound on the operator norm of a 3 × 2 matrix is the sum of its column norms: 
+
+∥∇ h∥2 ≤
+
+ 1
+
+c0
+
++ 1
+
+c20
+
+
+
++
+
+ 1
+
+c0
+
++ 1
+
+c20
+
+
+
+= CJ . (46) Combining with (45) yields 
+
+sup 
+
+> (θ′,φ ′)∈R
+
+∥Jg (θ′, φ ′)∥ ≤ sup 
+
+> (θ′,φ ′)∈R
+
+∥∇ h(θ′, φ ′)∥ ≤ CJ .
+
+The bound for the second derivative follows the same fashion, therefore, we omit it due to the page limit. Finally, we show the second-order Taylor expansion. Let 
+
+δ := [ δθ, δφ ]⊤ and (θ′, φ ′) = ( θp, φ q ) + δ. By Taylor’s theorem for vector-valued functions, 
+
+g(θ′, φ ′) = g0 + J0 δ + 12 Q0(δ) + R(δ),
+
+where g0 := g(θp, φ q ), J0 := Jg (θp, φ q ), Q0 is the bilinear form induced by D2g(θp, φ q ), and R(δ) is the high-order remainder term. Because g is C∞ on a compact neighborhood of R, we have 
+
+∥Q 0(δ)∥ ≤ ∥ D2g(θp, φ q )∥ ∥ δ∥2 ≤ Cg ∥δ∥2,
+
+∥R(δ)∥ ≤ Cg ∥δ∥3. (47) This finishes the proof. 
+
+B. Proof of Lemma 2 
+
+Let us fix the bin center (θp, φ q ) and set J0 := Jg(θp, φ q ).By assumption, J0 is invertible, so det J0̸ = 0 .Since g is C1 in a neighborhood of (θp, φ q ) (by Lemma 1), its Jacobian Jg(θ, φ ) and determinant det Jg(θ, φ ) are con-tinuous functions of (θ, φ ). Therefore, there exists r > 0 such that for all (θ, φ ) with |θ − θp| < r and |φ − φq | < r , the Jacobian remains invertible and 
+
+| det Jg(θ, φ )| ≥ 12 | det J0| > 0.
+
+By the inverse function theorem, this implies that g is a C1
+
+diffeomorphism from the rectangle 
+
+R := [ θp − ∆θ, θ p + ∆ θ] × [φq − ∆φ, φ q + ∆ φ]
+
+onto its image g(R), for any ∆θ, ∆φ < r .Now, consider the image of R under the first-order (linear) Taylor expansion of g at (θp, φ q ):
+
+g(θ, φ ) ≈ g(θp, φ q ) + J0
+
+ θ − θp
+
+φ − φq
+
+
+
+.
+
+The rectangle R in (θ, φ )-space, defined by |θ − θp| ≤ ∆θ,
+
+|φ − φq | ≤ ∆φ, is mapped by this linear transformation to a parallelogram in the tangent plane. Specifically, the sides of the parallelogram are given by the vectors 
+
+J0
+
+∆θ
+
+0
+
+
+
+and J0
+
+ 0∆φ
+
+
+
+,
+
+which are the images of the edges of the rectangle under the Jacobian. Because J0 is invertible, this parallelogram is nondegenerate: it has positive area and does not collapse to a line or a point. Therefore, for sufficiently small bins, g is a C1 diffeomor-phism from R onto its image, and the linear image of R is a nondegenerate parallelogram in the tangent plane as claimed. 
+
+C. Proof of Theorem 1 
+
+Set 
+
+J = Jg(θp, φ q ), δ =
+
+ θ′ − θp
+
+φ′ − φq
+
+
+
+.
+
+We split the error: 
+
+wexact − ew = Egeo + Ewin ,
+
+with 
+
+Egeo =
+
+Z Z 
+
+> R
+
+[f (g(θ′, φ ′)) | det Jg(θ′, φ ′)|− f (g(θp, φ q ) + Jδ ) | det J|] d θ′dφ′,Ewin =
+
+Z Z 
+
+> R
+
+f (g(θp, φ q ) + Jδ ) | det J| dθ′dφ′
+
+−
+
+Z
+
+> R2
+
+f (y) W (y) d y.
+
+We first bound Egeo . Add and subtract f (g(θp, φ q ) + 
+
+Jδ ) | det Jg(θ′, φ ′)| inside the integrand, we have 
+
+Egeo 
+
+=
+
+Z Z 
+
+> R
+
+
+
+[f (g(θ′, φ ′)) − f (g(θp, φ q ) + Jδ )] | det Jg(θ′, φ ′)|
+
++ f (g(θp, φ q ) + Jδ ) [ | det Jg(θ′, φ ′)| − | det J|]
+
+
+
+dθ′dφ′.14 
+
+By the triangle inequality, |Egeo | ≤ I1 + I2, where 
+
+I1 =
+
+Z Z 
+
+> R
+
+|f (g(θ′, φ ′)) − f (g(θp, φ q ) + Jδ )| | det Jg (θ′, φ ′)| dθ′dφ′,I2 =
+
+Z Z 
+
+> R
+
+|f (g(θp, φ q ) + Jδ )| || det Jg (θ′, φ ′)| − | det J|| dθ′dφ′.
+
+By Lemma 1, we have 
+
+|f (g(θ′, φ ′)) − f (g(θp, φ q ) + Jδ )| ≤ Lf Cg ∥δ∥2,
+
+for some constant Lf related to the Lipschitz constant of f (·).Also, by Lemma 2, | det Jg(θ′, φ ′)| is bounded above by some constant CJ in R. Therefore, 
+
+I1 ≤ Lf Cg CJ
+
+Z Z 
+
+> R
+
+∥δ∥2 dθ′dφ′.
+
+On the compact image of the bin, f is bounded, i.e., 
+
+|f (g(θp, φ q )+ Jδ )| ≤ Cf for some Cf . By the smoothness of 
+
+g(·), | det Jg| is C1, so by Taylor expansion and the symmetry of the bin R about (θp, φ q ), we have 
+
+|| det Jg(θ′, φ ′)| − | det J|| ≤ CJ, 2∥δ∥2
+
+for some CJ, 2 and all (θ′, φ ′) ∈ R. Thus, I2 ≤
+
+Cf CJ, 2
+
+RR  
+
+> R
+
+∥δ∥2 dθ′dφ′. Since RR  
+
+> R
+
+∥δ∥2 dθ′dφ′ = O(∆ θ3 +∆φ3), adding the bounds for I1 and I2 yields |Egeo | ≤
+
+C3(∆ θ3 + ∆ φ3) for some constant C3 > 0.Next we bound Ewin . Let g0 = g(θp, φ q ). Substitute y =
+
+g0 + Jδ , so 
+
+Ewin =
+
+Z
+
+> P
+
+f (y) d y −
+
+Z
+
+> R2
+
+f (y) W (y) d y,
+
+where P = J(R0) + g0 is the parallelogram image of the bin. Expand f in a Taylor series at g0:
+
+Ewin =
+
+> 2
+
+X
+
+> k=0
+
+Z 
+
+> P
+
+Tk(y) d y −
+
+Z
+
+> R2
+
+Tk(y) W (y) d y
+
+
+
++
+
+Z 
+
+> P
+
+R3(y) d y −
+
+Z
+
+> R2
+
+R3(y) W (y) d y
+
+
+
+,
+
+where Tk is the k-th degree Taylor term and |R3(y)| ≤ L3∥y−
+
+g0∥3 for some L3 > 0.By the GWA construction, W is a Gaussian window with area and covariance exactly matching those of the parallel-ogram P while the first-order terms are both zero due to symmetry. As a result, 
+
+|Ewin | ≤ 
+
+Z
+
+> P
+
+|R3(y)| dy +
+
+Z
+
+> R2
+
+|R3(y)| W (y) d y.
+
+Since ∥y − g0∥ ≤ h = O(∆ θ + ∆ φ) and the area of P
+
+is O(∆ θ∆φ), both integrals are O(∆ θ4 + ∆ φ4 + ∆ θ2∆φ2).Therefore, for some C4 > 0,
+
+|Ewin | ≤ C4(∆ θ4 + ∆ φ4 + ∆ θ2∆φ2).
+
+Adding the bounds for Egeo and Ewin completes the proof. REFERENCES [1] Z.-Q. Luo, X. Zheng, D. L´ opez-P´ erez, Q. Yan, X. Chen, N. Wang, Q. Shi, T.-H. Chang, and A. Garcia-Rodriguez, “SRCON: A data-driven network performance simulator for real-world wireless networks,” vol. 61, no. 6, pp. 96–102, 2023. [2] Y. Li, S. Zhang, X. Ren, J. Zhu, J. Huang, P. He, K. Shen, Z. Yao, J. Gong, T. Chang et al. , “Real-world wireless network modeling and optimization: From model/data-driven perspective,” Chinese Journal of Electronics , vol. 31, no. 6, pp. 991–1012, 2022. [3] J. Johansson, W. A. Hapsari, S. Kelley, and G. Bodog, “Minimization of drive tests in 3GPP release 11,” vol. 50, no. 11, pp. 36–43, 2012. [4] S. Zhang, Y. Xue, Z. Tang, H. Wang, C. Shen, Q. Shi, and T.-H. Chang, “Robust network optimization by deep generative models and stochastic optimization,” IEEE Transactions on Wireless Communications , vol. 24, no. 7, pp. 6069–6084, 2025. [5] H. Liu, T. Li, F. Jiang, W. Su, and Z. Wang, “Coverage optimization for large-scale mobile networks with digital twin and multi-agent reinforcement learning,” pp. 1–1, 2024. [6] H. Liu, W. Su, T. Li, W. Huang, and Y. Li, “Digital twin enhanced multi-agent reinforcement learning for large-scale mobile network coverage optimization,” ACM Trans. Knowl. Discov. Data , vol. 19, no. 1, Dec. 2024. [Online]. Available: https://doi.org/10.1145/3702644 [7] H. Wang, J. Zhang, G. Nie, L. Yu, Z. Yuan, T. Li, J. Wang, and G. Liu, “Digital twin channel for 6G: Concepts, architectures and potential applications,” IEEE Communications Magazine , vol. 63, no. 3, pp. 24– 30, 2025. [8] J. Wang, C.-X. Wang, J. Huang, H. Wang, X. Gao, X. You, and Y. Hao, “A novel 3D non-stationary GBSM for 6G thz ultra-massive mimo wireless systems,” IEEE Transactions on Vehicular Technology , vol. 70, no. 12, pp. 12 312–12 324, 2021. [9] J. Zhang, J. Lin, P. Tang, W. Fan, Z. Yuan, X. Liu, H. Xu, Y. Lyu, L. Tian, and P. Zhang, “Deterministic ray tracing: A promising approach to thz channel modeling in 6G deployment scenarios,” 
+
+Comm. Mag. , vol. 62, no. 2, p. 48–54, Feb. 2024. [Online]. Available: https://doi.org/10.1109/MCOM.001.2200486 [10] V. Abhayawardhana, I. Wassell, D. Crosby, M. Sellars, and M. Brown, “Comparison of empirical propagation path loss models for fixed wireless access systems,” in 2005 IEEE 61st Vehicular Technology Conference , vol. 1, 2005, pp. 73–77 Vol. 1. [11] S. Zhang, X. Ning, X. Zheng, Q. Shi, T.-H. Chang, and Z.-Q. Luo, “A physics-based and data-driven approach for localized statistical channel modeling,” vol. 23, no. 6, pp. 5409–5424, 2024. [12] Y. Wang, Y. Xue, S. Zhang, and T.-H. Chang, “GNN-based structured bayesian inference for multi-grid localized statistical channel modeling,” pp. 1–1, 2025. [13] K. Sato, K. Inage, and T. Fujii, “Radio environment map construction with joint space-frequency interpolation,” in 2020 International Con-ference on Artificial Intelligence in Information and Communication (ICAIIC) . IEEE, 2020, pp. 051–054. [14] Z. Zhang and B. D. Rao, “Sparse signal recovery with temporally correlated source vectors using sparse Bayesian learning,” IEEE Journal of Selected Topics in Signal Processing , vol. 5, no. 5, pp. 912–926, 2011. [15] S.-P. Kuo and Y.-C. Tseng, “Discriminant minimization search for large-scale RF-based localization systems,” IEEE Transactions on Mobile Computing , vol. 10, no. 2, pp. 291–304, 2010. [16] R. Levie, C ¸ . Yapar, G. Kutyniok, and G. Caire, “RadioUNet: Fast radio map estimation with convolutional neural networks,” IEEE Transactions on Wireless Communications , vol. 20, no. 6, pp. 4001–4015, 2021. [17] J. Eertmans, C. Oestges, and L. Jacques, “Demonstrating DiffeRT: An open-source library for optimizing radio networks with differentiable ray tracing,” in Proceedings of the IEEE International Conference on Machine Learning for Communication and Networking (ICMLCN) ,2025, pp. 1–2. [18] X. Zhao, Z. An, Q. Pan, and L. Yang, “NeRF2: Neural radio-frequency radiance fields,” in Proceedings of the 29th Annual International Conference on Mobile Computing and Networking , ser. ACM MobiCom ’23. New York, NY, USA: Association for Computing Machinery, 2023. [Online]. Available: https://doi.org/10.1145/3570361.3592527 [19] H. Lu, C. Vattheuer, B. Mirzasoleiman, and O. Abari, “NeWRF: a deep learning framework for wireless radiation field reconstruction and channel prediction,” in Proceedings of the 41st International Conference on Machine Learning , ser. ICML’24. JMLR.org, 2024. [20] B. Kerbl, G. Kopanas, T. Leimkuehler, and G. Drettakis, “3D Gaussian splatting for real-time radiance field rendering,” ACM Trans. Graph. , vol. 42, no. 4, Jul. 2023. [Online]. Available: https://doi.org/10.1145/3592433 15 
+
+[21] C. Wen, J. Tong, Y. Hu, Z. Lin, and J. Zhang, “WRF-GS: Wireless radiation field reconstruction with 3D Gaussian splatting,” in IEEE IN-FOCOM 2025-IEEE Conference on Computer Communications . IEEE, 2025, pp. 1–10. [22] K. Cheng, X. Long, K. Yang, Y. Yao, W. Yin, Y. Ma, W. Wang, and X. Chen, “GaussianPro: 3D Gaussian splatting with progressive propagation,” in Proceedings of the 41st International Conference on Machine Learning , ser. ICML’24. JMLR.org, 2024. [23] J. Li, J. Zhang, X. Bai, J. Zheng, X. Ning, J. Zhou, and L. Gu, “Dngaus-sian: Optimizing sparse-view 3D Gaussian radiance fields with global-local depth normalization,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2024, pp. 20 775–20 785. [24] Y. Fu, S. Liu, A. Kulkarni, J. Kautz, A. A. Efros, and X. Wang, “Colmap-free 3D Gaussian splatting,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2024, pp. 20 796–20 805. [25] 3GPP, “Study on channel model for frequencies from 0.5 to 100 GHz (Release 16),” Technical Report (TR) 38.901, Jan. 2020, version 16.1.0. [26] M. Liu, T. Lin, Y. Zhu, and Y.-J. A. Zhang, “Sparse channel estimation for IRS-assisted millimeter wave mimo ofdm systems,” vol. 72, no. 10, pp. 6553–6568, 2024. [27] W. A. Hapsari, A. Umesh, M. Iwamura, M. Tomala, B. Gyula, and B. Sebire, “Minimization of drive tests solution in 3GPP,” IEEE Com-munications Magazine , vol. 50, no. 6, pp. 28–36, 2012. [28] P. Sun, H. Kretzschmar, X. Dotiwalla, A. Chouard, V. Patnaik, P. Tsui, J. Guo, Y. Zhou, Y. Chai, B. Caine, V. Vasudevan, W. Han, J. Ngiam, H. Zhao, A. Timofeev, S. M. Ettinger, M. Krivokon, A. Gao, A. Joshi, Y. Zhang, J. Shlens, Z. Chen, and D. Anguelov, “Scalability in perception for autonomous driving: Waymo open dataset,” 2020 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pp. 2443–2451, 2019. [Online]. Available: https://api.semanticscholar.org/CorpusID:209140225 [29] S. Wang, V. Leroy, Y. Cabon, B. Charpiat, and J. Revaud, “DUSt3R: Geometric 3D vision made easy,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR) , 2024, pp. 20 697–20 709. [30] S. Fridovich-Keil, A. Yu, M. Tancik, Q. Chen, B. Recht, and A. Kanazawa, “Plenoxels: Radiance fields without neural networks,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2022, pp. 5501–5510. [31] M. Tancik, P. Srinivasan, B. Mildenhall, S. Fridovich-Keil, N. Raghavan, U. Singhal, R. Ramamoorthi, J. Barron, and R. Ng, “Fourier features let networks learn high frequency functions in low dimensional domains,” 
+
+Advances in neural information processing systems , vol. 33, pp. 7537– 7547, 2020. [32] T. Abhayapala, T. Pollock, and R. Kennedy, “Characterization of 3D spatial wireless channels,” in 2003 IEEE 58th Vehicular Technology Conference. VTC 2003-Fall (IEEE Cat. No.03CH37484) , vol. 1, 2003, pp. 123–127 Vol.1. [33] D. L. Colton, R. Kress, and R. Kress, Inverse acoustic and electromag-netic scattering theory . Springer, 1998, vol. 93. [34] K. D. B. J. Adam et al. , “A method for stochastic optimization,” arXiv preprint arXiv:1412.6980 , vol. 1412, no. 6, 2014. [35] Y. Wang, S. Zhang, Y. Xue, and T.-H. Chang, “Multi-modal neural radio radiance field for localized statistical channel modelling,” arXiv preprint arXiv:2508.06054 , 2025.

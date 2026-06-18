@@ -1,0 +1,1388 @@
+Title: Deep Learning-Empowered Movable-Antenna Position Optimization with Partial CSI
+
+URL Source: https://arxiv.org/pdf/2606.17543v1
+
+Published Time: Wed, 17 Jun 2026 00:34:20 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+> 1
+
+# Deep Learning-Empowered Movable-Antenna Position Optimization with Partial CSI 
+
+Lele Lu, Weidong Mei, Member, IEEE , Xin Wei, Student Member, IEEE , Ruixi Feng, Haocheng Hua, Member, IEEE , Zhi Chen, Senior Member, IEEE , Boyu Ning, Member, IEEE , and Emil Bj¨ ornson, Fellow, IEEE 
+
+Abstract —Movable antennas (MAs) have emerged as a promis-ing technology to achieve high data rates in wireless commu-nications by dynamically adjusting their positions to mitigate deep fading within a given region. However, to determine the optimal MA positions, full channel state information (CSI) is required for each antenna position within the transmit/receive movement region, which leads to extremely high channel esti-mation overhead. To tackle this challenge, this paper proposes a deep neural network (DNN)-based learning framework to predict the optimal positions of multiple transmit MAs in a multi-user multiple-input single-output (MISO) system without explicit channel estimation. To unveil useful insights, we first consider a simpler single-user MISO case, showing that there exists a clear mapping between the optimal MA positions and the channel power gains from a subset of locations within the transmit region to the user. However, this mapping is highly nonlinear and cannot be explicitly characterized for practical channel models. To tackle this challenge, we train a deep neural network to learn it in a supervised manner and then use the pre-trained DNN to determine the optimized MA positions in real-time data transmission, based on partial power measurements within the transmit region only. However, this framework cannot be applied to the multi-user case due to the more complex rate expression and the unavailability of globally optimal antenna position solutions as labels. To tackle this difficulty, we develop an unsupervised training framework to directly maximize the multi-user sum-rate. In particular, an attention-based architecture is employed to extract latent features from partial channel measurements and manage inter-user interference. Simulation results demonstrate that the proposed framework achieves near-optimal performance in single-user systems and even outperforms conventional CSI-based alternating optimization algorithms in the multi-user case. 
+
+Index Terms —Movable antenna, antenna position optimiza-tion, artificial intelligence, deep learning, channel estimation, transformer. 
+
+I. I NTRODUCTION 
+
+Movable antenna (MA) technology has recently emerged as a compelling means to enhance the performance of wireless 
+
+This paper was presented in part at the 2025 IEEE 36th International Sym-posium on Personal, Indoor and Mobile Radio Communications (PIMRC), Istanbul, Turkiye [1]. L. Lu and R. Feng are with Glasgow College, University of Elec-tronic Science and Technology of China, Chengdu, China (e-mail: ll.lu@std.uestc.edu.cn; 2022190905006@std.uestc.edu.cn). W. Mei, X. Wei, Z. Chen, and B. Ning are with the National Key Laboratory of Wireless Communications, University of Electronic Science and Technology of China, Chengdu, China (e-mail: wmei@uestc.edu.cn; xinwei@std.uestc.edu.cn; chenzhi@uestc.edu.cn; boydning@outlook.com). H. Hua is with the School of Science and Engineering, The Chinese University of Hong Kong (Shenzhen), Guangdong 518172, China (e-mail: huahaocheng@cuhk.edu.cn). E. Bj¨ ornson is with the Department of Communication Systems, KTH Royal Institute of Technology, Stockholm, Sweden (email: emilbjo@kth.se). 
+
+communications by allowing antennas to be flexibly reposi-tioned within a prescribed movement region at the transmitter and/or receiver [2], [3], [4]. In contrast to conventional fixed-position antennas (FPAs), MAs can proactively improve chan-nel conditions by avoiding fading and making user channels nearly orthogonal, thereby offering improved reliability and spectral efficiency. Beyond throughput gains, the geometric reconfigurability of MAs has also shown promise for wireless sensing [5], [6] and array signal processing [7], [8], [9], [10], underscoring their potential for future wireless networks. The promising and multifarious benefits of movable an-tennas (also known as fluid antennas from the viewpoint of flexible antenna positions [11]) have spurred extensive research interest. A central line of research has focused on MA position optimization techniques in view of the highly nonlinear multi-path channel expressions in terms of antenna positions. To tackle this challenge, some existing works con-sider optimizing MA positions based on long-term or statistical channel characteristics, where antenna locations are designed offline to achieve favorable average performance under given deployment scenarios. For example, MA position optimization based on statistical channel state information (CSI) was inves-tigated in [12], where antenna positions require less frequent updates compared to those based on instantaneous CSI. In addition, the authors in [13] proposed a pre-optimized irregular array architecture, where antenna geometry is optimized for a given deployment scenario through offline performance evaluation, which dispenses with instantaneous CSI as well. Although these approaches can significantly reduce the over-head of channel training and online optimization, their real-time performance may degrade, particularly in time-varying environments with dynamic channel fluctuations. For real-time antenna position optimization, most existing works developed a variety of gradient-based algorithms for antenna position optimization based on a theoretical field-response channel model [2]. For example, the authors in [14] proposed an alternating optimization (AO) algorithm to maximize the capacity of an MA-enhanced multiple-input multiple-output (MIMO) system, where the successive convex approximation technology is employed to optimize the trans-mit and receive antenna positions. Moreover, the authors in [15], [16], [17], [18] applied gradient-based algorithms for an-tenna position optimization in the scenarios of physical-layer security, interference networks, multi-user uplink transmission, and relay systems, respectively. However, due to the highly nonlinear channel expression, gradient-based algorithms are sensitive to initialization and may converge to poor local optima. To enhance global search 
+
+> arXiv:2606.17543v1 [eess.SP] 16 Jun 2026 2Digital
+> Processing
+> RF chain
+> RF chain
+> RF chain
+> AI-based
+
+## ……      
+
+> …
+> …
+> …
+> Real-Time Partial Measurement
+> Output
+> Input
+> Inferred Solutions
+> MA Positions
+> Precoding
+> 𝑤𝑤 1,1𝑤𝑤 1,2𝑤𝑤 1,3𝑤𝑤 2,1𝑤𝑤 2,2𝑤𝑤 2,3𝑤𝑤 3,1𝑤𝑤 3,2𝑤𝑤 3,3
+
+Input  
+
+> Learned mapping
+> Output
+> Single User Case: Supervised Learning
+> Optimal MA Positions
+> Global Channel Map Partial Measurement
+> Multi-user Case: Unsupervised Learning
+> …
+> …
+> …
+> Multi-layer Perceptron
+> Partial Measurement Machine Learning
+> Add & Norm
+> Multi-Head
+> Attention
+> Attention-based Model
+
+Input    
+
+> Prediction
+> MA Positions Other Variables
+> Precoding
+> User associations
+> Resource allocation
+> User sum-rate Inter-MA spacing
+> Unsupervised Loss Function
+> Utility Function Constraints
+
+Output 
+
+> Add & Norm
+> Feed
+> Forward
+
+## …
+
+Fig. 1: System model and illustration of the proposed learning-based frameworks. capability, a number of works have resorted to meta-heuristic and nature-inspired optimization methods that do not rely on gradient information. For example, the authors in [19] pro-posed a firefly algorithm to optimize MA positions, inspired by brightness-driven population interactions. Particle swarm optimization (PSO) and its variants have also been applied to MA systems, e.g., for multi-user communication systems [20]. While these heuristic algorithms are more capable of escaping poor local minima, they generally incur high com-putational complexity and lack theoretical guarantees on even local optimality, which limits their scalability in practical MA deployments. To mitigate these issues, an alternative line of research dis-cretizes the movement region into a set of candidate sampling points, thereby converting the continuous MA position opti-mization into a discrete selection problem. This reformulation facilitates more efficient solution methods based on discrete optimization algorithms. For example, in [21], a graph-based method was developed to solve the discrete point selection 
+
+optimally in polynomial time for MA-enhanced multiple-input single-output (MISO) systems. For multi-user MA-MISO sys-tems, the authors in [22] obtained the globally optimal MA positions via a generalized Bender’s decomposition (GBD) algorithm. The discrete MA position optimization has also been applied for physical-layer security [23], [24], cognitive radio [25], intelligent reflecting surface (IRS)-aided com-munications [26], robust antenna position optimization [27], MA trajectory designs [28], orthogonal frequency division multiplexing (OFDM) [29], among others. More recently, a general and efficient framework was established in [30] to unify discrete MA optimization by combining the sequential update and Gibbs sampling techniques. However, to practically implement the above antenna posi-tion optimization algorithms, a crucial question lies in how to acquire the CSI across the entire antenna movement region, referred to as the channel map. Compared with the channel estimation in conventional FPA systems, the training and feedback overhead becomes significantly higher. To deal with this issue, compressed sensing-based methods were proposed in [31], [32] to recover the channel map by leveraging the structural properties of the field-response channel model. To further improve the accuracy of channel map reconstruction, tensor decomposition techniques were introduced in [33] by leveraging structured pilot measurements. While effective in channel map estimation, these approaches remain dependent on a specific channel model, which can introduce model-mismatch issues in practical deployments. To improve the robustness of the above model-based chan-nel map methods, data-driven approaches have recently at-tracted increasing attention. For example, Bayesian reconstruc-3
+
+tion methods [34] and minimum mean square error (MMSE)-based estimation schemes [35] exploit statistical prior informa-tion or spatial correlation to enhance channel inference robust-ness. In addition, correlation-based deep learning techniques were developed in [36], [37] for channel map estimation in MA systems via channel extrapolation [36], [37]. However, most existing learning-based methods still aim to reconstruct the channel maps and then optimize the MA positions, which may overlook an implicit direct mapping between the optimal MA positions and partial CSI within the antenna movement region. Intuitively, the optimal positions are determined by the full channel map. Yet, within a fixed environment, channel responses at different positions are not independent but are governed by the same scatterers. Consequently, CSI measured at a subset of positions can carry latent information about the full channel map (and thus about the optimal MA positions). Motivated by these observations, this paper proposes a deep learning–empowered framework for MA position optimization that infers high-quality MA placements using channel mea-surements from only a subset of sampling points. By bypassing explicit channel reconstruction, the proposed method enables efficient MA position optimization with substantially reduced channel training overhead and significantly lower optimization complexity. Specifically, this paper focuses on the downlink of a multi-user MISO communication system, where a multi-MA base station (BS) communicates with multiple single-antenna users at the same time, as shown in Fig. 1. The main contributions of this paper are summarized as follows.  
+
+> •
+
+To unveil insights, we first consider a simpler single-user MISO case. We show that a well-defined mapping exists between the optimal MA positions and the channel power gains measured at only a subset of locations within the transmit region, although this mapping is difficult to char-acterize analytically. To address this issue, we propose a up-down multi-layer perception (MLP) architecture to approximate the mapping via offline supervised learning, using the globally optimal MA positions (computed using the graph-based algorithm in [21]) as ground-truth labels, as illustrated in Fig. 1. After training, the model is de-ployed for real-time inference, which directly outputs the MA positions from partial power measurements within the transmit region.  
+
+> •
+
+However, this supervised learning framework cannot be directly extended to the multi-user case due to the more involved sum-rate expression and the absence of globally optimal antenna-position labels. To tackle this difficulty, we develop an unsupervised learning framework that directly maximizes the multi-user sum-rate, as illustrated in Fig. 1. Specifically, we propose an attention-based architecture that extracts latent features from partial CSI measurements, manages inter-user interference, and aggregates per-user representations through three dedi-cated modules, respectively. By incorporating the sum-rate objective and the associated constraints into the loss function, the model learns to produce high-quality MA positioning (and transmit beamforming) solutions without explicit supervision. Simulation results validate the efficacy of the proposed learning-based methods in both single- and multi-user setups. The remainder of this paper is organized as follows. Sec-tion II presents the system model and problem formulation. Sections III and IV present the proposed supervised and unsupervised learning frameworks for the single- and multi-user cases, respectively. Section V presents simulation results. Section VI concludes the paper. 
+
+Notations: Bold lowercase and uppercase letters (e.g., h and 
+
+H) denote vectors and matrices, respectively. Superscripts (·)⊤
+
+and (·)H represent transpose and Hermitian transpose, respec-tively. ∥ · ∥ 2 and ∥ · ∥ F are the Euclidean and Frobenius norms, respectively. The complex and real domains are denoted by C
+
+and R, respectively. E[·] denotes expectation. II. S YSTEM MODEL 
+
+As shown in Fig. 1, we consider a narrowband MISO communication system where an N -MA BS communicates with K single-FPA users. Let K = {1, 2, · · · , K } denote the set of the K users. The N transmit MAs can be flexibly moved within a one-dimensional linear array with a length of A in meters (m). Let N = {1, 2, · · · , N } denote the set of all MAs. We assume that the channels between the BS and all users are quasi-static (e.g., for smart homes and factories), such that the MAs can move to their optimized positions within the channel coherence time. Considering the practical finite-resolution constraints of antenna position adjustment (e.g., those imposed by stepper motors or discrete architectures such as pixel antennas), we uniformly sample the MA array into M
+
+(M ≫ N ) discrete positions, with the distance between any two adjacent sampling points given by δs = AM . Therefore, the position of the m-th sampling point can be represented as 
+
+sm = mA M , m ∈ M = {1, 2, . . . , M }, and the position of each MA can be selected from one of the sampling points in M.Let an denote the index of the sampling point for the n-th MA. Hence, the position of this antenna is san = anAM , n ∈N . To avoid mutual coupling between MAs, we introduce a minimum spacing between any two MAs, denoted as dmin .Therefore, we have 
+
+|ai − aj | ≥ amin , ∀i, j ∈ N , i ̸ = j. (1) where amin = dmin /δ s ≫ 1. Thus, optimizing the MA positions is equivalent to selecting sampling points from the set M sub-ject to the minimum spacing constraint in (1). Here, we define an antenna index vector (AIV) a = a1 a2 · · · aN
+
+⊤ to represent the selected antenna positions. Let han 
+
+> k
+
+∈ C be the complex baseband channel from the 
+
+n-th BS antenna to user k, n ∈ N , k ∈ K . For any given AIV, the downlink channel vector for user k is 
+
+hk = ha1 
+
+> k
+
+ha2 
+
+> k
+
+· · · haN
+
+> k
+
+⊤ ∈ CN ×1. (2) Then, the aggregated BS–user channel matrix is written as 
+
+H(a) = 
+
+
+
+ha1 
+
+> 1
+
+ha2 
+
+> 1
+
+· · · haN
+
+> 1
+
+ha1 
+
+> 2
+
+ha2 
+
+> 2
+
+· · · haN
+
+> 2
+
+... ... . . . ...
+
+ha1 
+
+> K
+
+ha2 
+
+> K
+
+· · · haN
+
+> K
+
+ ∈ CK×N . (3) 4
+
+Let wk ∈ CN ×1 be the precoding vector for user k with P 
+
+> k∈K
+
+∥wk∥22 ≤ Pt, where Pt is the BS’s transmit power. The received signal at user k is given by 
+
+yk = hHk (a)wkxk + X
+
+> i̸=k
+
+hHk (a)wixi + nk, (4) where xk is the transmitted data symbol for user k with 
+
+E[|xk|2] = 1 , and nk ∼ CN (0 , σ 2
+
+> n
+
+) represents the received noise at user k with σ2 
+
+> n
+
+denoting its average power. Based on (4), by treating interference as noise, the achievable rate at user k is given by 
+
+Rk(W, a) = log 2
+
+1 + hHk (a)wk
+
+> 2
+
+P
+
+> i̸=k
+
+hHk (a)wi 
+
+> 2
+
++ σ2
+
+> n
+
+ , (5) where W = [ w1, . . . , wK ] ∈ CN ×K denotes the transmit precoding matrix. Our objective is to maximize the sum-rate of the K users 1 by jointly optimizing the BS’s transmit precoding matrix W and the positions of MAs. Hence, the optimization problem is formulated as (P1) max   
+
+> W,{a}
+
+Rsum (W, a) = 
+
+> K
+
+X
+
+> k=1
+
+Rk(W, a)
+
+s.t. 
+
+> K
+
+X
+
+> k=1
+
+∥wk∥22 ≤ Pt, (6a) 
+
+an ∈ M , ∀n ∈ N , (6b) 
+
+|ai − aj | ≥ amin , ∀i̸ = j, i, j ∈ N . (6c) However, (P1) is a non-convex optimization problem that is challenging to solve due to the inter-MA spacing constraints (i.e., (6c)). Moreover, solving (P1) requires channel maps associated with all K users, i.e., hmk , m ∈ M , k ∈ K involving 
+
+KM parameters, which may incur high channel estimation overhead in practice. To reveal essential insights and facilitate the exposition of our proposed partial CSI-based design, we first consider a simplified case with a single user and propose a learning-based solution accordingly. The extension to the general multi-user case will be presented in Section IV. III. S INGLE -U SER CASE 
+
+In this section, we consider a special single-user scenario for (P1). In this scenario, to maximize the user’s achievable rate, the maximum ratio transmission (MRT) should be adopted to maximize the received signal power at the user in the absence of inter-user interference, i.e., 
+
+w =
+
+√Pt
+
+∥h(a)∥ h(a). (7) The resulting maximum received signal power is given by 
+
+Pr (a) = |wH h(a)|2 = PtNX
+
+> n=1
+
+|han |2. (8) where w ∈ CN × 1 denotes the transmit beamforming with 
+
+∥w∥22 = Pt, and the subscripts “ k” in hk and wk are omitted here for brevity. 
+
+> 1It is worth noting that the proposed algorithms are also applicable to other performance metrics, such as the common achievable rate among all users.
+
+A. Existing CSI-Based Solution 
+
+Let H = {hm}m∈M denote the channels from all sampling points in M to the user, i.e., channel map. In the case that this map is available (e.g., via the channel estimation techniques proposed for MAs in [31], [32], [33], [34]), the optimal MA positions can be obtained by solving the following optimization problem, i.e., (P2) max 
+
+> a
+> N
+
+X
+
+> n=1
+
+|han |2,
+
+s.t. an ∈ M , ∀n ∈ N , (9a) 
+
+|ai − aj | ≥ amin , ∀ i, j ∈ N , i ̸ = j, (9b) where we have omitted the constant Pt in the objective function, as it does not affect the solution. Although (P1) is a combinatorial optimization problem that is generally difficult to optimally solve, in our previous work [21], we have proposed a graph-based algorithm to solve (P1) optimally in polynomial time. Specifically, a directed weighted graph G = ( V0, E 0) is constructed, where V0 and E0 denote its vertex and edge sets, respectively. Moreover, we model each sampling point as a vertex in G, i.e., V0 = M. To construct the set of edges, an edge is added between two vertices i
+
+and j if their corresponding sampling points satisfy (1), i.e., 
+
+|i − j| ≥ amin . Finally, by properly assigning each edge with a weight based on H, it can be shown that (P1) is equivalent to finding an (N + 1) -hop shortest path in G. The details are omitted for brevity. This fixed-hop shortest path problem can be optimally solved by applying dynamic programming. However, the graph-based solution relies on the channel map H, which can be practically difficult to acquire, especially in the complex rich-scattering environment with a large trans-mit array. Fortunately, the proposed solution in [21] reveals the existence of a clear mapping from H to the optimal MA positions. Moreover, CSI at different positions within the linear array often exhibits a certain degree of correlation due to the common environmental scatterers. This implies that the channel map can be inferred from CSI at partial positions within the transmit array [33], [35], [36], [37]. Consequently, a mapping may exist between the CSI at these partial positions and the optimal MA positions. Motivated by this, we propose a more efficient learning-based approach that circumvents explicit CSI estimation in the following. 
+
+B. Proposed Optimization Framework with Partial CSI 
+
+In this section, we present our proposed learning-based framework for optimizing MA positions. Note that in the considered single-user case with MRT, it suffices to determine the optimal MA positions based on the channel power gain at each position, i.e., |hm|2, m ∈ M. As such, we only measure partial BS-user channel power gains at S training sampling points with S ≪ M . To this end, we assume a time division duplex (TDD) system in this paper, such that the downlink channel power gains can be measured by estimating their uplink counterparts based on the assumption of channel reciprocity. 2 The user then sends a unit-power beacon signal to      
+
+> 2In the frequency division duplex system, the downlink channel power gains can also be measured based on the feedback from the user over control links. 5Obtain dataset Data processing Model training
+> Off-line
+> Partial channel measurement Data processing Pretrained model Optimal MA positions
+> On-line
+> Alter environmental parameters
+> Channel measurement
+> Calculate optimal MA positions
+
+Fig. 2: Main steps of the proposed learning-based method. the BS. Denote by y = [ y(1) , y (2) , . . . , y (S)] ⊤ ∈ RS×1 the beacon signal power received over the S training sampling points, which is used to approximate the channel power gains over these points in the presence of noise. Let 
+
+f (·) : RS×1 → M N (10) denote the mapping from y to the optimal MA positions. Given the vector y and the mapping f (·), our goal is to op-timize the MA positions by solving the following optimization problem, i.e., (P2) max  
+
+> {an}=f(y)
+> N
+
+X
+
+> n=1
+
+|han |2, s.t. (6a),(6b) . (11) Compared to (P1), solving (P2) dispenses with the estimation of the channel map H and only relies on y. However, it is still challenging to solve (P2) due to the implicit expression of the mapping f (·), which is highly complex to characterize. To deal with this challenge, we propose a deep neural network (DNN) that learns to predict optimal antenna positions by approximating f (·).To train the DNN, we design a two-stage optimization framework with hybrid offline and online processing, as de-picted in Fig. 2. In the offline stage, we collect sufficient channel maps and their corresponding optimal MA positions via traditional approaches as presented in Section III-A, and then train the DNN in a supervised manner. In the real-time transmission, y is input to the pre-trained DNN to obtain the optimized antenna positions directly (and the corresponding MRT beamformer), without the need to estimate H. In the next section, we discuss the training process in detail. 
+
+C. DNN Training 
+
+The procedures of DNN training consist of the following key steps, namely, data collection, data processing, model design, and model training, as presented below. 
+
+1) Offline Data Collection and Processing: To generate a rich dataset for training in the offline phase, we explore scenarios with varying environmental parameters, such as the user’s position, the number of multi-path components, the path-loss exponent, the reference path loss at a given distance, and the scatterer locations, etc. Let T denote the total number of channel realizations by changing the above environmental parameters and ˜Ht = {| ˜ht,m |2, m ∈ M} , t = 1 , 2, · · · , T 
+
+denote the set of channel power gains at all sampling points in the t-th channel realization, where ˜ht,m represents the channel from the m-th sampling point to the user in this realization. This channel power gain map can be practically estimated by applying the existing model-based or model-free algorithms for MAs [33], [35], [36] or performing exhaustive channel estimation for a small length of linear array. Alternatively, we can generate the channel power gain map based on simulation if an accurate channel model (e.g., ray-tracing and electromag-netic simulation) is available for the considered environment. Then, we derive the indices of the optimal sampling points for the t-th channel realization, denoted as {at,n }, by applying the optimal graph-based algorithm in our previous work [21]. To ensure effective learning, all estimated channel power gains should be normalized. Specifically, in the t-th channel realization, the normalization is performed as 
+
+gt,m = |˜ht,m |2 − μt
+
+σt
+
+, m ∈ M , (12) where μt = 1
+
+> M
+
+P 
+
+> m∈M
+
+|˜ht,m |2 and σ2 
+
+> t
+
+= 1
+
+> M
+
+P 
+
+> m∈M
+
+|˜ht,m |4 −
+
+μ2 
+
+> t
+
+denote the mean value and variance for all channel power gains in ˜Ht, respectively. This normalization ensures that each set of CSI data has zero mean and unit variance, which helps handle the data with a wide range of values and mitigate potential training instabilities arising from large numerical variations. 
+
+2) Model Design and Training: The proposed neural net-work is built upon an up-down MLP architecture, as illustrated in Fig. 3. Denote by L the total number of layers and Dl the dimensionality of features at layer l.The network takes as input the estimated channel power gains at S training sampling points, denoted by y ∈ RS×1.Initially, the first fully connected layer transforms y to extract informative high-level features, i.e., 
+
+z0 = σ
+
+
+
+W 1y + b1
+
+
+
+, W 1 ∈ R(D2−S)×S , (13) where σ(·) is the LeakyReLU activation function, and W 1
+
+and b1 are the weight matrices and bias vectors, respectively. To effectively leverage both the raw measurements and the extracted features, the network concatenates the original input 
+
+y with the high-level feature vector z0. This process preserves the low-level signal characteristics present in y while simulta-neously incorporating the nonlinear transformations captured by z0, resulting in a comprehensive feature representation z1,
+
+z1 = y; z0
+
+ ∈ RD2×1. (14) Subsequently, z1 is fed into layer 2, and the DNN enters an expansion phase where each successive layer doubles the feature dimensionality, i.e., 
+
+dim( zl+1 ) = 2 · dim( zl), 1 ≤ l ≤ L/ 2 − 1. (15) where dim( zl) denotes the dimension of features at layer l.The maximum dimension is reached at layer L/ 2.Upon reaching the peak dimension, the architecture transi-tions into a compression phase, in which the feature dimen-sionality is exponentially reduced through consecutive fully connected layers, i.e., 
+
+dim( zl+1 ) = 12 · dim( zl), L/ 2 ≤ l ≤ L − 1. (16) 6Layer 1                  
+
+> Layer 2
+> Layer 3
+> Fully-connected layer
+> Batch Normalization
+> LeakyReLU
+> y(1), 𝑦𝑦 (2), ⋯,𝑦𝑦 (S)z0
+> 𝐷𝐷 2
+> S-dim vector
+> Layer L
+> �𝑎𝑎 1
+> Pred ,�𝑎𝑎 2
+> Pred ,⋯,�𝑎𝑎 𝑁𝑁
+> Pred
+> N-dim vector
+> Layer L-1
+> Concatenate
+> 𝐷𝐷 1𝐷𝐷 3𝐷𝐷 𝐿𝐿−1 𝐷𝐷 𝐿𝐿
+> Up-down Multi-layer Perceptron (MLP)
+> 𝑧𝑧 1𝑧𝑧 2𝑧𝑧 3𝑧𝑧 𝐿𝐿−2 𝑧𝑧 𝐿𝐿−1
+
+# ··· 
+
+Fig. 3: Proposed DNN architecture in the single-user case. Ultimately, the output of layer L is the optimized antenna position indices {an}. At the l-th layer, the transformation is carried out as 
+
+zl+1 = σ (BN (W l+1 zl + bl+1 )) , 2 ≤ l ≤ L − 1, (17) where batch normalization (BN) is applied to the outputs of each layer and given by BN (z) = γ ⊙ z − μB
+
+pσ2 
+
+> B
+
++ ε + β. (18) Here, μB ∈ RDl×1 and σ2 
+
+> B
+
+∈ RDl×1 denote the channel-wise mean and variance computed over mini-batches, and ε is a small positive constant introduced for numerical stability (e.g., 
+
+1 × 10 −5). The symbols γ, β ∈ RDl×1 represent learnable scaling and shifting parameters, respectively, while ⊙ denotes the element-wise product between vectors. In this paper, we set the number of layers as L = 12 .
+
+3) Loss Function: To guide the training process, we employ the mean squared error (MSE) as the loss function. Specifi-cally, let ˜at,n denote the predicted index of the sampling point for the n-th MA in the t-th channel realization. Then, the loss function is given by MSE = 1
+
+T
+
+> T
+
+X
+
+> t=1
+> N
+
+X
+
+> n=1
+
+(at,n − ˜at,n )2. (19) By minimizing this MSE, the model is encouraged to produce predictions that closely match the ground truth, thus improv-ing antenna positioning accuracy and overall performance in practical scenarios. 
+
+4) Minimum Inter-MA Spacing: It should be mentioned that in the proposed DNN, the constraint on the minimum spacing between MAs (6b) is not explicitly enforced. However, through extensive training on ground-truth data, i.e., at,n ’s, the pretrained model inherently learns to adhere to this constraint in its high-dimensional representation. Our numerical results confirm that violations are rare, and when they do occur, only minor adjustments are required to ensure compliance, as discussed next. Specifically, let {˜aPred  
+
+> 1
+
+, ˜aPred  
+
+> 2
+
+, . . . , ˜aPred  
+
+> N
+
+} denote the indices of MAs output by the DNN, with ˜aPred  
+
+> 1
+
+< ˜aPred  
+
+> 2
+
+< · · · <
+
+˜aPred  
+
+> N
+
+. To adjust these indices to meet (6b), we aim to generate a new sequence of MA indices, denoted as {b1, b 2, . . . , b N },that is feasible to (P2) and has the minimum difference from 
+
+{˜aPred  
+
+> 1
+
+, ˜aPred  
+
+> 2
+
+, . . . , ˜aPred  
+
+> N
+
+}. This can be achieved by solving the following optimization problem, i.e., (P3) min 
+
+> {bn}
+> N
+
+X
+
+> n=1
+
+|bn − ˜aPred  
+
+> n
+
+|,
+
+s.t. bn ∈ M , ∀ n ∈ N , (20a) 
+
+|bi − bj | ≥ amin , ∀ i, j ∈ N , i ̸ = j, (20b) where we use |bn−˜aPred  
+
+> n
+
+| to characterize the difference between 
+
+bn and ˜aPred  
+
+> n
+
+, n ∈ N .Although (P3) is a discrete optimization problem, its op-timal solution can be obtained by applying a dynamic pro-gramming algorithm, which recursively computes the optimal value of (P3). Specifically, in the case of N = n, we define 
+
+An,m and In−1,m as the optimal value of (P3) and the optimal index of the (n − 1) -th MA if we set bn = m, respectively. For N = 1 , it is obvious to see 
+
+A1,m = |m − aPred  
+
+> 1
+
+|, m = 1 , 2, . . . , M. (21) Currently, I0,m can be left empty or assigned an initial marker. Then, we can recursively derive An,m from An−1,m based on the following relation, 
+
+An,m = min  
+
+> j:j≤m−amin
+
+An−1,j + |m − aPred  
+
+> n
+
+|, (22) where we constrain the index of the (n − 1) -th MA no larger than m − amin to meet the minimum distance constraint with the n-th MA. The optimal index of the (n − 1) -th MA under 
+
+bn = m is thus given by 
+
+In−1,m = arg min  
+
+> j:j≤m−amin
+
+An−1,j . (23) Finally, the optimal index of the N -th MA is determined as 
+
+b∗ 
+
+> N
+
+= arg min  
+
+> m∈M
+
+AN,m , (24) and the indices of all previous N − 1 MAs can be recursively obtained as 
+
+b∗ 
+
+> n−1
+
+= In−1,b ∗ 
+
+> n
+
+, 2 ≤ n ≤ N. (25) Based on the above, the optimized AIV by the proposed learning-based algorithm can be obtained. IV. M ULTI -U SER CASE 
+
+In this section, we consider the general multi-user case and solve (P1) accordingly. Similar to Section III, we first review the existing CSI-based solution to (P1). 7
+
+A. Existing CSI-Based Solution 
+
+In the presence of channel maps for all users, (P1) can be efficiently solved by an AO-based algorithm. In particular, (P1) is decomposed into two subproblems: (i) transmit precoding matrix optimization at the BS for a given AIV, and (ii) AIV optimization for a given transmit precoding matrix. 
+
+1) Optimizing W with Given a: First, with any given AIV a, (P1) reduces to the conventional sum-rate maximiza-tion problem in the multi-user MISO systems, which can be tackled by the weighted minimum mean square error (WMMSE) algorithm [38]. Specifically, by introducing two auxiliary variables χ = [χ1, χ 2, · · · , χ K ]⊤ ∈ CK×1 and 
+
+κ = [ κ1, κ 2, · · · , κ K ]⊤ ∈ CK×1, (P1) can be equivalently transformed into the following optimization problem (P4-1) max  
+
+> χ,κ,W
+
+f1(χ, κ, W) s.t. (6a) ,
+
+where f1(χ, κ, W) = PKk=1 κku(χk, W) − log 2 κk
+
+and u(χk, W) = |χk|2(PKi=1 hHk (a) wi 
+
+> 2
+
++ σ2
+
+> n
+
+) −
+
+Re {χ∗
+
+> k
+
+hHk (a) wk} + 1 . After the above transformation, the original problem becomes more tractable and can be efficiently solved by updating χ, κ, and W iteratively. Specifically, in the (l + 1) -th iteration of the WMMSE algorithm, these three variables are calculated based on the following updating rules: 
+
+χ(l+1)  
+
+> k
+
+=
+
+> K
+
+X
+
+> i=1
+
+hHk (a) w(l)
+
+> i
+> 2
+
++ σ2
+
+> n
+
+!−1
+
+hHk (a) w(l) 
+
+> k
+
+, (27a) 
+
+κ(l+1)  
+
+> k
+
+=
+
+
+
+1 − χ∗(l+1)  
+
+> k
+
+hHk (a) w(l)
+
+> k
+
+−1
+
+, (27b) 
+
+w(l+1)  
+
+> k
+
+= χ(l+1)  
+
+> k
+
+κ(l+1) 
+
+> k
+
+
+
+μIN +
+
+> K
+
+X
+
+> i=1
+
+χ(l+1) 
+
+> i
+> 2
+
+κ(l+1) 
+
+> i
+
+× hi (a) hHi (a)
+
+−1
+
+hHk (a) , (27c) where μ ≥ 0 is the optimal dual variable that ensures PKk=1 ∥wk∥22 ≤ P . Note that PKk=1 ∥wk∥22 is a monotonically decreasing function w.r.t. μ. Thus, we can find μ via a bisection search. 
+
+2) Optimizing a with Given W: Next, we optimize the AIV a for any given transmit precoding matrix W, and (P1) is simplified into the following problem: (P4-2) max  
+
+> a
+
+Rsum (a), s.t. (6b) , (6c) .
+
+Due to the discrete nature of the AIV a, (P4-2) can be solved by the sequential update algorithms. Specifically, we sequentially update the position of each MA over multiple rounds, each including N iterations. In the n-th iteration, we only optimize the position index of the n-th MA (i.e., an), while keeping the positions of the other (N − 1) MAs fixed. Let us consider the n-th iteration in the r-th round and denote by a(r) 
+
+> j
+
+the updated position index of the j-th MA in this round, 1 ≤ j ≤ n − 1. Then, the set of all feasible position indices for optimizing an is given by 
+
+X (r) 
+
+> n
+
+=
+
+n
+
+a a ∈ M , a − a(r) 
+
+> j
+
+≥ amin , ∀1 ≤ j ≤ n − 1,
+
+a − a(r−1)  
+
+> j
+
+≥ amin , ∀n + 1 ≤ j ≤ N
+
+o
+
+, (29) for 1 < n < N . In addition, we set X (r)1 = {a|a ∈M, |a − a(r−1)  
+
+> j
+
+| ≥ amin , ∀2 ≤ j ≤ N } and X (r) 
+
+> N
+
+=
+
+{a|a ∈ M, |a − a(r) 
+
+> j
+
+| ≥ amin , ∀1 ≤ j ≤ N − 1}. Let 
+
+ˆa = {a(r)1 , · · · , a (r)
+
+> n−1
+
+, a n, a (r−1)  
+
+> n+1
+
+, · · · , a (r−1)  
+
+> N
+
+}. Then, we can optimize xn as 
+
+a(r) 
+
+> n
+
+= arg max  
+
+> an∈X (r)
+> n
+
+Rsum (ˆa), (30) which can be optimally solved via an enumeration within X (r) 
+
+> n
+
+.Next, we can proceed to update the position of the (n + 1) -th MA in this round. Although the AO algorithm can effectively solve (P1), it only ensures local optimality and entails a cubic complexity in the number of MAs ( N ). Moreover, it requires full knowledge of the channel map H. To overcome these limitations, we exploit the spatial correlations of CSI across different positions and develop a more efficient learning-based approach for multi-user cases that avoids explicit channel estimation. 
+
+B. Proposed Optimization Framework with Implicit CSI 
+
+The main idea of our proposed learning-based design is to bypass explicit channel estimation and to solve problem (P1) directly. Specifically, we only measure the channel response vectors from a small set of S fixed sampling points to each of the K users, with S ≪ M . Similar to the single-user case, we assume a TDD system here to obtain the downlink channel by estimating their uplink counterparts. Let the collection of the channel measurements over the S training sampling points to be denoted by 
+
+Hprobe =
+
+
+
+h1,1 h1,2 · · · h1,S 
+
+h2,1 h2,2 · · · h2,S 
+
+... ... . . . ...
+
+hK, 1 hK, 2 · · · hK,S 
+
+ (31) 
+
+= h1, h2, · · · , hK
+
+⊤ ∈ CK×S ,
+
+where hk ∈ CS denotes the channel vector between the S
+
+sampling points and user k. It is worth noting that unlike the single-user case, determining the MA positions in the multi-user case requires channel phase information as well due to the presence of inter-user interference. Thus, taking Hprobe as the system input, we aim to learn a mapping function 
+
+g(·) : CK×S → M N , (32) which directly predicts the optimal AIV a. Given the input 
+
+Hprobe and the mapping g(·), the optimization problem for the multi-user scenario can be formulated as (P5) max  
+
+> W,a=g(Hprobe )
+
+Rsum (W, a)
+
+s.t. (6a) , (6b) , (6c) . (33) Compared with the original problem (P1), solving (P3) elim-inates the need for estimation of the full channel maps associated with all users, and the AIV a is directly predicted via Hprobe . After the positions are predicted by the neural network, the precoding matrix W(a) can be obtained by conducting real-time channel estimation for these predicted positions and following the procedures presented in Section 8
+
+IV-A. However, solving (P3) remains challenging due to the highly complex and implicit nature of g(·). Moreover, the supervised learning adopted in the single-user case becomes ineffective, since only a suboptimal solution to (P1) can be obtained by the AO algorithm presented in Section IV-A. To address this difficulty, we approximate g(·) using an attention-based neural network trained to predict optimal MA positions by directly maximizing the system sum-rate in an unsupervised manner. In the offline stage, we generate a large dataset of diverse multi-user channel realizations without the need of labels. The neural network is trained using a composite loss function consisting of a negative sum-rate term and a penalty term associated with the violation of the minimum spacing constraint. In the real-time transmission, the BS measures Hprobe , feeds it into the pre-trained DNN, and directly obtains the optimized MA positions. 
+
+C. Model Design 
+
+We now present the proposed neural network architecture and the training procedures. The overall architecture is shown in Fig. 4. 
+
+1) User Encoder: The user encoder takes the channel information Hprobe , obtained from the S training sampling points, as input. It then employs an L-layer neural network to produce a set of latent features, {zLk }Kk=1 . Since standard deep learning frameworks do not support complex-valued operations in general, each row vector h⊤ 
+
+> k
+
+in Hprobe is decomposed into real and imaginary parts and subsequently concatenated as 
+
+z0 
+
+> k
+
+=  Re {h⊤ 
+
+> k
+
+}, Im {h⊤ 
+
+> k
+
+}⊤ ∈ R2S×1. (34) Given the input feature vector z0
+
+> k
+
+, we use L layers of fully connected neural networks, denoted as ϕle(·), l = 1 , 2, . . . , L ,to produce a high-dimensional feature representation, zLk , for user k’s channel information. Let Dl denote the dimensionality of output features at the l-th layer. The above process is expressed as 
+
+zlk = ϕle(zl−1 
+
+> k
+
+) ∈ RDl×1, k ∈ K . (35) At the l-th layer, the operation ϕle(·) is carried out as: 
+
+zlk = ϕle(zl−1 
+
+> k
+
+) = σ(LN (W lzl−1 
+
+> k
+
++ bl)) , 1 ≤ l ≤ L, (36) where σ(·) denotes the ReLU activation function, and W l
+
+and bl are the weight matrix and bias vector for layer l,respectively. The layer normalization (LN) is applied to the output of each layer and expressed as LN (z) = γ ⊙ z − μL
+
+pσ2 
+
+> L
+
++ ε + β, (37) where μL ∈ RDl×1 and σ2 
+
+> L
+
+∈ RDl×1 are the mean and variance of the elements in z, respectively; γ ∈ RDl×1 and 
+
+β ∈ RDl×1 are learnable scaling and shifting parameters, respectively; ε is a small positive constant introduced for numerical stability (e.g., 1 × 10 −5 set in our simulation); and ⊙ denotes the element-wise product. After being pro-cessed through L layers, the resulting representation vectors, 
+
+(zL 
+
+> 1
+
+, zL 
+
+> 2
+
+, . . . , zLK ), now contain the essential channel features between the users and the BS. These vectors are subsequently fed into an attention module, which is designed to manage the interference among different users. 
+
+2) Multi-Head Self-Attention Module: The output features of the user encoder, i.e., zLk
+
+> Kk=1
+
+, are then fed into La
+
+stacked multi-head self-attention blocks that model inter-user interference. We now take one such block as an example to elaborate upon its structure. For clarity, we denote by 
+
+Z(ℓ) = [ zℓ
+
+> 1
+
+; · · · ; zℓK ] ∈ RK×D and Z(ℓ+1) ∈ RK×D as the input and output of the l-th block, respectively, ℓ = 1 , . . . , L a,where D is the hidden dimension of the block . Multi-head attention allows the model to jointly attend to information from different representation subspaces at dif-ferent positions, making it well-suited for modeling inter-user couplings. For each multi-head self-attention block, we employ H heads each with a head dimension dh, such that 
+
+H × dh = D. Given the input Z(ℓ) ∈ RK×D , we first compute the queries ( Q), keys ( E), and values ( V) through the following three linear projections, i.e., 
+
+Q = Z(ℓ)WQ, (ℓ) ∈ RK×D ,
+
+E = Z(ℓ)WE, (ℓ) ∈ RK×D , (38) 
+
+V = Z(ℓ)WV, (ℓ) ∈ RK×D .
+
+where WQ, (ℓ), WE, (ℓ) and WV, (ℓ) ∈ RD×D are the learnable linear maps for the l-th block. The resulting matrices in (38) are then reshaped and split into H parts along the last dimension, denoted as 
+
+Q = [ Q(1) , Q(2) , · · · , Q(H)],
+
+E = [ E(1) , E(2) , · · · , E(H)], (39) 
+
+V = [ V(1) , V(2) , · · · , V(H)].
+
+with Q(h), E(h), V(h) ∈ RK×dh . For the h-th head, the 
+
+Q(h), E(h) and V(h) are taken as input, and the output is computed as 
+
+head h = Attention( Q(h), E(h), V(h))= softmax 
+
+ Q(h)(E(h))⊤
+
+> √dh
+
+
+
+V(h) ∈ RK×dh . (40) where softmax( ·) is applied to each entry of its argument, i.e., 
+
+ softmax( S) 
+
+> i,j
+
+= exp( Si,j )
+
+PKm=1 exp( Si,m ) , (41) where Si,j denotes the (i, j )-th entry of S. Then, all the heads are concatenated and followed by an output projection as 
+
+MultiHead( Z(ℓ)) =  head 1, head 2, · · · , head H
+
+WO, (ℓ),
+
+(42) with MultiHead( Z(ℓ)) ∈ RK×D and WO, (ℓ) ∈ RD×D, which serves as an output projection matrix that linearly mixes the concatenated heads. Then, the blocks adopt the post-norm residual connections, i.e., 
+
+U(ℓ) = LN 
+
+
+
+Z(ℓ) + MultiHead  Z(ℓ)
+
+∈ RK×D , (43) where LN( ·) denotes row-wise layer normalization. Finally, a two-layer position-wise feed-forward network (FFN) is adopted as 
+
+FFN( U(ℓ)) = σ U(ℓ)W⊤ 
+
+> 1
+
++ 1b ⊤
+
+> 1
+
+ W⊤ 
+
+> 2
+
++ 1b ⊤ 
+
+> 2
+
+, (44) where W1 ∈ RDff ×D and W2 ∈ RD×Dff are the weight matrix, 
+
+b1 ∈ RDff and b2 ∈ RD are the bias vector, 1 is an all-one 9Layer 1 
+
+[𝒛𝒛 0, 𝒛𝒛 1, 𝒛𝒛 2, … , 𝒛𝒛 𝐾𝐾 ]⊤        
+
+> K× S Complex matrix
+> 𝐷𝐷 1
+> K× 2S Real matrix
+> Layer 2 𝐷𝐷 2
+> Layer L𝐷𝐷 𝐿𝐿
+> K× 2 𝐷𝐷 𝐿𝐿 Real matrix
+> ···  Layer L-1 𝐷𝐷 𝐿𝐿−1
+
+User Encoder 
+
+Linear  Linear  Linear 
+
+Scaled Dot-Product Attention 
+
+Concat 
+
+Linear 
+
+Add & Norm 
+
+Feed Forward 
+
+Add & Norm 
+
+Transformer 
+
+H
+
+𝐿𝐿 𝑎𝑎 ×
+
+Add & Norm 
+
+Feed Forward 
+
+Add & Norm 
+
+Pooling by Attention 
+
+Multi-Head Attention 
+
+Learnable Seed Vector     
+
+> 𝐷𝐷
+> 𝑁𝑁 𝑡𝑡
+> ···
+> �𝑎𝑎 1
+> Pred ,�𝑎𝑎 2
+> Pred ,⋯,�𝑎𝑎 𝑁𝑁
+> Pred
+
+[𝒉𝒉 0, 𝒉𝒉 1, 𝒉𝒉 2, … , 𝒉𝒉 𝐾𝐾 ]⊤
+
+[𝒛𝒛 0𝐿𝐿 , 𝒛𝒛 1𝐿𝐿 , 𝒛𝒛 2𝐿𝐿 … , 𝒛𝒛 𝐾𝐾 𝐿𝐿 ]⊤                  
+
+> 𝐔𝐔 ℓ
+> head 1, head 2,⋯, head H
+> 𝐙𝐙 La+1
+> 𝐮𝐮 glob
+> 𝐳𝐳 out
+> 𝐩𝐩 raw
+> MultiHead 𝐙𝐙 ℓ
+> Attention 𝑸𝑸 𝒉𝒉 ,𝑬𝑬 𝒉𝒉 ,𝑽𝑽 𝒉𝒉
+> �𝐳𝐳 1
+> 3-layer MLP
+
+𝐬𝐬 ∈ ℝ 𝟏𝟏  × 𝐃𝐃  
+
+> 𝐳𝐳 glob
+
+Fig. 4: Proposed attention-based architecture in the multi-user case. vector for broadcasting, σ(·) is the ReLU activation function, and Dff denotes the hidden dimension of the FFN. Based on the above, the block output is 
+
+Z(ℓ+1) = LN 
+
+
+
+U(ℓ) + FFN  U(ℓ)
+
+∈ RK×D . (45) By stacking the La multi-head attention blocks, the multi-head self-attention module outputs Z(La+1) =[z(La+1) 1 , . . . , z(La+1)  
+
+> K
+
+]⊤ for subsequent processing. 
+
+3) Global Aggregation Module: Following the La self-attention layers, the user embedding set Z(La+1) ∈ RK×D
+
+needs to be aggregated into a fixed-dimensional global representation, which is achieved by adopting pooling-by-multihead-attention (PMA) in this paper. PMA employs a learnable seed vector s ∈ R1×D as a single query in a multi-head attention mechanism, where Z(La+1) serves as both key and value matrices. As such, with the learnable linear maps denoted as WQP , WKP and WVP ∈ RD×D, we can compute the queries, keys, and values as 
+
+qP = sW QP ∈ R1×D,
+
+EP = Z(La+1) WEP ∈ RK×D , (46) 
+
+VP = Z(La+1) WVP ∈ RK×D .
+
+The matrices are then reshaped and split into H parts, denoted as q(h) 
+
+> P
+
+∈ R1×dh , E(h) 
+
+> P
+
+∈ RK×dh and V(h) 
+
+> P
+
+∈ RK×dh with 
+
+H × dh = D. The aggregated representation zglob ∈ R1×D
+
+is obtained by concatenating the outputs of H attention heads and following a linear projection WOP ∈ RD×D as 
+
+zglob = [ ^head 1, . . . , ^head H ]WOP , (47) where the output of the h-th head is 
+
+^head h = softmax q(h) 
+
+> P
+
+(E(h) 
+
+> P
+
+)⊤
+
+√dh
+
+!
+
+V(h) 
+
+> P
+
+∈ R1×dh . (48) Similar to the self-attention blocks, the PMA adopts residual connections and FFN to yield the final global embedding zout ,
+
+uglob = LN( s + zglob ), (49) 
+
+zout = LN( uglob + FFN( uglob )) . (50) with uglob ∈ R1×D and zout ∈ R1×D . The global rep-resentation zout , which encodes information from all active users, is projected into a physical antenna coordinate through a regression head freg (·) implemented as a three-layer MLP. Specifically, the transformation proceeds as 
+
+˜z1 = σ zout W1 + b1
+
+, W1 ∈ RD×D, b1 ∈ R1×D , (51) 
+
+˜z2 = σ ˜z1W2 + b2
+
+, W2 ∈ RD×Dh , b2 ∈ R1×Dh , (52) 
+
+praw = ˜z2W3 + b3, W3 ∈ RDh×N , b3 ∈ R1×N , (53) where Wi and bi denote the weight matrix and the bias in the 
+
+i-th layer of the MLP, σ(·) is the ReLU activation function. Next, the raw predictions praw are further processed to satisfy physical constraints on the antenna positions. For example, the predicted coordinates are restricted to lie within the array size 
+
+[0 , A ], for which a sigmoid function is applied as 
+
+p0 = sigmoid (praw ) · A, (54) The resulting vector p0 ∈ R1×N represents the estimated positions of the N antenna elements along the array. It is worth noting that the position vector p remains in a continuous space, which can be simply quantized as the nearest discrete sampling point in the antenna array. 
+
+D. Neural Network Training 
+
+It is worth pointing out that, although the proposed frame-work eliminates the need for explicit channel estimation during practical deployment, the offline training phase of the neural network still requires full CSI for evaluating the objective function. Moreover, while the WMMSE algorithm is adopted 10 
+
+in real-time implementation, its slow convergence speed and difficulties in gradient backpropagation make it less suitable for use in training. To address this issue, this paper employs the regularized zero-forcing (RZF) precoding during the training process, which admits a closed-form expression and thus facilitates efficient gradient-based optimization. Specifically, we consider that T independent channel realizations are con-ducted. In the t-th realization, let ˜at,n denote the predicted index of the sampling point for the n-th MA in the t-th channel realization by the proposed framework. Given {˜at,n }Nn=1 , the downlink channel matrix from the BS to the K users is 
+
+Ht,p =
+
+
+
+h˜at, 1 
+
+> p, 1
+
+h˜at, 2 
+
+> p, 1
+
+· · · h˜at,N 
+
+> p, 1
+
+h˜at, 1 
+
+> p, 2
+
+h˜at, 2 
+
+> p, 2
+
+· · · h˜at,N 
+
+> p, 2
+
+... ... . . . ...
+
+h˜at, 1 
+
+> p,K
+
+h˜at, 2 
+
+> p,K
+
+· · · h˜at,N 
+
+> p,K
+
+
+
+∈ CK×N , (55) where h˜at,n  
+
+> p,k
+
+denotes the complex baseband channel from the predicted antenna position ˜at,n to user k in the t-th realization. For notational brevity, the realization index t is omitted in the sequel without ambiguity. The RZF precoding matrix is given by 
+
+WRZF = [ w1,RZF , · · · , wK, RZF ]= βHHp
+
+ HpHHp + αIK
+
+−1, (56) where α = Kσ 2 
+
+> n
+> Pt
+
+is the regularization factor with σ2 
+
+> n
+
+repre-senting the noise power, β is a scalar to ensure the maximum power constraint at the BS. Based on this precoding scheme, the sum-rate is given by 
+
+Rsum =
+
+> K
+
+X
+
+> k=1
+
+log 2(1 + SINR k, RZF ) , (57) where 
+
+SINR k, RZF = |hHp,k wk, RZF |2
+
+> K
+
+P 
+
+> j=1 ,j ̸=k
+
+|hHp,k wj, RZF |2 + σ2
+
+> n
+
+(58) denotes the signal-to-interference-plus-noise ratio (SINR) at user k by treating interference as noise. To ensure that the predicted antenna positions satisfy inter-MA spacing constraints, we introduce a penalty term into the objective function, which penalizes the cases where antenna elements are placed closer than the minimum spacing dmin .Mathematically, the penalty term Pb is defined as 
+
+Pb = 1
+
+N
+
+X
+
+> 1≤i<j ≤N
+
+max  0, d min − | ˜ai − ˜aj |, (59) where ˜ai is the predicted antenna position for the i-th MA. By integrating the sum-rate with the penalty function in (59), the loss function is formulated as 
+
+L = −Rsum + η Pb, (60) where η is a hyperparameter controlling the trade-off between maximizing the system throughput and satisfying the physical spacing constraint. This joint optimization encourages the model to predict antenna positions that both achieve high system sum-rate and satisfy the minimum spacing requirement. In the exceptional cases where the minimum antenna spacing constraint is still violated, the projection procedures presented in Section III-C-4) can be employed. V. N UMERICAL RESULTS 
+
+In this section, we provide numerical results to evaluate the performance of the proposed learning-based solutions. Unless otherwise stated, the simulation settings are as follows. The carrier frequency is set to 5 GHz, and thus the wavelength is λ = 0.06 meter (m). The number of transmit MAs is 
+
+N = 8, and the length of the linear transmit array is 
+
+A = 0.48 m = 8λ. The minimum distance between any two MAs is set to dmin = λ 
+
+> 2
+
+. The distance between any two sampling points is set to δs = 0.1λ; thus, the total number of sampling points is given by A/δ s = M = 80 .The BS’s transmit power is set to Pt = 35 dBm. The training sampling points are uniformly distributed within the movement region at the BS. In the offline CSI measurements, the BS receives uplink beacon signals from multiple single-FPA user terminals, whose positions are randomly distributed within a region centered at the BS. Furthermore, we consider the field-response channel model as in [21], with the number of receive paths randomly generated within the interval [3 , 15] .Note that in actual downlink communications, these receive paths will become transmit paths. Let γi denote the channel response coefficient for the i-th receive path, which is assumed to follow CSCG distribution with γi ∼ CN (0 , β 0D−α/L r ),where α = 2 .5 represents the path-loss exponent, Lr denotes the number of receive paths, and β0 = −52 dB denotes the path loss at the reference distance of 1 m. The angle of arrival (AoA) for each receive path is assumed to be uniformly distributed within [0 , π ].
+
+A. Single-User System 
+
+First, in the single-user case, to obtain the training dataset, we generate T = 1 ,000 ,000 random realizations of the user position, the number of receive paths, and the channel response coefficient for each receive path, with the BS-user distance set to 70 m. Both the measurement noise at the BS (in offline training) and the user received noise (in real-time communications) are set to −104 dBm, corresponding to a power spectral density of −164 dBm/Hz over a bandwidth of 
+
+1 MHz. The transmit power of the user is set to 23 dBm in pilot signal transmission. In each realization, we employ the graph-based algorithm proposed in [21] to obtain the optimal MA positions as labels for supervised training. Based on the above offline processing, we can obtain the pre-trained DNN. To evaluate its real-time communication performance, we show its average performance over 5000 independent channel realizations. Furthermore, we consider the following benchmark schemes for performance compar-ison, namely, the optimal graph-based algorithm based on all sampling points [21], the conventional half-wavelength-spaced FPAs, and the minimum-redundancy linear arrays (MRLA) [39]. For the MRLA benchmark, the antenna positions are pre-configured offline following a non-uniform linear array geometry to minimize spacing redundancy and maximize spatial resolution [39]. Note that full CSI at all sampling points 11 Length of the transmit array (m)       
+
+> 0.36 0.42 0.48 0.54 0.6 0.66 0.72
+> Received SNR (dB)
+> 20
+> 20.5
+> 21
+> 21.5
+> 22
+> 22.5
+> 23
+> 23.5
+> 24
+> Optimal Solution
+> DNN with S=20
+> Graph-based solution with S=20
+> DNN with S=10
+> MRLA
+> FPA
+
+Fig. 5: Received SNR versus length of the transmit array. is required to perform the optimal graph-based algorithm, while the proposed method only requires channel power gains at S training sampling points. Furthermore, we also show the performance of the optimal graph-based algorithm that selects the antenna positions from the same set of S sampling points as the proposed algorithm, which ensures an identical channel estimation overhead in real time. First, Fig. 5 demonstrates the received SNR versus the length of the transmit array, A. For our proposed algorithm, we show its performance under S =10 and 20, corresponding to 12.5% and 20% of the total number of sampling points, respectively. It is observed from Fig. 5 that for a small length of the transmit array (e.g., A = 0 .36 m = 6λ), the proposed DNN-based scheme can achieve a comparable performance to the optimal graph-based solution with S = 20 . Moreover, even with CSI at any S = 10 sampling points, the performance gap between the proposed scheme and the optimal solution remains within 1 dB. It is also observed that the graph-based algorithm with 20 sampling points yields a worse performance than the proposed scheme with S = 20 . Particularly, as A = 0.42 m, it is even worse than the proposed scheme with S = 10 . This is attributed to the offline training of the proposed scheme that learns the mapping between partial power measurements and optimal antenna positions. The half-wavelength-spaced FPAs and the MRLA benchmark achieve the worst performance among all schemes due to their limited flexibility in antenna repositioning. Next, we plot the received SNR versus the number of MAs, N , in Fig. 6. It is observed that the performance of both the proposed DNN-based algorithm and the bench-mark schemes improves with increasing N . Particularly, our proposed learning-based approach achieves performance over 95% of the optimal solution with S = 20 only, and outper-forms the graph-based algorithm with the same set of training sampling points. Furthermore, the performance gap between the DNN algorithm and the optimal solution remains relatively stable as N increases, suggesting that a linear increase in SNR can be achieved by the proposed scheme. Finally, it is observed that the proposed scheme can still outperform the half-wavelength-spaced FPAs and the MRLA benchmark over the whole range of N considered. 
+
+B. Multi-User System 
+
+In the multi-user case, we set the number of fully connected layers ϕle in the user encoder (see Fig. 4) as L = 3 , while their sizes are set to 2S × 256 , 256 × 512 , and 512 × 512 ,Number of antennas     
+
+> 78910 11
+> Received SNR (dB)
+> 19
+> 19.5
+> 20
+> 20.5
+> 21
+> 21.5
+> 22
+> 22.5
+> 23
+> 23.5
+> Optimal Solution
+> DNN with S=20
+> Graph-based solution with S=20
+> DNN with S=10
+> MRLA
+> FPA
+
+Fig. 6: Received SNR versus the number of MAs. respectively. In the multi-head attention blocks, the feature dimension and the number of heads are set to D = 512 and 
+
+H = 8 , respectively. The hidden feature dimensions in the FFN and aggregation module are set to Dff = 2048 and Dh =256 , respectively. The number of users is randomly selected in the range from 2 to 6, and their distances from the BS are assumed to be identical as 70 m. Both the measurement noise at the BS (in offline training) and the user received noise (in real-time communications) are set to −104 dBm. The transmit power of all users is 23 dBm in pilot signal transmission. The channel with each user is generated following the process mentioned at the beginning of Section V. We implement the proposed network using the deep learning library PyTorch. The neural network is trained using the Adam optimizer with an initial learning rate 10 −4 with a 15-epoch warm-up phase followed by a cosine decay schedule over 100 epochs. At each training epoch, 200,000 training samples are used to compute the gradients in each iteration. We terminate the training process if the loss function does not decrease on the validation data set over 10 consecutive training epochs. In the actual communications, we show the performance of the proposed method over 1000 independent channel realiza-tions and compare it with the following benchmarks:  
+
+> •
+
+FPA (Benchmark 1): The N MAs are deployed symmet-rically to (0,0,0) and separated by the minimum distance 
+
+dmin = λ/ 2. 
+
+> •
+
+AO based on full CSI (Benchmark 2): Given full and perfect CSI, the beamforming vectors and antenna positions are alternately optimized according to the AO method described in Section IV-A.  
+
+> •
+
+AO with S = 20 (Benchmark 3): Based on the CSI at the same sets of training sampling points as the proposed algorithm, the beamforming vectors and antenna positions are alternately optimized following the AO algorithm described in Section IV-A.  
+
+> •
+
+MRLA (Benchmark 4): The positions of the N antennas are pre-configured as an MRLA [39]. Fig. 7 plots the sum-rate versus the transmit array length, 
+
+A, in the multi-user case. As observed from Fig. 7, the proposed attention-based scheme significantly outperforms the half-wavelength-spaced FPAs and the MRLA, and the perfor-mance gap increases with A thanks to the enlarged degrees of freedom for antenna position optimization or selection. It is also observed that the performance gap between the proposed scheme (with S = 20 ) and the AO algorithm implemented under full CSI is small for all values of A considered. 12 Length of the transmit array (m)     
+
+> 0.36 0.42 0.48 0.54 0.6
+> Sum-Rate (bps/Hz)
+> 14.8
+> 15
+> 15.2
+> 15.4
+> 15.6
+> 15.8
+> 16
+> 16.2
+> 16.4
+> AO
+> DNN with S=20
+> DNN with S=10
+> AO with S=20
+> MRLA
+> FPA
+
+Fig. 7: Multi-user sum-rate versus length of the transmit array. Number of Antennas     
+
+> 678910
+> Sum-Rate (bps/Hz)
+> 13
+> 13.5
+> 14
+> 14.5
+> 15
+> 15.5
+> 16
+> 16.5
+> 17
+> 17.5
+> 18
+> AO
+> DNN with S=20
+> DNN with S=10
+> AO with S=20
+> MRLA
+> FPA
+
+Fig. 8: Multi-user sum-rate versus the number of MAs. Moreover, if only S = 20 training sampling points are used, the AO algorithm becomes significantly less competitive and even yields a worse performance than our proposed scheme with S = 10 . Beyond the observations made from Fig. 7, we also find that as A increases, the proposed attention-based method requires significantly less computational time than the AO method. This is because the AO algorithm must explore an increasingly large set of candidate positions as A grows, while the inference/mapping time of our proposed method remains largely unaffected. These results demonstrate the efficiency of the proposed scheme compared to conventional CSI-based approaches in the multi-user setting. Fig. 8 plots the sum-rate versus the number of MAs, 
+
+N . Similar to the single-user case, the performance of all considered schemes improves as N increases. Notably, the proposed scheme consistently outperforms the AO benchmark under the same CSI input, the MRLA benchmark, and the half-wavelength-spaced FPA benchmark across all antenna configurations. Furthermore, the performance gap between the proposed algorithm and AO based on full CSI narrows as N
+
+increases, since the AO algorithm may be more frequently trapped in low-quality local optima as the number of MAs is large. Fig. 9 shows the sum-rate performance of different schemes versus the number of channel paths, where the total channel power gain is uniformly distributed among these paths. It is observed that as the number of paths increases, the perfor-mance of all considered schemes (except FPA) improves due to enhanced spatial diversity. The proposed scheme with S = 20 
+
+or S = 10 consistently outperforms the AO algorithm with 
+
+S = 20 , the MRLA benchmark, and the FPA benchmark. Particularly, this gap widens as the number of paths increases, Number of Paths (L)           
+
+> 12345678910
+> Sum-Rate (bps/Hz)
+> 14.5
+> 15
+> 15.5
+> 16
+> 16.5 AO
+> DNN with S=20
+> DNN with S=10
+> AO with S=20
+> MRLA
+> FPA
+
+Fig. 9: Multi-user sum-rate versus the number of channel paths. Number of Users K      
+
+> 23456
+> Average Sum-Rate (bps/Hz)
+> 10
+> 11
+> 12
+> 13
+> 14
+> 15
+> 16
+> 17
+> 18
+> 19 AO
+> DNN with S=20
+> DNN with S=10
+> AO with S=20
+> MRLA
+> FPA
+
+Fig. 10: Multi-user sum-rate versus the number of users. indicating that the proposed scheme is especially effective under more complex propagation conditions. Finally, Fig. 10 shows the sum-rate performance of the con-sidered schemes versus the number of users, K. As expected, it is observed that the rate performance of all considered schemes improves with K. Notably, the proposed scheme consistently outperforms both the half-wavelength-spaced FPA and MRLA baselines, as well as the AO algorithm with the same CSI input. Particularly, for a small number of users (e.g., 
+
+K = 2 , 3), the performance gap between the proposed scheme and the AO algorithm with S = 20 is small. However, as the number of users increases, this gap becomes more pronounced, since the enlarged user set makes the antenna position opti-mization more challenging and increases the likelihood that AO becomes trapped in unfavorable local optima. VI. C ONCLUSION 
+
+This paper addresses the key challenges of channel map estimation and antenna position optimization in MA systems by proposing a learning-based framework that directly infers high-quality MA positions from partial CSI measurements. For the single-user case, we develop an up–down MLP architecture that effectively captures the complex relationship between partial channel gains and optimal antenna positions. We further extend this framework to the more challenging multi-user sce-nario by designing an attention-based neural network trained in an unsupervised manner. The proposed architecture facili-tates efficient inter-user interference mitigation and provides a scalable solution that accommodates varying numbers of users without retraining. Simulation results show that the proposed 13 
+
+method achieves near-optimal performance in the single-user case and outperforms conventional CSI-based AO methods in the multi-user case, while requiring 75% less CSI. Notably, the performance gains over AO become more pronounced when the antenna movement region is large or the number of users or channel paths increases, since these regimes substantially complicate CSI-driven optimization and make AO more prone to converging to unfavorable local optima. This work can be extended in several promising directions. For example, it would be interesting to generalize the proposed method to frequency-division duplex (FDD) systems, where uplink CSI may contain latent information about the downlink channel that could be exploited for antenna position optimization. In addition, it is worthwhile to consider more general system settings and antenna architectures, such as wideband MA systems and six-dimensional MA (6DMA) systems [40], [41], [42]. REFERENCES [1] L. Lu, W. Mei, X. Wei, H. Hua, Z. Chen, and B. Ning, “Learning-based movable-antenna position optimization with implicit CSI,” in 
+
+Proc. IEEE Int. Symp. Personal, Indoor and Mobile Radio Commun. (PIMRC) , Istanbul, Turkiye, Sep. 2025, pp. 1–6. [2] L. Zhu et al., “A tutorial on movable antennas for wireless networks,” 
+
+IEEE Commun. Surveys Tuts. , vol. 28, pp. 3002–3054, 2026. [3] L. Zhu, W. Ma, and R. Zhang, “Movable antennas for wireless communication: Opportunities and challenges,” IEEE Commun. Mag. ,vol. 62, no. 6, pp. 114–120, 2024. [4] B. Ning et al., “Movable antenna-enhanced wireless communications: General architectures and implementation methods,” IEEE Wireless Commun. , vol. 32, no. 5, pp. 108–116, 2025. [5] W. Ma, L. Zhu, and R. Zhang, “Movable antenna enhanced wireless sensing via antenna position optimization,” IEEE Trans. Wireless Commun. , vol. 23, no. 11, pp. 16 575–16 589, Nov. 2024. [6] Y. Wang et al., “Antenna position optimization for movable antenna-empowered near-field sensing,” in Proc. IEEE Int. Conf. Commun. Workshops , Montreal, QC, Canada, Jun. 2025, pp. 324–329. [7] W. Ma et al., “Multi-beam forming with movable-antenna array,” 
+
+IEEE Commun. Lett. , vol. 28, no. 3, pp. 697–701, Jan. 2024. [8] L. Zhu, W. Ma, and R. Zhang, “Movable-antenna array enhanced beamforming: Achieving full array gain with null steering,” IEEE Commun. Lett. , vol. 27, no. 12, pp. 3340–3344, Oct. 2023. [9] D. Wang, W. Mei, B. Ning, Z. Chen, and R. Zhang, “Movable antenna enhanced wide-beam coverage: Joint antenna position and beamforming optimization,” IEEE Trans. Wireless Commun. , vol. 25, pp. 3541–3558, 2026. [10] D. Wang, W. Mei, Z. Chen, and B. Ning, “Movable antenna enhanced multi-region beam coverage: A multi-notch-filter-inspired design,” 
+
+IEEE Wireless Commun. Lett. , vol. 15, pp. 1320–1324, 2026. [11] W. K. New et al., “A tutorial on fluid antenna system for 6G net-works: Encompassing communication theory, optimization methods and hardware designs,” IEEE Commun. Surveys Tuts. , vol. 27, no. 4, pp. 2325–2377, Aug. 2025. [12] G. Yan, L. Zhu, and R. Zhang, “Movable antenna aided multiuser communications: Antenna position optimization based on statistical channel information,” arXiv preprint , 2025, arXiv:2502.20856. [On-line]. Available: https://arxiv.org/abs/2502.20856 [13] A. Irshad et al., “Pre-optimized irregular arrays versus movable antennas in multi-user MIMO systems,” IEEE Wireless Commun. Lett. , vol. 14, no. 8, pp. 2656–2660, Aug. 2025. [14] W. Ma, L. Zhu, and R. Zhang, “MIMO capacity characterization for movable antenna systems,” IEEE Trans. Wireless Commun. , vol. 23, no. 4, pp. 3392–3407, Sep. 2024. [15] G. Hu, Q. Wu, K. Xu, J. Si, and N. Al-Dhahir, “Secure wireless communication via movable-antenna array,” IEEE Signal Process. Lett. , vol. 31, pp. 516–520, 2024. [16] H. Wang, Q. Wu, and W. Chen, “Movable antenna enabled interfer-ence network: Joint antenna position and beamforming design,” IEEE Wireless Commun. Lett. , vol. 13, no. 9, pp. 2517–2521, Sep. 2024. [17] L. Zhu, W. Ma, B. Ning, and R. Zhang, “Movable-antenna enhanced multiuser communication via antenna position optimization,” IEEE Trans. Wireless Commun. , vol. 23, no. 7, pp. 7214–7229, 2024. [18] N. Li et al., “Movable antenna enhanced DF and AF relaying sys-tems: Performance analysis and optimization,” IEEE Trans. Commun. ,vol. 73, no. 12, pp. 13 239–13 255, Dec. 2025. [19] M. K. Hoang et al., “Firefly algorithm for movable antenna arrays,” 
+
+IEEE Wireless Commun. Lett. , vol. 13, no. 11, pp. 3157–3161, Nov. 2024. [20] Z. Xiao et al., “Multiuser communications with movable-antenna base station: Joint antenna positioning, receive combining, and power control,” IEEE Trans. Wireless Commun. , vol. 23, no. 12, pp. 19 744– 19 759, Dec. 2024. [21] W. Mei, X. Wei, B. Ning, Z. Chen, and R. Zhang, “Movable-antenna position optimization: A graph-based approach,” IEEE Wireless Com-mun. Lett. , vol. 13, no. 7, pp. 1853–1857, Jul. 2024. [22] Y. Wu, D. Xu, D. W. K. Ng, W. Gerstacker, and R. Schober, “Movable antenna-enhanced multiuser communication: Jointly optimal discrete antenna positioning and beamforming,” in Proc. IEEE Global Com-mun. Conf. , Kuala Lumpur, Malaysia, 2023, pp. 7508–7513. [23] W. Mei et al., “Movable-antenna position optimization for physical-layer security via discrete sampling,” in Proc. IEEE Global Commun. Conf. , Cape Town, South Africa, Dec. 2024, pp. 4739–4744. [24] X. Shen et al., “Movable-antenna-enhanced physical-layer service integration: Performance analysis and optimization,” IEEE Wireless Commun. Lett. , vol. 14, no. 9, pp. 2952–2956, Sep. 2025. [25] X. Wei et al., “Joint beamforming and antenna position optimiza-tion for movable antenna-assisted spectrum sharing,” IEEE Wireless Commun. Lett. , vol. 13, no. 9, pp. 2502–2506, Sep. 2024. [26] X. Wei et al., “Movable antennas meet intelligent reflecting surface: Friends or foes?” IEEE Trans. Commun. , vol. 73, no. 11, pp. 12 756– 12 770, Nov. 2025. [27] H. Ma, W. Mei, X. Wei, B. Ning, and Z. Chen, “Robust movable-antenna position optimization with imperfect CSI for MISO systems,” 
+
+IEEE Commun. Lett. , vol. 29, no. 7, pp. 1594–1598, Jul. 2025. [28] Q. Li, W. Mei, R. Zhang, and B. Ning, “Trajectory optimization for minimizing movement delay in movable antenna systems,” IEEE Trans. Wireless Commun. , vol. 25, pp. 6986–6999, 2026. [29] R. Feng et al., “Performance optimization for movable antenna enhanced MISO-OFDM systems,” arXiv preprint , 2025. [Online]. Available: https://arxiv.org/abs/2510.01789 [30] C. Liu, W. Mei, Z. Chen, J. Fang, and B. Ning, “A general optimiza-tion framework for movable antenna systems via discrete sampling,” 
+
+IEEE Wireless Commun. Lett. , vol. 15, pp. 475–479, 2026. [31] W. Ma, L. Zhu, and R. Zhang, “Compressed sensing based channel estimation for movable antenna communications,” IEEE Commun. Lett. , vol. 27, no. 10, pp. 2747–2751, Oct. 2023. [32] Z. Xiao et al., “Channel estimation for movable antenna communi-cation systems: A framework based on compressed sensing,” IEEE Trans. Wireless Commun. , vol. 23, no. 9, pp. 11 814–11 830, Sep. 2024. [33] R. Zhang et al., “Channel estimation for movable-antenna MIMO systems via tensor decomposition,” IEEE Wireless Commun. Lett. ,vol. 13, no. 11, pp. 3089–3093, Nov. 2024. [34] Z. Zhang, J. Zhu, L. Dai, and R. W. Heath, “Successive Bayesian reconstructor for channel estimation in fluid antenna systems,” IEEE Trans. Wireless Commun. , vol. 24, no. 3, pp. 1992–2006, Mar. 2025. [35] C. Skouroumounis and I. Krikidis, “Fluid antenna with linear MMSE channel estimation for large-scale cellular networks,” IEEE Trans. Commun. , vol. 71, no. 2, pp. 1112–1125, 2023. [36] S. Ji, C. Psomas, and J. Thompson, “Correlation-based machine learning techniques for channel estimation with fluid antennas,” in 
+
+Proc. IEEE ICASSP , Seoul, Korea, 2024, pp. 8891–8895. [37] Y. Huang, W. Mei, X. Wei, Z. Chen, and B. Ning, “CNN-based channel map estimation for movable antenna systems,” in Proc. IEEE SPAWC , Surrey, United Kingdom, Jul. 2025, pp. 1–5. [38] Q. Shi, M. Razaviyayn, Z.-Q. Luo, and C. He, “An iteratively weighted MMSE approach to distributed sum-utility maximization for a MIMO interfering broadcast channel,” IEEE Trans. Signal Process. ,vol. 59, no. 9, pp. 4331–4340, Sep. 2011. [39] A. Moffet, “Minimum-redundancy linear arrays,” IEEE Trans. Anten-nas Propag. , vol. 16, no. 2, pp. 172–175, 1968. [40] X. Shao, Q. Jiang, and R. Zhang, “6D movable antenna based on user distribution: Modeling and optimization,” IEEE Trans. Wireless Commun. , vol. 24, no. 1, pp. 355–370, 2025. [41] H. Hua et al., “Hierarchically tunable 6DMA for wireless communi-cation and sensing: Modeling and performance optimization,” IEEE Trans. Wireless Commun. , vol. 25, pp. 4721–4736, 2026. [42] X. Shao et al., “A tutorial on six-dimensional movable antenna for 6G networks: Synergizing positionable and rotatable antennas,” IEEE Commun. Surveys Tuts. , vol. 28, pp. 3666–3709, 2026.
