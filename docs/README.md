@@ -6,38 +6,32 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-18
-- 运行时间：2026-06-18 22:03:49 UTC
+- 最新运行日期：2026-06-19
+- 运行时间：2026-06-19 21:49:08 UTC
 - 运行状态：成功
-- 本次总论文数：6
+- 本次总论文数：4
 - 精读区：3
-- 速读区：3
+- 速读区：1
 
 ### 今日简报（AI）
-今天共处理6篇论文，精读重点在联合信源信道编码和生成式信道估计。最值得关注SA-RA-JSCC的SNR自适应编码与感知-失真权衡下的生成式信道估计。后续可探索自适应编码机制及生成模型在通信中的实用化方案。
-- 详情：[/202606/18/README](/202606/18/README)
+今日推荐4篇论文，精读2篇高分研究分别聚焦无线基础模型的Transformer效率优化与MIMO信道生成扩散流匹配。最值得关注ConsisFormer利用通道一致性提升计算效率，以及基于扩散/流匹配的信道生成方法。建议普通读者优先了解无线通信中AI模型的轻量化设计思路。
+- 详情：[/202606/19/README](/202606/19/README)
 
 ### 精读区论文标签
-1. [SA-RA-JSCC: SNR-Adaptive and Semantic-Rate-Aware Joint Source-Channel Coding](/202606/18/2606.17940v1-sa-ra-jscc-snr-adaptive-and-semantic-rate-aware-joint-source-channel-coding)  
+1. [ConsisFormer: Compute-Efficient Transformer for Wireless Foundation Models Based on Channel Consistency](/202606/19/2606.19953v1-consisformer-compute-efficient-transformer-for-wireless-foundation-models-based-on-channel-consistency)  
    标签：评分：9.0/10、query:channel-nn
-   evidence：面向SNR自适应的深度学习联合源信道编码
-2. [A Perception vs. Distortion Perspective on Score-Based Generative Channel Estimation](/202606/18/2606.16815v1-a-perception-vs-distortion-perspective-on-score-based-generative-channel-estimation)  
+   evidence：用于无线信道的计算高效Transformer
+2. [Site-Specific MIMO Channel Generation via Diffusion and Flow Matching: Fidelity, Efficiency, and Downstream Utility](/202606/19/2606.20098v1-site-specific-mimo-channel-generation-via-diffusion-and-flow-matching-fidelity-efficiency-and-downstream-utility)  
+   标签：评分：9.0/10、query:channel-nn
+   evidence：使用扩散模型和流匹配生成MIMO信道，直接应用神经网络于信道建模
+3. [Quantum-classical physics-informed Kolmogorov-Arnold networks for PDEs](/202606/19/2606.20326v1-quantum-classical-physics-informed-kolmogorov-arnold-networks-for-pdes)  
    标签：评分：8.0/10、query:channel-nn
-   evidence：将基于分数的生成模型应用于信道估计这一核心通信任务
-3. [Point-Cloud-Assistant Localized Statistical Channel Prediction by Tangent Gaussian Splatting](/202606/18/2606.18734v1-point-cloud-assistant-localized-statistical-channel-prediction-by-tangent-gaussian-splatting)  
-   标签：评分：8.0/10、query:channel-nn
-   evidence：点云辅助的本地化统计信道预测
+   evidence：量子经典物理信息KAN网络求解偏微分方程，与通信中KAN和PINN直接相关
 
 ### 速读区论文标签
-1. [Deep Learning-Based Automatic Modulation Classification Using GRU Networks](/202606/18/2606.15742v1-deep-learning-based-automatic-modulation-classification-using-gru-networks)  
+1. [Physics-Informed Neural Network with Squeeze-Excitation-like Attention](/202606/19/2606.19853v1-physics-informed-neural-network-with-squeeze-excitation-like-attention)  
    标签：评分：7.0/10、query:channel-nn
-   evidence：GRU用于通信调制分类
-2. [Deep Learning-Empowered Movable-Antenna Position Optimization with Partial CSI](/202606/18/2606.17543v1-deep-learning-empowered-movable-antenna-position-optimization-with-partial-csi)  
-   标签：评分：7.0/10、query:channel-nn
-   evidence：基于深度学习的可移动天线位置优化
-3. [InTrain: Intrinsic Trainability for Zero-Cost Neural Architecture Search](/202606/18/2606.18676v1-intrain-intrinsic-trainability-for-zero-cost-neural-architecture-search)  
-   标签：评分：7.0/10、query:channel-nn
-   evidence：零成本神经架构搜索，寻找可训练架构
+   evidence：物理信息神经网络引入注意力机制，与通信中的PINN需求相关
 
 
 <div class="dpr-home-promo-card">
