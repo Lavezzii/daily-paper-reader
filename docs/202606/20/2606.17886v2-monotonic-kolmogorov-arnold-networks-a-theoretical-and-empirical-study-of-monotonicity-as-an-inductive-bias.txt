@@ -1,0 +1,1074 @@
+Title: Monotonic Kolmogorov-Arnold Networks: A Theoretical and Empirical Study of Monotonicity as an Inductive Bias
+
+URL Source: https://arxiv.org/pdf/2606.17886v2
+
+Published Time: Fri, 19 Jun 2026 00:33:30 GMT
+
+Number of Pages: 19
+
+Markdown Content:
+# Monotonic Kolmogorov–Arnold Networks: A Theoretical and Empirical Study of Monotonicity as an Inductive Bias 
+
+Mikhail Krasnov, Blaž Bertalaniˇ c, Carolina Fortuna 
+
+Jozef Stefan Institute 
+
+# Abstract 
+
+Monotonicity has been a long-running architectural inductive bias for neural net-works, motivated by tabular, scientific, and economic settings where outputs are known to respond monotonically to certain inputs. Existing approaches are MLP-or flow-based and lack per-edge functional transparency; the only Kolmogorov– Arnold Network (KAN) variant with monotonicity, MonoKAN, enforces the con-straint only on a restricted parameter subset and requires a projection-style training procedure. We close this gap with MKAN , a KAN with hard monotonicity guar-anteed for all parameter values via exponential reparameterization of B-spline coefficients, positive edge weights, and a monotone base activation. Training reduces to standard unconstrained gradient descent. Our headline theoretical contri-bution is a representation-cost theorem: any CK , K > 0 feature extractor inducing a ball-shaped semantic-neighborhood partition admits a monotone realization of the equivalent neighborhood structure at N ′ = N ∗ + k ≤ 2N ∗, where k is the number of non-monotone coordinates of the original. The bound is architecture-agnostic and gives a principled sizing rule for monotone encoders. Empirically, MKAN is competitive with state-of-the-art monotone NNs on the SMM/ICML-2024 benchmark while being the only method that combines hard unconstrained monotonicity with KAN’s per-edge functional transparency; the 2N ∗ prediction is validated in a self-supervised feature-size sweep on four real datasets, and on a controlled monotone-generative dataset MKAN recovers ground-truth factors with substantially higher Spearman alignment than KAN, MLP, and linear baselines. 
+
+# 1 Introduction 
+
+Monotonicity is one of the most natural and widely-used inductive biases for neural networks. In tabular, scientific, and economic applications, certain inputs are known a priori to act monotonically on the output: higher dosage should not lower predicted toxicity, larger debt should not lower default risk, larger bean area should not predict a smaller bean class Daniels and Velikova [2010], Cano et al. [2019], Cole and Williamson [2019], Wang and Gupta [2020]. Encoding this prior structurally rather than through data gives two advantages: it is a hard constraint that does not vanish off-distribution, and it provides functional transparency Rudin et al. [2022] where the sign of each input’s effect is determinate by construction. Monotone neural networks span over two decades of work, from min–max architectures Sill [1998], Igel [2024] and deep monotone MLPs Daniels and Velikova [2010], Runje and Shankaranarayana [2023], Sartor and Shankaranarayana [2025], through Deep Lattice Networks You et al. [2017], Gupta et al. [2016], Milani Fard et al. [2016], Yanagisawa et al. [2022], certified Liu et al. [2020] and Lipschitz / bi-Lipschitz Kim and Lee [2024], Wang et al. [2024] formulations, principled initialization Hoedt et al. [2023], and a parallel line on monotone normalizing flows Huang et al. [2018], Wehenkel and Louppe [2019], De Cao et al. [2020], Sorrenson et al. [2020]. Across this 
+
+Preprint. 
+
+> arXiv:2606.17886v2 [cs.LG] 18 Jun 2026
+
+entire literature the backbone is an MLP, a lattice, or an autoregressive flow none of which preserve the per-edge functional transparency that motivates Kolmogorov–Arnold Networks (KANs) Liu et al. [2026], which place a learnable univariate spline on each edge and expose how every input–output coordinate pair contributes to the output. The natural question is whether KAN’s edge-level transparency can be combined with hard mono-tonicity. The only prior answer, MonoKAN Polo-Molina et al. [2025], uses cubic Hermite splines with constrained slopes, but the constraint holds only on a restricted parameter subset, requires projection-style training, and has been evaluated only in supervised settings. To our knowledge, no prior work delivers a KAN with hard monotonicity guaranteed for all parameter values, trainable by standard gradient descent, and supported by a representation-theoretic guarantee. 
+
+We close this gap through the following contributions: C1: Hard, projection-free monotonicity in a KAN. MKAN enforces monotonicity by construction through (i) exponential reparameterization of B-spline coefficients Wang and Branders [2025], (ii) positive edge weights, and (iii) a monotone base activation. Monotonicity is guaranteed across all 
+
+parameter values, so optimization reduces to standard gradient descent. This closes the gap left open by MonoKAN Polo-Molina et al. [2025]. 
+
+C2: A representation-cost theorem for monotonicity. Our central theoretical contribution is a 
+
+representation-cost theorem (Theorem 3): any CK feature extractor inducing a ball-shaped semantic-neighborhood partition admits a monotone realization of the same partition at exactly N ′ = N ∗ + k
+
+output dimensions, where 0 ≤ k ≤ N ∗ is the number of non-monotone coordinates of the source extractor; the worst case k = N ∗ gives the headline 2× bound. The result is architecture-agnostic and gives a principled sizing rule for monotone encoders. 
+
+C3: Empirical validation across supervised and self-supervised regimes. On the SMM/ICML-2024 benchmark suite, MKAN is competitive with state-of-the-art monotone neural networks on classification (COMPAS, LoanDefaulter, ChestXRay, Heart Disease) and regression (BlogFeedback, Auto MPG) tasks, while uniquely providing per-edge functional transparency. In a self-supervised setting, a feature-size sweep on Fashion MNIST, MNIST, Dry Bean, and MAGIC classification datasets validates the 2N ∗ prediction of Theorem 3, and on a controlled monotone-generative synthetic dataset MKAN achieves substantially higher Spearman alignment between learned and ground-truth factors than KAN, MLP, and linear baselines. 
+
+# 2 Related Work 
+
+Monotonic neural networks. Architectural monotonicity has been studied for over two decades across several families: min–max networks Sill [1998], Igel [2024] compose pointwise min/max over linear pieces with non-negative weights; deep monotone MLPs Daniels and Velikova [2010], Runje and Shankaranarayana [2023], Sartor and Shankaranarayana [2025] combine non-negative weights with carefully-chosen activations, with recent work removing bounded-activation requirements and proving universal approximation; lattice approaches You et al. [2017], Gupta et al. [2016], Milani Fard et al. [2016], Yanagisawa et al. [2022] parameterize piecewise-linear interpolants over a grid with monotone vertex constraints; certified Liu et al. [2020] networks train standard MLPs and verify post-hoc; Lipschitz and bi-Lipschitz monotonic networks Kim and Lee [2024], Wang et al. [2024] enforce monotonicity together with smoothness or invertibility; principled initialization for the family is studied in Hoedt et al. [2023]. A parallel line embeds monotonicity in normalizing flows Huang et al. [2018], Wehenkel and Louppe [2019], De Cao et al. [2020], Sorrenson et al. [2020], where the monotone transformation is autoregressive and aimed at density estimation rather than function approximation. Across this entire body of work the backbone is an MLP, a lattice, or an autoregressive flow; none preserves the per-edge transparency that makes Kolmogorov–Arnold Networks attractive for interpretability, and none pairs monotonicity with a representation-cost theorem of the kind we prove in Theorem 3. 
+
+Kolmogorov–Arnold Networks. KANs [Liu et al., 2026] replace fixed node activations with learnable univariate splines on each edge, exposing every input–output coordinate-pair contribution. Standard KAN splines are unconstrained and the overall map is non-monotone in general Somvanshi et al. [2025]. The only prior shape-constrained KAN, MonoKAN [Polo-Molina et al., 2025], uses cubic Hermite splines with constrained slopes, but its monotonicity holds only on a restricted 2parameter subset, requires projection-style training, and has been evaluated only in supervised settings. MKAN closes this gap by combining the all-parameter-values exponential reparameterization of monotone cubic B-splines Wang and Branders [2025] with positive edge weights and a monotone base activation, yielding hard monotonicity for every parameter value, plain gradient descent training, and the representation-cost guarantee of Theorem 3. 
+
+Monotonicity as an inductive bias for representation learning. Monotonicity has been studied primarily as a supervised constraint. As an inductive bias for representation learning it is largely soft, enforced through regularization in encoder objectives Burgess et al. [2018], Chen et al. [2016] rather than through architecture, despite many domains where interpretable representations are desirable (physical sciences, fairness-constrained decision-making, biomedical measurements) coming with strong monotone priors Daniels and Velikova [2010], Cano et al. [2019], Cole and Williamson [2019], Wang and Gupta [2020]. We pursue hard architectural monotonicity in this setting by using MKAN as both encoder and decoder of a VAE Burgess et al. [2018] and DIP-VAE Kumar et al. [2017], treated purely as an autoencoding framework. Theorem 3 bounds the embedding-dimension overhead required to preserve semantic neighborhood structure under this constraint, in an architecture-agnostic way. We frame the self-supervised contribution as monotone neighborhood preservation and monotone latent alignment with ground-truth factors, not as an identifiability-style disentanglement claim. 
+
+# 3 Monotonicity as an Inductive Bias 
+
+3.1 Background: KAN 
+
+A KAN layer [Liu et al., 2026] maps an input vector (x1, . . . , x Nin ) ∈ [−1, 1] Nin to an output vector of dimension Nout . Each edge (i, j ) carries a learnable univariate spline function ϕij parameterized by B-spline coefficients. Formally, the j-th output of a KAN layer is: 
+
+F (j)(x1, . . . , x Nin ) = 
+
+> Nin
+
+X
+
+> i=1
+
+
+
+w(s) 
+
+> ij
+
+ϕij (xi) + w(b) 
+
+> ij
+
+SiLU( xi)
+
+
+
+, (1) where ϕij (x) = PK+pk=1 γ(k) 
+
+> ij
+
+hk(x) is a B-spline of order p with K grid knots and basis functions 
+
+{hk}. The coefficients γ(k) 
+
+> ij
+
+are learnable parameters. The weights w(s) 
+
+> ij
+
+scale the spline output, w(b)
+
+> ij
+
+scale the SiLU skip connection, and together they form a two-component activation per edge. The full description of the proposed architecture could be found at Appendix A.1. 
+
+3.2 Enforcing Monotonicity in KANs (MKAN) 
+
+In this subsection, we describe how to enforce monotonicity in KANs to enhance interpretability. To enforce monotonicity, we require: (1) each spline ϕ′ 
+
+> ij
+
+to be monotonically increasing, (2) all scaling weights to be positive, and (3) the base activation to be monotonically increasing. 
+
+Monotonic splines via coefficient ordering. A cubic B-spline ϕ′(x) = PK+pk=1 γ′(k)hk(x) is guaranteed to be monotonically increasing if its coefficients are strictly ordered [de Boor, 1978, Wang and Branders, 2025]: 
+
+γ′(1) < γ ′(2) < · · · < γ ′(K+p). (2) We enforce this condition through an exponential reparameterization . Instead of directly learning the constrained γ′ coefficients, we introduce unconstrained parameters ω(k) 
+
+> ij
+
+∈ R and define: 
+
+γ′(1)  
+
+> ij
+
+= ω(1)  
+
+> ij
+
+, γ′(k) 
+
+> ij
+
+= ω(1)  
+
+> ij
+
++
+
+> k
+
+X
+
+> t=2
+
+exp  ω(t)
+
+> ij
+
+, k ∈ { 2, . . . , K + p}. (3) Since exp( ω) > 0 for all ω ∈ R, the condition in Eq. (8) is automatically satisfied. The inverse mapping from γ′ to ω is: 
+
+ω(1)  
+
+> ij
+
+= γ′(1)  
+
+> ij
+
+, ω(k) 
+
+> ij
+
+= log  γ′(k) 
+
+> ij
+
+− γ′(k−1) 
+
+> ij
+
+, k ∈ { 2, . . . , K + p}. (4) 3MKAN layer. Combining monotonic splines with positive weight constraints and a monotonic activation, the MKAN layer is defined as: 
+
+F ′(j)(x1, . . . , x Nin ) = 
+
+> Nin
+
+X
+
+> i=1
+
+
+
+exp( w′(s) 
+
+> ij
+
+) ϕ′ 
+
+> ij
+
+(xi) + exp( w′(b) 
+
+> ij
+
+) ReLU( xi)
+
+
+
++ bj , (5) where the exponential ensures positivity of the effective weights. The bias term bj is necessary because exp( w) · ReLU( x) ≥ 0 for all x, so without bias the layer output would be bounded below. We initialize these base output coefficients according to Hoedt et al. [2023]. Stacking MKAN layers yields a monotonically increasing feature extractor, since the composition of monotonically increasing functions is monotonically increasing. 
+
+Parameter count. An MKAN layer has (K + p) · Nin · Nout spline parameters (same as KAN) plus Nin · Nout base weight parameters and Nout bias parameters. The overhead compared to KAN is exactly Nout parameters for the bias. 
+
+3.3 Theoretical Analysis 
+
+In this section, we address a fundamental question: how do imposed monotonicity constraints affect the ability of FE to measure semantic similarity in the feature space using a distance metric? Semantic structures in feature space are referred to as semantic neighborhoods, as they capture similarity between samples according to a chosen distance metric Fu et al. [2020]. For theoretical tractability, we assume existence of arbitrary FE, which feature space can be partitioned with ball-shaped semantic neighborhoods. Full proofs are available in Appendix B. 
+
+Definition 1 (Feature extractor) . A feature extractor is a CK mapping F : [ −1, 1] N → RN ∗
+
+,
+
+F = {F j }N ∗
+
+> j=1
+
+.
+
+We define the FE on a restricted domain since real-world data, such image intensities, are inherently bounded. Furthermore, KANs are formulated on the same restricted domain [−1, 1] N , ensuring consistency between the model and the data representation. Next we give definitions of a monotonic feature extractor and a semantic neighborhood: 
+
+Definition 2 (Monotonic feature extractor) . A feature extractor F is monotonically increasing if for all i ∈ { 1, . . . , N } and j ∈ { 1, . . . , N ∗}, the partial derivative ∂F j 
+
+> ∂x i
+
+(x) ≥ 0 for all x ∈ [−1, 1] N .
+
+Definition 3 (Semantic neighborhood) . A semantic neighborhood CR(xc) with radius R and center 
+
+xc in RN ∗
+
+is the open set CR(xc) = {x ∈ RN ∗
+
+: ( x − xc)⊤A(x − xc) < R 2}, where A ∈ RN ∗×N ∗
+
+is positive definite. In the special case A = I, the neighborhood reduces to an open Euclidean ball is called ball-shaped semantic neighborhood. 
+
+We define dataset without any assumptions on the data distribution: 
+
+Definition 4 (Dataset) . Dataset D is a finite set of pairs 
+
+{(xi, l i)}, x ∈ RN , l ∈ { 1, . . . , T }
+
+where x is one training instance (i.e. input vector) and l is a label and T is a number of classes. 
+
+Definition 5 (Semantic neighborhood partition) . A feature extractor F induces a semantic neighbor-hood partition of a dataset D if there exist disjoint semantic neighborhoods {Ci}Ci=1 in RN ∗
+
+such that for every x ∈ D, there exists a unique i with F (x) ∈ Ci.
+
+We first establish that any feature extractor decomposes into monotonic components, which both consist of a polynomial and residual terms, which is pleasable since Kolmogorov-Arnold Networks are pice-wise defined polynomials. 
+
+Theorem 1 (Monotonic decomposition) . Let F : [ −1, 1] N → RN ∗
+
+be a feature extractor as per Definition1. Then F admits a decomposition 
+
+F (x) = Finc (x) + Fdec (x),
+
+where Finc , F dec : [ −1, 1] N → RN ∗
+
+are increasing and decreasing, respectively. 
+
+4Using this decomposition and Lemma 2, we construct a monotonic feature extractor that preserves semantic neighborhoods. 
+
+Lemma 2. For any R > 0, N ∗ > 0, 0 ≤ k ≤ N ∗, and xc ∈ RN ∗+k, if a finite set of points P
+
+belongs to Cρs 
+
+> R
+
+(xc) = {x : ρs(x, x c) < R }, then there exists a semantic neighborhood CR(xc)
+
+(Definition 3) that contains P and is contained in Cρs 
+
+> R
+
+(xc).
+
+Theorem 3 (Representation cost of monotonicity) . Let F : [ −1, 1] N → RN ∗
+
+be a feature extractor that induces a semantic neighborhood partition of a dataset D with ball-shaped neighborhoods 
+
+{Ci}Ci=1 , and let 0 ≤ k ≤ N ∗ be the number of non-monotone coordinate functions of F . Then there exists an increasing feature extractor F ′ : [ −1, 1] N → RN ′
+
+with N ′ = N ∗ + k ≤ 2N ∗ and semantic neighborhoods {C′
+
+> i
+
+}Ci=1 in RN ′
+
+that induce the same partition of D.
+
+Practical implications. Theorem 3 states that replacing a general feature extractor (e.g., KAN) with a monotonic one (e.g., MKAN) preserves the ability to separate data points into the same neighborhoods, provided the feature dimensionality is increased by at most 2× on an arbitrary data distribution . This result is architecture-agnostic as it applies to any CK feature extractor, and provides a principled guideline for choosing MKAN feature dimensions. Since neighborhood structure is preserved, classification methods that rely on local proximity, such as KNN, can achieve comparable performance with a monotonic feature extractor, given a feature size of at most twice the original. 
+
+# 4 Experiments 
+
+We evaluate MKAN in two regimes. Supervised (Section 4.1) reproduces the SMM/ICML-2024 protocol of Igel [2024] verbatim with 21 train/test splits per dataset, paired two-sided Wilcoxon at 
+
+p < 0.001 on three monotone multivariate polynomials ( Nin ∈ { 2, 4, 6}) and on the SMM benchmark suite (COMPAS, LoanDefaulter, ChestXRay, Heart Disease for classification; BlogFeedback, Auto MPG for regression). Self-supervised (Section 4.2) deploys MKAN as both encoder and decoder of a β-VAE / DIP-VAE on (i) a controlled monotone-generative synthetic ellipses dataset (3 runs × 2K epochs; β ∈ { 5, 10 , 20 }, λd=λod ∈ { 0, 10 , 50 }) and (ii) a feature-size sweep over {2, 4, 8, 16 , 32 }
+
+on MNIST, Fashion-MNIST, Dry Bean, and MAGIC (5 runs × 200 epochs; KNN classifier, k = 10 ). All runs use Adam with lr 10 −3, batch size 256 , fixed VAE variance σ=0 .05 , and execute on CPU (AMD EPYC 75F3) except ChestXRay (single NVIDIA A100). Per-dataset MKAN configurations and full hyperparameter ranges are reported in Appendix C; an anonymized reference implementation accompanies this submission as supplementary material. 
+
+4.1 Supervised Experiments 
+
+Our supervised evaluations are divided into two sections covering synthetic and public data: in Section 4.1.1, MKANs are evaluated on the approximation of three generated monotonic multivariate functions with different input sizes, while In Section 4.1.2, we benchmark MKAN on standard classification and regression datasets. Both scenarios follows established way of MNN evaluation and exactly repeats evaluation pipelines from Igel [2024]. 
+
+4.1.1 Monotonic multivariate functions approximation 
+
+Three multivariate monotonic functions are generated with three input sizes Nin ∈ { 2, 4, 6} and domains [0 , 1] Nin as random polynomials of degree no more than two with positive coefficients. For example, for the input of size two we have: 
+
+ftarget (x1, x 2) = ( w1 + w2x1 + w3x2 + w4x1x2 + w5x21 + w6x22)/(X
+
+> i
+
+wi) (6) with w1, ..w 6 ∼ U(0 , 1) . KAN and MKANs are specified to have two layers to capture interactions in input data, grid size G = 5 and grid range [0 , 1] . The data generation process and models optimization exactly repeat those from Igel [2024] for fair evaluation against existing baselines: 21 train/test splits are created and the median value of MSE score is selected for comparison using a paired two-sided Wilcoxon test with p < 0.001. Table 1 shows MKAN performing on par with the strongest monotone-NN baseline (SMM) and substantially better than vanilla KAN. MKAN matches SMM at Nin = 4 (both 0.01 MSE) and trails 5by at most 0.03 at Nin = 2 and Nin = 6 , while consistently outperforming the hierarchical lattice baseline (HLL). Standard KAN, lacking any monotonicity prior, overfits catastrophically as the input dimension grows ( 105 .12 MSE at Nin = 4 , 1.6 × 10 4 at Nin = 6 ), confirming that the monotone inductive bias makes the architecture usable on this task. MonoKAN is omitted from this comparison; see the table footnote for details. Table 1: Median MSE over 21 train/test splits on three monotone multivariate function approximation tasks of input dimension d ∈ { 2, 4, 6}, following the SMM/ICML-2024 protocol of Igel [2024]. Bold = best; italic = second-best; tied entries are bolded together. Significance is assessed via paired two-sided Wilcoxon at p < 0.001 .
+
+Nin KAN MKAN (ours) c SMM a HLL b
+
+2 0.02 0.01 0.00 0.03 4 105.12 0.01 0.01 0.03 6 16063 0.05 0.02 0.10      
+
+> aSmooth Min-Max Igel [2024]; bHierarchical Lattice Layer Yanagisawa et al. [2022]; cMonoKAN Polo-Molina et al. [2025] omitted (no public implementa-tion; paper does not evaluate synthetic functions).
+
+4.1.2 Benchmarking on classification and regression datasets 
+
+We evaluate MKAN on the SMM/ICML-2024 benchmark suite [Igel, 2024], which provides stan-dardized partially monotone datasets. Tables 2–3 show that MKAN is broadly competitive with the strongest monotone-NN baselines (SMM, LMN, MonoKAN) without uniformly dominating them. On classification, MKAN leads on COMPAS ( 69 .6 vs. SMM 69 .5) and LoanDefaulter ( 65 .49 vs. SMM-mini 65 .47 ), ranks second on ChestXRay-pretrained ( 67 .7 vs. SMM 67 .9) and Heart Disease (89 .6 vs. SMM-sig. 91 .3), and trails SMM on ChestXRay end-to-end ( 68 .7 vs. 70 .1). On regression, MKAN ties SMM-mini on BlogFeedback ( 0.154 RMSE) and is within 0.5 MSE of MonoKAN on Auto MPG ( 6.7 vs. 6.2), though the high variance ( ±4.2) precludes a statistically significant comparison. Overall, MKAN matches leading monotone-NN methods on partially-monotone tabular and structured data, while uniquely combining hard monotonicity for all parameter values with KAN’s per-edge functional transparency. 
+
+4.2 Self-Supervised Learning 
+
+In this section, we firstly evaluate the monotone latent alignment of MKANs compared to standard KAN, MLP, and Linear baselines within β-VAE and DIP-VAE frameworks on a synthetic dataset (Section 4.2.1) in which ground-truth factors relate to observations through monotonic dependencies, a controlled regime not addressed in prior work. We show that MKANs achieve substantially higher Spearman alignment with ground-truth factors than KAN, MLP, and Linear, while inheriting KAN’s per-edge functional interpretability. Then, in Section 4.2.2, we evaluate KANs against MKANs within the VAE framework ( β = 1 ) on four classification datasets. We compare MKANs and KANs across varying feature sizes to empirically validate Theorem 3, which characterizes the representation cost of monotonicity on general data distributions. 
+
+4.2.1 Synthetic ellipses dataset 
+
+As a proof of concept, we construct a synthetic dataset in which, unlike those used in related work, all observed pixels depend monotonically on three ground-truth latent factors z = ( z1, z 2, z 3). Each sample x is a 20 × 20 grayscale image containing an exponentially decaying elliptical spot: 
+
+xi,j = ( z3/100) exp  −(( i − 10) 2/z 21 ) − (( j − 10) 2/z 22 ) , i, j ∈ { 1, . . . , 20 }, (7) centered at (10 , 10) with semi-axes r1 = z1 and r2 = z2, where z1, z 2 ∼ U{ 1, . . . , 10 } and 
+
+z3 ∼ U{ 1, . . . , 100 }. By construction, the mapping from latent factors to observations is strictly monotone: increasing z1 or z2 expands the set of non-zero pixels, while increasing z3 raises their intensity uniformly. 6Table 2: Accuracy on the SMM/ICML-2024 classification benchmark suite Igel [2024]. Bold = best per column. Marker ∗ indicates per-edge functional interpretability (only KAN-based methods qualify); † indicates hard, unconstrained monotonicity. COMPAS LoanDefaulter ChestXRay Heart Disease Method ↑↑ Test Acc ↑↑ Test Acc ↑↑ Test Acc pretrained 
+
+↑↑ Test Acc end-to-end ↑↑ Test Acc Certified 68 .8 ± 0.2 65 .2 ± 0.1 62 .3 ± 0.2 66 .3 ± 1.0
+
+LMN † 69 .3 ± 0.1 65 .44 ± 0.03 67 .6 ± 0.6 70 .0 ± 1 .4 89 .6 ± 1.9
+
+LMN † mini 65 .28 ± 0.01 
+
+COMET 86 ± 3
+
+Crystal † 66 .3 ± 0.1 65 .0 ± 0.1
+
+CMNN † 69 .2 ± 0.2 65 .3 ± 0.01 89 ± 0
+
+XG 68 .5 ± 0.1 63 .7 ± 0.1
+
+SMM † 
+
+> 64
+
+69 .5 ± 0 .1 65 .41 ± 0.03 67 .9 ± 0.4 70 .1 ± 1.2 88 .5 ± 1.0
+
+SMM † 
+
+> 64
+
+mini 65 .47 ± 0 .00 
+
+SMM † 
+
+> 64
+
+sig. 91 .3 ± 1.89 
+
+MonoKAN ∗ 69 .0 ± 0.0 65 .3 ± 0.1 89 .0 ± 0.0
+
+MKAN ∗† 69 .6 ± 0.00 65 .49 ± 0.00 67 .7 ± 0 .02 68 .7 ± 0.01 89 .6 ± 0 .02     
+
+> ∗per-edge functional interpretability; †hard, unconstrained monotonicity. MKAN is the only method satisfying both. Reported uncertainties match those in the original references; small std values for MKAN/MonoKAN are limited by available seeds and should be interpreted as point estimates rather than tight confidence intervals.
+
+We train DIP-VAE with a three-dimensional latent space, employing MKAN, KAN, Linear, and MLP architectures for both encoder and decoder, varying λd = λod ∈ { 0, 10 , 50 }. We evaluate how well the learned latent dimensions recover the ground-truth factors. Treating KAN as the state-of-the-art architecture for functionally interpretable machine learning, we demonstrate that MKANs add 
+
+monotone latent alignment on top of KAN’s per-edge functional transparency in the regime where ground-truth factors act monotonically on observations. We adopt Spearman’s rank correlation coefficient r between per-sample sums of learned and ground-truth latents as our primary metric, which directly quantifies the strength of monotonic correspondence and is a natural fit for this dataset’s monotone-generative structure. As secondary diagnostics, we report the DCI score Eastwood and Williams [2018], measuring the degree to which each latent dimension captures a single generative factor, and reconstruction error computed as the ℓ2 norm between reconstructed and original images. Table 4 shows that monotonic architectures (MKAN and SMM) achieve better DCI and Spearman’s 
+
+r scores than unconstrained ones (KAN, Linear, and MLP), indicating that monotonic constraints serve as a powerful inductive bias for reflecting underlying semantics in the learned feature space. Unconstrained architectures may yield better reconstruction scores due to their wider parameter search space, even if the learned representations do not faithfully capture the data’s generative structure. Notably, MKAN achieves Spearman’s r and DCI scores of 83 and 72 .6, significantly outperforming KAN at 49 .4 and 10 , while KAN obtains a better reconstruction score of 5.8 versus 12 .1.
+
+4.2.2 Representation cost of monotonicity (Validating Theorem 3) 
+
+As shown in Section 3.2, MKANs guarantee hard monotonicity while inheriting KAN’s per-edge functional transparency. Here, we empirically evaluate the performance difference between MKANs and KANs in a self-supervised classification setting on general data. Theorem 3 predicts that an MKAN with 2N ∗ features should achieve classification performance comparable to or better than a KAN with N ∗ features. We evaluate both architectures within a VAE framework across four datasets and feature sizes {2, 4, 8, 16 , 32 }, using MNIST, Fashion MNIST, Dry Bean dry [2020], and MAGIC Gamma Telescope Bock [2004]. These datasets were selected to 7Table 3: Test error on the SMM/ICML-2024 regression benchmark suite Igel [2024]. Bold = best per column; tied entries are bolded together. Marker ∗ indicates per-edge functional interpretability; †
+
+indicates hard, unconstrained monotonicity. Method BlogFeedback 
+
+↓↓ RMSE Auto MPG 
+
+↓↓ MSE Certified 0.158 ± 0.001 
+
+LMN † 0.160 ± 0.001 7.58 ± 1.2
+
+LMN † mini 0.155 ± 0.001 
+
+COMET 8.81 ± 1.81 
+
+Crystal † 0.164 ± 0.002 
+
+CMNN † 0.156 ± 0.001 8.37 ± 0.08 
+
+XG 0.176 ± 0.005 
+
+SMM † 
+
+> 64
+
+0.192 ± 0.002 7.51 ± 1.6
+
+SMM † 
+
+> 64
+
+mini 0.154 ± 0.0004 
+
+MonoKAN ∗ 0 .155 ± 0 .0 6.2 ± 0.02 
+
+MKAN (ours) ∗† 0.154 ± 0.001 6 .7 ± 4 .2                  
+
+> ∗per-edge functional interpretability; †hard, uncon-strained monotonicity. MKAN is the only method sat-isfying both. Bean MNIST
+> 248Feature size Feature size Feature size Accuracy Accuracy Feature size 24816 32 MAGIC Gamma Telescope 0.7 0.6 0.8
+> 24816 24816 32 MKAN Shifted KAN MKAN MKAN Shifted KAN MKAN MKAN Shifted KAN MKAN MKAN Shifted KAN MKAN FASHION MNIST
+
+Figure 1: Figure represents classification accuracy of MKANs versus KANs within VAE framework across multiple feature sizes, four datasets and two classification metrics. Blue lines represent KANs, while red lines represent MKANs, with a dashed line standing for MKAN with a twice-increased feature space size. This comparison directly validates Theorem 3. ensure monotonic feature transformations carry genuine semantic meaning across a range of scales and class cardinalities. Classification is performed via KNN ( K = 10 ) on learned features, with VAEs trained for 200 epochs at lr 0.001 .Figure 1 reports Accuracy score across feature sizes, with blue and red lines representing KAN and MKAN respectively; dashed lines show the MKAN curve shifted one tick left to align 2N MKAN features with N KAN features. For Dry Bean and MNIST, KAN performance at a given feature size falls between MKAN at the same and twice the size, directly validating Theorem 3. Moreover, since MKAN with 2N features significantly outperforms KAN with N features, MKAN can match 8Table 4: Best values of Spearman’s r, Reconstruction MSE and DCI scores for KAN, MKAN, SMM, MLP, and Linear approaches under DIP-VAE, across {0, 10 , 50 } λd = λod values respectively. 
+
+DIP-VAE 
+
+Method Reconstruction 
+
+l2 norm ↓↓ 
+
+Spearman’s r
+
+↑↑ 
+
+DCI 
+
+↑↑ 
+
+MLP 3.7 ± 0.1 40 .1 ± 24 .1 27 .6 ± 11 .8
+
+Linear 74 .9 ± 0.4 28 .0 ± 7.4 19 .1 ± 3.6
+
+KAN 5 .8 ± 4 .1 49 .4 ± 9.7 10 .1 ± 9.5
+
+SMM 37 .0 ± 7.7 80 .1 ± 1 .6 68 .0 ± 17 .9
+
+MKAN 12 .1 ± 0.8 83 .0 ± 0.4 72 .6 ± 0.1
+
+KAN’s performance with fewer than 2N features, justifying the benefit of preserving monotonicity without fully decomposing components as in Theorem 3. For MAGIC Gamma Telescope, MKAN surpasses KAN even at equal feature sizes, which we attribute to improved extrapolation properties of monotonic representations. 
+
+# 5 Discussion and Limitations 
+
+Zero violation rate has a measurable downstream effect. By-construction monotonicity has a measurable consequence MonoKAN cannot match: zero violation rate throughout training versus constrained-subset enforcement maintained by projection. On the synthetic ellipses dataset, where the ground truth is strictly monotone, this translates into a Spearman alignment 83 .0 vs. 49 .4 under DIP-VAE, with DIP-VAE DCI 72 .6 vs. 10 .1 (Table 4). Unconstrained baselines fit reconstruction better but do not recover monotone structure which represents a separation only available to architectures that encode the prior in their parameterization. 
+
+Monotonicity is a quantifiable trade-off, not a categorical loss. Theorem 3 reframes the cost of monotonicity as an embedding-dimension trade-off. The Dry Bean, MAGIC Gamma Telescope, MNIST, and Fashion MNIST curves in Figure 1 sit between MKAN at N ∗ and MKAN at 2N ∗,validating the prediction; on MAGIC Gamma Telescope MKAN matches KAN at equal feature size, suggesting the constraint acts as a beneficial bias rather than an overhead in monotone-structured data. 
+
+Limitations. (i) MKAN lacks an adaptive grid range. (ii) Theorem 3 is an existence result, not a learning guarantee. (iii) The analysis assumes ball-shaped neighborhoods; ellipsoidal neighborhoods (Definition 3) are a natural extension. (iv) Self-supervised experiments use β-VAE / DIP-VAE; FactorVAE-style total-correlation penalties Duan et al. [2022] are unexplored. (v) The exponential reparameterization Eq. (14) can be ill-conditioned for very large ω; weight decay sufficed here, but principled treatment may be warranted for deeper stacks. 
+
+# 6 Conclusion 
+
+The proposed MKAN establishes architectural monotonicity in Kolmogorov–Arnold Networks as a hard, projection-free, gradient-friendly inductive bias representing the first KAN variant whose monotonicity holds for every parameter value. Theorem 3 characterizes the embedding-dimension cost of this constraint precisely: at most 2×, validated empirically on four real classification datasets and exact (rather than worst-case) on data with strong monotonic structure. Together, these results recast monotonicity as a quantifiable representation-cost trade-off rather than a categorical restriction, and identify MKAN as the natural KAN-based realization that combines hard monotonicity with per-edge transparency. Such a combination is unavailable to MLP- or flow-based monotone networks. Natural next steps are partial monotonicity via per-edge masks, ellipsoidal-neighborhood theorems, and identifiability under monotone-generative data. 9References 
+
+Dry Bean. UCI Machine Learning Repository, 2020. DOI: https://doi.org/10.24432/C50S4B. Julia Angwin, Jeff Larson, Surya Mattu, and Lauren Kirchner. Machine bias. In Ethics of data and analytics , pages 254–264. Auerbach Publications, 2022. Sanjeev Arora, Nadav Cohen, Noah Golowich, and Wei Hu. A convergence analysis of gradient descent for deep linear neural networks. arXiv preprint arXiv:1810.02281 , 2018. R. Bock. MAGIC Gamma Telescope. UCI Machine Learning Repository, 2004. DOI: https://doi.org/10.24432/C52C8B. Christopher P Burgess, Irina Higgins, Arka Pal, Loic Matthey, Nick Watters, Guillaume Des-jardins, and Alexander Lerchner. Understanding disentangling in beta -vae. arXiv preprint arXiv:1804.03599 , 2018. Krisztian Buza. Feedback prediction for blogs. In Data analysis, machine learning and knowledge discovery , pages 145–152. Springer, 2013. José-Ramón Cano, Pedro Antonio Gutiérrez, Bartosz Krawczyk, Michał Wo´ zniak, and Salvador García. Monotonic classification: An overview on algorithms, performance measures and data sets. 
+
+Neurocomputing , 341:168–182, 2019. Sourav Chatterjee. Convergence of gradient descent for deep neural networks. arXiv preprint arXiv:2203.16462 , 2022. Xi Chen, Yan Duan, Rein Houthooft, John Schulman, Ilya Sutskever, and Pieter Abbeel. Info-gan: Interpretable representation learning by information maximizing generative adversarial nets. 
+
+Advances in neural information processing systems , 29, 2016. Guy W Cole and Sinead A Williamson. Avoiding resentment via monotonic fairness. arXiv preprint arXiv:1909.01251 , 2019. Hennie Daniels and Marina Velikova. Monotone and partially monotone neural networks. In IEEE Transactions on Neural Networks , volume 21, pages 906–917, 2010. Carl de Boor. A Practical Guide to Splines . Springer-Verlag, 1978. Nicola De Cao, Wilker Aziz, and Ivan Titov. Block neural autoregressive flow. In Conference on Uncertainty in Artificial Intelligence (UAI) , 2020. Simon Du, Jason Lee, Haochuan Li, Liwei Wang, and Xiyu Zhai. Gradient descent finds global minima of deep neural networks. In International conference on machine learning , pages 1675– 1685. PMLR, 2019. Yitong Duan, Lei Wang, Qizhong Zhang, and Jian Li. Factorvae: A probabilistic dynamic factor model based on variational autoencoder for predicting cross-sectional stock returns. In Proceedings of the AAAI conference on artificial intelligence , volume 36, pages 4468–4476, 2022. Cian Eastwood and Christopher KI Williams. A framework for the quantitative evaluation of disentangled representations. In International conference on learning representations , 2018. Yanwei Fu, Timothy M Hospedales, Tao Xiang, and Shaogang Gong. Semantic neighborhood-aware deep facial expression recognition. IEEE Transactions on Image Processing , 2020. Maya Gupta, Andrew Cotter, Jan Pfeifer, Konstantin Voevodski, Kevin Canini, Alexander Mangylov, Wojciech Moczydlowski, and Alexander Van Esbroeck. Monotonic calibrated interpolated look-up tables. In Journal of Machine Learning Research , volume 17, pages 1–47, 2016. Pieter-Jan Hoedt, Frederik Kratzert, Daniel Klotz, Christina Halmich, Johannes Brandstetter, Günter Klambauer, and Sepp Hochreiter. Principled weight initialisation for input-convex neural networks. 
+
+Advances in Neural Information Processing Systems (NeurIPS) , 36, 2023. Chin-Wei Huang, David Krueger, Alexandre Lacoste, and Aaron Courville. Neural autoregressive flows. In International Conference on Machine Learning (ICML) , pages 2078–2087, 2018. 10 Christian Igel. Smooth min-max monotonic networks. In International Conference on Machine Learning (ICML) , 2024. Hyunho Kim and Jong-Seok Lee. Scalable monotonic neural networks. In International Conference on Learning Representations (ICLR) , 2024. Abhishek Kumar, Prasanna Sattigeri, and Avinash Balakrishnan. Variational inference of disentangled latent concepts from unlabeled observations. arXiv preprint arXiv:1711.00848 , 2017. Xingchao Liu, Xing Han, Na Zhang, and Qiang Liu. Certified monotonic neural networks. In 
+
+Advances in Neural Information Processing Systems (NeurIPS) , volume 33, 2020. Ziming Liu, Yixuan Wang, Sachin Vaidya, Fabian Ruehle, James Halverson, Marin Soljaˇ ci´ c, Thomas Y Hou, and Max Tegmark. KAN: Kolmogorov–Arnold networks. In International Conference on Learning Representations (ICLR) , 2026. Mahdi Milani Fard, Kevin Canini, Andrew Cotter, Jan Pfeifer, and Maya Gupta. Fast and flexible monotonic functions with ensembles of lattices. In Advances in Neural Information Processing Systems (NeurIPS) , 2016. Alejandro Polo-Molina, David Alfaya, and Jose Portela. Monokan: Certified monotonic kolmogorov-arnold network. Neural Networks , page 108278, 2025. Cynthia Rudin, Chaofan Chen, Zhi Chen, Haiyang Huang, Lesia Semenova, and Chudi Zhong. Interpretable machine learning: Fundamental principles and 10 grand challenges. Statistic Surveys ,16:1–85, 2022. Davor Runje and Sharath M Shankaranarayana. Constrained monotonic neural networks. In Interna-tional Conference on Machine Learning (ICML) , pages 29338–29353, 2023. Andreas Sartor and Sharath M Shankaranarayana. Advancing constrained monotonic neural networks: Universal approximation beyond bounded activations. In International Conference on Machine Learning (ICML) , 2025. Joseph Sill. Monotonic networks. In Advances in Neural Information Processing Systems (NeurIPS) ,volume 11, 1998. Shriyank Somvanshi, Syed Aaqib Javed, Md Monzurul Islam, Diwas Pandit, and Subasish Das. A survey on kolmogorov-arnold network. ACM Computing Surveys , 58(2):1–35, 2025. Peter Sorrenson, Carsten Rother, and Ullrich Köthe. Disentanglement by nonlinear ICA with general incompressible-flow networks (GIN). In International Conference on Learning Representations (ICLR) , 2020. Ruben Wang, Arda Sahiner, Murat A Erdogdu, and Mert Pilanci. Monotone, bi-Lipschitz, and polyak-łojasiewicz networks. In International Conference on Machine Learning (ICML) , 2024. Serena Wang and Maya Gupta. Deontological ethics by monotonicity shape constraints. In Interna-tional conference on artificial intelligence and statistics , pages 2043–2054. PMLR, 2020. Zhe Wang and M Branders. Monotone cubic B-spline interpolation. Journal of Computational and Applied Mathematics , 2025. Antoine Wehenkel and Gilles Louppe. Unconstrained monotonic neural networks. In Advances in Neural Information Processing Systems (NeurIPS) , 2019. Hiroki Yanagisawa, Kohei Miyaguchi, and Takayuki Katsuki. Hierarchical lattice layer for partially monotone neural networks. Advances in Neural Information Processing Systems , 35:11092–11103, 2022. Seungil You, David Ding, Kevin Canini, Jan Pfeifer, and Maya Gupta. Deep lattice networks and partial monotonic functions. In Advances in Neural Information Processing Systems (NeurIPS) ,2017. 11 A MKAN architecture 
+
+A.1 Enforcing Monotonicity in KANs (MKAN) 
+
+In this subsection, we describe how to enforce monotonicity in KANs to enhance interpretability. To enforce monotonicity, we require: (1) each spline ϕ′ 
+
+> ij
+
+to be monotonically increasing, (2) all scaling weights to be positive, and (3) the base activation to be monotonically increasing. This structure enhances functional interpretability: each node in the network is affected by other nodes in the same monotonic way, e.g., consistently increasing or decreasing, making signal propagation directly traceable. Moreover, when the data admit monotone semantic transformations (e.g., adding active pixels to a binary image moves it toward another class), the overall monotone input–output map of the network induces monotone latent alignment : such transformations correspond to predictable, monotone directions in feature space. 
+
+Monotonic splines via coefficient ordering. A cubic B-spline ϕ′(x) = PK+pk=1 γ′(k)hk(x) is guaranteed to be monotonically increasing if its coefficients are strictly ordered [de Boor, 1978, Wang and Branders, 2025]: 
+
+γ′(1) < γ ′(2) < · · · < γ ′(K+p). (8) We enforce this condition through an exponential reparameterization . Instead of directly learning the constrained γ′ coefficients, we introduce unconstrained parameters ω(k) 
+
+> ij
+
+∈ R and define: 
+
+γ′(1)  
+
+> ij
+
+= ω(1)  
+
+> ij
+
+, γ′(k) 
+
+> ij
+
+= ω(1)  
+
+> ij
+
++
+
+> k
+
+X
+
+> t=2
+
+exp  ω(t)
+
+> ij
+
+, k ∈ { 2, . . . , K + p}. (9) Since exp( ω) > 0 for all ω ∈ R, the condition in Eq. (8) is automatically satisfied. The inverse mapping from γ′ to ω is: 
+
+ω(1)  
+
+> ij
+
+= γ′(1)  
+
+> ij
+
+, ω(k) 
+
+> ij
+
+= log  γ′(k) 
+
+> ij
+
+− γ′(k−1) 
+
+> ij
+
+, k ∈ { 2, . . . , K + p}. (10) The weights ω(k) 
+
+> ij
+
+are initialized to make corresponding coefficients γ′(k) 
+
+> ij
+
+to increase and have a scale of σ typically of order 0.05 as in the original KAN paper Liu et al. [2026]. We achieve this by firstly generating a normal noise n(k) 
+
+> ij
+
+and making it monotonic across grid dimension: 
+
+γ′(1)  
+
+> ij
+
+= n(1)  
+
+> ij
+
+(11) 
+
+γ′(k) 
+
+> ij
+
+= n(1)  
+
+> ij
+
++
+
+> k
+
+X
+
+> t=2
+
+exp  n(t)
+
+> ij
+
+ (12) The final step is to normalize these coefficients: 
+
+γ′(k) 
+
+> ij
+
+= ( γ′(k) 
+
+> ij
+
+− (K + p − 1) √e
+
+2 ) 2σ
+
+(K + p − 1) √e (13) and derive weights ω(k) 
+
+> ij
+
+using Eq. 10. This normalization insures that Eγ′(K+p) 
+
+> ij
+
+= −Eγ′(1)  
+
+> ij
+
+= σ
+
+because Een(k) 
+
+> i,j
+
+= √e.
+
+MKAN layer. Combining monotonic splines with positive weight constraints and a monotonic activation, the MKAN layer is defined as: 
+
+F ′(j)(x1, . . . , x Nin ) = 
+
+> Nin
+
+X
+
+> i=1
+
+
+
+exp( w′(s) 
+
+> ij
+
+) ϕ′ 
+
+> ij
+
+(xi) + exp( w′(b) 
+
+> ij
+
+) ReLU( xi)
+
+
+
++ bj , (14) where the exponential ensures positivity of the effective weights. The bias term bj is necessary because exp( w) · ReLU( x) ≥ 0 for all x, so without bias the layer output would be bounded below. We initialize these base output coefficients according to Hoedt et al. [2023]. Stacking MKAN layers yields a monotonically increasing feature extractor, since the composition of monotonically increasing functions is monotonically increasing. 12 Parameter count. An MKAN layer has (K + p) · Nin · Nout spline parameters (same as KAN) plus Nin · Nout base weight parameters and Nout bias parameters. The overhead compared to KAN is exactly Nout parameters for the bias. 
+
+# B Full Proofs 
+
+In this section, we address a fundamental question: how do imposed monotonicity constraints affect the ability of FE to measure semantic similarity in the feature space using a distance metric? Semantic structures in feature space are referred to as semantic neighborhoods, as they capture similarity between samples according to a chosen distance metric Fu et al. [2020]. For theoretical tractability, we assume existence of arbitrary FE, which feature space can be partitioned with ball-shaped semantic neighborhoods. We then prove that exists a monotonic FE whose feature space can be equivalently partitioned into semantic neighborhoods. We apply this knowledge to compare the performance of KAN, used as FE, and MKAN utilized as monotonic FE. Figures 2a and 2b illustrate an example in which semantic neighborhoods induced by a FE can be reproduced by a monotonic FE, potentially at the cost of a higher embedding dimension. We start theoretical analysis with formal definitions of feature extractor, dataset and semantic neighborhood partition. F1 F2               
+
+> (a) Samples in a 2D features space of arbitrary FE: F1=x1, F 2=x2−x3.
+> (b) Samples in a 3D features space of mono-tonic FE: F1=x1, F 2=x2, F 3=x3.
+
+Figure 2: An example of how semantic neighborhoods in arbitrary features space can be reproduced in a monotonic one. The input data consist of three-dimensional vectors (x1, x 2, x 3), where x1 ∼
+
+0.5 N (0 , 1) + 0 .5 N (10 , 1) , x3 ∼ N (0 , 1) , and x2 = r + x3 , r ∼ 0.5 N (0 , 1) + 0 .5 N (10 , 1) .
+
+B.1 Definitions Definition 1 (Feature extractor) . A feature extractor is a CK , K > 0 mapping F : [ −1, 1] N → RN ∗
+
+,
+
+F = {F j }N ∗
+
+> j=1
+
+.
+
+One can observe that this definition excludes most common neural networks, as they are not dif-ferentiable at specific points due to activation functions such as ReLU. Indeed, the ReLU function is differentiable everywhere except at zero, where its derivative is zero by convention to enable backpropagation. However, in general theoretical studies such as optimization of neural networks Chatterjee [2022], Du et al. [2019], Arora et al. [2018] the neural network is usually considered to be smooth as non-differentiable activation functions like ReLU can be approximated by smooth maps. 
+
+Definition 2 (Monotonic feature extractor) . A feature extractor F is monotonically increasing if for all i ∈ { 1, . . . , N } and j ∈ { 1, . . . , N ∗}, the partial derivative ∂F j 
+
+> ∂x i
+
+(x) ≥ 0 for all x ∈ [−1, 1] N .
+
+Definition 3 (Semantic neighborhood) . A semantic neighborhood CR(xc) with radius R and center 
+
+xc in RN ∗
+
+is the open set CR(xc) = {x ∈ RN ∗
+
+: ( x − xc)⊤A(x − xc) < R 2}, where A ∈ RN ∗×N ∗
+
+is positive definite. In the special case A = I, the neighborhood reduces to an open Euclidean ball is called ball-shaped semantic neighborhood. 
+
+Definition 4 (Dataset) . Dataset D is a finite set of pairs 
+
+{(xi, l i)}, x ∈ RN , l ∈ { 1, . . . , T }
+
+where x is one training instance (i.e. input vector) and l is a label and T is a number of classes. 
+
+13 Definition 5 (Semantic neighborhood partition) . A feature extractor F induces a semantic neighbor-hood partition of a dataset D if there exist disjoint semantic neighborhoods {Ci}Ci=1 in RN ∗
+
+such that for every x ∈ D, there exists a unique i with F (x) ∈ Ci.
+
+B.2 Proof of Theorem 1 (Monotonic Decomposition) Theorem 1 (Monotonic decomposition) . Let F : [ −1, 1] N → RN ∗
+
+be a CK feature extractor with 
+
+K > o . Then F admits a decomposition 
+
+F (x) = Finc (x) + Fdec (x),
+
+where Finc is coordinate-wise increasing and Fdec is coordinate-wise decreasing. Proof. The decomposition is constructed componentwise, so it suffices to treat the scalar case; fix 
+
+j ∈ { 1, . . . , N ∗} and write f := F j .
+
+Step 1: Decomposition on [0 , 1] N . We first prove the result on the unit cube. Let ˜f : [0 , 1] N → R be 
+
+CK . By Taylor’s theorem with remainder, expanded around the origin, 
+
+˜f (y) = X
+
+> |α|<K
+
+cα yα
+
+| {z }  
+
+> =: P(y)
+
++ X
+
+> |α|=K
+
+hα(y) yα
+
+| {z } 
+
+> =: R(y)
+
+, (15) where cα ∈ R and the coefficients hα are continuous on [0 , 1] N . We decompose P and R separately. 
+
+Polynomial part. On [0 , 1] N every monomial yα is coordinate-wise increasing. Splitting P according to the sign of its coefficients, 
+
+Pinc (y) := X
+
+> cα>0
+
+cα yα, Pdec (y) := X
+
+> cα<0
+
+cα yα,
+
+yields P = Pinc + Pdec with Pinc increasing and Pdec decreasing. 
+
+Remainder part. Since R is C1 on the compact cube [0 , 1] N , the constant 
+
+L := max  
+
+> 1≤i≤N
+
+sup 
+
+> y∈[0 ,1] N
+
+∂R ∂y i
+
+(y)
+
+is finite. Setting S(y) := L (y1 + · · · + yN ), we write 
+
+R(y) =  R(y) − S(y)| {z }
+
+> Rdec (y)
+
++ S(y)
+
+|{z} 
+
+> Rinc (y)
+
+.
+
+Here Rinc is increasing because ∂S/∂y i = L ≥ 0, and Rdec is decreasing because, by the choice of 
+
+L, ∂(R − S)/∂y i = ∂R/∂y i − L ≤ 0.Defining ˜finc := Pinc + Rinc and ˜fdec := Pdec + Rdec gives the desired decomposition on [0 , 1] N .
+
+Step 2: Transfer to [−1, 1] N . Let φ : [ −1, 1] N → [0 , 1] N be the affine bijection φ(x) := x+1 2 ,and define ˜F (y) := F (2 y − 1) on [0 , 1] N . Applying Step 1 componentwise to ˜F produces ˜F =˜Finc + ˜Fdec . Set 
+
+Finc (x) := ˜Finc 
+
+ φ(x), Fdec (x) := ˜Fdec 
+
+ φ(x).
+
+Then F = Finc + Fdec , and monotonicity is preserved under this change of coordinates: by the chain rule, since ∂φ i/∂x i = 1 /2 > 0,
+
+∂F inc 
+
+∂x i
+
+(x) = 12
+
+∂ ˜Finc 
+
+∂y i
+
+ φ(x) ≥ 0,
+
+and analogously ∂F dec /∂x i ≤ 0.14 B.3 Proof of Lemma 2 Lemma 2. ∀R > 0, N ∗ > 0, 0 ≤ k ≤ N ∗, x c ∈ RN ∗+k if a finite set of points P belong to the set 
+
+Cρs 
+
+> R
+
+(xc) = {x ∈ RN ∗+k : ρs(x, x c) < R }, where ρs is defined in Eq. 16, then exists a semantic neighborhood CR(xc) from Definition 3, which belongs to Cρs 
+
+> R
+
+(xc) and contains all points from the finite set P .
+
+ρs(x, x ′)2 =
+
+> k
+
+X
+
+> j=1
+
+ (x2j − x′ 
+
+> 2j
+
+) − (x2j−1 − x′
+
+> 2j−1
+
+)2 + 
+
+> N∗
+
+X
+
+> j=k+1
+
+(xj+k − x′
+
+> j+k
+
+)2 (16) 
+
+Proof. We construct the semantic neighborhood CR(xc) as 
+
+x : ( x − xc)T A(x − xc) < R 2,
+
+where A = RTDR , with D being a positive diagonal matrix and R being a rotation matrix, which rotates planes (xi, x i−1) i ∈ { 1, . . . , k } on 45 degrees counterclockwise: ( xi−xi−1 
+
+> √2
+
+, xi+xi−1 
+
+> √2
+
+) and does not change other coordinates. This rotation is needed to make the neighborhood definition related to the semi-metric ρs(x, x c). Indeed, taking into account that 
+
+(( x − xc)T RTDR (x − xc) = ( R(x − xc)) T DR (x − xc)
+
+The neighborhood definition can be now rewritten as: 
+
+D1 
+
+> N∗
+
+X
+
+> i=k+1
+
+(xi+k − x(i+k)c)2 + D2
+
+2
+
+> k
+
+X
+
+> i=1
+
+(x2i − x2ic − (x2i−1 − x(2 i−1) c)) 2++ D3
+
+2
+
+> k
+
+X
+
+> i=1
+
+(x2i − x2ic + ( x2i−1 − x(2 i−1) c)) 2 < R 2,
+
+where D1, D 2, D 3 are coefficients of the diagonal matrix D:
+
+D1 = Di+k,i+k, i ∈ { k + 1 , N ∗}
+
+D2 = D2i ,2i , D 3 = D2i −1,2i −1, i ∈ { 1, k }
+
+We set D1 = 1 , D 2 = 2 and D3 = 2 β, where β > 0, to express this neighborhood inequality using 
+
+ρs. The inequality is then represented as: 
+
+f (x, x c, β ) = ρ2
+
+> s
+
+(x, x c) + β
+
+> k
+
+X
+
+> i=1
+
+(x2i − x2ic + ( x2i−1 − x(2 i−1) c)) 2 < R 2 (17) Let B be the maximal value of the ρs(x, x c)2 on the finite set P . All points from P belong to the 
+
+Cρs 
+
+> R
+
+(xc), thus B < R 2. The second part of the equation: 
+
+β
+
+> k
+
+X
+
+> i=1
+
+(x2i − x2ic + ( x2i−1 − x(2 i−1) c)) 2
+
+is also restricted on the finite set P . Therefore, we can choose sufficiently small β parameter to make inequality 17 true for all points from P . This means that the set P belongs to the neighborhood we constructed. Taking into account that f (x, x c, β ) > ρ 2
+
+> s
+
+(x, x c) and 
+
+∀x f (x, x c, β ) < R 2 → ρs(x, x c) < R 2
+
+our neighborhood also belongs to the set Cρs 
+
+> R
+
+(xc) = {x ∈ RN ′
+
+: ρs(x, x c) < R } from the Lemma statement. 15 Ball shaped semantic neighborhoods   
+
+> Unbounded sets
+> Ellipsoid semantic neighborhoods Initial FE Constructed monotonic FE
+
+Figure 3: Preservation of the semantic neighborhood partition under the constructed monotonic FE (F’). Red circles denote the original ball-shaped semantic neighborhoods in the feature space of (F). Red contours illustrate the corresponding unbounded sets defined by the semi-metric ( ρs), into which these neighborhoods are mapped in the feature space of the constructed monotonic (F’). Black ellipses represent the semantic neighborhoods within the ( ρs)-induced sets that contain all associated samples. 
+
+B.4 Proof of Theorem 3 (Representation Cost of Monotonicity) Theorem 3 (Representation cost of monotonicity) . Let F : [ −1, 1] N → RN ∗
+
+be a feature extractor that induces a semantic neighborhood partition of a dataset D with ball-shaped neighborhoods 
+
+{Ci}Ci=1 , and let 0 ≤ k ≤ N ∗ be the number of non-monotone coordinate functions of F . Then there exists an increasing feature extractor F ′ : [ −1, 1] N → RN ′
+
+with N ′ = N ∗ + k ≤ 2N ∗ and semantic neighborhoods {C′
+
+> i
+
+}Ci=1 with centers ci in RN ′
+
+that induce the same partition of D as shown in the Figure 3. Proof. Given a FE F : RN → RN ∗
+
+, let {F (j)inc , F (j)dec }N ∗ 
+
+> j=1
+
+denote the decomposition increasing and decreasing FEs guaranteed by Theorem 1. Let 0 ≤ k ≤ N ∗ be the number of non-monotonic coordinate functions F (j); without loss of generality, assume that these correspond to indices 
+
+j ∈ { 1, . . . , k }. The construction of the monotonic FE F ′ proceeds as follows. Each non-monotonic coordinate j ∈ { 1, . . . , k } is decomposed into the pair {F (j)inc , −F (j)dec }, yielding two increasing coordinates. For the remaining N ∗ − k monotonic coordinates, increasing coordinates are left unchanged, while decreasing coordinates are multiplied by −1 to make them increasing. As a result, the constructed increasing FE consists of 
+
+N ′ = 2 k + ( N ∗ − k) = N ∗ + k ≤ 2N ∗
+
+coordinates. The resulting increasing FE F ′ is formally defined as follows: 
+
+F ′ : RN → RN ∗−k+2 k = RN ′
+
+F ′(2 j−1) = −F (j)dec , F ′(2 j) = F (j)inc , j ∈ { 1, . . . , k }
+
+F ′(k+j) =
+
+(F (j), if F (j) is increasing ,
+
+− F (j), if F (j) is decreasing , j ∈ { k + 1 , . . . , N ∗}.
+
+(18) By construction, for all j ∈ { 1, . . . , k }, the odds indexed components are F ′(2 j−1) = −F (j)dec and the even indexed components are F ′(2 j) = F (j)inc . Given that F (j) 
+
+> inc
+
++ F (j) 
+
+> dec
+
+= F (j), the following expression is true: 
+
+F ′(2 j) − F ′(2 j−1) = F (j) (19) 16 Assume that there is a ball-shaped semantic neighborhood from Definition 3 in the F feature space from. The distance between representations of some data point x ∈ RN and neighborhood center 
+
+c ∈ RN is expressed as: 
+
+|| F (x) − F (c)|| 2 = 
+
+> N∗
+
+X
+
+> j=1
+
+(F (j)(x) − F (j)(c)) 2 (20) This implies the Euclidean distance in F -space equals the semi-metric ρs, Eq. 16 in F ′-space: 
+
+∥F (x) − F (c)∥2 = ρs(F ′(x), F ′(c)) 2.
+
+We define prototype neighborhoods C′ 
+
+> is
+
+= {x ∈ RN ′
+
+: ρs(x, F ′(ci)) < R } in F ′-space. By the distance equality, these sets have the same sample assignments as the original neighborhoods: 
+
+∀x ∈ D, i ∈ { 1, . . . , C } : F (x) ∈ Ci ⇐⇒ F ′(x) ∈ C′
+
+> is
+
+.
+
+By Lemma 2, for each C′ 
+
+> is
+
+there exists a proper semantic neighborhood C′ 
+
+> i
+
+(Definition 3) that contains all data points from Ci and is contained within C′
+
+> is
+
+. Therefore, the neighborhoods {C′
+
+> i
+
+}Ci=1 
+
+in F ′-space induce the same partition as {Ci}Ci=1 in F -space. 
+
+# C Additional Experimental Details 
+
+C.1 Supervised Experiments 
+
+In this section, we describe the MKAN configurations used in the supervised setting. An MKAN layer is specified in the format [input size, output size, grid range, grid size], and a multilayer MKAN is specified as a sequence of such layers. For fully monotonic datasets such as Synthetic, we constrain the entire MKAN layer to be monotonic, whereas for partially monotonic datasets only the edges of the first layer corresponding to monotonic inputs are monotonic, and the second layer (if present) is fully monotonic. All experiments in this section are run on AMD EPYC 75F3 CPU, except those on the ChestXRay dataset, which are run on an A100 GPU. The precise training parameters like lr , batch size etc. are left untouched with respect to Igel [2024]. Table 5 reports the MKAN configurations and parameter counts for each dataset; we vary only the number of layers and the hidden dimension size. A single run took at most 10 minutes. Dataset MKAN Configuration Parameters Synthetic [Nin , Nin , (0,1), 5], [ Nin , 1, (-3,3), 5] 45, 145, 301 COMPAS [13, 3, (-2,2), 5], [3, 1, (-3,3), 5] 92 LoanDefaulter [28, 10, (-2,2), 5], [10, 1, [ (-3, 3), 5] 2041 ChestXRay [130, 10, (-2,2), 5], [10, 1, [ (-3, 3), 5] 9181 Heart Disease [13, 1, (-2,2), 5] 92 BlogFeedback [276, 2, (-2,2), 5], [2, 1, (-3,3), 5] 3881 AutoMPG [8, 3, (-2,2), 5], [3, 1, (-3,3), 5] 193 Table 5: The table represents MKANs configurations and parameters numbers for dataset used in supervised evaluations. Here we also provide a short description of the datasets: COMPAS Angwin et al. [2022] (6172 samples, 13 inputs with 4 monotonic), LoandDefaulter (0.5M samples, 28 inputs with 5 monotonic), ChestXRay (5606 samples, 130 inputs with 2 monotonic), Heart Disease (303 samples, 13 inputs with 2 monotonic) for classification and BlogFeedback Buza [2013] (54000 samples, 276 inputs with 8 monotonic), Auto MPG (398 samples, 8 inpits with 3 monotonic) for regression. Inputs for the ChestXRay dataset consist of given features and of features of actual images produced by ResNet18 mode and evaluations are made with fixed and trainable ResNet18. 
+
+C.2 Self-supervised experiments C.2.1 Ellipses dataset 
+
+As a proof of concept, we construct a synthetic dataset in which, unlike those used in related work, all observed pixels depend monotonically on three ground-truth latent factors z = ( z1, z 2, z 3). Each 17 sample x is a 20 × 20 grayscale image containing an exponentially decaying elliptical spot: 
+
+xi,j = z3
+
+100 exp 
+
+
+
+− (i − 10) 2
+
+z21
+
+− (j − 10) 2
+
+z22
+
+
+
+, i, j ∈ { 1, . . . , 20 }, (21) centered at (10 , 10) with semi-axes r1 = z1 and r2 = z2, where z1, z 2 ∼ U{ 1, . . . , 10 } and 
+
+z3 ∼ U{ 1, . . . , 100 }. By construction, the mapping from latent factors to observations is strictly monotone: increasing z1 or z2 expands the set of non-zero pixels, while increasing z3 raises their intensity uniformly. The dataset comprises 8K training and 2K test samples. We train fixed-variance ( σ = 0 .05 ) DIP-VAE framework across λb = λob ∈ { 0, 10 , 50 }, with learning rate 0.001 (Adam optimizer) and batch size 256 , performing three runs of 2K epochs each. DCI, Spearman’s r, and reconstruction l2 error scores are recorded every 10 epochs, and the final values are selected for reporting with 2 σ error bars (randomness comes from weights initialization). For each training configuration, we evaluate five architectures: three unconstrained (Linear, MLP, KAN) and two monotonic (SMM, MKAN) as both encoder and decoder. KAN and MKAN layers are specified as [input size, output size, grid range, grid size], and linear layers as [input size, output size]. Table 6 reports the encoder and decoder configurations. A large grid size is used in the KAN and MKAN decoders to effectively reconstruct the original image with comparison to other architectures and to accurately capture the distribution of learned features, which may have a small scale relative to the grid range; the grid range itself could alternatively be tuned to permit a smaller grid size. The lack of an adaptive grid range is a current limitation of the MKAN architecture. All experiments here are performed on CPU, and a single run takes at most 40 minutes. Architecture Encoder config Decoder config Parameters Linear [400, 3] [3, 400] 1200,1200 MLP [400, 30], ReLU, [30, 3] [3, 30], ReLU, [30, 400] 12090, 12090 KAN [400, 30, (0,1), 30], [3, 30, (-3,-3), 200], 387K, 2M [30, 3, (-3,3), 3] [30, 400, (-3.-3), 200] MKAN [400, 30, (0,1), 30], [3, 30, (-3,-3), 200], 387K, 2M [30, 3, (-3,3), 3] [30, 400, (-3.-3), 200] SMM [400, 3, 6,6] [3, 400, 6, 6] 43200, 43200 Table 6: The table represents encoder and decoder configurations and parameters numbers across different types of architectures. 
+
+C.2.2 Representation cost of monotonicity 
+
+We evaluate KANs and MKANs across feature sizes {2, 4, 8, 16 , 32 } on four datasets: MNIST (784 inputs), Fashion-MNIST (784 inputs), Dry Bean (16 inputs), and MAGIC (10 inputs). For each configuration (feature size, dataset, and architecture), we perform five runs of 200 epochs each, with learning rate 0.001 (Adam optimizer) and batch size 256 , using the VAE framework with fixed variance 0.05 . For classification, we employ a KNN classifier with k = 10 , as it appeared to be the optimal value. Learned features are extracted and used for inference on the test partition of each dataset. Again, we specify MKAN and KAN as [input size, output size, grid range, grid size] and the configurations are listed in the Table 7, except the case for 32 feature sizes of MKANs in Fashion MNIST, where we use a grid size 8 to achieve performance higher than KANs with features size 16. Here, we A100 GPU and a single run take at most 10 minutes. Architecture Encoder config Decoder config Parameters MKAN [Nin , N out , (0 , 1) , 5] [Nout , N in , (−3, 3) , 5] 175K, 175K KAN [Nin , N out , (0 , 1) , 5] [Nout , N in , (−3, 3) , 5] 175K, 175K Table 7: The table represents encoder and decoder configurations and parameters numbers across MKANs and KANs. Parameters are calculated for the edge case of Nin = 784 , N out = 32 .Figures 4, 5 demonstrate monotone latent alignment in a setting where monotone transformations carry semantic meaning: increasing one of the learned latent components monotonically transforms digit “3” into digit “9” by drawing the missing stroke or transforms t-shirt to pullover. 18 Figure 4: Latent traversal in a separate MKAN-VAE trained on Fashion MNIST: the figure shows the evolution of an initial observation (t-shirt) into a pullover under monotone increase of one learned latent component, illustrating that monotone latent alignment generalizes beyond the datasets in Figure 1. 
+
+Figure 5: The figure demonstrates the evolution of the initial observation, an image of t-shirt, obtained through the MKAN decoder from trained VAE, to an image of pullover, while increasing the value of one of the latent components. Here, we also provide a short description and motivation for the datasets. We utilize MNIST, Fashion MNIST, Dry Bean dry [2020], and MAGIC Gamma Telescope Bock [2004] datasets from the UCI repository, which were selected to ensure that monotonic feature transformations carry genuine semantic meaning, and to cover a range of scales and class cardinalities. In MNIST and Fashion MNIST, monotonically increasing pixel intensities in specific spatial regions induce meaningful class transitions (e.g., 3 → 9, 1 → 7 or t-shirt to pullover). In Dry Bean and MAGIC Gamma Telescope, features correspond to physical measurements whose monotonic changes admit direct domain interpretation - larger area unambiguously implies a larger bean, while higher shower size implies a brighter gamma-ray event 19

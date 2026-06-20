@@ -1,0 +1,69 @@
+{
+  "label": "2026-06-20",
+  "date": "2026-06-20",
+  "generated_at": "2026-06-20T20:59:27",
+  "count": 4,
+  "papers": [
+    {
+      "paper_id": "202606/20/2606.19538v1-itnet-a-learnable-integral-transform-that-subsumes-convolution-attention-and-recurrence",
+      "section": "deep",
+      "title_en": "ITNet: A Learnable Integral Transform That Subsumes Convolution, Attention, and Recurrence",
+      "authors": "Ashim Dhor, Rasel Mondal, Pin Yu Chen",
+      "date": "2026-06-17",
+      "pdf": "https://arxiv.org/pdf/2606.19538v1",
+      "score": "8.0",
+      "evidence": "新颖的统一架构，融合卷积、注意力与循环",
+      "tldr": "现有卷积、循环和Transformer网络具有不同的归纳偏置，但本质上可统一为可学习积分变换。本文提出的ITNet通过一个MLP实现位置和特征联合的核函数，从而将卷积、自注意力和循环（含LSTM、S4、Mamba）作为特例。采用分块核融合、重要性加权蒙特卡洛积分和低秩分解实现高效计算。在ImageNet、GLUE、ModelNet40等基准上，单一ITNet架构达到或超越专门模型的性能，证明从数据中学习交互机制能够自动恢复三种架构的行为。",
+      "tags": "query:channel-nn",
+      "abstract_en": "Convolutional networks, recurrent networks, and transformers each encode different inductive biases -- locality, sequential memory, and content-dependent pairwise interaction -- and have remained mathematically distinct since their inception. We show that this fragmentation reflects not a fundamental diversity in how signals should be processed, but rather incomplete views of a single underlying mathematical object: a learnable integral transform. We introduce the Integral Transform Network (ITNet), a unified architecture built around a learnable kernel that depends jointly on positions and features. This kernel is implemented as a small neural network, specifically an MLP, that models pairwise interactions, enabling the model to adapt its behavior from data. We show that convolution, self-attention (including multi-head), and autoregressive recurrence (including LSTM, GRU, S4, and Mamba) arise as special cases under appropriate parameterizations, and that ITNet is a universal approximator of continuous operators. To make this practical, we develop tiled kernel fusion, importance-weighted Monte Carlo integration, and learned low-rank factorization, enabling efficient and scalable computation. A single ITNet architecture with a shared operator and lightweight modality-specific encoders matches or exceeds specialized baselines on ImageNet-1K , GLUE, ModelNet40, VQA\\,v2 and NLVR2. The results demonstrate that a single learned interaction mechanism can recover the behavior of all three architectural families from data.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/20/2606.15775v1-uncertainty-aware-haptic-signal-estimation-for-reliable-and-resource-efficient-tactile-internet",
+      "section": "quick",
+      "title_en": "Uncertainty-Aware Haptic Signal Estimation for Reliable and Resource Efficient Tactile Internet",
+      "authors": "Georgios Kokkinis, Alexandros Iosifidis, Qi Zhang",
+      "date": "2026-06-14",
+      "pdf": "https://arxiv.org/pdf/2606.15775v1",
+      "score": "7.0",
+      "evidence": "用于触觉互联网中触觉信号估计的概率神经网络",
+      "tldr": "触觉互联网面临高采样率导致的多用户无线网络拥塞问题。本文提出A2HAP框架，集成概率神经网络VarxHAP联合估计力和不确定性，并通过分层门控架构动态调整传输阈值。实验表明，高峰流量时数据包率降低45%，资源块消耗平均减少25%，支持用户容量提升20%，同时保持超可靠性。",
+      "tags": "query:channel-nn",
+      "abstract_en": "The Tactile Internet aims to enable real-time remote haptic interaction; however, the high sampling rates required for transparency in haptic control often lead to severe congestion in multi-user wireless environments. This paper proposes the Agile AI-empowered Haptic (A2HAP) framework, which integrates VarxHAP, a novel probabilistic neural network for joint force and uncertainty estimation, with an error-resilient controller. By employing a hierarchical gating architecture, the system dynamically adapts transmission thresholds to balance model confidence against reliability targets. Simulation results demonstrate that A2HAP suppresses packet rates by up to 45% during peak traffic and reduces resource block consumption by 25% on average. Consequently, the framework supports a 20% increase in user capacity compared to state-of-the-art methods while maintaining the ultra-reliability required for stable teleoperation.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/20/2606.16575v2-repnn-tackling-spectral-bias-in-deep-neural-networks-via-parameter-reparameterization",
+      "section": "quick",
+      "title_en": "RepNN: Tackling spectral bias in deep neural networks via parameter reparameterization",
+      "authors": "Yong Wang, Tao Zhou, Xuhui Meng",
+      "date": "2026-06-15",
+      "pdf": "https://arxiv.org/pdf/2606.16575v2",
+      "score": "7.0",
+      "evidence": "新颖的重参数化神经网络，克服频谱偏差",
+      "tldr": "深度神经网络在拟合高频函数时存在谱偏差，导致难以捕捉振荡和多尺度行为。本文通过分析浅层ReLU网络的失败原因，发现初始斜率尺度和分割点分布是关键因素。提出RepNN模型，重参数化第一隐藏层的权重和偏置，以控制初始斜率尺度和分割点分布，并实现自适应频率缩放。实验表明，RepNN在函数逼近、偏微分方程求解和算子学习中显著提升了高频特征预测精度，且计算成本增加很小。",
+      "tags": "query:channel-nn",
+      "abstract_en": "Deep neural networks (DNNs) have achieved remarkable success in scientific computing, yet they often suffer from spectral bias in capturing oscillatory and multiscale behaviors. In this study, we investigate this limitation by examining the failure of shallow ReLU neural networks in fitting high-frequency functions. This observation identifies two important factors in resolving rapid oscillations: the initial slope scale and the distribution of partition points induced by the networks. Motivated by this analysis, we propose RepNN, a reparameterized neural network model with activation ReLU or tanh designed for high-frequency and multiscale problems. The key idea is to reparameterize the weights and biases in the first hidden layer, which enables effective control of the initial slope scale and provides an appropriate distribution of the initial partition points. Furthermore, treating the reparameterized weights and biases as trainable parameters allows the DNN to achieve adaptive frequency scaling during training. In addition, we derive quantitative estimates for the output and slope magnitudes of the reparameterized DNN to guide the initialization of the proposed method. Numerical experiments, including multiscale one- and four-dimensional function approximations, forward and inverse PDE problems in combination with physics-informed neural networks (PINNs), and operator learning for an earthquake problem using real data, demonstrate that RepNN improves the predicted accuracy of vanilla DNNs in capturing highly oscillatory features with slightly additional computational cost. These results indicate that RepNN provides an effective and flexible approach for overcoming spectral bias and applying DNNs to multiscale problems.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/20/2606.17886v2-monotonic-kolmogorov-arnold-networks-a-theoretical-and-empirical-study-of-monotonicity-as-an-inductive-bias",
+      "section": "quick",
+      "title_en": "Monotonic Kolmogorov-Arnold Networks: A Theoretical and Empirical Study of Monotonicity as an Inductive Bias",
+      "authors": "Mikhail Krasnov, Blaž Bertalanič, Carolina Fortuna",
+      "date": "2026-06-16",
+      "pdf": "https://arxiv.org/pdf/2606.17886v2",
+      "score": "7.0",
+      "evidence": "MKAN：一种单调Kolmogorov-Arnold网络变体",
+      "tldr": "单调性是神经网络的重要归纳偏置，现有方法多基于MLP或流，缺乏KAN的逐边功能透明性。本文提出MKAN，通过指数重参数化B样条系数、正边权重和单调基激活，实现硬单调性，训练为标准无约束梯度下降。理论证明表示成本定理：任何具有球状语义邻域划分的特征提取器，可在编码器尺寸不超过2N*时实现等价单调结构。实验在SMM/ICML-2024基准上达到SOTA，并在生成数据上恢复真实因子。MKAN是首个兼具硬单调性与KAN透明性的方法。",
+      "tags": "query:channel-nn",
+      "abstract_en": "Monotonicity has been a long-running architectural inductive bias for neural networks, motivated by tabular, scientific, and economic settings where outputs are known to respond monotonically to certain inputs. Existing approaches are MLP- or flow-based and lack per-edge functional transparency; the only Kolmogorov--Arnold Network (KAN) variant with monotonicity, MonoKAN, enforces the constraint only on a restricted parameter subset and requires a projection-style training procedure. We close this gap with \\textbf{MKAN}, a KAN with hard monotonicity guaranteed for \\emph{all} parameter values via exponential reparameterization of B-spline coefficients, positive edge weights, and a monotone base activation. Training reduces to standard unconstrained gradient descent. Our headline theoretical contribution is a \\emph{representation-cost} theorem: any $C^K, K >0$ feature extractor inducing a ball-shaped semantic-neighborhood partition admits a monotone realization of the equivalent neighborhood structure at $N' = N^* + k \\le 2N^*$, where $k$ is the number of non-monotone coordinates of the original. The bound is architecture-agnostic and gives a principled sizing rule for monotone encoders. Empirically, MKAN is competitive with state-of-the-art monotone NNs on the SMM/ICML-2024 benchmark while being the only method that combines hard unconstrained monotonicity with KAN's per-edge functional transparency; the $2N^*$ prediction is validated in a self-supervised feature-size sweep on four real datasets, and on a controlled monotone-generative dataset MKAN recovers ground-truth factors with substantially higher Spearman alignment than KAN, MLP, and linear baselines.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
