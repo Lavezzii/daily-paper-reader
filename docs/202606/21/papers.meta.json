@@ -1,0 +1,54 @@
+{
+  "label": "2026-06-21",
+  "date": "2026-06-21",
+  "generated_at": "2026-06-21T20:24:48",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202606/21/2606.20414v1-exspike-a-general-full-event-neuromorphic-architecture-for-exploiting-irregular-sparsity-with-event-compression",
+      "section": "quick",
+      "title_en": "ExSpike: A General Full-Event Neuromorphic Architecture for Exploiting Irregular Sparsity with Event Compression",
+      "authors": "Yuehai Chen, Farhad Merchant",
+      "date": "2026-06-18",
+      "pdf": "https://arxiv.org/pdf/2606.20414v1",
+      "score": "7.0",
+      "evidence": "新型全事件神经形态架构用于高效脉冲神经网络",
+      "tldr": "脉冲神经网络（SNN）因稀疏时空活动而有望实现高能效，但传统架构难以将不规则稀疏性转化为实际性能增益。ExSpike通过数据流优化确保各层输入均为脉冲，实现全事件驱动执行；设计包含脉冲驱动注意力核的硬件架构，并引入相邻位置事件压缩减少冗余累加。在FPGA上评估，ExSpike在多种SNN模型上保持高精度，达到479.15 GOPS性能与281.85 GOPS/W能效，相比最先进的FPGA加速器FireFly-T，PE归一化能效提升最高10倍。该工作为SNN不规则稀疏性的高效利用提供了通用硬件方案。",
+      "tags": "query:channel-nn",
+      "abstract_en": "Spiking neural networks (SNNs) promise energy-efficient computing due to their sparse spatio-temporal activity. However, effectively translating such irregular sparsity into practical performance and energy gains remains challenging, as full-event computing architectures are still underexplored. This paper proposes ExSpike, a general full-event neuromorphic architecture that fully exploits irregular sparsity in SNNs. To realize pure event-driven execution, we first propose a set of dataflow optimizations to ensure that the inputs to each SNN layer remain spike-based, thereby enabling full-event execution throughout the network. We then design a hardware-efficient full-event architecture, named ExSpike, which supports the optimized pure event-driven dataflow and an additional Attention Core for spike-driven self-attention. To further improve computing efficiency, we introduce adjacent-position event compression to reduce redundant accumulations across spatially adjacent spike sequences. ExSpike is implemented on an AMD Xilinx Virtex-7 FPGA and evaluated on both classification and segmentation workloads. Experimental results show that ExSpike achieves high normalized energy efficiency across diverse SNN models while maintaining competitive accuracy, delivering up to 479.15 GOPS, 281.85 GOPS/W, and 0.80 GOPS/W/PE. In particular, ExSpike achieves up to 10$\\times$ higher PE-normalized energy efficiency than the SOTA FPGA-based SNN accelerator (FireFly-T). The code for ExSpike is available at \\url{https://github.com/xiaoyuehai/ExSpike}.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/21/2606.16516v1-towards-delta-aware-training-efficient-dnn-weight-storage-for-resource-constrained-fpgas",
+      "section": "quick",
+      "title_en": "Towards Delta Aware Training: Efficient DNN Weight Storage for Resource-Constrained FPGAs",
+      "authors": "David Peter Federl, Lukas Einhaus, Andreas Erbslöh, Gregor Schiele",
+      "date": "2026-06-15",
+      "pdf": "https://arxiv.org/pdf/2606.16516v1",
+      "score": "6.0",
+      "evidence": "面向FPGA的增量感知训练实现高效权重存储",
+      "tldr": "针对资源受限FPGA上DNN部署的存储瓶颈，提出Delta Aware训练方法，将权重存储为低比特delta并训练网络适应压缩。两种delta方案中，固定参考delta在FashionMNIST上以4比特权重达到78.6%验证精度，相比8比特定点网络仅损失8.3%。专用硬件加速器实现近50%权重压缩与7.992M MACs/s吞吐量，验证了该方法在嵌入式FPGA上的高效性。",
+      "tags": "query:channel-nn",
+      "abstract_en": "The deployment of embedded deep neural networks on resource-constrained field programmable gate arrays (FPGAs) is challenging due to limited memory and computational capacities. We introduce a new compression technique to reduce the memory footprint by saving weights in deltas with lower bitwidth and training the network to cope with compressed deltas. Two delta schemes are investigated: consecutive deltas and deltas with a fixed-reference value. We evaluate both on the FashionMNIST data set with a multi-layer-perceptron. The results indicate that fixed-reference delta compression outperforms the consecutive variant, achieving a validation accuracy of approximately 78.6 %, with 4 bit weight deltas, representing an accuracy loss of roughly 8.3 % compared to a fixed-point network with 8 bit. Our specialized hardware accelerator with a delta-compressed multiply-and-accumulate operator compresses weights by nearly 50 % and achieves a maximum throughput of 7.992M MACs/s on an AMD Spartan-7 S15 FPGA.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/21/2606.18923v1-grapnet-a-programmable-dynamic-architecture-neural-graph-substrate",
+      "section": "quick",
+      "title_en": "GrapNet: A Programmable Dynamic-Architecture Neural Graph Substrate",
+      "authors": "Zirong Li",
+      "date": "2026-06-17",
+      "pdf": "https://arxiv.org/pdf/2606.18923v1",
+      "score": "6.0",
+      "evidence": "新型可编程动态架构神经图基板",
+      "tldr": "传统神经网络缺乏可编程接口，编辑关系或冻结子图需手工参数修改。GrapNet将图作为网络架构和可执行程序，每个节点管理子引用和分配向量，支持动态结构编辑、冻结、分组及注意力路由。在Split Fashion-MNIST上，GrapNet+ER达63.16%准确率，较MLP+ER高12.08个百分点；在Split CIFAR-10上，基于冻结ResNet-18编码器，提升3.81个百分点。该工作提供了可编辑的神经图基板，核心价值在于结构可编程性与忠实执行视图。",
+      "tags": "query:channel-nn",
+      "abstract_en": "Programmability is a missing first-class interface in fixed-tensor neural networks: editing a relation, freezing a subgraph, auditing a local function, or changing the execution backend should be an operation on the neural program rather than ad-hoc parameter surgery. GrapNet studies this graph-as-network setting. The graph is the architecture and executable program, not an input data graph. Each compute node owns its next-layer child references and a trainable allocation vector aligned with those references; deleting a relation physically removes both the child reference and the corresponding allocation coordinate. Structural rules and execution policies live outside the node core, so the same child-owned graph can be grown, frozen, structurally edited, grouped into trainable family blocks, routed by attention over active relations, or lowered to dense snapshots after topology stabilizes. GrapNet composes with conventional modules through a vector-valued parent interface: dense layers, CNN encoders, ResNet feature extractors, attention blocks, and transformer representations can all feed one sensory GrapNode per coordinate. The evaluation is organized as a programmability stress suite rather than as a new replay benchmark. In a matched ten-seed Split Fashion-MNIST study, a plastic GrapNet+ER head reaches 63.16 percent seen-class accuracy versus 51.08 percent for a parameter-larger dense MLP+ER under the same seen-class loss and replay memory, with paired delta 12.08 points and p=1.3e-5. On Split CIFAR-10 with a frozen ImageNet ResNet-18 encoder, the same substrate improves the online head over MLP-256 by 3.81 points, with p=0.0026. These results support GrapNet as an editable neural graph substrate whose core value is structural programmability with faithful execution views.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
