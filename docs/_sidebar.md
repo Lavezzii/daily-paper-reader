@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-06-22 <!--dpr-date:20260622-->
+    * 速读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202606/22/2606.19039v1-adaptive-speech-to-spike-encoding-for-spiking-neural-networks" data-sidebar-item="{&quot;title&quot;: &quot;Adaptive Speech-to-Spike Encoding for Spiking Neural Networks&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2606.19039v1-adaptive-speech-to-spike-encoding-for-spiking-neural-networks&quot;, &quot;score&quot;: &quot;6.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;channel-nn&quot;}], &quot;evidence&quot;: &quot;新颖的脉冲神经网络架构&quot;}">Adaptive Speech-to-Spike Encoding for Spiking Neural Networks</a>
   * 2026-06-21 <!--dpr-date:20260621-->
     * 速读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202606/21/2606.20414v1-exspike-a-general-full-event-neuromorphic-architecture-for-exploiting-irregular-sparsity-with-event-compression" data-sidebar-item="{&quot;title&quot;: &quot;ExSpike: A General Full-Event Neuromorphic Architecture for Exploiting Irregular Sparsity with Event Compression&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2606.20414v1-exspike-a-general-full-event-neuromorphic-architecture-for-exploiting-irregular-sparsity-with-event-compression&quot;, &quot;score&quot;: &quot;7.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;channel-nn&quot;}], &quot;evidence&quot;: &quot;新型全事件神经形态架构用于高效脉冲神经网络&quot;}">ExSpike: A General Full-Event Neuromorphic Architecture for Exploiting Irregular Sparsity with Event Compression</a>
