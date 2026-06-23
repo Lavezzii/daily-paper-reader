@@ -1,0 +1,265 @@
+Title: DPD-KAN: Kolmogorov-Arnold Networks for Low Complexity Digital Predistortion in 5G Analog Radio-over-Fiber Systems
+
+URL Source: https://arxiv.org/pdf/2606.21178v1
+
+Published Time: Tue, 23 Jun 2026 00:38:50 GMT
+
+Number of Pages: 4
+
+Markdown Content:
+# DPD-KAN: Kolmogorov-Arnold Networks for Low Complexity Digital Predistortion in 5G Analog Radio-over-Fiber Systems 
+
+Bilal Khalid (1) , Fabio Cavaliere (2) , Luca Giorgi (2) , Pedro Freire (1) , Sergei K. Turitsyn (1) 
+
+and Jaroslaw E. Prilepsky (1) (1) Aston Institute of Photonic Technologies, Aston University, Birmingham, UK, r.khalid4@aston.ac.uk  
+
+> (2)
+
+Ericsson Research, Ericsson, 56124, Pisa, Italy 
+
+Abstract We demonstrate the first KAN-based DPD model for 5G analog RoF fronthaul link, achieving a 
+
+24 .2% lower EVM than multi-layer perceptron and 29 .6% lower than Volterra-based GMP at equivalent Bit Operations. To attain an EVM below 2% , KAN requires ≈ 52% fewer BOPs than a perceptron. ©2026 The Author(s) 
+
+Introduction 
+
+Radio-over-fiber (RoF) has emerged as a key en-abling technology for the distribution of wireless signals in dense 5G and prospective 6G network architectures [1] . While Digital RoF (D-RoF) guar-antees high signal fidelity, it incurs a significant bandwidth overhead and faces the challenges of increased power consumption and heat dissipa-tion for dense Remote Radio Units (RRU) deploy-ment scenarios [2] . Analog RoF (A-RoF) is the alternative option that offers high bandwidth ef-ficiency, lower latency, and reduced complexity at the RRU [3] . However, A-RoF links are highly susceptible to signal degradation due to several impairments. In A-RoF systems utilizing directly modulated lasers (DMLs), these impairments pri-marily originate from laser saturation and clip-ping, intensity-dependent frequency chirp, and the subsequent chirp-dispersion interaction within the standard single-mode fiber (SSMF) [3] .Digital predistortion (DPD) is one of the tech-niques commonly used to mitigate these effects. Machine learning (ML)-based architectures have heavily influenced recent DPD research. ML-based models [4, 5] have been shown to outperform classical DPD methods based on Volterra series, such as Memory Polynomials (MP) [6, 7] and Gener-alized Memory Polynomials (GMP) [8] . Techniques utilizing Multilayer Perceptrons (MLPs) [9–11] , Con-volutional Neural Networks (CNNs) [12] , and Re-current Neural Networks (RNNs) [13, 14] have been developed to achieve effective linearization. How-ever, the power consumption and computational complexity of ML models remain a concern for practical deployment in fronthaul RoF links [2, 11, 15] .Kolmogorov-Arnold Networks (KANs) [16] have recently emerged as an alternative to traditional neural networks. Unlike MLPs, which use fixed ac-tivation functions at the nodes, KANs place learn-able activation functions on the edges. This allows KANs to learn non-linear relationships while main-taining greater interpretability [17] . Recent works demonstrate the utility of KANs in baseband equal-ization for purely optical IM-DD systems [18] and DPD for standalone radio frequency (RF) power amplifiers [19] . However, to the best of our knowl-edge, KANs have not previously been investigated for DPD in A-RoF systems, which presents a fun-damentally different challenge. In this paper, we demonstrate the first KAN-based DPD model (DPD-KAN) for a 5G NR A-RoF fronthaul link. We evaluate the pro-posed method against MLP and conventional GMP baselines. The computational complexity is measured in terms of Bit Operations (BOPs), which accurately capture the complexity of quan-tized networks [20, 21] . Results indicate that KANs achieve superior performance as compared to the baselines in terms of error vector magnitude (EVM), adjacent channel leakage ratio (ACLR) and normalized mean square error (NMSE). Impor-tantly, DPD-KAN converges to the optimal per-formance at 52% lower BOPs than MLP, high-lighting its suitability and benefits for complexity-constrained real-world deployment. 
+
+Experimental Setup 
+
+The system model, illustrated in Fig. 1, realizes a 5G NR A-RoF fronthaul link. We consider a 100 MHz bandwidth, 64-QAM, 5G NR baseband waveform conforming to 3GPP Test Model (TM) 3.1 that is upconverted to an RF carrier frequency of 3.6 GHz using an arbitrary waveform generator (AWG). A driver amplifier is used to amplify the signal before it reaches the optical transmitter. The optical source is a VERTILAS VL-1550-25G-SH-H4 VCSEL directly modulated laser (DML) with a AWG  Driver Amp.  VCSEL DML  1 Km SSMF  PD  RTO         
+
+> Tx DSP Rx DSP
+> DPD Model
+> Fig. 1: System model for VCSEL-based Analog RoF link.
+> arXiv:2606.21178v1 [eess.SP] 19 Jun 2026 Fig. 2: Comparison of simulation and experimental results. Input
+> (X I, X Q, P RF )KAN path
+> Skip connection (X I,XQ)
+> ϕ0,1,1
+> ϕ0,2,1
+> ϕ0,n,1
+> ϕ0,1,2
+> ϕ0,2,2
+> ϕ0,n,2
+> ϕ0,1,3
+> ϕ0,2,3
+> ϕ0,n,3
+> ϕ1,1,1
+> ϕ1,2,1
+> ϕ1,1,2
+> ϕ1,2,2
+> ϕ1,1,n
+> ϕ1,2,n
+> ... ... ...
+
+...         
+
+> x0,1 x0,2 x0,3
+> x1,1 x1,2 x1,n
+> x2,1 x2,2
+> Output
+> (Y I, Y Q)
+> (∆I ,∆Q)
+> Fig. 3: DPD-KAN architecture.
+
+wavelength of 1550 nm. We consider a fiber length of 1 km as more than 97% of deployed fronthaul links fall within this operational range [22, 23] . At the receiver, the signal is captured by a real-time oscilloscope (RTO) after photo-detection. We developed the link simulation model in MAT-LAB. Prior to generating the training dataset, the MATLAB model was validated against experimen-tal measurements. Figure 2 shows the EVM ver-sus received optical power plot for the described transmission setup for 100 MHz and 400 MHz sig-nals. The close agreement between the simulation and experimental results confirms the correctness of the simulation model. To train the DPD models, Indirect Learning Architecture (ILA) [24] is used. 
+
+DPD-KAN Architecture 
+
+The KAN DPD model shown in Fig. 3 processes a three-dimensional input vector consisting of the In-phase (I) and Quadrature (Q) components of the complex baseband signal, concatenated with the RF input power. It employs a dual-path resid-ual architecture to improve training stability and convergence. The linear path is an identity map-ping that directly forwards the uncorrected signal. The non-linear KAN path is tasked with learning the residual correction (∆ I, ∆Q). Its learnable activation functions ϕ(x) are represented as 
+
+ϕ(x) = wb SiLU (x) + 
+
+> G+k−1
+
+X
+
+> i=0
+
+wi Bi,k (x) , (1)             
+
+> Fig. 4: EVM RMS vs. RF input power. DPD-KAN gives the best results at 10 4BOPs, with further improvement at 10 5BOPs.
+> Fig. 5: PSD plot at 3dBm RF input power showing ≈5dB advantage of DPD-KAN at low complexity.
+
+where wb is the base weight, wi denotes the ba-sis control coefficients, k is the spline order, G
+
+represents the grid size and Bi,k (x) are the B-spline basis functions. We employ a memoryless architecture because memory effects induced by chromatic dispersion are negligible for 1 km link length. Consequently, the dominant system im-pairments are static, namely the electro-optic con-version nonlinearity of the VCSEL and potential saturation of the driver amplifier. We verified this by adding memory taps that yielded no significant performance improvement. To maintain consis-tency, MLP also employs the same residual learn-ing architecture. The KAN model with a complexity of ≈ 10 4 BOPs has a single hidden layer with n = 7 
+
+nodes, spline order k = 3 and grid size G = 7 . The trained model weights are uniformly quantized to an 8-bit resolution during inference. 
+
+Results and Discussion 
+
+We compare the linearization performance of KAN with MLP and the conventional GMP methods, and present a comprehensive performance-versus-complexity analysis. 
+
+Linearization performance. Figure 4 shows the ef-fect on EVM when the RF signal input power is var-ied from −3 to +5 dBm. Without DPD, EVM rises rapidly from 1.6% to 7.6% , which reflects increased nonlinear distortion at higher RF signal powers. We observe that at low complexity of ≈ 10 4 BOPs, KAN outperforms both MLP and GMP. The gap widens at higher input powers where the stronger 10 4 10 5         
+
+> Bit Operations (BOP)
+> 1.5
+> 2.0
+> 2.5
+> 3.0
+> 3.5
+> 4.0
+> 4.5
+> Avg. EVM RMS  (%)
+> KAN (all trials)
+> KAN (best trials)
+> MLP (all trials)
+> MLP (best trials) (a) 10 410 5
+> Bit Operations (BOP)
+> 1.5
+> 2.0
+> 2.5
+> 3.0
+> 3.5
+> 4.0
+> 4.5
+> Avg. EVM RMS  (%)
+> Avg. BOP for EVM <= 2%
+> KAN: 1.32 × 10 4
+> MLP: 2.75 × 10 4
+> KAN (all trials)
+> KAN (rolling average)
+> MLP (all trials)
+> MLP (rolling average)
+> 2% threshold (b) Fig. 6: Performance vs. complexity trade-off for KAN and MLP across 200 independent trials. (a) Best performing trials (b) Rolling average of EVM across the complexity interval. KAN reaches 2% EVM threshold consuming 52% fewer BOPs as compared to MLP.
+
+nonlinearity demands greater model expressivity. At 5 dBm, KAN achieves a 24 .2% lower EVM than an equivalent complexity MLP and 29 .6% lower than a GMP DPD model with a higher complex-ity of 10 5 BOPs. This demonstrates that KAN’s learnable B-spline activations provide a more ef-ficient nonlinear basis for the distortion profile of the VCSEL-based A-RoF link than fixed-activation MLP and Volterra-based GMP under stringent complexity constraints. At a higher complexity of 
+
+10 5 BOPs, KAN’s performance further improves, maintaining a low EVM across the full power range. At this level of complexity, MLP also achieves sim-ilar performance. This is illustrated in Table 1, which summarizes the EVM, ACLR and NMSE at 
+
+3 dBm. At BOP ≈ 10 5, KAN achieves an EVM of 
+
+0.91 %, an ACLR of −47 .46 dBc, and an NMSE of 
+
+−40 .81 dB, which is almost indistinguishable from an equivalent complexity MLP. However, KAN con-verges to the optimal performance at significantly lower complexity than MLP, as discussed in the following paragraphs.  
+
+> Tab. 1: Performance Comparison at 3 dBm RF Power
+
+DPD EVM (%) ACLR (dBc) NMSE (dB) 
+
+— 5.35 -34.54 -25.42 BOP ≈ 1 × 10 4
+
+MLP 1.98 -42.47 -34.06 
+
+KAN 1.56 -45.21 -36.14 
+
+BOP ≈ 1 × 10 5
+
+GMP 2.21 -41.57 -33.09 MLP 0.93 -47.07 -40.63 
+
+KAN 0.91 -47.46 -40.81 
+
+Figure 5 shows the normalized power spectral density (PSD) at an RF input power of 3 dBm. The PSD plot indicates high spectral regrowth without DPD. A 10 4 BOPs KAN achieves approximately 
+
+5 dB reduced spectral regrowth as compared to a 10 4 BOPs MLP and 10 5 BOPs GMP. The KAN model at higher complexity of 10 5 BOPs gives the best performance as highlighted in the inset of Fig. 5. Thus, these results illustrate that KANs are suitable for efficient linearization of A-RoF links. 
+
+Performance-versus-complexity analysis of KAN and MLP. To compare the performance of KAN and MLP across different complexity levels, we performed 200 independent trials for each archi-tecture using the hyperparameter search space summarized in Table 2. For each trial, we calcu-late the EVM for RF powers from 2 − 5 dBm and report the average EVM with respect to complex-ity in Fig. 6. Fig. 6a shows the best-performing trials for both networks. It can be seen that KAN is able to achieve much better performance at lower complexity. To better illustrate this, Fig. 6b plots the rolling average of EVM across the complexity range. The results indicate that KAN converges at a significantly lower BOP. To reach an EVM thresh-old of less than 2% , KAN requires 52% fewer BOPs than MLP. At high complexity, both KAN and MLP converge to a similar performance level.  
+
+> Tab. 2: Summary of hyperparameter search space
+
+Hyperparameter MLP KAN 
+
+Number of trials 200 200 
+
+Batch size 1024 1024 
+
+Learning rate 1 × 10 −3 1 × 10 −3
+
+Hidden layers 1, 2 1, 2
+
+Nodes per layer 4–64 4–32 
+
+Quantization bits 6, 8 6, 8
+
+Training epochs 40 40 
+
+Activation ReLU, GELU, SiLU Learnable 
+
+Spline order – 2, 3
+
+Grid size – 5, 7, 9
+
+Conclusion 
+
+We demonstrate linearization of a 5G NR A-RoF fronthaul link using KAN-based DPD. Results in-dicate that KAN outperforms conventional MLP and Volterra-based GMP models at low complex-ity. Specifically, to reach an EVM threshold below 
+
+2% , KAN requires 52% fewer BOPs than MLP. Our results highlight that KANs offer an efficient archi-tecture for low-complexity linearization of fronthaul A-RoF links. Acknowledgements 
+
+This research is funded by EU’s Horizon Eu-rope research and innovation programme MSCA-DN NESTOR (G.A. 101119983). S. K. Turit-syn acknowledges EPSRC project TRANSNET (EP/R035342/1). Experiments were run on EPS ML Server (Grant EP/V036106/1). The authors have applied a Creative Commons Attribution (CC BY) licence to any Author Accepted Manuscript (AAM) version arising from this submission. 
+
+References 
+
+[1] C. Lim et al., “Past and future development of radio-over-fiber”, Journal of Lightwave Technology , vol. 43, no. 4, pp. 1525–1541, 2025. DOI : 10.1109/JLT.2024. 3485129 
+
+[2] R. Sabella, A. Bigongiari, F. Cavaliere, A. D’Errico, L. Giorgi, and S. Stracca, “Microwave and high-speed pho-tonics applications to 6g systems”, Journal of Lightwave Technology , vol. 43, no. 21, pp. 9775–9792, Nov. 2025. [Online]. Available: https://opg.optica.org/jlt/ abstract.cfm?URI=jlt-43-21-9775 
+
+[3] V. A. Thomas, M. El-Hajjar, and L. Hanzo, “Performance improvement and cost reduction techniques for radio over fiber communications”, IEEE Communications Sur-veys & Tutorials , vol. 17, no. 2, pp. 627–670, 2015. DOI :
+
+10.1109/COMST.2015.2394911 
+
+[4] M. U. Hadi, P. A. Traverso, G. Tartarini, O. Venard, G. Baudoin, and J. -L. Polleux, “Digital predistortion for lin-earity improvement of vcsel-ssmf-based radio-over-fiber links”, IEEE Microwave and Wireless Components Let-ters , vol. 29, no. 2, pp. 155–157, 2019. DOI : 10.1109/ LMWC.2018.2889004 
+
+[5] M. U. Hadi, M. Awais, M. Raza, K. Khurshid, and H. Jung, “Neural network dpd for aggrandizing sm-vcsel-ssmf-based radio over fiber link performance”, Photon-ics , vol. 8, no. 1, 2021, ISSN : 2304-6732. DOI : 10.3390/ photonics8010019 [Online]. Available: https://www. mdpi.com/2304-6732/8/1/19 
+
+[6] L. Ding et al., “A robust digital baseband predistorter constructed using memory polynomials”, IEEE Transac-tions on Communications , vol. 52, no. 1, pp. 159–165, 2004. DOI : 10.1109/TCOMM.2003.822188 
+
+[7] A. Hekkala et al., “Predistortion of radio over fiber links: Algorithms, implementation, and measurements”, IEEE Transactions on Circuits and Systems I: Regular Papers ,vol. 59, no. 3, pp. 664–672, 2012. DOI : 10.1109/TCSI. 2011.2167267 
+
+[8] D. Morgan, Z. Ma, J. Kim, M. Zierdt, and J. Pastalan, “A generalized memory polynomial model for digital pre-distortion of rf power amplifiers”, IEEE Transactions on Signal Processing , vol. 54, no. 10, pp. 3852–3860, 2006. 
+
+> DOI
+
+: 10.1109/TSP.2006.879264 
+
+[9] L. A. M. Pereira, L. L. Mendes, C. J. A. Bastos-Filho, and A. C. S. Jr, “Machine learning-based linearization schemes for radio over fiber systems”, IEEE Photonics Journal , vol. 14, no. 6, pp. 1–10, 2022. DOI : 10.1109/ JPHOT.2022.3210454 
+
+[10] A. C. Najarro and S. -M. Kim, “Nonlinear compensation using artificial neural network in radio-over-fiber system”, 
+
+Journal of Information & Communication Convergence Engineering , vol. 16, no. 1, pp. 1–5, 2018. [11] C. D. Fontes da Silva and E. Porto da Silva, “Perfor-mance vs complexity analysis of neural network and memory polynomial-based dpd for a-rof fronthaul”, in 
+
+2025 SBMO/IEEE MTT-S International Microwave and Optoelectronics Conference (IMOC) , 2025, pp. 1–5. DOI :
+
+10.1109/IMOC65414.2025.11365761 
+
+[12] M. U. Hadi, “Practical demonstration of 5g nr transport over-fiber system with convolutional neural network”, 
+
+Telecom , vol. 3, no. 1, pp. 103–117, 2022, ISSN : 2673-4001. DOI : 10 . 3390 / telecom3010006 [Online]. Avail-able: https://www.mdpi.com/2673-4001/3/1/6 
+
+[13] L. A. M. Pereira, L. L. Mendes, C. J. A. B. Filho, and A. C. Sodré, “Amplified radio-over-fiber system lineariza-tion using recurrent neural networks”, Journal of Optical Communications and Networking , vol. 15, no. 3, pp. 144– 154, Mar. 2023. DOI : 10.1364/JOCN.474290 [Online]. Available: https://opg.optica.org/jocn/abstract. cfm?URI=jocn-15-3-144 
+
+[14] M. U. Hadi, K. U. Danyaro, A. AlQushaibi, R. Qureshi, and T. Alam, “Digital predistortion based experimen-tal evaluation of optimized recurrent neural network for 5g analog radio over fiber links”, IEEE Access , vol. 12, pp. 19 765–19 777, 2024. DOI : 10.1109/ACCESS.2024. 3360298 
+
+[15] J. He, J. Lee, S. Kandeepan, and K. Wang, “Machine learning techniques in radio-over-fiber systems and net-works”, Photonics , vol. 7, no. 4, 2020, ISSN : 2304-6732. 
+
+> DOI
+
+: 10 . 3390 / photonics7040105 [Online]. Available: 
+
+https://www.mdpi.com/2304-6732/7/4/105 
+
+[16] Z. Liu et al., “KAN: Kolmogorov–arnold networks”, in 
+
+The Thirteenth International Conference on Learning Representations , 2025. [Online]. Available: https:// openreview.net/forum?id=Ozo7qJ5vZi 
+
+[17] S. Somvanshi, S. A. Javed, M. M. Islam, D. Pandit, and S. Das, “A survey on kolmogorov-arnold network”, ACM Comput. Surv. , vol. 58, no. 2, Sep. 2025, ISSN : 0360-0300. DOI : 10.1145/3743128 [Online]. Available: https: //doi.org/10.1145/3743128 
+
+[18] C. Chen et al., “Kolmogorov-arnold network for efficient equalization in short-reach im/dd systems”, Opt. Ex-press , vol. 33, no. 16, pp. 33 139–33 152, Aug. 2025. 
+
+> DOI
+
+: 10 . 1364 / OE . 566194 [Online]. Available: https : //opg.optica.org/oe/abstract.cfm?URI=oe- 33-16-33139 
+
+[19] J. Chen, Y. Lv, W. Zhao, L. Xin, G. Xu, and T. Liu, “Real-valued time delay kolmogorov-arnold network for digital predistortion of rf power amplifiers”, in 2025 Interna-tional Conference on Microwave and Millimeter Wave Technology (ICMMT) , 2025, pp. 1–3. DOI : 10 . 1109 / ICMMT65948.2025.11188977 
+
+[20] P. Freire et al., “Computational complexity optimization of neural network-based equalizers in digital signal pro-cessing: A comprehensive approach”, Journal of Light-wave Technology , vol. 42, no. 12, pp. 4177–4201, 2024. [21] B. Khalid, P. Freire, S. K. Turitsyn, and J. E. Prilepsky, 
+
+Hardware-oriented inference complexity of kolmogorov-arnold networks , 2026. arXiv: 2604.03345 [cs.LG] . [On-line]. Available: https://arxiv.org/abs/2604.03345 
+
+[22] Mobile Optical Pluggables Alliance (MOPA), “Mopa re-quirements and blueprints v26a”, Tech. Rep., Mar. 2025, p. 22. [Online]. Available: https : / / mopa - alliance . org/wp- content/uploads/MOPA_Technical_Paper_ Requirements_and_Blueprints_26a_Final.pdf 
+
+[23] F. Cavaliere, Centralization vs. disaggregation in 5g and 6g radio access: The role of photonics , presented at the 
+
+51 st European Conference on Optical Communication (ECOC), Copenhagen, Denmark, [Online]. Available: 
+
+https : / / www . ecocexhibition . com / wp - content / uploads/Wed- 1120- ECOC- 2025- Fabio- Cavaliere-presentation.pdf , Oct. 2025. [24] C. Eun and E. Powers, “A new volterra predistorter based on the indirect learning architecture”, IEEE Trans-actions on Signal Processing , vol. 45, no. 1, pp. 223– 227, 1997. DOI : 10.1109/78.552219
