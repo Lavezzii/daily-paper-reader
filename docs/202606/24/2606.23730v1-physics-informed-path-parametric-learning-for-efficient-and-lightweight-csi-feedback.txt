@@ -1,0 +1,778 @@
+Title: Physics-Informed Path-Parametric Learning for Efficient and Lightweight CSI Feedback
+
+URL Source: https://arxiv.org/pdf/2606.23730v1
+
+Published Time: Wed, 24 Jun 2026 00:04:04 GMT
+
+Number of Pages: 15
+
+Markdown Content:
+> 1
+
+# Physics-Informed Path-Parametric Learning for Efficient and Lightweight CSI Feedback 
+
+Chunyu Ling, Jiajia Guo, Member , IEEE , Yiming Cui, Chao-Kai Wen, Fellow , IEEE , Shi Jin, Fellow , IEEE ,Shuangfeng Han, Senior Member , IEEE and Xiaoyun Wang 
+
+Abstract —Channel State Information (CSI) feedback is vi-tal for high spectral efficiency in wireless systems, yet high-dimensional CSI introduce significant feedback overhead. Recent deep learning (DL) approaches alleviate this issue by treating CSI as a visual image, but such “black-box” designs often lack interpretability, producing CSI that is not consistent with mul-tipath propagation principles. To address these limitations, this paper proposes HS-PINNnet, a Hierarchical Sensing mechanism assisted Physics-Informed Neural Network for CSI Feedback. Unlike vision-inspired methods, HS-PINNnet integrates a mul-tipath channel model into the network, reformulating high-dimensional CSI reconstruction as low-dimensional multipath pa-rameter estimation (e.g., amplitude, angle). HS-PINNnet features a hierarchical sensing encoder to produce a compact multipath representation, and a heterogeneous decoder for parameter-specific CSI reconstruction, with dedicated branches to estimate different parameters. Moreover, a PCD module adaptively esti-mates the number of dominant paths in each CSI sample to en-hance generalization across diverse environments. A subchannel-wise shared encoding and parallel decoding strategy is further designed to decompose high-dimensional CSI processing into low-dimensional subchannel tasks, reducing training difficulty and improving scalability of HS-PINNnet for future extremely large-scale multiple-input multiple-output (XL-MIMO) systems. Simulation results show that HS-PINNnet outperforms the state-of-the-art under different configurations, achieving a 92.8% reduction in FLOPs and exhibiting two orders of magnitude lower FPGA simulation latency. 
+
+Index Terms —CSI feedback, deep learning, physics-informed neural network, massive MIMO. 
+
+I. I NTRODUCTION 
+
+In the vision of 6G, ultra-massive multiple-input multiple-output (MIMO) systems serve as a foundational enabler to achieve unprecedented spectral efficiency and system capac-ity [2]. To support real-time beamforming at base stations (BSs), user equipments (UEs) must continuously report high-dimensional channel state information (CSI) [3]. However, the dimensionality of CSI scales proportionally with the expansion of antennas, resulting in escalating feedback overhead that per-sistently strains uplink resources [4]. Traditional approaches, including codebook-based quantization [5] and compressive sensing (CS) [6], become insufficient for reconstructing high-dimensional channels in such complex scenarios [4]. This mis-match between growing channel dimensionality and limited capacity poses a critical challenge for efficient CSI acquisition. Recent advancements in deep learning (DL) have sig-nificantly improved wireless communication tasks [7]–[11]. Benefiting from the powerful representation capabilities of 
+
+An earlier version of this paper was accepted by IEEE ICC 2026 [1]. 
+
+Fig. 1: Illustration of conventional CSI feedback and the proposed framework, where a physical model guides the network’s learning of CSI physical structure. The encoder compresses multipath features. The decoder recovers multipath parameters. Finally CSI is reconstructed via the model. AI models, explicit CSI feedback has become feasible [12]. As illustrated in the upper part of Fig. 1, DL methods typically treat CSI matrices as two-dimensional (2D) images using autoencoder architectures. CsiNet [13] pioneers this paradigm by employing a lightweight convolutional neural network (CNN) encoder and a RefineNet-based decoder. Sub-sequent CNN-based methods, such as CsiNet+ [14] and CRNet [15], improve reconstruction by enlarging receptive fields or introducing inception-style structures [16]–[18]. Meanwhile, Transformer-based approaches [19]–[22] leverage attention mechanisms [23], [24] to model long-range CSI dependencies. Notably, TransNet [21] attains superior accuracy with two-layer Transformer blocks in both encoder and decoder, but incurs substantially high computational complexity. Despite their effectiveness, these methods largely follow the “CSI-as-an-image” paradigm and mainly pursue architectural improvements inspired by computer vision. Such designs often require increasingly complex networks to obtain marginal 
+
+> arXiv:2606.23730v1 [eess.SP] 20 Jun 2026
+
+gains, making it difficult to balance reconstruction perfor-mance and computational complexity in real-world systems. Beyond the “CSI-as-an-image” framework, several studies have explored CSI physical properties to improve feedback performance. Temporal correlation from slow environmental variation has been exploited in [25]. Frequency correlation has been utilized by modeling subcarrier correlation [26] or lever-aging uplink-downlink channel reciprocity to mitigate pilot aliasing and reconstruction errors [27], [28]. Spatial correlation has been investigated in [29], which exploits angular-domain characteristics, and in [30], which uses magnitude similarity among nearby UEs to share path information. Beyond intrinsic CSI correlations, [31] exploits the mutualistic correlation be-tween sensing and communication data by embedding sensory information into CSI feedback packets. Although these works demonstrate the usefulness of phys-ical properties, they mainly treat such properties as statistical priors or correlation patterns, while the intrinsic physical multipath structure of CSI remains underexploited. To bridge this gap, [32] exploits stripe-like CSI patterns, but remains limited to structure modeling at image level. The Newtonized Orthogonal Matching Pursuit (NOMP) algorithm [33] directly estimates multipath parameters by iteratively selecting and refining atoms from a 2D grid, but incurs high complexity. [34] compresses CSI into geometric parameters for direct feedback. While valuable for its focus on limited scattering properties of CSI, it suffers from heavy reliance on precise parameter estimation at UE, insufficient exploration of parameter com-pressibility and high Transformer-induced complexity. Motivated by these observations, this work departs from “CSI-as-an-image” paradigm and shallow uses of physical priors, by directly incorporating the deterministic multipath propagation model into CSI feedback. Specifically, CSI is gen-erated by electromagnetic propagation, where signals interact with objects such as buildings and trees and arrive at the receiver through a limited number of paths, each characterized by complex gain, delay, and direction. This multipath propaga-tion allows CSI to be compactly represented as a superposition of a few dominant path components. Based on this insight, we introduce HS-PINNnet, a
+
+Hierarchical Sensing mechanism assisted Physics-Informed 
+
+Neural Network for CSI Feedback, which guides the network to recover the key parameters of propagation paths, providing a step toward physics-informed wireless representation learning [35]. Compared with direct parameter-feedback schemes [34], whose performance is limited by UE-side estimation errors and a fixed number of fed-back dominant paths, HS-PINNnet compresses multipath information into a learned codeword and performs parameter recovery at the BS. Under the same feedback overhead, this codeword can implicitly retain more information beyond a small set of selected paths, enabling HS-PINNnet to outperform practical direct parameter-feedback schemes while reducing UE-side complexity. The main con-tributions are summarized as follows:  
+
+> •
+
+Reformulating CSI reconstruction as multipath pa-rameter estimation: We break away from the “CSI-as-an-image” paradigm by exploiting the physical meaning of CSI. Since CSI can be characterized by path param-eters such as delays, angles, and amplitudes, the high-dimensional CSI reconstruction problem is reformulated as low-dimensional multipath parameter estimation. A novel method named HS-PINNnet is proposed, which embeds a multipath propagation model into the neural network, providing a step toward physics-informed wire-less representation learning.  
+
+> •
+
+Hierarchical sensing convolution for path-aware CSI compression: For efficient CSI compression in HS-PINNnet, the encoder is designed to identify critical multipath components and produce compact represen-tation. Specifically, a hierarchical sensing convolutional mechanism is developed to replace conventional convo-lutions, where large kernels perform rough path scanning and small kernels conduct fine-grained path localization, thereby generating high-quality feedback codewords.  
+
+> •
+
+Heterogeneous decoder for parameter estimation with physics-informed optimization: Under the parameter estimation framework, dedicated decoder branches are designed to handle heterogeneous distributions and esti-mation difficulties of different parameters, which is sup-ported by theoretical analysis on cumulative reconstruc-tion errors across antennas and subcarriers. The estimated parameters are then used to reconstruct CSI via a physical model, ensuring consistency with multipath propagation principles. Meanwhile, a two-stage training strategy is tai-lored for the proposed structure by first guiding parameter learning and then refining CSI reconstruction.  
+
+> •
+
+Adaptive output path-count configuration and low-complexity large-array processing: A PCD module is designed to estimate the dominant path-count level at the UE and feed it back to the BS, adjusting the decoder out-put dimension according to the propagation complexity of each CSI sample. For larger BS arrays, a subchannel-wise shared encoding and parallel decoding strategy decomposes high-dimensional CSI processing into low-dimensional subchannel tasks, reducing training diffi-culty and demonstrating the scalability of the proposed framework for future extremely large-scale multiple-input multiple-output (XL-MIMO) systems. The remainder of this paper is organized as follows. Section II introduces the system model. Section III elaborates the moti-vation and design of HS-PINNnet. Section IV demonstrates the PCD module for path number estimation. Section V introduces the subchannel-wise shared encoding and parallel decoding strategy for larger array processing. Simulation results are provided in Section VI, and Section VII concludes the paper. Notations: In this paper, italic letters denote scalars, while boldface lowercase and uppercase letters represent vectors and matrices, respectively. The Hermitian transpose of a vector or matrix is denoted by (·)H . The regular transpose is indicated by (·)T . Cm×n (Rm×n) denotes the space of m × n complex-valued (real-valued) matrices. Euclidean norm of a vector is given by ∥ · ∥ 2. The magnitude of a scalar is given by |·| .
+
+E(·) is the expectation over a batch of training samples. Ai,j 
+
+represents the (i, j )-th element of matrix A. All other notation is introduced contextually within the text. II. S YSTEM MODEL 
+
+In this paper, we investigate a typical cellular commu-nication system, the BS is equipped with a uniform linear array comprising Nt antennas, while the UE employs a single antenna. To facilitate spectrum utilization and mitigate inter-symbol interference, orthogonal frequency division multiplex-ing (OFDM) is adopted with Nc subcarriers. The received signal at the UE on the k-th subcarrier can be expressed as: 
+
+yk = hHk vkxk + nk, (1) For the k-th subcarrier, xk ∈ C represents the transmitted signal, vk ∈ CNt×1 denotes the precoding vector, hk ∈ CNt×1
+
+is the frequency-domain channel vector, and nk ∼ N (0 , σ 2
+
+> n
+
+)
+
+corresponds to the additive Gaussian noise. The CSI matrix 
+
+H ∈ CNc×Nt in frequency-spatial domain is defined as 
+
+H = [ h1, . . . , hNc ]H . Crucially, due to the limited number of scattering paths in massive MIMO environments, H exhibits significant sparsity when transformed into the angular-delay domain ˜H via inverse discrete Fourier transformation (IDFT), following [13]: ˜H = FdHF a, (2) where Fd ∈ CNc×Nc and Fa ∈ CNt×Nt are DFT matrices. This fundamental physical property is the underlying basis for compression and feedback overhead reduction. As illustrated in Fig. 1, we assume that the UE perfectly acquires the downlink CSI matrix H. In the CSI feedback process, the UE compresses the high-dimensional H (often processed in its sparse representation ˜H [13]) into a low-dimensional codeword c, which is then transmitted back to the BS. The process can be expressed as: 
+
+c = fen ( ˜H), (3) where fen denotes the encoder at the UE side. The BS subsequently reconstructs the CSI matrix ˆH from the received codeword. The process can be expressed as: 
+
+ˆH = fde (c), (4) where fde denotes the decoder at the BS side. Thus, the primary objective of CSI feedback is to minimize overhead while ensuring high-fidelity reconstruction of the CSI. III. P HYSICS -I NFORMED NEURAL NETWORK FOR CSI FEEDBACK 
+
+A. Motivation 
+
+Current autoencoder-based methods often treat the CSI matrix similarly to how one might treat an image in computer vision tasks, essentially as a grid of pixels, where each element is processed like an independent pixel. These methods typi-cally reconstruct the full-dimensional channel directly using objectives such as mean squared error (MSE), while largely ignoring the physical propagation process that generates CSI. As a result, such black-box compression strategies fail to exploit the inherent physical structure of wireless channels, leading to inefficient and complex models. However, the downlink CSI matrix is not merely an arbitrary 2D data array, but a deterministic manifestation of the physical propagation environment. It is mainly governed by a limited number of multipath components, each characterized by phys-ical parameters such as angle of departure, delay, and path amplitude. Hence, despite its high-dimensional representation, CSI can be compactly described as the superposition of a few dominant propagation paths. Therefore, as shown in Fig. 1, we advocate a physics-informed CSI feedback approach, where “physics-informed” indicates that a differentiable channel model is embedded into the neural reconstruction and optimization pipeline. Instead of directly compressing CSI as an image, the proposed frame-work estimates the lower-dimensional physical causes of CSI, namely the dominant multipath parameters, and reconstructs CSI through the channel model. This design improves phys-ical consistency in terms of model-guided output generation, aligning CSI reconstruction with wireless propagation physics. Meanwhile, such a framework reduces feedback overhead by transforming the task from a high-dimensional image-level recovery to a compact parameter-level estimation, providing a promising step toward physics-informed wireless represen-tation learning with improved interpretability. 
+
+B. Framework Overview 
+
+Since the physical meaning of CSI is fundamentally em-bedded within its distinct multipath components, an effective representation for these components is essential. Thus, hk of CSI can be approximated by a stochastic geometric physical channel model, following: 
+
+hk =
+
+> L
+
+X
+
+> l=1
+
+αle−j2π(k−1)∆ f τ l a(θl), (5) where a(θl) = 
+
+h
+
+1, e j 2πd sin( θl) 
+
+> λ
+
+, . . . , e j(Nt−1) 2πd sin( θl)
+
+> λ
+
+iT
+
+is the array steering vector across Nt antennas. L is the number of propagation paths and ∆f is the subcarrier spacing. d
+
+and λ denote the antenna spacing and the signal wavelength, respectively. θl ∈ [0 , 2π) is the angle of departure of the 
+
+lth path, and τl ∈ [0 , τ max ] denotes the time delay. The complex gain αl = βlejϕ l is composed of path amplitude 
+
+βl ∈ [0 , β max ] and phase ϕl ∈ [0 , 2π). The parameters τmax 
+
+and βmax represent the maximum delay and maximum path amplitude of all paths. Then, the downlink CSI matrix H can be expressed using the physical multipath model: 
+
+H = [ h1, . . . , hNc ]H =
+
+> L
+
+X
+
+> l=1
+
+βlejϕ l b(τl)aH (θl), (6) where b(τl) = 1, e −j2π∆f τ l , . . . , e −j(Nc−1)2 π∆f τ l
+
+T is the frequency response vector across Nc subcarriers. Equation (6) provides an effective representation of the mul-tipath information, where each propagation path can be char-acterized by the multipath parameter set P = [ p1, . . . , pL]T ∈
+
+RL×4. The parameters pl of the lth path are defined as 
+
+pl = {βl, ϕ l, θ l, τ l} . (7) Based on this analysis, it is sufficient to feed back the multipath features and reconstruct the parameter set P at the BS to reconstruct the downlink CSI. Fig. 2: The architecture of HS-PINNnet. The encoder is designed with a hierarchical sensing convolution mechanism, with large kernels leveraging global CSI features and roughly scanning the path region, then enabling adaptive masked small kernels to perceive local details and refining the path localizing. The decoder is designed as a main and subnet structure, recovering the overall multipath features and decoupling each parameter. Therefore, we propose a physics-informed CSI feedback framework based on the signal propagation multipath model. As shown in Fig. 1, the encoder at the UE and the decoder at the BS are implemented using deep neural networks (DNNs). The encoder compresses the multipath parameter features of the CSI into a codeword c, and the decoder recovers the exact multipath parameters P from the received codeword c.We first transform the CSI matrix H in (6) from the frequency-spatial domain to the angular-delay domain ˜H via IDFT in (2), whose sparse representation facilitates the net-work’s learning of the fundamental multipath characteristics inherent in the CSI. The complex-valued CSI matrix ˜H is then rearranged into a real-valued tensor Hin ∈ R2×Nt×Nc to serve as the input to the encoder. The process of encoding Hin 
+
+into a codeword c ∈ RM ×1 is expressed as 
+
+c = fen (Hin , Θen ), (8) where fen denotes the encoder and Θen its parameters. As shown in Fig. 1, the decoder at the BS recovers the multipath parameters ˆP ∈ RL×4 from the codeword c:
+
+ˆP = fde (c, Θde ), (9) where fde and Θde represent the decoder and its network parameters, respectively. The output ˆP = [ˆ p1, . . . , ˆpL]T
+
+contains all recovered parameters across the L paths. Finally, the reconstructed CSI ˆH can be obtained by: 
+
+ˆH = FH 
+
+> d
+
+fch ( ˆP)FH 
+
+> a
+
+, (10) where fch denotes the channel reconstruction process based on (6). Guided by this framework, we propose HS-PINNnet, which recovers CSI according to the estimated multipath pa-rameters. Compared with direct parameter-feedback schemes [34], whose performance is affected by UE-side parameter estimation errors and constrained by the fixed number of fed-back dominant paths even under perfect estimation, HS-PINNnet compresses multipath information into a learned codeword and offloads parameter recovery to the BS. Thus, un-der the same feedback overhead, the codeword can implicitly preserve information of more propagation components beyond a small set of selected dominant paths. This enables HS-PINNnet to outperform practical direct parameter-feedback schemes with imperfect UE-side estimation. Details are de-scribed in the following sections. 
+
+C. HS-PINNnet Architecture 
+
+HS-PINNnet is designed with a hierarchical sensing convo-lutional encoder and a hetero-architecture decoder with a main and subnet structure, as illustrated in Fig. 2. In the following sections, we introduce the encoder and decoder, respectively. 
+
+1) Hierarchical Sensing Convolutional Encoder: The en-coder aims to detect and compress multipath features into a low-dimensional codeword for efficient decoding. Since dominant multipath parameters are mainly derived from lo-calized regions in the angular-delay CSI, the encoder should emphasize path-dominant areas while suppressing irrelevant or Shared                        
+
+> convolutionalkernelDestination
+> pixel
+> Sourcepixel
+> Destination
+> pixe
+> Region-specific
+> convolutional kernel
+> ( NN generate ) l
+> Sourcepixel
+> 200
+> 0
+> 0
+> 2
+> 1
+> 1
+> 1
+> 400
+> 0
+> 0
+> 0
+> 0
+> 0
+> -4
+> -8
+> 400
+> 0
+> 0
+> 0
+> 0
+> 0
+> -4
+> 000
+> 0
+> 0
+> 1
+> 1
+> 1
+> 2
+> 4
+> 000
+> 0
+> 0
+> 1
+> 1
+> 1
+> 2
+> 200
+> 0
+> 0
+> 2
+> 1
+> 1
+> 1
+> 400
+> 0
+> 0
+> 1
+> 0
+> 0
+> 1
+> 3
+> 000
+> 0
+> 2
+> -1
+> 0
+> 0
+> -1
+> -3
+> ConventionalConvolutionHSConvolution
+
+Fig. 3: The difference between conventional convolution and HS convolution. For clarity in representation, the region-specific convolutional kernels is shown as a 3 × 3 format. noisy components. However, conventional convolutions share kernels across the entire input and treat all spatial locations with uniform sensitivity, which is inefficient because only limited angular-delay regions contain meaningful multipath information as shown in Fig. 1. This motivates region-specific feature extraction to enhance path-related components over background regions [36]. To this end, we propose a hierarchical sensing convolutional encoder that combines the complementary strengths of large and small kernels [37]–[39]. Specifically, large kernels, due to their broader receptive fields, are well suited for scanning dominant multipath components, while small kernels, with localized receptive fields, are more appropriate for capturing fine-grained multipath details. Accordingly, the hierarchical sensing convolutional encoder first applies large kernels to extract global CSI features and coarsely identify path regions, then generates position-specific small kernels with location-dependent values on the feature map, enabling fine-grained refinement of multipath localization. The above process is illustrated in Fig. 2. In this archi-tecture, we adopt asymmetric large-kernel convolution [40] to independently capture features in the angular and delay domains. A convolutional layer with a 1 × 7 kernel is initially applied to guide the network in learning global features and generating intermediate feature maps. The encoder is then split into two branches, each using a 7 × 1 kernel. One branch generates position-specific diamond-shaped kernels 
+
+K ∈ R2×H×W ×ks , where ks is the kernel size. For ease of illustration, we use Kc,h,w,i,j to denote each element of the generated kernel, where c is the feature channel, h and w
+
+indicate the spatial position on the intermediate feature map, and i, j ∈ { 0, 1, 2, 3, 4} are the local kernel indices centered at (2 , 2) . To match the stripe-like patterns caused by the DFT windowing effect, only positions satisfying |i−2|+|j −2| ≤ 2
+
+are assigned valid values, while other positions are set to zero. Due to the different levels of angular and delay spread observed across paths, the other branch is used to generate binary masks m ∈ { 0, 1}2×H×W that control the activation strength across surrounding kernel regions. These masks allow the network to adapt to varying spatial spreads by modulat-ing the extent of feature extraction. We combine the masks with the diamond-shaped kernels to generate masked kernels 
+
+˜K ∈ R2×H×W ×ks , the process can be expressed as: 
+
+˜Kc,h,w,i,j =
+
+(
+
+mc,h,w Kc,h,w,i,j if |i − 2| = 2 or |j − 2| = 2 
+
+Kc,h,w,i,j otherwise (11) Subsequently, for each position in the 2×H ×W grid of the intermediate feature map, a unique masked kernel is applied to obtain the region-specific convolutional output, as shown in Fig. 3. Finally, a fully connected (FC) layer transforms the output into a low-dimensional codeword c of length M . This codeword is then transmitted from the UE to the BS. 
+
+2) Main and Subnet Decoder: The hetero-architecture de-coder consists of a shared main network and a branched subnet for estimating the multipath parameter matrix ˆP, as shown in Fig. 2. The main network serves as a feature extractor, tasked with extracting abstract features from the input codeword 
+
+c through stacked convolutional layers. Batch normalization [41] is inserted to stabilize feature distributions and accelerate convergence. A residual learning structure [42] is further adopted to alleviate degradation in deep networks. The extracted feature is then fed into the subnet to es-timate and decouple individual multipath parameters. Since 
+
+βl, ϕl, θl, and τl exhibit heterogeneous distributions and estimation difficulties, the subnet employs a multi-branch architecture, where each branch is tailored to one parameter. This branching strategy is informed by a detailed analysis of the parameters’ statistical distribution and network computa-tional requirements, optimizing both accuracy and efficiency in parameter reconstruction. Fig. 4 illustrates the distribution of multipath parameters and the following physical and empirical considerations guide the architectural design:  
+
+> •
+
+βl determines the strength of the corresponding multipath component and appears as a prominent intensity feature in the multipath response. As shown in Fig. 4, βl values are relatively concentrated with clear peaks, making them suitable for estimation using a lightweight branch.  
+
+> •
+
+ϕl is influenced by both the real and imaginary CSI components and exhibits circular periodicity and dis-continuities. Meanwhile, its nearly uniform distribution over [0 , 2π) indicates strong stochasticity. Thus a deeper branch is adopted for ϕl estimation.  
+
+> •
+
+θl determines the spatial direction of each path and the position of energy concentration along the angular axis. Due to environmental scattering, θl varies significantly across samples and paths, covering the full angular range, and thus requires a deeper branch for accurate estimation.  
+
+> •
+
+τl controls the distribution along the delay axis and is typically bounded by the maximum propagation delay. As shown in Fig. 4, τl has a concentrated distribution with clear peaks, making it easier to estimate. Thus to reflect these differences in estimation difficulty, different branch depths are assigned according to parameter estimation difficulty: lightweight single-layer FC branches are used for βl and τl, whereas deeper three-layer FC branches are used for ϕl and θl. The output dimension L of each branch corresponds to the estimated number of dominant propaga-tion paths, which can be determined based on PCD module 0 0.5 1 1.5               
+
+> -#10 -7
+> 0
+> 0.05
+> 0.1
+> 0.15
+> 0.2
+> 0.25
+> 0.3
+> 0.35
+> Probability
+> Path 1
+> Path 2
+> Path 3
+> Path 4
+> '
+> 0:/2 :3:/2 2:
+> Probability
+> 0
+> 0.005
+> 0.01
+> 0.015
+> 0.02
+> 0.025
+> 0.03
+> 0.035
+> Path 1
+> Path 2
+> Path 3
+> Path 4
+> 02468
+> =#10 -7
+> 0
+> 0.02
+> 0.04
+> 0.06
+> 0.08
+> 0.1
+> Probability
+> Path 1
+> Path 2
+> Path 3
+> Path 4
+> 3
+> 0:/2 :3:/2 2:
+> Probability
+> 0
+> 0.05
+> 0.1
+> 0.15
+> 0.2
+> Path 1
+> Path 2
+> Path 3
+> Path 4
+
+Fig. 4: Parameter distribution of the simulations’ scenario. β and τ are relatively concentrated with an obvious peak and comparatively easier to estimate. The phase ϕ tends toward a uniform random distribution and the antenna angle θ exhibits a different distribution for each path. These two parameters are inherently stochastic and more challenging to predict. Antenna index 
+
+0 5 10 15 20 25 30 35 
+
+> Relative error magnitude j"H=Hj
+
+0
+
+1
+
+2
+
+3
+
+4
+
+5 Exact, 10% 
+
+> 1st-order, 10%
+> Exact, 5%
+> 1st-order, 5%
+> Exact, 1%
+> 1st-order, 1%
+> Exact, 0%
+> 1st-order, 0%
+
+Fig. 5: Accumulated error of μ mismatch ( μ = π/ 2, N t = 32 )Subcarrier index 
+
+0 10 20 30 40 50 60 70 
+
+> Relative error magnitude j"H=Hj
+
+0
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1
+
+> Exact, 10%
+> 1st-order, 10%
+> Exact, 5%
+> 1st-order, 5%
+> Exact, 1%
+> 1st-order, 1%
+> Exact, 0%
+> 1st-order, 0%
+
+Fig. 6: Accumulated error of τ mismatch (τ = 1.5 ×
+
+10 −7, N c = 64 )introduced in Section IV. Finally, the branch outputs are concatenated into a structured parameter matrix ˆP ∈ RL×4,representing the recovered multipath parameters. These param-eters are then used to calculate the downlink CSI through the channel model in (6). 
+
+3) Theoretical Analysis of Multipath Parameter Estimation Errors: To quantitatively characterize the impact of multipath parameter estimation errors on the reconstructed CSI, we analyze the perturbation of the channel response caused by mismatches in the path amplitude, phase, delay, and angle parameters. For a wideband channel with L propagation paths, the channel vector at the k-th subcarrier can be written as (5). Accordingly, the contribution of the l-th path to the channel coefficient at the n-th antenna and the k-th subcarrier can be expressed as 
+
+hk(n, l ) = βlejϕ l e−j2π(k−1)∆ f τ l ej(n−1) μl , (12) where μl = 2πd λ sin θl for simplification. Suppose that the estimated parameters are perturbed as 
+
+ˆβl = βl + ∆ βl, ˆϕl = ϕl + ∆ ϕl,
+
+ˆτl = τl + ∆ τl, ˆθl = θl + ∆ θl. (13) and thus ˆμl = 2πd λ sin( θl + ∆ θl). Using the first-order Taylor expansion, the frequency-spatial perturbation can be approximated as 
+
+∆μl = ˆ μl − μl ≈ 2πd λ cos θl ∆θl. (14) Then, the reconstructed path component becomes 
+
+ˆhk(n, l ) = ( βl + ∆ βl)ej(ϕl+∆ ϕl)
+
+× e−j2π(k−1)∆ f (τl+∆ τl)ej(n−1)( μl+∆ μl). (15) Applying first-order approximations 
+
+ej∆ϕl ≈ 1 + j∆ϕl, (16) 
+
+e−j2π(k−1)∆ f ∆τl ≈ 1 − j2π(k − 1)∆ f ∆τl, (17) 
+
+ej(n−1)∆ μl ≈ 1 + j(n − 1)∆ μl, (18) we obtain the first-order perturbation of the l-th path is 
+
+∆hl(n, k ) = ˆhl(n, k ) − hl(n, k )
+
+≈ hl(n, k )
+
+ ∆βl
+
+βl
+
++ j∆ϕl − j2π(k − 1)∆ f ∆τl
+
++ j(n − 1)∆ μl
+
+
+
+. (19) Equation (19) reveals that the errors caused by amplitude mismatch ∆βl and phase mismatch ∆ϕl do not accumulate with antenna index n or subcarrier index k. In contrast, delay mismatch ∆τl is multiplied by (k − 1) , and angle mismatch 
+
+∆θl (∆μl) is multiplied by (n−1) . To quantify this effect, Fig. Step2:Refinement    
+
+> Codeword CSI Parameters
+> ,,,Encoder HS-PINNnet Structure
+> Decoder Physical model
+
+Step1:Guidance Ground Truth Ground Truth 
+
+> 1
+
+Fig. 7: The process of guidance and refinement training strategy. STEP1 guides HS-PINNnet to learn the map between CSI and multipath parameters, better accelerating the convergency of CSI reconstruction. STEP2 fine-tunes the pre-trained model and improves the accuracy of CSI reconstruction. 5 and Fig. 6 show the element-wise channel error under dif-ferent relative perturbations of τl and μl, with τl = 1 .5×10 −7
+
+s and μl = π/ 2. Results show that angular mismatch causes much faster error growth than delay mismatch. For example, with 32 antennas, a 1% angular error induces nearly 50% 
+
+distortion, whereas with 64 subcarriers, a 1% delay error leads to less than 10% deviation. These observations suggest that angle parameters require higher estimation accuracy than delay parameters, supporting the use of a deeper subnet branch for angle estimation. It also explains why even small parameter errors may cause substantial CSI reconstruction distortion, motivating a training objective that suppresses such amplified errors, as introduced in Section III-D. 
+
+D. Guidance and Refinement Training Strategy 
+
+Conventional DL-based methods typically minimize MSE between the reconstructed and original CSI. In contrast, HS-PINNnet leverages channel physics by taking the CSI matrix as input and the multipath parameters as output. Hence, minimizing parameter error is critical, as it guides the neural network to better capture the intrinsic physics of CSI. How-ever, parameter estimation accuracy alone does not guarantee satisfactory CSI reconstruction performance. As analyzed in section III-C3, even small parameter mismatches may accu-mulate over antenna and subcarrier indices, leading to non-negligible reconstruction distortion, which needs to be further refined by minimizing the reconstruction error of CSI. To address both objectives, we propose a guidance and refinement training strategy, as illustrated in Fig. 7. 
+
+1) STEP 1: Guidance: In the first training step, HS-PINNnet is guided to learn the mapping from the input CSI matrix Hin to the output parameter matrix ˆP based on the physical multipath model. The goal is to ensure that ˆP closely approximates the ground-truth parameter matrix P. The loss function is defined as the MSE between the predicted and ground-truth parameter matrices: 
+
+L1(Θen , Θde ) = 1
+
+NB
+
+> NB
+
+X
+
+> i=1
+
+∥ ˆP[i] − P[i]∥22, (20) where NB is the batch size, and Θen and Θde are the param-eters of the encoder and decoder. By prioritizing the precise 
+
+Fig. 8: The PCD module estimates the number of dominant paths to be recovered and then feeds it back to BS. estimation of multipath parameters in this step, HS-PINNnet establishes a foundation for subsequent CSI reconstruction. 
+
+2) STEP 2: Refinement: The ultimate goal is to accurately reconstruct the downlink CSI ˆH, since optimizing only the multipath parameters does not necessarily lead to accurate reconstructed channels as discussed above. Therefore, in the second training step, we fine-tune the network by optimizing 
+
+ˆP to better align with the CSI reconstruction model. The reconstructed CSI is calculated in (10). The loss function for this step is defined as the normalized mean squared error (NMSE) between ˆH and the ground-truth CSI H, which natu-rally incorporates the channel model into the back-propagated optimization as shown in Fig. 7: 
+
+L2(Θen , Θde ) = 1
+
+NB
+
+> NB
+
+X
+
+> i=1
+
+∥ ˆH[i] − H[i]∥22
+
+∥H[i]∥22
+
+. (21) We update Θen and Θde by applying this two-step training strategy, to jointly learn both an accurate parameter estimator and an effective CSI reconstructor. IV. P ATH COUNT DETECTION MODULE FOR ADAPTIVE 
+
+MULTIPATH RECOVERY 
+
+Most existing CSI feedback methods adopt a fixed feedback overhead for all channel samples. In such a design, the same latent dimension is used regardless of the actual propagation complexity of the input CSI. However, wireless channels Fig. 9: The illustration of subchannel-wise shared encoding and parallel decoding strategy for large BS arrays. exhibit highly diverse multipath characteristics across users and environments, thus the amount of information contained in different CSI samples is inherently non-uniform. As a result, a fixed-overhead feedback strategy is inefficient. Motivated by this insight, we propose an adaptive multipath recovery module, where the recovery process is adjusted according to the multipath richness of the input CSI sample. To this end, a lightweight Path Count Detection (PCD) module is deployed at UE side to estimate the number of dominant paths that need to be recovered from the input CSI. The detected path-count class is then fed back to the BS to determine the output dimension L of the subnet. As a result, the proposed CSI feedback framework can adapt to the propagation com-plexity of each sample, instead of relying on a fixed path-count assumption for all channels. The process is shown in Fig. 8. 
+
+A. Network Architecture 
+
+The PCD module is designed as a lightweight classification network, which takes Hin as input and outputs a path-count classification vector 
+
+ˆv = [ˆ v1, ˆv2, . . . , ˆvC ]T , (22) where C is the number of path-count classes, and ˆvc denotes the predicted probability that the input CSI belongs to the c-th class. The detected class is then mapped to the path number L
+
+used by the parameter recovery network at BS through fc2L .The process can be explained by: 
+
+L = fc2L (argmax(ˆ v)) = fc2L (argmax( fPCD (Hin ))) (23) As shown in Fig.8, the network is intentionally kept simple. The input CSI is first processed by a convolutional layer with 
+
+4 filters, followed by batch normalization and LeakyReLU activation. A max-pooling layer is then applied to reduce the spatial resolution and suppress feature redundancy. Next, a convolutional layer with 2 filters, followed by batch normal-ization, LeakyReLU, and max-pooling, is employed to further compress the representation. The resulting feature maps are flattened into a one-dimensional vector and passed to a fully connected layer, which outputs the final classification logits. 
+
+B. Training Process 
+
+The PCD module is trained as a multi-class classifier. To improve the separability among different classes, we do not assign one class to every exact path number. Instead, the labels are grouped with a step of 2 paths. Specifically, samples with 
+
+Ltrue = 1 and Ltrue = 2 are assigned to the class corresponding to detecting L = 2 paths, samples with Ltrue = 3 and Ltrue = 4 
+
+are assigned to the class corresponding to detecting L = 4 
+
+paths, and so on. This two-path grouping is adopted for the reason that if every possible path number were treated as an individual class, the classification boundaries would become overly dense, making the training process more difficult and reducing inter-class discriminability. Therefore, the classifica-tion space is instead coarsened into several representative path-count levels. Let q = [ q1, q 2, . . . , q C ]T denote the one-hot target label corresponding to the grouped path-count class, where 
+
+qc =
+
+(
+
+1, c = C(Ltrue ),
+
+0, otherwise , (24) and C(L) denotes the class index associated with the true path number L. The loss function of the PCD module is then defined as the cross-entropy loss 
+
+LPCD = −
+
+> C
+
+X
+
+> c=1
+
+qc log ˆ vc. (25) By minimizing LPCD , the network learns to predict an appro-priate path-count level for each CSI sample, providing an ef-fective foundation for the subsequent HS-PINNnet introduced in section III. V. S UBCHANNEL -WISE SHARED ENCODING AND 
+
+PARALLEL DECODING STRATEGY 
+
+HS-PINNnet reconstructs CSI using multipath parameters. However, for large BS antenna arrays in massive MIMO sys-tems, directly reconstructing the full CSI matrix significantly increases the dimensionality and learning difficulty of network, which issue is particularly important for future XL-MIMO systems. Although the CSI dimension grows with the number of antennas, the underlying propagation environment does not change accordingly. This motivates us to decompose the large-array CSI processing problem into several subchannel reconstruction tasks and propose a subchannel-wise shared encoding and parallel decoding strategy, as shown in Fig. 9. Specifically, the CSI matrix in the frequency-spatial domain is divided along the spatial dimension into Nsub subchannels. According to (6), the spatial-domain response of the l-th path is determined by 
+
+a(θl) = 
+
+h
+
+1, e jμ l , . . . , e j(Nt−1) μl
+
+iT
+
+, μ l = 2πd sin( θl)
+
+λ . (26) For the s-th subchannel, let ns denote its reference antenna index. Since each subchannel has the same number of antennas 
+
+Ns, the local steering vector within each subchannel has the same form: 
+
+asub (θl) = 
+
+h
+
+1, e jμ l , . . . , e j(Ns−1) μl
+
+iT
+
+. (27) Accordingly, the CSI of the s-th subchannel is 
+
+Hs =
+
+> L
+
+X
+
+> l=1
+
+βlejϕ l,s b(τl)aH
+
+> sub
+
+(θl), ϕ l,s = ϕl + nsμl. (28) This formulation shows that βl, τl, and θl are shared across subchannels, while ϕl,s varies with the reference antenna index 
+
+ns. Based on this physical structure, a shared encoder is recur-rently applied to all subchannels to extract compact features in a unified representation space. The resulting features are concatenated and further compressed into the final feedback codeword by an FC layer, aggregating local subchannel rep-resentations and global inter-subchannel correlations. At BS, Nsub parallel decoders are adopted to reconstruct different subchannels. Each decoder processes the whole codeword, so that the inter-subchannel correlations can be exploited during reconstruction. The outputs of all decoders are finally concatenated along the spatial dimension to recover the full CSI. In this way, the high-dimensional large-array CSI reconstruction is converted into multiple low-dimensional tasks, reducing training difficulty and improving the scalability of the proposed framework for future XL-MIMO systems. VI. S IMULATION RESULTS 
+
+A. Dataset and Experimental Setups 
+
+To evaluate the effectiveness of HS-PINNnet, CSI samples are generated using the DeepMIMO platform [43], where each TABLE I: Simulation and Training Parameters                                 
+
+> Parameter Setting
+> Scenarios O1, I3 Coverage area 100 m ×40 m (O1)
+> 10 m ×11 m (I3) Carrier frequency 3.5 GHz (O1), 2.4 GHz (I3) Bandwidth 50 MHz Subcarriers Nc= 64
+> UE antennas Nr= 1 (also 2,4for O1) BS antennas Nt= 32 ,256
+> Maximum paths L= 4 (O1), L= 10 (I3) Dataset size 20,000 Epochs 300 Learning rate 10 −4
+> Batch size 100
+
+sample consists of a channel matrix and the corresponding multipath parameter labels. In practical systems, such path-level labels can be obtained from measured channels using conventional high-resolution parameter estimation methods [33]. We consider both outdoor and indoor scenarios, namely the O1 scenario at 3.5 GHz and the I3 scenario at 2.4 GHz. BS is equipped with Nt = 32 antennas and UE with Nr = 1 
+
+antenna, while additional configurations with Nr = 2 , 4 (Sec-tion VI-F) and Nt = 256 (Section VI-G) are also evaluated for O1. The maximum number of paths is set to L = 4 for O1 and 
+
+L = 10 for I3. Each scenario contains 20,000 samples, split into training, validation, and test sets with a ratio of 8:1:1. HS-PINNnet (both guidance and refinement stages) and the PCD module are trained for 300 epochs using Adam optimizer, with a learning rate of 0.0001 and a batch size of 100. Detailed scenario and training parameters are summarized in Table I. 
+
+B. Metrics and Baselines 
+
+We evaluate our model’s performance using NMSE and squared generalized cosine similarity (SGCS). Model com-plexity is evaluated in floating point operations (FLOPs) and “FPGA simulation inference latency.” We compare HS-PINNnet with the following baselines: TVAL3 [6], a CS algorithm for reconstructing the original image from a small number of measurement data. CsiNet [13], the first work com-bining DL with CSI feedback; CsiNet+ [14], which utilizes larger receptive field of convolutional layers than CsiNet to compress and reconstruct CSI; CRNet [15], which adopts a multi-resolution DNN to refine the CsiNet decoder; TransNet 
+
+[21], the state-of-the-art model, which introduces a two-layer transformer and applies an attention mechanism in place of traditional convolution operations; HS-CsiNet , which adopts the HS convolutional encoder while utilizes the decoder of CsiNet [13]; NOMP [33], which uses an iterative algorithm to estimate multipath parameters from CSI, and then reconstruct the CSI with the iterated parameters; and Upper Bound of [34] , an ideal scheme that assumes the ground-truth parameters are fed back to the BS without any distortion, enabling a clearer comparison with the proposed HS-PINNnet. TABLE II: Comparison of CSI reconstruction accuracy and model complexity across different methods in O1 scenario. NMSE is measured in decibels (dB), SGCS in percent (%), and FLOPs in millions (M).                                                                                                                                        
+
+> Method M= 4 M= 6 M= 8 M= 10 M= 12
+> NMSE SGCS FLOPs NMSE SGCS FLOPs NMSE SGCS FLOPs NMSE SGCS FLOPs NMSE SGCS FLOPs TVAL3 [6] 0.09 25.60 –0.12 25.60 –0.16 25.60 –0.18 28.90 –0.20 28.90 –CsiNet [13] -2.48 66.67 13.88 -3.14 69.88 13.95 -3.25 69.93 14.01 -4.07 70.66 14.08 -4.65 75.91 14.14 CsiNet+ [14] -3.52 62.14 92.16 -4.73 68.97 92.23 -6.23 81.99 92.29 -7.00 84.20 92.36 -7.41 84.93 92.42 CRNet [15] -3.22 61.32 12.01 -4.43 75.65 12.08 -5.84 80.95 12.14 -6.81 83.57 12.21 -6.91 84.29 12.28 TransNet [21] -5.00 70.04 152.11 -8.60 87.40 152.18 -9.90 91.33 152.24 -10.29 91.52 152.31 -12.03 94.65 152.38 HS-CsiNet -3.92 61.34 15.81 -6.34 81.68 15.87 -6.82 84.45 15.94 -7.46 87.08 16.00 -7.90 87.67 16.07 HS-PINNnet -5.04 70.83 11.09 -9.82 92.49 11.16 -11.61 94.77 11.22 -12.03 95.06 11.29 -12.30 95.29 11.35 Angular-Delay Domain Spatial-Frequency Domain
+> M=4 M=6 M=8 M=4 M=6 M=8
+> Original CsiNet CRNet CsiNet+ TransNet HS-PINNnet
+
+Fig. 10: Channel reconstruction visualization of different methods and codeword length in O1. 
+
+C. Performance Under Different Codeword Length 
+
+Table II presents a comparative analysis of HS-PINNnet against baseline models under different compression ratios in O1 scenario. In our simulation setup, we extract 4 multipath components, each characterized by βl, ϕl, θl and τl. This results in a maximum of 16 parameters required to reconstruct the CSI. However, observations indicate that these parameters often exhibit redundancy (e.g., similar delays across paths). Thus, we set the codeword dimension from M = 4 to M = 12 
+
+to exploit this redundancy and further compress the infor-mation. Table II demonstrates that HS-PINNnet outperforms baseline models across all compression levels, achieving over 5 dB NMSE gain compared to CsiNet. Furthermore, it sur-passes TransNet with significantly lower complexity, requiring about 11 million FLOPs versus TransNet’s 152 million FLOPs, which is an approximately 92.8% reduction. 16 18 20 22 24 26 28 30 32 -14 -13 -12 -11 -10 -9 -8 CsiNet CsiNet+ CRNet TransNet HS-PINNnet 
+
+Fig. 11: Comparison of CSI reconstruction accuracy of differ-ent methods in I3. The channel reconstruction performance in the indoor I3 scenario is illustrated in Fig. 11. Compared to the O1 scenario, indoor environment exhibits richer multipath propagation with up to L = 10 paths. Nevertheless, HS-PINNnet still achieves superior or comparable performance to TransNet with much lower complexity, demonstrating the robustness and scalability of HS-PINNnet across both sparse and dense multipath envi-ronments. These advantages, especially at high compression ratios, stem from incorporating the channel model to fully exploit multipath structure, enabling efficient feedback of com-pact parameter representations with a lightweight architecture. 
+
+D. Analysis of the Role of PINN 
+
+To assess the contribution of PINN, we compare HS-PINNnet with HS-CsiNet in Table II, which adopts the HS convolutional encoder and CNN structure decoder. By recon-structing CSI without incorporating the physical model, HS-CsiNet exhibits an NMSE drop exceeding 3 dB compared to HS-PINNnet. This gap highlights the limitations of purely data-driven approaches, which lack the ability to leverage domain-specific physical knowledge. In contrast, HS-PINNnet integrates a physics-informed decoder to estimate the parame-ters, effectively exploiting the knowledge of the channel model and achieving superior performance. Additionally, Fig. 10 visualizes the reconstructed CSI and only the first 32 subcarriers are shown. The angular-delay -14   
+
+> -12
+> -10
+> -8
+> -6
+> -4
+> -2
+> 0
+> NMSE (dB)
+> -7.54
+> -6.64
+> -3.25
+> -5.84 -6.23
+> -9.90 -9.82
+> -11.61
+> Upper bound of [3 4]
+> NOMP
+> CsiNet
+> CRNet
+> CsiNet+
+> TransNet
+> HS-PINNnet(M=6)
+> HS-PINNnet(M=8)
+
+Fig. 12: Comparison of CSI reconstruction accuracy when 
+
+M = 8 .domain results show that the original CSI exhibits distinct spreading patterns, each corresponds to an individual propaga-tion path. Conventional DL methods mainly minimize pixel-wise MSE, without explicitly modeling the underlying channel physics. Therefore, they struggle to preserve spreading pat-terns under high compression ratios and introduce noticeable background noise. In contrast, HS-PINNnet embeds the phys-ical model into reconstruction, enabling physically consistent CSI recovery with clearer spreading structures and noise-free background. Similarly, in the frequency-spatial domain, HS-PINNnet also better preserves the inherent periodic patterns, while conventional methods generate blurred or distorted structures. This comparison validates the advantage of PINN. 
+
+E. Performance Comparison with Direct Feedback of Multi-path Parameters 
+
+As previously discussed, a maximum of 16 parameters is required to reconstruct the CSI, corresponding to four multipath components, each characterized by four parameters. However, due to inherent redundancies in these parameters, such as similar delays across certain paths, the CSI can still be effectively reconstructed even at higher compression ratios. To validate this, performance in O1 scenario with a codeword dimension of M = 8 is illustrated in Fig. 12, which corre-sponds to the parameter count of two propagation paths (i.e., 8 parameters). In the simulation, the “Upper bound of [34]” refers to the ideal scenario where the two strongest propagation paths are perfectly recovered and directly fed back. In contrast, the NOMP case employs an iterative algorithm to estimate the parameters of the two dominant paths and reconstruct the CSI using these estimates. As shown in Fig. 12, when M = 8 ,HS-PINNnet outperforms both NOMP and upper bound of [34], indicating that the codeword generated by HS-PINNnet at 
+
+M = 8 not only encodes comprehensive information about the two dominant paths but also retains partial information about the third and fourth paths, thereby enhancing reconstruction accuracy. Remarkably, even at a higher compression ratio with 
+
+M = 6, HS-PINNnet still surpasses NOMP, underscoring the encoder’s capability to achieve both effective parameter information extraction and efficient compression. These results highlight the robustness of HS-PINNnet in capturing essential multipath characteristics under strict compression constraints. 
+
+F. Performance with Multiple UE Antennas 
+
+To evaluate scalability, we test HS-PINNnet in the O1 scenario with multiple UE antennas. When Nr > 1, an additional angle-of-arrival parameter is required for each path. Therefore, each path is represented by five parameters, and the codeword length is set to M = 5 L. The CSI is stacked along the UE-antenna dimension and fed into the network, while the remaining network architecture is kept unchanged. As shown in Table III, HS-PINNnet maintains competitive reconstruction performance under different values of Nr and 
+
+L. More importantly, its FLOPs remains nearly unchanged as 
+
+Nr increases. This is because the proposed framework mainly operates on the compact multipath-parameter representation, and only the input(output) dimensions are slightly enlarged. In contrast, TransNet processes CSI in an image-like man-ner, causing its complexity to increase rapidly with Nr. For example, when Nr = 4 , TransNet requires more than 686M FLOPs, which is nearly 60 times that of HS-PINNnet. These results demonstrate that HS-PINNnet is more computationally scalable for multi-antenna UE scenarios. 
+
+G. Performance with Larger BS Antenna Arrays 
+
+To evaluate the scalability of HS-PINNnet with larger BS antenna arrays, we extend the O1 scenario to Nt = 256 and adopt the subchannel-wise shared encoding and parallel de-coding strategy, mentioned in Section V, to train the network. 
+
+Nsub is set to 8. For fair comparison, other baselines are also implemented with the same shared-encoder and parallel-decoder structure. Since the total parameter dimension is 
+
+8 × 16 = 128 , we set M = 64 , 96 , 128 . As shown in Table IV, HS-PINNnet maintains effective CSI reconstruction under the 
+
+256 -antenna setting. This is because the proposed framework exploits the shared physical multipath structure across sub-channels and compresses redundant parameter information under guiding and refinement training strategy. In contrast, other baselines treat each subchannel as an independent image-like input, making it difficult to exploit such high-dimensional information sharing and rendering their non-convergence at low codeword lengths. 
+
+H. Ablation Experiments 
+
+To further validate our network design, we conduct exten-sive ablation studies in O1 scenario, summarized in Table V. 
+
+1) Encoder Analysis: We evaluate the impact of the en-coder by replacing the hierarchical sensing convolutional mechanism with standard convolutional layers. In the “Csi-PINNnet” setting, we substitute the encoder with the one of CsiNet, which adopts a convolutional layer with 2 filters, while the “Csi-PINNnet (3conv)” setting employs three con-volutional layers with 8, 16, and 2 filters. A performance degradation of more than 1.5 dB is observed in both cases. This confirms the effectiveness of the hierarchical sensing convolutional mechanism, which uses large kernels for global feature extraction and adaptive small kernels for local multi-path detail detection. TABLE III: Performance Comparison under Different Numbers of UE Antennas in O1. NMSE is measured in decibels (dB), SGCS in percent (%), and FLOPs in millions (M). The codeword length is M = 4 L for Nr = 1 and M = 5 L for N r = 2 , 4.                                                                           
+
+> Encoded Path Method Nr= 1 Nr= 2 Nr= 4
+> NMSE SGCS FLOPs NMSE SGCS FLOPs NMSE SGCS FLOPs
+> L= 1 HS-PINNnet -5.04 70.83 11.09 -6.66 79.01 11.24 -7.83 83.04 11.47 TransNet -5.00 70.04 152.11 -6.17 77.68 317.88 -6.73 80.19 686.17
+> L= 2 HS-PINNnet -11.61 94.77 11.22 -12.17 91.24 11.32 -12.59 91.07 11.55 TransNet -9.90 91.33 152.24 -12.06 94.59 318.05 -12.11 94.90 686.50
+> L= 3 HS-PINNnet -12.30 95.29 11.35 -12.55 91.35 11.40 -12.95 91.60 11.63 TransNet -12.03 94.65 152.38 -12.34 95.29 318.21 -12.49 95.29 686.83
+
+TABLE IV: Performance with Nt = 256 . Other baselines include CsiNet, CsiNet+, CRNet, and TransNet.                
+
+> MMethod NMSE (dB) SGCS (%) 64 HS-PINNnet -5.89 81.00 Other baselines Non-convergent 96 HS-PINNnet -6.92 84.95 Other baselines Non-convergent 128 HS-PINNnet -7.86 87.17 Other baselines Non-convergent
+
+TABLE V: Ablation study results under M = 6 .                                
+
+> Method NMSE (dB) SGCS (%) FLOPs (M)
+> Encoder Architecture
+> Csi-PINNnet -5.65 83.90 9.23 Csi-PINNnet (3conv) -8.28 89.62 15.67
+> Decoder Architecture
+> Without main-net Non-convergent 4.40 Subnet branches 1-1FC -4.45 69.37 10.11 Subnet branches 1-2FC -9.22 91.45 10.60 Subnet branches 1-4FC -8.77 91.08 12.33 Subnet branches 3-3FC -8.56 90.47 12.21
+> Training Strategy
+> Without guidance 1.68 16.43 11.16 Without refinement 1.62 32.46 11.16
+> Proposed Method Ours -9.82 92.49 11.16
+
+2) Decoder Analysis: The decoder consists of a main network and a heterogeneous subnet. The main network ex-tracts global features, whose removal causes non-convergence. Moreover, Table V compares different FC depths of subnet, where “ a-b FC” denotes a FC layers for shallow branches and 
+
+b FC layers for deep branches. In the “1-b FC” cases, the branches for β and τ each employ a single FC layer, as the guiding step shows that one layer suffices to achieve NMSE below -15 dB for both parameters. In contrast, the recovery accuracy of ϕ and θ with a single layer falls short of -10 dB, thus deeper FC branches are adopted. We evaluate b = 1 
+
+to b = 4 and find that 2 to 4 FC layers accurately recover these angles, with the proposed 3-layer achieving the best performance. In the “3-3 FC” case, deep branches for β and 
+
+τ underperform the proposed one due to possible overfitting, further validating the rationality of the subnet. 4 6 8 10 12 -14 -12 -10 -8 -6 -4 -2 4-bit 5-bit 6-bit 7-bit 8-bit 9-bit 10-bit Without Quant. 
+
+Fig. 13: CSI reconstruction performance under different quan-tization levels. 
+
+3) Training Strategy Analysis: The training strategy con-sists of a guidance and a refinement stage. As shown in Table V, omitting Step 1, directly using NMSE as the optimization objective, renders HS-PINNnet ineffective. This is because Step 1 is crucial for learning the map between H and P.Without this step, the network lacks guidance for parameter extraction. Similarly, skipping the refinement step, directly reconstructing the CSI using the parameters obtained from guidance, also results in poor performance. This is because the exponential and trigonometric operations involved in CSI reconstruction amplify any errors in the estimated parameters, which has been verified in section III-C3. Therefore, Step 2 is essential for refining the parameters to align them with the reconstruction process (6). 
+
+I. Codeword Quantization Sensitivity Analysis 
+
+We further investigate the impact of codeword quantization on the performance of the proposed HS-PINNnet in O1 scenario. Since the feedback codeword serves as the com-pact representation of multipath information, its quantization accuracy directly affects the fidelity of parameter recovery and thus the final channel reconstruction quality. Fig. 13 shows the channel reconstruction performance under different quantization level, and a clear performance-precision tradeoff can be observed. When the quantization resolution is too low (e.g., 4 bits), the reconstruction performance degrades signif-icantly, indicating that severe information loss occurs during codeword discretization. As the bit increases, the performance 10 0 10 1 10 2 
+
+> FPGA inference latency (ms)
+> -12
+> -10
+> -8
+> -6
+> -4
+> -2
+> NMSE (dB)
+> CsiNet
+> CRNet CsiNet+
+> TransNet HS-PINNnet
+> (a)
+> CsiNet
+> CRNet
+> CsiNet+
+> TransNet
+> HS-PINNnet
+> 10 -1
+> 10 0
+> 10 1
+> 10 2
+> FPGA inference latency (ms)
+> 0.18 0.18
+> 0.37
+> 62.01
+> 0.79
+> (b)
+> CsiNet
+> CRNet
+> CsiNet+
+> TransNet
+> HS-PINNnet
+> 10 -1
+> 10 0
+> 10 1
+> 10 2
+> FPGA inference latency (ms)
+> 1.09
+> 1.98
+> 6.26
+> 77.55
+> 3.91
+> (c)
+
+Fig. 14: (a) Total FPGA inference latency of different methods. The size of the scatter point is proportional to the inference latency. (b) and (c) is FPGA inference latency of encoders and decoders respectively. improves rapidly and gradually saturates. In particular, 6–7 bit quantization already achieves performance comparable to the unquantized case. Therefore, an appropriate quantization level can be selected to balance feedback overhead and reconstruc-tion accuracy according to system requirements. 
+
+J. FPGA Complexity Analysis 
+
+Table II reports the FLOPs of different methods. However, FLOPs do not account for data loading, storage, or parallel execution during hardware deployment [44]. Therefore, to provide a more realistic estimation of the network’s complex-ity, we employ Deep Learning HDL Toolbox of MATLAB to simulate hardware inference latency. The hardware clock frequency is set to 220 MHz, and the estimated latencies for 
+
+M = 8 are shown in Fig. 14(a). Since the toolbox cannot estimate the latency of multihead layer, this portion is excluded from TransNet. It can be observed that although HS-PINNnet achieves the lowest FLOPs in Table II, its latency is slightly higher than that of CsiNet [13] and CRNet [15], indicating that FLOPs and latency are not linearly correlated. Additionally, HS-PINNnet achieves a favorable performance improvement while maintaining relatively low latency, which is two orders of magnitude lower than TransNet. Fig. 14 (b) and (c) further present the encoder and decoder latencies. The encoder latency of HS-PINNnet is slightly higher than CsiNet [13], remaining within the same order. This moderate increase brings over 5dB reconstruction gains, thus providing a practical UE-side trade-off between latency and accuracy, while avoiding the unacceptable latency of TransNet. Table VI shows the latency per layer of HS-PINNnet when 
+
+M = 8. “Cycles” is the product of the latency and the hardware frequency. The table also includes γ = FLOPs Cycles and a higher ratio indicates faster hardware acceleration. The results show that convolutional layers exhibit higher γ than FC layers, indicating stronger hardware parallelization and acceleration capability. This explains why HS-PINNnet, which contains more FC layers, has slightly longer latency than CsiNet and CRNet. Furthermore, the higher γ of “Conv6” compared with “Conv4” suggests that convolutional layers with more filters can better exploit hardware parallelism. TABLE VI: HS-PINNnet ( M = 8 ) FPGA performance of each layer when frequency is 220MHz.                                                                        
+
+> Layer Latency (ms) Cycles FLOPs γ
+> Encoder
+> Conv0 0.07 14,748 57,344 3.89 Conv1 kernelbranch 0.33 72,438 745,472 10.29 Conv2 maskbranch 0.07 14,748 57,344 3.89 multiple 0.10 21,925 16,384 0.75 Conv3 0.09 18,854 106,496 5.65 FC 0.13 29,018 32,768 1.12
+> Decoder
+> FC 0.15 31,916 32,768 1.03 Conv4 0.05 10,642 73,728 6.93 Conv5 0.07 16,151 294,912 18.26 Conv6 0.18 40,309 2,359,296 58.53 Conv7 0.14 31,585 589,824 18.67 add 0.05 10,993 4,096 0.37 FC branch β/τ0.07 15,771 16,384 1.04 FC branch0 ϕ/θ1.94 426,458 524,288 1.23 FC branch1 ϕ/θ0.02 3,786 8,192 2.16 FC branch2 ϕ/θ0.00 289 256 0.89
+
+TABLE VII: Performance of the Proposed PCD Module                          
+
+> Overall Performance
+> Training Accuracy 95.98% Validation Accuracy 94.23% Test Accuracy 94.74% Relaxed Accuracy 96.17% FLOPs 0.389M
+> Confusion Matrix of Test Set True / Predicted 24682238 33 00
+> 431 1323 20
+> 6022 276 10
+> 80016 217
+
+K. Detection Performance of PCD module 
+
+The performance of the PCD module is evaluated in terms of classification accuracy and computational complexity in the O1 scenario. The confusion matrix in Table VII shows that most samples are correctly classified, with only minor confusion between adjacent path-count classes. This behavior is expected, as channels with similar numbers of paths often exhibit comparable propagation characteristics. Quantitatively, the PCD module achieves classification accuracy of 95.98%, 94.23%, and 94.74% on the training, validation, and test set. Furthermore, considering that assigning a smaller path-count sample to a slightly larger class still allows successful recovery, the relaxed accuracy increases to 96.17%, proving the strong ability of PCD module to capture multipath richness of CSI samples. In terms of complexity, the proposed PCD network requires only 0.389M FLOPs, which is negligible compared to typical CSI feedback models. This demonstrates that the PCD module can be efficiently deployed at the UE side without introducing noticeable computational overhead. VII. C ONCLUSION 
+
+In this paper, we propose a physics-informed CSI feedback method HS-PINNnet, enabling the network to learn multipath characteristics of the wireless channel. The encoder is designed with a hierarchical sensing convolutional mechanism to effi-ciently compress the multipath features. The decoder adopts a hetero-architecture to recover each parameter for accurate CSI reconstruction. In addition, a PCD module is introduced to adaptively estimate the number of dominant paths contained in CSI samples. A subchannel-wise shared encoding and parallel decoding strategy is designed to improve scalability for appli-cations in future XL-MIMO systems. Simulations demonstrate that HS-PINNnet advances the performance-complexity trade-off in CSI feedback, outperforming the state-of-the-art method (i.e., TransNet) with simultaneous reductions in computational demands. Specifically, HS-PINNnet achieves a 92.8% reduc-tion in FLOPs and exhibits two orders of magnitude lower FPGA simulation latency. Despite these advances, the current work needs further investigation. First, real-world propagation may involve non-specular scattering, diffuse components, or model mismatch that cannot be fully captured by the idealized parametric multipath model. Second, under high UE mobility, rapid channel variation may affect the stability of path esti-mation. Future work will extend HS-PINNnet toward more robust modeling under non-ideal propagation and mobility-aware cases. REFERENCES [1] C. Ling et al. , “Physics-Informed Neural Networks for Wireless CSI Feedback,” Proc. IEEE ICC , pp. 1–6, 2026. [2] W. Chen et al. , “5G-Advanced Toward 6G: Past, Present, and Future,” 
+
+IEEE J. Sel. Areas Commun. , vol. 41, no. 6, pp. 1592–1619, 2023. [3] F. Tariq, M. R. A. Khandaker, K.-K. Wong, M. A. Imran, M. Bennis, and M. Debbah, “A Speculative Study on 6G,” IEEE Wireless Commun. ,vol. 27, no. 4, pp. 118–125, 2020. [4] J. Guo, C.-K. Wen, S. Jin, and G. Y. Li, “Overview of Deep Learning-Based CSI Feedback in Massive MIMO Systems,” IEEE Trans. Com-mun. , vol. 70, no. 12, pp. 8017–8045, 2022. [5] 3GPP, “Physical Layer Procedures for Data (Release 17),” 3rd Generation Partnership Project (3GPP), Technical Specification (TS) 38.214, 2022, Version 17.3.0. [Online]. Available: https://www.3gpp.org [6] Z. Qin, J. Fan, Y. Liu, Y. Gao, and G. Y. Li, “Sparse Representation for Wireless Communications: A Compressive Sensing Approach,” IEEE Signal Process. Mag. , vol. 35, no. 3, pp. 40–58, 2018. [7] S. Cai and V. K. N. Lau, “Remote State Estimation of Nonlinear Systems Over Fading Channels via Recurrent Neural Networks,” IEEE Trans. Neural Netw. Learn. Syst. , vol. 33, no. 8, pp. 3908–3922, 2022. [8] Y. Shen, J. Zhang, S. H. Song, and K. B. Letaief, “Graph Neural Networks for Wireless Communications: From Theory to Practice,” 
+
+IEEE Trans. Wireless Commun. , vol. 22, no. 5, pp. 3554–3569, 2023. [9] Q. Qi, X. Chen, C. Zhong, C. Yuen, and Z. Zhang, “Deep Learning-Based Design of Uplink Integrated Sensing and Communication,” IEEE Trans. Wireless Commun. , vol. 23, no. 9, pp. 10 639–10 652, 2024. [10] Y. Yang, D. Zou, and X. He, “Graph Neural Network-Based Node Deployment for Throughput Enhancement,” IEEE Trans. Neural Netw. Learn. Syst. , vol. 35, no. 10, pp. 14 810–14 824, 2024. [11] J. Guo, Y. Cui, C.-K. Wen, and S. Jin, “Prompt-Enabled Large AI Models for CSI Feedback,” IEEE J. Sel. Areas Commun. , vol. 44, pp. 2654–2668, 2026. [12] Y. Cui, C. Jiang, C. Ling, J. Liu, J. Guo, C.-K. Wen, and S. Jin, “Towards CSI Acquisition in 6G: A3GPP Perspective,” 2026, dOI: 10.13140/RG.2.2.12766.19527. [On-line]. Available: https://www.researchgate.net/publication/405232078 Towards CSI Acquisition in 6G A 3GPP Perspective [13] C.-K. Wen, W.-T. Shih, and S. Jin, “Deep Learning for Massive MIMO CSI Feedback,” IEEE Wireless Commun. Lett. , vol. 7, no. 5, pp. 748– 751, 2018. [14] J. Guo, C.-K. Wen, S. Jin, and G. Y. Li, “Convolutional Neural Network-Based Multiple-Rate Compressive Sensing for Massive MIMO CSI Feedback: Design, Simulation, and Analysis,” IEEE Trans. Wireless Commun. , vol. 19, no. 4, pp. 2827–2840, 2020. [15] Z. Lu, J. Wang, and J. Song, “Multi-resolution CSI Feedback with Deep Learning in Massive MIMO System,” in Proc. IEEE ICC , 2020, pp. 1–6. [16] C. Szegedy et al. , “Going Deeper With Convolutions,” in Proc. IEEE/CVF CVPR , 2015, pp. 1–9. [17] J. Zhong, J. Chen, and A. Mian, “DualConv: Dual Convolutional Kernels for Lightweight Deep Neural Networks,” IEEE Trans. Neural Netw. Learn. Syst. , vol. 34, no. 11, pp. 9528–9535, 2023. [18] C. Szegedy, V. Vanhoucke, S. Ioffe, J. Shlens, and Z. Wojna, “Rethinking the Inception Architecture for Computer Vision,” in Proc. IEEE/CVF CVPR , 2016, pp. 2818–2826. [19] Y. Xu, M. Yuan, and M.-O. Pun, “Transformer Empowered CSI Feed-back for Massive MIMO Systems,” in Proc. IEEE WOCC , 2021, pp. 157–161. [20] X. Bi, S. Li, C. Yu, and Y. Zhang, “A Novel Approach Using Convolu-tional Transformer for Massive MIMO CSI Feedback,” IEEE Wireless Commun. Lett. , vol. 11, no. 5, pp. 1017–1021, 2022. [21] Y. Cui, A. Guo, and C. Song, “TransNet: Full Attention Network for CSI Feedback in FDD Massive MIMO System,” IEEE Wireless Commun. Lett. , vol. 11, no. 5, pp. 903–907, 2022. [22] S. Mourya, S. Amuru, and K. K. Kuchi, “A Spatially Separable Attention Mechanism for Massive MIMO CSI Feedback,” IEEE Wireless Commun. Lett. , vol. 12, no. 1, pp. 40–44, 2023. [23] A. Vaswani et al. , “Attention is All you Need,” in Proc. NeurIPS , vol. 30, 2017. [24] Y. Liu et al. , “A Survey of Visual Transformers,” IEEE Trans. Neural Netw. Learn. Syst. , vol. 35, no. 6, pp. 7478–7498, 2024. [25] T. Wang, C.-K. Wen, S. Jin, and G. Y. Li, “Deep Learning-Based CSI Feedback Approach for Time-Varying Massive MIMO Channels,” IEEE Wireless Commun. Lett. , vol. 8, no. 2, pp. 416–419, 2019. [26] J. Wang, G. Gui, T. Ohtsuki, B. Adebisi, H. Gacanin, and H. Sari, “Compressive Sampled CSI Feedback Method Based on Deep Learning for FDD Massive MIMO Systems,” IEEE Trans. Commun. , vol. 69, no. 9, pp. 5873–5885, 2021. [27] Y. Liu and O. Simeone, “Learning How to Transfer From Uplink to Downlink via Hyper-Recurrent Neural Network for FDD Massive MIMO,” IEEE Trans. Wireless Commun. , vol. 21, no. 10, pp. 7975– 7989, 2022. [28] Y. Lin, Y. Xin, T. Lee, C. Zhang, and Z. Ding, “Physics-Inspired Deep Learning Anti-Aliasing Framework in Efficient Channel State Feedback,” IEEE Trans. Wireless Commun. , vol. 24, no. 2, pp. 1117– 1131, 2024. [29] M. Yuan, L. Lian, and S. Ji, “Physics-Informed Data Augmentation for CSI Data-Limited Deep Learning-Driven Communication Tasks,” in 
+
+Proc. IEEE ICC Workshops , 2025, pp. 1634–1639. [30] J. Guo, X. Yang, C.-K. Wen, S. Jin, and G. Ye Li, “Deep Learning-Based CSI Feedback for RIS-Assisted Multi-User Systems,” IEEE Trans. Commun. , vol. 73, no. 7, pp. 4974–4989, 2025. [31] S. Ji, L. Lian, Y. Zheng, and C. Wu, “MuSAC: Mutualistic Sensing and Communication for Mobile Crowdsensing,” in Proc. IEEE ICDCS ,2024, pp. 243–254. [32] Q. Hu, H. Kang, H. Chen, Q. Huang, Q. Zhang, and M. Cheng, “CSI-StripeFormer: Exploiting Stripe Features for CSI Compression in Massive MIMO System,” in Proc. IEEE INFOCOM , 2023, pp. 1–10. [33] B. Mamandipoor, D. Ramasamy, and U. Madhow, “Newtonized Or-thogonal Matching Pursuit: Frequency Estimation Over the Continuum,” 
+
+IEEE Trans. Signal Process. , vol. 64, no. 19, p. 5066–5081, 2016. [34] H. Ju, S. Jeong, S. Kim, B. Lee, and B. Shim, “Transformer-Assisted Parametric CSI Feedback for mmWave Massive MIMO Systems,” IEEE Trans. Wireless Commun. , vol. 23, no. 12, pp. 18 774–18 787, 2024. [35] L. Liang et al. , “Foundation Models for Wireless Communications: From PHY Intelligence to Network Autonomy,” arXiv:2606.06239 , 2026. [36] J. Dai, H. Qi, Y. Xiong, Y. Li, G. Zhang, H. Hu, and Y. Wei, “Deformable Convolutional Networks,” in Proc. IEEE ICCV , 2017, pp. 764–773. [37] C. Peng et al. , “Large Kernel Matters — Improve Semantic Segmen-tation by Global Convolutional Network,” in Proc. IEEE/CVF CVPR ,2017, pp. 1743–1751. [38] D. Lian, W. Yu, and X. Wang, “Receptive Fields as Experts in Convolu-tional Neural Architectures,” in Proc. ICML , 2024, pp. 29 531–29 544. [39] A. Wang, H. Chen, Z. Lin, J. Han, and G. Ding, “LSNet: See Large, Focus Small,” in Proc. IEEE/CVF CVPR , 2025, pp. 9718–9729. [40] Z. Li, F. Liu, W. Yang, S. Peng, and J. Zhou, “A Survey of Convolutional Neural Networks: Analysis, Applications, and Prospects,” IEEE Trans. Neural Netw. Learn. Syst. , vol. 33, no. 12, pp. 6999–7019, 2022. [41] S. Ioffe and C. Szegedy, “Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift,” in Proc. ICML ,vol. 37, 2015, pp. 448–456. [42] K. He, X. Zhang, S. Ren, and J. Sun, “Deep Residual Learning for Image Recognition,” in Proc. IEEE/CVF CVPR , 2016, pp. 770–778. [43] A. Alkhateeb, “DeepMIMO: A Generic Deep Learning Dataset for Millimeter Wave and Massive MIMO Applications,” in Proc. IEEE ITA ,2019, pp. 1–8. [44] K. S. Zaman et al. , “Custom Hardware Architectures for Deep Learning on Portable Devices: A Review,” IEEE Trans. Neural Netw. Learn. Syst. ,vol. 33, no. 11, pp. 6068–6088, 2022.

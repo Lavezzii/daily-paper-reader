@@ -1,0 +1,1168 @@
+Title: Unlocking Realism and Interpretability in Wireless Channel Synthesis: A Physics-Guided Generative Approach
+
+URL Source: https://arxiv.org/pdf/2606.23868v1
+
+Published Time: Wed, 24 Jun 2026 00:13:47 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+> 1
+
+# Unlocking Realism and Interpretability in Wireless Channel Synthesis: A Physics-Guided Generative Approach 
+
+Satyavrat Wagle 1, Akshay Malhotra 2, Shahab Hamidi-Rad 2, Aditya Sant 2, David J. Love 1, and Christopher G. Brinton 11Elmore Family School of Electrical and Computer Engineering, Purdue University, 2Interdigital Communications 
+
+Abstract —In recent years, machine learning (ML) methods have become increasingly popular for wireless communication systems. These require large amounts of data reflecting the behavior of realistic channels with high fidelity. However, sam-pling over-the-air (OTA) channel data is an extremely resource-intensive process which cannot accurately represent the variety of real world channels. This results in the need for realistic training data for ML systems. To this end, generative models have been proposed to synthesize channel data. However, (i) the outputs produced by such methods may not correspond to physically viable channels, (ii) the outputs may not provide insights into the associated environment, and (iii) training the generative model may need labeled data, requiring resource intensive data annota-tion. Through this work, we address these issues by integrating a parametric, physics-based geometric channel (PPGC) modeling framework derived from planar wave propagation equations, with generative methods to produce realistic channel matrices with interpretable representations in the parameter domain. To overcome the limitations of the resulting non-convex optimization landscape, we propose a linearized reformulation of the PPGC model to ensure smooth gradient flow during training, while also providing insights into the underlying physical environment. We incorporate a tensor decomposition framework into the linearized reformulation to allow for flexibility in the number of wireless channel parameters. We also show the compatibility of this reformulation with parameter extraction tasks. We evaluate our model against prior baselines by comparing generated, scenario-specific samples to true channels in terms of their similarity and through their utility in downstream compression tasks. 
+
+I. I NTRODUCTION 
+
+# THe use of machine learning (ML) for applications in signal processing and wireless communication has seen extensive interest in the past few years. At the physical layer (PHY) of wireless communication systems, ML research has predominantly focused on two main objectives: estimating and mitigating distortions in electromagnetic signals during over-the-air (OTA) transmission (such as channel compres-sion, estimation, equalization, and beamforming), [1]–[4] and addressing noise and non-linearities at the antennas [5], [6]. However, despite being a promising solution for PHY layer communication tasks, ML methods in these domains are frequently outperformed by traditional model-based methods [7]–[9], because of the resource-intensive tasks of manually 
+
+> This work was completed during Satyavrat Wagle’s internship at Inter-Digital Communications. Prof. Christopher G. Brinton and David J. Love’s contributions to this article were supported by the Office of Naval Research (ONR) grant N00014-21-1-2472, and the National Science Foundation (NSF) grants CNS-2212565 and ITE-2326898. Prof. Christopher G. Brinton was also supported in part by the Defense Advanced Research Projects Agency (DARPA) grant D22AP00168 and by the Air Force Office of Scientific Research (AFOSR) under grant FA9550-24-1-0083.
+
+collecting, cleaning and labeling wireless over-the-air (OTA) data from the real world to effectively train ML models for practical PHY layer deployments. Past data measurement and labeling campaigns have taken multiple months to capture a small number of fully characterized data points for asingle scenario [10]–[12], while ML pipelines typically require substantial amounts of training data. Additionally, the full diversity of the wireless channel cannot be captured by OTA data collection due to hardware limitations and dynamism in the environment of interest [13], [14]. These drawbacks have a detrimental impact on downstream wireless ML systems which rely on diverse and realistic channel data for training [15], [16]. Modern ray-tracing packages and software [17] replicate diverse wireless environments. However, these models require extensive computational resources in creating channel data, limiting their use for online training on low-power devices like IoT devices. Further, these models cannot be easily tailored to generate channel models from a particular distribution in the channel parameter space. In contrast, this work proposes a scalable yet interpretable PPGC-based generative model. As the model learns channel generation through parameter generation, the generated channels naturally correspond to a particular distribution in the parameter space. Next, we first provide an overview of the different gen-erative channel modeling approaches, followed by a brief description of the contributions of this work. 
+
+A. Related Work 
+
+The use of generative ML models has been proposed to arti-ficially synthesize wireless data [18] to mitigate the problems described in Sec. I. Generative models aim to learn the under-lying distribution of data by learning either its parametrized statistical model [19], or a mapping from a known, simple distribution to the distribution of interest [20]. A generative adversarial network (GAN) based wireless channel modeling framework was first introduced in [18]. In [21], the authors utilize a Wasserstein-GAN with Gradient Penalty (WGAN-GP) to synthesize novel channel matrices, which were evalu-ated by cross-validating between real and synthesized data. In [22], the authors trained a GAN on multiple-input multiple-output (MIMO) data, explicitly designed to learn the spatial correlation across the channel data. In [23], a diffusion based generative model has been adopted to circumvent the issue of mode collapse in GANs. Works such as [24] utilize a score-based generative model to generate channel matrices and for channel estimation in noisy environments. In [25], the authors 
+
+> arXiv:2606.23868v1 [eess.SP] 22 Jun 2026 2
+
+train a conditional GAN to generate environment-specific channel matrices by conditioning the generated samples on the RF signatures of the environment. In [26], the authors leverage prior knowledge of the reflected channel to generate novel samples of channel matrices for intelligent reflecting surface-equipped systems. In [27], the authors utilize received pilot signal data to predict the distribution of the wireless channel. A similar research direction involves using labeled datasets to predict parameters associated with the wireless channel. In [28], the authors use the locations of UAVs to predict the link state and the parameters sequentially, using a conditional variational autoencoder (VAE) to capture relationships within the data. Similarly, in [29] the authors develop a GAN-based model to generate new instances of parameters given the loca-tion of UAVs. In [30], a convolutional GAN is used to produce time-varying, frequency-selective channels. In [31], [32], the authors capture channel characteristics through scatterer-based modeling of the propagation environment as a low-complexity alternative to ray tracing based channel synthesis. Now, unlike common modalities of data that we typically encounter, such as image, text, audio, etc. which are directly human-interpretable, the wireless channel data is a tensor of complex numbers and is not human-interpretable or easily visualized . This gives rise to two challenges unique to the usage of generative models for wireless channel generation. Firstly, while the generative models are trained to generate data points statistically similar to the training set, owing to the stochasticity of the model, the synthesized outputs may not correspond to valid channels. Here, the validity of channel data implies that the wireless channel can be represented as a multipath geometric model representing the multiple paths the transmitted signal takes, before arriving at the receiver [33], [34]. Therefore, there are no guarantees about the quality of generated data, which can potentially have adverse effects on downstream ML tasks [35], [36]. Secondly, it is hard to gain any insights about the physical parameters associated with the signal propagation or any information about the environment or scenario being considered (e.g. angles associated with paths, gains of paths, line-of-sight transmission or non-line-of-sight, etc.) from generated data samples. This lack of interpretability hinders the ability to evaluate the efficacy of the generative model to synthesize context-specific data [36]. 
+
+B. Proposed Solution and Contributions 
+
+Our proposed method to generate the wireless channel overcomes the aforementioned challenges by incorporating a verified PPGC model into the generative pipeline. As the PPGC model parametrizes the channel generation, our gen-erative process learns the joint distribution of the underlying parameters responsible for channel generation. This mitigates both the aforementioned issues of prior approaches for gener-ative channel modeling. Firstly, incorporating a verified PPGC model in the pipeline guarantees that the outputs of our frame-work are valid channels, and secondly, the model generates the parameters associated with the channels, ensuring we can extract insights related to the physics of the environment, making the generated channels more interpretable. In contrast to the works in [21]–[26], which use a generative model to directly produce channels without any guarantees on the validity of the generated matrices, our method uses the generative model to produce a distribution over the parameter domain which is utilized by a verified channel model to produce channel matrices guaranteed to be geometrically valid. Compared to [27], which uses responses to pilot signals for single-input multiple-output (SIMO) data and considers the az-imuth plane, we consider a MIMO system in both the azimuth and elevation planes, and do not require the knowledge of pilot signals. Our approach also provides mechanisms to explicitly extract parameter values, as well as to adapt to additional parameters used to model the channel. Compared to [28]– [32], which require datasets labeled with metadata relating to the environment, locations of device and the entire set of channel parameters, our method does not require labeled data or prior knowledge and can learn channel parameters directly from channel matrices acquired through standard 3GPP CSI compliant pipeline post channel estimation at the user device, or at the network side via CSI reporting [37]. A summary of the contributions of this work is as follows:  
+
+> •
+
+We propose a generative ML framework which leverages a parametric, physics-based channel (PPGC) model to produce realistic channel data that belongs to the dis-tribution of interest and illustrate the convergence related challenges arising from the non-convexity of the PPGC model when training the generative pipeline (Sec. II-B).  
+
+> •
+
+We develop a linearized relaxation of the PPGC model to mitigate the effect of this non-convexity using adiscretized dictionary of array response matrices across the range of parameter values (Sec. II-C).  
+
+> •
+
+In order to better scale the generative channel parameter estimation with the number of channel parameters, we incorporate a tensor decomposition method, leveraging the sparsity in the generator outputs (Sec. II-D).  
+
+> •
+
+We design a parameter estimation module to calculate the parameters associated with a generated sample of data by leveraging the sparsity characteristics of the ML model outputs using peak detection algorithms (Sec. III-B).  
+
+> •
+
+We show that our method can accurately generate channel data as well as the parameter distributions associated with a given set of real data. This is evaluated against prior art baselines on practical downstream tasks. We also show that our model can accurately estimate the underlying parameters for input channel matrices (Sec. IV). An abridged version of this work appeared in [38] and [39]. In this extension, we make the following significant additions to [38], [39]: (1) we extend our method to the azimuth and elevation planes, and (2) incorporate tensor decomposition methods in the generative pipeline by leveraging the sparsity of the gain tensor, mitigating the issues of scaling to larger res-olutions. (3) We develop a PPGC-aided parameter extraction framework to calculate path parameters from a given channel; and (4) we significantly expand upon our experimental results by evaluating our method against a larger set of baselines, demonstrating its effectiveness in parameter extraction tasks and flexibility to incorporate additional channel parameters. 3
+
+Fig. 1: The physics-based geometric channel (PPGC) model is motivated by ray-tracing methods for channel tracking, and uses the arrival and departure angles in the elevation and azimuth plane for P paths and the associated gains as parameters to model the wireless channel H.II. S YSTEM MODEL AND APPROACH 
+
+In this section, we describe our proposed system. We begin by elaborating on the PPGC model that is used in the genera-tive process, followed by the design of the generative model. We then discuss the design choices made for the generative model. Finally, we describe the training and inference pipeline. 
+
+A. Channel Model 
+
+For MIMO systems, the wireless channel is expressed as a complex matrix H ∈ CNt×Nr , where Nt, N r are the number of transmit and receive antennas respectively, such that Nt =
+
+N ht · N vt and Nt = N hr · N vr , where N ht/r , N vt/r are the number of antenna elements in each row and column respectively, as shown in Fig. 1. We assume a narrowband channel [40], such that the signal received over the channel at discrete-time k is only dependent on the waveform transmitted at time 
+
+k, as a majority of modern communication systems leverage wideband OFDM communication, which can be interpreted as multiple narrowband channels due to the orthogonality of the channels corresponding to each subcarrier [40], [41]. An established method of modeling the wireless channel H is by using ray-tracing algorithms [42], [43], wherein the path of the 
+
+p-th individual ray is geometrically modeled to calculate the channel parameters such as angles of arrival and departure for the elevation plane ( θpa, θ pd ), azimuth plane ( ϕpa, ϕ pd), and the propagation gain gp using the Saleh-Valenzuela PPGC model [44], [45] as shown in Fig. 1. Through this planar wave model, the contribution of the pth path to the wireless channel is characterized by the response matrices Ar (θpa, ϕ pa) ∈ CN hr ×N vr
+
+and At(θpd , ϕ pd) ∈ CN ht ×N vt , scaled by the complex gain gp
+
+[46]. We consider Uniform Planar Array (UPA) [33] antennas, whose array response matrices for the transmit and receive antennas can be defined as 
+
+At(θpd , ϕ pd) = 
+
+"
+
+eju vm,n (θpd ,ϕ pd)
+
+√Nt
+
+#m=N ht −1,n =N vt −1
+
+> m=0 ,n =0
+
+, (1) 
+
+Ar (θpa, ϕ pa) = 
+
+ eju vm,n (θpa ,ϕ pa)) 
+
+√Nr
+
+m=N hr −1,n =N vr −1
+
+> m=0 ,n =0
+
+, (2) respectively, where vm,n (θ, ϕ ) = m · cos( ϕ) sin( θ) + n · cos( θ)
+
+and u = 2πλ d; λ is the wavelength of the carrier and d is the distance between antenna elements. Thus, the PPGC model given by M : R5P → R2×Nt×Nr , to map a set of parameters 
+
+s = [ gp, θ pa, θ pd , ϕ pa, ϕ pd]Pp=1 ∈ R5P to a matrix H ∈ CNt×Nr as 
+
+H = M(s) = 
+
+> P
+
+X
+
+> p=1
+
+gpAr (θpa, ϕ pa)At(θpd , ϕ pd)H , (3) where P is the number of paths that a transmitted signal takes before being received at the receiver antennas, which is typ-ically small in over-the-air transmission, such as in mmWave communication, where multipath sparsity is caused by severe path loss in the propagation environment, as discussed in [47]– [49]. All angles take values between [−π, π ] radians. Now, the calculated channel H differs significantly based on the physics of the environment [13], [14], which relates to the parameters s associated with H. Thus, a key characteristic of the PPGC model M is that, a distribution q(·) over the param-eters s induces a distribution qM (·) over the channel matrix 
+
+H, where the distribution q(·) is specific to the environment in which the model is deployed. In order to incorporate the PPGC model into the generative pipeline, the generative model must learn the prior distribution over the parameters s instead of directly learning the prior distribution over the channel matrix 
+
+H. Thus, the objective of our system is as follows; given a set of channel matrices D = [ Hi]Ni=1 , where Hi ∼ q′(·) and q′(·)
+
+is unknown, we train a generative model to output a probability distribution q(·) over the parameters s such that the induced distribution qM (·) over the channel H is close to q′(·).
+
+B. Generative Model to Predict Channel Statistics 
+
+We consider a generative model gψ parametrized by ψ,which operates in two modes, namely training mode, where the process gTrain  
+
+> ψ
+
+: R2×Nt×Nr → R5P takes a channel matrix 
+
+H as input and produces a parameter vector ˆs as output as ˆs = gTrain  
+
+> ψ
+
+(H), and generation mode, where the process 
+
+gGen  
+
+> ψ
+
+: RZ → R5P takes a sample z ∼ πZ (·) ∈ RZ from a known distribution πZ (·) as input and produces a generated parameter vector ˆs as output as ˆs = gGen  
+
+> ψ
+
+(z). For both modes, the parameter vector ˆs is then passed to the PPGC model M
+
+to produce a valid channel matrix as ˆH = M(ˆ s).
+
+1) Generative model training: We assume that the loss function of the generative model is a function of the input channel matrix and the output of the complete generative pipeline M(gTrain  
+
+> ψ
+
+(H)) , and does not require knowledge of the target outputs of the generative model gTrain  
+
+> ψ
+
+(H). The model architectures that satisfy this condition are variational autoencoders (VAE) [50] and generative adversarial networks (GAN) [18]. The particular processes by which the generative models produce the parameter vectors ˆs and by which they are updated vary based on the nature of the generative model. We will empirically illustrate the compatibility of the generative pipeline with these models in Sec. IV. In contrast, methods such as normalizing flow models [51] assume that the trans-formation pipeline is invertible, which is incompatible with the modifications made by our method that produces rank deficient 40 100 200 300 400 500 
+
+> Epochs
+> 1.36
+> 1.38
+> 1.40
+> 1.42
+> 1.44
+> 1.46
+> 1.48
+> 1.50
+> NMSE
+
+Fig. 2: When incorporating the PPGC model M into the generative pipeline in a straightforward manner, the generator directly predicts the parameters ˆs, which are then used by the model M to predict the channel. Such a pipeline is compatible with architectures that do not require knowledge of the target generator outputs, with the generator-specific processes to produce the parameter vector ˆs (Left). In such cases, the generator cannot converge to suitable optima due to the non-convexity of the PPGC model, as observed in the stagnation of training performance of the pipeline over multiple training runs (Right). outputs, as we will explain in Sec. II-D, and diffusion models [52] require knowledge of the target generator outputs, as they operate by successively denoising the latent distribution. For VAEs, which consist of encoder and decoder models given by f VAE  
+
+> ψe
+
+and hVAE  
+
+> ψd
+
+respectively (i.e. gψ = {f VAE  
+
+> ψe
+
+, h VAE  
+
+> ψd
+
+}), the encoder first samples a latent vector from the posterior distribution as z = fψe (H), which is then used to produce a parameter vector as ˆs = hψe (z). The VAE is trained to map the unit Gaussian distribution to the latent distribution over the parameters, enabling the generation of novel parameter vectors 
+
+ˆs. Valid channels are obtained as ˆH = M(ˆ s). The VAE loss is a generalization of the evidence based lower bound (ELBO) [50], given by LVAE = || H − ˆH|| 22 + αD · KL (z, N (0 , I)) .Here, the first term ensures that the outputs are similar to the inputs. The second term encourages the distribution of the latent vectors to be similar to N (0 , I). Thus, for VAEs, 
+
+gTrain  
+
+> ψ
+
+(H) = f VAE  
+
+> ψe
+
+(hVAE  
+
+> ψd
+
+(H)) , and gGen  
+
+> ψ
+
+(z) = hVAE  
+
+> ψd
+
+(z), where z
+
+is sampled from a Gaussian distribution defined by N (0 , I).GANs consist of a generator f GAN  
+
+> ψg
+
+which learns to produce the parameter vector ˆs from random noise, and a discrim-inator hGAN  
+
+> ψd
+
+which learns to distinguish between real and fake channel data (i.e. gψ = {f GAN  
+
+> ψg
+
+, h GAN  
+
+> ψd
+
+}). The GAN is trained until hGAN  
+
+> ψd
+
+cannot distinguish between ground truth and fakes produced by f GAN  
+
+> ψg
+
+, using min-max optimization, which is characterized by LGAN = −EH∼D H [log hGAN  
+
+> ψd
+
+(H)] −
+
+Ez∼pZ (z)[log hGAN  
+
+> ψd
+
+(M(f GAN  
+
+> ψg
+
+(z)))] . Here, DH and pZ (·) are the training dataset of valid channels and a known ran-dom distribution, respectively. Thus, for GANs, gTrain  
+
+> ψ
+
+(H) = 
+
+hGAN  
+
+> ψd
+
+(M(f GAN  
+
+> ψg
+
+(z))) , gGen  
+
+> ψ
+
+(z) = hGAN  
+
+> ψg
+
+(z) and z ∼ pZ (·).
+
+2) Limitations of generative model training using PPGC: 
+
+In order to understand the limitations of training a generative model directly in conjunction with the PPGC model given by (3), we analyze the role of the UPA manifold, given by (1). The presence of sinusoidal functions of the angular channel parameters ( θpd , θ pa, ϕ pd, ϕ pa) in creating the array re-sponse matrices results in periodicities in the loss function landscape, with the resulting non-convexity increasing with the number of paths, as seen in Fig. 3. These periodicities cannot be effectively approximated by the non-linear activation functions used in deep neural networks, leading to difficulties in training [53], [54]. As a result, depending on the location of the optimizer in the parameter space, the gradient may not flow during backpropagation, resulting in the optimizer converging to unsuitable local minima. Additionally, as seen in Fig. 3, the convergence of the system to a suitable minimum is highly dependent on the number of antennas, Nt, N r , used in the PPGC model. As Nt, N r increase, (i) the number of local minima also increases, and (ii) the optimality gap, that is, the difference between the loss values at the local and global minima, widens, causing convergence to any local minima to significantly impact the overall loss, as observed in Fig. 2. Also, as observed in Fig. 3, the loss landscape flattens as parameter values move further from the global optimum, leading to smaller gradients. This prevents gradient-based optimization from converging to optimal parameter values, regardless of the strategies and momentum employed. 
+
+C. Linearized Reformulation of the Physics Model 
+
+To overcome the challenges posed by the PPGC model while maintaining the underlying model features for channel generation, we relax the overall cost function by reformulating the PPGC model M by first discretizing the range of values that θpa, θ pd , ϕ pa, ϕ pd can take and then expressing the channel generation process as a weighted sum of the resultant response matrices Ar (θpa, ϕ pa)At(θpd , ϕ pd)H . Different from directly esti-mating the channel parameters, this method utilizes dictionary-based channel generation, where the loss function is a linear function of learnable weights, and is described next. 1) Define the range of azimuth angles θpa, θ pd , given by 
+
+[θmin , θ max ], divided equally into Rθ intervals of width 
+
+∆θ = ( θmax − θmin )/R θ . Similarly, the range of ele-vation angles ϕpa, ϕ pd, given by [ϕmin , ϕ max ], is divided into Rϕ intervals of width ∆ϕ = ( ϕmax − ϕmin )/R ϕ.2) Pre-compute the outer product between the array re-sponse matrices, Ar (θpa, ϕ pa)At(θpd , ϕ pd)H , at the dis-cretized angle values and store them in a dictionary D.5−π                        
+
+> 2−3π
+> 8
+> −π
+> 4
+> π
+> −80π
+> 8
+> π
+> 43π
+> 8
+> π
+> 2
+> θ1
+> a(Rad.)
+> 0.00
+> 0.02
+> 0.04
+> 0.06
+> 0.08
+> 0.10
+> MSE Loss
+> Nr=Nt= 4
+> θ1
+> d= 1 .0−π
+> 2−3π
+> 8
+> −π
+> 4
+> π
+> −80π
+> 8
+> π
+> 43π
+> 8
+> π
+> 2
+> θ1
+> a(Rad.)
+> 0.00
+> 0.25
+> 0.50
+> 0.75
+> 1.00
+> 1.25
+> 1.50
+> 1.75
+> MSE Loss
+> Nr=Nt= 16
+> θ1
+> d= 1 .0−π
+> 2−3π
+> 8
+> −π
+> 4
+> π
+> −80π
+> 8
+> π
+> 43π
+> 8
+> π
+> 2
+> θ1
+> a(Rad.)
+> 0
+> 5
+> 10
+> 15
+> 20
+> 25
+> 30
+> MSE Loss
+> Nr=Nt= 64
+> θ1
+> d= 1 .0
+
+Fig. 3: The loss surface as a function of (θ1
+
+> a
+
+, θ 1
+
+> d
+
+) in reference to a channel matrix with ground truth θ1 
+
+> a
+
+= θ1 
+
+> d
+
+= 1 .0 Rad. using a PPGC model M for the azimuth plane using ULA antennas with P = 1 and Nr = Nt = {4, 16 , 64 } antennas respectively. The PPGC model M is extremely non-convex as a function of the parameters θa, θ d due to periodicity in the loss function arising from the formulation of the array response matrices. Avoiding the numerous local minima surrounding the global minimum poses a significant challenge given the nature of activation functions. Also, as the number of antennas Nr , N t increase, gradient flowing through the model is negligible at locations further away from the minima, where the loss surface is effectively flat. The dictionary D has a total of R2 
+
+> θ
+
+R2 
+
+> ϕ
+
+elements, henceforth referred to as the array response dictionary . Each element of the dictionary, Di,j,m,n ∀ i, j ∈ { 1, R θ }, m, n ∈ { 1, R ϕ},represents a Nr × Nt matrix, and is given by 
+
+Di,j,m,n = Ar (θi, ϕ m)At(θj , ϕ n)H , (4) where θk := θmin + k(∆ θ )| k ∈ { i, j } and ϕk := ϕmin +
+
+k(∆ ϕ)| k ∈ { m, n } . Thus, each element of the array response dictionary is the combination of antenna array responses at the transmitter and receiver for unique values of the angle of arrival and angle of departure. The angles associated with neighboring elements of the dictionary {Di,j,m,n , Di+1 ,j,m,n }
+
+or {Di,j,m,n , Di,j +1 ,m,n } differ by a value of ∆θ for the azimuth angle of arrival or the angle of departure respectively, while {Di,j,m,n , Di,j,m +1 ,n } or {Di,j,m,n , Di,j,m,n +1 } differ by a value of ∆ϕ for the elevation angles of arrival or departure respectively. The relaxed PPGC model is now expressed as, 
+
+H =
+
+> Rθ
+
+X
+
+> i=1
+> Rθ
+
+X
+
+> j=1
+> Rϕ
+
+X
+
+> m=1
+> Rϕ
+
+X
+
+> n=1
+
+Wi,j,m,n Di,j,m,n , (5) where, the channel generation is parametrized by the gain tensor W ∈ RRθ ×Rθ ×Rϕ×Rϕ , instead of the parameters 
+
+s. Each individual element of the gain tensor, given by 
+
+Wi,j,m,n denotes the contribution of the path constructed from 
+
+{θia, θ jd, ϕ ma , ϕ na }.The weight elements are expected to be non-zero for the paths corresponding to the ground-truth channel. With this pipeline, we now model the output channel H as a linear function of the gain tensor W, mitigating the issues arising from the non-convexity of the PPGC model M as seen in Sec. II-B. Thus, the generative model now predicts W
+
+instead of s. Now, as the total number of paths P is typically small, as mentioned in Sec. II-A, W is expected to be sparse. 
+
+Remark 1. It is to be noted that (3) and (5) both produce valid channel matrices. For suitably high values of Rθ , R ϕ,any channel H can be approximated by (5) using a suitable sparse W with P non-zero values. For such a tensor W, (5) is equivalent to (3), and each non-zero value Wi,j,m,n will correspond to the gain gp of one of the P paths. Thus, for this linearized representation of the problem, we can interpret the non-zero values of the gain tensor W as the path gains, and the angles associated with the corresponding array response 
+
+Di,j,m,n as the angles of arrival and departure of those paths. D. Decomposition of Parameter Tensor 
+
+The weight tensor W as defined in Sec.II-C, scales ex-ponentially with the azimuth and elevation resolutions as 
+
+O(R2 
+
+> θ
+
+R2
+
+> ϕ
+
+). This results in significant practical challenges at higher resolutions of the linearized PPGC model, as seen in Fig. 5. This issue is exacerbated by the introduction of new parameters, e.g. phase ( η), in the channel model, which results in the size of W scaling as O(R2 
+
+> θ
+
+R2
+
+> ϕ
+
+Rη ), where Rη is the resolution used to discretize the phase η. Thus, computing outer products becomes prohibitively expensive with at scale. 6
+
+Fig. 4: In order to visualize the channel construction process, we consider the 2-D projection of the azimuth angles θa, θ d for a channel with 2 paths, with angles of elevation ϕa = π/ 3, ϕ d = π/ 3 for both paths. The sparsity structure arising in the full gain tensor W is also reflected in the sparse CPD vectors {w(θka ), w(θkd )}2
+
+> k=1
+
+. The locations of the non-zero elements of the CPD vectors indicate the values of the associated angles. In this case, (w(θka ), w(θkd )) correspond to the azimuth angles of arrival and departure for the k-th path, respectively, relating to the associated elements in the array response dictionary D.8 16 32 64    
+
+> Resolution ( R,R)
+> 10 2
+> 10 3
+> 10 4
+> 10 5
+> 10 6
+> 10 7
+> Generator Output Size
+> No CPD
+> CPD for 2 paths
+> CPD for 5 paths
+> CPD for 10 paths
+
+Fig. 5: By predicting the Canonical Polyadic Decomposition (CPD) of the gain tensor W, the generator output size scales as O(RP ), where R = max {Rθ , R ϕ} with the resolutions 
+
+Rθ , R ϕ, reduced from O(R2 
+
+> θ
+
+R2
+
+> ϕ
+
+) without CPD. This allows the model to scale to an arbitrary number of paths P .We mitigate this issue by modifying the generator gψ
+
+to predict the canonical polyadic decomposition (CPD) [55] of the gain tensor W, which is expressed as a set of CPD vectors W = {w(θia), w(θid), w(ϕia), w(ϕid)}Pi=1 , where 
+
+w(θia), w(θid) ∈ RRθ ∀ i ∈ {1, P } and w(ϕia), w(ϕid) ∈
+
+RRϕ ∀ i ∈ { 1, P }. We assume that the maximum number of paths P constituting the channel matrix H in (3) is known. We then obtain the full gain tensor W by taking the sum of Kronecker products of the CPD vectors as 
+
+W =
+
+> P
+
+X
+
+> i=1
+
+w(θia) ⊗ w(θid) ⊗ w(ϕia) ⊗ w(ϕid). (6) By predicting the set of CPD vectors W, the size of the generator output scales linearly with the resolution and the number of paths as O(RP ), where R = max {Rθ , R ϕ}, as opposed to O(R2 
+
+> θ
+
+R2
+
+> ϕ
+
+). This results in significant reductions in the output size of generator gψ , making the model tractable at larger resolutions, as shown in Fig. 5. The choice of CPD as the tensor decomposition method is motivated by the fact that W is a sparse tensor with P non-zero entries, as shown in Remark 1. Therefore, W has a rank of at most P , implying that W can be decomposed to CPD vectors 
+
+W, and can be reconstructed via the sum of their Kronecker products as shown in (6). The Kronecker product operation is differentiable, and is thus compatible with commonly used gradient descent based optimizers for the generator gψ .It should be noted that the CPD vectors W retain the in-terpretability characteristics desired from the generator output. As described in Sec. II-C, the azimuth and elevation angles of arrival and departure are captured by the locations of non-zero entries in W, where a single non-zero entry Wi,j,m,n 
+
+corresponds to the angles for a single path. The CPD of the sparse gain tensor W results in row-sparse CPD vectors W, as shown in Fig. 4, where each CPD vector corresponds to one of the angles, where the order of angles depends on the specific construction of the array response dictionary D. For example, if D is given by (4), the order of the CPD vectors must follow (6). Now, the location of the non-zero entries of each CPD vector indicates the value of the corresponding angle. 
+
+Remark 2. In contrast to purely generative models, the com-putational complexity of our physics-based generative pipeline is independent of the size of the output channel matrix, owing to the reformulated dictionary D. As such, the complexity of our method can be tailored to user preference, as it scales linearly with the resolution R and the maximum number of paths P , both of which are user-defined. For practical implementations, the memory footprint of D can be reduced by decomposing it into two tensors as D = Dr (Dt)H , where Dr =[Ar (θi, ϕ m)] i=Rθ ,m =Rϕ 
+
+> i=0 ,m =0
+
+and Dt = [At(θj , ϕ n)] j=Rθ ,n =Rϕ 
+
+> j=0 ,n =0
+
+,similar to (4). By storing Dr , Dt instead of D, we reduce the memory footprint of D from O(R4) to O(2 R2).7
+
+Fig. 6: We reformulate the PPGC model by defining a discretized array response dictionary D and use the generative model to produce CPD vectors ˆW, which are then combined using the Kronecker Product to produce the gain tensor ˆW. The elementwise multiplication of ˆW and D mimics the PPGC model process. The reformulated PPGC model can be used with generative models to produce valid channel matrices that belong to the distribution of ground truth channels (blue blocks), as well as with autoencoders to explicitly extract the values of azimuth and elevation angles associated with input channels through a separate parameter extraction module which is independent of autoencoder training (green blocks). This reformulation allows the flow of gradient through the models, enabling it to converge to more suitable optima. III. I NTEGRATION OF REFORMULATED CHANNEL MODEL WITH LEARNING ALGORITHMS 
+
+A. Generative Model for Synthetic Channel Generation 
+
+The generative pipeline incorporating the reformulated PPGC model can be used to generate new samples of channel matrices that are guaranteed to be valid in terms of the chosen channel model. In this section, we describe the processes for training and sampling these generative models. 
+
+Training: To train the generative model to predict the CPD vectors W, we change the pipeline described in Sec. II-B in the following ways. The generator gTrain  
+
+> ψ
+
+: R2×Nt×Nr → R4RP 
+
+now predicts the CPD vectors ˆW, as defined in Sec. II-D, as 
+
+ˆW = gTrain  
+
+> ψ
+
+(H). (7) The CPD vectors ˆW are then combined as the sum of their Kronecker products to produce the predicted gain tensor ˆW, as defined in (6). ˆW is then used to generate the predicted channel 
+
+ˆH by multiplying it with the array response dictionary as 
+
+ˆH =
+
+> Rθ
+
+X
+
+> i=1
+> Rθ
+
+X
+
+> j=1
+> Rϕ
+
+X
+
+> m=1
+> Rϕ
+
+X
+
+> n=1
+
+ˆWi,j,m,n Di,j,m,n . (8) Now, we propose a modified system loss which operates on the predicted channel ˆH and the input H, that also accounts for the sparsity in the CPD vectors W. This is given by 
+
+L = LGEN (H, ˆH) + τ
+
+ X 
+
+> ˆw∈ˆW
+
+|| ˆw|| 1
+
+ , (9) where the first term, LGEN , is the architecture-specific loss function defined for generator models as described in Sec. II-B. The last term is a regularization term that penalizes 
+
+ℓ1-norm of the CPD vectors ˆW, encouraging sparsity in the CPD vectors ˆW, thereby causing the gain tensor ˆW to also be sparse. Hence, the overall loss function improves the fidelity of the generator outputs through the first term, while ensuring that ˆW does not select a large combination of paths that do not correspond to realistic scenarios, enabling the model to estimate sparse CPD vectors from the input channel matrix. 
+
+Inference and Sampling : During the inference phase, we only use the generator gψ in generation mode to produce new channel matrices. First, we sample a vector ez ∼ N (0 , I) and use the generative process to produce CPD vectors as 
+
+fW = gGen  
+
+> ψ
+
+(ez). (10) 8
+
+Algorithm 1 Generation of Channel Data using Reformulated PPGC Model 
+
+Training (gTrain  
+
+> ψ
+
+)
+
+Given: Dataset of valid channels D, generator parame-ters ψ, Range of angles [θmin , θ max , ϕ min , ϕ max ], Resolution 
+
+Rθ , R ϕ. 
+
+> 1:
+
+Calculate the array response dictionary D using (4) for all 
+
+i, j ≤ Rθ , m, n ≤ Rϕ. 
+
+> 2:
+
+Sample a channel matrix H from the dataset D. 
+
+> 3:
+
+Produce a set of CPD vectors ˆW from H via (7).  
+
+> 4:
+
+Obtain gain tensor ˆW from CPD vectors via (6).  
+
+> 5:
+
+Obtain the predicted channel matrix ˆH from ˆW using (8).  
+
+> 6:
+
+Calculate the loss using (9) and update parameters ψ.
+
+Output: Trained generator model parameters ψ.
+
+Generation (gGen  
+
+> ψ
+
+)
+
+Given: Sample vector ez ∈ RZ from unit Gaussian distribution 
+
+N (0 , I), trained generator gψ . 
+
+> 1:
+
+Generate a set of CPD vectors W from ez via (10).  
+
+> 2:
+
+Obtain gain tensor eW from CPD vectors via (6).  
+
+> 3:
+
+Obtain generated channel matrix eH from eW using (11). 
+
+Output: Generated channel matrix eH.The generated CPD vectors fW are then combined as the sum of their Kronecker products to produce a new example of the gain tensor eW, as defined in (6). eW is then used to generate a synthetic channel, using the array response dictionary, as 
+
+eH =
+
+> Rθ
+
+X
+
+> i=1
+> Rθ
+
+X
+
+> j=1
+> Rϕ
+
+X
+
+> m=1
+> Rϕ
+
+X
+
+> n=1
+
+eWi,j,m,n Di,j,m,n . (11) The generated channel eH is guaranteed to be a valid channel matrix as the mapping from the parameter space to the channel space is done using the array response dictionary D, which is based on a verified PPGC model. eH is also expected to be from the distribution of interest, as the first term in (9) ensures that the generator learns to map samples from the unit Gaussian distribution to a set of parameters that belong to the target distribution. A summary of the training and generative processes for the linearized representation is given in Algo. 1. 
+
+B. Autoencoder Model to Extract Channel Parameters 
+
+In addition to channel generation, which is the primary func-tion of the proposed model, its ability to recover CPD vectors can be extended to explicitly extract channel parameters s from the associated channel matrix H. We describe this process next. We consider an autoencoder bγ parametrized by γ, which takes a channel matrix H as input and produces the CPD vectors ˆW as output, as 
+
+ˆW = bγ (H). (12) The CPD vectors ˆW are then combined as the sum of their Kronecker products to obtain the predicted gain tensor 
+
+ˆW, as defined in (6). The gain tensor ˆW is then used to produce the predicted channel ˆH using (8). The autoencoder 
+
+Algorithm 2 PPGC Parameter Extraction using Autoencoders 
+
+Training :
+
+Given: Dataset of valid channels D, autoencoder parame-ters bγ , Range of angles [θmin , θ max , ϕ min , ϕ max ], Resolution 
+
+Rθ , R ϕ. 
+
+> 1:
+
+Calculate the array response dictionary D using (4) for all 
+
+i, j ≤ Rθ , m, n ≤ Rϕ. 
+
+> 2:
+
+Sample a channel matrix H from the dataset D. 
+
+> 3:
+
+Produce a set of CPD vectors ˆW from H via (12).  
+
+> 4:
+
+Obtain gain tensor ˆW from CPD vectors via (6).  
+
+> 5:
+
+Obtain the predicted channel matrix ˆH from ˆW using (8).  
+
+> 6:
+
+Calculate the loss using (13) and update bγ .
+
+Output: Trained autoencoder bγ
+
+Parameter Extraction :
+
+Given: Trained autoencoder bγ , channel matrix 
+
+eH. 
+
+> 1:
+
+Generate a set of CPD vectors fW from eH via (12).  
+
+> 2:
+
+Apply Savitzky-Golay filter to rows of ew ∈ fW. 
+
+> 3:
+
+Obtain locations of peaks {c(θia), c (θid), c (ϕia), c (ϕid)}pi=1 . 
+
+> 4:
+
+Calculate angle values { ˆθia, ˆθid, ˆϕ]i, ˆϕid}Pi=1 using (14). 
+
+Output: Estimated parameter values { ˆθia, ˆθid, ˆϕ]i, ˆϕid}Pi=1 
+
+is trained using the Mean Square Error (MSE) loss with an L1 regularization term as follows 
+
+LAUTO = || ˆH − H|| 22 + τ
+
+ X 
+
+> ˆw∈ˆW
+
+|| ˆw|| 1
+
+ . (13) Here, similar to (9), the first term minimizes the accuracy of the reconstructed channel ˆH, and the second term ensures that a large combination of paths are not selected. 
+
+Parameter Extraction : In order to extract the parameters associated with the predicted channel H, we perform 1-D peak detection across the rows of each CPD vector ˆw ∈ ˆW by first applying the Savitzky-Golay filter [56] to each row of the CPD vectors to remove noise, and then identifying the peaks above a threshold value. The peak detection algorithm extracts the locations of peaks in each row of the CPD vectors, given by {c(θia), c (θid), c (ϕia), c (ϕid)}Pi=1 , which correspond to the associated values of angles { ˆθia, ˆθid, ˆϕia, ˆϕid}Pi=1 , as described in Sec. II-D. We then calculate the values of the associated angles of azimuth and elevation as follows 
+
+ˆθia = θmin +
+
+ c(θia)
+
+Rθ
+
+
+
+· (θmax − θmin ),
+
+ˆϕia = ϕmin +
+
+ c(ϕia)
+
+Rϕ
+
+
+
+· (ϕmax − ϕmin ), (14) with corresponding equations for the angles of departure 
+
+{θid, ϕ id}Pi=1 , where i ∈ { 1, . . . , P } denote the path index. This process is independent of the training process of the autoencoder bγ . The granularity of estimation depends upon the resolution Rθ , R ϕ, and range [θmin , θ max , ϕ min , ϕ max ] of the angles of azimuth and elevation. The estimation granu-larities of azimuth and elevation angles are given by ∆θ =(θmax − θmin )/R θ and ∆ϕ = ( ϕmax − ϕmin )/R ϕ respectively. 9                                                    
+
+> 2-Wasserstein Distance MMD Dataset Ours CGAN UNet CVAE Glow Ours CGAN UNet CVAE Glow Boston 0.152 ±0.006 0.357 ±0.002 0.853 ±0.008 2.084 ±0.043 1.384 ±0.051 0.007 ±0.001 0.058 ±0.005 1.753 ±0.039 0.367 ±0.008 1.301 ±0.091
+> ASU 0.198 ±0.011 0.544 ±0.003 0.952 ±0.016 3.162 ±0.12 0.938 ±0.095 0.010 ±0.002 0.055 ±0.005 0.441 ±0.091 3.576 ±0.220 0.275 ±0.096
+> Indoor 0.046 ±0.003 0.294 ±0.008 1.349 ±0.012 4.854 ±0.11 0.569 ±0.072 0.012 ±0.002 0.084 ±0.018 0.332 ±0.005 3.823 ±0.120 0.142 ±0.012
+> Outdoor 0.091 ±0.002 0.541 ±0.006 0.877 ±0.003 3.552 ±0.11 0.596 ±0.063 0.041 ±0.006 0.18 ±0.018 2.246 ±0.662 1.140 ±0.121 0.188 ±0.036
+
+TABLE I: The distribution of channels modeled by our method is closer to the ground truth channel distribution compared to baselines in terms of both 2-Wasserstein distance and Maximum Mean Discrepancy (MMD).                                                                                  
+
+> Train on Testing on DR
+> 10 Testing on DR
+> 11 Testing on DG
+> 10 Testing on DG
+> 11
+> Ours CGAN UNet CVAE Glow Ours CGAN UNet CVAE Glow Ours CGAN UNet CVAE Glow Ours CGAN UNet CVAE Glow
+> DR
+> 10 0.05 0.05 0.05 0.05 0.05 1.05 1.05 1.05 1.05 1.05 0.08 0.14 0.44 0.67 0.292 1.07 1.01 1.0 1.75 1.315
+> DR
+> 11 0.87 0.87 0.87 0.87 0.87 0.07 0.07 0.07 0.07 0.07 0.88 1.15 0.91 1.14 1.522 0.15 0.18 0.49 1.12 0.65
+> DG
+> 10 0.07 0.37 0.44 0.8 0.842 1.41 1.11 1.62 1.15 2.523 0.06 0.09 0.1 0.19 0.208 1.06 1.11 1.16 2.24 1.676
+> DG
+> 11 1.27 1.51 1.2 1.03 1.073 0.12 0.33 0.21 0.75 0.475 1.29 1.85 0.94 0.99 1.856 0.02 0.03 0.08 0.11 0.187
+
+TABLE II: Cross evaluation of downstream compression tasks for different combinations of real and generated datasets by comparing NMSE loss. When compression models are trained on real data and tested on generated data (Rows 1,2) and vice versa (Rows 3,4), our method records lower NMSE for corresponding real-generated dataset pairs, indicating that the data generated by our method is more similar to the true channel data from the target ground truth distribution. The autoencoder training and parameter extraction processes are illustrated in Fig. 6, and described in Algo. 2. IV. E XPERIMENTS 
+
+In this section, we analyze the performance of our method on wireless channel datasets corresponding to real-life sce-narios and compare our method against prior baselines. We show the efficacy of our method in capturing the underlying parameter distributions, its high fidelity in generating channels, and its efficacy in downstream channel compression tasks. For our PPGC model, we consider a system with Nt =
+
+Nr = 16 transmit and receive antennas respectively, with 4
+
+antennas in each row. We consider six datasets, five of which are generated by the DeepMIMO framework [57] that utilizes 3D ray tracing for generating channel datasets in different settings. Datasets corresponding to the following scenarios are used; (i) Two base stations in an outdoor intersection of two streets with blocking and reflecting surfaces. The channels corresponding to base station 10 (BS10) and 11 (BS11) have been considered; (ii) An indoor conference room (Indoor); (iii) A section of downtown Boston, Massachusetts, USA, generated using the 5G model developed by RemCom [58] (Boston) and (iv) A section of the Arizona State University campus in Tempe, Arizona, USA (ASU). The sixth dataset is a user-defined dataset of size 20 , 000 produced by sampling known distributions of parameters to use with the PPGC model 
+
+M with 5 paths to produce a dataset (User Defined). The distribution over the parameter space for each path is given in Table III. For the Boston and ASU datasets, we consider 2
+
+paths and for the Indoor, BS10 and BS11 datasets, we consider 
+
+3 paths. It should be noted that for datasets simulated using the DeepMIMO framework, the number of paths are limited by the number of datapoints available in each scenario. All datasets are split 80 /20 for training and testing. We use a VAE as the generative model gψ , with the encoder and decoder given by (f VAE  
+
+> ψe
+
+, f VAE  
+
+> ψd
+
+) respectively. The                                                 
+
+> pθpa(Radians) θpd(Radians) ϕpa(Radians) ϕpd(Radians) 1U(0 .55 ,0.85) U(0 .55 ,0.85) U(1 .15 ,1.45) U(1 .47 ,1.67)
+> 2U(−0.85 ,−0.25) U(−0.85 ,−0.25) U(1 .47 ,1.67) U(1 .6,1.8)
+> 3U(0 .45 ,0.75) U(−0.75 ,−0.45) U(1 .7,1.9) U(1 .42 ,0.72)
+> 4U(−0.1,0.3) U(0 .4,0.8) U(1 .15 ,1.35) U(1 .55 ,1.85)
+> 5U(−1.0,−0.6) U(0 .1,0.5) U(1 .55 ,1.85) U(1 .15 ,1.35)
+
+TABLE III: Distributions of channel parameters for each path used to generate the User Defined dataset. VAE encoder f VAE  
+
+> ψe
+
+consists of four convolutional layers, with kernel size 2 and stride 1, followed by two linear layers with output sizes 1024 and 512 . The layers used for sampling the latent distribution are linear layers with output size 64 . The VAE decoder f VAE  
+
+> ψd
+
+consists of five linear layers with output sizes 256 , 1024 , 2048 , 4096 and 2P (Rθ +Rϕ) respectively. We compare our model against ChannelGAN (CGAN) [21], the DUNet diffusion model (UNet) [23], VAE version of CSINet [1] and the GLOW generative flow model (Glow) [59]. Models are trained for 300 epochs with a batch size of 256 . For our model, we use resolution Rθ = 32 and Rϕ = 16 .
+
+A. Generation of Accurate Channels 
+
+In Table I, we analyze the ability of our method to capture the underlying distribution of channel matrices compared to baseline methods. To evaluate this, we compare the 2-Wasserstein distance [60] and Maximum Mean Discrepancy (MMD) [61] between 3000 samples of generated channels and the ground truth distribution of channels in the testing set. We observe that the channels generated by our method are closer to the distribution of ground truth channels than those generated by ChannelGAN, which is the best performing baseline, by up to 6×. This shows that our method can generate more realistic channel data as compared to baselines, while ensuring the validity of the generated channels. This is because our method learns to map a known distribution to the distribution over the set of sparse CPD vectors W as opposed 10 0 25 50 75 100 125 150 175 200         
+
+> Training Epochs
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> VAE Loss
+> Datasets
+> ASU
+> Boston
+> Outdoor 025 50 75 100 125 150 175 200
+> Training Epochs
+> 0
+> 5
+> 10
+> 15
+> 20
+> 25
+> 30
+> 35
+> GAN Loss
+> Datasets
+> ASU
+> Boston
+> Outdoor Generated Channels
+> Real Channels
+
+Fig. 7: Our method is compatible with the VAE (left) and GAN (center) architectures, with generator models converging to suitable optima. The inclusion of the array response dictionary D in the training pipeline guarantees valid channel matrices at the generator output that are similar to the ground truth channels, thus capturing the underlying parameter distributions (right). 2.0     
+
+> 1.5
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> Ground Truth Azimuth (Rad.)
+> 2.0
+> 1.5
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> Estimated Azimuth (Rad.)
+> Arrival ( a)
+> Departure ( d)0.75
+> 1.00
+> 1.25
+> 1.50
+> 1.75
+> 2.00
+> 2.25
+> 2.50
+> Ground Truth Elevation (Rad.)
+> 0.75
+> 1.00
+> 1.25
+> 1.50
+> 1.75
+> 2.00
+> 2.25
+> 2.50
+> Estimated Elevation (Rad.)
+> Arrival ( a)
+> Departure ( d)
+
+Fig. 8: Our method can be extended to estimate channel parameters accurately using the parameter extraction process. to the full channel matrix H, which has no specific sparsity structure and is thus more complex to predict. 
+
+B. Cross-Evaluation on Downstream Compression Task 
+
+In Table II, we analyze the efficacy of our method in pro-ducing realistic wireless data in the context of a downstream channel compression task, which is crucial to mitigating feedback overheads that arise in practical wireless systems that frequently exchange channel data to optimize communication efficiency [1], [62]. We consider two Outdoor scenario datasets for the base stations 10 and 11 denoted by DR 
+
+> 10
+
+and DR
+
+> 11
+
+respectively, to train two generators on each independently. We then use the trained generators to produce synthetic channel datasets, which are denoted by DG 
+
+> 10
+
+and DG
+
+> 11
+
+. Next, we train four autoencoders based on the CSI-Net [1] architecture on the datasets DR
+
+> 10
+
+, DR
+
+> 11
+
+, DG 
+
+> 10
+
+and DG 
+
+> 11
+
+respectively, for a compression task using the MSE loss. We then compare the performance of each pairwise combination of autoencoder and dataset. Intuitively, a model trained on DG 
+
+> 10
+
+should generalize well to DR
+
+> 10
+
+, and vice versa. Similar rules apply for models trained on DR/G  
+
+> 11
+
+. In Table II, we observe that an autoencoder trained on data generated by our model follows these rules, indicating that it can capture the distinctions between different datasets in its generated channels. Our method outperforms all baselines, showing that the channels generated by the PPGC pipeline are crucial to downstream compression tasks. 
+
+C. Compatibility with Generative Models 
+
+In Fig. 7, we illustrate the compatibility of our method with VAE and GAN architectures. As mentioned in Sec. II-A, our method is compatible with architectures that require no knowledge of the target generator outputs, a condition satisfied by VAE and GAN models, which utilize the MSE loss between the true channel and the output of the complete generator pipeline with no additional constraints. We consider the loss trajectories for the ASU, Boston, and Outdoor datasets, along with samples of the generated channels. We observe that both VAE and GAN models converge to suitable stationary points as seen in Fig. 7, and that the generated channels are very similar to the ground truth. Also, incorporating the response dictionary D guarantees that the generated channels are geometrically valid. Thus, our method is flexible in terms of the choice of the generative model. 
+
+D. Accuracy of Parameter Estimation 
+
+In Fig. 8, we show the compatibility of our framework with autoencoder models for parameter estimation tasks. We use an autoencoder based on the CSI-Net [1] architecture, with the output layer producing the set of CPD vectors W. We consider the Outdoor dataset with 2 paths and train for 100 epochs. We observe that the autoencoder can accurately predict the underlying channel parameters. This is because the linearized reformulation of the channel model and the decomposition of the parameter tensor allow the autoencoder to converge to optimal parameter values without being affected by the non-convexity of the original channel model M. The discretized nature of the array response dictionary D results in a single estimated angle value for a set of proximal ground truth values. 
+
+E. Effect of Number of Paths 
+
+In Fig. 9(a), we observe the effect of increasing the number of paths P that comprise the input channel H as described in (3). We consider the Indoor dataset with up to 5 paths, and analyze the ability of our method to adapt to additional paths. We observe that even as the number of paths P increases, the increase in 2-Wasserstein distance is ∼ 0.002 on average, and in MMD, it is ∼ 0.0008 on average for every additional path. This indicates that our method can scale to a larger range of scenarios in terms of the number of constituent paths. This is because the formulation of the generator output assigns a set of independent CPD vectors for each path, allowing the generator to learn the mapping functions for each path independently. It should be noted that the number of paths P
+
+affects the size of the output CPD, which is 4RP neurons. 11 2 3 4 5           
+
+> Number of Paths ( P)
+> 0.03
+> 0.04
+> 0.05
+> 0.06
+> 0.07
+> 0.08
+> 0.09
+> 0.10
+> 2-Wasserstein Distance
+> 0.002
+> 0.004
+> 0.006
+> 0.008
+> 0.010
+> 0.012
+> 0.014
+> MMD
+> 2-Wasserstein
+> MMD
+> (a) 2000 5000 10000 15000 20000
+> Training Dataset Size
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 2-Wasserstein Distance
+> 0.00
+> 0.05
+> 0.10
+> 0.15
+> 0.20
+> 0.25
+> 0.30
+> MMD
+> 2-Wasserstein - Ours
+> 2-Wasserstein - CGAN
+> MMD - Ours
+> MMD - CGAN (b) 8 / 8 16 / 8 32 / 16 64 / 16
+> Resolution ( R/R)
+> 0.03
+> 0.04
+> 0.05
+> 0.06
+> 0.07
+> 0.08
+> 0.09
+> 0.10
+> 2-Wasserstein Distance
+> 0.002
+> 0.004
+> 0.006
+> 0.008
+> 0.010
+> 0.012
+> 0.014
+> MMD
+> 2-Wasserstein
+> MMD (c)
+
+Fig. 9: Our method generalizes to channel data with an arbitrary number of constituent multipath components while retaining its ability to generate output data that belongs to the distribution of ground truth channels (a), and can generate high fidelity channel data even for smaller sizes of training data compared to the best performing baseline (CGAN). This translates to practical benefits in terms of the resources utilized to gather wireless channel data for training (b). As the resolution (Rθ , R ϕ)
+
+of the array response dictionary D is increased, the distribution of channels generated by our method gets closer to the ground truth distribution at the cost of larger computational resources used to store and operate on D (c). Thus, the output sizes of the generator are 256 , 382 , 512 and 
+
+640 neurons for 2, 3, 4 and 5 paths, respectively. 
+
+F. Effect of Size of Dataset 
+
+In Fig. 9(b), we observe the effect of varying the amount of training data available. This experiment is motivated by practical considerations in terms of resources expended to gather ground truth wireless data. We consider the Indoor dataset with 5 paths, which consists of 20 , 000 datapoints. We iteratively retrain the generator after removing chunks of the training data, while keeping the validation dataset the same. We observe that our method retains its ability to generate datapoints similar to the ground truth distribution in terms of 2-Wasserstein distance and MMD even when the size of the dataset is reduced by up to ∼ 50% . This illustrates that our method does not require large amounts of training data to produce samples of high-fidelity samples of wireless data. This is because our method learns to map a latent distribution to the distribution over the set of CPD vectors W rather than the channel matrix H, which is an easier mapping to learn on account of the sparsity structure of the CPD vectors W.
+
+G. Effect of Dictionary Resolution 
+
+In Fig. 9(c), we study the effect of changing the resolution 
+
+Rθ , R ϕ of the array response dictionary D. We consider the Indoor dataset with 5 paths, with (θmax − θmin ) = 2 .0 rad and (ϕmax − ϕmin ) = 1 .0 rad. For resolutions Rθ = {8, 16 },we consider Rϕ = 8 and for resolutions Rθ = {32 , 64 },we consider Rϕ = 16 . An increase in resolution enables the generative model to capture the underlying parameters of the channel with higher granularity, which results in more accurate generated channel matrices at the cost of an larger dictionary. We observe that the similarity between generated become and ground truth channels increases with the resolution. This happens because the increased resolution enables the generator to capture the underlying distribution of parameters with greater accuracy, described by the dictionary interval widths 
+
+∆θ/ϕ = (( θ/ϕ )max − (θ/ϕ )min )/R (θ/ϕ ) the azimuth and eleva-tion angles. However, the size of the array response dictionary 
+
+D increases with resolution as O(R2 
+
+> θ
+
+R2
+
+> ϕ
+
+), thus making it more computationally intensive. Thus, a change in resolution constitutes a tradeoff between the quality of the generated channel matrices and the computational resources required to store and operate upon the array response dictionary D.
+
+H. Incorporating Additional Parameters 
+
+In Fig. 10(a), we demonstrate the ability of our model to in-corporate additional channel parameters by including the phase shift caused by the wireless channel as an additional parameter, given by {ηi}Pi=1 . We consider the resolution Rη = 16 for the phase shift parameter. The output of the generative model is then of size 2Rθ P +2 RϕP +Rη P to account for the additional parameter, resulting in the set of CPD vectors W consisting of an additional vector for each path corresponding to the phase shift, given by {w(θia), w(θid), w(ϕia), w(ϕid), w(ηi)}.We evaluate our method on the ASU dataset and the Boston dataset, where the phase component is included in the channel modeling process. We compare the channels synthesized with and without the additional CPD vector for phase and observe the change in 2-Wasserstein distance and MMD. We observe that our method generates channels that are closer to the ground truth distribution after the addition of the phase shift parameter. This shows that our method can capture the effects of phase shift in addition to the angular parame-ters through the addition of the corresponding CPD vectors 
+
+{w(ηi)}Pi=1 , which enhances in its ability to synthesize more accurate and realistic distributions of the wireless channel. 
+
+I. Transfer Learning across Number of Antennas 
+
+In Fig. 10(b), we show that our method can easily be fine-tuned for new antenna-array configurations using a small amount of paired channel data. We pre-train the PPGC model using dataset DRef for a reference antenna configuration N Ref 
+
+> r/t
+
+and fine-tune on dataset DPaired of paired reference-target channels, with the reference configuration N Ref  
+
+> r/t
+
+and target con-figuration N Trg  
+
+> r/t
+
+similar to [63]. During this phase, we change the precomputed dictionary D to reflect the target configuration 12 Boston ASU 
+
+> Datasets
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 2-Wasserstein Distance
+> 0.00
+> 0.01
+> 0.02
+> 0.03
+> 0.04
+> 0.05
+> 0.06
+> 0.07
+> 0.08
+> MMD
+> 2-Wasserstein w/ Phase
+> 2-Wasserstein w/o Phase
+> MMD w/ Phase
+> MMD w/o Phase
+
+(a) 0.0 0.2 0.4 0.6 0.8 1.0  
+
+> 2-Wasserstein Distance
+> 6×6 to 8×8
+> 4×4 to 6×6
+> 2×2 to 4×4
+> Antenna Configurations
+> Pretrain
+> No Pretrain
+
+(b) 2 x 2  
+
+> 4 x 4
+> 6 x 6
+> 8 x 8
+
+(c) 
+
+Fig. 10: Our method can be extended to incorporate additional model parameters such as channel phase, which results in improved performance on ground truth channel data with a phase component (a), and used as a fine-tuning stage to generalize to novel antenna geometries by leveraging geometry-agnostic multipath information learned by the PPGC (b). Larger antennas allow for finer angular resolution of this multipath information, resulting in more accurate synthetic channels (c). with each element of size N Trg  
+
+> r
+
+× N Trg  
+
+> t
+
+. We compare this method to a PPGC model trained only on DPaired . We consider three scenarios, namely, {N Ref  
+
+> r/t
+
+= 2/4/6;N Trg  
+
+> r/t
+
+= 4/6/8},
+
+|D Paired | = 50 , and finetune for 100 minibatch iterations. We observe that compared to directly training the PPGC on DPaired , our method improves the 2-Wasserstein distance between the synthesized and the ground truth data by up to approximately 30% . This indicates that pretraining the PPGC model allows it to learn configuration-agnostic multipath infor-mation crucial for adapting to novel antenna geometries. We also observe that as the number of antennas in the reference and target configurations become larger, pretraining using our method improves the generation performance to a greater extent. This is because, for larger antenna geometries, critical multipath information can be captured to a higher degree of granularity in the pretraining stage, resulting in the generation of more accurate synthetic channels, as seen in Fig. 10(c). V. C ONCLUSION 
+
+In this paper, we addressed the problem of validity in channel matrices produced by generative ML models by developing a novel framework that incorporates physics-based channel models in the generative pipeline. We mitigated the convergence issues faced in the straightforward incorporation of channel models by relaxing the non-convexity of the model through a discretized array response dictionary which simpli-fies it to a linear combination problem. We also improved the scaling characteristics of our method by generating the tensor decomposition of the overall parameter tensor, enabling it to scale to larger resolutions and number of parameters. Extensive experimental validation comparing generated channel distribu-tions as well as performance on downstream tasks shows that the proposed method outperforms the different state-of-the-art methods for generative channel modeling. Future directions include temporal modeling of channels, increasing the number of parameters to better capture the behavior of the channels. REFERENCES [1] C.-K. Wen, W.-T. Shih, and S. Jin, “Deep learning for massive mimo csi feedback,” IEEE Wireless Commun. Letters , vol. 7, no. 5, pp. 748–751, 2018. [2] M. Soltani, V. Pourahmadi, A. Mirzaei, and H. Sheikhzadeh, “Deep learning-based channel estimation,” IEEE Commun. Letters , vol. 23, no. 4, pp. 652–655, 2019. [3] H. Huang, Y. Peng, J. Yang, W. Xia, and G. Gui, “Fast beamforming design via deep learning,” IEEE Trans. on Vehicular Tech. , vol. 69, no. 1, pp. 1065–1069, 2019. [4] C. G. Brinton, M. Chiang, K. T. Kim, D. J. Love, M. Beesley, M. Repeta, J. Roese, P. Beming, E. Ekudden, C. Li et al. , “Key focus areas and enabling technologies for 6g,” IEEE Commun. Mag. , vol. 63, no. 3, pp. 84–91, 2025. [5] M. Drakshayini and M. R. Kounte, “A review of wireless channel estimation techniques: challenges and solutions,” Inter. Jrnl. of Wireless and Mobile Computing , vol. 23, no. 2, pp. 193–203, 2022. [6] A. Sant and B. D. Rao, “Insights into maximum likelihood detection for one-bit massive mimo communications,” IEEE Trans. on Wireless Commun. , 2024. [7] H. He, S. Jin, C.-K. Wen, F. Gao, G. Y. Li, and Z. Xu, “Model-driven deep learning for physical layer communication,” IEEE Wireless Commun. , vol. 26, no. 5, pp. 77–83, 2019. [8] A. Zappone, M. Di Renzo, and M. Debbah, “Wireless networks design in the era of deep learning: Model-based, ai-based, or both?” IEEE Trans. on Commun. , vol. 67, no. 10, pp. 7331–7376, 2019. [9] H. Zhou, M. Erol-Kantarci, Y. Liu, and H. V. Poor, “A survey on model-based, heuristic, and machine learning optimization approaches in ris-aided wireless networks,” IEEE Commun. Surveys & Tutorials , vol. 26, no. 2, pp. 781–823, 2024. [10] S. Ju and T. S. Rappaport, “142 ghz multipath propagation measurements and path loss channel modeling in factory buildings,” in ICC 2023 -IEEE Inter. Conf. on Commun. , 2023, pp. 5048–5053. [11] S. Ju, Y. Xing, O. Kanhere, and T. S. Rappaport, “Sub-terahertz channel measurements and characterization in a factory building,” in ICC 2022 - IEEE Inter. Conf. on Commun. , 2022, pp. 2882–2887. [12] S. Kumar, A. Malhotra, and S. Hamidi-Rad, “Channel parameter estima-tion in wireless communication: A deep learning perspective,” in 2024 IEEE Inter. Conf. on Mach. Learn. for Communication and Networking (ICMLCN) , 2024, pp. 511–516. [13] P. Shen, Y. Qi, W. Yu, J. Fan, and F. Li, “Ota measurement for iot wireless device performance evaluation: Challenges and solutions,” IEEE Internet of Things Jrnl. , vol. 6, no. 1, pp. 1223–1237, 2019. [14] R. Luostari, D. Korpi, M. Honkala, and J. M. J. Huttunen, “Adapting to reality: Over-the-air validation of ai-based receivers trained with simulated channels,” 2025. [15] T. J. O’Shea, T. Roy, and T. C. Clancy, “Over-the-air deep learning based radio signal classification,” IEEE Jrnl. of Selected Topics in Sig. Proc. , vol. 12, no. 1, pp. 168–179, 2018. [16] A. Al-Shawabka, F. Restuccia, S. D’Oro, T. Jian, B. Costa Rendon, N. Soltani, J. Dy, S. Ioannidis, K. Chowdhury, and T. Melodia, “Ex-posing the fingerprint: Dissecting the impact of the wireless channel on radio fingerprinting,” in IEEE INFOCOM 2020 - IEEE Conf. on Computer Commun. , 2020, pp. 646–655. [17] S. Cammerer, G. Marcus, T. Zirr, F. A. Aoudia, L. Maggi, J. Hoydis, and A. Keller, “Sionna research kit: A gpu-accelerated research platform for ai-ran,” 2025. [Online]. Available: https://arxiv.org/abs/2505.15848 13 
+
+[18] Y. Yang, Y. Li, W. Zhang, F. Qin, P. Zhu, and C.-X. Wang, “Generative-adversarial-network-based wireless channel modeling: Challenges and opportunities,” IEEE Commun. Mag. , vol. 57, no. 3, pp. 22–27, 2019. [19] L. Girin, S. Leglaive, X. Bie, J. Diard, T. Hueber, and X. Alameda-Pineda, “Dynamical variational autoencoders: A comprehensive review,” 
+
+Found. and Trends in Mach. Learn. , vol. 15, no. 1-2, pp. 1–175, 2021. [20] S. Mohamed and B. Lakshminarayanan, “Learning in implicit generative models,” arXiv preprint arXiv:1610.03483 , 2016. [21] H. Xiao, W. Tian, W. Liu, and J. Shen, “Channelgan: Deep learning-based channel modeling and generating,” IEEE Wireless Commun. Letters , vol. 11, no. 3, pp. 650–654, 2022. [22] T. Orekondy, A. Behboodi, and J. B. Soriaga, “Mimo-gan: Generative mimo channel modeling,” in ICC 2022 - IEEE Inter. Conf. on Commun. ,2022, pp. 5322–5328. [23] U. Sengupta, C. Jao, A. Bernacchia, S. Vakili, and D.-s. Shiu, “Gen-erative diffusion models for radio wireless channel modelling and sampling,” in GLOBECOM 2023 - 2023 IEEE Global Commun. Conf. ,2023, pp. 4779–4784. [24] M. Arvinte and J. Tamir, “Score-based generative models for wireless channel modeling and estimation,” in ICLR Workshop on Deep Gener-ative Models for Highly Structured Data , 2022. [25] X. Li, A. Alkhateeb, and C. Tepedelenlio˘ glu, “Generative adversarial estimation of channel covariance in vehicular millimeter wave systems,” in 2018 52nd Asilomar Conf. on Signals, Sys., and Computers , 2018, pp. 1572–1576. [26] Y. Wei, M.-M. Zhao, and M.-J. Zhao, “Model-driven gan-based channel modeling for irs-aided wireless communication,” in 2021 IEEE Global Commun. Conf. (GLOBECOM) , 2021, pp. 1–6. [27] B. B¨ ock, A. Oeldemann, T. Mayer, F. Rossetto, and W. Utschick, “Physics-informed generative modeling of wireless channels,” 2025. [Online]. Available: https://arxiv.org/abs/2502.10137 [28] W. Xia, S. Rangan, M. Mezzavilla, A. Lozano, G. Geraci, V. Semkin, and G. Loianno, “Generative neural network channel modeling for millimeter-wave uav communication,” IEEE Trans. on Wireless Com-mun. , vol. 21, no. 11, pp. 9417–9431, 2022. [29] Y. Hu, M. Yin, W. Xia, S. Rangan, and M. Mezzavilla, “Multi-frequency channel modeling for millimeter wave and thz wireless communication via generative adversarial networks,” in 2022 56th Asilomar Conf. on Signals, Systems, and Computers , 2022, pp. 670–676. [30] D. Singh and A. K. Reddy Chavva, “Modeling time-varying and frequency-selective channels with generative adversarial networks,” in 
+
+ICC 2022 - IEEE Inter. Conf. on Commun. , 2022, pp. 5329–5334. [31] H. Sun, L. Zhu, J. Xu, and R. Zhang, “Channel gain map reconstruction based on virtual scatterer model,” 2026. [Online]. Available: https://arxiv.org/abs/2602.12602 [32] H. Sun, L. Zhu, and R. Zhang, “Channel gain map estimation for wireless networks based on scatterer model,” IEEE Transactions on Wireless Communications , vol. 24, no. 8, pp. 7012–7028, 2025. [33] A. Forenza, D. J. Love, and R. W. Heath, “Simplified spatial correlation models for clustered mimo channels with different array configurations,” 
+
+IEEE Trans. on Vehicular Tech. , vol. 56, no. 4, pp. 1924–1934, 2007. [34] A. Meijerink and A. F. Molisch, “On the physical interpretation of the saleh–valenzuela model and the definition of its power delay profiles,” 
+
+IEEE Trans. on Ants. and Prop. , vol. 62, no. 9, pp. 4780–4793, 2014. [35] Y. Yang, Y. Li, W. Zhang, F. Qin, P. Zhu, and C.-X. Wang, “Generative-adversarial-network-based wireless channel modeling: Challenges and opportunities,” IEEE Commun. Mag. , vol. 57, no. 3, pp. 22–27, 2019. [36] F. Khoramnejad and E. Hossain, “Generative ai for the optimization of next-generation wireless networks: Basics, state-of-the-art, and open challenges,” IEEE Commun. Surveys & Tutorials , pp. 1–1, 2025. [37] 3rd Generation Partnership Project (3GPP), “NR; Physical Layer Procedures for Data,” 3rd Generation Partnership Project (3GPP), Technical Specification TS 38.214, 2024, release 15 and subsequent releases, Section 5.2.2 (UE CSI Reporting Procedures). [Online]. Available: https://www.3gpp.org/dynareport/38214.htm [38] S. Wagle, A. Malhotra, S. Hamidi-Rad, A. Sant, D. J. Love, and C. G. Brinton, “Physics-based generative models for geometrically consistent and interpretable wireless channel synthesis,” in Proc. of the Thirty-Fourth Inter. Joint Conf. on Artificial Intelligence, IJCAI 2025, Montreal, Canada, August 16-22, 2025 . ijcai.org, 2025, pp. 9384–9392. [Online]. Available: https://doi.org/10.24963/ijcai.2025/1043 [39] ——, “Physics-informed generative approaches for wireless channel modeling,” in Inter. Conf. on Learn. Repres. (ICLR), Workshop on Deep Generative Model in Machine Learning: Theory, Principle and Efficacy, April 24-28, 2025. 
+
+[40] T. S. Rappaport, Wireless communications: principles and practice .Cambridge University Press, 2024. [41] 3rd Generation Partnership Project (3GPP), “NR; Physical Channels and Modulation,” 3rd Generation Partnership Project (3GPP), Technical Specification TS 38.211, 2024, release 17, Section 5.3 (OFDM Baseband Signal Generation). [Online]. Available: https://www.3gpp. org/dynareport/38211.htm [42] D. He, B. Ai, K. Guan, L. Wang, Z. Zhong, and T. K¨ urner, “The design and applications of high-performance ray-tracing simulation platform for 5g and beyond wireless commun.: A tutorial,” IEEE Commun. Surveys & Tutorials , vol. 21, no. 1, pp. 10–27, 2019. [43] T. K. Geok, F. Hossain, M. Kamaruddin, N. Rahman, S. Thiagarajah, A. T. W. Chiat, and C. Liew, “A comprehensive review of efficient ray-tracing techniques for wireless communication,” Inter. Jrnl. on Commun. Ant. and Prop. , vol. 8, no. 2, pp. 123–136, 2018. [44] A. Forenza, D. J. Love, and R. W. Heath, “Simplified spatial correlation models for clustered mimo channels with different array configurations,” 
+
+IEEE Trans. on Vehicular Tech. , vol. 56, no. 4, pp. 1924–1934, 2007. [45] A. Meijerink and A. F. Molisch, “On the physical interpretation of the saleh–valenzuela model and the definition of its power delay profiles,” 
+
+IEEE Trans. on Ants. and Prop. , vol. 62, no. 9, pp. 4780–4793, 2014. [46] J. Salmi and A. F. Molisch, “Propagation parameter estimation, modeling and measurements for ultrawideband mimo radar,” IEEE Trans. on Ants. and Prop. , vol. 59, no. 11, pp. 4257–4267, 2011. [47] T. S. Rappaport, S. Sun, R. Mayzus, H. Zhao, Y. Azar, K. Wang, G. N. Wong, J. K. Schulz, M. Samimi, and F. Gutierrez, “Millimeter wave mobile communications for 5G cellular: It will work!” IEEE Access ,vol. 1, pp. 335–349, 2013. [48] S. Rangan, T. S. Rappaport, and E. Erkip, “Millimeter-wave cellular wireless networks: Potentials and challenges,” Proceedings of the IEEE ,vol. 102, no. 3, pp. 366–385, 2014. [49] Y. Xing, T. S. Rappaport, and A. Ghosh, “Millimeter wave and sub-THz indoor radio propagation channel measurements, models, and comparisons in an office environment,” IEEE Communications Letters , vol. 25, no. 10, pp. 3151–3155, 2021. [Online]. Available: https://arxiv.org/abs/2103.00385 [50] D. P. Kingma and M. Welling, “Auto-encoding variational bayes,” arXiv preprint arXiv:1312.6114 , 2014. [51] G. Papamakarios, E. Nalisnick, D. J. Rezende, S. Mohamed, and B. Lakshminarayanan, “Normalizing flows for probabilistic modeling and inference,” Jrnl. of Mach. Learn. Research , vol. 22, no. 57, pp. 1–64, 2021. [52] D. Kingma, T. Salimans, B. Poole, and J. Ho, “Variational diffusion mod-els,” in Advances in Neural Info. Proc. Sys. , M. Ranzato, A. Beygelzimer, Y. Dauphin, P. Liang, and J. W. Vaughan, Eds., vol. 34. Curran Associates, Inc., 2021, pp. 21 696–21 707. [53] V. Nair and G. E. Hinton, “Rectified linear units improve restricted boltzmann machines,” in Proc. of the 27th Inter. Conf. on Mach. Learn. ,ser. ICML’10. Madison, WI, USA: Omnipress, 2010, p. 807–814. [54] V. Dumoulin and F. Visin, “A guide to convolution arithmetic for deep learning,” arXiv preprint arXiv:1603.07285 , 2016. [55] F. L. Hitchcock, “The expression of a tensor or a polyadic as a sum of products,” Jrnl. of Mathematics and Physics , vol. 6, no. 1-4, pp. 164– 189, 1927. [56] A. Savitzky and M. J. E. Golay, “Smoothing and differentiation of data by simplified least squares procedures.” Analytical Chemistry , vol. 36, no. 8, pp. 1627–1639, 1964. [57] A. Alkhateeb, “DeepMIMO: A generic deep learning dataset for mil-limeter wave and massive MIMO applications,” in Proc. of Info. Theory and App. Workshop (ITA) , San Diego, CA, Feb 2019, pp. 1–8. [58] Remcom, “Wireless InSite,” http://www.remcom.com/wireless-insite. [59] D. P. Kingma and P. Dhariwal, “Glow: generative flow with invertible 1×1 convolutions,” in Proc. of the 32nd Inter. Conf. on Neural Info. Proc. Sys. , ser. NIPS’18. Red Hook, NY, USA: Curran Associates Inc., 2018, p. 10236–10245. [60] V. M. Panaretos and Y. Zemel, “Statistical aspects of wasserstein distances,” Annual review of statistics and its application , vol. 6, no. 1, pp. 405–431, 2019. [61] G. K. Dziugaite, D. M. Roy, and Z. Ghahramani, “Training generative neural networks via maximum mean discrepancy optimization,” in Proc. of the Thirty-First Conf. on Uncertainty in Artificial Intelligence , ser. UAI’15. Arlington, Virginia, USA: AUAI Press, 2015, p. 258–267. [62] M. B. Mashhadi, Q. Yang, and D. G¨ und¨ uz, “Distributed deep convo-lutional compression for massive mimo csi feedback,” IEEE Trans. on Wireless Commun. , vol. 20, no. 4, pp. 2621–2633, 2020. [63] S. Wagle, A. Malhotra, S. Hamidi-Rad, A. Sant, D. J. Love, and C. G. Brinton, “Physics-based channel transformation for wireless configura-tions,” in to appear in Proc. of IEEE Int. Conf. on Acoustics, Speech, and Sig. Proc., Barcelona, Spain, May 4-8, 2026.
