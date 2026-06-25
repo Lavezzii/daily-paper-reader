@@ -1,0 +1,314 @@
+Title: Sequential and Generative Models for Vehicular Distributed MIMO Channel Prediction
+
+URL Source: https://arxiv.org/pdf/2606.25864v1
+
+Published Time: Thu, 25 Jun 2026 01:13:33 GMT
+
+Number of Pages: 7
+
+Markdown Content:
+# Sequential and Generative Models for Vehicular Distributed MIMO Channel Prediction 
+
+Malek ABIDA 
+
+College of computing GVSU 
+
+Michigan, USA abidam@mail.gvsu.edu 
+
+Rafik ZAYANI 
+
+Univ Rennes, CNRS, IETR, UMR 6164, F-35000 
+
+Rennes, France rafik.zayani@univ-rennes.fr 
+
+Eric P. SIMON 
+
+Univ Lille, CNRS, IEMN, UMR 8520, F-59650 
+
+Lille, France eric.simon@univ-lille.fr 
+
+Davy P. GAILLOT 
+
+Univ Lille, CNRS, IEMN, UMR 8520, F-59650 
+
+Lille, France davy.gaillot@univ-lille.fr 
+
+Abstract —Vehicular communication is a key 6G use case requiring reliable and high-capacity connectivity under fast mo-bility and highly time-varying propagation conditions. However, large-scale vehicular channel estimation is costly and limited, im-pacting system-level performance of vehicular communications, and realistic channel prediction models are needed. This paper proposes a vehicular channel prediction framework based on real measured urban channels collected through a dedicated measure-ment campaign using the MaMIMOSA channel sounder. The framework enables the training and systematic benchmarking of sequential and generative models for both single-step and multi-horizon vehicular channel state information (CSI) prediction to assess prediction robustness across different forecasting horizons, including LSTM, TCN, a CNN-enhanced Transformer, and ChannelGPT, with the goal of accurately predicting channel evolution while preserving spatiotemporal dynamics and non-stationarity. In addition, a system-level evaluation framework is introduced to assess the impact of channel prediction on the per-formance of vehicular distributed MIMO communications. Using predicted channels, spectral efficiency (SE) is evaluated against true CSI. Results show that ChannelGPT achieves over 94% normalized mean squared error (NMSE) reduction compared to LSTM and significant improvements over other baselines, while reducing FLOPs by 28% and inference latency by 39% relative to the CNN + Transformer. Moreover, ChannelGPT-predicted channels yield SE distributions nearly indistinguishable from those obtained with real measurements, demonstrating its effectiveness for reliable performance evaluation in high-mobility 6G vehicular networks. 
+
+Index Terms —Vehicular communication, channel prediction, deep learning, sequential models, temporal modeling, spectral efficiency. 
+
+I. I NTRODUCTION 
+
+Vehicular communication is a cornerstone of emerging 6G networks, enabling ultra-reliable, low-latency, and high-capacity connectivity for safety-critical and high-mobility ap-plications [1]. Achieving these performance targets critically depends on accurate channel estimation and prediction under rapidly time-varying propagation conditions, where channel estimation acquires current channel state information (CSI) through pilot-based measurements, whereas channel prediction forecasts future CSI from previously observed channel realiza-tions. In this work, the considered learning models operate as channel predictors and are evaluated according to their ability to predict future vehicular CSI. However, acquiring large-scale vehicular channel datasets from real-world measurements remains costly and time-consuming. Measurement campaigns are constrained by hardware availability, bandwidth, and oper-ational complexity, while classical analytical channel models often fail to capture the strong non-stationarity, and mobility-induced dynamics observed in realistic vehicular environments [2], [3]. As a result, learning-based methods trained solely on idealized or simulated data exhibit limited generalization in practice. Recent advances in deep learning have shown strong potential for enhancing channel modeling and prediction. Nevertheless, modern data-driven models are inherently data-hungry and require diverse, representative datasets to general-ize reliably [4]. In this work, we propose a vehicular channel prediction framework that combines sequential learning and attention-based temporal modeling to capture both short-term dynamics, corresponding to rapid channel fluctuations caused by fast fading and Doppler effects, and long-range temporal evolution induced by changes in vehicle position, propagation geometry, and blockage conditions. The framework is trained and evaluated on the real measured MaMIMOSA dataset [5], ensuring that the predicted channels preserve realistic spatiotemporal structure and mobility effects. Unlike most existing approaches, we further assess prediction quality at the system level by analyzing its impact on achievable SE. Prior learning-based approaches for vehicular channel pre-diction include CNN–LSTM architectures for Doppler-aware forecasting [6], [7], Transformer-based CSI predictors [8], and mobility-aware methods incorporating graph or spatiotemporal information [9], [10]. While these approaches demonstrate promising prediction accuracy, most are evaluated using sim-ulated or semi-synthetic channel models and therefore do not fully capture the non-stationary and environment-dependent characteristics of real vehicular propagation. As highlighted in comprehensive surveys [2], data scarcity remains a fun-damental challenge in vehicular communication, significantly limiting the generalization capability of purely data-driven models and motivating the need for realistic, measurement-driven augmentation strategies. In addition, existing works predominantly assess performance using prediction-oriented metrics such as mean squared error (NMSE), while rarely val-idating the impact of channel prediction accuracy at the com-munication system level. In particular, the effect of predicted CSI on achievable SE, a critical performance indicator for 6G 
+
+> arXiv:2606.25864v1 [eess.SP] 24 Jun 2026
+
+vehicular systems, is often not evaluated. This lack of system-level validation leaves an important gap between channel prediction accuracy and its practical benefit for vehicular com-munication performance. Recent studies have demonstrated that LSTM-based channel predictors can outperform classical channel prediction techniques, such as Wiener filtering and Kalman-based methods, in time-varying wireless environments by better capturing nonlinear temporal channel dynamics [11], [12]. Consequently, LSTM has become a widely adopted learning-based benchmark for wireless channel prediction. In this work, LSTM is therefore used as the baseline model upon which more advanced temporal learning architectures are evaluated. To address the limitations of recurrent learning, we investigate four complementary temporal learning paradigms for vehicular CSI prediction: recurrent learning (LSTM), convolutional temporal modeling (TCN), encoder-based at-tention (CNN+Transformer), and decoder-only Transformer modeling (ChannelGPT). These architectures were selected because they represent fundamentally different approaches for modeling temporal dependencies, ranging from sequential memory mechanisms to attention-based sequence modeling. To the best of our knowledge, a unified comparison of these temporal learning paradigms using real measured vehicular distributed multiple- input multiple-output (MIMO) channels has not been previously reported. Such a comparison provides valuable insights into the trade-offs between prediction ac-curacy, forecasting robustness, and computational complexity under realistic vehicular propagation conditions. This paper makes the following key contributions:  
+
+> •
+
+We leverage the real-world MaMIMOSA vehicular mea-surement campaign to investigate non-stationary and mobility-driven channel behavior in a distributed-MIMO setting using measured CSI data.  
+
+> •
+
+We develop a unified benchmarking framework compar-ing recurrent, convolutional, encoder-based, and decoder-only Transformer architectures for vehicular CSI predic-tion under identical preprocessing, training, and evalua-tion conditions.  
+
+> •
+
+We evaluate both single-step and multi-horizon CSI pre-diction performance and further assess the impact of predicted channels at the system level through spectral-efficiency analysis, establishing the relationship between prediction accuracy and communication performance. The remainder of this paper is organized as follows. Sec-tion II describes the measurement campaign and dataset. Section III details channel representation and preprocessing. Section IV presents the proposed learning framework. Sec-tion V outlines the experimental setup and evaluation metrics. Section VI discusses the prediction and SE results. Section VII concludes the paper. II. M EASUREMENT CAMPAIGN 
+
+The channel measurements were conducted on the “Cit´ eScientifique” campus in Lille, France, using the MaMIMOSA channel sounder. The campaign targets realistic 5.89 GHz ve-hicular propagation conditions and serves as the experimental  
+
+> Fig. 1. Top view of the measurement campaign showing eight distributed APs and four antennas mounted on the van.
+
+basis for this study. As illustrated in Fig. 1, 4 receiving anten-nas were mounted on a vehicle moving along a 200 m campus boulevard at an approximately constant speed of 20 km/h, ensuring smooth temporal sampling of channel variations. The measurement campaign corresponds to uplink (UL) channel acquisition between the vehicle and the distributed APs. Under the assumption of channel reciprocity in TDD systems, the measured channels are subsequently reused for downlink (DL) system-level performance evaluation, i.e., acquisition from 8
+
+distributed single-antenna APs. It is worth mentioning that our campaign-measurement captures heterogeneous propaga-tion conditions, including line-of-sight (LOS) and obstructed scenarios with scattering and blockage effects. This distributed configuration reflects practical vehicular distributed MIMO deployments and enables the evaluation of spatial variability. In this campaign, the channel was recorded over approximately 52 frames, corresponding to a total measurement time of about 35 seconds, with each frame consisting of 128 symbols (i.e., measurements). This temporal resolution captures both small-scale fading and mobility-induced large-scale variations, making the dataset well suited for validating learning-based channel prediction and generation methods using real vehicu-lar measurements. III. V EHICULAR DISTRIBUTED MIMO C HANNEL 
+
+REPRESENTATION AND PREPROCESSING 
+
+A. Channel Data Representation 
+
+The vehicular wireless channel is represented as a five-dimensional complex-valued tensor 
+
+H ∈ CF ×T ×A×M ×K , (1) where F denotes the number of subcarriers, T the number of symbols, A the number of frames, M the number of APs, and K denotes the number of transmit antennas at the vehicle (single-user scenario). This representation captures the joint frequency, temporal, and spatial evolution of vehicular distributed-MIMO channels. Each channel coefficient is acomplex number expressed as 
+
+h = hRe + jh Im , (2) where hRe and hIm denote the real and imaginary components, respectively. This representation preserves both amplitude and phase information required for coherent detection and channel prediction. The key characteristics of the dataset are summa-rized in Table I.                 
+
+> TABLE I CHANNEL DATASET STRUCTURE AND KEY STATISTICS
+> Property Value
+> Tensor dimensions (F, T, A, M, K )(818 ,128 ,52 ,8,4)
+> Data type Complex-valued Std. dev. (real/imag) ≈8.4×10 −5
+
+B. Channel Data Transformation 
+
+Let H ∈ CF ×T ×A×M ×K denote the raw channel tensor. We denote by hf,m,k (t) ∈ C the channel coefficient at subcarrier 
+
+f , time index t, AP antenna m, and number of user antennas 
+
+k. The T symbols per frame and A frames are concatenated into a single temporal index t ∈ { 0, . . . , T × A − 1}, such that T × A defines the overall temporal dimension of the data. To enable learning with real-valued neural networks, each complex coefficient is decomposed into its real and imaginary components. To reduce dimensionality, we select 
+
+64 subcarriers, denoted by Fsel . The selection is computed on the training set only to avoid data leakage. For each AP, the selected coefficients are flattened into a real-valued feature vector. The dimension D corresponds to the feature frequential dimension, while T × A represents the temporal dimension: 
+
+h(t) ∈ RD , D = 2 × Fsel × M × K, (3) where the factor of 2 accounts for the concatenation of real and imaginary components. Feature-wise normalization is performed using statistics μ and σ computed exclusively from the training set: 
+
+h(t) = (h(t) − μ)
+
+σ . (4) which stabilizes optimization and improves generalization. Here, μ is the per-feature mean and σ is the per-feature standard deviation. Finally, a sliding window of length W
+
+constructs input–target pairs (Xt, yt), where Xt denotes the input sequence and yt the corresponding ground-truth next-step channel: 
+
+Xt = h(t − W + 1) , . . . , h(t) ∈ RW ×D, (5) 
+
+yt = h(t + 1) ∈ RD . (6) IV. P ROPOSED CHANNEL PREDICTION METHODOLOGY 
+
+The objective of the proposed framework is to predict realistic channel realizations that preserve the intrinsic spa-tiotemporal structure of measured vehicular distributed MIMO data. This facilitates the development of robust learning-based communication strategies, including SE optimization and channel prediction.   
+
+> Fig. 2. LSTM-based sequence-to-one channel predictor.
+> Fig. 3. TCN-based next-step channel predictor with causal dilated residual blocks.
+
+A. LSTM-Based Channel Predictor 
+
+Long Short-Term Memory (LSTM) networks mitigate vanishing-gradient effects in recurrent models by maintaining gated hidden and memory states [13].The LSTM maintains a hidden state hhid and a memory cell cmem to capture temporal dependencies. The memory cell stores information from pre-vious channel observations, while the hidden state summarizes the relevant temporal context required for prediction, enabling the model to capture channel evolution over time. In our framework, the LSTM predictor follows a sequence-to-one formulation using a sliding window of W past channel vectors 
+
+{h(t − W + 1) , . . . , h(t)}, and outputs the next-step estimate 
+
+ˆh(t + 1) , as illustrated in Fig. 2. Stacked unidirectional LSTM layers process the input sequence, and the resulting hidden states are aggregated via hybrid pooling (mean, max, and attention). A regression head maps the pooled representation to the predicted channel vector. Channel sequences are con-structed independently per AP to avoid information leakage, with complex coefficients represented using real and imaginary components. The loss function combines Smooth L1 with a cosine similarity term to promote robustness and directional consistency. 
+
+B. TCN-Based Channel Predictor 
+
+Temporal Convolutional Networks (TCNs) provide a non-recurrent alternative for sequence modeling using causal di-lated convolutions [14]. The proposed TCN processes an input window of length W through a stack of residual convolutional blocks with increasing dilation (e.g., 1, 2, 4), ensuring a large receptive field while preserving causality, as illustrated in Fig. 3. A last-timestep readout summarizes the temporal context and is mapped to the next-step channel prediction. Channel sequences are constructed independently per AP to avoid cross-AP leakage. Residual connections, normaliza-tion, and gated activations improve training stability, while Smooth L1 regression ensures robust convergence. Fig. 4. Hybrid CNN + Transformer encoder for next-step vehicular distributed MIMO channel prediction.  
+
+> Fig. 5. ChannelGPT-based autoregressive channel sequence generator.
+
+C. Hybrid CNN + Transformer Encoder Channel Predictor 
+
+To capture both local temporal patterns and long-range de-pendencies, we propose a hybrid CNN + Transformer encoder architecture, illustrated in Fig. 4. A temporal CNN stem with residual depthwise-separable convolutions extracts short-term dynamics and projects features into a shared embedding space. The resulting sequence is processed by pre-norm Transformer encoder blocks with multi-head self-attention and positional encodings (with optional ALiBi bias) to model temporal de-pendencies. The encoded representation is summarized using last-step or last-k pooling and mapped to the next-step channel estimate ˆh(t + 1) .
+
+D. ChannelGPT-Based Channel Generator 
+
+We adopt ChannelGPT, a decoder-only Transformer for generative CSI modeling, as illustrated in Fig. 5. The model first applies a linear projection with positional encoding to the input sequence, followed by a stack of Transformer blocks composed of layer normalization (LN), multi-head self-attention, and feedforward networks (FFN). The final hidden representation is passed through a linear regression head that directly predicts future channel realizations over a predefined forecasting horizon. Specifically, given an observed window of length W , ChannelGPT predicts the next channel realization 
+
+ˆh(t + 1) . Prediction performance is subsequently evaluated across multiple forecasting horizons, as discussed in Sec-tion VI-B. The model operates on real-valued vectors obtained from unfolded complex CSI, using leakage-free preprocessing. V. P ERFORMANCE EVALUATION 
+
+A. Evaluation of predictions 
+
+To evaluate the effectiveness of the proposed prediction framework, a series of controlled experiments are conducted under realistic vehicular distributed MIMO channel prediction settings. Channel sequences are preprocessed as described in Section II and subsequently partitioned into training, valida-tion, and test sets to ensure statistically sound evaluation. The dataset was partitioned chronologically into training (80%), validation (10%), and test (10%) sets to avoid temporal leakage between highly correlated samples. Normalization statistics and subcarrier selection were computed exclusively on the training set. Although the dataset was collected along a single measurement route, it exhibits substantial spatial and fre-quency diversity. In the spatial domain, the distributed-MIMO deployment consists of eight geographically distributed access points communicating with four vehicle-mounted antennas, resulting in multiple independent propagation links. In the frequency domain, the channel is observed over 64 selected OFDM subcarriers, capturing frequency-selective fading and rich multipath propagation effects. Furthermore, both LOS and obstructed propagation conditions are present throughout the measurement campaign, providing a realistic benchmark for measurement-driven vehicular CSI prediction. The pri-mary evaluation metric is the NMSE, which quantifies the reconstruction error relative to the energy of the true channel realization: 
+
+NMSE = ∥y − by∥22
+
+∥y∥22
+
+, (7) where y and by denote the true and predicted channel vectors, respectively. NMSE provides a scale-invariant measure of prediction accuracy and is particularly well-suited for wire-less channel modeling, where channel magnitudes can vary significantly across propagation conditions. 
+
+B. Model Parameters 
+
+All models were trained under identical optimization set-tings to ensure a fair comparison. A batch size of 128, an input window of length W = 48 , and 200 training epochs were used for all architectures. Optimization was performed using AdamW with a learning rate of 10 −3 and weight decay of 10 −5. Gradient clipping (max norm 1.0) and a OneCycle learning rate schedule were applied to stabilize training. This unified protocol ensures that performance differences primarily reflect architectural design rather than optimization choices (Table II). The model configurations balance capacity and efficiency for capturing temporal dynamics, with recurrent and convolutional models handling multi-scale dependencies, and attention-based models enabling richer temporal repre-sentations. ChannelGPT employs a decoder-only Transformer architecture for multi-step vehicular CSI prediction. 
+
+C. System-level performance evaluation 
+
+We consider a single-user vehicular-to-infrastructure (V2I) UL communication system where a vehicle (user equipment, UE) equipped with K transmit antennas communicates with 
+
+M geographically distributed single-antenna APs. The vehicle simultaneously transmits M independent data streams, with each AP responsible for decoding a single stream. Let sf ∈
+
+CM ×1 denote the vector of transmitted symbols at subcarrier 
+
+f , where the elements sf,m ∼ CN (0 , 1) are independent and identically distributed (i.i.d.) complex Gaussian symbols. To control the transmit power across streams and subcarriers, we introduce a per-stream power allocation strategy [15]. TABLE II UNIFIED ARCHITECTURE AND HYPERPARAMETER SUMMARY FOR SEQUENTIAL AND GENERATIVE MODELS 
+
+Model Layers Hidden Dim. FF Dim. Core Mechanism / Key Config. Att./Kernel / Heads Special Options 
+
+LSTM 2 128 128 Input proj. →128, Huber + co-sine loss – Dropout 0.5, noise 
+
+σ = 0 .05 
+
+TCN 5 384 – Proj. D → 192 , 5 dilated causal GLU blocks, last-timestep head 
+
+k = 5 OneCycleLR, Huber + cosine loss, bf16 AMP CNN + Transformer Encoder 3 CNN + 6 Enc. 256 1536 CNN stem + self-attention (AL-iBi, SwiGLU) 
+
+k = 7, 8heads –ChannelGPT (Decoder-only) 6 256 1024 Decoder-only Transformer (GPT-2 style, learned PE) 8 heads –
+
+Note: FF = Feedforward, Attn. = Attention, FC = Fully Connected, PE = Positional Encoding. TABLE III PARAMETERS USED FOR CHANNEL PREDICTION AND SE E VALUATION 
+
+Symbol Description Value 
+
+wp Noise level (dBm) −93 dBm 
+
+σ2 Noise power 0.001 × 10 wp/10 
+
+Ptx Total transmit power 1 W 
+
+τp Pilot length 4
+
+τc Coherence block length 168 
+
+ξ Fraction of DL data symbols 0.5 
+
+Specifically, the transmit signal at subcarrier f is expressed as 
+
+xf = Wf P1/2 
+
+> f
+
+sf , (8) where Wf ∈ CK×M denotes the precoding matrix, sf ∈
+
+CM ×1 is the vector of normalized data symbols satisfying 
+
+E[sf sHf ] = IM , and Pf = diag( p1,f , . . . , p M,f ) ∈ RM ×M
+
+is a diagonal matrix containing the power allocated to each stream. To enable low-complexity reception at the APs, we adopt a use-and-then-forget (UatF) framework [16] combined with PZF precoding [15] at the transmitter. The key idea is that all signal processing is performed at the vehicle, such that each AP can detect its intended stream without requiring additional processing or instantaneous CSI. This enables us to quantify the impact of prediction accuracy on system performance. Table III summarizes the main parameters used in the evaluation. In addition, the DL signal-to-interference-plus-noise ratio (SINR) and the corresponding SE are computed for each user under PZF precoding. In a distributed setup with M APs, the received signal of user antenna k at channel use n is the coherent superposition of the contributions transmitted by all APs. Following the UatF bounding technique, the effective SINR of user antenna k, given by (9) 
+
+SINR m,f = |CP m,f |2
+
+E
+
+h
+
+|P GU m,f |2i
+
++ P 
+
+> m′̸=m
+
+E
+
+h
+
+|M SI m′,f |2i
+
++ σ2
+
+> n
+
+,
+
+(9) where σ2 
+
+> n
+
+is the receiver noise power. We define the following terms: 
+
+TABLE IV COMPARISON OF VALIDATION AND TEST NMSE ( LOWER IS BETTER ). 
+
+Model Val NMSE Ep. Test NMSE Ep. 
+
+CNN + Transformer 0.0221 161 0.0290 161 ChannelGPT 0.0215 118 0.0331 176 TCN 0.0269 175 0.0332 162 LSTM 0.3751 165 0.6949 189 
+
+CP m,f ≜ E√pm,f hHm,f wm,f 
+
+ , (10) 
+
+P GU m,f ≜ √pm,f hHm,f wm,f − CP m,f , (11) 
+
+M SI m′,f ≜ ppm′ , f hHm,f wm′,f , m′̸ = m, (12) In (10), hH 
+
+> m,f
+
+∈ C1×K denotes the DL channel coeffi-cients between AP m and vehicle antennas at frequency f .
+
+wm,f ∈ CK×1 is the precoding vector at frequency f . Hence, 
+
+CP m,f represents the coherent mean desired signal, P GU m,f 
+
+captures the random fluctuation around this mean (precoding gain uncertainty), M SI m′,f is the multi-stream interference from AP m′. The achievable DL SE of subcarrier f is given by 
+
+SE f =
+
+> M
+
+X
+
+> m=1
+
+ξ
+
+
+
+1 − τp
+
+τc
+
+| {z }
+
+> prelog factor
+
+log 2
+
+
+
+1 + SINR m,f 
+
+
+
+, (13) where the prelog factor accounts for the fraction of symbols used for UL data transmission after pilot overhead. When channel prediction is employed and no pilot-based channel estimation is required, we set τp = 0 , resulting in the prelog factor ξ.VI. N UMERICAL RESULTS 
+
+A. Single-Step Prediction Performance 
+
+We first compare the single-step CSI prediction performance of the considered models in terms of convergence behavior, validation accuracy, and test-set generalization. Fig. 6 com-pares the training and validation NMSE over 200 epochs for all models. The LSTM baseline converges slowly and Fig. 6. Validation NMSE comparison among LSTM, TCN, CNN + Trans-former, and ChannelGPT.  
+
+> Fig. 7. NMSE as a function of prediction horizon for all considered models.
+
+stabilizes at a high error level, reflecting limited ability to capture long-range temporal dependencies. In contrast, TCN and CNN + Transformer converge rapidly within the first 50 epochs and exhibit stable training behavior. ChannelGPT achieves the most consistent convergence, combining fast error decay with minimal oscillations, indicating robust modeling of nonlinear temporal dynamics in vehicular distributed MIMO channels. Quantitative results in Table IV confirm these ob-servations. ChannelGPT and CNN + Transformer achieve over 94% NMSE reduction compared to LSTM, while TCN also provides a significant improvement (92.8%). ChannelGPT reaches its optimal validation performance earlier than the other models, highlighting faster and more stable convergence. Test results further demonstrate superior generalization of attention-based models. CNN + Transformer achieves the lowest test NMSE (0.0290), followed closely by Channel-GPT (0.0331) and TCN (0.0332), whereas LSTM exhibits a substantially higher error (0.6949). Overall, attention-centered architectures, particularly CNN + Transformer and Channel-GPT, deliver the best accuracy and robustness, achieving an order-of-magnitude improvement over recurrent baselines for vehicular distributed MIMO channel prediction. 
+
+B. Multi-Horizon Prediction Performance 
+
+To assess robustness beyond one-step forecasting, the trained models are evaluated at multiple prediction hori-zons. Specifically, prediction accuracy is reported for hori- 
+
+> Fig. 8. Cumulative distribution function (Cdf) of SE comparison of different models using the channel estimation
+
+zons Tpred ∈ { 1, 5, 10 , 15 , 20 }, corresponding to increasingly distant future channel realizations. This evaluation provides insight into each model’s ability to preserve temporal channel dynamics as the forecasting interval increases. Fig. 7 presents the prediction NMSE as a function of the forecasting horizon. As expected, prediction accuracy degrades as the horizon in-creases due to the growing uncertainty in future channel evolu-tion. While CNN+Transformer achieves the lowest single-step test NMSE, ChannelGPT maintains the lowest NMSE across longer prediction horizons, demonstrating improved robustness for long-term vehicular CSI forecasting. The results indicate that attention-based architectures are more effective than re-current approaches at preserving temporal channel dynamics over extended forecasting intervals. The observed trends can be explained by the different temporal modeling capabilities of the considered architectures. The LSTM baseline exhibits the highest NMSE because recurrent models compress historical observations into hidden states, which may limit their ability to preserve temporal information over extended time intervals under non-stationary vehicular propagation conditions. TCN improves prediction accuracy through causal dilated convo-lutions that capture multi-scale temporal correlations more effectively. CNN+Transformer achieves the lowest single-step test NMSE by combining local temporal feature extraction with global self-attention, enabling the modeling of both short-term channel fluctuations and longer-range temporal evolution. In contrast, ChannelGPT maintains the lowest NMSE across longer forecasting horizons while requiring fewer parameters, lower computational complexity, and shorter inference time, resulting in a favorable accuracy–complexity trade-off for long-term vehicular CSI prediction. 
+
+C. System-Level Performance Validation 
+
+Beyond system-level accuracy, it is essential to verify whether improved channel prediction translates into tangible system-level gains. Figure 8 shows that the predictions ob-tained with ChannelGPT and CNN + Transformer closely match the true SE distribution. For instance, at the median point (CDF ≈ 0.5), the true SE is around 2.2 bit/s/Hz, TABLE V ACCURACY –COMPLEXITY COMPARISON OF THE STRONGEST -PERFORMING                    
+
+> CSI PREDICTORS .
+> Model Val. NMSE Test NMSE Params (M) GFLOPs Inference Time (ms)
+> TCN 0.0269 0.0332 11.37 1.074 9.45 CNN+Transformer 0.0221 0.0290 9.15 0.88 3.03 ChannelGPT 0.0215 0.0331 8.61 0.63 1.86
+
+while ChannelGPT and CNN + Transformer provide very similar values (about 2.15–2.25 bit/s/Hz). Likewise, at higher percentiles (CDF ≈ 0.9), the true SE reaches approximately 3.4 bit/s/Hz, and both models remain very close to this value. In contrast, the LSTM model shows a noticeable deviation from the true distribution, with a predicted SE of about 1.8 bit/s/Hz at CDF ≈ 0.5, indicating an underestimation of the SE. Overall, these results demonstrate that ChannelGPT and CNN + Transformer provide predictions that are much closer to the true SE distribution, achieving better performance than the LSTM model. VII. M ODEL SELECTION AND PERFORMANCE ANALYSIS 
+
+Beyond prediction accuracy, we compare the prediction accuracy and computational complexity of the strongest-performing architectures. As summarized in Table V, CNN+Transformer achieves the lowest single-step test NMSE (0.0290), while ChannelGPT attains the lowest validation NMSE and requires the fewest parameters, lowest GFLOPs, and shortest inference time. Although TCN achieves a test NMSE comparable to ChannelGPT, it incurs substantially higher computational complexity. Combined with its strong multi-horizon prediction performance and the SE CDF that remains almost indistinguishable from the perfect-CSI curve, ChannelGPT provides a favorable accuracy–complexity trade-off for real-time vehicular CSI prediction in distributed-MIMO systems. Consequently, ChannelGPT emerges as a promising candidate for vehicular CSI prediction and for reducing reliance on frequent CSI acquisition in distributed-MIMO deployments, while CNN+Transformer remains highly competitive in terms of single-step prediction accuracy. VIII. C ONCLUSION 
+
+This paper presented a data-driven vehicular chan-nel prediction framework based on real urban vehicu-lar distributed-MIMO measurements, benchmarking sequen-tial and Transformer-based temporal learning models in-cluding LSTM, TCN, CNN+Transformer, and ChannelGPT. Results demonstrate that attention-based architectures sig-nificantly outperform recurrent baselines, achieving more than 94% NMSE reduction compared with LSTM. While CNN+Transformer achieves the lowest single-step test NMSE, ChannelGPT provides competitive prediction accuracy to-gether with lower computational complexity and stronger robustness across longer prediction horizons, resulting in a favorable accuracy–complexity trade-off. System-level evalu-ation confirms that improved prediction accuracy translates into improved spectral efficiency. In particular, the predicted channels obtained with ChannelGPT and CNN+Transformer closely reproduce the spectral-efficiency distribution achieved with true CSI, demonstrating their ability to preserve the dominant temporal and spatial channel characteristics required for distributed-MIMO transmission. These findings highlight the effectiveness of attention-based temporal modeling for ac-curate vehicular CSI prediction and reliable system-level per-formance under realistic measurement conditions, supporting future 6G vehicular communications. Future work will inves-tigate larger-scale datasets and broader mobility scenarios. Al-though the MaMIMOSA campaign provides realistic vehicular propagation conditions, evaluating the proposed framework across multiple routes and propagation environments would further assess model generalization. ACKNOWLEDGMENT 
+
+This work was supported by the French ANR under the France 2030 RIS3 project (ANR-23-CMAS-0023) and by the RITMEA project, co-funded by the ERDF, the French State, and the Hauts-de-France Regional Council. REFERENCES [1] N. Saeed et al. , “A vision of 6g vehicular networks: Challenges and opportunities,” IEEE TVT , vol. 70, no. 9, pp. 7619–7632, 2021. [2] H. Liu, S. Chen, B. Ai, and C. Han, “Machine learning for v2x channel modeling and prediction: A survey,” IEEE Communications Surveys & Tutorials , vol. 24, no. 2, pp. 1234–1260, 2022. [3] K. Muhammad et al. , “6g-enabled vehicular communication: Require-ments, technologies, and challenges,” IEEE Communications Surveys & Tutorials , vol. 24, no. 3, pp. 1597–1646, 2022. [4] M. Alrabeiah and A. Alkhateeb, “DeepMIMO: A Generic Deep Learning Dataset for Millimeter Wave and Massive MIMO Applications,” in Proc. IEEE ICC , 2019. [5] E. P. Simon, P. Laly, J. Farah, E. Tanghe, W. Joseph, and D. Gaillot, “Measurement of the v2i channel in cell-free vehicular networks with the distributed mamimosa channel sounder,” in EuCAP , 2023, pp. 1–5. [6] X. Gao, Y. Liu, H. Xiao, and D. Yang, “Deep learning–based channel prediction for vehicle-to-vehicle communications,” IEEE Transactions on Vehicular Technology , vol. 70, no. 6, pp. 5184–5196, 2021. [7] E. Onwubolu, S. S. Pietro, and R. A. Stirling-Gallacher, “Recurrent neural networks for prediction of v2x channels in highway scenarios,”

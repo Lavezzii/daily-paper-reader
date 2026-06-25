@@ -1,0 +1,2550 @@
+Title: PHAST-Net: Attention-Guided, Physics-Informed Network for Unified Estimation of Ideal Time-Frequency Representations
+
+URL Source: https://arxiv.org/pdf/2606.23665v1
+
+Published Time: Tue, 23 Jun 2026 03:44:26 GMT
+
+Number of Pages: 17
+
+Markdown Content:
+> 1
+
+# PHAST-Net: Attention-Guided, Physics-Informed Network for Unified Estimation of Ideal Time–Frequency Representations 
+
+James M. Cozens, Member, IEEE, Simon J. Godsill, Fellow, IEEE 
+
+Abstract —We introduce PHAST-Net, an attention-guided, physics-informed network for unified estimation of Ideal Time– Frequency Representations (ITFRs), spanning spectral, tempo-based, metrical, and harmonic representations such as Spec-trograms, Tempograms, and Metrograms. PHAST-Net learns an application-general mapping from a constellation of wavelet transforms, specifically the proposed Continuous Log-frequency Adaptive Wavelet Transform (CLAWT), to high-resolution, cross-term-suppressed time-frequency representations. The proposed constellation of CLAWTs is strategically selected through Co-hen’s class kernel analysis to maximise curvature coverage in a logarithmic–frequency time–frequency plane tailored to harmonic signal structure. PHAST-Net further incorporates a proposed physics-informed auxiliary reprojection loss designed to reconstruct the idealised observed CLAWT constellation from the predicted ITFR and the corresponding Cohen’s class kernels during training. This auxiliary objective promotes transform con-sistency and energy conservation, mitigates pathological target sparsity, and enhances optimisation stability. Attention layers further promote effective cross-term suppression across the input constellation. The log-frequency formulation also enables Harmonic PHAST-Net, which estimates a Harmonic ITFR that isolates fundamental structure, supporting robust fundamental-only representations for speech and music, such as derived fun-damental Tempograms and Metrograms. We further introduce Spline-PHAST-Net, which parameterises detected and associated time–frequency ridges as continuous spline trajectories, enabling arbitrary-grid re-rendering and signal reconstruction. Trained on an effectively unbounded procedurally generated dataset, PHAST-Net demonstrates improved accuracy over established approaches, providing a unified framework for high-resolution, cross-term-robust analysis of speech, music, and broader nonsta-tionary signals. 
+
+Index Terms —PHAST-Net, Ideal Time-Frequency Representa-tion (ITFR), Physics-Informed, Continuous Log-frequency Adap-tive Wavelet Transform (CLAWT), Attention-guided. 
+
+I. I NTRODUCTION 
+
+A. Motivation 
+
+# TIME-FREQUENCY (T–F) analysis serves as a funda-mental tool for studying nonstationary processes, offering interpretable structure for complex signals whose spectral content evolves over time [1], [2]. In speech, music, and wider 
+
+This work has been submitted to the IEEE for possible publication. Copyright may be transferred without notice, after which this version may no longer be accessible. J. Cozens and S. Godsill are with the Engineering Department, University of Cambridge, CB2 1PZ Cambridge, U.K., E-mail: (jmc257@cam.ac.uk; sjg30@cam.ac.uk). (Corresponding author: James M. Cozens) 
+
+The work of James M. Cozens was supported by EPSRC Doctoral Training Partnership (DTP) under Grant 2738835 
+
+audio processing, T–F representations support transcription, signal decomposition, classification, restoration, segmentation, and visualisation [50]–[52], increasingly functioning as both inputs and targets within deep learning pipelines, including modern generative models [53]. Beyond audio, T–F methods are routinely employed for EEG and ECG based neurological and cardiac assessment [3]–[5], [10], vibration and acoustic monitoring for fault diagnosis and predictive maintenance [11], analysis of financial time series for volatility and anomaly structure [34], [35], and time-localised spectral characterisa-tion of transient behaviour in gravitational-wave observatories [6]. For harmonic-rich audio signals, fundamental-focused rep-resentations improve speech and music pitch-centric inference and visualisation, in addition to enhancing spectral represen-tations such as Tempograms and Metrograms [12], [50], [52]. Harmonic-suppressed T–F representations are also important in applications such as power systems (synchrophasor and PLL phase–frequency tracking), rotating machinery (tacholess order tracking), vibroseis seismic processing (harmonic-noise removal), and biomedical examinations (ECG and EEG) [12], [46], [47]. 
+
+B. Prior Work 
+
+A core objective in T–F analysis is to obtain representations that remain sharply concentrated along physically meaningful T–F signal trajectories whilst suppressing cross-term interfer-ence and retaining practical computational tractability [59]– [61]. Bilinear representations are especially relevant in this regard, given their ability to attain high auto-term concen-tration. In particular, the Wigner–Ville distribution (WVD) provides optimal concentration for linear frequency-modulated T–F trajectories, whilst Polynomial Wigner–Ville distributions (PWVDs) extend this optimality to higher-order frequency-modulated signals [62]. However, the direct application of both the WVD and PWVD to multicomponent signals is limited by strong cross-term interference [54], [59]–[61], [63]. In addition, the increased interference complexity, computational burden, and reduced analytical convenience of the PWVD often make WVD-based methods more viable in practice for T–F analysis [2], [60], [62]. In particular, WVD-derived Cohen’s class bilinear representations, including spectrograms, CWT-energy, and fractional-wavelet energy formulations, as well as adaptive optimal-kernel methods, provide mechanisms for suppressing WVD cross-term interference, typically at the expense of reduced auto-term concentration [2], [13]–[15], 
+
+> arXiv:2606.23665v1 [eess.AS] 22 Jun 2026 2
+
+[19], [32], [58], [60]. Likewise, approaches such as spectral re-assignment, synchrosqueezing, deconvolutional methods, and multiresolution techniques improve T–F concentration, but typically incur the same underlying trade-off between interfer-ence suppression, localisation, and computational tractability [36], [38]–[40], [65], [66], [68], [69]. Decomposition-based alternatives, including Empirical Mode Decomposition and Variational Mode Decomposition, as well as dictionary-based methods such as matching pursuit, provide sparse component extraction frameworks, but they typically require mode- or dictionary-specific assumptions, remain sensitive to mode mix-ing and noise, and can become computationally burdensome for dense multicomponent signals [41], [42], [55]. Motivated by these limitations, the RIFT algorithm [7] introduced a model-based framework for jointly suppressing cross-term interference and sharpening T–F representations via iterative deconvolution over a strategically chosen constellation of fractional wavelet transforms spanning multiple orientations and standard deviations. More recently, deep-learning-based methods have emerged as a promising approach to T–F analysis. Direct learned recon-struction of cross-term-suppressed idealised representations has been explored through CNN-based and data-driven cross-term-free T–F estimation, semi-supervised WVD refinement, learned structured-sparsity reconstruction, and GAN-based WVD enhancement [23]–[27], [31]. Furthermore, broader learned T–F models, including TFA-Net, QTFN, and adaptive multi-scale TF-net, demonstrate the potential of neural infer-ence to further enhance concentration and suppress cross-term interference [28]–[30]. However, existing learned approaches have largely focused on enhancing fixed T–F representations or directly learning analysis operators, rather than estimating ideal representations under explicit transform-family consis-tency constraints. Additionally, several recent learned methods continue to report challenges for dense multicomponent sig-nals with intersecting trajectories, particularly in noisy con-ditions. Moreover, although classical logarithmic-frequency methods such as the constant-Q transform are well established [20], and refinement methods have also been explored in filter-bank and log-frequency formulations [48], [49], comparatively few works address unified concentration enhancement and interference suppression directly in a log-frequency framework tailored to harmonic signal structure, particularly in audio applications. Harmonic-suppressed T–F representations present a distinct challenge in T–F analysis due to the time- and frequency-varying nature of overtone structure encountered in many real-world signals [12], [46], [47], [50], [52]. Fundamental-extracting approaches have been proposed; in particular, the de-shape synchrosqueezing method reduces wave-shape and harmonic influence to more directly reflect underlying fun-damental behaviour [12], whilst methods such as the YIN algorithm and variable-rate particle-filter approaches provide frameworks for monophonic or speech-oriented fundamental tracking [21], [56]. However, synchrosqueezing can still ex-hibit cross-term interference, monophonic trackers do not gen-eralise to polyphonic T–F representations, and fundamental– harmonic ambiguity persists [12], [52]. Tempograms are time–tempo representations that capture how a signal’s periodicity evolves over time, making them especially useful for music processing tasks such as beat tracking and tempo estimation [8], [9], [50]. A Tempogram is typically computed by applying T–F analysis to an onset detection (novelty) function derived from the audio, most often via the Short-Time Fourier Transform (yielding a Fourier Tem-pogram) or via Autocorrelation (yielding an Autocorrelation Tempogram) [8], [9], [50]. However, Fourier-based approaches produce rhythmic harmonics, whereas Autocorrelation-based Tempograms produce sub-harmonics, thereby reducing in-terpretability. Variants such as cyclic Tempograms [8] and methods that combine the properties of the Fourier- and Autocorrelation-based representations [9], [22], [50] aid in suppressing tempo-harmonic ambiguity, with enhanced con-centration achieved through a Matching Pursuit-based con-struction [22]. However, the time–tempo representations still exhibit cross-term interference, reduced concentration, and mode-mixing, analogous to those encountered in classical T– F analysis. More recently, the Metrogram was introduced as a transform that extracts time-varying rhythmic and met-ric periodicities from Tempogram representations, supporting dynamic time-signature inference, tempo analysis, and beat tracking [50]. As a result of the construction, any harmonic ambiguity or cross-term interference present in the underlying tempogram representation can be misinterpreted by the Met-rogram as metric information; thus, a sharpened, cross-term-and harmonic-suppressed input representation is crucial for the Metrogram’s performance. 
+
+C. Method Overview 
+
+Motivated by the above limitations, this paper introduces the Physics-Informed Harmonic Adaptive Spectral Transform Network, PHAST-Net, a unified framework for ideal T–F representation estimation, together with the harmonic PHAST-Net and Spline-PHAST-Net variants for harmonic suppression, noise reduction, component rerendering and reconstruction, and refined idealised Tempogram and Metrogram represen-tations. PHAST-Net learns a direct mapping from a curated constellation of input observed Continuous Log-frequency Adaptive Wavelet Transforms (CLAWTs) to a high-fidelity, noise-suppressed, and cross-term-free idealised target repre-sentation via a high-capacity attention-guided network. The CLAWT constellation is selected through Cohen’s class kernel analysis to provide representative coverage of local orientation and scale over the proposed T–F grid. Unlike prior learned T–F representation estimators that predict representations without explicit transform-family consistency, PHAST-Net regularises ITFR prediction with a physics-informed CLAWT Cohen’s class reprojection loss, enforcing transform-consistent, energy-preserving, cross-term-free reconstruction while stabilising optimisation. Additionally, in contrast to prior work, we formulate the representation on a log-frequency T–F grid encompassing a frequency range specifically tailored to speech, music, and wider audio applications, handled by a Spatial Feature Trans-form (SFT). Establishing the framework in the log-frequency domain additionally addresses a key limitation of conven-3
+
+tional linear-frequency-based approaches for harmonic signals, since harmonic overtone structure is translation-consistent (equivariant) along the log-frequency axis. This formulation therefore enables the construction of the harmonic PHAST-Net which, in addition to cross-term suppression and auto-term sharpening, learns controllable suppression of harmonic structure whilst retaining fundamental trajectories, yielding a proposed Harmonic ITFR that is especially suited to speech and music. In particular, the harmonic PHAST-Net can be employed to estimate the idealised overtone- and cross-term-free Fundamental Tempogram, which in turn is required for the construction of the Metrogram. To account for the wide range of nonstationary signal structures encountered in practice, training is performed on a procedurally generated and effectively unbounded synthetic dataset of observed-constellation–target pairings, compris-ing randomly generated spline-defined component trajectories with time-varying amplitudes, simulated overtone structures, component intersections, and variable noise floors. This train-ing formulation additionally enables strong robustness to noisy real-world extracts, with the input scaling providing practical control over the degree of denoising and harmonic suppression at inference time. Finally, whereas existing learned TFR methods generally predict only a fixed rasterised representation, we addition-ally introduce the Spline-PHAST-Net variant, which detects ridge structure via Frangi ridge detection, tracks components through time using a data association algorithm, refines sub-pixel positions and magnitudes through spline-fitted trajectory models, and enables per-component signal reconstruction esti-mates and re-rendering on arbitrary target T–F grids of interest. The remainder of this paper is organised as follows. We first present the preliminary concepts and mathematical foun-dations required for the proposed approach. We then introduce the methodology in detail, including the PHAST-Net frame-work, the procedure for synthetic data generation, the design of the proposed wavelet constellation, the derivation of the Fundamental Tempogram and Metrogram representations, and the subsequent component extraction and signal re-synthesis process. II. P RELIMINARIES 
+
+In this section we introduce the relevant material for Section (III), including the relationship between Continuous Wavelet Transforms (CWT), Cohen’s class distributions, and the Wigner-Ville Distribution (WVD), in addition to the Ide-alised T–F representation (ITFR) model employed for the PHAST-Net model. 
+
+A. CWT Properties 
+
+Let Φ( ω, t ) be a (magnitude squared) Continuous Wavelet Transform (CWT) [58] with a complex-valued window func-tion, Ω( t) [7]:              
+
+> Φ( ω, t ) =
+> h
+> z(τ)∗Ω∗(τ)ejωτ i
+> (t)2
+> =|[z∗Wω] ( t)|2,(1)
+
+where Wω (t) is the CWT wavelet function for angular fre-quency ω, and ∗ denotes the continuous-time convolution. A significant relationship that can be derived is that the CWT can be expressed as a 2D convolution [7], [37]:                
+
+> Φ( ω, t ) = 2 π
+> Z
+> R2
+> W V D z(ω1, T )W V D Ω(ω−ω1, t −T)dT dω 1
+> = 2 π[W V D z∗Π] ( ω, t ),(2)
+
+where Π( ω, t ) is the convolution kernel (Π( ω, t ) ≜
+
+W V D Ω(ω, t ), and W V D z (ω, t ) and W V D Ω (ω, t ) denote the Wigner–Ville Distribution (WVD) of the signal, z(t), and the wavelet window function, Ω( t), respectively. The WVD of the signal z(t) is defined [54], [57]:          
+
+> W V D z(ω, t ) = 12π
+> Z
+> R
+> z
+> 
+> t+τ
+> 2
+> 
+> z∗
+> t−τ
+> 2
+> 
+> e−jωτ dτ. (3)
+
+The analytic signal, z(t), is computed as z(t) = x(t) + 
+
+> jH{ x(t)}
+
+, where x(t) ∈ R is the input signal, and H{ x(t)} is the Hilbert transform [44] of x(t). Significantly, this relation-ship demonstrates that the magnitude squared CWT, Φ( ω, t ),is a Cohen’s class bilinear distribution with a Cohen’s class kernel Π( ω, t ) [7], [60]. For further details and derivations, please consult [7]. 
+
+B. Ideal Time-Frequency Representation (ITFR) Model 
+
+The concept of an Ideal T–F Representation (ITFR) for a signal is explored in several papers [2], [7], [43]. Let z (t) be a multi-component complex signal [43]:            
+
+> z(t) =
+> PX
+> p=1
+> 1τp(t)Ap(t) exp
+> 
+> jϕ p, 1+jRttp, 1ωp(τ)dτ
+> 
+> (4)
+
+where Ap(t) are the positive real amplitudes for component        
+
+> p(1≤p≤P)
+
+respectively, and ϕp (t) are the phases of each component relative to the initial phase offsets, such that ϕp(t) = R ttp, 1 ωp(τ ) dτ , where ωp(t) are the instantaneous angular frequencies for component p. Here, ϕp, 1 denotes the initial phase at the onset tp, 1 of component p. The term 
+
+1τp is an indicator function that confines the component to its active interval between its onset tp, 1 and offset tp, 2,with τp = [tp, 1, t p, 2]. Conceptually, the ITFR consists of 
+
+P trajectories in the T-F plane with perfect time-frequency resolution, and no cross terms [2], [43]. A suitable definition for the ITFR of a signal z (t) in the linear frequency domain (with respect to ω), ITFR ω , is thus:          
+
+> ITFR ω{z}(ω, t ) =
+> PX
+> p=1
+> 1τp(t)Ap(t)δ(ω−ωp(t)) .(5)
+
+Now let the angular frequency of the sth musical semitone be:      
+
+> ωs(s) = 2 πf 0·2s
+> 12 ,(6)
+
+where f0 corresponds to the frequency of note A0 (f0 =27 .5Hz ). Taking the coordinate system transformation ω 7 → s:              
+
+> ITFR ω{z}(s, t ) = ∂ω s(s)
+> ∂s
+> −1PX
+> p=1
+> 1τp(t)Ap(t)δ(s−sp(t)) =kf02−s
+> 12 ·ITFR s{z}(s, t )(7)
+
+where kf0 =   112 2πf 0 ln 2 −1 is the scaling constant, sp(t) =   
+
+> ω−1
+> s(ωp(t))
+
+(where ω−1 
+
+> s
+
+(·) denotes the inverse of Eq. (6)), and 
+
+ITFR s is the logarithmic (semi-tonal) s domain ITFR:        
+
+> ITFR s{z}(s, t ) =
+> PX
+> p=1
+> 1τp(t)Ap(t)δ(s−sp(t)) .(8) 4
+
+C. Harmonic ITFR Model 
+
+Let zH (t) be a multi-component harmonic complex signal with a T–F varying (inhomogeneous) linearly distributed har-monic distribution: 
+
+zH (t) = 
+
+> P
+
+X
+
+> p=1
+> NH,p
+
+X
+
+> nh=1
+
+1τp(t)Ah(nh, p, t )Ap(t) exp( j[ϕp,n h,1 +nh ·ϕp(t)]) .
+
+(9) 
+
+where Ah(nh, p, t ) is the relative amplitude of the nhth harmonic, with 1 ≤ nh ≤ NH,p ; NH,p is the total number of harmonics for component p. Here, ϕp,n h,1 denotes the initial phase at the onset tp, 1 of component p and harmonic nh, such that as before ϕp(t) = R ttp, 1 ωp(τ ) dτ . Note that Eq. (9) is defined such that: 
+
+X
+
+> nh
+
+Ah(nh, p, t ) = 1 ∀p, t (10) 
+
+Conceptually, the Harmonic ITFR likewise consists of P
+
+trajectories in the T-F plane with perfect time-frequency reso-lution, and no cross terms. Thus, a suitable definition for the 
+
+linear ω domain Harmonic ITFR, for signal zH (t) is: 
+
+ITFR H,ω {zH } (ω, t ) = 
+
+> P
+
+X
+
+> p=1
+
+1τp (t) Ap(t)δ (ω − ωp(t)) . (11) 
+
+Note that the harmonic amplitudes, Ah(nh, p, t ), disappear owing to the normalisation condition provided in Eq. (10). By applying the same coordinate transformation ω 7 → s
+
+introduced in Eq. (7), the corresponding Harmonic ITFR in the logarithmic (semi-tonal) domain, ITFR H,s {zH }, can be formulated as follows: 
+
+ITFR H,s {zH }(s, t ) = 
+
+> P
+
+X
+
+> p=1
+
+1τp (t) Ap(t)δ (s − sp(t)) (12) 
+
+Note also that the logarithmic s domain ITFR, ITFR s
+
+(Eq. (8)), for signal zH (t) would likewise be: 
+
+ITFR s{zH }(s, t )=
+
+> P
+
+X
+
+> p=1
+> NH,p
+
+X
+
+> nh=1
+
+1τp (t)Ah(nh, p, t )Ap(t)δ (s−sp(t)−s(nh)) , (13) 
+
+where s(nh) = 12 log 2nh. As shown in the Supplementary Material (SM), Section A, redefining the Harmonic ITFR in the logarithmic domain renders the relationship between the ITFR and the Harmonic ITFR convolutional, thereby motivating its use in the proposed Harmonic ITFR estimation method. III. P ROPOSED METHODOLOGY 
+
+A. PHAST-Net framework 
+
+This section establishes the core components of the PHAST-Net framework, including the ITFR and Harmonic ITFR estimation process. As noted in the overview, while classical methods exist for refining T–F representations, the integration of a neural architecture is motivated by its ability to provide a single-pass deconvolution solution, as well as to perform automatic auto-term extraction [23]. In addition, typical clas-sical methods employ the cross-term suppressed WVD as a target for the ITFR [60], which is conceptually aligned but not equivalent to the ITFR model, due to the presence of artificial auto-terms, further supporting the employment of neural archi-tectures to enable refined auto-term extraction. Motivated by the strong performance of the classical RIFT algorithm [7] and recent deep learning approaches [23], [28], the core proposal is to model the iterative, positivity-constrained deconvolution process of RIFT, along with its entropic weighting scheme for auto-term extraction, within a deep-learning accelerated framework. Driven by the success of attention-guided Auto-encoder architectures in adjacent fields [67], we propose a deep, high-capacity attention-guided U-Net-style architecture which takes as input a constellation tensor of Continuous Log-frequency Adaptive Wavelet Transforms (CLAWT) and outputs the estimate of the proposed logarithmic-frequency domain ITFR and Harmonic ITFR (Eq.(8) and Eq.(12)). The architecture is presented in Fig. 1. To account for the frequency-dependent Cohen’s class ker-nel induced by the logarithmic-frequency scaling, the network incorporates a frequency-component Spatial Feature Trans-form (SFT) [16], which provides spatially adaptive affine parameter modulation. Likewise, in contrast to recent learned T–F representation estimators, which predict representations without explicit consistency with the underlying transform family, PHAST-Net learns a direct transform-consistent map-ping through the incorporation of a regularising physics-informed auxiliary loss. Specifically, during training the pre-dicted Ideal T–F Representation (ITFR) is reprojected through the derived CLAWT Cohen’s class kernels to reconstruct the corresponding idealised cross-term-free observed constel-lation, thereby enforcing transform consistency, promoting energy conservation, and improving optimisation stability via reduced target sparsity. Let the training data index be denoted by n (total data points 
+
+N ), and the time-frequency “image” dimensions be H × W ,with pixel indices (i, j ). The ITFR (tonal) and Harmonic models are each trained on dedicated datasets, as detailed in Section III-B. ˆxn ∈ RH×W is the single-channel output ITFR predicted by the network, fΘ(·), parametrised by weights Θ,for training sample n. Likewise, Φn ∈ RK×H×W denotes the 
+
+n input CLAWT constellation tensor, with K input CLAWT channels Φn = {Φn,k }Kk=1 . The CLAWT constellation tensor is constructed by stacking K discretised input CLAWTs, each defined by a specific orientation–scale pair in the T– F plane, as described in Section III-C. xn ∈ RH×W is the 
+
+nth single-channel ground truth ITFR. ˆyn ∈ RK×H×W is the nth predicted K-channel physics output tensor, given by the operation ˆyn = P(ˆxn). P is the physics operator, such that ˆyn,k = ˆxn ∗SV Πk for ˆyn = {ˆyn,k }Kk=1 , where ∗SV 
+
+denotes 2D spatially varying discrete time convolution with the corresponding spatially varying kth CLAWT kernel, Πk,such that: 
+
+ˆyn,k = ˆxn ∗SV Πk = X
+
+> u,v
+
+ˆxn;i−u,j −v Πk;u,v ;i,j , (14) 
+
+where ˆxn = {ˆxn;i,j }i=1 ,...,H, j =1 ,...,W and Πk =
+
+{Πk;u,v ;i,j }u=1 ,...,U Π, v =1 ,...,V Π;i=1 ,...,H, j =1 ,...,W , where 
+
+(UΠ, V Π) is the support of each of the kernels in Πk; the specific forms for the Cohen’s class kernels Πk corresponding to the CLAWTs are described in Section III-C. Likewise, 564            
+
+> I
+> 128
+> I/2
+> 256
+> I/4
+> 512
+> I/8
+> 1024
+> I/16  1024
+> I/32  1024
+> I/64
+> Bottleneck
+> 1024 1024 1024
+> I/32
+> 1024 1024 1024
+> I/16
+> 512 512 512
+> I/8
+> 256 256 256
+> I/4
+> 128 128 128
+> I/2
+> 64 64 64
+> I
+> +
+> gating +
+> gating
+> +
+> gating
+> +
+> gating
+> +
+> gating
+
+Fig. 1. PHAST-Net Architecture (I = 1024) 
+
+yn ∈ RK×H×W is the K-channel physics target tensor, generated from yn = P(xn). The proposed loss function is then given by: 
+
+Ltotal = Lx, mse + Lx, log + Ly, mse + Ly, log + LT V , (15) 
+
+The MSE Image Reconstruction Loss , Lx, mse , is the mean squared error between the predicted and ground truth ITFRs: 
+
+Lx, mse = λx, mse 
+
+N HW 
+
+> N
+
+X
+
+> n=1
+
+∥xn −ˆxn∥2 
+
+> F
+
+,
+
+where ˆxn = fΘ (Φn) and ∥X∥2 
+
+> F
+
+denotes the Frobenius norm squared: 
+
+∥X∥2 
+
+> F
+
+= X
+
+> i,j
+
+X2 
+
+> i,j
+
+.
+
+The Log-MAE Image Reconstruction Loss , Lx, log , is the mean absolute error in the log domain, spatially weighted to focus on lower frequencies: 
+
+Lx, log = λx, log 
+
+N HW 
+
+> N
+
+X
+
+> n=1
+
+∥Wx ⊙ [log( xn + ϵ) − log( ˆxn + ϵ)] ∥1,1 ,
+
+where Wx ∈ RH×W 
+
+> +
+
+is a nonnegative spatial weighting mask, with larger weights assigned to lower row indices i, thereby emphasising lower-frequency components. Likewise, ϵ is the 
+
+sensitivity parameter, which defines the dynamic range of the training process, and: 
+
+∥X∥1,1 = X
+
+> i,j
+
+|Xi,j |.
+
+The MSE Physics loss , Ly, mse , is the mean squared error between the physics prediction and the simulated physics target, across all K channels: 
+
+Ly, mse = λy, mse 
+
+N KHW 
+
+> N
+
+X
+
+> n=1
+> K
+
+X
+
+> k=1
+
+∥yn,k −ˆyn,k ∥2 
+
+> F
+
+.
+
+The Log-MAE Physics Loss , Ly, log , is the physics error mea-sured in the log domain with spatial weighting. 
+
+Ly, log = λy, log 
+
+N KHW 
+
+> N
+
+X
+
+> n=1
+> K
+
+X
+
+> k=1
+
+∥Wy ⊙[log( yn,k + ϵ)−log( ˆyn,k + ϵ)] ∥1,1,
+
+where Wy ∈ RK×H×W 
+
+> +
+
+is a nonnegative spatial weighting mask, with once again larger weights assigned to lower-frequency components. The Total Variation Regularisation Loss , LT V , is the L1 norm of the spatial gradient of the predicted image, which penalises spiky artefacts: 
+
+LT V = λTV · 1 
+
+> H(W−1)
+> N
+
+X
+
+> n=1
+> H
+
+X 
+
+> i=1
+> W−1
+
+X
+
+> j=1
+
+|ˆxn,i,j +1 − ˆxn,i,j |
+
++ 1 
+
+> W(H−1)
+> N
+
+X
+
+> n=1
+> W
+
+X
+
+> j=1
+> H−1
+
+X
+
+> i=1
+
+|ˆxn,i +1 ,j − ˆxn,i,j |. (16) 
+
+Both the tonal and harmonic models are trained using the Adam optimizer [17], and the harmonic model is initialised with the converged weights of the tonal model. A schematic of the PHAST-Net training process is shown in Fig. 2. 
+
+B. Generation of Synthetic Training Data 
+
+Since the neural inference task corresponds to learning an underlying physical process, the required training data can be generated procedurally on demand. Consequently, the use of synthetic training data makes the effective dataset size practically unbounded. The nth training data sample, 
+
+zn = {zn,m }m=1 ,...,M (where m denotes the time index) is procedurally generated as the sum of randomly generated sinusoidal components, with instantaneous frequencies and magnitudes specified by randomly generated spline functions [75]. The ITFR target, xn, is generated by rasterising the ide-alised trajectories onto the H ×W T–F grid. To rasterise the T– F components, the antialiased line algorithm [45] is employed. The corresponding input constellation, Φn is thus derived from taking the K CLAWTs, parametrised by {θk}Kk=1 and 
+
+{σk}Kk=1 as outlined in the following section (Section III-C). To improve robustness to varying noise levels, Gaussian noise is added to zn, where the standard deviation is randomly drawn from a prescribed interval independently for each data point in the dataset. Consequently, scaling the input constellation during inference enables noise suppression to be dynamically controlled, while simultaneously providing control over the degree of harmonic suppression in the harmonic model. Addi-tionally, for each component, a randomly determined number of synthesised harmonic partials is included, with varying amplitudes and linearly spaced overtone positions, following the formulation given by the Harmonic ITFR (Eq. 12). Small amounts of jitter are introduced to enhance robustness to deviations from strictly linear harmonic spacing. Thus, for the 6Network,  𝑓 Θ(⋅)              
+
+> Synthetic Target Data Generation
+> Loss
+> Image reconstruction loss,
+> ℒ𝓍 ,𝑚𝑠𝑒 +ℒ𝓍 ,𝑙𝑜𝑔
+> Total loss, ℒ𝑡𝑜𝑡𝑎𝑙
+> TV loss, ℒ𝑇𝑉
+> PHAST -Net
+> Observed CLAWT
+> constellation, 𝚽
+> Target CLAWT
+> constellation, 𝒚
+> Generate T -F
+> components
+> Random seed
+> Generate
+> harmonics
+> Harmonic model Tonal model
+> Physics operator
+> Model selector
+> Target ITFR, 𝒙
+> Predicted ITFR, ෝ𝒙
+> Parameter update
+> Physics operator Predicted CLAWT
+> constellation, ෝෝ𝒚 Physics loss,
+> ℒ𝑦 ,𝑚𝑠𝑒 +ℒ𝑦 ,𝑙𝑜𝑔
+> Noise
+> Fig. 2. Block diagram representing the PHAST-Net training process
+
+nth data point in the dataset, a harmonic-suppressed target for the Harmonic PHAST-Net can be generated by only rasterising the fundamentals onto the target xn T–F grid with amplitudes computed as per Eq. (9). To illustrate the process, Panels (f) and (l) of Fig. 8 in the SM show procedurally generated tonal and harmonic ITFR targets, respectively. 
+
+C. The Continuous Log-frequency Adaptive Wavelet Trans-form (CLAWT) 
+
+In this section, we specify the proposed constellation of wavelet transforms employed in the PHAST-Net framework, and their corresponding convolutional Cohen’s class kernels. Given that the framework is formalised in log-frequency T-F coordinates, a wavelet with an exponential instantaneous-frequency (IF) is desired such that the IF of the wavelet is a linear slope in the log-frequency T-F coordinate system. However, the orientation and scale of the principal axis of the corresponding Cohen’s class kernels does not in general match the expected orientation and scale due to the resulting skewed coordinate system in the derived kernel (as later observed in Eq. (27)). Thus, to ensure that the principal axis of the corresponding Cohen’s class kernel both maps to a linear slope in this domain, and provides explicit orientation ( θ) and scale (σ) parameters that directly control the actual principal axis and elliptical width of the associated Cohen’s class kernel in log-frequency T-F coordinate systems, the “Continuous Log-frequency Adaptive Wavelet Transform” (CLAWT) is introduced. The CLAWT defines a parametrisable wavelet transform family in which ( θ) and ( σ) directly govern the orientation and scale-dependent spread of the corresponding Cohen’s class kernel in the log-frequency T-F coordinate sys-tem, thereby enabling orientation- and scale-adaptive coverage of this specified coordinate system. Let Φσ,θ (s, t ) denote the (magnitude-squared) CLAWT with a complex-valued wavelet function, such that: 
+
+Φσ,θ (s, t ) = 
+
+h
+
+z ∗ Ψ(s)
+
+> σ, θ
+
+i
+
+(t) 2
+
+=
+
+Z
+
+> R
+
+z (τ ) Ψ (s) 
+
+> σ, θ
+
+(t − τ ) dτ 
+
+> 2
+
+. (17) 
+
+Here, Ψ(s) 
+
+> σ,θ
+
+(t) denotes the wavelet associated with semitone 
+
+s, parameterised by σ and θ. The parameter σ is defined relative to an isotropic reference value σI , chosen so that 
+
+σ = σI corresponds to an isotropic Cohen’s class kernel in the 
+
+(s, t ) coordinate system, under the selected scaling between the s- and t-axes. The parameter θ denotes the orientation of the kernel’s principal axis relative to the time axis in this coordinate system. The corresponding CLAWT wavelet function is defined as: 
+
+Ψ(s) 
+
+> σ, θ
+
+(t) = 
+
+
+
+ψ(s) 
+
+> σin , κ in
+
+(t) if |θ| ≤ θL(σ), σ > 0, σ ̸ = 1 
+
+ψ(s)
+
+> σ′
+> in , κ ′
+> in
+
+(t) if θL(σ) < |θ| ≤ π 
+
+> 2
+
+, σ > 0, σ ̸ = 1 
+
+ψ(s)   
+
+> σI,0
+
+(t) if σ = 1 
+
+(18) 
+
+where: 
+
+ψ(s) 
+
+> σ, θ
+
+= 1
+
+> 4
+
+√πσ 2
+
+> s
+
+e− t2 
+
+> 2σ2
+> s
+
+exp 
+
+
+
+j ωs(s)
+
+γ
+
+ eγt − 1
+
+,
+
+with: γ = ln 2 12 tan θ, σ s = σ
+
+√ks
+
+, k s = 2 πf 0 2s/ 12 
+
+ ln 2 12 
+
+
+
+. (19) 
+
+Here, σin ≡ σI σ0(σ, κ I (σ, θ )) , κin ≡ κI (σ, θ ), where 
+
+κI (σ, θ ) ≡ arctan  tan ( κ(σ, θ )) /σ 2
+
+> I
+
+. Likewise, σ′ 
+
+> in
+
+≡
+
+σI σ0(1 /σ, κ I (1 /σ, θ ′)) , κ′ 
+
+> in
+
+≡ κI (1 /σ, θ ′), and θ′ ≜ θ −
+
+sgn( θ) π 
+
+> 2
+
+, where sgn( x) denotes the sign function, with 
+
+sgn( x) = −1 ( x < 0) , 0 ( x = 0) , 1 ( x > 0) . This for-mulation is required to ensure that the true standard deviation and orientation of the principal axis of the Cohen’s class kernel relative to the scaled coordinate system truly correspond to the parameters σ and θ, respectively; this is achieved by providing a coordinate transformation (σ, θ ) 7 → (σ0, κ ) provided in a previous publication [7]: 
+
+σ0(σ, κ ) = 
+
+"
+
+(σ2 +σ−2) + sgn( σ−1) p(σ2 +σ−2)2 −4 sec 2 κ
+
+2 sec 2 κ
+
+#12
+
+(20) 
+
+Likewise, the principal-axis orientation satisfies: 
+
+φ (σ, κ ) = − 12 arctan 
+
+ 2 tan κσ0(σ, κ )−4 +tan 2 κ−1
+
+
+
++Kσ (κ) , (21) 
+
+where Kσ (κ) is the axis switching function provided in [7], Eq. (90) in the SM. Thus, κ(σ, θ ) = φ−1(σ, θ ), the inverse function with respect to θ. The upper limit θL (σ) on |θ| is determined from Eq. (21): 
+
+θL(σ) = φ
+
+
+
+σ, arccos 
+
+ 2σ2
+
+σ4 + 1 
+
+ 
+
+. (22) 7
+
+Conceptually, θL(σ) < |θ| ≤ π 
+
+> 2
+
+signifies the region in which the wavelet’s IF direction switches to follow the axis orthogonal to θ, allowing the Cohen’s class kernel to cover the full range of θ. Due to the wavelet’s rotational symmetry, 
+
+Ψ(s) 
+
+> σ,θ
+
+(t) = Ψ (s) 
+
+> σ,θ ±π
+
+(t), for |θ| > π 
+
+> 2
+
+. Note also that by design the instantaneous “semitonal” frequency of ψ(s) 
+
+> σ,θ
+
+, sinst , is: 
+
+sinst = ω−1 
+
+> s
+
+(ωinst ) = ω−1
+
+> s
+
+
+
+2πf 02 112 tan θt + s
+
+> 12
+
+
+
+= s + tan θ t (23) 
+
+where ω−1 
+
+> s
+
+is the inverse of Eq. (6). Thus, the instantaneous 
+
+semitone of the wavelet function ψ(s) 
+
+> σ, θ
+
+(t) is skewed by an angle θ relative to the (s, t ) plane. To derive the Cohen’s class kernel corresponding to the proposed wavelet and coordinate system, Eq. (17) can be rewritten in the general form provided in Eq. (2): 
+
+Φσ,θ (s, t ) = 
+
+Z
+
+> R2
+
+W V D z (υ, τ ) · Π(s) 
+
+> σ,θ
+
+(s − υ, t − τ ) dυ dτ (24) 
+
+Thus, taking into account the coordinate system transformation 
+
+ω 7 → s, the following spatially-variant kernel can be derived: 
+
+Π(s) 
+
+> σ,θ
+
+(υ, τ ) = 
+
+
+
+¯Π(s) 
+
+> σin ,κ in
+
+(υ, τ ) if |θ| ≤ θL(σ), σ > 0, σ ̸ = 1 ¯Π(s)
+
+> σ′
+> in ,κ ′
+> in
+
+(υ, τ ) if θL(σ) < |θ| ≤ π 
+
+> 2
+
+, σ > 0, σ ̸ = 1 ¯Π(s) 
+
+> σI,0
+
+(υ, τ ) if σ = 1 
+
+(25) 
+
+with: 
+
+¯Π(s) 
+
+> σ,θ
+
+(υ, τ ) = f0 ln 2 · 2 s−υ 
+
+> 12
+
+e−τ 2/σ 2
+
+> s
+
+12 √πσ s
+
+·
+
+Z
+
+> R
+
+exp 
+
+
+
+− ξ2
+
+4σ2
+
+> s
+
+− jω s(s − υ)ξ + j ωs(s)
+
+γ eγτ 2 sinh   γξ 
+
+> 2
+
+
+
+dξ. 
+
+(26) 
+
+The full derivation is provided in Section C of the SM. To understand the general behaviour of the kernel, a first-order approximation ( ˆΠ(s) 
+
+> σ,θ
+
+(υ, τ ) ≈ ¯Π(s) 
+
+> σ,θ
+
+(υ, τ )) of the wavelet provides: 
+
+ˆΠ(s) 
+
+> σ,θ
+
+(υ, τ ) = f0 ln 2 6 ·exp 
+
+
+
+−ks
+
+ t2
+
+σ2 +σ2 υ+τ · tan θ 2
+
+ 
+
+, (27) 
+
+Thus, the proposed kernel can be approximated as a skewed Gaussian whose standard deviation along any axis decreases with increasing frequency proportionally to ks, hence the required formulation provided in Eq. (18) to transform from the skewed to the polar coordinate system. Note that for the discretised coordinate system with step size (∆ s, ∆t), from Eq. (27), the isotropic Gaussian kernel occurs at σ = σI =p∆s/ ∆t.To select a suitable constellation, an appropriate region of 
+
+σ and θ must be represented to ensure auto-terms are always isolated and cross terms suppressed in some members of the constellation for a variety of signal types with varying chirp angles and curvatures. In a previous publication [7], a uniformly distributed θ and log normally distributed σ
+
+centred on the isotropic standard deviation σI were proposed. Thus, to balance computational efficiency and coverage, we propose the following size K = 15 constellation consisting of an isotropic kernel followed by 14 uniformly distributed radial branches such that σk = [1 , 7, . . . , 7] and θk =[0 , f θ (1) , f θ (8) , f θ (2) , . . . , f θ (7) , f θ (9) , . . . , f θ (14)] , where: 
+
+fθ (k) = π (k − 8) 14 . (28) 
+
+Note this specific ordering is for convenience to separate kernels aligned with the T–F axis (members 1-3) with kernels orientated in the T–F plane (members 4-15). Panels (a)–(e) and (g)–(k) of Fig. 8 in the SM show selected members of an example input CLAWT constellation corresponding to the waveform generated from the ITFR in panel (f). 
+
+D. Fundamental Tempogram ITFR Estimation 
+
+As introduced in the overview, a Tempogram is commonly obtained by applying T–F analysis to an audio-derived onset-detection (novelty) function [8], [9], [22], [50]. In many applications, harmonic suppression is highly desirable; we use the term “Fundamental Tempogram”, introduced in [50], to denote this idealised, fundamental-only representation, which can be expressed in terms of the Harmonic ITFR (Eq. (12)): 
+
+TF,λ {zH } (λ, t ) = ITFR H,s {fonset {zH } (t)} (λ, t ), (29) 
+
+where λ is the logarithmic “semitonal” tempo ( λ = s), and the proposed idealised onset-detection (novelty) function is: 
+
+fonset {zH } (t) = 
+
+ ∂∂t 
+
+Z
+
+> R
+
+ITFR s{zH }(s, t ) ds 
+
+
+
+> +
+
+,
+
+with: (x)+ = max {0, x } . (30) 
+
+Note, by construction, R 
+
+> R
+
+ITFR s{zH }(s, t ) ds is the cross-term-free analytic envelope of the signal zH (t):
+
+Z
+
+> R
+
+ITFR s{zH }(s, t ) ds 
+
+=
+
+Z
+
+> R
+
+
+
+> P
+
+X
+
+> p=1
+> NH
+
+X
+
+> nh=1
+
+1τp (t)Ah(nh, p, t )Ap(t)δ (s−sp(t)−s(nh)) 
+
+ ds 
+
+=
+
+> P
+
+X
+
+> p=1
+> NH
+
+X
+
+> nh=1
+
+1τp (t)Ah(nh, p, t )Ap(t) = 
+
+> P
+
+X
+
+> p=1
+
+1τp (t)Ap(t), (31) 
+
+where the final step follows from Eq. (10). Thus, taking the gradient of this idealised analytic envelope extracts note onsets (transients) without cross-term interference, such as beating frequencies that would otherwise distort the representation. Likewise, taking positive components ensures only note onsets are extracted (as opposed to note ends, which would have a negative gradient). 
+
+E. Metrogram ITFR Estimation 
+
+The Metrogram is a transform that encodes time-varying metric structure by applying the multiplicative analogue of the autocorrelation function to the Fundamental Tempogram in the linear frequency domain: 
+
+M (k, t ) = 1
+
+Z (k)
+
+Z ∞
+
+> 0+
+
+TF (ωbpm , t ) TF (kω bpm , t ) dω bpm , (32) 
+
+where M (k, t ) is the Metrogram, k is the rhythmic ratio to be evaluated, Z (k) is a normalising function, and T F (ωbpm , t ) is the linear tempo axis ( ωbpm ) Fundamental Tempogram ITFR. 8
+
+The Metrogram is constructed such that the factor k provides insight into rhythmic ratios (metric information) present in the extract, independent of tempo, thereby enabling direct inference of time signature, polymetre, and polyrhythm [50]. For instance, an idealised 4/4 extract will result in a peak at k = 4 in the Metrogram ITFR, M (k, t ) = δ(k − 4) .Supplementary Material (SM), Section B provides a derivation of this result. Since the proposed Fundamental Tempogram ITFR in Eq. (29) is defined on a logarithmic (semitonal) tempo axis, we obtain:           
+
+> M(k, t ) =
+> Z
+> R
+> TF,λ (λ, t )TF,λ (λ+ 12 log 2k, t )dλ (33)
+> =RT T (12 log 2k, t ),(34)
+
+where RT T (x, t ) denotes the autocorrelation of TF,λ (·, t )
+
+along λ:      
+
+> RT T (x, t ) =
+> Z
+> R
+> TF,λ (λ, t )TF,λ (λ+x, t )dλ. (35)
+
+Note that Z (k) is omitted here; it was introduced in [50] for probabilistic calibration across k, which is not required for the present analysis. 
+
+F. Spline-Based Component Reconstruction 
+
+This section describes the component-extraction stage that converts the anti-aliased ridge representation predicted by PHAST-Net into explicit spline-parameterised ridge compo-nents, which are subsequently phase-aligned to form the 
+
+Spline-PHAST-Net variant. Candidate ridge structures are first identified using the multiscale Frangi ridge detector [18], after which thresholding and skeletonisation are applied to obtain a graph of dominant curvilinear features. Local amplitudes and sub-pixel centreline positions are recovered from the Xiaolin Wu line algorithm [45] interpolation weights, thereby retaining the sub-pixel information encoded by the PHAST-Net output. Ambiguous connectivity at junctions and branch points is then formulated as a data-association problem and resolved using the Hungarian algorithm [74]. Finally, the recovered ridge tracks are fitted with splines [75], yielding smooth continuous curves that can be resampled, mapped, and rasterised to arbitrary T–F coordinates. For computational efficiency, phase recovery is performed independently for each reconstructed component by estimating a single phase offset per component. Let x[n] denote the input audio signal, and let ˆxk[n] denote the waveform associated with the kth reconstructed T–F component. For n ∈ I k, where 
+
+Ik = {nk, 0, . . . , n k, end } denotes the temporal support of the component, the waveform is modelled as:              
+
+> ˆxk[n] = Ak[n]·cos ( ϕk[n]) (36)
+> ϕk[n] = ϕk, 0+ϕk,I [n],(37)
+
+where Ak[n] and ωk[n] denote the amplitude and instantaneous angular frequency of the kth component, respectively, as extracted from the PHAST-Net representation. The integrated phase term is defined as ϕk,I [n] = Pn−1 
+
+> m=nk, 0
+
+ωk[m], where 
+
+nk, 0 is the first detected sample of the component and ϕk, 0
+
+is the unknown initial phase offset. The phase offset is chosen to maximise the correlation between the reconstructed component and the input signal over the component support:      
+
+> ˆϕk, 0= arg max
+> ϕk, 0
+> nP
+> n∈I kx[n]·ˆxk[n]
+> o
+> (38)
+
+Expanding the cosine term gives the closed-form solution:     
+
+> ˆϕk, 0= atan2( −Sk, C k),(39)
+
+where:                   
+
+> Ck=X
+> n∈I k
+> x[n]·Ak[n]·cos ( ϕk,I [n]) (40)
+> Sk=X
+> n∈I k
+> x[n]·Ak[n]·sin ( ϕk,I [n]) .(41)
+
+The estimated offset is then used to obtain the phase-aligned waveform ˆxk[n] for each reconstructed component. IV. R ESULTS 
+
+This section presents an empirical evaluation of the pro-posed PHAST-Net framework across a diverse set of tasks to demonstrate its effectiveness and versatility. In particular, we consider speech, music, and synthetic signal excerpts, as well as a complex synthetic waveform benchmark, thereby enabling a comparative assessment of PHAST-Net against established methodologies. We first analyse a speech signal taken from the “Harvard sentences” database [76], shown in Fig. 3. The figure depicts three selected members of the input CLAWT constellation (panels (a)–(c)) and the corresponding PHAST-Net–predicted cross-term-free CLAWT representations (panels (f)–(h)). The raw PHAST-Net outputs for the tonal and harmonic models are shown in panels (d) and (e), respectively, while the associated Spline-PHAST-Net outputs are provided in panels (i) and (j). Next, we examine a violin excerpt from the composition “Piano Concerto No. 4” (by the author), illustrated in Fig. 4, which exhibits pronounced frequency-modulated vibrato. The figure is structured analogously, showing selected members from both the input and predicted CLAWT constellations together with the corresponding PHAST-Net outputs. The specific notated score for the analysed excerpt is: mf               
+
+> 4
+> 4&bbbbbÓŒœœœœœœœbœœbœ˙
+
+In addition, the PHAST-Net framework is evaluated on a complex, multi-component synthetic waveform characterised by substantial cross-term interference, as shown in Fig. 5. The extracted components (colour-coded) are presented in panel (j), and the waveform is defined by Eq. 103 in the SM. To further assess the PHAST-Net–predicted Fundamental Tempogram and Metrogram ITFR representations, we con-struct a controlled synthetic musical excerpt that incorporates both a time-varying tempo and a change of time signature. This design enables a direct comparison with idealised ground-truth Fundamental Tempogram and Metrogram representa-tions. Specifically, the idealised excerpt consists of 32 mea-sures in 3/4 metre followed by 32 measures in 4/4 metre, generated from a simple periodic chordal pattern. The tempo follows a linearly increasing trajectory, onto which a low-frequency sinusoidal modulation is superimposed to emulate 9
+
+pronounced rubato and to test the Metrogram’s robustness to substantial tempo fluctuations. As described in Section 29, the PHAST-Net Tempogram is computed from the note-onset detection function derived from the inferred PHAST-Net ITFR. The simulated idealised Fundamental Tempogram and Metrogram ITFRs are given by:                  
+
+> b(t) = 187 .5 + 187 .5tT2
+> + 20 sin
+> πt
+> 5
+> 
+> , m (t) = 3 + 1τm(t),TF(ωbpm , t ) = δ(ωbpm −b(t)) + 4 δ(ωbpm −b(t)/m (t)) ,(42)
+> M(k, t ) = δ(k−m(t)) ,T2= 47 .687s , T 1= 24 .239s ,(43)
+
+with τm = [ T1, T 2]. For figure visibility at publication scale, PHAST-Net outputs are rendered after applying a small σ < 1-pixel isotropic Gaussian anti-aliasing filter. Finally, a comparative evaluation is performed against estab-lished approaches on a challenging synthetic multicomponent benchmark designed to assess T–F localisation, interference suppression, and performance under additive white Gaussian noise (AWGN). The proposed evaluated waveform contains multiple closely spaced components, multiple intersections, and prominent cross-term interference:                           
+
+> x1(t) =
+> 7X
+> i=1
+> sin
+> 
+> 2πRt−δi
+> 0gi(τ)dτ +5π(i−1) 7
+> 
+> ,0≤t≤T, g1,2(t) = c1,2+ 45 t/T + 90 sin(2 πt ),c1,2= (175 .5,139 .5) ,g3,4(t) = d3,4+ 45 t/T, d3,4= (292 .5,22 .5) ,g5,6(t) = 570 ±210 sin(2 πt ),g7(t) = 381 + 378 t/T,
+> (44)
+
+where T = 153599 /44100 ≈ 3.483 s , δi = 0 for i = 1 , . . . , 4,and δi = 1/16 for i = 5, . . . , 7. Given that the native PHAST-Net output is defined on a log-frequency grid, quanti-tative comparisons are performed using the Spline-PHAST-Net rasterised on the common linear-frequency grid used by the baseline methods, derived from the corresponding PHAST-Net output. The raw PHAST-Net output is also shown for reference, but not used for the linear-grid quantitative comparisons. We compare against a representative set of established and reproducible T–F analysis methods: the Synchrosqueezing transform (SST) [39], classical reassignment (RS) [36], the adaptive optimal-kernel (AOK) distribution [14], the S-Method [68], the Choi–Williams distribution (CW) [64], the RIFT algorithm (RIFT) [7], and the synchroextracting transform (SET) [69]. Note that SST, SET, S-Method, and reassignment are computed from the same isotropic Gaussian-kernel CWT relative to the normalised T–F grid. Likewise, all methods are evaluated on the same sampled signal, frequency range, output grid, and SNR levels. At each finite SNR, all methods are evaluated on the same set of independent AWGN realisations, ensuring paired comparisons across methods. Each method is evaluated on 20 AWGN realisations per finite SNR. Let Rm(t, f ) ≥ 0 denote the T–F representation produced by method m, and let C(t, f ) ≥ 0 denote the reference ideal T–F representation (ITFR), generated from the model in Section II-B. The ITFR components are rasterised using Xi-aolin Wu’s antialiased line algorithm [45]. To avoid numerical sensitivity to sub-pixel discretisation, we incorporate a small soft tolerance using an isotropic Gaussian kernel GσI (with 
+
+σI = 2 pixels) eRm = GσI ∗ Rm, and eC = GσI ∗ C, where 
+
+∗ denotes discrete-time convolution; the same σI is used for every method, SNR, and noise realisation. Note that ablating over σI , as reported in Table II of the SM, confirms that the relative metric rankings are insensitive to this parameter. Let:            
+
+> Pm=eRmP
+> t,f eRm(t,f ),Q=eC
+> P
+> t,f eC(t,f ).
+
+We report three complementary metrics. First, the Bhat-tacharyya coefficient, BC( Pm, Q ) = P  
+
+> t,f
+> pPm(t, f )Q(t, f )
+
+,measures global probabilistic overlap between the method output and the reference ITFR, with larger values indicating better agreement ( 0 ≤ BC ≤ 1) [70]. Second, the Jensen– Shannon divergence, JS( Pm, Q ) = 12 KL( Pm∥M )+ 12 KL( Q∥M ),with M = 12 (Pm + Q), measures symmetric distributional (KL) discrepancy, with lower values indicating better agreement (0 ≤ JS ≤ ln 2 ) [71]. Third, the ridge energy ratio (RER) measures the proportion of method magnitude concentrated near the soft reference ITFR ridges. Specifically, let di(t, f )
+
+denote the Euclidean pixel distance from (t, f ) to the rasterised ridge of component i. We define:         
+
+> Wi(t, f ) = exp
+> 
+> −di(t,f )2
+> 2σ2
+> I
+> 
+> ,W(t, f ) = max
+> iWi(t, f ).
+
+The RER is then RER( Rm, W ) =       
+
+> P
+> t,f |Rm(t, f )|W(t, f )/P
+> t,f |Rm(t, f )|
+
+, where W ∈ [0 , 1] is the union of the soft Gaussian ridge tubes obtained from the reference ITFR, combined across components by pointwise maximum. This metric quantifies on-ridge concentration relative to the reference ITFR, with larger values indicating stronger localisation ( 0 ≤ RER ≤ 1), and is motivated by classical notions of energy concentration and T–F localisation [72], [73]. The methods are evaluated at AWGN levels of −10 , −5, 0, and 5dB , together with the noise-free case denoted by ∞dB . Qualitative results at −5dB are shown in Fig. 7. Quantitative results for all SNRs are reported in Table I; for finite SNRs, each entry is the mean ± sample standard deviation over the matched AWGN realisations, while the noise-free ∞dB case is deterministic and is thus reported as a single value. Note that for display only, all T–F images are rendered after applying a σ = 1-pixel isotropic Gaussian anti-aliasing filter to improve readability at publication scale; this display filter is not used in the quantitative metrics. As observed in Table I, the PHAST-Net framework consis-tently outperforms established methods across all evaluation metrics and SNR conditions, with particularly pronounced gains in low-SNR regimes. In particular, Fig. 7 demonstrates that both the raw PHAST-Net and Spline-PHAST-Net repre-sentations substantially attenuate cross-term interference and noise relative to competing approaches, yielding performance that visually converges towards the reference ITFR. Moreover, while most methods exhibit difficulty in this setting, the proposed algorithm effectively accommodates the pronounced T–F-varying component curvature and the numerous compo-nent intersections. It is further noted that the classical RIFT algorithm attains the second-highest performance over the majority of SNRs and metrics, with the anticipated exception 10 55 220 880 3.5k      
+
+> Frequency (Hz)
+> 00.5 11.5 22.5
+
+Time (s)      
+
+> 55 220 880 3.5k
+> Frequency (Hz)
+> 00.5 11.5 22.5
+
+Time (s)      
+
+> 00.5 11.5 22.5
+
+Time (s)      
+
+> 00.5 11.5 22.5
+
+Time (s)      
+
+> 00.5 11.5 22.5
+
+Time (s)           
+
+> (a) Observed 1 (b) Observed 2 (c) Observed 3 (d) PHAST -Net Output (e) Harmonic PHAST -Net Output (f) Predicted 1 (g) Predicted 2 (h) Predicted 3 (i) Spline-PHAST -Net (j) Harmonic Spline-PHAST -Net
+
+Fig. 3. A visualisation of the PHAST-Net framework applied to a speech excerpt from the “Harvard sentences” database [76]. On the left, the action of the physics operator is illustrated for several elements of the CLAWT constellation: panels (a)–(c) display the observed (input) CLAWTs, while panels (f)–(h) show the corresponding predicted, cross-term-free CLAWTs. The specific constellation elements considered here are members 1, 3, and 14. On the right, panels (d) and (e) present the PHAST-Net and Harmonic PHAST-Net outputs, respectively, and panels (i) and (j) depict the associated spline-based representations. 
+
+of high-SNR RER scores, which is attributable to the iterative nature of the underlying deconvolution procedure. For the challenging high-complexity waveform defined in Eq. 103 and evaluated in Fig. 5, the algorithm significantly reduces cross-term interference in the predicted CLAWT con-stellation, as evidenced by panels (a)–(c) relative to (f)–(h), while simultaneously preserving high instantaneous-frequency precision in the predicted ITFR. Similarly, the Spline-PHAST-Net algorithm reliably performs component extraction and data association, despite the intricate intersection behaviour present in the T–F plane. For the speech excerpt in Fig. 3, the algo-rithm again substantially suppresses cross-term interference, dynamically adapting to the complex T–F-varying curvature and mitigating interactions between harmonics. This yields high-precision IF ridge estimates and accurate fundamental-trajectory extraction, with panels (e) and (j) exhibiting strong harmonic suppression that exposes the underlying fundamental speech contour. The music excerpt in Fig. 4 likewise illustrates that the method accurately recovers the fundamental structure, at frequencies consistent with the musical score, while cap-turing locally prominent frequency-modulated vibrato. These results demonstrate the versatility of the approach and its robustness to variations in overtone structure and harmonic interaction. Finally, the PHAST-Net–inferred Fundamental Tempogram and Metrogram representations for the synthetic example in Fig. 6 closely approximate the corresponding idealised repre-sentations, exhibiting negligible visible cross-term interference and high T–F resolution, while capturing the pronounced tempo fluctuations. In particular, as shown in panels (c) and (h) relative to (d) and (i), the employment of a harmonic model for Tempogram inference effectively suppresses over-tone structure, thereby isolating the fundamental beat and bar-tempo trajectories (panel (d)) and producing a substantially improved Metrogram (panel (i)) with the expected two metric trajectories, corresponding to the 3/4-metre and 4/4-metre sections. V. C ONCLUSION 
+
+In conclusion, PHAST-Net establishes a unified, physics-informed framework for estimating high-resolution Ideal Time–Frequency Representations across spectral, temporal, metrical, and harmonic domains. By combining a strategi-cally selected CLAWT constellation derived from Cohen’s class kernel analysis, attention-based cross-term suppression, and an auxiliary physics-informed reconstruction loss that enforces transform-domain consistency, the proposed approach improves representation accuracy, robustness to noise, and interpretability for nonstationary signal analysis. Harmonic PHAST-Net and Spline-PHAST-Net extend the framework by enabling fundamental-structure isolation, component-level ex-traction, and arbitrary-grid re-rendering. These results demon-strate that PHAST-Net provides a principled and generalisable foundation for advanced T–F analysis across speech, music, and related nonstationary domains. REFERENCES                   
+
+> [1] M. Dakovic, L. Stankovic, and T. Thayaparan, Time-Frequency Signal Analysis with Applications . Norwood, MA, USA: Artech House, 2013. [2] B. Boashash, Time-Frequency Signal Analysis and Processing: A Comprehensive Reference , 2nd ed. Academic Press, 2015. [3] H. Zhang, Q. Q. Zhou, H. Chen, et al., “The applied principles of EEG analysis methods in neuroscience and clinical neurology,” Military Medical Research , vol. 10, no. 1, Art. no. 67, 2023. [4] A. F. Hussein, S. J. Hashim, A. F. A. Aziz, et al., “Performance evaluation of time–frequency distributions for ECG signal analysis,” Journal of Medical Systems ,vol. 42, no. 1, Art. no. 15, 2018. [5] R. Alazrai, R. Homoud, H. Alwanni, and M. I. Daoud, “EEG-based emotion recognition using quadratic time–frequency distribution,” Sensors , vol. 18, no. 8, Art. no. 2739, 2018. [6] The LIGO Scientific Collaboration and the Virgo Collaboration, “A guide to LIGO–Virgo detector noise and extraction of transient gravitational-wave signals,”
+> Classical and Quantum Gravity , vol. 37, no. 5, art. no. 055002, Feb. 2020. [7] J. M. Cozens and S. J. Godsill, “RIFT: Entropy-Optimised Fractional Wavelet Con-stellations for Ideal Time–Frequency Estimation,” arXiv:2501.15764v3 [eess.AS], 2026. [Online]. Available: https://arxiv.org/abs/2501.15764. [8] P. Grosche, M. M¨ uller, and F. Kurth, “Cyclic tempogram—A mid-level tempo representation for music signals,” in 2010 IEEE International Conference on Acoustics, Speech and Signal Processing , Dallas, TX, USA, 2010, pp. 5522–5525. [9] G. Peeters, “Time Variable Tempo Detection and Beat Marking,” in Proc. Int. Comput. Music Conf. (ICMC) , Barcelona, Spain, 2005, pp. 539–542. [10] J. Escriv´ a Mu˜ noz, Y. Pan, S. Ge, E. W. Jensen, and M. Vallverd´ u, “Novel characterization method of impedance cardiography signals using time–frequency distributions,” Medical and Biological Engineering and Computing , vol. 56, no. 10, pp. 1757–1770, 2018.
+
+11 440 880 1.8k 3.5k 
+
+> Frequency (Hz)
+
+0 2.5 5 7.5 10 
+
+Time (s) 
+
+440 880 1.8k 3.5k 
+
+> Frequency (Hz)
+
+0 2.5 5 7.5 10 
+
+Time (s) 
+
+0 2.5 5 7.5 10 
+
+Time (s) 
+
+0 2.5 5 7.5 10 
+
+Time (s) 
+
+0 2.5 5 7.5 10 
+
+Time (s) 
+
+(a) Observed 1 (b) Observed 2 (c) Observed 3 (d) PHAST -Net Output (e) Harmonic PHAST -Net Output (f) Predicted 1 (g) Predicted 2 (h) Predicted 3 (i) Spline-PHAST -Net (j) Harmonic Spline-PHAST -Net 
+
+Fig. 4. A visualisation of the PHAST-Net framework applied to a short violin extract from the piece “Piano Concerto No. 4” by the author. As per the speech example in Fig 3, several elements of the CLAWT constellation are shown, with panels (a)–(c) displaying the observed (input) CLAWTs, and panels (f)–(h) showing the corresponding predicted, cross-term-free CLAWTs. The constellation elements considered here are members 9, 11, and 14. On the right, panels (d) and (e) present the PHAST-Net and Harmonic PHAST-Net outputs, respectively, and panels (i) and (j) depict the associated spline-based representations. 27.5 110 440 
+
+> Frequency (Hz)
+
+0 1 2 3
+
+Time (s) 
+
+27.5 110 440 
+
+> Frequency (Hz)
+
+0 1 2 3
+
+Time (s) 
+
+0 1 2 3
+
+Time (s) 
+
+0 1 2 3
+
+Time (s) 
+
+0 1 2 3
+
+Time (s) 
+
+(a) Observed 1 (b) Observed 2 (c) Observed 3 (d) Reference ITFR (e) PHAST -Net Output (f) Predicted 1 (g) Predicted 2 (h) Predicted 3 (i) Spline-PHAST -Net (j) Extracted T-F Components 
+
+Fig. 5. A visualisation of the PHAST-Net framework applied to the evaluative signal x2(t) (Eq. (103) in the SM). As before, on the left, several elements of the CLAWT constellation are presented in panels (a)–(c) (the observed input CLAWTs), and panels (f)–(h) (the corresponding predicted, cross-term-free CLAWTs). The specific constellation elements considered here are members 3, 9, and 14. On the right, panels (d) and (e) present the Reference ITFR and PHAST-Net outputs, respectively, and panel (i) depicts the associated spline-based representation with the extracted T–F components (colour coded) shown in (j). 27.5 110 440 880 3.5k                                    
+
+> Frequency (Hz)
+> 40 120 320 1.3k 5.1k
+> Tempo (bpm)
+> 010 20 30 40
+> Time (s)
+> 27.5 110 440 880 3.5k
+> Frequency (Hz)
+> 010 20 30 40
+> Time (s)
+> 1312 64 256
+> Ratio  k
+> 010 20 30 40
+> Time (s)
+> 010 20 30 40
+> Time (s)
+> 010 20 30 40
+> Time (s)
+> (a) Reference ITFR (b) Reference F. Tempogram ITFR (c) PHAST -Net (Tonal) Tempogram (d) PHAST -Net F. Tempogram (e) Spline PHAST -Net F. Tempogram (f) PHAST -Net ITFR (g) Reference Metrogram ITFR (h) PHAST -Net (Tonal) Metrogram (i) PHAST -Net Metrogram (j) Spline PHAST -Net Metrogram
+
+Fig. 6. A visualisation of the Fundamental Tempogram and Metrogram inference process: (a) provides the reference ITFR for the simulated musical excerpt, and (f) provides the raw predicted PHAST-Net ITFR output. Panels (b) and (g) present the reference Fundamental Tempogram and Metrogram ITFRs provided by Eq. (42) and Eq. (43), respectively. Panels (c) and (d) present the Tempogram PHAST-Net outputs computed from the onset detection function generated from the PHAST-Net ITFR (panel (f)), employing the tonal and harmonic models, respectively, and panels (h) and (i) are the corresponding Metrograms. Finally, panels (e) and (j) are the Spline-PHAST-Net outputs computed from the representations in panels (d) and (i). 12 200 400 600 800    
+
+> Frequency (Hz)
+> 0123
+
+Time (s)    
+
+> 200 400 600 800
+> Frequency (Hz)
+> 0123
+
+Time (s)    
+
+> 0123
+
+Time (s)    
+
+> 0123
+
+Time (s)    
+
+> 0123
+
+Time (s) 
+
+> 27.5 55 110 220 440
+
+SNR = -5 dB 
+
+(a) ITFR Reference (b) SPLINE-PHAST -NET (c) AOK (d) RIFT (e) CW (f) RS (g) SST (h) S-METHOD (i) SET (j) Raw PHAST -NET (log f)
+
+Fig. 7. Comparative evaluation on the multi-component benchmark of Eq. (44) with additive white Gaussian noise (AWGN) at an SNR of −5 dB .
+
+Bhattacharyya overlap ( ↑)
+
+SNR (dB) AOK Choi–Williams RIFT Reassignment S-Method SET SST Spline-PHAST-Net -10 dB 0.409 ± 0.002 0.488 ± 0.002 0.825 ± 0.003 0.737 ± 0.003 0.576 ± 0.002 0.738 ± 0.004 0.716 ± 0.003 0.914 ± 0.005 
+
+-5 dB 0.435 ± 0.001 0.544 ± 0.001 0.908 ± 0.001 0.854 ± 0.002 0.627 ± 0.001 0.833 ± 0.003 0.816 ± 0.002 0.970 ± 0.002 
+
+0 dB 0.444 ± 0.001 0.574 ± 0.000 0.927 ± 0.001 0.906 ± 0.001 0.647 ± 0.001 0.873 ± 0.001 0.858 ± 0.001 0.986 ± 0.001 
+
+5 dB 0.446 ± 0.000 0.588 ± 0.000 0.927 ± 0.001 0.925 ± 0.000 0.654 ± 0.000 0.886 ± 0.001 0.873 ± 0.000 0.993 ± 0.001 
+
+∞ 0.447 0.597 0.938 0.935 0.657 0.891 0.880 0.996 Jensen–Shannon divergence ( ↓)
+
+SNR (dB) AOK Choi–Williams RIFT Reassignment S-Method SET SST Spline-PHAST-Net -10 dB 0.457 ± 0.002 0.395 ± 0.001 0.140 ± 0.003 0.213 ± 0.003 0.335 ± 0.001 0.209 ± 0.003 0.229 ± 0.002 0.072 ± 0.003 
+
+-5 dB 0.437 ± 0.001 0.351 ± 0.001 0.078 ± 0.001 0.123 ± 0.002 0.298 ± 0.001 0.139 ± 0.002 0.154 ± 0.001 0.027 ± 0.001 
+
+0 dB 0.430 ± 0.001 0.328 ± 0.000 0.065 ± 0.001 0.082 ± 0.001 0.283 ± 0.000 0.107 ± 0.001 0.121 ± 0.001 0.013 ± 0.001 
+
+5 dB 0.429 ± 0.000 0.317 ± 0.000 0.066 ± 0.001 0.066 ± 0.000 0.278 ± 0.000 0.097 ± 0.000 0.110 ± 0.000 0.007 ± 0.001 
+
+∞ 0.428 0.310 0.056 0.057 0.275 0.093 0.104 0.003 RER ( ↑)
+
+SNR (dB) AOK Choi–Williams RIFT Reassignment S-Method SET SST Spline-PHAST-Net -10 dB 0.119 ± 0.001 0.192 ± 0.001 0.659 ± 0.017 0.541 ± 0.005 0.224 ± 0.001 0.696 ± 0.007 0.476 ± 0.005 0.850 ± 0.009 
+
+-5 dB 0.139 ± 0.001 0.244 ± 0.001 0.793 ± 0.003 0.729 ± 0.004 0.260 ± 0.001 0.847 ± 0.004 0.628 ± 0.003 0.945 ± 0.003 
+
+0 dB 0.146 ± 0.001 0.273 ± 0.001 0.834 ± 0.002 0.831 ± 0.002 0.275 ± 0.000 0.913 ± 0.002 0.706 ± 0.002 0.975 ± 0.001 
+
+5 dB 0.148 ± 0.000 0.287 ± 0.000 0.837 ± 0.001 0.875 ± 0.001 0.281 ± 0.000 0.934 ± 0.001 0.738 ± 0.001 0.989 ± 0.001 
+
+∞ 0.149 0.296 0.857 0.903 0.283 0.943 0.756 0.994 
+
+TABLE I OBJECTIVE METRIC RESULTS ACROSS SNR S. E NTRIES ARE MEAN ± SAMPLE STANDARD DEVIATION OVER NOISE REALISATIONS , REPORTED TO THREE DECIMAL PLACES . B OLD INDICATES THE BEST MEAN VALUE PER ROW .
+
+[11] Z. Feng, M. Liang, and F. Chu, “Recent advances in time–frequency analysis methods for machinery fault diagnosis: A review with application examples,” 
+
+Mechanical Systems and Signal Processing , vol. 38, no. 1, pp. 165–205, 2013. [12] C.-Y. Lin, L. Su, and H.-T. Wu, “Wave-Shape Function Analysis: When Cepstrum Meets Time–Frequency Analysis,” J. Fourier Anal. Appl. , vol. 24, no. 2, pp. 451– 505, 2018. [13] R. G. Baraniuk and D. L. Jones, “A signal-dependent time–frequency represen-tation: Optimal kernel design,” IEEE Transactions on Signal Processing , vol. 41, no. 4, pp. 1589–1602, 1993. [14] D. L. Jones and R. G. Baraniuk, “An adaptive optimal-kernel time–frequency representation,” IEEE Transactions on Signal Processing , vol. 43, no. 10, pp. 2361– 2371, 1995. [15] M. Mohammadi, A. A. Pouyan, N. A. Khan, and V. Abolghasemi, “Locally optimized adaptive directional time–frequency distributions,” Circuits, Systems, and Signal Processing , vol. 37, no. 8, pp. 3154–3174, 2018. [16] X. Wang, K. Yu, C. Dong, and C. C. Loy, “Recovering realistic texture in image super-resolution by deep spatial feature transform,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR) , Salt Lake City, UT, USA, 2018, pp. 606– 615 [17] D. P. Kingma and J. Ba, “Adam: A method for stochastic optimization,” in Proc. 3rd Int. Conf. Learn. Represent. (ICLR) , San Diego, CA, USA, May 7–9, 2015. [18] A. F. Frangi, W. J. Niessen, K. L. Vincken, and M. A. Viergever, “Multiscale vessel enhancement filtering,” in Medical Image Computing and Computer-Assisted Intervention—MICCAI’98 , W. M. Wells, A. Colchester, and S. Delp, Eds. Berlin, Heidelberg: Springer, 1998, pp. 130–137. [19] M. A. Awal, S. Ouelha, S. Dong, and B. Boashash, “A robust high-resolution time–frequency representation based on the local optimization of the short-time fractional Fourier transform,” Digital Signal Processing , vol. 70, pp. 125–144, 2017. [20] J. C. Brown, “Calculation of a constant Q spectral transform,” The Journal of the Acoustical Society of America , vol. 89, no. 1, pp. 425–434, 1991. [21] G. Zhang and S. Godsill, “Fundamental Frequency Estimation in Speech Signals With Variable Rate Particle Filters,” IEEE/ACM Trans. Audio, Speech, Lang. Process. , vol. 24, no. 5, pp. 890–900, 2016. [22] W. Gui, Y. Sun, Y. Tao, Y. Li, L. Meng, and J. Zhang, “A Novel Tempogram Generating Algorithm Based on Matching Pursuit,” Applied Sciences , vol. 8, no. 4, Art. no. 561, 2018. [23] S. Zhang, M. S. R. Pavel, and Y. D. Zhang, “Crossterm-free time-frequency representation exploiting deep convolutional neural network,” Signal Processing ,vol. 192, Art. no. 108372, 2022. [24] N. Liu, J. Wang, Y. Yang, Z. Li, and J. Gao, “WVDNet: Time-Frequency Analysis via Semi-Supervised Learning,” IEEE Signal Processing Letters , vol. 30, pp. 55– 59, 2023. [25] L. Jiang, H. Zhang, and L. Yu, “Robust Time-Frequency Reconstruction by Learning Structured Sparsity,” arXiv preprint arXiv:2004.14820, 2020. [26] L. Jiang, H. Zhang, L. Yu, and G. Hua, “A Data-Driven High-Resolution Time-Frequency Distribution,” IEEE Signal Processing Letters , vol. 29, pp. 1512–1516, 2022. [27] D. Quan, F. Ren, X. Wang, M. Xing, N. Jin, and D. Zhang, “WVD-GAN: A Wigner-Ville distribution enhancement method based on generative adversarial network,” IET Radar, Sonar & Navigation , vol. 18, no. 6, pp. 849–865, 2024. [28] P. Pan, Y. Zhang, Z. Deng, S. Fan, and X. Huang, “TFA-Net: A Deep Learning-Based Time-Frequency Analysis Tool,” IEEE Transactions on Neural Networks and Learning Systems , vol. 34, no. 11, pp. 9274–9286, 2023. [29] T. Chen, Q. Chen, Q. Zheng, Z. Li, Z. Zhang, L. Xie, and H. Su, “Adaptive multi-scale TF-net for high-resolution time-frequency representations,” Signal Processing , vol. 214, Art. no. 109247, 2024. [30] T. Chen, Y. Jiao, L. Xie, and H. Su, “QTFN: A General End-to-End Time-Frequency Network to Reveal the Time-Varying Signatures of the Time Series,” 
+
+Big Data Mining and Analytics , vol. 7, no. 3, pp. 905–919, 2024. [31] Y. Yang, Y. Lei, N. Liu, Z. Wang, J. Gao, and J. Ding, “SparseTFNet: A Physically Informed Autoencoder for Sparse Time-Frequency Analysis of Seismic Data,” 13 
+
+IEEE Transactions on Geoscience and Remote Sensing , vol. 60, Art. no. 4512812, 2022. [32] M. A. Awal and B. Boashash, “An automatic fast optimization of quadratic time–frequency distribution using the hybrid genetic algorithm,” Signal Processing ,vol. 131, pp. 134–142, 2017. [33] Y. D. Zhang, M. G. Amin, and B. Himed, “Reduced-interference time–frequency representations and sparse reconstruction of undersampled data,” in Proc. 21st European Signal Processing Conf. (EUSIPCO) , Marrakech, Morocco, 2013, pp. 1–5. [34] R. Genc ¸ay, F. Selc ¸uk, and B. Whitcher, An Introduction to Wavelets and Other Filtering Methods in Finance and Economics . San Diego, CA, USA: Academic Press, 2001. [35] P. M. Crowley, “A guide to wavelets for economists,” Journal of Economic Surveys ,vol. 21, no. 2, pp. 207–267, 2007. [36] F. Auger and P. Flandrin, “Improving the readability of time–frequency and time–scale representations by the reassignment method,” IEEE Transactions on Signal Processing , vol. 43, no. 5, pp. 1068–1089, 1995. [37] A. H. Nuttall, “Wigner distribution function: Relation to short-term spectral estimation, smoothing, and performance in noise,” Naval Underwater Systems Center, New London, CT, USA, Tech. Rep. 8225, Feb. 1988. [38] J. W. Pitton, L. E. Atlas, and P. J. Loughlin, “Deconvolution for positive time–frequency distributions,” in Proc. 27th Asilomar Conf. Signals, Systems and Computers , Pacific Grove, CA, USA, 1993, vol. 2, pp. 1450–1454. [39] G. Thakur, E. Brevdo, N. S. Fuˇ ckar, and H.-T. Wu, “The synchrosqueezing algorithm for time-varying spectral analysis: Robustness properties and new paleoclimate applications,” Signal Processing , vol. 93, no. 5, pp. 1079–1094, 2013. [40] P. Flandrin, F. Auger, and E. Chassande-Mottin, “Time–frequency reassignment: From principles to algorithms,” in Applications in Time-Frequency Signal Process-ing , A. Papandreou-Suppappola, Ed. Boca Raton, FL, USA: CRC Press, 2003, pp. 179–204. [41] N. E. Huang, Z. Shen, S. R. Long, M. C. Wu, H. H. Shih, Q. Zheng, N.-C. Yen, C.-C. Tung, and H. H. Liu, “The empirical mode decomposition and the Hilbert spectrum for nonlinear and non-stationary time series analysis,” Proceedings of the Royal Society A: Mathematical, Physical and Engineering Sciences , vol. 454, no. 1971, pp. 903–995, 1998. [42] K. Dragomiretskiy and D. Zosso, “Variational mode decomposition,” IEEE Trans-actions on Signal Processing , vol. 62, no. 3, pp. 531–544, 2014. [43] M. Al-Sa’d, B. Boashash, and M. Gabbouj, “Design of an optimal piece-wise spline Wigner–Ville distribution for TFD performance evaluation and comparison,” IEEE Transactions on Signal Processing , vol. 69, pp. 3963–3976, 2021. [44] F. R. Kschischang, “The Hilbert Transform,” Dept. Elect. & Comput. Eng., Univ. of Toronto, Toronto, ON, Canada, 2006. [Online]. Available: https://www.comm. utoronto.ca/ ∼frank/notes/. [45] X. Wu, “An efficient antialiasing technique,” ACM SIGGRAPH Comput. Graph. ,vol. 25, no. 4, pp. 143–152, 1991. [46] L. Xu, S. Chatterton, P. Pennacchi, and C. Liu, “A Tacholess Order Tracking Method Based on Inverse Short Time Fourier Transform and Singular Value De-composition for Bearing Fault Diagnosis,” Sensors , vol. 20, no. 23, Art. no. 6924, 2020. [47] D. Liu, X. Li, W. Wang, X. Wang, Z. Shi, and W. Chen, “Eliminating har-monic noise in vibroseis data through sparsity-promoted waveform modeling,” 
+
+Geophysics , vol. 87, no. 3, pp. V183–V191, 2022. [48] S. Fenet, R. Badeau, and G. Richard, “Reassigned time–frequency representations of discrete time signals and application to the Constant-Q Transform,” Signal Process. , vol. 132, pp. 170–176, Mar. 2017, doi: 10.1016/j.sigpro.2016.10.008. [49] N. Holighaus, Z. Pr˚ uˇ sa, and P. L. Søndergaard, “Reassignment and synchrosqueez-ing for general time–frequency filter banks, subsampling and processing,” Signal Process. , vol. 125, pp. 1–8, Aug. 2016, doi: 10.1016/j.sigpro.2016.01.007. [50] J. M. Cozens and S. J. Godsill, “Dynamic Time Signature Recognition, Tempo Inference, and Beat Tracking Through the Metrogram Transform,” 
+
+IEEE Open Journal of Signal Processing , vol. 5, pp. 140–149, 2024, doi: 10.1109/OJSP.2023.3344048. [51] M. Bhattacharjee, S. R. M. Prasanna, and P. Guha, “Speech/music classification using features from spectral peaks,” IEEE/ACM Transactions on Audio, Speech, and Language Processing , vol. 28, pp. 1549–1559, 2020. [52] B. S. Gowrishankar and N. U. Bhajantri, “An exhaustive review of automatic music transcription techniques: Survey of music transcription techniques,” in 
+
+Proc. Int. Conf. Signal Processing, Communication, Power and Embedded System (SCOPES) , Paralakhemundi, India, 2016, pp. 140–152. [53] L. Moysis, et al., “Music deep learning: Deep learning methods for music signal processing—A review of the state of the art,” IEEE Access , vol. 11, pp. 17031– 17052, 2023. [54] E. P. Wigner, “On the quantum correction for thermodynamic equilibrium,” 
+
+Physical Review , vol. 40, no. 5, pp. 749–759, 1932. [55] S. Mallat and Z. Zhang, “Matching pursuits with time–frequency dictionaries,” 
+
+IEEE Transactions on Signal Processing , vol. 41, no. 12, pp. 3397–3415, 1993. [56] A. de Cheveign´ e and H. Kawahara, “YIN, a fundamental frequency estimator for speech and music,” J. Acoust. Soc. Am. , vol. 111, no. 4, pp. 1917–1930, Apr. 2002. [57] J. Ville, “Th´ eorie et applications de la notion de signal analytique,” Cˆ ables et Transmissions , vol. 2A, no. 1, pp. 61–74, 1948. [58] S. Mallat, A Wavelet Tour of Signal Processing: The Sparse Way , 3rd ed. Amsterdam, The Netherlands: Elsevier/Academic Press, 2009. [59] P. Flandrin, Time-Frequency/Time-Scale Analysis . San Diego, CA, USA: Academic Press, 1999. [60] L. Cohen, “Time–frequency distributions—A review,” Proceedings of the IEEE ,vol. 77, no. 7, pp. 941–981, 1989. [61] B. Boashash, “Estimating and interpreting the instantaneous frequency of asignal—Part 1: Fundamentals,” Proceedings of the IEEE , vol. 80, no. 4, pp. 520– 538, 1992. [62] B. Boashash and P. O’Shea, “Polynomial Wigner–Ville distributions and their relationship to time-varying higher order spectra,” IEEE Transactions on Signal Processing , vol. 42, no. 1, pp. 216–220, 1994. [63] F. Hlawatsch and P. Flandrin, “The interference structure of the Wigner distribution and related time–frequency signal representations,” in The Wigner Distribu-tion—Theory and Applications in Signal Processing , W. Mecklenbr¨ auker and F. Hlawatsch, Eds. Amsterdam, The Netherlands: Elsevier, 1997, pp. 59–133. [64] J. Choi and W. J. Williams, “Improved time–frequency representation of multi-component signals using exponential kernels,” IEEE Transactions on Acoustics, Speech, and Signal Processing , vol. 37, no. 6, pp. 862–871, 1989. [65] V. V. Moca, H. Bˆ arzan, A. Nagy-Dˆ abˆ acan, and R. C. Mures ¸an, “Time–frequency super-resolution with superlets,” Nature Communications , vol. 12, Art. no. 337, 2021. [66] J. Nam, G. J. Mysore, J. Ganseman, K. Lee, and J. S. Abel, “A super-resolution spectrogram using coupled PLCA,” in Proc. Interspeech , Makuhari, Japan, 2010, pp. 1696–1699. [67] S. Lian, Z. Luo, Z. Zhong, X. Lin, S. Su, and S. Li, “Attention guided U-Net for accurate iris segmentation,” Journal of Visual Communication and Image Representation , vol. 56, pp. 296–304, 2018. [68] L. Stankovi´ c, “A method for time–frequency analysis,” IEEE Transactions on Signal Processing , vol. 42, no. 1, pp. 225–229, 1994. [69] G. Yu, M. Yu, and C. Xu, “Synchroextracting transform,” IEEE Trans. Ind. Electron. , vol. 64, no. 10, pp. 8042–8054, 2017. [70] A. Bhattacharyya, “On a measure of divergence between two statistical populations defined by their probability distributions,” Bull. Calcutta Math. Soc. , vol. 35, pp. 99–109, 1943. [71] J. Lin, “Divergence measures based on the Shannon entropy,” IEEE Trans. Inf. Theory , vol. 37, no. 1, pp. 145–151, Jan. 1991. [72] D. Slepian and H. O. Pollak, “Prolate spheroidal wave functions, Fourier analysis and uncertainty—I,” Bell Syst. Tech. J. , vol. 40, no. 1, pp. 43–63, 1961. [73] L. Stankovi´ c, “A measure of some time–frequency distributions concentration,” 
+
+Signal Processing , vol. 81, no. 3, pp. 621–631, 2001. [74] H. W. Kuhn, “The Hungarian method for the assignment problem,” Naval Research Logistics Quarterly , vol. 2, nos. 1–2, pp. 83–97, 1955. [75] C. de Boor, A Practical Guide to Splines . New York, NY, USA: Springer-Verlag, 1978. [76] IEEE Recommended Practice for Speech Quality Measurements , IEEE Std. 297-1969, May 1969, doi: 10.1109/IEEESTD.1969.7405210. 
+
+VI. B IOGRAPHY 
+
+James M. Cozens (Member, IEEE) is a Ph.D. candidate in the Probabilistic Systems, Information, and Inference Group (ψ2) at the University of Cambridge. He holds an M.Eng. in Information and Computer Engineering from the University of Cambridge. His research focuses on statistical signal processing and machine learning methods in the context of audio and music processing, including high-resolution time–frequency analysis, music tran-scription, beat tracking, and signal decomposition. Additional interests involve multi-object tracking and deep learning-based hierarchical generative models for music visualisation and composition. His work has been featured in leading IEEE publications and presented at top-tier international conferences. 
+
+Simon J. Godsill (FIEEE) received the under-graduate and Ph.D. degrees from the University of Cambridge, Cambridge, U.K., while being amember of Selwyn College, Cambridge, in 1988 and 1994, respectively. He is currently Professor of Statistical Signal Processing and Head of In-formation Engineering at the Department of En-gineering, Cambridge University, Cambridge, U.K. He is also a Professorial Fellow at Corpus Christi College Cambridge, Cambridge. He coordinates an active research group in Statistical Signal Inference (SSigInf) and its applications within the Probabilistic Systems, Informa-tion, and Inference Group ( ψ2), University of Cambridge, specialising in Bayesian computational methodology, multiple object tracking, audio and music processing, and time series modelling. A particular methodological theme over many years has been the development of novel techniques for optimal Bayesian filtering and smoothing, using sequential Monte Carlo or particle filtering methods. He has authored extensively in journals, books, and international conference proceedings, and regularly delivers invited and plenary addresses at conferences. 14 
+
+SUPPLEMENTARY MATERIAL 
+
+A. Harmonic ITFR properties 
+
+Note that the following relationship holds between Eq. (13) and Eq. (12): 
+
+ITFR s{zH }(s, t )=
+
+> P
+
+X
+
+> p=1
+> NH,p
+
+X
+
+> nh=1
+
+1τp (t)Ah(nh, p, t )Ap(t)δ (s−sp(t)−s(nh)) (45) 
+
+=
+
+> P
+
+X
+
+> p=1
+
+Z
+
+> R
+
+ITFR H,s {zH, p (t)} s−s′, t  Hp
+
+ s′, t  ds ′ (46) 
+
+=
+
+> P
+
+X
+
+> p=1
+
+[ITFR H,s {zH, p (t)} ∗ s Hp] ( s, t ) , (47) 
+
+where ∗s denotes convolution with respect to s, s(nh) =12 log 2nh, and: 
+
+Hp (s, t ) = 
+
+> NH,p
+
+X
+
+> nh=1
+
+Ah(nh, p, t )δ (s − s(nh)) , (48) 
+
+where Eq. (48) is the inhomogeneous (T–F varying) Harmonic distribution. Thus, crucially, by reformulating the Harmonic ITFR and the ITFR in the logarithmic domain, the relationship becomes convolutional, given that the relative positions of the harmonics become T–F invariant as observed in Eq.(45). If we now let z ¯H (t) be a multi-component harmonic complex signal with a T–F invariant (homogeneous) linearly distributed harmonic distribution: 
+
+z ¯H (t) = 
+
+> P
+
+X
+
+> p=1
+> Nh
+
+X
+
+> nh=1
+
+1τp (t) Ah(nh)Ap(t) exp( j[ϕp,n h,1 +nh ·ϕp (t)]) .
+
+(49) 
+
+where Ah(nh) is the relative amplitude of the nhth ( 1 ≤
+
+nh ≤ Nh) harmonic ( P 
+
+> nh
+
+Ah(nh) = 1 ). As before, a suitable definition for this linear ω domain Homogeneous Harmonic ITFR, ITFR ¯H,ω , for signal z ¯H (t) is: 
+
+ITFR ¯H,ω {z ¯H } (ω, t ) = 
+
+> P
+
+X
+
+> p=1
+
+1τp (t) Ap(t)δ (ω − ωp(t)) . (50) 
+
+Note that the linear ω domain ITFR, ITFR ω (Eq. (5)), for signal z ¯H (t) would likewise be defined as: 
+
+ITFR ω {z ¯H }(ω, t ) = 
+
+> P
+
+X
+
+> p=1
+> Nh
+
+X
+
+> nh=1
+
+1τp (t)Ah(nh)Ap(t)δ(nh(ω−ωp(t))) .
+
+(51) 
+
+Expressing the ITFR for this homogeneous harmonic model in the semitonal domain, ITFR s, using the same change of coordinate system ω 7 → s derived in Eq. (7) provides: 
+
+ITFR s{z ¯H }(s, t ) = 
+
+> P
+
+X
+
+> p=1
+> NH
+
+X
+
+> nh=1
+
+1τp (t)Ah(nh)Ap(t)δ (s−sp(t)−s(nh)) 
+
+(52) 
+
+=
+
+Z
+
+> R
+
+ITFR ¯H,s {z ¯H (t)} s−s′, t  ¯H s′ ds ′
+
+(53) 
+
+= ITFR ¯H,s {z ¯H (t)} ∗ s ¯H (s, t ) , (54) 
+
+with: 
+
+ITFR ¯H,s {z ¯H } =
+
+> P
+
+X
+
+> p=1
+
+1τp (t) Ap(t)δ (s − sp(t)) (55) 
+
+¯H (s) = 
+
+> Nh
+
+X
+
+> nh=1
+
+Ah(nh)δ (s − s(nh)) , (56) 
+
+where Eq. (55) is the Homogenous Harmonic ITFR, and Eq. (56) is the Homogeneous Harmonic distribution. Thus, in the homogeneous case, the Harmonic ITFR can be expressed as a single convolution between the ITFR and a Harmonic distribution (Eq. (56)). 
+
+B. Derivation of the Metrogram ITFR for an idealised Metric extract 
+
+To simulate a simple music extract transitioning from 3/4 to 4/4, let the idealised input signal, zM (t), be a chain of regularly repeating block chords (time invariant amplitudes) corresponding to both upbeats and downbeats such that: 
+
+zM (t) = 
+
+> ∞
+
+X
+
+> n=1
+
+zbeat 
+
+ t − ϕ−1
+
+> beat
+
+(n)+
+
+> ∞
+
+X
+
+> m=1
+
+zbar 
+
+ t − ϕ−1 
+
+> bar
+
+(m) , (57) 
+
+where zbeat (t) and zbar (t) are derived from zH (t) in Eq. (9) with 1τp = 1beat and 1τp = 1bar , Ah(nh, p, t ) =
+
+Ah,beat (nh, p ) and Ah(nh, p, t ) = Ah,beat (nh, p ), P = Pbeat 
+
+and P = Pbar , and Ap(t) = Ap,beat and Ap(t) = Ap,bar 
+
+respectively. Note that τbeat = [0 , T beat ] and τbar = [0 , T bar ]
+
+for the indicator function. Likewise, ϕ−1
+
+> beat
+
+(x) and ϕ−1 
+
+> bar
+
+(x) are the inverse functions for the beat and downbeat phase, such that: 
+
+ϕbeat (t) = ϕbeat, 0 +
+
+Z t
+
+> 0
+
+ωbeat (τ ) dτ, (58) 
+
+ϕbar (t) = ϕbeat, 0
+
+k(0) +
+
+Z t
+
+> 0
+
+ωbeat (τ )
+
+k(τ ) dτ, (59) 
+
+where ϕbeat, 0 is the initial phase at t = 0 , ωbeat (t) is the time-varying beat tempo (with ωbeat (t) = ωbar (t)·k(t)), and k(t) is the time-dependent time signature (metric) denominator. For the simple case of a transition from N3/4 bars of 3/4 (so 3 ×
+
+N3/4 beats) to N4/4 bars of 4/4, k(t) can be defined as such: 
+
+k(t) = 
+
+(
+
+3 0 ≤ t ≤ ϕ−1
+
+> beat
+
+(3 · N3/4)4 t > ϕ −1
+
+> beat
+
+(3 · N4/4) . (60) 
+
+Thus: 
+
+fonset {zM } (t) (61) 
+
+=
+
+ ∂∂t 
+
+Z
+
+> R
+
+ITFR H,s {zM }(s, t ) ds 
+
+
+
+> +
+
+(62) 
+
+=
+
+ ∂∂t 
+
+Z ∞
+
+> 0
+
+ITFR H,ω {zM }(ω, t ) dω 
+
+
+
+> +
+
+(63) 
+
+= ∂∂t 
+
+> ∞
+
+X
+
+> n=1
+
+1beat 
+
+ t − ϕ−1
+
+> beat
+
+(n) Pbeat X
+
+> p=1
+
+Ap,beat 
+
+!
+
+(64) 
+
++
+
+> ∞
+
+X
+
+> m=1
+
+1bar 
+
+ t − ϕ−1 
+
+> bar
+
+(m) Pbar X
+
+> p=1
+
+Ap,bar 
+
+!! 
+
+> +
+
+. (65) 
+
+Let Abeat = PPbeat  
+
+> p=1
+
+Ap,beat and Abar = PPbar  
+
+> p=1
+
+Ap,bar .Thus: 15 27.5 110 440 1.8k    
+
+> Frequency (Hz)
+> 0123
+
+Time (s)    
+
+> 27.5 110 440 1.8k
+> Frequency (Hz)
+> 0123
+
+Time (s)    
+
+> 0123
+
+Time (s)    
+
+> 0123
+
+Time (s)    
+
+> 0123
+
+Time (s)    
+
+> 0123
+
+Time (s)           
+
+> (a) Observed 1 (b) Observed 3 (c) Observed 5 (d) Observed 7 (e) Observed 9 (f) ITFR (g) Observed 2 (h) Observed 4 (i) Observed 6 (j) Observed 8 (k) Observed 10 (l) Harmonic ITFR
+
+Fig. 8. Example procedurally generated input data point, comprising a randomly generated tonal ITFR target in Panel (f), the corresponding harmonic ITFR target in Panel (l), and selected members of the input CLAWT constellation (members 1-10). The heatmap depth is −90 dB .
+
+fonset {zM } (t)=
+
+> ∞
+
+X
+
+> n=1
+
+Abeat δ t − ϕ−1
+
+> beat
+
+(n) +
+
+> ∞
+
+X
+
+> m=1
+
+Abar δ t − ϕ−1 
+
+> bar
+
+(m) . (66) 
+
+Therefore, the Fundamental Tempogram ITFR (Eq. (29)) can be derived: 
+
+TF,λ {zM }(λ, t ) = ITFR H,s {fonset {zM } (t)} (λ, t )= Abeat δ(λ − λbeat (t)) + Abar δ(λ − λbar (t)) ,
+
+(67) 
+
+where λbeat (t) = ω−1 
+
+> s
+
+(ωbeat (t)) and λbar (t) = ω−1 
+
+> s
+
+(ωbar (t)) ,and ω−1 
+
+> s
+
+(ω), the inverse function of Eq. (6). Note that 
+
+ωbeat (t) = ωbar (t) · k(t), thus: 
+
+λbeat (t) = 12 log 2(ωbar (t) · k(t)) (68) 
+
+= λbar (t) + 12 log 2 k(t), (69) 
+
+and: 
+
+TF,λ {zM }(λ, t ) = Abeat δ(λ − λbar (t) − 12 log 2 k(t)) (70) 
+
++ Abar δ(λ − λbar (t)) . (71) 
+
+Therefore, the Metrogram ITFR can be derived (Eq. (33)): 
+
+M(k, t ) = 
+
+Z
+
+> R
+
+TF,λ (λ, t ) TF,λ (λ + 12 log 2 k, t ) dλ (72) 
+
+= 2 Abeat Abar δ (k − k(t)) (73) 
+
+∝
+
+(
+
+δ (k − 3) 0 ≤ t ≤ ϕ−1
+
+> beat
+
+(3 · N3/4)
+
+δ (k − 4) t > ϕ −1
+
+> beat
+
+(3 · N4/4) , (74) 
+
+as desired. 
+
+C. Derivation of the proposed Cohen’s class kernel 
+
+Let Φ( ω, t ) be a Continuous Wavelet Transform (CWT) [58] with a complex-valued window function, such that: 
+
+Φσ,θ (ω, t ) = z(t) ∗ Wω (t) 2
+
+, (75) 
+
+where Wω (t) is the CWT wavelet function for angular fre-quency ω. Thus: 
+
+Φ( ω, t ) =  z(t) ∗ Wω (t)  z(t) ∗ Wω (t)∗
+
+=
+
+Z
+
+> R2
+
+z(t1) z∗(t2) Wω (t − t1) W ∗ 
+
+> ω
+
+(t − t2) dt 1 dt 2. (76) 
+
+Substituting the average time T = ( t1 + t2)/2 and the time-lag τ = t1 − t2, the Jacobian is 
+
+J =
+
+> ∂τ ∂t 1
+> ∂τ ∂t 2
+> ∂T ∂t 1
+> ∂T ∂t 2
+
+= 1 −1
+
+> 1212
+
+= 1 . (77) 
+
+Thus: 
+
+Φσ,θ (ω, t ) = 
+
+Z Z 
+
+z T + τ
+
+> 2
+
+ z∗ T − τ
+
+> 2
+
+ Wω
+
+ t − (T + τ 
+
+> 2
+
+)
+
+· W ∗
+
+> ω
+
+ t − (T − τ 
+
+> 2
+
+) dτ dT 
+
+=
+
+Z Z 
+
+Rz (T, τ ) RW ∗ 
+
+> ω
+
+(t − T, τ ) dτ dT, (78) 
+
+where the instantaneous correlation functions are: 
+
+Rz (t, τ ) = z t + τ
+
+> 2
+
+ z∗ t − τ
+
+> 2
+
+ , (79) 
+
+RW ∗ 
+
+> ω
+
+(t, τ ) = W ∗
+
+> ω
+
+ t + τ
+
+> 2
+
+ Wω
+
+ t − τ
+
+> 2
+
+ . (80) 
+
+Note that: 
+
+W V D z (ω, t ) = 1
+
+√2π F{ Rz (t, τ )} , (81) 
+
+W V D Wω (ω, t ) = 1
+
+√2π F{ RWω (t, τ )} , (82) 
+
+so that: 
+
+Rz (t, τ ) = 
+
+Z
+
+> R
+
+W V D z (ω, t ) ejωτ dω, (83) 
+
+RW ∗ 
+
+> ω
+
+(t, τ ) = 
+
+Z
+
+> R
+
+W V D W ∗ 
+
+> ω
+
+(ω, t ) ejωτ dω. (84) 16 
+
+σI AOK Choi–Williams RIFT Reassignment S-Method SET SST Spline-PHAST-Net 0 0.000 0.166 0.590 0.657 0.110 0.572 0.482 1.000 
+
+0.5 0.000 0.189 0.682 0.704 0.144 0.681 0.539 1.000 
+
+1 0.000 0.207 0.775 0.754 0.196 0.759 0.611 1.000 
+
+1.5 0.000 0.211 0.824 0.781 0.245 0.788 0.660 1.000 
+
+2 0.000 0.202 0.850 0.798 0.289 0.802 0.696 1.000 
+
+2.5 0.000 0.185 0.864 0.808 0.328 0.808 0.721 1.000 
+
+3 0.000 0.161 0.871 0.814 0.362 0.810 0.739 1.000 
+
+TABLE II RANKING STABILITY ACROSS σI . F OR EACH σI , METRICS ARE AVERAGED OVER NOISE REALISATIONS WITHIN EACH SNR AND THEN EQUALLY AVERAGED ACROSS SNR S. E ACH METRIC IS MIN –MAX NORMALISED ACROSS METHODS , WITH JENSEN –S HANNON DIVERGENCE INVERTED SINCE LOWER IS BETTER ; THE THREE NORMALISED METRICS ARE THEN AVERAGED . B OLD INDICATES THE BEST METHOD PER σI .
+
+Thus: 
+
+Φ( ω, t ) = 
+
+Z
+
+> R4
+
+ejω 1τ W V D z (ω1, T ) ejω 2τ
+
+· W V D W ∗ 
+
+> ω
+
+(ω2, t − T ) dτ dT dω 1 dω 2
+
+=
+
+Z
+
+> R3
+
+W V D z (ω1, T ) W V D W ∗ 
+
+> ω
+
+(ω2, t − T )
+
+·
+
+Z 
+
+> R
+
+ejτ (ω1+ω2) dτ 
+
+
+
+dT dω 1 dω 2. (85) 
+
+Note that: 
+
+Z
+
+ejτ (ω1+ω2) dτ = 2 π δ (ω1 + ω2) . (86) 
+
+Hence: 
+
+Φ( ω, t ) = 2 π
+
+Z
+
+> R3
+
+W V D z (ω1, T ) W V D W ∗ 
+
+> ω
+
+(ω2, t − T )
+
+· δ(ω1 + ω2) dT dω 1 dω 2
+
+= 2 π
+
+Z
+
+> R2
+
+W V D z (ω1, T ) W V D W ∗ 
+
+> ω
+
+(−ω1, t − T ) dT dω 1
+
+Note that W V D F (ω, t ) = W V D F ∗ (−ω, t ), thus: 
+
+= 2 π
+
+Z
+
+> R2
+
+W V D z (ω1, T ) W V D Wω (ω1, t − T ) dT dω 1
+
+(87) 
+
+Thus, the process is equivalent to a convolution only in the time domain. Now let the proposed window function, Wω (t), be newly defined as W (s) 
+
+> σ,θ
+
+(t) ≜ A(t)ejϕ (t), parameterised by (σ, θ ), such that: 
+
+A(t) = e−t2/(2 σ2 
+
+> s)
+> 4
+
+√πσ 2
+
+> s
+
+, ϕ (t) = 2πf 0 2s/ 12 
+
+γ
+
+ eγt −1, s = ω−1 
+
+> s
+
+(ω), (88) 
+
+where γ and σs are defined in Eq. (19). Thus, the WVD is: 
+
+W V D W (s)
+
+> σ,θ
+
+(ω, t ) = 12π
+
+Z
+
+> R
+
+A
+
+
+
+t + τ
+
+2
+
+
+
+A
+
+
+
+t − τ
+
+2
+
+
+
+· exp [ j (ϕ(t + τ / 2) − ϕ(t − τ / 2))] e−jωτ dτ. 
+
+(89) 
+
+where: 
+
+A
+
+
+
+t + τ
+
+2
+
+
+
+A
+
+
+
+t − τ
+
+2
+
+
+
+= 1
+
+√πσ s
+
+exp 
+
+
+
+− t2
+
+σ2
+
+> s
+
+− τ 2
+
+4σ2
+
+> s
+
+
+
+,
+
+and: 
+
+ϕ
+
+
+
+t + τ
+
+2
+
+
+
+− ϕ
+
+
+
+t − τ
+
+2
+
+
+
+= ω0
+
+γ
+
+ eγ(t+ τ 
+
+> 2
+
+) − 1 − ω0
+
+γ
+
+ eγ(t− τ 
+
+> 2
+
+) − 1
+
+= 2 ω0
+
+γ eγ
+
+"
+
+e γτ  
+
+> 2
+
+− e− γτ 
+
+> 2
+
+2
+
+#
+
+= ω0
+
+γ eγt 2 sinh 
+
+ γτ 
+
+> 2
+
+
+
+where ω0 = 2 πf 0 2s0/12 . Thus: 
+
+W V D W (s)
+
+> σ,θ
+
+(ω, t )= 12πe−t2/σ 2
+
+> s
+
+√πσ s
+
+Z
+
+> R
+
+exp 
+
+
+
+− τ 2
+
+4σ2
+
+> s
+
+− jωτ + j ω0
+
+γ eγt 2 sinh 
+
+ γτ 
+
+> 2
+
+
+
+dτ 
+
+(90) 
+
+Substituting Eq. (90) into Eq. (87), with Φ( ·) newly param-eterised by (σ, θ ), as denoted by Φσ,θ (·):
+
+Φσ,θ (ω, t ) = 2 π
+
+Z
+
+> R2
+
+W V D z (ω1, T ) W V D W (s)
+
+> σ,θ
+
+(ω1, t − T ) dT dω 1
+
+(91) 
+
+Thus, taking the coordinate transformation (ω, t ) 7 → (s, t ):
+
+Φσ,θ (s, t )= 2 π
+
+Z
+
+> R2
+
+W V D z
+
+ ωs(s′), T  W V D W (s)
+
+> σ,θ
+
+ ωs(s′), t − T  dT dω 1
+
+× 13 2πf 0 ln 2 · 2 s′  
+
+> 12 −2
+
+dT ds ′ (92) 
+
+= 2 π
+
+Z
+
+> R2
+
+W V D z
+
+ ωs(s′), T  ¯Π(s) 
+
+> σ,θ
+
+(s − s′, t − T ) dT ds, (93) 
+
+where ¯Π(s) 
+
+> σ,θ
+
+(s, t ) is the Cohen’s class kernel in the log-frequency domain such that: 
+
+¯Π(s) 
+
+> σ,θ
+
+(υ, τ ) = f0 ln 2 · 2 s−υ 
+
+> 12
+
+e−τ 2/σ 2
+
+> s
+
+12 √πσ s
+
+·
+
+Z
+
+> R
+
+exp 
+
+
+
+− ξ2
+
+4σ2
+
+> s
+
+− jω s(s − υ)ξ + j ωs(s)
+
+γ eγτ 2 sinh   γξ 
+
+> 2
+
+
+
+dξ, 
+
+(94) 
+
+and, for convenience, υ ≜ s − s′, τ ≜ t − T , and σs =
+
+σ/ √ks, as defined in Eq. (19). To understand the behaviour of the kernel, ¯Π(s) 
+
+> σ,θ
+
+(υ, τ ), a first-order approximation of the wavelet can be found. Firstly, note that ωs(s) 
+
+> γ
+
+eγτ 2 sinh 
+
+ γξ 
+
+> 2
+
+
+
+≈
+
+ωs(s)eγτ ξ = ωinst (τ ) ξ, ; the approximation sinh u ≈ u
+
+is valid for |γτ | ≲ 0.6, which is typically the case for audio-range windows. Thus: 17 
+
+¯Π(s) 
+
+> σ,θ
+
+(υ, τ ) ≈ f0 ln 2 · 2 s−υ 
+
+> 12
+
+e−τ 2/σ 2
+
+> s
+
+12 √πσ s
+
+·
+
+Z
+
+> R
+
+exp 
+
+
+
+− ξ2
+
+4σ2
+
+> s
+
+− jξ (ωs(s − υ) − ωinst (τ )) 
+
+
+
+dξ (95) 
+
+= f0 ln 2 · 2 s−υ
+
+> 12
+
+6 exp 
+
+
+
+− τ 2
+
+σ2
+
+> s
+
+− σs (ωs(s − υ) − ωinst (τ )) 2
+
+
+
+(96) 
+
+Note also that: 
+
+ωs(s − υ) = 2 πf 0 2(s−υ)/12 , (97) 
+
+ωinst (τ ) = 2 πf 0 2 tan θ    
+
+> 12 τ+s
+> 12
+
+, (98) 
+
+ωs(s − υ) − ωinst (τ ) = 2 πf 0 2s/ 12  2−υ/ 12 − 2 tan θ  
+
+> 12 τ
+
+ (99) 
+
+≈ − 2πf 0 2s/ 12 
+
+ ln 2 12 
+
+  υ + τ · tan θ.
+
+(100) 
+
+In general form: 
+
+¯Π(s) 
+
+> σ,θ
+
+(υ, τ )
+
+≈ f0 ln 2 6 exp 
+
+
+
+ln 2 · s − υ
+
+12 − τ 2
+
+σ2
+
+> s
+
+− σ2 
+
+> s
+
+ks (υ + τ · tan θ)2
+
+
+
+Given that σs = σ/ √ks as per Eq. (19): 
+
+¯Π(s) 
+
+> σ,θ
+
+(υ, τ )= f0 ln 2 6 · exp 
+
+
+
+ln 2 · s − υ
+
+12 − ks
+
+ t2
+
+σ2 + σ2 υ + τ · tan θ 2
+
+ 
+
+(101) 
+
+Thus, letting ˆΠ(s) 
+
+> σ,θ
+
+(υ, τ ) be the first-order approximation of 
+
+¯Π(s) 
+
+> σ,θ
+
+(υ, τ ), for small s − υ:
+
+ˆΠ(s) 
+
+> σ,θ
+
+(υ, τ ) = f0 ln 2 6 · exp 
+
+
+
+−ks
+
+ t2
+
+σ2 + σ2 υ + τ · tan θ 2
+
+ 
+
+.
+
+(102) 
+
+D. Complex waveform equation 
+
+x2(t) = 
+
+> 7
+
+X
+
+> i=1
+
+sin 
+
+
+
+2π
+
+Z t
+
+> 0
+
+gi(τ ) dτ 
+
+
+
+, 0 ≤ t ≤ T, T = 154623 44100 s,g1,2(t) = a1,2 + 75 t/T + 75 sin(2 πt ), a1,2 = (127 .5, 97 .5) ,g3(t) = 225 + 75 t/T, g4(t) = 15 + 60 t/T, g5,6(t) = 600 ± 300 sin(2 πt ), g7(t) = 300 + 600 t/T. 
+
+(103)
