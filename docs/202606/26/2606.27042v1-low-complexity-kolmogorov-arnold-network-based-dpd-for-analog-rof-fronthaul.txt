@@ -1,0 +1,408 @@
+Title: Low Complexity Kolmogorov-Arnold Network-based DPD for Analog RoF Fronthaul
+
+URL Source: https://arxiv.org/pdf/2606.27042v1
+
+Published Time: Fri, 26 Jun 2026 01:17:56 GMT
+
+Number of Pages: 9
+
+Markdown Content:
+> JOURNAL OF LIGHTWAVE TECHNOLOGY, VOL. XX, NO. X, FEBRUARY 2026 1
+
+# Low Complexity Kolmogorov-Arnold Network-based DPD for Analog RoF Fronthaul 
+
+Carlos Daniel Fontes da Silva, Tianyu Jiang, Lu Zhang, Vjaceslavs Bobrovs, Xianbin Yu, Xiaodan Pang, Oskars Ozolins, Edson Porto da Silva, Senior Member, IEEE ,
+
+Abstract —This paper proposes and demonstrates experi-mentally for the first time a Kolmogorov–Arnold Network (KAN)–based digital predistortion (DPD) model, named envelope time-delay KAN (ETDKAN), for mitigating nonlinear distor-tions in analog radio-over-fiber (A-RoF) systems. The ETDKAN model incorporates physical constraints of radio-frequency (RF) nonlinear devices and, through KAN symbolization, achieves a significant reduction in computational complexity while im-proving interpretability. The proposed model is numerically implemented and optimized alongside multilayer perceptron (MLP) and memory-polynomial-based DPDs. Results show that the resulting symbolic ETDKAN (symbETDKAN) attains ACLR and EVM performance comparable to neural network-based models, while maintaining a computational complexity close to that of memory polynomials. Experimental validation using an A-RoF system confirms the practical feasibility of the proposed approach, which resulted in a 4–5 dB reduction in ACLR in the analyzed scenario. 
+
+Index Terms —Kolmogorov-Arnold Network, Analog Radio over Fiber (A-RoF), Digital Predistortion. 
+
+I. I NTRODUCTION 
+
+# THE forthcoming generation of mobile wireless com-munication systems (6G) is expected to comply with formidable requirements for both high data rates and seamless connectivity [1]. Expanding the capacity in the physical layer of 6G networks will require the use of higher frequency bands, such as Terahertz (THz) and millimeter Wave (mmW) spectra, along with the development of solutions to overcome numerous challenges inherent to communication across these frequency bands. A major obstacle is the increased levels of attenuation that wireless signals within these bands experience when propagating over the atmosphere [2]. High levels of attenuation reduce transmission reach, thus impacting in the coverage of mobile access networks. One potential solution for extending broadband radio sig-nals’ reach involves using analog Radio-over-Fiber (A-RoF) 
+
+Carlos Daniel Fontes da Silva and Edson Porto da Silva are with the Department of Electrical Engineering, Federal University of Campina Grande (UFCG), Campina Grande, PB, 58429-900, Brazil. (e-mails: car-los.fontes@ee.ufcg.edu.br, edson.silva@dee.ufcg.edu.br) Tianyu Jiang is with the Department of Applied Physics, KTH Royal Institute of Technology, 106 91 Stockholm, Sweden (e-mail: tianyuj@kth.se). Lu Zhang and Xianbin Yu are with College of Information Science and Electronic Engineering, Zhejiang University, Hangzhou, China (e-mails: zhanglu1993@zju.edu.cn, xyu@zju.edu.cn). Xiaodan Pang is with Institute of Telecommunications, Riga Technical University, 1048 Riga, Latvia, and College of Information Science and Electronic Engineering, Zhejiang University, Hangzhou, China (e-mail: xi-aodan.pang@ieee.org). Vjaceslavs Bobrovs and Oskars Ozolins are with the Institute of Telecommunications, Riga Technical University, 1048 Riga, Latvia (e-mail: vjaceslavs.bobrovs@rtu.lv, oskars.ozolins@rtu.lv) Manuscript received February 26, 2026; revised . 
+
+systems [3]. A-RoF leverages the high bandwidth and low attenuation of optical fibers to transport broadband wireless signals across significantly greater distances effectively. This is achieved by modulating the amplitude of an optical carrier with the wireless signal, transmitting the resulting modulated carrier over the fiber link, and converting the signal from the optical domain back to the electrical domain through envelope detection (i.e., direct detection). Following detection, a remote antenna can re-transmit the wireless signal to its intended destination. However, signals propagating through A-RoF links are subject to impairments that may compromise the quality of transmission (QoT). These impairments may stem from either linear or nonlinear phenomena. In the optical domain, the nonlinear characteristics of electro-optic modulators, such as Mach-Zhender modulators (MZMs), contribute to signal distortion during the optical modulation process. Additionally, linear dispersive effects and nonlinear Kerr effects within the fiber channel can influence the envelope of the optical carrier, with their impact dependent on factors such as the propagation distance and the power sent into the fiber. In the electrical domain, several hardware impairments can also degrade signal quality. These include component bandwidth limitations, in-phase/quadrature (IQ) imbalances, and, notably, the nonlinear behavior of power amplifiers (PAs) employed to boost the power of the radio signals. Nonlinear distortions are of critical importance, as they are directly dependent on the power level of the signals, which plays a central role in trade-offs of power efficiency and QoT. Usually, the power efficiency of PAs is maximized when they operate in the so-called saturation regime, where the nonlinear effects of the amplification process are enhanced. Moreover, the optical power at the output of optical modulators depends on the power of the modulating signal. Thus, the signal-to-noise ratio (SNR) at the end of the A-RoF link depends on the power level of the modulating signal at the optical modulator. Digital predistortion (DPD) is an effective strategy to miti-gate performance degradation caused by nonlinearities within the A-RoF link, particularly the distortions induced by the op-eration of the MZM and the PA. DPD techniques involve two basic steps: estimating the inverse of the channel’s input-to-output nonlinear response, and applying this inverse response to the input signal before transmission through the A-RoF channel, which linearizes the overall system response, mini-mizing performance degradation due to channel nonlinearities. In PA linearization for wireless systems, models derived from Volterra series, such as the memory polynomials (MP), are well-established in literature [4].   
+
+> arXiv:2606.27042v1 [eess.SP] 25 Jun 2026 JOURNAL OF LIGHTWAVE TECHNOLOGY, VOL. XX, NO. X, FEBRUARY 2026 2
+
+Recently, due to their ability to approximate intricate input-output nonlinear multidimensional mappings, neural networks (NNs) have been explored in the literature as potential candi-dates to implement nonlinear predistortion to linearize A-RoF links. These networks can learn the inverse nonlinear response of the A-RoF channel via supervised learning, effectively cap-turing intricate patterns and distortions introduced by nonlinear components such as PAs and MZMs. Once trained, the NN can be utilized to implement DPD with the objective of linearizing the channel and enhancing transmission performance. Several authors have discussed NN-based linearization of PAs. In [5], an augmented real-valued time-delay neural network (ARVTDNN) is proposed to address nonlinear dis-tortions in wideband direct-conversion transmitters. Unlike the real-valued time-delay neural network (RVTDNN), which only uses the IQ components of the baseband signal as input features, the ARVTDNN model includes additional envelope-dependent terms. This approach provides the neural net-work with extra input features, improving nonlinear distortion modeling and DPD capabilities. Simulations and experiments demonstrate that the ARVTDNN outperforms the RVTDNN, offering reduced complexity and improved numerical stability. In [6], the envelope time-delay neural network model (ETDNN) is proposed. It incorporates as input elements the time-delayed signal amplitudes and combines the network output with the complex inputs, forming a model that satisfies the parity constraints of PA modeling [7]. When comparing the performance of the DPD based on this model, in terms of transmission metrics and computational complexity, with the ARVTDNN and RVTDNN models in compensating for a PA’s nonlinearities, the ETDNN outperformed them in both aspects in the analysed scenario. In [8], a neural network model based on the Kol-mogorov–Arnold Representation Theorem is presented. Kol-mogorov–Arnold networks (KAN) differ from Multilayer Per-ceptron (MLP) networks in that they use parameterizable activation functions, which are optimized during the training stage instead of the weights and biases. This model has been investigated as a promising alternative, especially due to its superior interpretability compared to MLPs, allowing for a symbolic representation that can simplify its application. The use of KAN as a DPD model is still little explored; however, [9] proposed the real-valued time-delay KAN (RVTDKAN) model, with a principle similar to that of the RVTDNN, which was successfully applied to compensate for the nonlinearities of a PA. In this work, we propose and experimentally demonstrate a DPD model based on KAN networks for linearization of A-RoF links including the non-linearities from PA and MZM. The proposed model is named envelope time-delay KAN (ETDKAN), and can be a good candidate for DPD especially due to the symbolization process which can reduce the computational complexity of the model in comparison to other NN-based DPD models. The remaining of the paper is divided as follows: in Sec-tion II, the KAN is introduced and the ETDKAN for DPD is presented in details; in Section III, a detailed description of the A-RoF communication model considered in this work is provided; in Section IV, the numerical results obtained are dis-cussed; in Section V, an experimental validation is presented to demonstrate practical feasibility and to confirm consistency with the simulated trends, leading to the conclusions. II. K OLMOROGOROV -A RNOLD NETWORKS 
+
+KAN networks are based on the Kolmogorov–Arnold Rep-resentation Theorem, which states that a multivariable function 
+
+f (x1, · · · , x n) can be represented as a composition of univari-ate functions as follows [8]: 
+
+f (x1, · · · , x n) = 
+
+> 2n+1
+
+X
+
+> q=1
+
+Φq
+
+> n
+
+X
+
+> p=1
+
+ϕq,p (xp)
+
+!
+
+(1) For n = 2 , (1) can be represented by a diagram such as in Fig. 1, similar to a MLP network with one hidden layer, but instead of neurons, the nodes in each layer are adders that take as input the output of the activation functions. The principle of KAN networks consists in generalizing (1), assuming that more layers can be included and that the number of nodes per layer is a free parameter.     
+
+> Fig. 1. KAN diagram of a network representing a function f(x1, x 2)as composition of univariate functions.
+
+Therefore, consider a KAN network with L+1 layers, where each layer has nl nodes and activation functions ϕ(l) 
+
+> i,j
+
+, 1 ≤ i ≤
+
+nl+1 , 1 ≤ j ≤ nl, 0 ≤ l ≤ L. The relationship between the vectors of two consecutive layers is given by: 
+
+x(l) =
+
+
+
+> nl−1
+
+X
+
+> j=1
+
+ϕ(l−1) 1,j 
+
+
+
+x(l−1) 
+
+> j
+
+
+
+> nl−1
+
+X
+
+> j=1
+
+ϕ(l−1) 2,j 
+
+
+
+x(l−1) 
+
+> j
+
+
+
+...
+
+> nl−1
+
+X
+
+> j=1
+
+ϕ(l−1) 
+
+> nl,j
+
+
+
+x(l−1) 
+
+> j
+
+
+
+(2) As in MLP networks, training KAN networks consists of determining a set of parameters that minimize an objective function, and in the case of KAN networks, these parameters are associated with the activation functions. In [8], each activation function ϕ(x) is represented as the sum of a fixed nonlinear function b(x) (in this case, b(x) = SiLU (x)) and a JOURNAL OF LIGHTWAVE TECHNOLOGY, VOL. XX, NO. X, FEBRUARY 2026 3
+
+B-spline Sk(x) of degree k, weighted by the coefficients wb
+
+and ws.
+
+ϕ(x) = wbb(x) + wsSk(x) (3) B-splines are parametric functions obtained from the combi-nation of basis functions Bi,k (x) weighted by P control points 
+
+ci, as presented in (4). 
+
+Sk(x) = X
+
+> i
+
+ciBi,k (x) (4) Each basis function Bi,k (x) is represented by polynomials of degree k defined on subintervals established by a knot vector T = [ t0, t 1, · · · , t m], where t0 ≤ t1 ≤ · · · ≤ tm,with m = P + k. The expressions for Bi,k (x) can be derived using the recursive Cox-de Boor algorithm: 
+
+Bi, 0(x) = 
+
+(
+
+1 , se ti ≤ x ≤ ti+1 
+
+0 , c.c. (5) 
+
+Bi,k (x) = x − ti
+
+ti+k − ti
+
+Bi,k −1(x) + ti+k+1 − xti+k+1 − ti+1 
+
+Bi+1 ,k −1(x)
+
+(6) 
+
+A. ETDKAN 
+
+The proposed ETDKAN model consists of an adaptation of the ETDNN [6] in which the MLP is replaced by a KAN with M inputs and M outputs, and a hidden layer of size N .The input to the KAN network consists of a sequence of M
+
+delays of the magnitude of the input signal x[n], and y[n] is a linear combination of x[n] with the output of the internal KAN network, as illustrated in Fig. 2. 
+
+> Fig. 2. Diagram of proposed DPD based on envelope time-delay Kolmogorov--Arnold network.
+
+y[n] = 
+
+> M
+
+X
+
+> m=0
+
+
+
+> N
+
+X
+
+> i=1
+
+ϕ(1) 
+
+> m+1 ,i
+
+
+
+> M
+
+X
+
+> j=0
+
+ϕ(0) 
+
+> i,j +1
+
+  x[n − j]  x[n−m]
+
+(7) From (7), it can be seen that the output y[n] is an odd function of the input x[n], a condition that is necessary for satisfying the physical constraints of PA modeling and its inverse response [7]. This condition is not necessarily satisfied by ARVTDNN and RVTDNN models, which may result in performance losses, as suggested in [6]. 
+
+B. Symbolic KAN 
+
+During the training of the KAN network, the optimizable parameters in each activation function are the weights ws and 
+
+wb, and the B-splines’ control points. Once the models are trained, they can be pruned, and the activation functions can then be approximated by analytical functions using symbolic regression, which can reduce the computational cost of the model. This process is proposed by [8], and it is illustrated in Figure 3. In the symbolic model, an activation function ϕ(x) is approximated by an expression of the form ˆϕ(x) = cf (ax +
+
+b) + d, where a, b, c, and d are the affine parameters, and f (·)
+
+an analytical function. Initially, the values c = 1 and d = 0 
+
+are fixed, and through a grid search, the values of a and b that maximize the coefficient of determination r2 ϕ(x); f (ax +b),defined in (8), are selected. 
+
+r2(α; β) = 
+
+X
+
+> i
+
+
+
+α(xi) − α(xi)
+
+  
+
+β(xi) − β(xi)
+
+!2
+
+X
+
+> i
+
+
+
+α(xi) − α(xi)
+
+2 X
+
+> i
+
+
+
+β(xi) − β(xi)
+
+2
+
+(8) Once the parameters a and b are defined, c and d are computed via linear regression. This process must be repeated for a set of candidate functions F = {f1, f 2, · · · , f i, · · · } ,so that the selected function is the one with the highest r2.After symbolizing all activation functions in the network, the training can proceed to ensure greater accuracy of the affine parameters of each symbolic function.    
+
+> Fig. 3. Diagram of KAN training with symbolization. JOURNAL OF LIGHTWAVE TECHNOLOGY, VOL. XX, NO. X, FEBRUARY 2026 4
+
+III. DPD FOR A-R OF S YSTEMS 
+
+Due to its easy reconfigurability and effective linearization capability, digital predistortion is a well-established technique for compensating nonlinearities of PAs in wireless systems [10]. More recently, it has attracted significant interest for application in A-RoF systems [11], where nonlinear distortions arise not only from the PA but also from the optical modulation stage. In DPD, an estimate of the inverse nonlinear response of the channel is applied to the baseband signal prior to transmission. The distortions introduced by the DPD block are then cancelled by the channel, thereby linearizing the overall system response. There are two main approaches to obtaining the inverse response of the channel: the Direct Learning Architecture (DLA) and the Indirect Learning Architecture (ILA). In DLA, the DPD model is trained in its operating position as apredistorter, which requires a channel model to be defined and included in the training loop. In contrast, in ILA the DPD block is temporarily placed after the channel and trained as a postdistorter. Using the channel output as the model input and the transmitted signal as the target, the DPD parameters are optimized. Once the model converges, it is then repositioned to operate as a predistorter.  
+
+> Fig. 4. Indirect Learning Architecture (ILA) for DPD training.
+
+In the following subsections, the numerical model im-plemented of the A-RoF system and its nonlinearities are explained in details. 
+
+A. Waveform generation 
+
+Due to its widespread use in mobile communications, or-thogonal frequency division multiplexing (OFDM) is consid-ered here as the type of waveform to be transported through the A-RoF channel [1]. In Fig. 5 (b)-(c) the setup of the OFDM baseband modulator and the OFDM baseband demodulator are detailed. The channel amplitude and phase response are estimated from the pilot symbols via linear interpolation. The estimated channel frequency response is used to perform zero-forcing 1-tap equalization of the received signal. Finally, the received constellation symbols can be used to evaluate the QoT. A summary of the OFDM signal parameters is presented in Table I. The signal has a bandwidth ( Bw) of 100 MHz, in-cludes a subcarrier spacing of 30 kHz and 273 resource blocks (RBs). The chosen of 3.55 GHz for electrical carrier frequency is due to its wildly implements in current 5G deployments and still has a considerable potential in bandwidth.                    
+
+> TABLE I OFDM SIGNAL PARAMETERS
+> Parameter Value
+> Number of subcarriers ( N)4096 Number of information subcarriers ( Ns)3243 Number of pilot subcarriers ( Np)32 Number of null subcarriers ( Nz)821 Subcarrier spacing ( ∆f)≈30 kHz Bandwidth ( Bw)100 MHz Cyclic prefix length ( NCP )288 Adjacent channel leakage ratio (ACLR) -44.70 dB RF center frequency 3.55 GHz Simulation sampling rate ( fs)12.5 GSa/s Modulation scheme 64QAM Channel estimation linear interpolation
+
+B. Optical Modulator Model 
+
+The MZM model is defined under the assumption that the device is constructed in a push-pull configuration [12]. The input-output relation of the MZM is defined in eqs. (9)-(10), 
+
+|Eout (t)| = |Ein (t) cos φ(t)| (9) 
+
+φ(t) = π
+
+2Vπ
+
+[u(t) + Vb] (10) where Ein (t) is the envelope of the input optical field, 
+
+Eout (t) is the envelope of the output optical field, u(t) is the modulating signal, Vπ is the half-wave voltage of the MZM, and Vb is the DC bias added to u(t), set as −Vπ /2 such that the MZM is operated at the quadrature point. 
+
+C. Optical Fiber Model 
+
+In this paper, a linear model is assumed for the fiber channel, accounting for loss and chromatic dispersion (CD). In direct-detection systems the combination of CD and the square law detection of photodiodes introduces frequency-selective power fading that may cause severe penalties to the transmission per-formance. Consequently, signals propagating over fiber links in A-RoF systems may experience frequency-selective power fading whose intensity depends on the RF carrier frequency and propagation distance, leading to performance penalties. The baseband equivalent frequency response HCD (f ) of CD after square law detection is approximated by [13] 
+
+HCD (f ) = cos  (2 πf )2β2l/ 2 (11) where β2 = −Dλ 2 
+
+> c
+
+/2πc , D is the fiber dispersion parameter, 
+
+λc is the wavelength of the optical carrier, and c is the speed              
+
+> TABLE II OPTICAL CHANNEL PARAMETERS
+> Parameter Value
+> MZM’s Vπ3 V MZM’s optical input power 15 dBm Fiber length 25 km Fiber dispersion coefficient 16 ps/nm/km Fiber attenuation 0.2 dB/km Photodiode bandwidth 12 GHz Photodiode temperature 25 C ◦
+> Photodiode dark current 5 nA JOURNAL OF LIGHTWAVE TECHNOLOGY, VOL. XX, NO. X, FEBRUARY 2026 5
+> Fig. 5. System model considered in this paper. (a) Block diagram for the A-RoF transmission system model; (b) Signal processing assumed for the OFDM baseband modulator; (c) Signal processing assumed for the OFDM baseband demodulator.
+
+of light. In this work, the carrier frequency of the RF signal is not high enough for this effect to have an impact, so the optical link response is essentially flat over the frequency range used. 
+
+D. Photodiode Model 
+
+After propagating through the fiber, the optical signal is sent to a photodiode where the RF signal modulating the optical carrier is downconverted to its original frequency. The model assumed for the photodiode considers the presence of thermal and shot noise [12], as well as a bandwidth limitation. It is assumed that the photocurrent follows an ideal square-law detection with no saturation effects. A summary of the optical channel parameters is presented in Table II. 
+
+E. Power Amplifier Model 
+
+After traversing the A-RoF link and before reaching the remote transmit antenna, the signals are amplified by a PA, where both their phase and amplitude are affected by nonlinear distortions. One commonly employed method to characterize the nonlinearity introduced by the PA involves utilizing an amplitude modulation-amplitude modulation (AM-AM) model and an amplitude modulation-phase modulation (AM-PM) model [4]. In this study, we adopt the memoryless AM-AM AM-PM nonlinear PA model specified by the 3GPP TSG-RAN WG4 task group [14]. Let s(t) = |s(t)|ejϕ (t) be the equivalent baseband complex-valued envelope of the signal at the input of the PA. The baseband AM-AM model is described as 
+
+A(|s(t)|) = g|s(t)|
+
+h
+
+1 + ( g|s(t)|/v sat )2σp
+
+i1/(2 σp) , (12) with the typical parameters g = 16 , σp = 1 .1, vsat = 1 .9 V. The baseband AM-PM model is given by 
+
+∆ϕ (|s(t)|) = π
+
+180 
+
+α|s(t)|q
+
+[1 + ( |s(t)|/β )q ] , (13) with parameters α = −345 , β = 0 .17 , q = 4 . The gain and the nonlinear phase shift (in radians) induced by the PA model as a function of its input power in dBm are shown in Fig. 6. 
+
+> Fig. 6. Gain and phase shift characteristic curves of PA as a function of input power for the model described in eqs. (12)-(13).
+
+The equivalent baseband signal ˆs(t) at the output of the PA can be written as 
+
+ˆs(t) = A(|s(t)|)ej[ϕ(t)+∆ ϕ(|s(t)|)] , (14) which is the resulting signal after s(t) is affected by amplitude and phase nonlinear distortions. Here, it is assumed that the input power to the PA can be controlled independently of the optical power that reaches the photodiode. IV. N UMERICAL RESULTS 
+
+Based on the numerically implemented A-RoF channel model, to ensure operation in the nonlinear regime, the RF signal power at the input of the MZM is fixed at 17 dBm, and the signal power at the input of the PA is set to 5 dBm. Under these conditions, the DPD model was trained following the ILA approach, illustrated in Fig. 4. For the performance evaluation of the DPD-ETDKAN, models based on ARVTDNN and ETDNN were also imple-mented, along with a model based on memory polynomi-als. For a proper comparison between the models, a multi-objective optimization of each model’s hyperparameters was carried out using the Optuna [15] framework. A total of 500 hyperparameter combinations were generated, and for each combination a model was trained. After training, its transmission metrics were computed, as well as the number JOURNAL OF LIGHTWAVE TECHNOLOGY, VOL. XX, NO. X, FEBRUARY 2026 6 
+
+> Fig. 7. Pareto fronts from multi-objective optimization of DPD’s hyperparameters for transmission metrics and complexity. (a) EVM vs NFLOP; (b) ACLR vs NFLOP.
+
+of floating-point operations (NFLOP) required to compute one output of the model. To train the NN-based models, arrays containing a total of 50000 signal samples are divided into training and vali-dation datasets in a 75/25 ratio. Training is conducted with a batch size of 1000, using backpropagation and the Adam optimization algorithm with a learning rate of μ = 0 .005 .For ETDNN and ARVTDNN, 500 epochs were used in the training phase, which was enough to achieve convergence in all configurations; for ETDKAN, it was necessary 100 epochs for convergence. All simulation models and NNs reported in this work were implemented using the Pytorch [16] and pyKAN [8] frameworks. The MP model was trained with the same set of samples, and the Recursive Least Squares (RLS) algorithm adapted to the MP structure was applied [10]. For the ETDKAN, the optimization varied the hyperparam-eters N from 1 to 5 and M from 2 to 8, as well as the order 
+
+k (from 2 to 6) of the polynomials that compose the B-spline functions, together with a parameter related to the grid size of these functions, all of which influence the model’s accuracy. For the ARVTDNN, the number of hidden layers was varied from 1 to 2, and the number of neurons per layer from 5 to 50, the nonlinearity order was varied from 1 to 5, and the number of memory taps from 2 to 10. For the ETDNN, the number of neurons in the hidden layer was varied from 5 to 50, and those in the input and output layers from 2 to 20. In the memory polynomial model, the number of memory taps was varied from 1 to 10, and the nonlinearity order from 1 to 10. For the MLP-based models, the activation function used in the internal layers was ReLU (x), and a linear operation was assumed for the output layer. An alternative model with symbolization, symbETDKAN, was also applied. After the first 50 epochs of training, the model is symbolized, and then more 50 epochs are runned to adjust the affine parameters of symbolic functions. The same hyperparameter optimization range of ETDKAN was applied to this version. To evaluate the spectral broadening due to nonlinear dis-tortions, the adjacent channel leakage ratio (ACLR) was cal-culated, which is defined as (15), where Bin and Bout refer to the frequencies inside and outside the transmitted OFDM signal bandwidth, respectively. 
+
+ACLR dB = 10 log 10 
+
+" R   
+
+> f∈Bout
+
+S(f )df 
+
+R  
+
+> f∈Bin
+
+S(f )df 
+
+#
+
+(15) The other transmission metric computed was the error vector magnitude (EVM), which indicates the degree of dispersion of the received constellation symbols ˆXr relative to the transmitted ones Xr .EVM [%] = 100 
+
+vuuuuutX
+
+> r
+
+ˆXr − Xr
+
+> 2
+
+X
+
+> r
+
+|Xr |2 (16) For the calculation of the DPD-ETDKAN’s NFLOP, an analytical derivation was performed based on the expressions presented in [17]. The NFLOP for ARVTDNN, ETDNN, and MP was derived analytically by counting the number of addi-tions and real multiplications in a single forward step. Since the symbETDKAN is composed of analytical functions, the NFLOP required for its computation depends on the hardware and software implementation of each function. Therefore, in this work, we assume that the NFLOP ranges from 10 to 100 for each transcendental function in the model, then, for this model, there will be two Pareto fronts: one for the minimum NFLOP and another for the maximum. After hyperparameter optimization, the Pareto curves for the DPD models were obtained, as illustrated in Fig. 7. It can be observed that, in the analyzed scenario, the MP-DPD achieved superior results in terms of EVM and ACLR with a computational complexity significantly lower than that of JOURNAL OF LIGHTWAVE TECHNOLOGY, VOL. XX, NO. X, FEBRUARY 2026 7 
+
+> Fig. 8. Symbolic model obtained for symbETDKAN-DPD.
+
+the other neural network-based models. The envelope net-works outperformed the ARVTDNN, reproducing what was also shown in [6]. Among the neural network-based models, the ETDKAN-DPD was the only one capable of achieving performance close to that of the MP-DPD in terms of EVM and ACLR, however, this comes at a high computational cost, which is largely due to the computation of the B-splines that make up the KAN network inside the model. The symbETDKAN Pareto fronts reached ACLR and EVM levels comparable to the other NN-based DPD models, but requiring overall lower computational complexity. In fact, it is the model whose optimal points lie closest to the MP model’s complexity. By considering the ACLR, EVM, and NFLOP metrics, one representative model from each DPD family was selected, and their results are reported in Tab. III. The MP-DPD outper-formed the NN models in both computacional complexity, requiring fewer NFLOP, and in transmission metrics. The selected symbETDKAN model, illustrated in Fig.8, is the only one that approaches the NFLOP count of the MP model, with a range from 53 to 143 NFLOP, while achieving transmission metrics similar to the NN-based models. Compared with the ARVTDNN, the symbETDKAN required on average 8 times fewer NFLOPs to achieve similar EVM and ACLR performance, 6 times fewer when compared with the ETDNN, and 59 times fewer compared with the ETDKAN, even with a 0.83 dB difference in ACLR.                        
+
+> TABLE III PERFORMANCE METRICS OF THE SELECTED DPD MODELS .
+> DPD model NFLOP EVM [%] ACLR [dB]
+> No DPD –9.13 -28.26 MP 60 2.24 -37.22 ARVTDNN 852 3.54 -35.48 ETDNN 620 3.05 -35.62 ETDKAN 5804 3.16 -36.54 symbETDKAN 53 – 143 3.46 -35.71
+
+V. E XPERIMENTAL RESULTS 
+
+To access the applicability of the proposed models in a practical environment, an experiment was conducted using a back-to-back A-RoF system, as illustrated in Fig. 9. The light source (LS) is an external cavity laser (ECL) that works at the wavelength of 1550.9 nm, and has a linewidth less than 100 kHz and output the light power at 16 dBm in the experiment. Our test signal is generated by an arbitrary waveform generator (AWG), the sampling frequency is set at 25 GSa/s, with a vertical resolution of 9 bits for the output waveform and an additional 1-bit marker channel for the stability. The signal was generated based on Table I specifications, and it was modulated to the light from LS through a MZM with a 
+
+Vπ value of 4.2 V. The A-RoF signal output from MZM is controlled by an optical variable attenuator (VOA), and after transmission, the A-RoF signal is received by a photodetector (PD) of 9 GHz bandwidth and 0.8 A/W responsivity. A power amplifier with a linear gain of 22 dB is used to amplify the received signal, which has a noise figure of 6 dB. After the PA, the signal is captured by a digital storage oscilloscope (DSO) with a sampling frequency set to 20 GSa/s and then sent to a computer for digital signal processing (DSP) operations, such as filtering and synchronization. After processing the received signal, the transmitted and received sequences are used to train the implemented DPD models, following the same procedure presented in the previous sec-tion. The signal with DPD is then generated and transmitted again to verify the resulting changes in performance metrics. Table IV presents the ACLR, EVM, and NFLOP results for the applied models. Although absolute metric values differ due differences with numerical model, the relative performance ranking among models remains consistent with the simulation results, and the symbETDKAN model also achieves EVM and ACLR values comparable to those of the neural network–based models, while exhibiting computational complexity in terms of NFLOP close to that of the MP model.    
+
+> Fig. 9. (a) Block diagram and (b) photo of experimental setup used for DPD tests. JOURNAL OF LIGHTWAVE TECHNOLOGY, VOL. XX, NO. X, FEBRUARY 2026 8
+
+TABLE IV PERFORMANCE METRICS OF THE SELECTED DPD MODELS IN EXPERIMENTAL SETUP .
+
+DPD model NFLOP EVM [%] ACLR [dB] 
+
+No DPD – 9.57 -28.87 MP 60 6.94 -34.15 ARVTDNN 852 7.61 -33.60 ETDNN 620 7.42 -33.63 ETDKAN 5804 7.56 -34.49 symbETDKAN 53 – 143 7.18 -33.12 
+
+Fig. 10 shows the received spectra without DPD and with the DPD models applied. A reduction in out-of-band emissions caused by nonlinear distortions can be observed, correspond-ing to an ACLR improvement of 5.62 dB for ETDKAN-DPD and 4.25 dB for symbETDKAN-DPD. These results further demonstrate that the proposed model can be successfully applied in an experimental environment with high nonlinearity. 
+
+Fig. 10. Spectrum of the received signals without and with DPD. 
+
+VI. C ONCLUSION 
+
+This article presents the first analysis of the application of KAN network–based DPD models to A-RoF systems. The ETDKAN-based DPD model was proposed and experimen-tally demonstrated for the compensation of nonlinearities in A-RoF links. In the numerical analysis, the ETDKAN networks exhib-ited superior ACLR ( −36 .54 dB) performance compared to approaches based on MLP ( −35 .62 dB for ETDNN, and 
+
+−35 .48 dB for ARVTDNN); however, this improvement was achieved at the cost of higher computational complexity, with NFLOP = 5804. By applying network symbolization, the NFLOP requirement of symbETDKAN was reduced to a level close to that of the MP model, between 53 and 143, that is the simplest among the evaluated approaches, while only marginally affecting performance (ACLR = −35 .71 dB). A back-to-back A-RoF experimental system was then em-ployed to validate the applicability of the ETDKAN model in a practical environment. The results followed patterns similar to those observed in the numerical analysis, with the ETDKAN achieving the best performance of in therms of ACLR ( −34 .49 
+
+dB), and symbETDKAN achieving performance comparable to other NN-based models, with ACLR = −33 .12 dB, while requiring significantly lower NFLOP. Future work could investigate the performance of KAN-based models under different nonlinear regimes, as well as assess the impact of the frequency-selective response of the optical channel with direct-detection. Due to their ability to derive analytical expressions for system representation, KAN networks have strong potential for application in the equalization and modeling of nonlinearities that are inherent in modern communication systems, including those used in 5G and 6G technologies. ACKNOWLEDGMENT 
+
+This work was supported by the Programa de P´ os-graduac ¸ ˜ ao em Engenharia El´ etrica (PPGEE) of the Universidade Federal de Campina Grande (UFCG). This study has been partially funded by the Coordenac ¸ ˜ ao de Aperfeic ¸oamento de Pessoal de N´ ıvel Superior - Brasil (CAPES) - Finance Code 001, The Na-tional Council for Scientific and Technological Development (CNPq) - Grant 406684/2021-9, and the project PHOSENSE DEVICES supported by the EMBRAPII VIRTUS COMPE-TENCE CENTER IN INTELLIGENT HARDWARE FOR INDUSTRY - VIRTUS-CC, with financial resources from the HardwareBR PPI of the MCTI grant number 055/2023, signed with EMBRAPII. REFERENCES [1] M. Alsabah et al. , “6G Wireless Communications Networks: A Com-prehensive Survey,” IEEE Access , vol. 9, pp. 148 191–148 243, 2021. [2] A. N. Uwaechia and N. M. Mahyuddin, “A Comprehensive Survey on Millimeter Wave Communications for Fifth-Generation Wireless Networks: Feasibility and Challenges,” IEEE Access , vol. 8, pp. 62 367– 62 414, 2020. [3] C. Lim and A. Nirmalathas, “Radio-Over-Fiber Technology: Present and Future,” Journal of Lightwave Technology , vol. 39, no. 4, pp. 881–888, 2021. [4] D. R. Morgan et al. , “A Generalized Memory Polynomial Model for Digital Predistortion of RF Power Amplifiers,” IEEE Transactions on Signal Processing , vol. 54, no. 10, pp. 3852–3860, 2006. [5] D. Wang et al. , “Augmented Real-Valued Time-Delay Neural Network for Compensation of Distortions and Impairments in Wireless Trans-mitters,” IEEE Transactions on Neural Networks and Learning Systems ,vol. 30, no. 1, pp. 242–254, 2019. [6] M. Tanio, N. Ishii, and N. Kamiya, “Efficient Digital Predistortion Using Sparse Neural Network,” IEEE Access , vol. 8, pp. 117 841–117 852, 2020. [7] E. G. Lima et al. , “Base-band Derived Volterra Series for Power Amplifier Modeling,” in 2009 IEEE MTT-S International Microwave Symposium Digest . Boston, MA, USA: IEEE, 2009. [8] Z. Liu et al. , “KAN: Kolmogorov–Arnold Networks,” in The Thirteenth International Conference on Learning Representations , 2025. [Online]. Available: https://openreview.net/forum?id=Ozo7qJ5vZi [9] J. Chen et al. , “Real-Valued Time Delay Kolmogorov-Arnold Network for Digital Predistortion of RF Power Amplifiers,” in 2025 International Conference on Microwave and Millimeter Wave Technology (ICMMT) .Xi’an, China: IEEE, 2025. [10] D. H. Le et al. , “Linearization of RF Power Amplifiers in Wideband Communication Systems by Adaptive Indirect Learning Using RPEM Algorithm,” Mobile Networks and Applications , vol. 25, pp. 1988–1997, 2020. [11] L. A. M. Pereira et al. , “Novel Machine Learning Linearization Scheme for 6G A-RoF Systems,” Journal of Lightwave Technology , vol. 41, no. 23, pp. 7245–7252, 2023. [12] M. Seimetz, High-Order Modulation for Optical Fiber Transmission ,ser. Springer Series in Optical Sciences. Berlin, Heidelberg: Springer, 2009. [13] G. Rizzelli et al. , “An Analytical Model for Performance Estimation in Modern High-Capacity IMDD Systems,” J. Lightw. Technol. , vol. 42, no. 5, pp. 1443–1452, Mar. 2024. JOURNAL OF LIGHTWAVE TECHNOLOGY, VOL. XX, NO. X, FEBRUARY 2026 9
+
+[14] “Realistic power amplifier model for the new radio evaluation,” 3GPP TSG-RAN WG4 Meeting #79, Tech. Rep., 2016. [15] T. Akiba et al. , “Optuna: A next-generation hyperparameter optimization framework,” in Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining , 2019. [16] A. Paszke et al. , “Pytorch: An imperative style, high-performance deep learning library,” in Advances in Neural Information Processing Systems 32 . Curran Associates, Inc., 2019, pp. 8024–8035. [17] R. Yu, W. Yu, and X. Wang, “KAN or MLP: A fairer comparison,” in arXiv preprint arXiv:2407.16674 , 2024. [Online]. Available: https://arxiv.org/abs/2407.16674

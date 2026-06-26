@@ -1,0 +1,54 @@
+{
+  "label": "2026-06-26",
+  "date": "2026-06-26",
+  "generated_at": "2026-06-26T21:26:36",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202606/26/2606.27042v1-low-complexity-kolmogorov-arnold-network-based-dpd-for-analog-rof-fronthaul",
+      "section": "deep",
+      "title_en": "Low Complexity Kolmogorov-Arnold Network-based DPD for Analog RoF Fronthaul",
+      "authors": "Carlos Daniel Fontes da Silva, Tianyu Jiang, Lu Zhang, Vjaceslavs Bobrovs, Xianbin Yu, Xiaodan Pang, Oskars Ozolins, Edson Porto da Silva",
+      "date": "2026-06-25",
+      "pdf": "https://arxiv.org/pdf/2606.27042v1",
+      "score": "10.0",
+      "evidence": "基于KAN的模拟RoF前传数字预失真",
+      "tldr": "针对模拟RoF前传中的非线性失真问题，提出基于Kolmogorov-Arnold网络（KAN）的数字预失真（DPD）模型ETDKAN。该模型融入射频器件物理约束，通过KAN符号化大幅降低计算复杂度并提升可解释性。实验表明，符号化ETDKAN（symbETDKAN）在ACLR和EVM上媲美神经网络模型，复杂度接近记忆多项式，ACLR降低4-5 dB。",
+      "tags": "query:channel-nn",
+      "abstract_en": "This paper proposes and demonstrates experimentally for the first time a Kolmogorov-Arnold Network (KAN)-based digital predistortion (DPD) model, named envelope time-delay KAN (ETDKAN), for mitigating nonlinear distortions in analog radio-over-fiber (A-RoF) systems. The ETDKAN model incorporates physical constraints of radio-frequency (RF) nonlinear devices and, through KAN symbolization, achieves a significant reduction in computational complexity while improving interpretability. The proposed model is numerically implemented and optimized alongside multilayer perceptron (MLP) and memory-polynomial-based DPDs. Results show that the resulting symbolic ETDKAN (symbETDKAN) attains ACLR and EVM performance comparable to neural network-based models, while maintaining a computational complexity close to that of memory polynomials. Experimental validation using an A-RoF system confirms the practical feasibility of the proposed approach, which resulted in a 4-5 dB reduction in ACLR in the analyzed scenario.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/26/2606.23210v1-efficient-network-inference-via-hardware-aware-architecture-search-model-pruning--quantization",
+      "section": "quick",
+      "title_en": "Efficient Network Inference via Hardware-Aware Architecture Search, Model Pruning & Quantization",
+      "authors": "Lucas Heublein, Mark Deutel, Axel Plinge, Felix Ott",
+      "date": "2026-06-22",
+      "pdf": "https://arxiv.org/pdf/2606.23210v1",
+      "score": "7.0",
+      "evidence": "通过NAS剪枝量化实现高效网络推理，用于GNSS干扰监测",
+      "tldr": "嵌入式GNSS干扰监测需实时处理大量IQ样本，但深度网络在资源受限硬件上部署困难。本文采用迭代结构化剪枝、训练后静态量化与硬件感知零样本NAS，从MCUNet基线优化模型。在GNSS干扰分类与表征任务上，模型尺寸和计算量显著降低，性能保持。为嵌入式平台高效推理提供实用指导。",
+      "tags": "query:channel-nn",
+      "abstract_en": "Embedded global navigation satellite system (GNSS) interference monitoring requires fast and memory-efficient inference to process large volumes of raw in-phase and quadrature (IQ) samples in real time. At the same time, increasingly expressive deep neural networks (DNNs) are needed for robust interference classification and characterization across diverse signal conditions. This creates a fundamental tension between predictive performance and deployability on resource-constrained hardware. In this paper, we investigate efficient network inference for GNSS interference characterization using iterative structured pruning, post-training static quantization, and hardware-aware zero-shot neural architecture search (NAS). Starting from MCUNet as a compact baseline, we analyze how model compression and automated architecture optimization affect model size, computational complexity, and memory usage while maintaining task performance. Experiments on a GNSS interference dataset, covering both classification and generalized characterization, show the benefits of combining compression and hardware-aware design for embedded deployment. Our results provide practical guidance for developing compact machine learning (ML) models for real-time GNSS interference monitoring on embedded platforms (iMXRT1062 MCU, Raspberry Pi Zero 2W, and Raspberry Pi 5).",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/26/2606.25725v1-deep-learning-assisted-multicast-subgrouping-in-massive-mimo",
+      "section": "quick",
+      "title_en": "Deep Learning-Assisted Multicast Subgrouping in Massive MIMO",
+      "authors": "Alejandro de la Fuente, Leopoldo Carro-Calvo, Giovanni Interdonato",
+      "date": "2026-06-24",
+      "pdf": "https://arxiv.org/pdf/2606.25725v1",
+      "score": "6.0",
+      "evidence": "利用LSTM进行大规模MIMO多播子组划分的深度学习辅助方法",
+      "tldr": "大规模MIMO多播系统中，用户异质性和导频开销限制了频谱效率。本文提出深度学习辅助的多播子组划分框架，对用户信道协方差矩阵进行PCA降维，利用LSTM编码器自适应预测子组数量和用户分组，并引入迁移学习优化频谱效率估计。仿真表明，该方法达到最优方案85%的频谱效率，优于传统多播、随机分组和聚类方法，且对信道估计误差鲁棒。",
+      "tags": "query:channel-nn",
+      "abstract_en": "Efficient content delivery in massive multiple-input multiple-output (mMIMO) multicasting is fundamentally limited by pilot overhead and the need to serve heterogeneous users with a common transmission rate. Conventional approaches either suffer from pilot contamination or are constrained by the worst-user effect, motivating the need for adaptive subgrouping strategies. In this paper, we propose a deep learning-assisted multicast subgrouping framework that infers the number of multicast subgroups directly from users' spatial channel statistics. A snapshot-specific principal component analysis (PCA) is applied to user covariance matrices to obtain a compact representation, which is processed by a sequential long short-term memory (LSTM) encoder capable of handling variable-size user sets. The model predicts the number of subgroups and groups of users based on their statistical similarity. To further improve system performance, we introduce a transfer learning (TL) extension where a pretrained LSTM encoder is reused, and a lightweight dense head is fine-tuned to estimate the sum spectral efficiency (SE) as a function of the subgroup configuration. This enables selecting near-optimal subgrouping solutions without exhaustive search. Simulation results demonstrate that the proposed approach consistently outperforms benchmark methods, including unicast transmission, conventional multicast, random subgrouping, and density-based clustering. The TL-enhanced model achieves up to 85% of the maximum achievable spectral efficiency while maintaining robust performance across diverse spatial user distributions and under imperfect covariance information.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
