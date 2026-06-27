@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-06-27 <!--dpr-date:20260627-->
+    * 速读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202606/27/2606.24137v1-joint-learning-of-covariance-estimation-and-white-noise-gain-for-robust-mvdr-beamforming" data-sidebar-item="{&quot;title&quot;: &quot;Joint Learning of Covariance Estimation and White Noise Gain for Robust MVDR Beamforming&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2606.24137v1-joint-learning-of-covariance-estimation-and-white-noise-gain-for-robust-mvdr-beamforming&quot;, &quot;score&quot;: &quot;6.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;channel-nn&quot;}], &quot;evidence&quot;: &quot;深度神经网络用于通信系统波束成形&quot;}">Joint Learning of Covariance Estimation and White Noise Gain for Robust MVDR Beamforming</a>
   * 2026-06-26 <!--dpr-date:20260626-->
     * 精读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202606/26/2606.27042v1-low-complexity-kolmogorov-arnold-network-based-dpd-for-analog-rof-fronthaul" data-sidebar-item="{&quot;title&quot;: &quot;Low Complexity Kolmogorov-Arnold Network-based DPD for Analog RoF Fronthaul&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2606.27042v1-low-complexity-kolmogorov-arnold-network-based-dpd-for-analog-rof-fronthaul&quot;, &quot;score&quot;: &quot;10.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;channel-nn&quot;}], &quot;evidence&quot;: &quot;基于KAN的模拟RoF前传数字预失真&quot;}">Low Complexity Kolmogorov-Arnold Network-based DPD for Analog RoF Fronthaul</a>

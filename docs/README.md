@@ -6,29 +6,26 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-26
-- 运行时间：2026-06-26 21:26:29 UTC
+- 最新运行日期：2026-06-27
+- 运行时间：2026-06-27 20:48:32 UTC
 - 运行状态：成功
-- 本次总论文数：3
-- 精读区：1
-- 速读区：2
+- 本次总论文数：1
+- 精读区：0
+- 速读区：1
 
 ### 今日简报（AI）
-今日精读高分论文：低复杂度KAN网络DPD方案攻克模拟RoF前传线性化难题。同时速读关注硬件感知架构搜索与模型压缩、以及深度学习优化大规模MIMO多播子组分组。建议优先探索KAN网络在通信系统非线性补偿中的潜力，并关注模型轻量化与多播效率提升的协同设计。
-- 详情：[/202606/26/README](/202606/26/README)
+1) 今天速读了一篇联合学习协方差估计与白噪声增益的论文，用于提升鲁棒MVDR波束形成性能。
+2) 核心方向是将白噪声增益约束融入协方差估计的联合学习，从而增强波束形成在噪声环境下的鲁棒性。
+3) 推荐关注该联合优化思路，它比传统单独设计协方差或约束方法更适配实际噪声场景。
+- 详情：[/202606/27/README](/202606/27/README)
 
 ### 精读区论文标签
-1. [Low Complexity Kolmogorov-Arnold Network-based DPD for Analog RoF Fronthaul](/202606/26/2606.27042v1-low-complexity-kolmogorov-arnold-network-based-dpd-for-analog-rof-fronthaul)  
-   标签：评分：10.0/10、query:channel-nn
-   evidence：基于KAN的模拟RoF前传数字预失真
+- 本次无精读推荐。
 
 ### 速读区论文标签
-1. [Efficient Network Inference via Hardware-Aware Architecture Search, Model Pruning & Quantization](/202606/26/2606.23210v1-efficient-network-inference-via-hardware-aware-architecture-search-model-pruning--quantization)  
-   标签：评分：7.0/10、query:channel-nn
-   evidence：通过NAS剪枝量化实现高效网络推理，用于GNSS干扰监测
-2. [Deep Learning-Assisted Multicast Subgrouping in Massive MIMO](/202606/26/2606.25725v1-deep-learning-assisted-multicast-subgrouping-in-massive-mimo)  
+1. [Joint Learning of Covariance Estimation and White Noise Gain for Robust MVDR Beamforming](/202606/27/2606.24137v1-joint-learning-of-covariance-estimation-and-white-noise-gain-for-robust-mvdr-beamforming)  
    标签：评分：6.0/10、query:channel-nn
-   evidence：利用LSTM进行大规模MIMO多播子组划分的深度学习辅助方法
+   evidence：深度神经网络用于通信系统波束成形
 
 
 <div class="dpr-home-promo-card">
