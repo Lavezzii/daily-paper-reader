@@ -1,0 +1,1513 @@
+Title: Spectral Gating via Damped Oscillations for Adaptive Implicit Neural Representations
+
+URL Source: https://arxiv.org/pdf/2606.23129v1
+
+Published Time: Tue, 23 Jun 2026 03:38:00 GMT
+
+Number of Pages: 39
+
+Markdown Content:
+# Spectral Gating via Damped Oscillations for Adaptive Implicit Neural Representations 
+
+Alex Costanzino 1 , Pierluigi Zama Ramirez 2 , Giuseppe Lisanti 1 , and Luigi Di Stefano 1 
+
+> 1
+
+CVLab, University of Bologna  
+
+> 2
+
+Ca’ Foscari University of Venice 
+
+Abstract. Implicit Neural Representations (INRs) have been proven successful in encoding continuous signals through coordinate-based net-works, yet facing a spectral dilemma: periodic activations capture fine details but act as all-pass filters that memorise noise, while spatially compact activations regularise effectively but suffer from low-frequency bias. Existing attempts to resolve this trade-off introduce computational overhead or tuning frailty. We propose to model each neuron’s activation as the steady-state response of a sinusoidally-forced damped harmonic oscillator, whose amplitude naturally governs the network’s spectral se-lectivity during training. By jointly optimising the oscillator parameters alongside the network weights, our method adapts to the target signal’s spectral content without explicit regularisation. Initialised in the stop-band, the network exhibits a coarse-to-fine learning curriculum that pro-gressively expands its spectral gate, capturing low-frequency structures first and high-frequency details only when justified by the reconstruction objective. Comprehensive experiments show that our approach consis-tently achieves state-of-the-art or competitive results against established INRs, while requiring no task-specific tuning of any hyperparameters. Project Page available at https://alex-costanzino.github.io/fdho/ .
+
+Keywords: Implicit Neural Representations · Spectral Gating 
+
+1 Introduction 
+
+Implicit Neural Representations (INRs) have emerged as a powerful paradigm for encoding continuous signals, such as audio, images, shapes, and physical fields, into the weights of coordinate-based neural networks [14, 17, 22]. Their appeal lies in being resolution-independent, differentiable, and compact, mak-ing them natural fits for tasks ranging from novel view synthesis [5] to solving partial differential equations [22]. At the heart of any INR lies the choice of the activation function, which governs the network’s spectral expressivity, i.e ., its ability to faithfully represent both smooth global structure and fine-grained local details. This choice confronts practitioners with what we term the spectral dilemma. Periodic activations, exemplified by SIREN [22], endow the network  
+
+> arXiv:2606.23129v1 [cs.CV] 22 Jun 2026 2A. Costanzino et al.
+
+with the capacity to represent arbitrarily high frequencies. However, their infi-nite bandwidth makes them susceptible to noise memorisation, treating random perturbations as legitimate signal content. Non-periodic alternatives, such as Gaussian activations [18], provide spatial compactness and inherent regularisa-tion but introduce a low-frequency bias that limits their ability to capture oscil-latory or fine-grained content. Intermediate approaches exist – Gabor wavelets in WIRE [19] offer joint space-frequency localisation, FINER [13] introduces variable-periodic functions, and Fourier Reparametrisation [21] addresses spec-tral bias through weight decomposition – but each comes with its own trade-offs in computational cost, sensitivity to hyperparameters, or restricted representa-tional capacity. More recently, MIRE [10] proposes learning per-layer activations selected from a dictionary of predefined functions, and IGA-INR [20] adjusts gradient dynamics through inductive gradient correction, both methods high-lighting that the interaction between activation design and training dynamics is central to INR performance. Despite this progress, no existing method provides a mechanism to adapt the bandwidth robustly with respect to noise. Inspired by classical mechanics, we model each neuron as the steady-state re-sponse of a sinusoidally-forced damped harmonic oscillator. The resulting acti-vation takes the form of an amplitude-modulated sinusoidal carrier. Such modu-lation depends on three physical quantities: the forcing frequency ω, the natural frequency ωn, and the damping factor ξ. In particular, the amplitude is the transfer function of a second-order linear system, a well-characterised band-pass filter whose centre frequency, bandwidth, and roll-off are determined by ωn and 
+
+ξ. We refer to this amplitude-modulated bandwidth control as spectral gating :the oscillator parameters determine a passband, and only frequency content from the forcing within this band receives non-negligible amplitude gain. When these parameters are made learnable, the network acquires the ability to adapt its bandwidth during training. In particular, with our formulation, the optimisa-tion cost to admit higher frequencies is lower for coherent signal content than for random noise (Sec. 3.3, Corollary 1). Moreover, a coarse-to-fine learning cur-riculum emerges as we initialise the oscillator parameters in the stopband, so that the network begins with a narrow bandwidth. As training progresses and the loss landscape demands richer frequency content, the bandwidth widens, pro-ducing a natural coarse-to-fine learning progression without explicit scheduling (Sec. 3.4). Finally, the damping factor ξ provides a continuous, learnable axis connecting distinct spectral regimes: as ξ → 0, the activation recovers the unreg-ulated bandwidth of a pure SIREN-style sinusoid, as it increases, the function smoothly transitions toward a more spatially compact representation. Hence, rather than committing to a fixed point in the INR’s design space, the network can learn where to operate along this axis. We validate these claims through extensive experiments and comparisons to es-tablished INRs, achieving state-of-the-art or competitive results across all eval-uated settings, while requiring no task-specific tuning of any hyperparameters. Spectral Gating via Damped Oscillations 3
+
+2 Related Work 
+
+Activation Design for INRs. The choice of activation function is central to INR performance. ReLU-based networks are known to suffer from spectral bias to-ward low frequencies [24]. SIREN [22] addressed this with sinusoidal activations, enabling high-frequency representation but acting as an all-pass filter with no intrinsic regularisation. Subsequent work introduced spatially compact alterna-tives: Gaussian activations [18] provide smoothness and implicit low-frequency bias, while WIRE [19] combines spatial and frequency localisation through Gabor wavelets. FINER [13] proposes variable-periodic activations that allow per-layer spectral tuning, and MIRE [10] learns a per-layer selection from a dictionary of predefined functions. These methods address the spectral dilemma through activation shape, but none provide a formal mechanism explaining why certain frequencies are favoured or suppressed during training. Our approach differs by deriving the activation from a physical system whose transfer function yields provable spectral gating properties. 
+
+Spectral Bias and Training Dynamics. A parallel line of work addresses spectral limitations not through the activation itself but through the training proce-dure or input encoding. Fourier feature mappings [24] lift coordinates into a high-dimensional sinusoidal basis, enabling ReLU-based networks to learn high frequencies. Their NTK [9] analysis shows that the feature bandwidth directly controls the kernel’s spectral support. Multiplicative filter networks [8] achieve frequency control through element-wise products of Gabor filters across layers. BACON [12] enforces a band-limited hierarchy via additive multi-scale outputs. Fourier Reparameterisation [21] decomposes network weights in the frequency domain to mitigate spectral bias, and IGA-INR [20] corrects gradient dynamics through inductive gradient adjustment. Our work is complementary: rather than modifying the input encoding, weight parameterisation, or gradient update rule, we embed spectral control directly into the activation’s differentiable structure, where it arises as an implicit consequence of optimisation. 
+
+Theoretical analysis of INRs. Theoretical understanding of INRs remains lim-ited: [24] analyses the NTK of Fourier features to explain their accelerated convergence; [26] shows that SIREN layers compose via Bessel functions; [18] derives Lipschitz bounds and NTK eigenspectra for Gaussian activations; [19] analyses Gabor wavelet support to motivate WIRE’s frequency-space trade-off; and [22] establishes the distribution of activations and gradients through depth for SIREN. However, these analyses characterise representational properties – what each activation can express – rather than optimisation dynamics – how gradient descent navigates the parameter space. None provides a gradient-level mechanism for noise rejection or adaptive bandwidth control. Conversely, our contribution features an explicit gating condition that allows us to reject noise while fitting genuine signal components. 4 A. Costanzino et al. 
+
+3 Formulation 
+
+We derive our activation function from the steady-state analysis of a forced damped harmonic oscillator (Sec. 3.1), establish its formal properties (Sec. 3.2, proofs in Sec. A.1), analyse how its learnable parameters create implicit spectral regularisation through gradient dynamics (Sec. 3.3, proofs in Sec. A.2), char-acterise the multi-layer frequency composition via Bessel-function expansions (Sec. 3.4 and Sec. A.3), and discuss its neural tangent kernel structure (Sec. A.4). 
+
+3.1 Activation Definition 
+
+Consider a damped harmonic oscillator with natural frequency ωn and damping factor ξ, driven by a sinusoidal forcing at frequency ω. Its motion equation is ¨x + 2 ξω n ˙x + ω2
+
+> n
+
+x = ω2 
+
+> n
+
+sin( ωt ), and the steady-state solution has the form 
+
+xs(t) = A(ω, ω n, ξ ) sin( ωt + φ), with the amplitude given by: 
+
+A(ω, ω n, ξ ) = ω2
+
+> n
+
+p(ω2 
+
+> n
+
+− ω2)2 + (2 ξω nω)2 . (1) 
+
+Definition 1. Given the set of learnable parameters θ = (ω, ω n, ξ, φ ), with 
+
+ω; ωn; ξ > 0, our proposed activation function, σ : R → R, is defined as: 
+
+σ(z; θ) = A(ω, ω n, ξ ) sin( ωz + φ). (2) Each hidden layer uses a parameter set θ shared across all neurons. Hence, the ac-tivation is applied element-wise to the input z = w⊤x+b, yielding σ(Wx +b; θ).Parameters θ and weights (W, b) are jointly optimised via gradient descent. It is worth highlighting that for a given set of layer parameters, the amplitude gain A is a scalar constant, not a spatially varying envelope. Hence, the network does not filter different frequency components at inference time; rather, the land-scape of A(ω, ω n, ξ ) shapes the gradient flow during training, determining how readily the network can amplify or suppress content at different frequencies as the optimisation evolves. The inductive bias, therefore, operates through opti-misation dynamics, not through the functional form of a single forward pass. One might consider achieving similar adaptivity by simply making the ampli-tude, frequency, and phase of SIREN’s sinusoidal activation independently learn-able. However, when these quantities are decoupled, nothing prevents the net-work from assigning a large amplitude to any frequency, including those driven by noise. The oscillator formulation is fundamentally different, as the amplitude 
+
+A(ω, ω n, ξ ) is not a free parameter but is constrained by the relationship be-tween forcing frequency, natural frequency, and damping factor. This physical coupling ensures that the optimisation cost to admit higher frequencies is lower for coherent signal content than for random noise, as we formalise in Sec. 3.3, and that the learned parameters converge to stable equilibria rather than drift-ing indefinitely, as we verify empirically by comparing our proposal to learnable SIREN activations in Sec. C.1. Spectral Gating via Damped Oscillations 5
+
+3.2 Basic Properties 
+
+Before analysing the training dynamics of our proposed activation, dubbed Forced Damped Harmonic Oscillator (FDHO ), we establish three properties: smooth-ness, Lipschitz continuity, and output boundedness. Smoothness in both z and θ
+
+guarantees that all parameters can be jointly optimised via gradient-based meth-ods; Lipschitz continuity bounds the magnitudes of gradients flowing through the network during backpropagation; and the output bound quantifies how the parameters control the activation’s dynamic range. All proofs are in Sec. A.1. 
+
+Proposition 1 (Smoothness). For ωn > 0 and ξ > 0, the activation function 
+
+σ(z; θ) is C∞ with respect to both z and all components of θ.Remark 1. At ξ = 0 the denominator of A(ω, ω n, ξ ) vanishes when ω = ωn
+
+(undamped resonance). In practice, we constrain ξ ∈ (0 , 1) via sigmoid reparam-eterisation, which is physically motivated as all real oscillatory systems exhibit non-zero damping. 
+
+Proposition 2 (Lipschitz Bound). For fixed θ, the activation is Lipschitz in z with a constant Lz = |ω| A(ω, ω n, ξ ).
+
+Proposition 3 (Output Bound). |σ(z; θ)| ≤ A(ω, ω n, ξ ) uniformly in z for all z ∈ R. The peak amplitude Apeak =  2ξp1 − ξ2−1 is attained at the resonant frequency ωr = ωn
+
+p1 − 2ξ2 for ξ < 1/√2. For ξ ≥ 1/√2 the amplitude decreases monotonically from A(0) = 1 .
+
+Proposition 2 reveals a key structural property: representing high-frequency con-tent requires both a large forcing frequency ω and a non-negligible amplitude A
+
+at that frequency, since the Lipschitz constant is their product. This multiplica-tive coupling is the source of the implicit regularisation that we formalise next. 
+
+3.3 Spectral Gating 
+
+The properties above confirm that our activation is well-behaved for optimisa-tion; however, they do not yet explain why it should favour signal over noise. We now turn to the core theoretical question: how do the gradients of the reconstruc-tion loss with respect to the parameters behave during training? By decomposing the gradient with respect to the damping factor ξ, following the principle of analysing implicit biases of gradient descent [3, 11], we obtain a particularly in-terpretable form of spectral regularisation, requiring no explicit penalty in the loss. The gradient naturally separates into: (i) a term that pushes ξ upward, narrowing the bandwidth unconditionally; (ii) a term that pushes ξ downward, widening the bandwidth, but only when the target contains coherent energy at the carrier frequency. We refer to these competing dynamics as closing and 
+
+opening the spectral gate, respectively. Theorems and corollaries are proven in Sec. A.2. 6 A. Costanzino et al. 
+
+Theorem 1 (Amplitude is Monotone in ξ). For ω; ωn; ξ > 0 then ∂A ∂ξ < 0.
+
+Theorem 1 establishes that increasing ξ always decreases the amplitude. The only route to amplifying the activation’s output, thereby increasing the network’s representational capacity at the carrier frequency, is to decrease ξ. Since gradient descent updates ξ ← ξ − η ∂L 
+
+> ∂ξ
+
+, the spectral gate opens only when ∂L 
+
+> ∂ξ
+
+> 0. To characterise when this condition holds, let us consider the mean squared error loss L = 1
+
+> N
+
+PNi=1 
+
+ σ(zi; θ) − yi
+
+2 for a single neuron with target values {yi}.
+
+Theorem 2 (Decomposition of the Damping Gradient). The gradient of 
+
+L with respect to ξ decomposes as: 
+
+∂L
+
+∂ξ = ∂A ∂ξ 
+
+2AN
+
+X
+
+> i
+
+sin 2(ωz i + φ)
+
+| {z }
+
+> Tself
+
++
+
+
+
+− ∂A ∂ξ 
+
+ 2
+
+N
+
+X
+
+> i
+
+yi sin( ωz i + φ)
+
+| {z }
+
+> Tsignal
+
+. (3) The self-interaction term satisfies Tself = ∂A ∂ξ · 2AN
+
+P 
+
+> i
+
+sin 2(ωz i + φ). For dense, uniform sampling 3 of z, the sum converges to 12 , yielding Tself ≈ ∂A ∂ξ A < 0
+
+by Theorem 1. This term always pushes ξ to increase, acting as a regularising force that tends to close the spectral gate. The signal term satisfies Tsignal =
+
+−2 ∂A ∂ξ ⟨y, sin( ω · +φ)⟩N , where ⟨· , ·⟩ N denotes the empirical inner product. Since 
+
+− ∂A ∂ξ > 0 by Theorem 1, we have sign( Tsignal ) = sign  ⟨y, sin( ω · +φ)⟩N
+
+. That is, 
+
+Tsignal is positive precisely when the target has energy at the carrier frequency. 
+
+Corollary 1 (Spectral Gating Conditions). The spectral gate opens ( ∂L 
+
+> ∂ξ
+
+>
+
+0) if and only if Tsignal > |Tself |, which requires: 
+
+⟨y, sin( ω · +φ)⟩N > A
+
+2 . (4) 
+
+Three cases arise: 
+
+(a) Coherent signal. If the target contains a Fourier component Ay sin( ωz +ψ)
+
+at the carrier frequency ω, then ⟨y, sin( ω · +φ)⟩N ≈ Ay 
+
+> 2
+
+cos( φ − ψ). The gate opens when Ay cos( φ − ψ) > A , i.e ., when the neuron is underfitting the corresponding frequency component. As A increases toward Ay , the inequality saturates, and ξ reaches equilibrium; 
+
+(b) Random noise. If y is i.i.d. with zero mean and variance σ2 
+
+> y
+
+, then ⟨y, sin( ω·
+
++φ)⟩N = Op(N −1/2) by the central limit theorem, while A/ 2 = O(1) . For any reasonably sized sample, |Tself | dominates, and the gate remains closed; 
+
+(c) Mismatched frequency. If y = A′ sin( ω′z) with ω′̸ = ω, the inner product 
+
+⟨y, sin( ω · +φ)⟩N → 0 as N → ∞ by the orthogonality of sinusoids at distinct frequencies. The self-term dominates, correctly signalling that this neuron should not fit the mismatched component.  
+
+> 3
+
+We analyse the population gradient obtained in the limit N → ∞ , where empirical inner products converge to their expectations. Spectral Gating via Damped Oscillations 7
+
+Corollary 1, therefore, establishes that the optimisation problem is inherently biased to fit the coherent components of the signal and reject random noise. 
+
+Remark 2 (Multi-neuron layers). In a full layer with weight vectors {wj } and biases {bj }, each neuron receives zj = w⊤ 
+
+> j
+
+x + bj , creating different effective fre-quencies ω∥wj ∥ along different directions. The oscillator parameters (ω, ω n, ξ, φ ),shared across the layer, control the envelope of representable frequencies, while the weight distribution determines how individual neurons tile the frequency space within that envelope. 
+
+3.4 Multi-Layer Frequency Composition 
+
+Cascading single-neuron oscillator layers produce a frequency-modulated sig-nal [7] whose harmonic content is governed by the Jacobi-Anger expansion [2,25]. The effective modulation index at layer ℓ is βℓ = ωℓwℓ
+
+Qℓ−1 
+
+> k=1
+
+Ak, which controls the number of non-negligible harmonics, which are approximately ⌊β⌋ + 1 , since 
+
+|Jn(β)| ≪ 1 for |n| > β + O(β1/3) [1,16]. Since each Ak decreases with ξk (Theo-rem 1), the damping factors collectively gate the network’s harmonic bandwidth: larger ξk narrows the spectrum, while smaller ξk widens it. The product struc-ture ensures geometric decay of βℓ at initialisation ( βℓ ∝ Aℓ−10 with A0 < 1), so that the deepest layers initially contribute near-zero frequency support and bandwidth expands progressively as the individual Ak grow during training, producing a coarse-to-fine learning curriculum without explicit scheduling. This extends the observation by [26] that composing sinusoidal layers in SIREN pro-duces Bessel-governed harmonics. The key difference is that our oscillator ampli-tude Ak makes the modulation index learnable. Full formulation and derivations are provided in Sec. A.3 of the Supplemental Material. 
+
+4 Experiments 
+
+We evaluate our method across several tasks organised by observation model: signal representation (Sec. 4.1), recovery from corrupted observations (Sec. 4.2), and recovery from incomplete observations (Sec. 4.3). More tasks are reported in Sec. D of the Supplemental Materials. We compare against eight established INRs: SIREN [22], Gauss [18], WIRE [19], FINER [13], BACON [12], MFN [8], FR [21], and Fourier Features [24]. For each competitor, we adopt the task-specific hyperparameters and architecture configuration recommended by the original authors when available. When no configuration is provided for a given task, we manually tune the architecture and hyperparameters to obtain com-petitive results. In contrast, our method uses the same architecture and hyper-parameters across all tasks, with no task-specific tuning, directly verifying the claim that the spectral gate adapts to the signal’s complexity without manual intervention. All these details are in the Supplemental Materials. To ensure a fair and reproducible comparison, we have re-implemented all methods and tasks 8 A. Costanzino et al. 
+
+Table 1: Signal Fitting. Best results in bold , runner-ups underlined.                                                                                                                                                                                                                                                                                                                                              
+
+> INR Square Wave Chirp
+> 100 Hz 250 Hz 500 Hz 250 Hz 500 Hz 1000 Hz Final PSNR Peak PSNR Final PSNR Peak PSNR Final PSNR Peak PSNR Final PSNR Peak PSNR Final PSNR Peak PSNR Final PSNR Peak PSNR
+> FDHO 150.76 ±1.51 160.40 ±7.32 135.95 ±1.39 142.70 ±1.22 126.83 ±1.17 135.38 ±0.69 117.69 ±15.63 120.97 ±17.13 122.38 ±16.85 124.98 ±18.65 86.39 ±4.10 94.15 ±2.60 SIREN [22] 116.68 ±1.46 148.39 ±2.32 74.98 ±3.06 136.40 ±0.33 64.49 ±39.68 125.86 ±0.80 70.43 ±9.88 126.55 ±2.20 57.65 ±34.99 120.78 ±3.15 61.05 ±6.62 105.05 ±3.27 Gauss [18] 123.83 ±5.02 132.48 ±0.16 91.60 ±42.04 125.54 ±0.07 26.63 ±8.40 42.08 ±4.32 104.32 ±16.93 113.31 ±15.97 49.10 ±14.06 66.77 ±4.61 16.70 ±1.65 17.96 ±1.61 WIRE [19] 95.64 ±27.03 140.20 ±1.98 54.83 ±8.10 88.38 ±14.79 34.41 ±6.80 45.35 ±3.07 96.81 ±21.76 132.48 ±3.72 51.09 ±10.94 74.48 ±5.82 30.92 ±7.67 34.94 ±6.57 BACON [12] 29.03 ±0.00 29.03 ±0.00 33.01 ±0.00 33.01 ±0.00 36.02 ±0.00 36.02 ±0.00 75.03 ±2.71 107.59 ±1.87 79.23 ±0.73 109.08 ±3.24 73.28 ±0.96 78.69 ±2.56 FINER [13] 107.64 ±25.40 107.64 ±25.40 101.85 ±10.61 132.31 ±0.81 53.70 ±33.03 119.07 ±0.07 82.68 ±22.96 136.74 ±1.10 65.76 ±6.98 123.49 ±0.63 80.50 ±30.38 112.57 ±1.36
+> MFN [8] 94.72 ±13.13 126.92 ±8.56 52.23 ±4.76 63.77 ±2.22 6.03 ±0.00 6.04 ±0.00 56.23 ±4.40 81.54 ±2.57 14.60 ±0.21 14.62 ±0.22 10.90 ±0.14 10.91 ±0.12 Fourier [24] 150.33 ±6.87 155.47 ±2.46 54.75 ±8.71 125.31 ±7.14 24.75 ±13.57 34.00 ±2.47 104.82 ±22.65 137.95 ±1.28 43.50 ±9.43 60.16 ±4.76 19.64 ±1.53 22.31 ±1.62 FR [21] 6.02 ±0.00 6.03 ±0.00 6.02 ±0.00 6.02 ±0.00 6.02 ±0.00 6.02 ±0.00 9.40 ±0.36 10.48 ±0.20 9.47 ±0.25 9.75 ±0.11 9.24 ±0.16 9.36 ±0.12
+
+within a unified codebase under identical training conditions. We will publicly release this library, dubbed INRs Playground , as part of our contributions. We run each experiment 10 times and average the results. For image-related tasks, we provide qualitative results of their best run in Fig. 1. 
+
+Initialisation We initialise ω0 and ωn, 0 such that the forcing frequency lies be-low the natural frequency ( e.g ., ω0 = 40 , ω n, 0 = 45 ), placing the system away from resonance with a suppressed initial amplitude. Both frequencies are repa-rameterised via softplus to ensure positivity. We initialise the damping factor to ξ0 = 1 /√2, corresponding to a Butterworth (maximally-flat) magnitude re-sponse [6], which provides moderate amplitude without a resonance peak. We initialise φ to the physical phase lag of the oscillator at the initial parame-ters: φ0 = − arctan   2ξ0ωn, 0ω0
+
+ω2
+
+n, 0−ω20
+
+. This ensures physical consistency at the start of training; the phase is then free to evolve. Finally, we follow the SIREN initial-isation scheme [22] but scaled by the initial natural frequency: the first layer composed of m neurons draws w ∼ U (−1/m, 1/m ) and hidden layers draw 
+
+w ∼ U  −p6/m/ω n, p6/m/ω n
+
+, which maintains approximate unit variance of pre-activations across layers. 
+
+4.1 Signal Representation 
+
+We first evaluate the activation’s ability to faithfully encode continuous signals under direct, complete supervision, i.e ., fitting a function y = f (x) from dense samples. This setting isolates expressivity: every sample point is observed with-out noise or missing data, so performance differences between activations reflect their capacity to represent diverse spectral content. In terms of our theoretical framework, these experiments validate the properties established in Sec. 3.2. The network must have sufficient spectral bandwidth to match the target and provide baseline conditions under which the spectral gate should open during training. 
+
+1D Signal Fitting. We fit a one-dimensional composite signal containing multiple frequency components. This controlled setting allows direct inspection of how the learned FDHO parameters align with the target’s spectral content, provid-ing the most transparent validation of the spectral gating mechanism described in Sec. 3.3. Results are reported in Tab. 1. We evaluate on two signal types: a Square Wave (rich in odd harmonics) and a Chirp (continuously sweep-ing frequency), at increasing fundamental frequencies, and report both final and peak PSNR over training to distinguish converged reconstruction quality from the best performance achieved at any point during optimisation. The FDHO Spectral Gating via Damped Oscillations 9
+
+Table 2: Audio Fitting. Best results in bold , runner-ups underlined.                                                                                                 
+
+> Signal Metric FDHO SIREN Gauss WIRE BACON FINER MFN Fourier FR Bach Final PSNR 56.23 ±0.21 52.02 ±2.14 19.72 ±0.10 19.80 ±0.06 19.50 ±0.00 38.69 ±1.64 7.38 ±0.25 50.75 ±1.14 17.98 ±1.20 Peak PSNR 56.32 ±0.19 58.47 ±0.16 20.25 ±0.15 20.80 ±0.17 19.56 ±0.01 41.97 ±0.19 7.38 ±0.25 52.36 ±0.64 20.63 ±0.05
+> Counting Final PSNR 43.17 ±2.45 41.64 ±2.84 24.43 ±0.01 24.83 ±0.19 24.43 ±0.00 34.02 ±0.60 6.84 ±0.25 36.20 ±0.65 24.29 ±0.18 Peak PSNR 45.83 ±4.20 45.22 ±0.66 24.72 ±0.03 25.11 ±0.23 24.43 ±0.00 36.20 ±1.17 6.84 ±0.25 36.55 ±0.40 24.64 ±0.04
+
+activation achieves the highest final PSNR across all six settings, demonstrating consistently superior converged reconstruction quality. It also attains the highest peak PSNR in four of six conditions, with the two exceptions being the Chirp 
+
+at 250 Hz (where Fourier Features reaches 137 .95 dB vs. our 120 .97 dB) and at 1000 Hz (where FINER reaches 112 .57 dB vs. our 94 .15 dB). The fact that 
+
+FDHO leads on final PSNR even in these two settings suggests that the spec-tral gating mechanism provides more stable long-term convergence: once the gate opens for a coherent frequency component, the equilibrium predicted by Corollary 1(a) prevents further drift, whereas methods without this mechanism may overshoot during training and settle at a lower endpoint. The most reveal-ing pattern emerges at higher frequencies. Non-periodic and spatially compact activations, such as Gauss, WIRE, and MFN, degrade severely as frequency in-creases: on the 500 Hz Square Wave , Gauss drops to 42 dB, and MFN collapses to 6 dB, consistent with their documented low-frequency bias. SIREN shows a characteristic pattern: modest final PSNR but competitive peak PSNR, reflect-ing its all-pass nature: it can match the signal’s frequency content but lacks the spectral gate to stabilise convergence, resulting in a gap between peak and final performance. FDHO combines the strengths of both regimes: strong converged quality (highest final PSNR) with stable training dynamics (smallest gap be-tween peak and final PSNR), consistent with the spectral gating mechanism and the coarse-to-fine curriculum of Sec. 3.4, preventing subsequent drift. 
+
+Audio Fitting. We encode raw audio waveforms as coordinate-based networks mapping time to amplitude, following the protocol of [22]. Audio signals are characterised by rich harmonic structure spanning several orders of magnitude in frequency, making them a demanding test of spectral expressivity. Results are reported in Tab. 2. We evaluate on two clips: Bach (tonal, harmonically structured) and Counting (speech, broadband and transient-rich), again re-porting both final and peak PSNR. FDHO achieves the highest final PSNR on both signals ( 56 .23 dB on Bach , 43 .17 dB on Counting ), confirming that the spectral gating mechanism yields consistently superior converged representa-tions even on spectrally demanding targets. On peak PSNR, FDHO ranks first on Counting (45 .83 dB vs. SIREN’s 45 .22 dB) and second on Bach (56.32 dB vs. SIREN’s 58 .47 dB). The peak gap on Bach is informative: SIREN’s all-pass, purely periodic activation is well matched to the sustained harmonic structure of instrumental music, allowing it to transiently achieve high fidelity, but it does not maintain this performance at convergence (final PSNR drops to 52 .02 dB, over 4 dB below our activation). This pattern is consistent with SIREN’s lack of a stabilising mechanism: without the equilibrium condition of Corollary 1(a), the network continues to adjust frequencies after they have been adequately cap-tured, leading to a lower endpoint despite a higher peak. The broader comparison 10 A. Costanzino et al. 
+
+Table 3: Image Fitting. Best results in bold , runner-ups underlined.                                                                                                                                                                                                                                                                                      
+
+> INR Tiger Tiles Bikers Butterfly Knot
+> Final PSNR Peak PSNR Final PSNR Peak PSNR Final PSNR Peak PSNR Final PSNR Peak PSNR Final PSNR Peak PSNR
+> FDHO 63.79 ±0.23 63.79 ±0.23 52.24 ±5.82 57.09 ±1.31 57.06 ±0.97 57.25 ±0.78 57.85 ±0.71 57.96 ±0.61 59.21 ±7.84 64.05 ±3.68
+> SIREN [22] 53.69 ±1.77 58.52 ±0.25 52.05 ±1.76 58.36 ±0.21 43.11 ±11.9 55.92 ±0.21 48.81 ±1.51 55.83 ±0.48 51.90 ±0.53 59.72 ±0.78 Gauss [18] 44.10 ±0.62 46.46 ±0.21 42.34 ±1.09 44.77 ±0.19 41.45 ±0.74 42.59 ±0.08 43.19 ±0.62 45.01 ±0.44 43.81 ±1.19 47.08 ±0.24 WIRE [19] 38.64 ±0.19 39.20 ±0.06 40.92 ±0.45 42.06 ±0.21 36.71 ±0.15 36.99 ±0.26 36.78 ±0.33 37.10 ±0.26 40.32 ±0.27 40.80 ±0.11 BACON [12] 29.88 ±0.03 29.90 ±0.04 32.20 ±0.04 32.30 ±0.01 27.45 ±0.05 27.45 ±0.05 25.01 ±0.10 25.01 ±0.11 31.22 ±0.03 31.25 ±0.02 FINER [13] 56.58 ±0.12 57.09 ±0.14 54.09 ±0.97 55.31 ±0.27 47.46 ±3.13 53.53 ±0.17 53.65 ±0.86 55.10 ±0.08 53.39 ±1.88 59.72 ±0.20 MFN [8] 46.97 ±0.99 47.01 ±0.97 41.92 ±3.32 42.59 ±2.60 38.11 ±0.53 38.11 ±0.53 44.12 ±0.74 44.25 ±0.72 48.71 ±1.95 50.59 ±1.02 Fourier [24] 51.79 ±0.66 52.77 ±0.26 46.29 ±1.45 50.79 ±0.16 45.35 ±1.09 47.80 ±0.12 45.30 ±3.40 51.58 ±0.40 51.49 ±0.52 53.02 ±0.56 FR [21] 23.01 ±0.22 23.01 ±0.22 19.79 ±0.02 19.79 ±0.02 19.89 ±0.05 19.89 ±0.05 18.68 ±0.03 18.68 ±0.03 17.35 ±0.12 17.35 ±0.12
+
+reveals a stark divide. Non-periodic activations, such as Gauss, WIRE, BACON, and FR, plateau around 20 to 25 dB on both clips, and MFN fails entirely (be-low 8 dB), demonstrating that spatially compact activations lack the spectral bandwidth required for audio-frequency content. FINER provides a meaningful improvement ( 42 dB peak on Bach , 36 dB on Counting ) but remains well be-low FDHO and SIREN, indicating that variable-periodic modulation alone is insufficient without a mechanism to coordinate spectral bandwidth across the full frequency range. Fourier Features performs competitively on Bach (52 .36 
+
+dB peak) but drops on Counting (36 .55 dB), suggesting that its fixed random frequency basis struggles with the non-stationary spectral content of speech. 
+
+Image Fitting. We fit natural images by learning a mapping from pixel coordi-nates to RGB values, following the standard protocol established by [22] and adopted across the INR literature [10, 13, 18, 19, 21]. Natural images exhibit a broad, spatially varying frequency spectrum, ranging from smooth regions to fine textures and sharp edges, requiring the activation to accommodate a wide range of spectral content. Results on five diverse images are reported in Tab. 3. FDHO 
+
+achieves the highest final and peak PSNR on four of five images ( Tiger , Bik-ers , Butterfly , Knot ), with margins of up to 10 dB over the closest competitor on final quality ( Bikers : 57 .06 dB vs. FINER’s 47 .46 dB). The sole exception is 
+
+Tiles , where FINER reaches 54 .09 dB vs. FDHO ’s 52 .24 dB on final PSNR, and SIREN reaches 58 .36 dB vs. FDHO ’s 57 .09 dB on peak PSNR. Tiles is a highly regular, repetitive texture, precisely the setting where FINER’s variable-periodic activations are best suited, as the spectral content is concentrated at a few dom-inant spatial frequencies with little need for adaptive bandwidth control. The most evident pattern is the gap between the final and peak PSNR for SIREN. On Bikers , SIREN peaks at 55 .92 dB but converges to only 43 .11 dB, a degra-dation of nearly 13 dB; similar drops appear on Tiger (−4.83 dB), Butterfly 
+
+(−7.02 dB), and Tiles (−6.31 dB). This is the overshoot-then-decay behaviour expected from an all-pass activation: SIREN reaches the target frequencies but, lacking a stabilising mechanism, continues to adjust its parameters and drifts away from optimal solutions. FDHO shows no such degradation: on Tiger , fi-nal and peak PSNR are identical ( 63 .79 dB), and across all images the gap never exceeds 5 dB (with the highest being on Knot ), consistent with the equilibrium condition of Corollary 1(a) that stabilises ξ once the neuron adequately repre-sents its frequency component. Among the remaining INRs, FINER and SIREN are the strongest overall competitors. Gauss, WIRE, and MFN cluster between 
+
+37 and 50 dB, reflecting the low-frequency ceiling of non-periodic and spatially Spectral Gating via Damped Oscillations 11           
+
+> Supervision GT FDHO SIREN Gauss WIRE BACON FINER MFN Fourier FR
+> Fitting Denoising CT Inp. SR Poisson
+
+Fig. 1: Qualitative results. Please zoom to appreciate the differences. 
+
+compact activations on images with significant high-frequency content. FR and BACON remain below 32 dB across all images. The variance of FDHO is mod-erate across conditions, while several INRs exhibit notable instability ( i.e ., on 
+
+Bikers : SIREN ±11 .9 dB vs. FDHO ±0.97 dB). 
+
+4.2 Signal Recovery from Corrupted Observations 
+
+We next evaluate settings where the observed data is degraded, following the model y = f (x) + ε, where ε represents observation noise. These experiments directly test the noise rejection mechanism formalised in Sec. 3.3. 
+
+Image Denoising. We fit a noisy image (with σ = 0 .1) directly, without any ex-plicit denoising loss or regularisation, relying entirely on the INR’s inductive bias to separate signal from noise. This is the purest test of Corollary 1(b): the noise component ε is i.i.d. and produces Op(N −1/2) correlation with the carrier, so the gate should remain closed for noise-driven frequencies while opening for the un-derlying clean signal. We follow the evaluation protocol described in [13,19] and report only the final PSNR against the clean ground truth in Tab. 4, since peak PSNR is not meaningful when the training target itself is corrupted. FDHO 
+
+achieves the highest PSNR on all five images. This is a direct empirical confir-mation of the noise rejection mechanism: without any architectural modification, early stopping, or regularisation term, the spectral gate autonomously prevents the network from fitting the noise, as it adapts the bandwidth to the signal content rather than imposing a fixed spectral ceiling. The runner-up across all images is MFN, which is notable, as in the clean image fitting experiments (Tab. 3), MFN ranked among the weaker methods. Its relative strength here stems from its multiplicative structure imposing a strong low-frequency bias that acts as implicit regularisation in the presence of noise, though at the cost of severely limited representational capacity. SIREN, which led or rivalled FDHO 
+
+on peak PSNR in clean fitting, drops to 26 .2 dB here, nearly identical to Gauss 12 A. Costanzino et al. 
+
+Table 4: Image Denoising and CT Scan Reconstruction. INR Tiger Tiles Bikers Butterfly Knot CT Scan                                                                                                                                                              
+
+> FDHO 30.81 ±1.25 28.57 ±0.29 29.35 ±0.32 31.86 ±0.69 28.67 ±0.83 39.97 ±0.25
+> SIREN [22] 26.22 ±0.02 26.21 ±0.02 26.26 ±0.08 26.40 ±0.03 26.21 ±0.01 29.81 ±1.81 Gauss [18] 26.44 ±0.03 26.46 ±0.03 26.77 ±0.06 27.05 ±0.06 26.25 ±0.03 31.22 ±0.06 WIRE [19] 26.36 ±0.02 26.69 ±0.02 26.72 ±0.02 26.69 ±0.05 26.29 ±0.03 27.15 ±0.19 BACON [12] 25.87 ±0.02 27.30 ±0.06 25.48 ±0.04 23.60 ±0.04 26.01 ±0.01 11.11 ±0.12 FINER [13] 26.23 ±0.01 26.20 ±0.03 26.39 ±0.01 26.54 ±0.02 26.21 ±0.01 28.42 ±6.06 MFN [8] 27.65 ±0.19 27.62 ±0.04 28.21 ±0.10 28.18 ±0.69 26.89 ±0.10 37.19 ±0.07 Fourier [24] 26.59 ±0.01 26.13 ±0.44 26.85 ±0.10 27.36 ±0.06 26.08 ±0.25 34.92 ±0.19 FR [21] 22.87 ±0.15 19.77 ±0.02 19.85 ±0.07 18.62 ±0.04 17.29 ±0.16 22.84 ±0.62
+
+and WIRE, confirming that its all-pass nature offers no protection against noise memorisation. FINER similarly falls to the level of the non-periodic activations, indicating that its variable-periodic mechanism does not provide noise rejection. FR performs worst overall (below 23 dB on four of five images), suggesting that its Fourier reparametrisation amplifies rather than suppresses noise-driven fre-quency content. The variance of our activation is slightly higher than that of the other baselines (e.g., ±1.25 dB on Tiger vs. ±0.02 dB for SIREN), which reflects the fact that FDHO is actively making non-trivial spectral decisions, 
+
+i.e ., determining which frequencies to fit and which to suppress, whereas the baselines converge to a similar worse solution regardless of the run. 
+
+Computed Tomography (CT) Reconstruction. We reconstruct a 2D image from a sparse set of Radon projections, and observations are corrupted by measurement noise. This task combines aspects of both indirect and incomplete observation models: the signal is accessed only indirectly through line integrals, and the lim-ited number of projection angles makes the inverse problem severely ill-posed. The INR must leverage its inductive bias to regularise the reconstruction, mak-ing this a joint test of noise robustness and the coarse-to-fine learning curriculum described in Sec. A.3. We follow the setup of [19, 23] and report results in the rightmost column of Tab. 4. FDHO achieves 39 .97 dB, leading the second-best method (MFN, 37 .19 dB) by nearly 2.8 dB, the largest absolute margin among all experiments in this section. This result is particularly significant because CT reconstruction compounds two challenges that the spectral gate is designed to address: noise rejection (the projections are noisy) and progressive frequency recovery (sparse angular sampling provides incomplete spectral coverage, the network must reconstruct missing frequency content in a principled order). The ranking mirrors the denoising results: MFN is the runner-up, benefiting from its conservative spectral bias, followed by Fourier Features ( 34 .92 dB) and Gauss (31 .22 dB). SIREN drops to 29 .81 dB, confirming that its all-pass nature is a liability when the observations are both indirect and noisy: without spectral gat-ing, SIREN fits noise in the sinogram, which propagates into streak artefacts in the reconstructed image (Fig. 1). FINER shows instability in this setting ( ±6.06 
+
+dB), suggesting that its variable-periodic activations are sensitive to the condi-tioning of the Radon inverse problem. BACON ( 11 .11 dB) and FR ( 22 .84 dB) fail to produce useful reconstructions, indicating that their spectral structures are incompatible with the frequency-domain characteristics of tomographic data. Spectral Gating via Damped Oscillations 13 
+
+Table 5: Image Inpainting and Super-resolution. Best results in bold , runner-ups underlined.                                                                                                                                                                                                                                                                                     
+
+> INR Image Inpainting Image Super-resolution Tiger Tiles Bikers Butterfly Knot Tiger Tiles Bikers Butterfly Knot
+> FDHO 26.86 ±0.39 20.47 ±0.52 23.05 ±0.10 24.65 ±0.10 21.11 ±0.09 23.92 ±0.06 19.60 ±0.81 21.45 ±0.02 20.81 ±0.04 17.84 ±0.03
+> SIREN [22] 27.35 ±0.09 20.70 ±0.06 23.33 ±0.08 24.15 ±0.17 20.91 ±0.04 23.59 ±0.02 20.27 ±0.28 20.69 ±0.04 20.24 ±0.26 17.40 ±0.17 Gauss [18] 24.69 ±0.04 20.66 ±0.06 22.38 ±0.03 22.97 ±0.07 19.74 ±0.01 20.93 ±0.04 19.41 ±0.03 19.79 ±0.03 18.97 ±0.02 16.62 ±0.03 WIRE [19] 17.32 ±0.14 16.86 ±0.21 17.51 ±0.10 15.66 ±0.21 15.87 ±0.10 15.47 ±0.11 15.39 ±0.11 15.72 ±0.10 13.37 ±0.12 14.47 ±0.07 BACON [12] 8.21 ±0.05 9.42 ±0.07 7.65 ±0.03 6.92 ±0.02 9.69 ±0.06 5.50 ±0.12 8.01 ±3.68 11.90 ±0.09 9.00 ±0.06 5.72 ±0.19 FINER [13] 26.78 ±0.10 20.90 ±0.03 23.00 ±0.07 24.61 ±0.08 20.90 ±0.01 23.57 ±0.05 20.52 ±0.14 21.34 ±0.07 20.67 ±0.00 17.76 ±0.02 MFN [8] 24.65 ±0.04 19.42 ±0.14 20.74 ±0.06 22.83 ±0.13 19.33 ±0.12 23.34 ±0.10 20.56 ±0.07 21.00 ±0.07 20.42 ±0.04 17.31 ±0.04 Fourier [24] 25.25 ±0.10 20.87 ±0.03 22.34 ±0.17 23.33 ±0.11 20.12 ±0.18 21.28 ±0.25 19.52 ±0.23 20.27 ±0.14 18.87 ±0.13 16.76 ±0.09 FR [21] 22.47 ±0.18 19.46 ±0.02 19.54 ±0.04 18.40 ±0.03 16.73 ±0.08 21.76 ±0.10 19.48 ±0.02 19.33 ±0.04 18.13 ±0.02 16.18 ±0.07
+
+4.3 Signal Recovery from Incomplete Observations 
+
+Finally, we evaluate settings where the signal is observed only partially or indi-rectly, following the model y = Φ(f (x)) with Φ a non-invertible forward operator that discards information. Unlike the corrupted setting, the challenge here is not noise but ill-posedness: infinitely many signals are consistent with the observa-tions, and the network must rely on its inductive bias to select a plausible recon-struction. These experiments test whether the coarse-to-fine learning curriculum (Sec. 3.4 and Sec. A.3) and the progressive bandwidth expansion (Sec. A.4) pro-vide useful structural priors for underdetermined inverse problems. 
+
+Image Inpainting. We reconstruct an image from a subset of observed pixels, with the forward operator Φ being a binary mask that retains only a fraction ( 20 %) of the pixel locations. Thus, the network must interpolate coherently across missing regions. We follow the protocol described in [13,19] and report results in Tab. 5. Inpainting is the most competitive setting across baselines, with the top three methods, FDHO , SIREN, and FINER, separated by fractions of a decibel on most images. FDHO ranks first on Butterfly (24 .65 dB) and Knot (21 .11 dB), and second on Tiger (26 .86 dB, behind SIREN’s 27 .35 dB) and Bikers (23 .05 
+
+dB, behind SIREN’s 23 .33 dB). On Tiles , Fourier Features leads ( 20 .87 dB), with SIREN second ( 20 .70 dB) and FDHO at 20 .47 dB. Unlike denoising and super-resolution, where the network must generalise beyond corrupted or downsampled observations, inpainting provides clean pixel values at the observed locations. The missing data is spatially, not spectrally, incomplete. The task, therefore, rewards full spectral bandwidth at the observed coordinates, which is exactly SIREN’s strength. The noise rejection is less relevant here as the observations are uncorrupted, and the coarse-to-fine curriculum offers a smaller benefit when the low-resolution structure is already fully determined by the observed pixels scattered across the image. The fact that FDHO nonetheless matches or exceeds SIREN on two of five images, while remaining within 0.5 dB on two others, indicates that the spectral gate does not significantly penalise the network when noise rejection is unnecessary. FINER again emerges as a strong competitor, trailing our activation on Butterfly and matching it closely elsewhere, consistent with its strong performance in the clean fitting regime. WIRE, BACON, and FR underperform, confirming that spatial localisation without sufficient spectral bandwidth is inadequate for coherent interpolation across missing regions. 14 A. Costanzino et al. 
+
+Image Super-resolution. We recover a higher-resolution ( 512 px) image from a lower-resolution input ( 128 px), where Φ represents spatial downsampling. The network is supervised only on the low-resolution grid and must hallucinate plau-sible high-frequency content at the fine scale. This tests whether the coarse-to-fine curriculum produces a natural frequency hierarchy: the network should first lock onto the observed low-frequency content and then extend to higher frequen-cies guided by the signal’s spectral structure. We follow the protocol described in [13, 19, 21] and report results in Tab. 5. FDHO achieves the highest PSNR on four of five images ( Tiger , Bikers , Butterfly , Knot ), with FINER as the consistent runner-up on those four. The margins are tighter than in clean fitting or denoising, as expected, since super-resolution is fundamentally constrained by the information available in the low-resolution input. On Tiles , FDHO (19 .60 
+
+dB) falls behind MFN ( 20 .56 dB) and FINER ( 20 .52 dB), echoing the results in clean fitting, where FINER also led: the highly periodic texture of Tiles favours activations whose spectral support aligns with its regular structure, reducing the advantage of adaptive bandwidth control. An interesting shift from the fitting and denoising experiments is MFN’s performance. MFN was among the weakest methods on clean fitting (Tab. 3) but the second-best on denoising (Tab. 4), and here it is competitive with FINER and SIREN across all images. Super-resolution shares a key property with denoising: the network must generalise beyond the observed data, and methods with conservative spectral behaviour avoid halluci-nating high-frequency artefacts at unsupervised locations. FDHO achieves this conservatism through the spectral gating. The coarse-to-fine curriculum ensures that low-frequency structure is captured first and higher frequencies are admitted only when justified, while MFN achieves it through a fixed low-frequency ceiling that, as the clean fitting results show, limits its capacity when the full spectrum must be represented. WIRE and BACON further degrade in the super-resolution setting, suggesting that their spatial localisation, while beneficial for fitting ob-served data, does not extrapolate well to unobserved coordinates. SIREN remains competitive on Tiger (23 .59 dB, second-best) but falls behind on the remain-ing images, consistent with its lack of a mechanism to prioritise the observed low-frequency content before extending to higher frequencies. 
+
+5 Discussion 
+
+We have presented FDHO , a physics-grounded activation function for INRs de-rived from the steady-state response of a damped harmonic oscillator. The core insight is that coupling amplitude to frequency through a physical transfer func-tion creates an implicit spectral regulariser: the gradient of the reconstruction loss with respect to the damping factor decomposes into a self-closing force and a signal-driven opening force, yielding a precise gating condition that distin-guishes coherent signal from noise without any explicit penalty in the loss. This mechanism yields state-of-the-art or competitive results across all the considered tasks without the need to tune either the architecture or any other hyperparam-eters, whereas each competitor INR needs specific tuning, and performs well Spectral Gating via Damped Oscillations 15 
+
+in some settings but degrades significantly in others. Notably, the cases where 
+
+FDHO turns out less beneficial – clean, spatially incomplete observations and highly regular textures – are those where Corollary 1 predicts the least advan-tage, confirming that the theory correctly characterises the method’s behaviour. Extending the formulation to per-neuron parameters and formalising the multi-layer gradient dynamics are the main directions for future work. 16 A. Costanzino et al. 
+
+References 
+
+1. Abramowitz, M., Stegun, I.A.: Handbook of Mathematical Functions with Formu-las, Graphs, and Mathematical Tables. Dover Publications (1964) 2. Arfken, G.B., Weber, H.J., Harris, F.E.: Mathematical Methods for Physicists. Academic Press, 7th edn. (2012) 3. Arora, S., Cohen, N., Hu, W., Luo, Y.: Implicit regularization in deep matrix factorization. In: Advances in Neural Information Processing Systems (NeurIPS). vol. 32 (2019) 4. Arora, S., Du, S.S., Hu, W., Li, Z., Wang, R.: Fine-grained analysis of optimiza-tion and generalization for overparameterized two-layer neural networks. In: ICML (2019) 5. Barron, J.T., Mildenhall, B., Tancik, M., Hedman, P., Martin-Brualla, R., Srini-vasan, P.P.: Mip-nerf: A multiscale representation for anti-aliasing neural radiance fields. In: ICCV (2021) 6. Butterworth, S.: On the theory of filter amplifiers. Wireless Engineer 7(6), 536–541 (1930) 7. Carson, J.R.: Notes on the theory of modulation. Proceedings of the Institute of Radio Engineers 10 (1), 57–64 (1922) 8. Fathony, R., Sahu, A.K., Willmott, D., Kolter, J.Z.: Multiplicative filter networks. In: ICLR (2021) 9. Jacot, A., Gabriel, F., Hongler, C.: Neural tangent kernel: Convergence and gen-eralization in neural networks. In: NeurIPS (2018) 10. Jayasundara, D., Zhao, H., Labate, D., Patel, V.M.: Mire: Matched implicit neural representations. In: CVPR (2024) 11. Li, Z., Luo, Y., Lyu, K.: Towards resolving the implicit bias of gradient descent for matrix factorisation: Greedy low-rank learning. In: ICLR (2021) 12. Lindell, D.B., Van Veen, D., Park, J.J., Wetzstein, G.: Bacon: Band-limited coor-dinate networks for multiscale scene representation. In: CVPR (2022) 13. Liu, Z., Zhu, H., Zhang, Q., Fu, J., Deng, W., Ma, Z., Guo, Y., Cao, X.: Finer: Flexible spectral-bias tuning in implicit neural representation by variable-periodic activation functions. In: CVPR (2024) 14. Mildenhall, B., Srinivasan, P.P., Tancik, M., Barron, J.T., Ramamoorthi, R., Ng, R.: Nerf: Representing scenes as neural radiance fields for view synthesis. In: ECCV (2020) 15. Ogata, K.: Modern Control Engineering. Prentice Hall, 5th edn. (2010) 16. Olver, F.W.J., Lozier, D.W., Boisvert, R.F., Clark, C.W.: NIST Handbook of Mathematical Functions. Cambridge University Press (2010) 17. Park, J.J., Florence, P., Straub, J., Newcombe, R., Lovegrove, S.: Deepsdf: Learning continuous signed distance functions for shape representation. In: CVPR (2019) 18. Ramasinghe, S., Lucey, S.: Beyond periodicity: towards a unifying framework for activations in coordinate-mlps. In: ECCV (2022) 19. Saragadam, V., LeJeune, D., Tan, J., Balakrishnan, G., Veeraraghavan, A., Bara-niuk, R.G.: Wire: Wavelet implicit neural representations. In: CVPR (2023) 20. Shi, K., Chen, H., Zhang, L., Gu, S.: Inductive gradient adjustment for spectral bias in implicit neural representations. In: ICML (2025) 21. Shi, K., Zhou, X., Gu, S.: Improved implicit neural representation with fourier reparameterized training. In: CVPR (2024) 22. Sitzmann, V., Martel, J.N., Bergman, A.W., Lindell, D.B., Wetzstein, G.: Implicit neural representations with periodic activation functions. In: NeurIPS (2020) Spectral Gating via Damped Oscillations 17 23. Sun, Y., Liu, J., Xie, M., Wohlberg, B., Kamilov, U.S.: Coil: Coordinate-based internal learning for tomographic imaging. IEEE Transactions on Computational Imaging (2021) 24. Tancik, M., Srinivasan, P.P., Mildenhall, B., Fridovich-Keil, S., Raghavan, N., Sing-hal, U., Ramamoorthi, R., Barron, J.T., Ng, R.: Fourier features let networks learn high frequency functions in low dimensional domains. In: NeurIPS (2020) 25. Watson, G.N.: A Treatise on the Theory of Bessel Functions. Cambridge University Press, 2nd edn. (1944) 26. Yüce, G., Ortiz-Jiménez, G., Bekerš, B., Frossard, P.: A structured dictionary perspective on implicit neural representations. In: CVPR (2022) 18 A. Costanzino et al. 
+
+# Spectral Gating via Damped Oscillations for Adaptive Implicit Neural Representations Supplemental Materials 
+
+In this document, we propose complementary results to the main paper. First, we provide additional theoretical results, along with proofs and derivations, in Sec. A. After that, we illustrate implementation details in Sec. B. Then, we provide a complementary analysis on the properties of the FDHO in Sec. C. Finally, we propose additional tasks in Sec. D, along with more qualitative results from the tasks proposed in the main paper. 
+
+A Additional Formulation 
+
+Throughout this section, we write D (ω, ω n, ξ ) = ( ω2 
+
+> n
+
+− ω2)2 + (2 ξω nω)2 for the radicand in Eq. (1), so that A = ω2
+
+> n
+
+D−1/2.
+
+A.1 Derivations of Basic Properties 
+
+Proposition 1 states that the activation function σ(z; θ) is smooth with respect to both z and all components of θ.
+
+Proof. The sine term is C∞ with respect to z, ω, and φ. The function D is a polynomial in (ω, ξ, ω n) and satisfies D > 0 for all ω ∈ R whenever ωn > 0
+
+and ξ > 0, since the two non-negative terms (ω2 
+
+> n
+
+− ω2)2 and (2 ξω nω)2 cannot vanish simultaneously. Therefore D−1/2 is C∞ in (ω, ξ, ω n). Since products and compositions of C∞ functions are C∞, it follows that σ(z; θ) = ω2
+
+> n
+
+D−1/2 sin( ωz +
+
+φ) is C∞ with respect to z and all components of θ.Proposition 2 states that the activation function is Lipschitz in z with a constant 
+
+Lz = |ω|A(ω, ω n, ξ ).
+
+Proof. ∂σ ∂z = ωA cos( ωz + φ), so Lz = sup z∈R ∂σ ∂z = |ω| A ≥ ∂σ ∂z .Proposition 3 states that: (i) |σ(z; θ)| ≤ A(ω, ω n, ξ ) uniformly in z ∀z ∈ R;(ii) The peak amplitude is Amax =  2ξp1 − ξ2−1, which is attained at the resonant frequency ωr = ωn
+
+p1 − 2ξ2 for ξ < 1/√2;(iii) For ξ ≥ 1/√2 the amplitude decreases monotonically from A(0) = 1 .
+
+Proof. Part (i): as | sin( ·)| ≤ 1, the output bound depends solely on A(ω, ω n, ξ ).Part (ii): We can find peak amplitude by maximising A or, as the numerator is positive by construction ( ω2 
+
+> n
+
+> 0), by minimising D. Remembering that D =Spectral Gating via Damped Oscillations 19 
+
+(ω2 
+
+> n
+
+− ω)2 + 4 ξ2ω2
+
+> n
+
+ω2, differentiating with respect to ω we obtain: 
+
+∂D ∂ω = 0 = ⇒ ∂D ∂ω = 2( ω2 
+
+> n
+
+− ω2) · − 2ω + 2(2 ξω nω) · 2ξω n (5) 
+
+= 8 ξ2ω2
+
+> n
+
+ω − 4ω2
+
+> n
+
+ω + 4 ω3 (6) 
+
+= 4 ω(2 ξ2ω2 
+
+> n
+
+− ω2 
+
+> n
+
++ ω2) = 0  (7) which yields the trivial solution ωpeak = 0 =⇒ A(0) = 1 (DC gain). The remaining expression can be rearranged as: 
+
+2ξ2ω2 
+
+> n
+
+− ω2 
+
+> n
+
++ ω2 = 0 (8) 
+
+ω2 = ω2
+
+> n
+
+(1 − 2ξ2) = ⇒ ωpeak = ωn
+
+p1 − 2ξ2. (9) Note that we discard the negative solution as ω > 0. The positive solution, more commonly referred to as resonant frequency ωr , exists when the radicand is strictly positive, hence for ξ < 1/√2. By substituting back into Eq. (1) [15], we obtain: 
+
+A(ωr ) = ω2
+
+> n
+
+q ω2 
+
+> n
+
+− ω2
+
+> n
+
+(1 − 2ξ2)2 + 4 ξ2ω2
+
+> n
+
+ω2
+
+> n
+
+(1 − 2ξ2)
+
+(10) 
+
+= ω2
+
+> n
+
+pω4 
+
+> n
+
++ ω4
+
+> n
+
+(1 − 2ξ2)2 − 2ω4
+
+> n
+
+(1 − 2ξ2) + 4 ξ2ω4
+
+> n
+
+(1 − 2ξ2) (11) 
+
+= ω2
+
+> n
+
+q
+
+ω4
+
+> n
+
+ 1 + (1 − 2ξ2)2 − 2(1 − 2ξ2) + 4 ξ2(1 − 2ξ2) (12) 
+
+= 1
+
+q
+
+1 + (1 − 2ξ2) (1 − 2ξ2) − 2 + 4 ξ2 (13) 
+
+= 1
+
+p1 + (1 − 2ξ2)(2 ξ2 − 1) (14) 
+
+= 1
+
+p1 + 2 ξ2 − 1 − 4ξ4 + 2 ξ2 (15) 
+
+= 1
+
+p4ξ2 − 4ξ4 (16) 
+
+= 1
+
+p4ξ2(1 − 2ξ2) (17) 
+
+= 12ξp1 − 2ξ2 = Apeak . (18) Part (iii): By differentiating D with respect to ω we already computed that: 
+
+∂D ∂ω = 4 ω(2 ξ2ω2 
+
+> n
+
+− ω2 
+
+> n
+
++ ω2), (19) 20 A. Costanzino et al. 
+
+and since ω; ωn; ξ > 0 and 2ξ2ω2 
+
+> n
+
+− ω2 
+
+> n
+
+> 0 for ξ ≥ 1/√2, then ∂D ∂ω > 0, meaning that D is strictly increasing ∀ω ∈ (0 , ∞), hence A is strictly decreasing ∀ω ∈
+
+(0 , ∞).
+
+A.2 Derivations of Spectral Gating 
+
+Theorem 1 establishes that the amplitude A is monotone in ξ.
+
+Proof. Since we can rewrite the amplitude as A = ω2
+
+> n
+
+D−1/2, we have: 
+
+∂A ∂ξ = ∂∂ξ 
+
+h
+
+ω2
+
+> n
+
+D−1/2i
+
+= − 12 ω2
+
+> n
+
+D−3/2 ∂D ∂ξ . (20) Remembering that D = ( ω2 
+
+> n
+
+− ω)2 + 4 ξ2ω2
+
+> n
+
+ω2, differentiating with respect to ξ
+
+we obtain ∂D ∂ξ = 8 ξω 2
+
+> n
+
+ω2, and substituting in Eq. (20) yields: 
+
+∂A ∂ξ = − 12 ω2
+
+> n
+
+D−3/2 · 8ξω 2
+
+> n
+
+ω2 = −ω4
+
+> n
+
+ω2ξD −3/2 =⇒ ∂A ∂ξ < 0, (21) as ω; ωn; ξ > 0 by definition, while Remark 1 establishes the vanishing condition for the radicand D.Theorem 2 establishes how the gradient of L with respect to ξ decomposes, while Corollary 1 how its components interacts with different signals. 
+
+Proof. As the pointwise mean squared error loss for target values {yi} is L =
+
+> 1
+> N
+
+PNi=1 
+
+ σ(zi; θ) − yi
+
+2, its derivative with respect to ξ is 4:
+
+∂L
+
+∂ξ = 2
+
+N
+
+> N
+
+X
+
+> i=1
+
+(σi − yi) ∂σ i
+
+∂ξ . (22) Since: 
+
+∂σ i
+
+∂ξ = ∂A ∂ξ sin ( ωz + φ), (23) we can plug it back into Eq. (22) obtaining: 
+
+∂L
+
+∂ξ = 2
+
+N
+
+> N
+
+X
+
+> i=1
+
+(σi − yi) ∂A ∂ξ sin ( ωz + φ). (24)  
+
+> 4
+
+σ(zi; θ) = σi for sake of compactness. Spectral Gating via Damped Oscillations 21 
+
+Plugging the definition of σi we obtain: 
+
+∂L
+
+∂ξ = 2
+
+N
+
+> N
+
+X
+
+> i=1
+
+(A sin ( ωz + φ) − yi) ∂A ∂ξ sin ( ωz + φ) (25) 
+
+= 2
+
+N∂A ∂ξ 
+
+> N
+
+X
+
+> i=1
+
+(A sin 2 (ωz + φ) − yi sin ( ωz + φ)) (26) 
+
+= 2AN · ∂A ∂ξ 
+
+> N
+
+X
+
+> i=1
+
+sin 2(ωz i + φ)
+
+| {z }
+
+> Tself
+
++
+
+
+
+− 2
+
+N · ∂A ∂ξ 
+
+ NX
+
+> i
+
+yi sin( ωz i + φ)
+
+| {z }
+
+> Tsignal
+
+. (27) We can rewrite the self-term by using the identity sin 2 x = 12 (1 − cos(2 x)) :
+
+Tself = 2AN · ∂A ∂ξ 
+
+> N
+
+X
+
+> i=1
+
+sin 2 (ωz i + φ) (28) 
+
+= 2AN · ∂A ∂ξ 
+
+> N
+
+X
+
+> i=1
+
+ 12 − 12 cos  2( ωz i + φ)
+
+(29) 
+
+= AN · ∂A ∂ξ + AN · ∂A ∂ξ 
+
+> N
+
+X
+
+> i=1
+
+cos  2( ωz i + φ) (30) 
+
+= AN · ∂A ∂ξ 
+
+> N
+
+X
+
+> i=1
+
+1 + cos (2 ωz i + 2 φ). (31) 
+
+(32) For N → +∞, the first term evaluates to N while the second term oscillates symmetrically, evaluating to 0 due to phase cancellation: 
+
+Tself ≈ AN · ∂A ∂ξ [N + 0  = A · ∂A ∂ξ . (33) Since A > 0 by construction and ∂A ∂ξ < 0 by Theorem 1, then Tself < 0.We can rewrite the signal-term as an empirical inner product: 
+
+Tsignal =
+
+
+
+− 2
+
+N · ∂A ∂ξ 
+
+ NX
+
+> i
+
+yi sin( ωz i + φ) = −2 · ∂A ∂ξ ⟨y, sin( ω · +φ)⟩N . (34) Since ∂A ∂ξ < 0 = ⇒ − ∂A ∂ξ > 0 by Theorem 1, we have: 
+
+sign( Tsignal ) = sign  ⟨y, sin( ω · +φ)⟩N
+
+, (35) since we cannot remove y, the signal term depend on the joint structure of y and 
+
+sin( ωz i + φ). We distinguish three cases: 22 A. Costanzino et al. 
+
+(a) With a coherent signal yi ≈ Ay sin ( ωz i + ϕ), hence with a frequency close to ω, the signal-term can be written as 5:
+
+Tsignal = 2
+
+N
+
+> N
+
+X
+
+> i
+
+Ay sin ( ωz i + ϕ) sin( ωz i + φ), (36) employing the Werner’s formula for the product of sines: 
+
+sin a sin b = cos ( a − b) − cos ( a + b), (37) we can rewrite: 
+
+Tsignal = 2Ay
+
+N
+
+> N
+
+X
+
+> i=i
+
+cos ( φ − ϕ) − 2Ay
+
+N
+
+> N
+
+X
+
+> i=i
+
+cos (2 ωz i + φ + ϕ). (38) For N → +∞, the second term oscillates symmetrically, evaluating to 0 due to phase cancellation, while the second term is non-zero, hence the gate can open; (b) With i.i.d noise with zero mean and finite variance we have that Tsignal =
+
+Op(N − 12 ), hence for N → +∞ the signal-term vanishes asymptotically and the gate stays closed 6;(c) With a signal yi ≈ A′ sin ( ω′zi), hence with a frequency ω′̸ = ω far from ω,the signal-term can be written as: 
+
+Tsignal = 2
+
+N
+
+> N
+
+X
+
+> i
+
+A′ sin ( ω′zi) sin( ωz i + φ). (39) We can employ once again the Werner’s formula for the product of sines, but since we have different frequencies, for N → +∞ both terms evaluate to 0, and the gate stays closed. 
+
+Gradients with respect to ω and ωn. The remaining parameter gradients complete the picture of how the spectral gate is positioned and shaped during training. The partial derivatives of A are: 
+
+∂A ∂ω = ω2
+
+> n
+
+2ω(ω2 
+
+> n
+
+− ω2) − 4ξ2ω2
+
+> n
+
+ω
+
+D3/2 , (40) 
+
+∂A ∂ω n
+
+= 2ωn
+
+D1/2 − ω2
+
+> n
+
+4ωn(ω2 
+
+> n
+
+− ω2) + 8 ξ2ωnω2
+
+2D3/2 . (41)  
+
+> 5
+
+For the sake of clarity, we dropped the derivative term as we already know its sign.  
+
+> 6
+
+Op denotes boundedness in probability: XN = Op(aN ) means that for any ϵ > 0
+
+there exists M such that P (|XN | > M a N ) < ϵ for all large N . We use Op because the signal term is a random variable (a function of the stochastic target y), whereas 
+
+A/ 2 = O(1) is deterministic. Spectral Gating via Damped Oscillations 23 
+
+Crucially, ∂A ∂ω changes sign at ω2 = ω2
+
+> n
+
+(1 −2ξ2), the resonance frequency, meaning gradient descent on ω drives the forcing frequency toward resonance when the current ω is below the peak, and away when above. This creates a gradient-driven frequency-locking mechanism that aligns the carrier with the target’s dominant spectral content, complementing the bandwidth control exerted by ξ.
+
+A.3 Multi-Layer Frequency Composition 
+
+The analysis in Sec. 3.3 considers a single layer in isolation. In practice, the interaction between stacked layers determines an INR’s representational power. We now show that cascading oscillator layers produces a frequency-modulated signal [7] whose harmonic bandwidth is controlled by the per-layer amplitudes 
+
+Ak and, therefore, by the damping factors ξk. This connects single-layer spectral gating to the network’s global frequency support and extends the observation by [26] that composing sinusoidal layers produces Bessel-governed harmonics: our FDHO amplitude Ak makes the modulation index learnable, giving the network explicit control over its harmonic bandwidth at each depth. 
+
+Proposition 4 (Frequency Modulation Structure). Consider two consec-utive oscillator layers: 
+
+h1(x) = A1 sin  ω1(w1x + b1) + φ1
+
+, (42) 
+
+h2(x) = A2 sin  ω2(w2h1(x) + b2) + φ2
+
+. (43) 
+
+The two-layer composition is a frequency-modulated signal: 
+
+h2(x) = A2 sin  β sin( α(x)) + c, (44) 
+
+with modulation index β = ω2w2A1, carrier α(x) = ω1(w1x+b1)+ φ1, and offset 
+
+c = ω2b2 + φ2.Proof. Direct substitution of h1 into the argument of h2:
+
+h2(x) = A2 sin ( ω2(w2A1 sin( ω1(w1x + b1) + φ1) + b2) + φ2) (45) 
+
+= A2 sin ( ω2w2A1
+
+| {z } 
+
+> Amplitude β
+
+sin ( ω1(w1x + b1) + φ1
+
+| {z }
+
+> Carrier α(x)
+
+) + ω2b2 + φ2
+
+| {z } 
+
+> Offset c
+
+) (46) 
+
+= A2 sin ( β sin ( α(x)) + c). (47) Expanding Eq. (44) via the Jacobi-Anger identity [2, 25]: 
+
+sin( β sin α + c) = 
+
+> ∞
+
+X
+
+> n=−∞
+
+Jn(β) sin( nα + c), (48) where Jn is the Bessel function of the first kind [1]. Thus, the output con-tains harmonics at integer multiples of the first-layer frequency, with amplitudes 
+
+A2|Jn(β)|.24 A. Costanzino et al. 
+
+Proof. Starting from the Jacobi-Anger identity and rearranging: 
+
+eiβ sin α =
+
+> +∞
+
+X
+
+> n=−∞
+
+Jn(β)einα , (49) we can multiply both sides by a constant eic to introduce the offset c:
+
+eiβ sin α · eic =
+
+> +∞
+
+X
+
+> n=−∞
+
+Jn(β)einα · eic (50) 
+
+ei(β sin α+c) =
+
+> +∞
+
+X
+
+> n=−∞
+
+Jn(β)ei(nα +c). (51) Applying Euler’s Formula, eix = cos x + i sin x, we can rewrite: 
+
+cos ( β sin α + c) + i sin ( β sin α + c) (52) 
+
+=
+
+> +∞
+
+X
+
+> n=−∞
+
+Jn(β)[cos ( nα + c) + i sin ( nα + c)] . (53) We can then evaluate the real and imaginary parts separately: 
+
+ℜ : cos ( β sin α + c) = 
+
+> +∞
+
+X
+
+> n=−∞
+
+Jn(β) cos ( nα + c), (54) 
+
+ℑ : sin ( β sin α + c) = 
+
+> +∞
+
+X
+
+> n=−∞
+
+Jn(β) sin ( nα + c). (55) Finally: 
+
+h2(x) = A2+∞X
+
+> n=−∞
+
+Jn(β) sin ( nα + c) (56) 
+
+Corollary 2 (Damping-controlled Harmonic Bandwidth). The num-ber of harmonics with non-negligible amplitude is approximately ⌊β⌋ + 1 , since 
+
+|Jn(β)| ≪ 1 for |n| > β + O(β1/3) [1, 16]. Since β = ω2w2A1 and A1 is a decreasing function of ξ1 (Theorem 1): 
+
+– Larger ξ1 ⇒ smaller A1 ⇒ smaller β ⇒ fewer harmonics (narrowband); 
+
+– Smaller ξ1 ⇒ larger A1 ⇒ larger β ⇒ more harmonics (wideband). 
+
+This analysis extends to deeper networks by induction. 
+
+Proposition 5 (Cascaded Spectral Gating). In an L-layer oscillator net-work, the effective modulation index at layer ℓ is 
+
+βℓ = ωℓwℓℓ−1Y
+
+> k=1
+
+Ak. (57) 
+
+The total harmonic bandwidth is therefore exponentially sensitive to the product of per-layer amplitudes Q 
+
+> k
+
+Ak.Spectral Gating via Damped Oscillations 25 
+
+At initialisation with per-layer amplitudes Ak ≈ A0 < 1, the modulation index at layer ℓ is βℓ ∝ Aℓ−10 , which decays geometrically with depth. The deepest layers initially contribute near-zero frequency support, and bandwidth expands from the input layer outward as the individual Ak grow during training. This provides a rigorous mechanism for the empirically observed coarse-to-fine learn-ing: the multiplicative structure ensures that even modest decreases in individual 
+
+ξk values have compounding effects on spectral bandwidth. This analysis mirrors the classical observation in [26] that composing sinusoidal layers produces harmonics whose amplitudes are governed by Bessel coefficients; the key difference here is that the oscillator amplitude Ak provides a learnable per-layer control over the modulation index, whereas in SIREN this quantity is determined solely by the fixed product of frequency and weight magnitude. 
+
+A.4 Neural Tangent Kernel 
+
+The gradient decomposition and multi-layer analysis describe FDHO ’s induc-tive bias in terms of individual parameter updates and harmonic structure. We complement these with a Neural Tangent Kernel (NTK) perspective, which char-acterises how the oscillator parameters shape the global learning dynamics of the network. The NTK framework [9] relates the convergence rate of gradient descent to the eigenspectrum of the kernel. By showing that the kernel magnitude scales with A2, we establish that the oscillator parameters modulate the network’s ef-fective learning rate. This provides an additional, kernel-level explanation for the progressive learning behaviour: the network bootstraps its own convergence speed by opening the spectral gate. NTK analysis has been applied to INRs previously: [24] uses it to explain why Fourier feature mappings accelerate learn-ing of high-frequency functions, and [18] analyses the NTK’s eigenspectrum of Gaussian activations to explain their low-frequency bias. 
+
+Theorem 3 (Decomposition). Consider a single hidden-layer oscillator net-work of m neurons, f (x) = Pmj=1 aj σ(wj x + bj ; θ), with network parameters 
+
+w = {aj , w j , b j }mj=1 and θ = {ω, ω n, ξ, φ } for our activation function, such that 
+
+Θ = w ∪ θ. Its NTK decomposes as KΘ (x, x ′) = Kw(x, x ′) + Kθ (x, x ′), where: 
+
+(i) The weight contribution satisfies, in the infinite-width limit: 
+
+Kw(x, x ′) = A2
+
+2 Ew
+
+cos  ωw (x − x′) , (58) 
+
+where the expectation is over the weight initialisation distribution. For w ∼ U [−c, c ], this evaluates to Kw(x, x ′) = A2 
+
+> 2
+
+sinc   ωc (x−x′)
+
+> π
+
+.
+
+(ii) The oscillator parameter contribution is a rank-4 correction: 
+
+Kθ (x, x ′) = X
+
+> α∈θ
+
+ mX
+
+> j=1
+
+aj
+
+∂σ j
+
+∂α (x)
+
+ mX
+
+> j=1
+
+aj
+
+∂σ j
+
+∂α (x′)
+
+
+
+. (59) 26 A. Costanzino et al. 
+
+Proof. Part (i): since the Neural Tangent Kernel is defined as: 
+
+K(x, x ′) = ⟨∇ Θ f (x), ∇Θ f (x′)⟩, (60) and ∂f (x) 
+
+> ∂a j
+
+= σj (x), the contribution from {aj } is: 
+
+Kw(x, x ′) = 
+
+> m
+
+X
+
+> j=1
+
+∂f (x)
+
+∂a j
+
+· ∂f (x′)
+
+∂a j
+
+(61) 
+
+=
+
+> m
+
+X
+
+> j=1
+
+σj (x) · σj (x′) (62) 
+
+=
+
+> m
+
+X
+
+> j=1
+
+A sin( ω(wj x + bj ) + φ) · A sin( ω(wj x′ + bj ) + φ). (63) Applying the product-to-sum identity: 
+
+sin u · sin v = 12 [cos ( u − v) − cos ( u + v)] , (64) gives: 
+
+u − v = ωw j (x − x′), (65) 
+
+u + v = ωw j (x + x′) + 2( ωb j + φ). (66) Hence, we can then rewrite: 
+
+Kw(x, x ′) = 
+
+> m
+
+X
+
+> j=1
+
+A sin( ω(wj x + bj ) + φ) · A sin( ω(wj x′ + bj ) + φ) (67) 
+
+= A2
+
+2
+
+> m
+
+X
+
+> j=1
+
+cos( ωw j (x − x′)) − cos( ωw j (x − x′) + 2( ωb j + φ)) . (68) and taking expectations over the symmetric initialisation of b eliminates the cross-term cos( ωw (x + x′) + 2( ωb + φ)) .The infinite-width limit of the remaining term follows from the law of large num-bers. Since for a uniform distribution w ∼ U [−c, c ] its probability distribution function is p(w) = 12c , the expectation of function f (w) over such distribution is 
+
+E[f (w)] = R +c 
+
+> −c
+
+p(w)f (w)dw .Spectral Gating via Damped Oscillations 27 
+
+Hence, following the fundamental theorem of calculus and for the parity of the sine, the remaining term evaluates as: 
+
+Ew[cos( ωw (x − x′))] = 
+
+Z +c
+
+> −c
+
+12c cos( ωw (x − x′)) (69) 
+
+= 12c
+
+"
+
+sin ( ωw (x − x′)) 
+
+ω(x − x′)
+
+#+c
+
+> −c
+
+(70) 
+
+= 12c
+
+"
+
+sin ( ωc (x − x′)) 
+
+ω(x − x′) + sin ( −ωc (x − x′)) 
+
+ω(x − x′)
+
+#
+
+, (71) 
+
+= 12c · 2 · sin ( ωc (x − x′)) 
+
+ω(x − x′) (72) 
+
+= sin ( ωc (x − x′)) 
+
+ωc (x − x′) (73) 
+
+= sinc ωc (x − x′)
+
+π
+
+!
+
+. (74) Finally: 
+
+Kw(x, x ′) = A2
+
+2 sinc ωc (x − x′)
+
+π
+
+!
+
+. (75) Part (ii): each oscillator parameter α ∈ { ω, ω n, ξ, φ } is shared across all neurons, so ∂f ∂α = P 
+
+> j
+
+aj ∂σ j 
+
+> ∂α
+
+. The NTK contribution is ∂f ∂α (x) ∂f ∂α (x′), summed over the four parameters. 
+
+Corollary 3 (Amplitude-modulated Learning Dynamics). The kernel magnitude in Eq. (58) scales as A2. As the NTK eigenvalues govern convergence rates under gradient flow [4, 9], the oscillator parameters modulate the effective learning rate: 
+
+– At initialisation with A ≈ A0, all eigenvalues are scaled by A20, yielding slow initial learning when A0 < 1;
+
+– As ξ decreases during training and A grows, the kernel magnitude increases, accelerating convergence. The network thus bootstraps its convergence rate by progressively opening the spectral gate. 
+
+B Implementation Details 
+
+All experiments are implemented within a unified codebase under identical train-ing conditions (optimiser, loss function, evaluation protocol) to ensure a fair 28 A. Costanzino et al. 
+
+comparison. For each INR, we adopt the architecture and hyperparameters rec-ommended by the original authors when available for a given task; when no configuration is provided, we manually tune to obtain competitive results. Our proposed activation, FDHO , uses the same oscillator parameters across all tasks, as described in Sec. 4 of the main paper. Below, we report the per-task configu-ration for each baseline. In all tables, m denotes the hidden feature dimension, 
+
+L the number of hidden layers, and η the learning rate. 
+
+FDHO Configuration. Our activation uses a single configuration across all tasks: 
+
+m = 256 , L = 5 , ω0 = 45 , ωn, 0 = 50 , ξ0 = 1 /√2, and φ0 = −1.423 . The network weights are optimised with a learning rate of ηw = 10 −4, while the oscillator parameters (ω, ω n, ξ, φ ) use a separate learning rate of ηθ = 10 −2. No task-specific tuning of any parameter is performed. 
+
+Optimisation. All INRs use Adam for all tasks. Three methods employ learn-ing rate schedulers. FDHO uses ReduceLROnPlateau (factor 0.1, patience 500 ,minimum learning rate 10 −6), which monitors the training loss and reduces the learning rate only when progress stalls. WIRE uses a linear warmup schedule that scales the learning rate by 0.1 · min( t/T, 1) , where T is the total number of training steps. FR uses a step decay schedule ( StepLR ) that multiplies the learn-ing rate by 0.1 every 3000 steps. All remaining INRs use a constant learning rate throughout training. 
+
+1D Signal Fitting and Audio Fitting. All methods use a 1D input ( din = 1 ) and are trained for 10000 steps. The square waves at 100 Hz, 250 Hz and 500 Hz are sampled at 400, 1000, and 2000 points, respectively. The chirp signals at 250 Hz, 500 Hz and 1000 Hz are sampled at 550, 1100, and 2200 points, respectively. Audio waveforms are sampled with their respective sampling rate as done in [22]. Configurations are reported in Tab. 6. 
+
+> Table 6: Configurations for 1D Signal Fitting and Audio Fitting.
+
+INR m L η Task-specific parameters SIREN [22] 256 5 10 −4 ω0 = 30 
+
+Gauss [18] 256 5 10 −4 σ = 0 .1
+
+WIRE [19] 256 2 5 × 10 −3 ω0 = 20 , s = 30 
+
+BACON [12] 128 4 10 −4 freq. limit = 2048 , quantised FINER [13] 256 3 10 −4 ω0 = 30 (first and hidden) MFN [8] 256 3 10 −2 weight scale = 1 .0, α = 6 .0
+
+Fourier [24] 256 4 10 −4 scale = 10 
+
+FR [21] 256 5 10 −4 high-freq. components = 256 Spectral Gating via Damped Oscillations 29 
+
+Image Fitting, Image Denoising, Image Inpainting, and Image Super-resolution. 
+
+All methods use a 2D input ( din = 2 ) mapping pixel coordinates to RGB values, and are trained for 10000 steps on 512 × 512 images. For denoising, Gaussian noise with σ = 0 .1 is added to the target image. For inpainting, a binary mask retains 20% of the pixel locations. For super-resolution, the network is supervised on a 128 × 128 low-resolution grid and evaluated at 512 × 512 . Configurations are reported in Tab. 7. 
+
+Table 7: Configurations for Image Fitting, Image Denoising, Image Inpaint-ing, and Image Super-resolution. INR m L η Task-specific parameters SIREN [22] 256 5 10 −4 ω0 = 30 
+
+Gauss [18] 256 5 10 −4 σ = 0 .1
+
+WIRE [19] 256 2 5 × 10 −3 ω0 = 20 , s = 30 (ω0 = 4 , s = 4 for denoising) BACON [12] 256 8 5 × 10 −4 freq. limit = 2048 , quantised FINER [13] 256 3 10 −4 ω0 = 30 (first and hidden) MFN [8] 256 3 10 −2 weight scale = 16 , α = 2 .5
+
+Fourier [24] 256 4 10 −3 scale = 10 
+
+FR [21] 256 3 10 −4 high-freq. components = 128 
+
+CT Reconstruction. All methods use a 2D input ( din = 2 ) and are trained for 50000 steps. The reconstruction target is a 512 × 512 image observed through 100 projection angles. Configurations are reported in Tab. 8. 
+
+Table 8: Configurations for CT Reconstruction. INR m L η Task-specific parameters SIREN [22] 256 5 10 −4 ω0 = 30 
+
+Gauss [18] 256 5 10 −4 σ = 0 .1
+
+WIRE [19] 256 2 5 × 10 −3 ω0 = 20 , s = 30 
+
+BACON [12] 32 4 5 × 10 −4 freq. limit = 2048 , quantised FINER [13] 256 3 10 −4 ω0 = 30 (first and hidden) MFN [8] 256 3 10 −2 weight scale = 16 , α = 2 .5
+
+Fourier [24] 256 4 10 −3 scale = 10 
+
+FR [21] 128 3 10 −6 high-freq. components = 128 30 A. Costanzino et al. 
+
+SDF Fitting. All methods use a 3D input ( din = 3 ) and are trained for 50000 steps with gradient accumulation over 2 steps. We sample 125000 on-surface points per batch and evaluate on a 512 3 grid. Configurations are reported in Tab. 9. 
+
+> Table 9: Configurations for SDF Fitting.
+
+INR m L η Task-specific parameters SIREN [22] 256 5 10 −4 ω0 = 30 
+
+Gauss [18] 256 5 10 −4 σ = 0 .1
+
+WIRE [19] 256 2 5 × 10 −3 ω0 = 10 , s = 40 
+
+BACON [12] 128 6 10 −4 freq. limit = 2048 , quantised FINER [13] 256 3 10 −4 ω0 = 30 (first and hidden) MFN [8] 256 3 10 −2 weight scale = 16 , α = 2 .5
+
+Fourier [24] 256 4 10 −3 scale = 10 
+
+FR [21] 256 2 5 × 10 −3 high-freq. components = 256 
+
+Poisson Image Reconstruction. All methods use a 2D input ( din = 2 ) and are trained for 50000 steps on 512 × 512 images. Supervision is applied to the net-work’s Laplacian rather than to pixel values directly, using the top-left ground-truth pixel as an anchor. Configurations are reported in Tab. 10. 
+
+> Table 10: Configurations for Poisson Image Reconstruction.
+
+## INR m L η Task-specific parameters SIREN [22] 256 5 10 −4 ω0 = 30 
+
+## Gauss [18] 256 5 10 −4 σ = 0 .1
+
+## WIRE [19] 256 2 5 × 10 −3 ω0 = 20 , s = 30 
+
+## BACON [12] 128 8 5 × 10 −4 freq. limit = 2048 , quantised FINER [13] 256 3 10 −4 ω0 = 30 (first and hidden) MFN [8] 256 3 10 −2 weight scale = 16 , α = 2 .5
+
+## Fourier [24] 256 4 10 −3 scale = 10 
+
+## FR [21] 256 3 10 −4 high-freq. components = 128 Spectral Gating via Damped Oscillations 31 
+
+C Complementary Analysis 
+
+C.1 Adaptive SIREN vs. FDHO 
+
+As anticipated in Sec. 1, one might consider achieving the FDHO ’s adaptivity by simply making the amplitude a, frequency ω, and phase φ of a sinusoidal activation σ(z; θ) = a sin( ωz + φ) independently learnable, effectively extending SIREN with a per-layer gain parameter. We test this directly by initialising 
+
+a0 = 1 .0, ω0 = 30 .0, and φ0 = 0 .0, making the initial activation identical to standard SIREN, and comparing against our FDHO under fixed architecture and training protocol on a controlled toy signal: the sum of four pure tones at 
+
+ω1 = 1 .0, ω2 = 10 .0, ω3 = 50 .0, and ω4 = 100 .0. FDHO achieves a final PSNR of 148 .98 ± 0.59 dB and a peak of 155 .20 ± 2.08 dB, while the adaptive SIREN reaches a comparable peak 154 .74 ±1.34 dB, but a substantially lower final PSNR 
+
+72 .26 ± 11 .79 dB. The nearly identical peaks confirm that both formulations have sufficient capacity to represent the target, as they both can adapt their frequency. The 77 dB gap at convergence and the tenfold increase in variance reveal that decoupled parameters lack the stabilising mechanism provided by the FDHO ’s physical coupling. The training dynamics in Fig. 2 illustrate this concretely: the adaptive SIREN’s unconstrained amplitude and frequency drift after reaching good solutions, whereas the FDHO ’s parameters settle into the equilibrium predicted by Corollary 1(a). 
+
+> Fig. 2: Training Dynamics.
+
+Figure 3 and Fig. 4 compare the parameter evolution across layers. The oscilla-tor’s parameters converge smoothly to stable equilibria within the first few thou-32 A. Costanzino et al.       
+
+> Fig. 3: FDHO ’s parameters evolu-tion
+> Fig. 4: Adaptive SIREN’s parame-ters evolution
+
+sand steps: frequencies settle, ξ decreases monotonically and plateaus, and phases lock, consistent with the equilibrium condition of Corollary 1(a). The adaptive SIREN exhibits qualitatively different behaviour: all three parameters oscillate erratically throughout training with no sign of convergence, even in layers that have already contributed to a high peak PSNR. This instability arises because the decoupled parametrisation admits degenerate solutions: many combinations of (a, ω, φ ) yield similar outputs, creating flat directions in the loss landscape along which gradient descent drifts indefinitely. The oscillator’s transfer func-tion eliminates this degeneracy by coupling amplitude to frequency through ξ,yielding a unique equilibrium for each frequency component and the stable con-vergence observed in practice. 
+
+D Additional Experiments 
+
+D.1 Computational Cost Comparison 
+
+We report the computational overhead of FDHO relative to the INRs in Tab. 11, averaged across the five images used in the image fitting task ( 512 × 512 , 10000 steps, on a single NVIDIA GeForce RTX 4090). Spectral Gating via Damped Oscillations 33                                       
+
+> Table 11: Computational cost comparison on Image Fitting. Averaged over five images and 10 runs. Training time and memory are measured end-to-end, including optimiser state.
+> INR No. Params Model Size (MB) Train Time (s) Train Memory (MB)
+> FDHO 330523 1.26 191 2908 SIREN [22] 330499 1.26 134 1205 Gauss [18] 330499 1.26 196 1285 WIRE [19] 66979 0.51 212 1265 BACON [12] 538904 2.06 287 2816 FINER [13] 198915 0.76 122 1202 MFN [8] 204291 0.78 257 2379 Fourier [24] 395779 1.51 122 877 FR [21] 12585219 48.01 126 790
+
+FDHO adds only 24 scalar parameters over the SIREN backbone (four oscillator parameters per layer across five hidden layers), bringing the total from 330499 to 330523, a negligible increase of 0.007%. Model size and inference cost are therefore effectively identical to SIREN. The main overhead is in training. FDHO requires approximately 1.4 × the wall-clock time of SIREN (191 s vs. 134 s), attributable to the two-group optimiser and the ReduceLROnPlateau scheduler rather than the activation itself. This overhead is comparable to Gaussian and WIRE, and substantially lower than BACON (287 s) and MFN (257 s). Training memory is approximately 2.4 ×
+
+that of SIREN (2908 MB vs. 1205 MB), which reflects the additional gradient computation for the shared oscillator parameters through all neurons in each layer. This cost is comparable to BACON (2816 MB) and remains well below FR, which, despite low training memory per step, requires 48 MB for the model alone due to its 12.6 M parameters. In summary, the computational cost of FDHO is moderate and falls within the range of existing methods. The activation itself introduces negligible parameter and inference overhead. The training cost, while higher than the simplest base-lines, is the price of the adaptive spectral gating mechanism, which, as the ex-perimental results demonstrate, yields substantial quality gains across all tasks. 
+
+D.2 Additional Tasks 
+
+Signed Distance Function (SDF) Fitting. We represent 3D shapes by learning a continuous signed distance function from spatial coordinates, following [17, 22]. SDFs require the network to simultaneously capture smooth surfaces and sharp geometric features such as edges and corners, testing the activation’s ability to represent signals with localised high-frequency content in three dimensions. We follow the protocol described in [13, 22] and evaluate on four meshes of increas-ing geometric complexity. We report Chamfer Distance (CD, lower is better), which measures the average nearest-neighbour distance between the predicted 34 A. Costanzino et al. 
+
+Table 12: Signed Distance Function (SDF) Fitting. INR Armadillo Dragon Thai Statue Lucy Statue 
+
+CD NC CD NC CD NC CD NC 
+
+FDHO 0.038 × 10 −3 0.9915 0.024 × 10 −3 0.9688 0.049 × 10 −3 0.9877 0.025 × 10 −3 0.9637 SIREN [22] 0.041 × 10 −3 0.9915 0.024 × 10 −3 0.9727 0.061 × 10 −3 0.9882 0.113 × 10 −3 0.9439 Gauss [18] 0.039 × 10 −3 0.9922 0.025 × 10 −3 0.9729 0.181 × 10 −3 0.8468 0.098 × 10 −3 0.8490 WIRE [19] 0.042 × 10 −3 0.9911 0.025 × 10 −3 0.9724 0.169 × 10 −3 0.8694 0.079 × 10 −3 0.9021 BACON [12] 0.038 × 10 −3 0.9081 0.066 × 10 −3 0.4865 0.121 × 10 −3 0.9339 0.032 × 10 −3 0.9652 FINER [13] 0.038 × 10 −3 0.9920 0.024 × 10 −3 0.9767 0.046 × 10 −3 1.0000 0.027 × 10 −3 0.9820 MFN [8] 0.038 × 10 −3 0.9910 0.025 × 10 −3 0.9673 0.298 × 10 −3 0.8936 0.182 × 10 −3 0.8564 Fourier [24] 0.049 × 10 −3 0.8503 0.039 × 10 −3 0.7891 0.286 × 10 −3 0.8035 0.131 × 10 −3 0.7650 FR [21] 0.087 × 10 −3 0.9395 0.104 × 10 −3 0.8770 0.316 × 10 −3 0.7661 0.176 × 10 −3 0.8304      
+
+> Armadillo Dragon Thai Statue Lucy Statue Armadillo Dragon Thai Statue Lucy Statue
+> Ground-truth
+> FDHO
+> SIREN
+> Gauss
+> WIRE
+> BACON
+> FINER
+> MFN
+> Fourier
+> FR
+
+Fig. 5: Qualitative results on Signed Distance Function (SDF) Fitting. 
+
+and ground-truth point clouds, and Normal Consistency (NC, higher is better), which quantifies the alignment of surface normals. Results are in Tab. 12 and qualitative comparisons in Fig. 5. Unlike other proposed tasks, SDF Fitting ex-periments were run only once due to the extended computation time required by a single run. On the simpler meshes (Armadillo, Dragon), most periodic activations perform comparably: CD values fall within a narrow range and NC exceeds 0.96 for the top methods. The differences become more pronounced on the geometrically complex shapes. On Thai Statue, FINER achieves the lowest CD ( 0.046 × 10 −3)with FDHO close behind ( 0.049 × 10 −3), while SIREN ( 0.061 × 10 −3) and the remaining baselines degrade more substantially. On Lucy, FDHO leads ( 0.025 ×
+
+10 −3) followed by FINER ( 0.027 × 10 −3), with SIREN dropping to 0.113 × 10 −3.Spectral Gating via Damped Oscillations 35                                                                                                                                                    
+
+> Table 13: Poisson Image Reconstruction. Best results in bold ,runner-ups underlined.
+> INR Tiger Tiles Bikers Butterfly Knot
+> FDHO 26.13 ±0.31 14.26 ±1.91 26.93 ±0.25 33.76 ±0.02 25.83 ±0.91 SIREN [22] 25.89 ±1.45 19.13 ±1.27 23.39 ±1.22 30.69 ±0.11 24.74 ±0.26 Gauss [18] 22.21 ±0.28 13.47 ±0.13 17.37 ±0.46 20.83 ±0.49 22.03 ±0.43 WIRE [19] 12.94 ±0.18 14.23 ±0.19 14.20 ±0.28 10.95 ±0.10 13.22 ±0.06 BACON [12] 12.80 ±0.00 14.29 ±0.01 14.14 ±0.01 10.83 ±0.01 14.07 ±0.05 FINER [13] 19.85 ±0.42 16.85 ±0.97 15.78 ±0.82 18.73 ±0.20 17.68 ±0.78 MFN [8] 36.76 ±0.13 27.21 ±0.78 31.52 ±0.22 33.11 ±0.57 29.85 ±0.32
+> Fourier [24] 17.98 ±6.43 21.03 ±2.51 24.61 ±0.70 19.13 ±1.52 17.32 ±0.87 FR [21] 15.73 ±1.57 15.38 ±1.21 15.50 ±1.35 12.46 ±0.77 14.13 ±0.29
+
+Overall, FDHO and FINER emerge as the two strongest methods, with FDHO 
+
+performing well across all four meshes without task-specific tuning. MFN, which dominated the Poisson task, struggles here (CD 0.298 × 10 −3 on Thai Statue), consistent with its limited representational capacity when fine geometric details must be resolved. 
+
+Poisson Image Reconstruction. We solve the Poisson equation ∇2f = g by su-pervising the network’s Laplacian against the given source term g, recovering the image f up to boundary conditions. This task is distinctive because the network never observes pixel values directly. Indeed, the supervision is applied to second-order derivatives, requiring the activation to propagate gradient in-formation through two levels of differentiation faithfully. The smoothness and Lipschitz properties established in Sec. 3.2 are essential here, as they guarantee well-behaved higher-order derivatives. We follow the protocol described in [22] and report results in Tab. 13. In this task, MFN leads on four of five images by substantial margins (up to 10 dB on Tiger), with FDHO leading on Butterfly (33.76 dB vs. 33.11 dB) and ranking second on Tiger, Bikers, and Knot. On Tiles, FDHO drops to 14.26 dB, well below both MFN (27.21 dB) and SIREN (19.13 dB). Nonetheless, FDHO 
+
+remains the only method other than MFN to rank consistently in the top two: it places first or second on four of five images, being the runner-up method on average. This is notable because, across all previous tasks, the identity of the runner-up changes frequently: MFN on denoising and CT, SIREN on inpainting, FINER on super-resolution. FDHO is the only activation that remains compet-itive throughout. The explanation lies in how Poisson supervision alters the spectral gating dy-namics. Corollary 1 was derived under a pixel-level MSE loss, where the signal term Tsignal depends on the inner product ⟨y, sin( ω · +φ)⟩N . Under Poisson su-pervision, the loss is computed on the Laplacian ∇2f rather than on f itself. Differentiating a sinusoidal component at frequency ω twice introduces a factor of 
+
+ω2, so the effective target seen by the optimiser amplifies high-frequency content by ω2 relative to pixel-level supervision. Within the MSE loss, this amplification 36 A. Costanzino et al.       
+
+> Square Wave Chirp
+> 100 Hz 250 Hz 500 Hz 250 Hz 500 Hz 1000 Hz
+> FDHO
+> SIREN
+> Gauss
+> WIRE
+> BACON
+> FINER
+> MFN
+> Fourier
+> FR
+
+Fig. 6: Qualitative results on Signal Fitting. The red line represents the fitted signal, while the grey line represents the ground-truth signal. Please zoom to appreciate the differences. 
+
+is squared again, meaning the effective signal energy at frequency ω scales as ω4
+
+compared to the pixel-level case. This fundamentally shifts the balance in the gating condition of Eq. (4): Tsignal grows with ω4 while Tself remains governed by 
+
+A, which starts small due to the stopband initialisation. The coarse-to-fine cur-riculum that benefits noise rejection and progressive frequency recovery under pixel-level losses now becomes a liability, as low-amplitude but high-frequency Laplacian components carry disproportionate energy in the loss landscape, yet the conservative initial bandwidth delays their recovery. MFN’s multiplicative Gabor structure does not face this issue: its filters compose through element-wise products whose derivatives remain well-conditioned through multiple levels of differentiation, making it inherently suited to derivative-based supervision. Adapting FDHO ’s initialisation to account for the ω2 scaling, for instance, by starting with a wider initial bandwidth when the supervision is applied to dif-ferential operators, is a natural direction for future work. 
+
+D.3 Additional Qualitative Results 
+
+We report in Fig. 6 and Fig. 7 all the qualitative results for the signal and audio fitting tasks. We provide in Fig. 8, Fig. 9, Fig. 10, Fig. 11 and Fig. 12 all the qualitative results on the image-related tasks, already partially provided in Fig. 1 of Sec. 4. Spectral Gating via Damped Oscillations 37 
+
+Bach Counting 
+
+> FDHO
+> SIREN
+> Gauss
+> WIRE
+> BACON
+> FINER
+> MFN
+> Fourier
+> FR
+
+Fig. 7: Qualitative results on Audio Fitting. The red line represents the fitted signal, while the grey line represents the ground-truth signal. Please zoom to appreciate the differences. 38 A. Costanzino et al.           
+
+> Supervision GT FDHO SIREN Gauss WIRE BACON FINER MFN Fourier FR
+> Fitting Den. Inp. SR Poisson
+
+Fig. 8: Qualitative results on Tiger. Please zoom to appreciate the differences.           
+
+> Supervision GT FDHO SIREN Gauss WIRE BACON FINER MFN Fourier FR
+> Fitting Denoising Inpainting SR Poisson
+
+Fig. 9: Qualitative results on Tiles. Please zoom to appreciate the differences.           
+
+> Supervision GT FDHO SIREN Gauss WIRE BACON FINER MFN Fourier FR
+> Fit. Den. Inp. SR Poiss.
+
+Fig. 10: Qualitative results on Bikers. Please zoom to appreciate the differences. Spectral Gating via Damped Oscillations 39           
+
+> Supervision GT FDHO SIREN Gauss WIRE BACON FINER MFN Fourier FR
+> Fit. Den. Inp. SR Poiss.
+
+Fig. 11: Qualitative results on Butterfly. Please zoom to appreciate the differ-ences.           
+
+> Supervision GT FDHO SIREN Gauss WIRE BACON FINER MFN Fourier FR
+> Fitting Denoising Inpainting SR Poisson
+
+Fig. 12: Qualitative results on Knot. Please zoom to appreciate the differences.

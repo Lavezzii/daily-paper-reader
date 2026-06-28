@@ -1,0 +1,39 @@
+{
+  "label": "2026-06-28",
+  "date": "2026-06-28",
+  "generated_at": "2026-06-28T21:12:33",
+  "count": 2,
+  "papers": [
+    {
+      "paper_id": "202606/28/2606.23129v1-spectral-gating-via-damped-oscillations-for-adaptive-implicit-neural-representations",
+      "section": "quick",
+      "title_en": "Spectral Gating via Damped Oscillations for Adaptive Implicit Neural Representations",
+      "authors": "Alex Costanzino, Pierluigi Zama Ramirez, Giuseppe Lisanti, Luigi Di Stefano",
+      "date": "2026-06-22",
+      "pdf": "https://arxiv.org/pdf/2606.23129v1",
+      "score": "6.0",
+      "evidence": "基于阻尼振荡的隐式神经表示新型激活函数",
+      "tldr": "隐式神经表示面临频谱困境：周期激活易过拟合噪声，紧凑激活有低频偏置。本文提出将神经元激活建模为阻尼谐振子的稳态响应，通过联合优化振荡器参数自适应控制频谱选择性。网络初始化在阻带，实现从粗到细的学习课程。无需超参数调优，在多项任务上达到最优或竞争结果。",
+      "tags": "query:channel-nn",
+      "abstract_en": "Implicit Neural Representations (INRs) have been proven successful in encoding continuous signals through coordinate-based networks, yet facing a spectral dilemma: periodic activations capture fine details but act as all-pass filters that memorise noise, while spatially compact activations regularise effectively but suffer from low-frequency bias. Existing attempts to resolve this trade-off introduce computational overhead or tuning frailty. We propose to model each neuron's activation as the steady-state response of a sinusoidally-forced damped harmonic oscillator, whose amplitude naturally governs the network's spectral selectivity during training. By jointly optimising the oscillator parameters alongside the network weights, our method adapts to the target signal's spectral content without explicit regularisation. Initialised in the stopband, the network exhibits a coarse-to-fine learning curriculum that progressively expands its spectral gate, capturing low-frequency structures first and high-frequency details only when justified by the reconstruction objective. Comprehensive experiments show that our approach consistently achieves state-of-the-art or competitive results against established INRs, while requiring no task-specific tuning of any hyperparameters.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/28/2606.25087v1-neural-network-quantization-by-learning-low-loss-subspaces",
+      "section": "quick",
+      "title_en": "Neural Network Quantization by Learning Low-Loss Subspaces",
+      "authors": "Vladimir Protsenko, Mikhalina Kharkevich, Alexander Vashchilko, Vladimir Kryzhanovskiy",
+      "date": "2026-06-23",
+      "pdf": "https://arxiv.org/pdf/2606.25087v1",
+      "score": "6.0",
+      "evidence": "神经网络量化以实现高效推理",
+      "tldr": "神经网络量化通常因离散约束导致性能下降。近期发现全精度模型存在低损失子空间，其中参数多样且性能优异。本文提出学习量化感知的线性路径，构造低损失子空间，其中点直接量化即可保持性能。该方法无需直通估计器，与量化感知训练效果相当，为量化提供了新思路。",
+      "tags": "query:channel-nn",
+      "abstract_en": "Neural network quantization aims to find a discrete representation of parameters that preserves the performance of a full-precision (FP) model as faithfully as possible. Enforcing discrete constraints perturbs parameters away from a well-optimized minimum, generally resulting in performance degradation. Recent studies indicate that low-loss FP solutions are not isolated, but instead belong to connected low-loss subspaces of the loss landscape, where the loss maintains nearly the same minimum value. Models sampled from these subspaces are diverse and retain high accuracy. This raises the question: can a quantized model be constructed to lie within a low-loss subspace of the FP model, thereby automatically preserving performance? We address this question by learning quantization-aware linear paths in weight space optimized to minimize loss. We demonstrate that the midpoint of the resulting subspace is, by design, quantization-friendly and that its direct quantization yields performance comparable to that of quantization-aware training. The proposed procedure offers a novel perspective on weight quantization and, in contrast to conventional methods, neither relies on the straight-through estimator nor involves explicit discretization during training.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
