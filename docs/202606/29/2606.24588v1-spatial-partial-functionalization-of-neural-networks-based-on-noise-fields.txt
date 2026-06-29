@@ -1,0 +1,1070 @@
+Title: Spatial Partial Functionalization of Neural Networks based on Noise Fields
+
+URL Source: https://arxiv.org/pdf/2606.24588v1
+
+Published Time: Wed, 24 Jun 2026 01:04:31 GMT
+
+Number of Pages: 37
+
+Markdown Content:
+# Spatial Partial Functionalization of Neural Networks based on Noise Fields 
+
+Shuhei Ikemoto a, ∗, Fabio DallaLibera b
+
+> aGraduate School of Life Science and Systems Engineering, Kyushu Institute of Technology, 2-4 Hibikino, Wakamatsu, Kitakyushu, Fukuoka, 8080196, Japan
+> bGraduate School of Engineering Science, Osaka University, 1-3 Machikaneyama, Toyonaka, Osaka, Japan
+
+Abstract 
+
+Noise in neural computation is typically regarded as a disturbance, but its spatial distribution may also actively regulate which parts of a network participate in computation. This paper investigates the spatial partial func-tionalization of Noise-modulated Neural Networks using noise fields. We first present an activation function suitable for this goal, the crossing activation function, using the sample-level, statistical-level, and analytical-level imple-mentations, and examine parameter reuse across these implementations. We then introduce a virtual noise field, an auxiliary continuous space for gener-ating spatially structured network noise fields that activate partially overlap-ping subnetworks. Using one-dimensional function approximation tasks, we evaluate how multiple functions can be stored in a single network when each function is assigned to a different noise-field location. The results show that memory capacity improves when the spatial arrangement of noise fields re-flects the proximity relationships among the functions to be learned, whereas mismatches in noise field structure can reduce effective capacity. These find-ings suggest that structured noise can serve not only as a perturbation but also as a topology-defining factor for functional subnetwork selection. 
+
+Keywords: Noise Field, Neural Network, Stochastic Resonance       
+
+> ∗Corresponding author
+> Email addresses: s.ikemoto@ieee.org (Shuhei Ikemoto), fabiodl@gmail.com
+> (Fabio DallaLibera)
+> URL: http://www.brain.kyutech.ac.jp/~ikemoto/ (Shuhei Ikemoto)
+> Preprint submitted to Elsevier June 24, 2026
+> arXiv:2606.24588v1 [cs.NE] 23 Jun 2026
+
+1. Introduction 
+
+Neural activity in the brain is highly heterogeneous, exhibiting signifi-cant spatial and temporal variability [1, 2]. Functional brain imaging and electrophysiological measurements have repeatedly demonstrated that, de-pending on specific tasks or contexts, only limited regions within the brain become selectively active. However, the criteria and mechanisms that regu-late which specific neural circuits or regions transition into an active state in a task-specific manner remain poorly understood. Although it is thought that various factors such as synaptic connectivity[3, 4], neurotransmitters[5, 6], and history dependence[7, 8] act as internal states, no unified principle has been established to explain them. Alongside such brain activity, fluctuations inherent in neural activity, namely neural noise[9, 10], are constantly observed. Neural noise has been studied for many years, and it has been demonstrated that its diverse gen-eration mechanisms[11] and its intensity are closely related to the state of neural activity and task performance[12, 13]. In particular, there is a strong tendency for the variance and variability of neural responses to increase in regions where activity is heightened, and it is almost taken for granted that there is a strong correlation between the locality of noise intensity and the locality of brain activity[13, 14]. However, these reports implicitly assume a causal relationship in which changes in brain activity lead to changes in noise characteristics. To our knowledge, no studies have reversed this perspective to examine the possibility that the spatial distribution of noise intensity de-termines the temporal and spatial heterogeneity of brain activity. While noise is always detrimental in linear systems, in non-linear systems, an appropriate noise level improves system performance. Indeed, stochastic resonance refers to a phenomenon in which the loss of information through-put that occurs in nonlinear systems is mitigated by the addition of noise with an appropriate intensity[15, 16]. Although it was initially proposed as a mathematical model to explain the periodic occurrence of glacial and interglacial periods[17, 18], it has since been universally observed in a wide range of systems, including electronic circuits[19, 20], mechanical systems[21], and chemical reaction systems[22]. In particular, within biological nervous systems, stochastic resonance is regarded as one of the principles that ac-tively utilizes inevitable noise[23, 24], and its role has been suggested and observed at various levels, such as sensory reception[25, 26], neural infor-mation processing[27], and motor control[28, 29]. Furthermore, to explain 2and reproduce its properties, various mathematical models have been pro-posed, including models based on bistable systems[19], stochastic differential equations[30], and discrete state transition models[31, 32]. Consequently, the concept that noise is not merely a source of error but an element that plays a functional role is now widely accepted in the biological nervous system. Spiking neural networks (SNNs), often regarded as the third generation of neural network models, provide a computational framework in which infor-mation is represented by discrete spiking events rather than continuous firing-rate variables [33, 34, 35]. Because spike generation is intrinsically nonlinear and event-based, SNNs have also served as an important testbed for stochas-tic resonance, where appropriately tuned noise can transform subthreshold inputs into reliable spike timing or signal propagation [36, 37]. These studies suggest that noise can be treated not merely as an external perturbation to neural computation but as a parameter that regulates whether, when, and through which pathways neural events are generated. In this field, we have proposed a mathematical model that not only utilizes noise but also incorpo-rates it to such an extent that the model cannot function without it[38, 39]. This model, named the Noise-modulated Neural Network, enables training and inference only when and where noise is applied. Specifically, in this net-work, hidden layer units to which noise is not applied always output zero, regardless of the input signal, and information from the input signal is re-flected probabilistically in the output signal only when noise is applied. This feature makes it possible to apply noise to only a portion of the entire network and to use only that subnetwork for training and inference. In fact, we have previously reported that by partitioning the regions where noise is applied, this network can learn and utilize multiple functions without failure[39]. The partial application of noise in the Noise-modulated Neural Network and the resulting partial utilization of the network demonstrate that in studies of stochastic resonance, not only the intensity of the noise but also the perspec-tive of ”where noise is applied” can serve as a parameter. Although highly simplified, the proposed model shows that the temporal and spatial hetero-geneity of activity, and specifically of noise, commonly observed in biological brains, is a key component for making a neural network learn and perform inference on multiple functions. In other terms, studying the effects of the application of a ”noise field”, or more intuitively, ”where and how much noise is applied”, is of interest both for research on stochastic resonance and as a learning model for brain mechanisms. In this study, we expand upon this concept by formalizing the theoret-3ical foundations of the Noise-modulated Neural Network and clarifying its relationship with deterministic neural networks. We will then investigate in detail the memory capacity, that is, how well multiple functions can be stored when utilizing subnetworks designated by multiple noise fields. In regard to the theoretical foundations, we investigate three types of compu-tational implementations: A) Sample-level implementation: using the events themselves generated by actually adding noise, B) Statistical-level implemen-tation: using statistics of the events generated by actually adding noise, and C) Analytical-level implementation: using theoretically equivalent determin-istic functions. Through the analysis of these three implementations, we clarify their similarities and differences. In regard to the memory capacity, by continuously varying the “noise field,” we change the subnetworks used while allowing for overlapping regions. By repeatedly performing tests to learn different functions, we quantitatively demonstrate that the similarity of the learned functions and the configuration of the subnetwork strongly influences memory capacity. The main contributions of this paper are summarized as follows: 1. Formulated noise-modulated neural networks using sample-level, statistical-level, and analytical-level implementations, and clarified their relation-ships in terms of parameter reuse. 2. Proposed a virtual noise field as a representation for generating a struc-tured noise field that activates a subnetwork. 3. Demonstrated that the memory capacity of a single network is en-hanced when the spatial arrangement of the noise field reflects the proximity relationships among the functions being learned. This paper is organized as follows. Section 2 formalizes the Noise-modulated Neural Network by introducing the crossing activation function, its Sample-level, Statistical-level, and Analytical-level implementations, and the noise field as a topology-defining hyperparameter. Section 3 examines the rela-tionship among these three implementations through parameter-transfer ex-periments and evaluates whether trainable parameters can be reused across implementation levels. Section 4 introduces the virtual noise field, a spatial representation used to generate structured network noise fields, and demon-strates how different localized noise patterns can selectively functionalize different subnetworks within a single model. Section 5 evaluates the memory capacity of the proposed framework by assigning multiple target functions to 40Input signal 0.5 Theoretical Statistical 0.5 1 Sample Noise PDF    
+
+> 𝔼𝔼 𝑦𝑦 𝑦𝑦 𝑦𝑦 𝑥𝑥
+> Crossing
+> 𝑥𝑥 𝑦𝑦 𝜂𝜂 1,𝜂𝜂 2∼ 𝑝𝑝 (𝜉𝜉 )
+> ⋯⋯⋯⋯⋯
+
+⋯⋯⋯⋯⋯
+
+> Noise Field Noise Intensity
+
+Figure 1: Overview of Noise-modulated Neural Network. Left: the crossing activation function and its three different implementation levels. The Analytical-level, Statistical-level, and Sample-level behave as a deterministic continuous function, a stochastic con-tinuous function, and a binary function, depending on whether the noise is used in the probability density distribution, a sample group, or an individual sample, respectively. Right: the noise field on the noise-modulated neural network using the crossing activation function. Noise for each activation function is given as a hyperparameter over the network. 
+
+different positions in the virtual noise field and analyzing how function simi-larity, noise field dimensionality, and spatial arrangement affect simultaneous learning. Section 6 discusses the characteristic loss behavior observed in the memory-capacity experiments, focusing on the effects of grid resolution and dimensional imbalance in the virtual noise field. Finally, Section 7 concludes the paper by summarizing the findings and outlining future directions. 
+
+2. Noise-modulated Neural Network 
+
+Figure 1 shows an overview of the key features in the noise-modulated neural network originally proposed in [39]. This section formally defines this model to clarify its functionalities and features in detail. In Sec. 2.1, we introduce the crossing activation function, which is the source of this model’s functionality, and its three levels of implementation. Based on the formal definition, we explain parameter sharing and reuse in Sec. 2.2. Then, in Sec. 2.3, we introduce the noise field as the main focus of this paper. 
+
+2.1. Crossing Activation Function 
+
+To disable learning and inference in the absence of noise, the “crossing” activation function has been proposed in [39]. This is a type of spiking model that outputs 1 at the moment when the threshold is crossed and 0 otherwise. 5Our activation function is defined as follows: 
+
+z = ϕ(d) = 
+
+(
+
+1 if d ≥ η1 ˙∨ d ≥ η2
+
+0 otherwise, (1) where d ∈ R is an input value, ˙ ∨ is the logic operator XOR, and η1, η 2iid 
+
+∼ p(ξ)are noise values. Intuitively, this activation function represents a simple spiking neuron model that fires when the input signal crosses zero due to noise. It is clear that if noise is absent, the crossing event must not occur for a constant input d.Defining the cumulative probability of the noise probability density func-tion p(ξ) as: 
+
+F (d) = P (d ≥ η) = 
+
+Z d
+
+> −∞
+
+p(ξ)dξ, (2) the expected value of the crossing activation function’s output can be written as follows: 
+
+E[z] = ¯ϕ(d) = 2 F (d)(1 − F (d)) . (3) By definition, the cumulative probability F : R → [0 , 1] is a monotoni-cally non-decreasing function. Consequently, the mapping ¯ϕ : R → [0 , 0.5] naturally forms a unimodal, bell-shaped curve—functionally analogous to a radial basis function—peaking at 0 .5 when F (d) = 0 .5, provided F (d) does not plateau over an intermediate interval. Considering the ¯ϕ(·) as the statistically equivalent activation function of the original crossing function in Eq.1, its derivative is given by the following: ¯ϕ(d)′ = 2(1 − 2F (d)) p(d) (4) where p(d) is the value of the noise probability density function p(ξ) evaluated at ξ = d.Suppose that p(ξ) is currently unknown, but we can obtain N samples 
+
+ηi ∼ p(ξ). In this case, F (d) can be approximated by the empirical cumula-tive distribution function FN (d), defined as follows: 
+
+FN (d) = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+1{d≥ηi} ≈ F (d) (5) where N indicates the total number of samples taken from p(ξ), and 1{·} 
+
+is the indicator function, which evaluates to 1 if the condition d ≥ ηi is 6true and 0 otherwise. Intuitively, FN (d) represents the sample mean of these indicator values. Regarding p(d), it can be approximated using kernel density estimation as follows: 
+
+p(d) ≈ 1
+
+nh 
+
+> N
+
+X
+
+> i=1
+
+K
+
+d − ηi
+
+h
+
+
+
+(6) where K and h indicate a kernel function and a bandwidth. In particular, when a uniform kernel is used, it can be written as follows: 
+
+p(d) ≈ 12h
+
+ F + 
+
+> N
+
+(d) − F − 
+
+> N
+
+(d) (7) where F + 
+
+> N
+
+(d) and F − 
+
+> N
+
+(d) denote approximate values of FN (d) obtained by modifying the condition d ≥ ηi in Eq.5 to d + h ≥ ηi and d − h ≥ ηi,respectively. In a similar manner, let us denote by z+ 
+
+> i
+
+∈ { 1, 0} and z− 
+
+> i
+
+∈ { 1, 0}
+
+the values of the samples of z obtained by substituting d + h or d − h for d in the condition of Eq.1, respectively, and by ¯ z+ and ¯ z− their respective means. The approximations for ¯ϕ(d) and ¯ϕ(d)′ can be obtained as follows: 
+
+ϕN (d) = 12
+
+ ¯z+ + ¯ z− ≈ ¯ϕ(d) (8) 
+
+ϕN (d)′ = 12h
+
+ ¯z+ − ¯z− ≈ ¯ϕ(d)′ (9) Note that as h becomes smaller, the approximation error decreases, but so does the difference between ¯ z+ and ¯ z−. By definition, the following relation-ships hold: 
+
+ϕN (d) = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+12
+
+ z+ 
+
+> i
+
++ z−
+
+> i
+
+ (10) 
+
+ϕN (d)′ = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+12h
+
+ z+ 
+
+> i
+
+− z−
+
+> i
+
+ (11) From these relationships, the following function, which corresponds to the original activation function ϕ, can also be derived: 
+
+ϕ1(d) = 12
+
+ z+1 + z−
+
+> 1
+
+ h→0
+
+−−→ ϕ(d) (12) 
+
+ϕ1(d)′ = 12h
+
+ z+1 − z−
+
+> 1
+
+ h→0
+
+−−→ δ(d) (13) 7where δ(d) represents the Dirac delta function. Because z+ and z− are binary, the ϕ1(·) and ϕ1(·)′ are ternary-valued functions. In summary, the crossing activation function can be considered at the following three levels: 
+
+• Sample-level : Use ϕ or ϕ1 as an activation function and ϕ′ 
+
+> 1
+
+as its derivative. 
+
+• Statistical-level : Use ϕN as an activation function and ϕ′ 
+
+> N
+
+as its derivative. 
+
+• Analytical-level : Use ¯ϕ as an activation function and ¯ϕ′ as its deriva-tive. Note that the Sample-level outputs a stochastic spike-like signal, the Statistical-level outputs a stochastic continuous value, and the Analytical-level outputs a deterministic continuous value. Although there are significant differences between these levels, they are all derived from the same equation Eq.1, and their behavior depends on the value of the noise and its statistical properties. The above formulation is related to existing approaches for training net-works with non-differentiable or stochastic units, such as straight-through estimators and surrogate-gradient methods [40, 41, 42, 43]. These methods typically replace the derivative of a discontinuous operation with a heuristic or smooth surrogate during backpropagation. In contrast, the present formu-lation uses noise not only to define a backward gradient but also to reshape the forward computation itself. The statistical properties of the injected noise, therefore, provide a common basis for both the forward response and its backward derivative, preserving consistency between inference and learn-ing. This perspective is closely aligned with the concept of positive noise learning, in which noise is treated as a functional component of computation rather than as a disturbance. 
+
+2.2. Network Implementation 
+
+Consider an L-layer feed-forward Noise-modulated Neural Network. Let 
+
+z(0) = x denote the input to the network. The forward pass through the hidden layers l = 1 , . . . , L − 1 is given by 
+
+d(l) = W(l)z(l−1) + b(l), (14) 
+
+z(l) = Φ(l)(d(l)), (15) 8where W(l) and b(l) are the weight matrix and bias vector of layer l, and Φ(l) denotes the element-wise application of the crossing activation func-tion (whose precise form depends on the level of implementation mentioned above). The output layer applies only a linear transformation without acti-vation: 
+
+y = W(L)z(L−1) . (16) The set of trainable parameters is 
+
+θ = {W(l), b(l)}L−1 
+
+> l=1
+
+∪ { W(L)}. (17) It is important to note that, unlike other approaches like the parametric bias [44], the activation layers Φ (l) contain no trainable parameters; noise for each activation function is given as a hyperparameter, and all learnable quan-tities reside exclusively in the weight matrices and bias vectors. Therefore, whether θ can be shared or reused across the aforementioned three levels of crossing activation functions depends on whether their behavior is the same or similar when used in the network. Although the Statistical-level and the Analytical-level are defined differ-ently, they represent the same deterministic input-output mapping in the limit of large sample sizes. In the Statistical-level implementation, the ac-tivation function ϕN and its derivative ϕ′ 
+
+> N
+
+are obtained by sample-based approximations of ¯ϕ and ¯ϕ′, respectively. Therefore, for a fixed input value 
+
+d, we have 
+
+ϕN (d) N →∞ 
+
+−−−→ ¯ϕ(d), ϕ′ 
+
+> N
+
+(d) N →∞ , h →0
+
+−−−−−−−→ ¯ϕ′(d). (18) Consequently, the network implemented at the Statistical-level converges to the Analytical-level network, and the same set of trainable parameters θ can be shared between these two levels, up to the finite-sample approximation error. In contrast, the Sample-level implementation is not simply a finite-sample approximation of the Analytical-level network when multiple nonlinear layers are stacked. At the Sample-level, the output of each activation layer is a stochastic binary or ternary variable. Therefore, the input of the l-th layer 
+
+d(l) is itself a random variable due to the stochasticity of z(l−1) . Denoting the expected value of d(l) as ¯d(l) and assuming that h is sufficiently small, the following relationship holds: 
+
+E
+
+h
+
+Φ(l)1
+
+ d(l)i̸
+
+= E
+
+h
+
+Φ(l)1
+
+ ¯d(l)i
+
+= ¯Φ(l)  ¯d(l) (19) 9because the distributions of what we are taking the expected value of are different. In other words, the Φ 1 carry information not only through their mean firing probabilities but also through their full distributions, as opposed to Φ N and ¯Φ. For this reason, even if the Sample-level output is averaged over many noise realizations, the resulting expected network output is not generally identical to the output of the Statistical-level or Analytical-level networks. Specifically, because the expectation operator and the nonlinear activation function do not commute, substituting the expected input into the activation function does not yield the expected output. On the other hand, the Analytical-level and its finite-sample approxima-tion, namely the Statistical-level, can be seen as a mean-field approximation of the Sample-level network. The difference manifests specifically within the hidden layers of multi-layer architectures. Rather than propagating the full joint probability distribution of the stochastically firing neurons, the mean-field approach propagates only their expected values, thereby discarding the effects of variance and inter-neuron correlations. Naturally, this discrepancy does not exist in a single-layer network receiving purely deterministic inputs, but in deep networks, the approximation differences can accumulate across successive layers. Therefore, parameters trained at the Statistical-level or Analytical-level cannot, in general, be directly reused at the Sample-level without additional calibration or fine-tuning. They can, however, constitute a useful starting point, as will be experimentally shown later. 
+
+2.3. Noise Field 
+
+Although not explicitly mentioned thus far, the behavior of the crossing activation function varies depending on the noise applied internally, regard-less of the three implementation levels discussed earlier. In other words, just like the number of layers, the number of hidden units in each layer, and con-nectivity, additive noise is one of the hyperparameters of noise-modulated neural networks. However, compared to other hyperparameters, there is a neurophysiological justification for modifying additive noise during or be-tween the inference and learning processes. Let p(l,k ) denote the probability density function of the noise applied within the crossing activation function of the k-th unit in the l-th layer. The probability density distribution of the noise can be specified indepen-dently for each layer and unit. In other words, the hyperparameter governing noise represents the spatial distribution to which units in which layers are subjected to noise and the probability density distribution with which they 10 are subjected. Therefore, we refer to this hyperparameter as the “noise field” and define it as follows: 
+
+P =
+
+> L−1
+
+[
+
+> l=1
+
+P(l) = p(1 ,1) , p (1 ,2) , . . . , p (2 ,1) , p (2 ,2) , . . . . (20) If p(l,k ) = δ holds, i.e. the noise value for the k-th unit on the l-th layer is deterministically zero, the output and the derivative are always zero, regard-less of the input and the implementation level, as explained in Sec.2.1. This neuron is, in all respects, uninfluential on the network output. Therefore, the modulation of each crossing activation function by the noise field can also produce discrete structural changes, such as gating at the unit level. The primary aim of introducing the noise field is to equip the Noise-modulated Neural Network with a form of controllable network topology. As shown above, in an extreme case, applying noise to only a subset of units activates the corresponding subnetwork for learning and inference, while the units left without noise remain inert and are effectively detached from the computation. By assigning different noise fields, one can therefore select different subnetworks within the same set of trainable parameters, and by switching the noise field repeatedly, multiple functions can be learned in a single network while suppressing mutual interference. In this sense, the noise field acts as a topology-defining hyperparameter that determines which portion of the network is recruited for each task. 
+
+3. Parameter reuse across different algorithm implementations 
+
+In this section, we empirically validate the efficacy of parameter sharing and reuse among the Analytical-level, the Statistical-level, and the Sample-level implementations introduced in Sec. 2.1. Throughout this experiment, we compare three networks that share the same architecture but implement the crossing activation function at three different levels. Each network is a feed-forward network with two hidden layers of 100 units each and identical crossing activation functions, differing only in the implementation level of those activations. Following the terminology of Sec. 2.1, we refer to them as the Analytical-level, Statistical-level, and Sample-level networks. The Analytical-level network evaluates the deterministic expected activation ¯ϕ
+
+in the closed form of Eq. 21 and therefore requires no noise sampling. The Statistical-level network instead uses the sample-based activation ϕN and its 11 derivative ϕ′ 
+
+> N
+
+, where the N is set to 10 for the Statistical-level activation function. The Sample-level network, denoted Sample 100 in the following, has the same architecture but implements each activation at the Sample-level (Eq. 12), and its output is obtained by averaging the network response over 100 independent noise realizations. Furthermore, throughout the remainder of this paper, we assume that the noise follows a normal distribution p(ξ) = N (0 , σ 2). This assumption allows the P (d ≥ η) in Eq. 3 and Eq. 4 to be written in the following form: 
+
+P (d ≥ η) = FG
+
+ dσ
+
+
+
+= 12
+
+
+
+1 + erf 
+
+ dσ√2
+
+ 
+
+(21) where FG(·) denotes the cumulative distribution function of the standard normal distribution. Substituting it as F (d) in Eq. (3) gives the analytical-level activation function used in the following experiments. It is clear that this implementation is entirely deterministic and requires no noise sampling. It represents the exact expected behavior of the Statistical-level implemen-tation in the limit of infinite samples ( N → ∞ ). To verify the sharing and reuse of trainable parameters across the different computational implementations of the Noise-modulated Neural Network, we conduct a 1D curve-fitting experiment. The target function is defined as y =sin( x), evaluated over the domain x ∈ [−2π, 2π]. The dataset consists of 1000 uniformly spaced data points. The training pipeline is structured to evaluate both independent learning capabilities and cross-implementation parameter transfer. For all training procedures, we utilize the Adam optimizer with a learning rate of 3 × 10 −4, zero weight decay, and Mean Squared Error (MSE) as the objective loss function. The experiment is divided into two phases. In the first phase, all models are initialized independently and trained for 50 , 000 epochs. During this full learning process, a snapshot of the fully connected layer weights is captured every 100 epochs. This establishes a baseline for the convergence properties of each individual implementation and generates a repository of intermediate parameter states. In the second phase, to quantitatively evaluate parameter compatibility and reuse across different implementation levels, we perform a parameter transfer experiment. At specific training milestones, denoted as switch locations Eswitch ∈ { 1000 , 10000 , 25000 } epochs, we extract the learned parameters θ from a trained source model. These weights are then injected into a destination model of a different implementation type. The destination model resumes training from this transferred state, continuing until the total 12 number of epochs reaches 30 , 000 (i.e., training for an additional 30 , 000 −
+
+Eswitch epochs). The resulting convergence rates and final losses are evaluated against baseline models trained entirely from scratch, allowing us to ascertain the degree to which parameters learned in one noise regime can be generalized to another. Table 1 reports destination-model performance under both non-switch and switch training conditions, with losses evaluated on the same regression task. The three destination formulations considered are Analytical, Statis-tical, and Sample 100. The row labeled Untrained corresponds to standard end-to-end training from random initialization (equivalent to switch loca-tion 0) and therefore provides the reference trajectory for each destination model. The remaining rows correspond to weight-swap experiments at prede-fined switch epochs, where the source representation (Analytical, Statistical, or Sample 100) is injected into the destination model, and optimization is continued thereafter. For each destination, two values are reported: Init (loss at the switching instant, i.e., the first loss after loading the switched state) and Final (loss at the end of post-switch training). These metrics allow for direct evaluation of both the immediate transfer quality at handoff (Init) and the asymptotic convergence after adaptation (Final). Relative to Untrained, a lower Init loss indicates a more compatible transferred representation at the moment of switch, while a lower Final indicates superior asymptotic adap-tation under that transfer condition. Cases where source and destination coincide serve as within-method continuity controls, whereas cross-method rows quantify cross-representation transferability. Together, the Init-to-Final gap provides an estimate of post-switch plasticity: large reductions indicate substantial recoverable mismatch after transfer, while small gaps suggest ei-ther immediate compatibility or limited residual adaptation. These results show that, in all transfer cases, pretrained weights reduce the initial loss af-ter switching compared with random initialization, and no clear evidence of convergence to detrimental local minima is observed after post-switch opti-mization. In summary, these results indicate that trainable parameters are reusable across the three implementations as effective initial conditions. Parameters trained under one implementation, whether Analytical-level, Statistical-level, or Sample-level, consistently reduced the loss at the switching point when transferred to another implementation. After post-switch optimization, the destination models reached comparable final losses without clear evidence of detrimental local minima. These results suggest that, although the three im-13 Condition Analytical Statistical Sample 100 Init Final Init Final Init Final Untrained 5.14e-01 3.80e-08 4.99e-01 1.94e-02 5.49e-01 3.66e-03 Switch 1000 / Analytical 1.67e-02 5.91e-08 1.14e-01 2.03e-02 4.74e-02 3.63e-03 Switch 1000 / Statistical 3.82e-02 1.10e-07 7.35e-02 2.05e-02 3.96e-02 3.70e-03 Switch 1000 / Sample 100 3.03e-02 4.15e-07 6.77e-02 2.08e-02 2.82e-02 3.56e-03 Switch 10000 / Analytical 9.19e-07 1.25e-06 2.11e-01 2.05e-02 9.79e-02 3.65e-03 Switch 10000 / Statistical 4.84e-03 5.01e-08 2.50e-02 2.08e-02 1.05e-02 3.65e-03 Switch 10000 / Sample 100 1.10e-02 2.76e-08 5.09e-02 1.92e-02 5.78e-03 3.55e-03 Switch 25000 / Analytical 1.02e-07 1.67e-07 2.20e-01 3.20e-02 1.10e-01 7.84e-03 Switch 25000 / Statistical 4.24e-03 6.24e-05 2.01e-02 1.97e-02 8.86e-03 3.28e-03 Switch 25000 / Sample 100 2.29e-02 5.32e-05 5.56e-02 2.02e-02 3.85e-03 3.42e-03 
+
+> Table 1: Experimental evaluation of cross-implementation parameter transferability. The table reports the Mean Squared Error (MSE) at the exact moment of weight transfer (Init) and after subsequent post-switch optimization (Final). The ’Untrained’ row provides the baseline convergence trajectory from random initialization.
+
+plementations are not strictly equivalent, they share a compatible parameter space for practical initialization and transfer. 
+
+4. Spatial partial training and inference 
+
+In this section, we formalize the spatial partial functionalization of Noise-modulated Neural Networks by spatially localized noise patterns. The noise field introduced in Section 2.3 considers independent noise for each neu-ron. While neurons in standard artificial neural networks are often depicted as spatially organized arrays, traditional models lack any intrinsic defini-tion of physical proximity or topological structure among units. However, for brain-inspired models, it is desirable to utilize a noise field that reflects the spatial localization of noise intensity based on the spatial positions of the neurons. To introduce such a constraint, this section introduces an ab-stract representation (referred to as a virtual noise field) that implements the noise field in Section 2.3 (referred to as a network noise field) with a spatial structure. Specifically, the virtual noise field is defined as an auxil-iary V -dimensional continuous space [0 , 1] V , which introduces the property that “nearby locations receive noise of similar intensity” within this space. We realize this spatial and partial functionalization by establishing rules to 14 transform it into the network noise field. In the following, we introduce a framework for noise field generation in Section 4.1, and in Section 4.2, we demonstrate the validity of this framework and provide examples of its ap-plication. In addition, based on the results shown in Section 3, we use only the Analytical-level network hereafter. 
+
+4.1. Noise Field Generation 
+
+The key idea of the virtual noise field is to place a truncated Gaussian inside a V -dimensional unit hypercube [0 , 1] V to introduce the relationship that similarly intense noise is added to nearby locations. The parameter 
+
+V ∈ N represents the dimension of the proximity relationship; the larger the value, the more spatially complex the patterns generated. This space is not the neural network itself; it is an auxiliary continuous space whose sole purpose is to generate spatially structured noise patterns. The network noise field is generated through a unique mapping from the virtual noise field. By changing the location of the truncated Gaussian center in the virtual noise field, we obtain different network noise field patterns. If there is an overlapping active region between patterns in the virtual noise field, corresponding patterns in the network noise field also share overlapping active regions. Truncated Gaussian centers are placed on a regular grid, the index set of which is defined as follows: 
+
+Kv =
+
+> V
+
+Y
+
+> i=1
+
+1, . . . , m (i) 
+
+> v
+
+(22) where m(i) 
+
+> v
+
+is the number of grid points along the i-th axis. The total number of grid points is therefore: 
+
+Nv = |K v| =
+
+> V
+
+Y
+
+> i=1
+
+m(i) 
+
+> v
+
+. (23) A grid index kv ∈ K v is converted to a continuous center position in [0 , 1] V ,whose i-th axis is: 
+
+c(i) 
+
+> v
+
+=
+
+
+
+k(i) 
+
+> v
+
+− 1
+
+m(i) 
+
+> v
+
+− 1 if m(i) 
+
+> v
+
+> 1,
+
+0 if m(i) 
+
+> v
+
+= 1 .
+
+(24) 15 To prevent the Gaussian from being cut off at the boundaries, we map these raw coordinates inward using the following correction: 
+
+c′(i) 
+
+> v
+
+= ρ
+
+2 + (1 − ρ)c(i) 
+
+> v
+
+, (25) where ρ ∈ (0 , 1) is the target activation rate defined below. This rescaling, together with the way σv will be defined, ensures that even the extreme centers (at the corners of the hypercube) keep their Gaussian support inside [0 , 1] V .The field is then evaluated on a regular grid to translate the pattern for the network. Note that this grid can differ from the grid for truncated Gaussian center locations. Let this index set and its generic member be defined as: 
+
+Ks =
+
+> V
+
+Y
+
+> i=1
+
+1, . . . , m (i) 
+
+> s
+
+, ks ∈ K s, (26) its coordinate along the i-th axis, uniformly spaced in [0 , 1], is defined as: 
+
+u(i) 
+
+> s
+
+(ks) = k(i) 
+
+> s
+
+− 1
+
+m(i) 
+
+> s
+
+− 1, i = 1 , . . . , V. (27) Given a center c′ ∈ [0 , 1] V and a standard deviation σv > 0, the noise inten-sity at node ks is 
+
+ν(c′, ks) = 
+
+
+
+exp 
+
+−12
+
+> V
+
+X
+
+> i=1
+
+u(i) 
+
+> v
+
+− c′(i)
+
+> v
+
+σv
+
+!2 if this value ≥ θ, 
+
+0 otherwise .
+
+(28) The truncation threshold θ ∈ (0 , 1) sets values below it to zero, so that only a localized region of the grid is active; in this implementation, θ = 0 .1. The standard deviation σV is chosen so that a desired rate of nodes is active. Let 
+
+ρ ∈ (0 , 1) be the target rate of active nodes, i.e., those for which ν(c′, ks) >
+
+0. Denoting by Cv = πV / 2/Γ( V / 2 + 1) the volume of the unit ball in V
+
+dimensions, and letting 
+
+r =
+
+ ρCv
+
+1/V 
+
+(29) 16 be the radius of a ball whose volume equals ρ. We require the Gaussian to drop to θ at a distance r, which gives 
+
+σv =
+
+r −r2
+
+2 ln θ =
+
+ ρCv
+
+1/V 1
+
+√−2 ln θ . (30) The parameter ρ represents the proportion of the total volume occupied by non-zero noise regions; a smaller value of ρ generates more exclusive, isolated noise regions, whereas a larger ρ induces significant spatial overlap. Throughout the remainder of this paper, we set ρ = 0 .5. A noise pattern in the virtual noise field is expressed as a V -dimensional array ν(c′, ks), which must finally be mapped to the network noise field P.Since each noise pattern activates a sub-region of the network, we must ensure that this sub-region contains a path from the input to the output neurons; otherwise, learning would be impossible. To guarantee this, we construct the network as a set of fully connected layers in which each hidden layer has 
+
+Ns = |K s| neurons, resulting in Nh = ( L − 1) Ns hidden neurons in total, and we apply the same noise pattern to every layer, i.e. p(l1,i ) = p(l2,i ) for 1 ≤ l1, l 2 < L and 1 ≤ i ≤ Ns. The array is then flattened in standard row-major order into a one-dimensional vector, which is reused identically for all hidden layers. Figure 2 shows examples of virtual noise fields and network noise fields. The heatmap on the left represents the noise intensity distribution (the distri-bution of the variance of Gaussian noise) in the virtual noise field. The virtual noise field is composed of V = 2, Kv = {1, . . . , 10 }2, and Ks = {1, . . . , 8}2,which means that a two-dimensional neighborhood relationship is introduced for each hidden layer of the network. The heatmap on the right depicts the corresponding network noise field. In this case, the network has two hidden layers, each with 64 units. As mentioned above, the same pattern is applied to each hidden layer, and it can be confirmed that a path for information transmission between the input and output layers is established. In a fully connected layer, if the order of the weight parameters is changed to match changes in the order of the units, a mathematically equivalent mapping can be maintained before and after the change. Therefore, the periodically de-caying patterns shown on the right side of the figure are generated by the noise field generation process and do not represent five independent pipe-like paths formed from the input to the output. In other words, interestingly, it can be argued that it is the virtual noise field, rather than the network noise field, that represents physical proximity relationships. 17 0.0 0.5 1.0               
+
+> Virtual axis 1
+> 0.0
+> 0.5
+> 1.0
+> Virtual axis 2
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> Noise intensity 010 20 30 40 50 60
+> Neuron index
+> Layer 1
+> Layer 2
+> Hidden layer
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> Noise intensity 0.0 0.5 1.0
+> Virtual axis 1
+> 0.0
+> 0.5
+> 1.0
+> Virtual axis 2
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> Noise intensity 010 20 30 40 50 60
+> Neuron index
+> Layer 1
+> Layer 2
+> Hidden layer
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> Noise intensity
+
+Figure 2: Examples of different noise fields generated via the virtual noise field. Truncated Gaussian placements and noise intensity measurements are given on Kv = {1, . . . , 10 }2,and Ks = {1, . . . , 8}2 regular grids, respectively. (Top) A truncated Gaussian is placed at (1 , 2). (Bottom) A truncated Gaussian is placed at (8 , 7). (Left) Noise intensity patterns in the virtual noise field. (Right) Corresponding noise intensity patterns in the network noise field. 
+
+4.2. Results 
+
+To verify that a single noise-modulated neural network can learn different functions by using different noise fields, we conduct experiments to approx-imate various 1D curves. The target function is defined by y = sin( αx + β)with different parameters α and β, and is evaluated over the domain x ∈
+
+[−2π, 2π]. The dataset consists of N = 1000 data points uniformly spaced. Network parameters are optimized by Adam (learning rate 10 −4) with MSE loss. The maximum number of epochs is 10 ,000. Within each epoch, every function (together with its associated noise pattern) is presented to the net-work exactly once; the order in which functions are presented is randomized at each epoch. Figure 3 shows the results of training a single noise-modulated neural network to learn two different functions by applying two distinct noise fields, specifically the noise fields shown in Fig. 2. The target functions are y =sin(1 .11 x + 0) for the first noise field, and sin(1 .67 x + 4 .4) for the second noise field. 18 6 4 2 0 2 4 6
+
+> x
+> 1.00
+> 0.75
+> 0.50
+> 0.25
+> 0.00
+> 0.25
+> 0.50
+> 0.75
+> 1.00
+> y
+> Result A
+> Target A
+> Result B
+> Target B
+
+Figure 3: Inference results (solid lines) compared against the target analytical functions for a single network trained simultaneously on two distinct tasks. By switching the active network noise field between the two patterns shown in Figure 2, the network’s shared set of trainable parameters successfully alters its output mapping from y = sin(1 .11 x) to 
+
+y = sin(1 .67 x + 4 .4). 
+
+This example demonstrates that by applying different noise fields, it is possible to train a single Noise-modulated Neural Network to learn multi-ple target functions. Here, if there is no overlap in the non-zero regions of the two noise fields, this is equivalent to training two completely separate Noise-modulated Neural Networks. However, the two noise fields used in these results do have overlap in their non-zero regions. This implies that components common to the two different target functions are retained in the overlapping regions. It is interesting to investigate what happens if, during inference, the noise field is varied smoothly between the two noise fields used during training. Fig. 4 provides a schematic representation of this process. We can consider noise fields whose centers lie over the interpolating line of the two trained functions. Let us parametrize these centers by t, with t = 0 corresponding to the first noise field and t = 1 corresponding to the second noise field. Figure 5 shows the activations obtained in this way. Figure 6 shows the mapping obtained by linearly interpolating the two noise fields. The ability to consider the proximity and interpolation between noise fields, regardless 19 of the network structure or the complexity of the noise field patterns, is an advantage of the virtual noise field. 1 2 3 4 5 6 7 8 9 10         
+
+> k(1)
+> v(frequency index)
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> 8
+> 9
+> 10
+> k(2)
+> v (phase index)
+> sampling centers
+> t= 0.25
+> t= 0.50
+> t= 0.75
+> target sin(1.11 x+ 0.00)
+> target sin(1.67 x+ 4.40)
+
+Figure 4: Interpolation of noise fields by moving the center of the activation gaussian. Big dots indicate centers used during training. Small dots indicate gaussian centers used during inference. Dashed circles represent the extremes at which Gaussian are cropped. Squares indicate the position at which the noise intensity value for the actual neurons is sampled. 
+
+These results show that even when there are overlapping non-zero regions in the noise fields, the interpolation does not necessarily result in a smooth outcome. It can also be inferred that the complex functions resulting from the interpolation implicitly indicate that there is still room for learning in this region. Investigating how many functions can be learned within a contin-uous interval of the virtual noise field and whether this relates to its memory capacity and the arrangement of functions is considered a key focus in ad-vancing a constructivist understanding of the brain using Noise-modulated Neural Networks. We will focus on this point in the next section. 
+
+5. Memory capacity in spatial partial functionalization 
+
+In this section, we investigate how many different functions a single noise-modulated neural network can store when each function is associated with a distinct, spatially localized noise pattern. The procedure involves three 20 0.0 0.5 1.0                             
+
+> Virtual axis 1
+> 0.0
+> 0.5
+> 1.0
+> Virtual axis 2
+> t= 0.25
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> Noise intensity 010 20 30 40 50 60
+> Neuron index
+> Layer 1
+> Layer 2
+> Hidden layer
+> t= 0.25
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> Noise intensity 0.0 0.5 1.0
+> Virtual axis 1
+> 0.0
+> 0.5
+> 1.0
+> Virtual axis 2
+> t= 0.50
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> Noise intensity 010 20 30 40 50 60
+> Neuron index
+> Layer 1
+> Layer 2
+> Hidden layer
+> t= 0.50
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> Noise intensity 0.0 0.5 1.0
+> Virtual axis 1
+> 0.0
+> 0.5
+> 1.0
+> Virtual axis 2
+> t= 0.75
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> Noise intensity 010 20 30 40 50 60
+> Neuron index
+> Layer 1
+> Layer 2
+> Hidden layer
+> t= 0.75
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> Noise intensity
+
+Figure 5: Intermediate noise patterns generated during inference by linearly interpolating the Gaussian center between two trained positions. The rows correspond to interpolation parameters t = 0 .25, t = 0 .50, and t = 0 .75, respectively. The left column displays the noise intensity in the virtual noise field, while the right column shows the noise intensity applied to each hidden layer neuron. 
+
+stages that pass through several distinct representations. In the first stage, we generate a family of target functions, each identified by a point in a F -dimensional function parameter space. This will be detailed in Section 5.1. In the second stage, we map every function to a position in a V -dimensional virtual noise field. This will be detailed in Section 5.2. In the third stage, the network is trained on the entire function family, as described in Section 5.3. Finally, Section 5.4 presents the evaluation results and the discussion on memory capacity. 21 6 4 2 0 2 4 6     
+
+> x
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> y
+> t= 0.00
+> t= 0.25
+> t= 0.50
+> t= 0.75
+> t= 1.00
+
+Figure 6: Network inference results observed during the continuous interpolation of the noise field. Inference for trained noise fields are shown in dotted lines, and correspond to the results of Fig. 3. Other inference results, obtained as the parameter t transitions from 0 (first trained function) to 1 (second trained function), are shown with solid lines. 
+
+5.1. Function set 
+
+The first step is to construct the set of target functions that the network must store. To do this, we first define an F -dimensional parameter space. For each setting of the parameters, a different function can therefore be obtained. To obtain a set of functions, we generate a F -dimensional uniformly spaced lattice whose index set and a member are defined as follows: 
+
+Kf =
+
+> F
+
+Y
+
+> i=1
+
+n
+
+1, . . . , m (i)
+
+> f
+
+o
+
+, kf ∈ K f . (31) Although the size of this set is Nf = |K f |, the objective here is to first specify Nf and then construct a lattice Kf with that number of elements. Since multiple factorizations of m(i) 
+
+> f
+
+can yield the same Nf , we uniquely define the grid topology by selecting the tuple ( m(i) 
+
+> f
+
+, m (j) 
+
+> f
+
+, . . . m (F ) 
+
+> f
+
+) such that m(i) 
+
+> f
+
+≤
+
+m(j) 
+
+> f
+
+∀i < j and such that ( |m(F ) 
+
+> f
+
+− m(1)  
+
+> f
+
+|, |m(F ) 
+
+> f
+
+− m(2)  
+
+> f
+
+|, . . . , |m(F ) 
+
+> f
+
+− m(F −1)  
+
+> f
+
+|)is lexicographically minimal. In our experiments, we use the family of sine functions with a phase in [0 , 2π) and a frequency in [1 , 2], i.e., a 2-dimensional parameter space: 
+
+fkf (x) = sin 1 + k(1)  
+
+> f
+
+− 1
+
+m(1) 
+
+> f
+
+!
+
+x + 2 π k(2)  
+
+> f
+
+− 1
+
+m(2) 
+
+> f
+
+!! 
+
+(32) 22 where kf = ( k(1)  
+
+> f
+
+, k (2)  
+
+> f
+
+). 
+
+5.2. Assignment to Virtual Noise Field 
+
+Based on the virtual noise field defined in Section 4.1, we now assign each function to a truncated Gaussian center within it and then map the resulting noise field of the actual network. The function parameter space is 
+
+F -dimensional, whereas the virtual noise field has a dimensionality of V , and these two may differ. We therefore introduce the following rule that maps every function to a position in the V -dimensional placement grid: 
+
+• When V = F , define the placement grid Kv of the virtual noise field so that it is congruent with the function lattice and map the functions directly. 
+
+• When V > F , the function lattice is mapped to the first F axes of the 
+
+V -dimensional space, assigning coordinate 0 to the trailing V − F axes. 
+
+• When V < F , the function lattice must be projected onto fewer axes, which we achieve by collapsing its trailing dimensions into the last axis of the noise field. In performing such a collapse, the order in which functions are enumer-ated along the placement grid matters because it determines which functions become spatial neighbors in the noise field. We therefore use a boustrophedon (serpentine) traversal of the F -dimensional placement grid, in which the last axis ( k(V ) 
+
+> f
+
+) changes fastest. Whenever the index along axis i reaches a bound-ary ( k(i) 
+
+> f
+
+= 1 or k(i) 
+
+> f
+
+= m(i) 
+
+> f
+
+), its direction is reversed while the next-slower axis ( k(i−1)  
+
+> f
+
+) advances by one step. This is the multi-dimensional generaliza-tion of the reflected Gray code. Every successive grid position differs from its predecessor in exactly one axis and by exactly one step, so consecutive functions are always nearest neighbors on the grid and their Gaussian noise fields overlap maximally. For example, for a 2 × 4 grid, the traversal visits (1 , 1) , (1 , 2) , (1 , 3) , (1 , 4) , (2 , 4) , (2 , 3) , (2 , 2) , (2 , 1), and the second index sweeps forward along the first row, then backward along the second. The same serpentine order is applied to both the original function lattice and the 
+
+V -dimensional placement grid, so that functions that are neighbors in the original parameter space remain neighbors along the collapsed axis, preserv-ing local continuity as much as possible. Each function index ( k(1)  
+
+> f
+
+, . . . , k (F ) 
+
+> f
+
+)23 is thereby converted into a grid index ( k(1)  
+
+> v
+
+, . . . , k (V ) 
+
+> v
+
+), which fixes that func-tion’s Gaussian center through Eqs. (24) and (25). 
+
+5.3. Training settings 
+
+To evaluate memory capacity, we prepare the network as a fully con-nected feedforward architecture with two hidden layers. Each hidden layer contains 64 units, and this number remains fixed for all subsequent condi-tions. Network parameters are optimized by Adam (learning rate 10 −4) with MSE loss. Within each epoch, every function (together with its associated noise pattern) is presented to the network exactly once; the order in which functions are presented is randomized at each epoch. Early stopping is used to terminate training when progress saturates. Every ∆ e epochs, the summed training loss over all functions, St, is evaluated. Let S⋆t = min τ ≤t Sτ be the best value observed so far. An update is counted as having no significant improvement when 
+
+St > S ⋆t − ϵ. (33) Training stops after P consecutive no-improvement checks. In this imple-mentation, (∆ e, ϵ, P ) = (50 , 10 −3, 10) is employed. In the case where the early stopping condition has not been met, training stops at the maximum number of epochs that is set to 10 ,000. 
+
+5.4. Evaluation results 
+
+Given Eq. 32, we study three cases. Two unidimensional function spaces, where only the phase ( k(2)  
+
+> f
+
+) or the frequency ( k(1)  
+
+> f
+
+) is changed (and the other parameter is left at 1), and one bidimensional function space where both indices are varied. In this latter case, we also study what happens for both 
+
+V = 2 and V = 1. For each case, we compare two placement conditions: 
+
+• Ordered : functions are assigned to noise-field grid positions using the serpentine traversal described in Section 5.2. 
+
+• Shuffled : the same set of functions is randomly permuted before being assigned to the same grid positions. In the ordered condition, functions that are close in parameter space occupy nearby grid positions and thus share a large fraction of active neurons. In the shuffled condition, this locality is deliberately destroyed. 24 After training, the loss for a family of Nf functions is evaluated as 
+
+Lmax = max 
+
+> kf
+
+Lkf , (34) where Lkf is the MSE for function fkf . Intuitively, the lower this quantity is, the better the network is able to store all the functions at once. We therefore use this worst-case reconstruction error as an inverse proxy for memory capacity. The curves of Lmax versus Nf for ordered and shuffled conditions for the unidimensional function spaces are shown in Figure 7 and 8. The bidimensional case is shown in Figure 9. 0 10 20 30 40 50 60 70 80 90 100     
+
+> Number of functions
+> 10 4
+> 10 3
+> 10 2
+> 10 1
+> 10 0
+> Loss  V=1 ordered
+> V=2 ordered
+> V=1 shuffled
+> V=2 shuffled
+
+Figure 7: Reconstruction loss for a unidimensional function space with phase variations only, evaluated using unidimensional and bidimensional noise fields. For each condition, functions are assigned either in order or to randomly selected truncated Gaussian centers in the virtual noise field. 
+
+Overall, these results suggest that the network’s memory capacity can be improved by introducing a noise field whose spatial structure reflects the similarity properties of the functions being learned. In Figure 7, since the training data consists of a set of functions where only the phase has been var-ied, their proximity relationships can be represented in one dimension. The 
+
+V = 1 ordered condition, in which functions with similar phases are placed next to each other, most accurately captures these proximity relationships. 25 0 10 20 30 40 50 60 70 80 90 100    
+
+> Number of functions
+> 10 3
+> 10 2
+> 10 1
+> 10 0
+> Loss  V=1 ordered
+> V=2 ordered
+> V=1 shuffled
+> V=2 shuffled
+
+Figure 8: Reconstruction loss for a unidimensional function space with frequency variations only, evaluated using unidimensional and bidimensional noise fields. For each condition, functions are assigned either in order or to randomly selected truncated Gaussian centers in the virtual noise field. 
+
+Consequently, even when training on 100 different functions, there is no in-crease in loss that would indicate a limit to memory capacity. However, the 
+
+V = 2 Ordered condition, which introduces redundant representations of proximity relationships, also achieves a comparable memory capacity, and at this stage, no difference between V = 1 and V = 2 can be observed. The difference becomes apparent under the Shuffled condition. Under the V = 2 Shuffled condition, the loss begins to increase sharply once the number of distinct functions reaches around 10, and memory capacity is almost completely exhausted by around 30 functions. In contrast, under the V = 1 Shuffled condition, the loss begins to increase gradually once the number of distinct functions reaches around 20, and memory capacity is almost completely exhausted by around 60 functions. This degradation of the performance can be explained as follows. First, under the Shuffled condition, the amount of information that can be learned in common by the two functions decreases in the overlapping non-zero regions between the two noise fields. Consequently, these overlapping non-zero regions cannot be effectively utilized, and the decrease in the “occupied region” per function as the number of functions increases results in an increase in loss. 26 0 10 20 30 40 50 60 70 80 90 100    
+
+> Number of functions
+> 10 3
+> 10 2
+> 10 1
+> 10 0
+> Loss
+> V=1 ordered
+> V=2 ordered
+> V=1 shuffled
+> V=2 shuffled
+
+Figure 9: Reconstruction loss for a bidimensional function space with both phase and frequency variations, evaluated using unidimensional and bidimensional noise fields. For each condition, functions are assigned either in order or to randomly selected truncated Gaussian centers in the virtual noise field. 
+
+In this case, if V = 1, only the two neighboring functions share large overlapping non-zero regions, but if V = 2, the four neighboring functions must share large overlapping non-zero regions. Consequently, as the number of functions to be learned increases, the problem of reduced occupied region progresses much more rapidly for V = 2 compared to V = 1, resulting in memory capacity being exhausted early on. This trend is also observed in Figure 8, which uses a function set where only the frequency is varied as the training target, supporting the claim that accurately capturing the proximity relationships within the function set through the noise field increases memory capacity. Figure 9 provides further insight into this. Here, the function set being learned varies not only in phase but also in frequency, requiring two dimen-sions to represent its proximity relationships. Therefore, the V = 2 Ordered condition is best suited to represent the proximity relationships within this function set in the noise field, whereas the V = 1 Shuffled condition is the least effective. In fact, the former yields the largest memory capacity, while the latter yields the smallest. Notably, a comparison between the V = 1 Ordered condition and the 27 V = 2 Shuffled condition is of particular interest. In the V = 1 Ordered condition, although the dimension of the noise field is insufficient to repre-sent the proximity relationships of the function set, the use of a serpentine arrangement suggests that there is a certain degree of similarity between ad-jacent functions within that one-dimensional proximity relationship. On the other hand, under the V = 2 Shuffled condition, although a noise field of the same dimension as the proximity relationships in the function set is adopted, the shuffling of the function arrangement should destroy the similarity with actually adjacent functions. Since whether overlapping non-zero regions can be effectively exploited depends on the similarity to neighboring functions, one might expect an increase in loss to be observed under the V = 2 Shuffled condition before the V = 1 Ordered condition. However, in reality, the loss is smaller under the V = 2 Shuffled condition for most numbers of functions, although the V = 2 Shuffled condition occasionally exhibits a sharp increase in loss at certain numbers of functions, which will be discussed in the next section. This result suggests that aligning the dimension of the noise field with the dimension of the proximity relationships in the function set yields positive results, regardless of whether the functions are ordered or shuffled. In other words, it can be said that the extent to which overlapping non-zero regions are exploited depends not only on the similarity of adjacent func-tions, but rather, to a large extent, on whether the dimensional parameter 
+
+V corresponds to the complexity of the proximity relationships and similar-ities present across the entire function set. Since increasing the parameter 
+
+V , which represents the dimension of the noise field, increases the number of proximity patterns with large overlapping non-zero regions around a given noise pattern, it might intuitively be thought to lead to monotonic perfor-mance degradation under the Shuffled condition. However, the fact that an independent benefit of matching the dimensions of the function set and the noise field was confirmed provides additional support for the hypothesis that “the network’s memory capacity increases by introducing a noise field that reflects the similarity properties of the functions being learned.” 
+
+6. Discussion 
+
+In Figure 9, under the V = 2 Shuffled condition, a behavior was observed in which the loss increases sharply for a specific number of functions. Em-pirical validation, including variations in early stopping criteria and random seed initializations, confirmed that the specific function counts triggering 28 0 20 40 60 80 100 
+
+> Number of functions
+> 0
+> 5
+> 10
+> 15
+> 20
+> Size ratio
+
+Figure 10: The ratio of grid dimensions, m(2)  
+
+> v
+
+/m (1)  
+
+> v
+
+, plotted as a function of the total number of target functions Nf . Periodic spikes represent highly disproportionate grid aspect ratios caused by integer factorization constraints during grid construction. These extreme imbalances effectively collapse the dimensionality of the function space. 
+
+these loss spikes are highly deterministic. Therefore, we believe this phe-nomenon arises from causes embedded within the framework of spatial and partial functionalization, including the assignment of the truncated Gaussian and target functions in the virtual noise field and the transformation into the network noise field. The most plausible explanation is the difference in spatial resolution be-tween the two axes in the grid space at F = 2 and V = 2. As explained in Section 5.2, under the condition V = F , we define the placement grid Kv
+
+so that it is congruent with the grid used for the function set. Specifically, the spatial resolution of each axis of Kv is determined by the generation rule for Nf described in Section 5.1. In this rule, to ensure that the product of 
+
+m(1)  
+
+> v
+
+and m(2)  
+
+> v
+
+equals the number of functions to be learned, values for m(1) 
+
+> v
+
+and m(2)  
+
+> v
+
+are chosen in lexicographical order when the number of functions is not a perfect square. Constrained by the necessity of integer factorization, this rule is generally optimal. However, for specific prime or imbalanced composite values of Nf , it forces a severe aspect ratio imbalance Figure 10 shows the change in the ratio m(2)  
+
+> v
+
+/m (1)  
+
+> v
+
+as the number of 29 functions increases. As shown, at specific numbers of functions, m(2)  
+
+> v
+
+can become extremely large compared to m(1)  
+
+> v
+
+, and this disparity increases as the number of functions grows. As explained in Section 4.1, we generate the network noise field by placing a single truncated Gaussian in the virtual noise field, with its variance fixed isotropically. Therefore, when m(2)  
+
+> v
+
+be-comes much larger than m(1)  
+
+> v
+
+, it becomes difficult to generate differences in the m(1)  
+
+> v
+
+direction, resulting in behavior where the dimension substantially degenerates into only the m(2)  
+
+> v
+
+direction. In this case, the V = 2 Shuffled condition imposes more limited learning resources than the V = 1 Shuffled condition, and simultaneously, the similarity between neighboring functions becomes smaller. Consequently, it is believed that for those function num-bers, the V = 2 Shuffled condition resulted in a larger loss than any other condition. The sharp loss increase is therefore interpreted as a limitation of the present grid-construction rule rather than as a contradiction of the main trend. This observation suggests that memory-capacity estimates can be sensitive to the discretization of the virtual noise field, especially when the two grid axes become highly imbalanced. A more systematic treatment of grid construction, anisotropic field shapes, and adaptive placement rules is left for future work. 
+
+7. Conclusion 
+
+In this paper, we investigated spatial partial functionalization in Noise-modulated Neural Networks using noise fields. Rather than treating noise as a disturbance, the proposed framework uses noise as a mechanism for selecting and organizing active subnetworks within a single model. The main contributions of this study are as follows. First, we formulated the crossing activation function at three implementation levels, namely Sample-level, Statistical-level, and Analytical-level, and showed through parameter-transfer experiments that these implementations share a compatible param-eter space. Second, we introduced the noise field and the virtual noise field as topology-defining mechanisms that enable spatially structured activation of partially overlapping subnetworks. Third, we demonstrated that multiple functions can be stored within a single network and that memory capacity improves when the network noise field is defined by the virtual noise field that reflects the proximity relationship in the function set. The present study suggests several directions for future work. First, a more extensive investigation of the relationship between memory capacity 30 and noise-field structure is required. Due to computational constraints, this study did not evaluate network sizes or benchmark tasks of sufficient scale to fully exploit three-dimensional virtual noise fields. In addition, many parameters involved in generating network noise fields from virtual noise fields remain to be systematically explored. Scaling up the experiments and conducting a more comprehensive parameter study would strengthen the empirical basis of the noise-field concept and clarify its applicability to the spatial partial utilization of neural networks. Second, future work should address the adaptive generation of noise fields from training data. In the present study, the number of target functions was assumed to be known in advance, and distinct noise fields were prepared accordingly. A more generalized framework would invert this paradigm, dy-namically inducing noise fields directly from the data. When the training data contain ambiguity, such as different target outputs for the same input, different noise fields could be induced and used to resolve the ambiguity through spatially partial functionalization of the network. Such a framework would provide further insight into brain-inspired learning mechanisms and may also serve as a basis for practical applications involving multi-valued or context-dependent mappings. Third, the noise field itself should be considered not merely a fixed pa-rameter but as a dynamical system. In the brain, noise fields are likely to vary over time and may be affected by external fluctuations from sensory receptors, self-generated movements, and other internal and environmental factors. Modeling the noise field as a system that interacts with learning dynamics would open a new research direction in neuromorphic computing. 
+
+Acknowledgements 
+
+This work was supported by the Japan Science and Technology Agency (JST) Fusion Oriented Research for Disruptive Science and Technology (FOR-EST) Program under Grant JPMJFR242H. This work was supported by the Japan Society for Promotion of Science (JSPS) KAKENHI Grant Number 25H02619. 
+
+References 
+
+[1] M. E. Raichle, The brain’s dark energy, Science 314 (5803) (2006) 1249– 1250. arXiv:https://www.science.org/doi/pdf/10.1126/science.1134405, 31 doi:10.1126/science.1134405. URL https://www.science.org/doi/abs/10.1126/science.1134405 
+
+[2] N. K. Logothetis, What we can do and what we cannot do with fmri (6 2008). doi:10.1038/nature06976. [3] L. C. Katz, C. J. Shatz, Synaptic activity and the construc-tion of cortical circuits, Science 274 (5290) (1996) 1133–1138. doi:10.1126/science.274.5290.1133. URL https://www.science.org/doi/abs/10.1126/science.274.5290.1133 
+
+[4] L. Luo, Architectures of neuronal circuits, Science 373 (6559) (2021) eabg7285. doi:10.1126/science.abg7285. URL https://www.science.org/doi/abs/10.1126/science.abg7285 
+
+[5] C. I. Bargmann, Beyond the connectome: How neuromodula-tors shape neural circuits, BioEssays 34 (6) (2012) 458–465. doi:https://doi.org/10.1002/bies.201100185. URL https://onlinelibrary.wiley.com/doi/abs/10.1002/bies.201100185 
+
+[6] E. Marder, Neuromodulation of neuronal circuits: Back to the future, Neuron 76 (1) (2012) 1–11. doi:https://doi.org/10.1016/j.neuron.2012.09.010. URL https://www.sciencedirect.com/science/article/pii/S0896627312008173 
+
+[7] D. V. Buonomano, W. Maass, State-dependent computa-tions: Spatiotemporal processing in cortical networks (2 2009). doi:10.1038/nrn2558. [8] A. S. Morcos, C. D. Harvey, History-dependent variability in population dynamics during evidence accumulation in cortex, Nature Neuroscience 19 (2016) 1672–1681. doi:10.1038/nn.4403. [9] A. Destexhe, M. Rudolph-Lilith, Neuronal Noise, 1st Edition, Springer Series in Computational Neuroscience, Springer US, 2012. doi:10.1007/978-0-387-79020-6. [10] R. M. Birn, The role of physiological noise in resting-state functional connectivity, NeuroImage 62 (2) (2012) 864–870. doi:https://doi.org/10.1016/j.neuroimage.2012.01.016. 32 [11] A. A. Faisal, L. P. J. Selen, D. M. Wolpert, Noise in the ner-vous system, Nature Reviews Neuroscience 9 (4) (2008) 292–303. doi:10.1038/nrn2258. [12] A. R. McIntosh, N. Kovacevic, R. J. Itier, Increased brain signal variability accompanies lower behavioral variability in de-velopment, PLOS Computational Biology 4 (7) (2008) 1–9. doi:10.1371/journal.pcbi.1000106. URL https://doi.org/10.1371/journal.pcbi.1000106 
+
+[13] D. D. Garrett, N. Kovacevic, A. R. McIntosh, C. L. Grady, The modulation of bold variability between cognitive states varies by age and processing speed, Cerebral Cortex 23 (3) (2012) 684–693. doi:10.1093/cercor/bhs055. URL https://doi.org/10.1093/cercor/bhs055 
+
+[14] J. S. Nomi, T. S. Bolt, C. C. Ezie, L. Q. Uddin, A. S. Heller, Moment-to-moment bold signal variability reflects regional changes in neural flexi-bility across the lifespan, Journal of Neuroscience 37 (22) (2017) 5539– 5548. arXiv:https://www.jneurosci.org/content/37/22/5539.full.pdf, doi:10.1523/JNEUROSCI.3408-16.2017. URL https://www.jneurosci.org/content/37/22/5539 
+
+[15] L. Gammaitoni, P. H¨ anggi, P. Jung, F. Marchesoni, Stochas-tic resonance, Reviews of Modern Physics 70 (1998) 223–287. doi:10.1103/RevModPhys.70.223. [16] K. Wiesenfeld, F. Moss, Stochastic resonance and the benefits of noise: from ice ages to crayfish and SQUIDs, Nature 373 (6509) (1995) 33–36. [17] R. Benzi, A. Sutera, A. Vulpiani, The mechanism of stochastic reso-nance, Journal of Physics A: Mathematical and general 14 (1981) 453– 457. [18] R. Benzi, G. Parisi, A. Sutera, A. Vulpiani, Stochastic resonance in climatic change, Tellus 34 (1) (1982) 10–16. arXiv:https://onlinelibrary.wiley.com/doi/pdf/10.1111/j.2153-3490.1982.tb01787.x, doi:https://doi.org/10.1111/j.2153-3490.1982.tb01787.x. URL https://onlinelibrary.wiley.com/doi/abs/10.1111/j.2153-3490.1982.tb01787.x 
+
+33 [19] S. Fauve, F. Heslot, Stochastic resonance in a bistable system, Physics Letters A 97 (1983) 5–7. [20] B. McNamara, K. Wiesenfeld, R. Roy, Observation of stochastic resonance in a ring laser, Phys. Rev. Lett. 60 (1988) 2626–2629. doi:10.1103/PhysRevLett.60.2626. URL https://link.aps.org/doi/10.1103/PhysRevLett.60.2626 
+
+[21] P. S. Landa, P. V. E. McClintock, Vibrational resonance, Jour-nal of Physics A: Mathematical and General 33 (45) (2000) L433. doi:10.1088/0305-4470/33/45/103. URL https://doi.org/10.1088/0305-4470/33/45/103 
+
+[22] A. Guderian, G. Dechert, K.-P. Zeyer, F. W. Schneider, Stochas-tic resonance in chemistry. 1. the belousov-zhabotinsky reaction, The Journal of Physical Chemistry 100 (11) (1996) 4437–4441. arXiv:https://doi.org/10.1021/jp952243x, doi:10.1021/jp952243x. URL https://doi.org/10.1021/jp952243x 
+
+[23] M. D. McDonnell, L. M. Ward, The benefits of noise in neural systems: bridging theory and experiment, Nature Reviews Neuroscience 12 (7) (2011) 415–425. doi:10.1038/nrn3061. [24] F. Moss, L. M. Ward, W. G. Sannita, Stochastic resonance and sensory information processing: a tutorial and review of application, Clinical Neurophysiology 115 (2) (2004) 267–281. doi:https://doi.org/10.1016/j.clinph.2003.09.014. URL https://www.sciencedirect.com/science/article/pii/S1388245703003304 
+
+[25] J. Douglass, L. Wilkens, E. Pantazelou, F. Moss, Noise enhancement of information transfer in crayfish mechanoreceptors by stochastic reso-nance, Nature 365 (6444) (1993) 337–340. [26] J. Levin, J. Miller, Broadband neural encoding in the cricket cercal sensory system enhanced by stochastic resonance, Nature 380 (1996) 165–168. doi:10.1038/380165a0. [27] M. D. McDonnell, D. Abbott, What is stochastic resonance? definitions, misconceptions, debates, and its relevance to biology, PLoS Comput Biol 5 (5) (2009) e1000348. 34 [28] A. Priplata, J. Niemi, M. Salen, J. Harry, L. A. Lipsitz, J. J. Collins, Noise-enhanced human balance control, Phys. Rev. Lett. 89 (2002) 238101. doi:10.1103/PhysRevLett.89.238101. URL https://link.aps.org/doi/10.1103/PhysRevLett.89.238101 
+
+[29] L. Mart´ ınez, T. P´ erez, C. R. Mirasso, E. Manjarrez, Stochastic res-onance in the motor system: Effects of noise on the monosynap-tic reflex pathway of the cat spinal cord, Journal of Neurophysiology 97 (6) (2007) 4007–4016. arXiv:https://doi.org/10.1152/jn.01164.2006, doi:10.1152/jn.01164.2006. URL https://doi.org/10.1152/jn.01164.2006 
+
+[30] P. Jung, P. H¨ anggi, Amplification of small signals via stochastic resonance, Phys. Rev. A 44 (1991) 8032–8042. doi:10.1103/PhysRevA.44.8032. URL https://link.aps.org/doi/10.1103/PhysRevA.44.8032 
+
+[31] B. McNamara, K. Wiesenfeld, Theory of stochastic resonance, Phys. Rev. A 39 (1989) 4854–4869. doi:10.1103/PhysRevA.39.4854. URL https://link.aps.org/doi/10.1103/PhysRevA.39.4854 
+
+[32] S. Zozor, P.-O. Amblard, Stochastic resonance in discrete time nonlinear ar(1) models, IEEE Transactions on Signal Processing 47 (1) (1999) 108– 122. doi:10.1109/78.738244. [33] W. Maass, Networks of spiking neurons: The third generation of neural network models, Neural Networks 10 (9) (1997) 1659–1671. doi:https://doi.org/10.1016/S0893-6080(97)00011-7. URL https://www.sciencedirect.com/science/article/pii/S0893608097000117 
+
+[34] F. Ponulak, A. Kasi´ nski, Introduction to spiking neural networks: In-formation processing, learning and applications, Acta neurobiologiae ex-perimentalis 71 (2011) 409–33. doi:10.55782/ane-2011-1862. [35] A. Tavanaei, M. Ghodrati, S. R. Kheradpisheh, T. Masquelier, A. Maida, Deep learning in spiking neural networks, Neural Networks 111 (2019) 47–63. doi:https://doi.org/10.1016/j.neunet.2018.12.002. URL https://www.sciencedirect.com/science/article/pii/S0893608018303332 
+
+35 [36] M. Ozer, M. Perc, M. Uzuntarla, Stochastic resonance on new-man–watts networks of hodgkin–huxley neurons with local pe-riodic driving, Physics Letters A 373 (10) (2009) 964–968. doi:https://doi.org/10.1016/j.physleta.2009.01.034. URL http://www.sciencedirect.com/science/article/pii/S0375960109000905 
+
+[37] M. Ozer, M. Perc, M. Uzuntarla, E. Koklukaya, Weak signal propagation through noisy feedforward neuronal networks, Neuroreport 21 (5) (2010) 338–343. doi:10.1097/wnr.0b013e328336ee62. URL http://europepmc.org/abstract/MED/20186108 
+
+[38] S. Ikemoto, F. DallaLibera, K. Hosoda, Noise-modulated neural net-works as an application of stochastic resonance, Neurocomputing 277 (2018) 29 – 37. doi:https://doi.org/10.1016/j.neucom.2016.12.111. [39] S. Ikemoto, Noise-modulated neural networks for selectively functional-izing sub-networks by exploiting stochastic resonance, Neurocomputing 448 (2021) 1–9. doi:https://doi.org/10.1016/j.neucom.2020.05.125. URL https://www.sciencedirect.com/science/article/pii/S0925231221004379 
+
+[40] Y. Bengio, N. L´ eonard, A. Courville, Estimating or propagating gra-dients through stochastic neurons for conditional computation (2013). arXiv:1308.3432. URL https://arxiv.org/abs/1308.3432 
+
+[41] M. Courbariaux, I. Hubara, D. Soudry, R. El-Yaniv, Y. Bengio, Bina-rized neural networks: Training deep neural networks with weights and activations constrained to +1 or -1 (2016). arXiv:1602.02830. URL https://arxiv.org/abs/1602.02830 
+
+[42] J. H. Lee, T. Delbruck, M. Pfeiffer, Training deep spiking neural networks using backpropagation, Frontiers in Neuroscience Volume 10 - 2016. doi:10.3389/fnins.2016.00508. URL https://www.frontiersin.org/journals/neuroscience/articles/10.3389/fnins.2 
+
+[43] E. O. Neftci, H. Mostafa, F. Zenke, Surrogate gradient learning in spik-ing neural networks: Bringing the power of gradient-based optimization to spiking neural networks, IEEE Signal Processing Magazine 36 (6) (2019) 51–63. doi:10.1109/MSP.2019.2931595. 36 [44] L. Rybicki, Y. Sugita, J. Tani, Reinforcement learning of multiple tasks using parametric bias, in: 2009 International Joint Conference on Neural Networks, IEEE, 2009, pp. 2732–2739. 37

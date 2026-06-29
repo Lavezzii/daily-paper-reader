@@ -1,0 +1,318 @@
+Title: MAP-Based Task-Oriented Precoding for Multiuser Communication
+
+URL Source: https://arxiv.org/pdf/2606.25722v1
+
+Published Time: Thu, 25 Jun 2026 00:54:34 GMT
+
+Number of Pages: 4
+
+Markdown Content:
+> 1
+
+# MAP-Based Task-Oriented Precoding for Multiuser Communication 
+
+Mohammad Javad Ahmadi, Rafael F. Schaefer Senior Member, IEEE ,and H. Vincent Poor, Life Fellow, IEEE 
+
+Abstract —We propose a task-oriented multiuser wireless com-munication framework for distributed classification based on a MAP-driven system design under wireless channel impairments. By deriving a tractable class-mean separation objective, the pro-posed approach enables low-complexity design of both learning-based feature extraction and precoding strategies. Unlike exist-ing covariance-based and reconstruction-oriented methods, the proposed formulation avoids repeated covariance inversions and eigen-decomposition operations while directly improving class separability after channel distortion. Simulation results demon-strate that the proposed method achieves higher classification accuracy than existing schemes, while simultaneously reducing computational complexity. 
+
+Index Terms —Task-oriented communication, MAP detection, feature learning, wireless precoding. 
+
+I. I NTRODUCTION 
+
+Task-oriented and semantic communication has recently emerged as a promising paradigm for next-generation wireless systems, where the goal is to reliably convey task-relevant se-mantic information rather than reconstructing raw transmitted signals [1]. In contrast to conventional communication systems that primarily focus on minimizing symbol or signal distortion, semantic and task-oriented frameworks aim to optimize end-task performance such as classification or inference accuracy at the receiver. This shift has motivated the integration of machine learning techniques with wireless communication design, enabling joint optimization of feature representation, transmission strategies, and decision-making under channel impairments. As a result, new system designs are required that account for both learning-based feature extraction and channel-aware signal processing in a unified framework [2]–[8]. Earlier works in task-oriented communication focus on learning-based feature transmission, where neural networks extract compact representations and transmit them over wire-less channels for downstream tasks such as classification or 
+
+This work of M. J. Ahmadi and R. F. Schaefer have been supported in part by the German Federal Ministry of Research, Technology and Space (BMFTR) through the transfer hub 6G-life under Grant 16KIS2413K and in part by the German Research Foundation (DFG) as part of Germany’s Excellence Strategy EXC 2050/2 – Project ID 390696704 – Cluster of Excellence “Centre for Tactile Internet with Human-in-the-Loop” (CeTI) and within the Priority Programme SPP 2378 “Resilient Worlds” – Project ID 503657103. The work of H. V. Poor was supported in part by an Innovation Grant from Princeton NextG. M. J. Ahmadi and R. F. Schaefer are with the Chair of Information Theory and Machine Learning, Technische Universit¨ at Dresden, 01062 Dresden, Germany and also with the Cluster of Excellence “CeTI”, Technische Univer-sit¨ at Dresden, 01062 Dresden, Germany (e-mail: {mohammad javad.ahmadi, rafael.schaefer }@tu-dresden.de). H. V. Poor is with the Department of Electrical and Computer Engineering, Princeton University (e-mail: poor@princeton.edu). 
+
+retrieval [2]–[4]. These methods mainly optimize task perfor-mance indirectly through representation learning frameworks such as deep joint source–channel coding (JSCC) or informa-tion bottleneck models. More recent approaches further shape the learned feature space to enhance post-channel inference performance, rather than solely compressing representations for transmission [5]–[8]. Although achieving promising per-formance, these methods still rely on conventional commu-nication objectives that are not explicitly aligned with end-task inference. For instance, [5] targets accurate signal recon-struction via the linear minimum mean-squared error criterion, while [6], [7] employ mutual information as the optimization objective, focusing on semantic-aware representation learning rather than task-specific discrimination. The method in [8] employs maximal coding rate reduction (MCR 2) to enhance class separability in the learned feature space. This reliance on criteria that are not explicitly aligned with task-specific inference objectives limits the effectiveness of existing task-oriented communication systems. To address this issue, this paper proposes a task-oriented wireless communication framework based on an approximate MAP error formulation in the channel-affected feature space, which is more aligned with the end-task objective than conven-tional approaches in the literature. Unlike existing approaches relying on reconstruction-based or surrogate coding-rate ob-jectives, the proposed formulation directly targets post-channel MAP decision performance while avoiding expensive covari-ance and matrix decomposition operations. Simulation results demonstrate improved classification accuracy and more stable performance compared to existing methods, while significantly reducing computational complexity. The rest of this letter is organized as follows. Sec. II intro-duces the system model. Sec. III presents the proposed MAP-based task-oriented system design along with its computational complexity analysis. Sec. IV provides numerical results to validate the proposed method. Finally, Sec. V concludes the letter. II. S YSTEM MODEL 
+
+We consider a distributed wireless classification system consisting of K edge devices (workers) and a central server (fusion center). Each worker k ∈ { 1, . . . , K } is equipped with 
+
+Nk transmit antennas, while the server is equipped with M
+
+receive antennas. The observed data at each worker belongs to one of C classes {C 1, . . . , CC }. The kth worker processes its high-dimensional observation sk using a feature extraction 
+
+> arXiv:2606.25722v1 [cs.IT] 24 Jun 2026 2
+
+function xk = fθ (sk) ∈ CDk ×1, where fθ (·) denotes a parameterized nonlinear mapping (e.g., a neural network with parameters θ) that transforms the input sample into a lower-dimensional task-relevant feature vector. The resulting feature vector xk is transmitted to the server through a wireless channel. The ultimate goal of the system is to correctly infer the class label Cj from the received signal at the fusion center. The received signal at the edge server corresponding to the tth channel use is given by 
+
+yt =
+
+> K
+
+X
+
+> k=1
+
+HkVk,t xk + zt, (1) where Hk ∈ CM ×Nk is the wireless channel between worker 
+
+k and the server, Vk,t ∈ CNk ×Dk is the precoding matrix at the tth channel-use of the kth edge device, and zt ∼CN (0, σ 2IM ) is the additive complex symmetric Gaussian noise. The received signal in (1) can be written in the following matrix form 
+
+yt = HV tx + zt, (2) where H = [H1, H2, ..., HK ] ∈ CM ×N ,
+
+x = [xT 
+
+> 1
+
+, xT 
+
+> 2
+
+, ...., xTK ]T ∈ CD×1, Vt =blkdiag( V1,t , V2,t , . . . , VK,t ) with N = PKk=1 Nk and 
+
+D = PKk=1 Dk. Stacking the received signals over T channel uses, we can write 
+
+y = ˜HVx + z, (3) where ˜H = IT ⊗ H ∈ CT M ×T N , y = [ yT 
+
+> 1
+
+, yT 
+
+> 2
+
+, ...., yTT ]T ∈
+
+CT M ×1, z = [zT 
+
+> 1
+
+, zT 
+
+> 2
+
+, ...., zTT ]T ∈ CT M ×1, V =
+
+VT 
+
+> 1
+
+, VT 
+
+> 2
+
+, . . . , VTT
+
+T ∈ CT N ×D. In (3), ˜H denotes the effective channel matrix and Vx is the transmitted signal. To satisfy the transmit power constraint, we impose 
+
+E{∥ Vx ∥2} ≤ P T, (4) where P denotes the total transmit power budget across all users. III. MAP-B ASED TASK -O RIENTED SYSTEM DESIGN 
+
+The system design is formulated under a MAP detection framework, where the feature extractor fθ (·) and precoder V
+
+are designed to minimize the MAP-induced classification error probability. 
+
+A. MAP Receiver and Error Probability Analysis 
+
+The maximum a posteriori (MAP) detector is given by 
+
+ˆc = arg max  
+
+> j
+
+P(y | C j )P(Cj ), (5) where P(Cj ) denotes the class prior probability. Assuming class-conditional Gaussian feature distributions, i.e., x|C j ∼CN (μj , Σj ), we have 
+
+y | C j ∼ CN ( ˜HV μj , Kj ), (6) where Kj = ˜HV Σj VH ˜HH + σ2IM T . To obtain a tractable detector structure and avoid repeated covariance matrix inver-sions, we employ the approximation Kj ≈ 1 
+
+> M T
+
+tr( Kj )IM T ,which gives 
+
+Kj ≈ 1
+
+M T tr( ˜HV Σj VH ˜HH )IM T + σ2IM T . (7) Assuming weak coupling between the channel and fea-ture covariance matrices, we have tr( ˜HV Σj VH ˜HH ) ≈
+
+1
+
+M T tr( ˜HH ˜H)tr( VΣj VH ). Then, motivated by (4), we can rewrite (7) as 
+
+Kj ≈ δH IM T , (8) where δH = σ2 + tr( ˜HH ˜H)P/ (M 2T ). Using (6) and (8), the MAP detector in (5) can be simplified as 
+
+ˆc = arg min 
+
+> j
+
+∥y − ˜HV μj ∥2
+
+δH
+
+− log P(Cj ), (9) where the determinant term is omitted since δH is independent of the class index. The error probability of the MAP detector can be upper-bounded using a pairwise union bound as 
+
+Pe ≤
+
+> C
+
+X
+
+> j=1
+> j−1
+
+X
+
+> k=1
+
+P(Cj )Pjk , (10) where Pjk = P
+
+
+
+∥y − ˜HV μk∥2 + ajk < ∥y − ˜HV μj ∥2 Cj
+
+
+
+with ajk = δH (log P(Cj ) − log P(Ck)) . We can write y|C j =˜HV μj + kj , where kj ∼ CN (0, δ H IM T ). Accordingly, the pairwise error probability Pjk can be expressed as 
+
+Pjk = P
+
+
+
+∥kj + ˜HV μjk ∥2 + ajk < ∥kj ∥2
+
+= Q
+
+s
+
+∥ ˜HV μjk ∥2 + δH log ( P(Cj )/P(Ck)) 2δH
+
+ , (11) where μjk = μj − μk.
+
+B. Feature Extraction and Precoder Design 
+
+In this subsection, we present the proposed transmitter design, which consists of feature extraction and a linear precoder. Both components are optimized based on the MAP error probability derived in the previous subsection to improve task performance under power constraints. 
+
+1) Neural Network Training and Feature Learning: In this part, we describe the feature learning module used to generate class-discriminative representations at each user. Specifically, the kth user employs a neural network parameterized by θk,denoted by fθk (·), to map its high-dimensional observation into a real-valued latent representation ˜xk ∈ R2Dk . The resulting vector is converted into a complex representation 
+
+xk ∈ CDk ×1 as xk = ˜ xk, 1: Dk + j ˜xk,D k +1:2 Dk , followed by normalization such that ∥xk∥2 = 1 . For each class, the feature vectors within a minibatch are averaged to obtain the class-dependent mean representations μ1, μ 2, . . . , μ C .To obtain the learning objective, we use the error term in (10) under a nominal noiseless and identity-equivalent channel 3
+
+assumption, i.e., ˜HV ≈ ID , σ2 = 0, and set δH to a fixed constant value, i.e., δH = 0 .5. These approximations normalize the loss to remove scale ambiguity induced by channel statistics, while preserving the structure of the MAP decision rule. In addition, we assume uniform class priors, i.e., 
+
+P(Cj ) = 1 /C , which corresponds to the case where no prior information about class distribution is available. Under these assumptions, the resulting loss function is given by 
+
+L =
+
+> C
+
+X
+
+> j=1
+> j−1
+
+X
+
+> k=1
+
+1
+
+C Q (∥μjk ∥) . (12) This loss promotes separation between class-dependent fea-ture means in the learned representation space. The neural network parameters are optimized using standard backprop-agation to minimize this objective over the training dataset. After convergence, the learned class means are computed from the trained feature extractor and used in the subsequent precoder design stage, where the wireless transmission matrix is optimized based on these statistics. 
+
+2) Precoder Design: To design the precoder matrix V,we minimize the derived pairwise MAP error approximation in (10), under the assumption of uniform class priors, i.e., 
+
+P(Cj ) = 1 /C , which yields the following optimization prob-lem 
+
+min 
+
+> V
+> C
+
+X
+
+> j=1
+> j−1
+
+X
+
+> k=1
+
+1
+
+C Ljk (V), s.t. ∥Vμj ∥2 ≤ P T, (13) where Ljk (V) = Q
+
+q 
+
+0.5∥ ˜HV μjk ∥2/δ H
+
+
+
+. To obtain a tractable optimization problem, we approximate the Gaus-sian Q-function using an exponential surrogate of the form 
+
+Q(x) ≈ exp( −τ x 2), where τ > 0 is a tuning parameter controlling the tightness of approximation. Defining djk (V) = 0.5∥ ˜HV μjk ∥2/δ H , we have Ljk (V) = e−τ d jk (V). Using a projected gradient descent/ascent scheme on the surrogate objective, the precoder update rule is given by 
+
+V(t+1) = αP
+
+V(t) + ηC
+
+> C
+
+X
+
+> j=1
+> j−1
+
+X
+
+> k=1
+
+∇L jk 
+
+
+
+V(t) , (14) where η is the step size, αP is a simple normaliza-tion scalar that rescales the precoder such that the maxi-mum class-wise transmit power satisfies the constraint, i.e., 
+
+max j ∥V(t+1) μj ∥2 
+
+> F
+
+≤ P T , and ∇L jk (V) is the gradient of 
+
+Ljk (V) with respect to V, given by 
+
+∇L jk (V) = − τδHCX
+
+> j=1
+> j−1
+
+X
+
+> k=1
+
+˜HH ˜HV μjk μHjk e−τ d jk (V). (15) The precoder matrix is updated using (14) over I0 iterations, and the final updated matrix V(I1) is used as the precoding matrix for transmission. 
+
+3) Computational Complexity: In this subsection, we an-alyze the computational complexity of the proposed feature extractor and precoder and compare them with existing ap-proaches. Specifically, we measure the complexity in terms of the number of complex multiplications required by each algorithm. 20 40 60 80 100 120 140 160 180 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 
+
+Fig. 1: Test accuracy versus training epochs for the proposed feature extractor and MCR 2 [8] with different values of ϵ under identical network architecture. 
+
+Feature Extractor Complexity : The proposed objective in (12) requires computing pairwise distances between class-mean feature vectors across C classes in a D-dimensional space, which results in a computational complexity of O(DC 2).In contrast, the MCR 2-based objective in [8] requires the computation of empirical covariance matrices over a minibatch of size B, together with the evaluation of log-determinant terms over C + 1 covariance matrices of size D × D. This leads to a computational complexity of O(BD 2 + CD 3),which is significantly higher than the proposed approach in high-dimensional settings. We note that, to analyze the feature extractor complexity, we ignore the computational cost of the neural network layers, as they exhibit standard complexity in both the proposed method and MCR 2 and are not the focus of this work. Thus, we only consider the complexity of the loss functions. 
+
+Precoder Complexity : The proposed gradient-based precoder optimization requires evaluating the pairwise separation term 
+
+∥ ˜HV μjk ∥2 for all class pairs (j, k ). For each pair, the com-putation of Vμjk has complexity O(NkKT D k), followed by multiplication with ˜H, which requires O(M N kKT ) opera-tions, and the computation of the squared norm with complex-ity O(M T ). Since the number of class pairs scales as O(C2),the total forward complexity scales as O C2NkKT (Dk +
+
+M ), which also determines the overall computational com-plexity since the gradient computation involves the same set of pairwise operations and does not change the order. In contrast, the MCR 2-based precoder in [8] relies on a block coordinate ascent framework involving matrix inversions, singular value decompositions, and iterative bisection-based power alloca-tion updates, which results in a per-iteration computational complexity of O  D3 + CM 3T 3 + I1KT 3N 3 
+
+> k
+
+D3
+
+> k
+
+, where I1
+
+denotes the number of iterations for the bisection-based up-dates. For the LMMSE precoder in [5] (with modifications detailed in Appendix A of [8]), the per-iteration computational complexity is given by O  M 3T 3 + I1KT 3N 3
+
+> k
+
+.4
+
+IV. N UMERICAL RESULTS 
+
+The performance of the proposed task-oriented commu-nication framework is evaluated using our implementation available on GitHub [9]. Unless stated otherwise, the following settings are used throughout the simulations. We consider a distributed wireless classification system using the CIFAR-10 dataset with K = 2 views per sample, where each view is generated using stochastic data augmentation including ran-dom resized cropping, horizontal flipping, and color jittering, resulting in two independently augmented observations per input image. Each view is encoded using a dedicated ResNet-18 backbone initialized with ImageNet pretrained weights, followed by a two-layer fully connected projection head that maps the 512-dimensional feature representation to a 2Dk-dimensional latent embedding. For performing the update equation in (14), we select η = 0 .1, τ = 0 .7, and I0 = 30 .The wireless channel coefficients are generated independently according to CN (0 , 1) , corresponding to a Rayleigh fading environment, with transmit power P = 2, noise variance 
+
+σ2 = 1 , and system parameters Nk = 6 and T = 1 .In Fig. 1, we plot the test accuracy versus the number of training epochs for the proposed feature extractor and MCR 2
+
+in [8] with different values of ϵ. For a fair comparison, both methods use the same network architecture. It can be observed that the proposed method closely matches the performance and convergence behavior of MCR 2 across training epochs, while requiring significantly lower computational complexity as discussed in Sec. III-B3, due to its independence from covariance estimation and matrix decomposition operations. Moreover, the results indicate that MCR 2 exhibits strong sensitivity to the choice of ϵ, where the best performance is achieved at ϵ = 5 , while both smaller and larger values lead to noticeable performance degradation. In contrast, the proposed method does not rely on such sensitive tuning parameters, which improves its robustness. We compare the performance of different precoding schemes in Fig. 2, which illustrates the MAP detection error performance with respect to the number of receive antennas. The baselines are the MCR 2 precoder proposed in [8] and the LMMSE baseline in [5] (with modifications detailed in Appendix A of [8]). For a fair comparison focused solely on precoder design, all considered schemes employ the same pretrained MCR 2-based feature extractor [8]. It is observed that the proposed precoder consistently achieves lower MAP error compared to both the LMMSE and MCR 2 precoders. This superior performance stems from the fact that the pro-posed method directly minimizes an approximation of the MAP detection error. In contrast, the LMMSE precoder is designed to minimize the mean-squared error of feature recon-struction at the receiver, while the MCR 2 precoder focuses on maximizing rate-related objectives that are not directly aligned with classification error minimization. In addition, it is observed in Fig. 2 that the computational complexity of the MCR 2 precoder is significantly higher than that of both the proposed and LMMSE precoders. This is mainly due to the repeated matrix inversions, SVD operations, and inner iterative updates required by the block coordinate 1 2 3 4 5 6 7 8 9 10 11 0.1 0.2 0.3 0.4 0.5 0.6 0.7 10 4
+
+> 10 5
+> 10 6
+> 10 7
+
+Fig. 2: Comparison of the proposed, LMMSE [5], and MCR 2 [8] precoders versus the number of receive antennas. 
+
+ascent framework, whereas the proposed method relies only on gradient-based updates and simple matrix multiplications. Overall, the results demonstrate that the proposed precoder achieves a favorable trade-off between classification accuracy and computational efficiency compared to existing baselines. V. C ONCLUSION 
+
+In this paper, we have proposed a MAP-driven task-oriented communication framework for distributed wireless classifi-cation. A low-complexity feature learning objective and a gradient-based precoder were derived from an approximation of the MAP detection error. Numerical results show that the proposed method achieves higher classification accuracy, lower computational complexity, and improved robustness compared to conventional precoding schemes. REFERENCES [1] A. Mostaani, T. X. Vu, S. K. Sharma, V.-D. Nguyen, Q. Liao, and S. Chatzinotas, “Task-oriented communication design in cyber-physical systems: A survey on theory and applications,” IEEE Access , vol. 10, pp. 133842–133868, 2022. [2] E. Bourtsoulatze, D. Burth Kurka and D. G¨ und¨ uz, “Deep joint source-channel coding for wireless image transmission,” IEEE Trans. Cogn. Commun. Netw. , vol. 5, no. 3, pp. 567–579, Sept. 2019. [3] M. Jankowski, D. G¨ und¨ uz and K. Mikolajczyk, “Wireless image retrieval at the edge,” IEEE J. Sel. Areas Commun. , vol. 39, no. 1, pp. 89–100, Jan. 2021. [4] J. Shao, Y. Mao and J. Zhang, “Learning task-oriented communication for edge inference: an information bottleneck approach,” IEEE J. Sel. Areas Commun. , vol. 40, no. 1, pp. 197–211, Jan. 2022. [5] H. Xie, Z. Qin, X. Tao, and K. B. Letaief, “Task-oriented multi-user semantic communications,” IEEE J. Sel. Areas Commun. , vol. 40, no. 9, pp. 2584–2597, Sep. 2022. [6] H. Xie, Z. Qin, G. Y. Li, and B.-H. Juang, “Deep learning enabled semantic communication systems,” IEEE Trans. Signal Process. , vol. 69, pp. 2663–2675, 2021. [7] C. Cai, X. Yuan and Y.-J. A. Zhang, “End-to-end learning for task-oriented semantic communications over MIMO channels: an information-theoretic framework,” IEEE J. Sel. Areas Commun. , vol. 43, no. 4, pp. 1292–1307, Apr. 2025. [8] C. Cai, X. Yuan, and Y.-J. A. Zhang, “Multi-device task-oriented com-munication via maximal coding rate reduction,” IEEE Trans. Wireless Commun. , vol. 23, no. 12, pp. 18096–18110, Dec. 2024. [9] M. J. Ahmadi, R. F. Schaefer, and H. V. Poor, “MAP-Based Task-Oriented Precoding for Multiuser Communication,” GitHub repository. Available: https://github.com/Javad7ahmadi/ MAP-Based-Task-Oriented-Precoding-for-Multiuser-Communication
