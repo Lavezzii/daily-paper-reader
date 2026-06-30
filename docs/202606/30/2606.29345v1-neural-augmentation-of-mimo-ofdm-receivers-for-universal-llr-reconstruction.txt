@@ -1,0 +1,685 @@
+Title: Neural Augmentation of MIMO-OFDM Receivers for Universal LLR Reconstruction
+
+URL Source: https://arxiv.org/pdf/2606.29345v1
+
+Published Time: Tue, 30 Jun 2026 01:08:55 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+# Neural Augmentation of MIMO-OFDM Receivers for Universal LLR Reconstruction 
+
+Ory Eger, Student Member, IEEE, and Nir Shlezinger, Senior Member, IEEE 
+
+Abstract—The growing demands for higher throughput and cost-efficient wireless communications drive the need for receivers that are both simple to deploy and robust to hardware impairments and nonlinear environments. While classical model-based receivers and recently proposed deep neural network (DNN) architectures provide complementary benefits, they either rely on simplified linear Gaussian assumptions, require considerable computational resources, or are tailored for a given setting and modulation. In this work, we propose a compact and modular DNN augmentation that universally refines the soft outputs of existing receivers (model-based or data-driven), addressing two distinct operating regimes: structurally incomplete soft information arising from reduced-complexity detectors, and degraded soft outputs caused by hardware impairments and synchronization errors. A key property of the proposed framework is its task-agnostic nature: operating without any knowledge of the specific source of unreliability, it produces well-calibrated log-likelihood ratios (LLRs) suitable for channel decoding. Our design leverages an element-wise scaled convolutional neural network tailored to perform learned interference cancellation across users and neighboring subcarriers, combined with a training algorithm that encourages accurate LLRs for soft channel decoding. Numerical results demonstrate that the proposed augmentation consistently improves diverse receiver algorithms in challenging channel conditions while incurring minimal overhead. 
+
+I. Introduction Wireless communication systems are facing rapidly growing demands in terms of throughput, reliability, cost, and energy-efficiency [2]. To meet these requirements, modern networks increasingly rely on multi-user multiple-input multiple-output (MIMO) architectures combined with multi-carrier waveforms such as orthogonal frequency division multiplexing (OFDM) [3]. While these technologies enable high spectral efficiency and flexible resource alloca-tion, they also impose stringent requirements on receiver design. In particular, practical receivers are expected to operate under tight computational and latency constraints, while coping with challenging propagation conditions, multi-user interference, and various hardware-induced non-idealities. These competing requirements make it difficult to simultaneously achieve high detection performance, robust-ness to mismatches, and low implementation complexity. In multi-user MIMO-OFDM systems, receiver processing has been traditionally dominated by classical model-based 
+
+Parts of this work were presented at the 2026 IEEE International Conference on Communications (ICC) as the paper [1]. The authors are with the School of ECE, Ben-Gurion University of the Negev, Be’er-Sheva, Israel (e-mail: egero@post.bgu.ac.il; nirshl@bgu.ac.il). The work was supported by the European Research Council (ERC) under the ERC starting grant nr. 101163973 (FLAIR). 
+
+approaches [4]. These include low-complexity linear receivers such as zero-forcing (ZF) and linear minimum mean-squared error (LMMSE) equalizers [5], as well as more advanced algorithms such as sphere decoding [6] and soft interference cancellation [7]. While these methods are well understood, analytically grounded, and widely deployed, they fundamentally rely on the assumption that the underlying channel can be accurately described as a linear (pseudo) time-invariant system with additive Gaussian noise. In practice, however, modern wireless systems are often subject to hardware mismatches and impairments, such as IQ mismatch (IQMM) and amplifier nonlinearities, as well as carrier frequency offset (CFO), which in multi-carrier settings further induces inter-carrier interference (ICI) [8]. These mismatches all affect the classic canonical model. As a result, the performance of conventional receivers can significantly degrade when operating outside their assumed regime. Addressing these effects within the model-based paradigm typically requires either highly specialized compensation schemes tailored to specific impairments (e.g., low-resolution quantization [9], [10]), iterative interference cancellation methods for ICI mitigation [11], or the adoption of more general but computationally demanding models (e.g., Volterra series expansions [12]). Consequently, such approaches either lack robustness and universality to diverse real-world mismatches or incur notable complexity, limiting their suitability for next-generation wireless systems. Recent advances in artificial intelligence (AI) have led to the emergence of a broad family of deep neural networks (DNNs) for receiver processing [13]. Approaches based on recurrent neural networks [14], convolutional neural net-works (CNNs) [15], [16], residual networks [17]–[19], graph neural networks [20]–[23], variational autoencoders [24], and attention mechanisms [25], [26] have been proposed to replace conventional receiver modules (see survey in [27]). By learning the input–output mapping directly from data, these architectures can operate effectively in complex and poorly modeled environments without requiring explicit channel knowledge. However, such black-box designs are typically characterized by high model complexity, substan-tial training data requirements, and limited interpretabil-ity. Moreover, deploying such architectures in practice raises significant challenges related to real-time infer-ence [28], as well as dynamic reconfiguration (e.g., to varying modulation orders) and site-specific adaptation [29]. An alternative line of work, rooted in model-based deep 
+
+> arXiv:2606.29345v1 [eess.SP] 28 Jun 2026
+
+learning [30], aims to bridge the gap between classical signal processing and data-driven methods by embedding domain knowledge into the network architecture. This includes approaches that unfold iterative algorithms into trainable layers [31]–[33], augment conventional receivers with DNNs-based learned components [34]–[37], or replace complex computations such as symbol-to-log-likelihood ratio (LLR) mappings [38]. Such hybrid designs typically offer improved interpretability, reduced parameterization, and faster training compared to fully data-driven DNNs. Nevertheless, existing methods often inherit the limitations of their underlying model-based formulations (e.g., the reliance on linear Gaussian channel modeling) [39]– [41]. Channel model-agnostic hybrid architectures are often tailored to simplified settings such as narrowband systems [42]–[44], and extending these approaches to multi-carrier scenarios by independently processing each subcarrier leads to increased computational complexity and fails to capture cross-subband effects, such as ICI. Main Contributions The diversity of receiver algorithms, each offering a different trade-off between complexity, robustness, and performance, motivates a paradigm shift from design-ing standalone receivers toward developing augmentative mechanisms that enhance existing processing chains. In this work, we propose a lightweight neural augmentation framework for multi-user MIMO-OFDM receivers, that operates by refining the soft outputs of an arbitrary primary detector, which can be model-based, data-driven, or hybrid. By focusing on post-processing augmentation rather than end-to-end replacement as shown in Fig. 1, the proposed ap-proach preserves the structure and reliability of the under-lying receiver while significantly improving its robustness to model mismatches (including ICI, synchronization errors, or hardware-induced nonlinearities), and overcome speci-ficity to a given modulation. This design enables a compact, modular, and scalable solution that can be seamlessly inte-grated into existing systems, providing a unified mechanism for enhancing diverse receiver architectures and extending operation regimes under challenging operating conditions. Our main contributions are summarized as follows:  
+
+> •
+
+Modular neural augmentation for soft detection: We propose a general framework that augments arbitrary MIMO-OFDM receivers by refining their bit-wise LLRs. The proposed module is agnostic to the structure of the primary detector, and can be applied on top of model-based, deep learning-based, and hybrid receivers.  
+
+> •
+
+Lightweight architecture for cross-subcarrier refine-ment: We develop our compact augmentation network based on an element-wise scaled CNN (ESCNN), which exploits local spectral correlations to perform learned interference mitigation across neighboring subcarriers and users. The architecture is highly parameter-efficient and tailored for low-latency implementation. Channel              
+
+> Decoder
+> DNN
+> Soft Detector
+> LLRs
+> Decoded
+> bits
+> Primary
+> Soft Detector
+> Primary LLRs
+> Decoded
+> bits
+> DNN
+> Augmentation
+> Refined LLRs
+> (a)
+> Channel
+> Decoder
+> (b)
+> Fig. 1. DNN for soft detection: (a)A DNN serves as an end-to-end soft detector, directly producing LLRs for the channel decoder;
+> (b)The proposed approach: A DNN augments some primary soft detector, refining its output LLRs before channel decoding
+> •
+
+Robust and scalable enhancement under mismatches: The proposed augmentation effectively compensates for a wide range of impairments, including ICI, CFO, IQMM and clipping distortion, enabling conventional receivers to operate reliably beyond their nominal as-sumptions. It further supports heterogeneous receiver configurations, including high-complexity detectors such as sphere decoding, and enables reduced-complexity operation via LLR completion, where only a subset of bits is estimated and the remaining ones are reconstructed by the augmentation module.  
+
+> •
+
+Flexible training and modulation-agnostic design: We devise a training methodology that explicitly promotes accurate probabilistic outputs, yielding well-calibrated LLRs suitable for channel decoding. Combined with the bit-wise formulation, this allows a single trained augmentation module to support multiple modulation orders, facilitating scalable deployment across varying system configurations. This further enables a unified treatment of two distinct operating regimes: LLR completion, where the primary detector provides only a subset of bit LLRs, and impairment-induced LLR cor-ruption, where hardware or channel non-idealities dis-tort the soft outputs — without requiring knowledge of the operating regime or the nature of the impairments.  
+
+> •
+
+Comprehensive numerical validation: Through simulations with physically compliant channels based on 3GPP specifications [45] and modeled using Sionna [46] and Quadriga [47], we demonstrate that the proposed augmentation consistently improves the performance of diverse receivers under challenging conditions, while incurring negligible computational and latency overhead. Organization and Notations The rest of this paper is structured as follows. Section II presents the system model. Section III details the proposed augmentation, which we evaluate in Section IV. Section V provides concluding remarks. Throughout this paper, we use boldface lowercase and uppercase letters for vectors (e.g. x) and matrices (e.g. 
+
+M ), respectively. The ith element of x is denoted [x]i,
+
+[M ]i,j is the (i, j )th element of a matrix M , while [M ]i, :
+
+is its ith row. We use I for the identity matrix, R for the set of real numbers, and C for the set of complex numbers. II. System Model and Preliminaries A. System Model We consider a multi-user multi-carrier uplink MIMO com-munication system, where K single-antenna users transmit to a base station equipped with nr receive antennas over B
+
+orthogonal subcarriers. Transmission is organized in discrete time blocks indexed by i, where each block corresponds to a single OFDM symbol in the frequency domain. Channel Input: Let S i ∈ S B×K denote the matrix of transmitted symbols in the ith block, where [S i]b,k is the complex symbol transmitted by user k over subcarrier b.The symbol alphabet S ⊂ C represents a digital modulation constellation of size |S| = 2 Ns , where each symbol encodes 
+
+Ns information bits (e.g., Ns = 4 for 16-QAM). The corresponding transmitted bits are represented by the tensor 
+
+Di ∈ { 0, 1}B×K×Ns , where dib,k,n = [ Di]b,k,n denotes the 
+
+nth bit associated with the symbol transmitted by user k
+
+on subcarrier b at block i. This representation explicitly captures the bit-wise structure required for soft detection and subsequent channel decoding. Channel Output: The received signal is given by the matrix 
+
+Y i ∈ CB×nr , where [Y i]b, : denotes the nr -dimensional received vector corresponding to subcarrier b. Rather than committing to a specific parametric model, we adopt a general stochastic formulation in which the input-output relation is characterized by the conditional distribution 
+
+pY i|Si (· | · ), that captures the combined effect of the wireless propagation channel, multi-user interference, and the full transmit and receive chains, including synchronization mis-matches and hardware impairments (see Fig. 2). We assume a stationary setting in which the conditional distribution does not depend on the block index i, i.e., 
+
+Y i | S i ∼ pY |S (· | · ), ∀i ∈ { 1, 2, . . . }. (1) While the formulation above is intentionally general, it encompasses classical channel models as well as systems affected by hardware impairments. We show this with two examples, beginning with the linear Gaussian channel model and followed by an OFDM system with CFO. Example 1: In linear Gaussian channels, the received signal oneachsubcarrierismodeledasalineartransformation ofthe transmitted symbols corrupted by additive Gaussian noise. Specifically, for each subcarrier b ∈ { 1, . . . , B }, the received vector for the ith OFDM symbol yib ∈ Cnr is given by 
+
+yib = Hbsib + wib, (2) where sib ∈ CK collects the symbols transmitted by all K
+
+users on subcarrier b, Hb ∈ Cnr ×K is the corresponding channel matrix, and wib is additive circularly symmetric complex Gaussian noise with variance ρ2 per dimension. Under the additional assumption that different subcarriers are statistically independent, the conditional distribution factorizes as 
+
+pY |S
+
+([yi
+
+> 1
+
+, . . . , yiB ]∣∣[si
+
+> 1
+
+, . . . , siB ]) =
+
+> B
+
+∏
+
+> b=1
+
+CN (yib; Hbsib, ρ 2I) ,
+
+where CN (·; μ, Σ) denotes the multivariate complex Gaussian distribution with mean μ and covariance Σ.Example 2: In OFDM systems affected by a CFO of ε
+
+(normalized to the subcarrier spacing), the received signal on each subcarrier is modeled as a linear combination of the transmitted symbols on all subcarriers, corrupted by additive Gaussian noise [48]. Specifically, for each subcarrier 
+
+b ∈ { 1, . . . , B } at OFDM symbol m, the received vector 
+
+yib ∈ Cnr is given by 
+
+yib = ejϕ i
+
+> B
+
+∑
+
+> l=1
+
+cl,b (ε) Hlsil + wib, (3) where sil ∈ CK , Hb ∈ Cnr ×K , and wib are as in Example 1, 
+
+ϕi is a symbol-dependent phase rotation induced by the CFO, and cl,b (ε) is the ICI coefficient describing the leakage from subcarrier l onto subcarrier b, with cl,b (ε) → 0 for b 6 = l
+
+as ε → 0. Since the noise is independent across subcarriers, the conditional distribution factorizes as 
+
+pY |S
+
+([yi
+
+> 1
+
+, . . . , yiB ]∣∣[si
+
+> 1
+
+, . . . , siB ])
+
+=
+
+> B
+
+∏
+
+> b=1
+
+CN 
+
+(
+
+yib; ejϕ i
+
+> B
+
+∑
+
+> l=1
+
+cl,b (ε) Hlsil , ρ 2I
+
+)
+
+.
+
+Unlike Example 1, the received signal on each subcarrier depends on the transmitted symbols across all B subcarriers rather than on a single subcarrier alone. Beyond channel-induced distortions, in reduced-complexity receivers, computational constraints may limit the detector to recovering only a subset of the Ns
+
+bits per symbol, leaving the remaining bits undetected. While the channel itself may be free of impairments, the receiver architecture inherently provides incomplete soft information as a deliberate trade-off between detection quality and computational complexity. We further elaborate on such receiver-induced distortions in the sequel. Soft Detector      
+
+> Wireless channel + Impairments
+> LLRs
+> ⚠⚠⚠
+> ⚠Fig. 2. System model for Kusers. Pink blocks denote hardware impairments arising in the RF front-end and digital front-end at both transmitter and receiver
+
+B. Soft Symbol Detection We focus on the soft detection receiver task, whose goal is to map the received signal Y i into probabilistic estimates of the transmitted bits. In particular, we aim to recover the bit-wise LLRs, denoted {lib,k,n }, which quantify the reliability of each bit and serve as the input to channel decoders. These are defined as 
+
+lib,k,n = log Pr( dib,k,n = 1 | Y i)Pr( dib,k,n = 0 | Y i) . (4) Accurate estimation of these LLRs is critical for reliable decoding, as they directly determine the performance of subsequent forward error correction schemes. A wide range of receiver algorithms can be interpreted as mappings from the channel observations Y i to estimates of the LLRs in (4). Classical model-based approaches, typically derived under the linear Gaussian assumption of Example 1, compute approximate LLRs using linear equalizers such as ZF and LMMSE [5], or more sophisticated detectors such as sphere decoding [6] and soft interference cancellation [7]. These methods leverage analytical models of the channel to derive tractable approximations of the posterior probabilities. More recently, data-driven approaches based on deep learning have emerged, including fully end-to-end DNNs [17] as well as hybrid model-based/data-driven architectures [42]. Such methods learn to approximate the mapping Y i 7 → { lib,k,n } directly from data, and can therefore operate effectively even when the underlying channel deviates from standard modeling assumptions. However, many existing approaches remain tailored to simplified settings, such as narrowband systems, effectively assuming independence across subcarriers, i.e., 
+
+pY |S
+
+([yi
+
+> 1
+
+, . . . , yiB ]∣∣[si
+
+> 1
+
+, . . . , siB ]) =
+
+> B
+
+∏
+
+> b=1
+
+p[Y ]b, :|[S]b, :
+
+([yib
+
+∣∣[sib
+
+) .
+
+Overall, different receiver designs provide distinct trade-offs between computational complexity, reliance on explicit                 
+
+> TABLE I Summary of Symbols Symbol Description
+> KNumber of users
+> nrNumber of receive antennas
+> BNumber of subcarriers
+> S ⊂ CSymbol constellation
+> NsNumber of bits per symbol ( |S| = 2 Ns)
+> NMaximum bits per symbol supported by ESCNN
+> N′Bits per symbol provided by primary detector ( N′≤N)
+
+modeling assumptions, and robustness to impairments. We henceforth adopt a unifying perspective in which any such receiver is viewed as a primary detector that produces soft outputs, and consider the problem of refining the LLRs to improve their reliability and scale across modulations, as formulated next. C. Problem Formulation In this work, we address the problem of enhancing soft detection in scenarios where the underlying channel deviates from the assumptions made during the design or training of the receiver. As discussed in the previous subsection, existing detectors (whether model-based or data-driven) produce approximate LLRs whose reliability may significantly degrade under model mismatches (such as ICI, synchronization errors, or hardware-induced nonlinearities), and may be tailored to a given modulation. Our goal is to develop a neural augmentation module that operates on top of a given receiver (the primary detector) to refine and possibly rescale its soft outputs. Specifically, let N denote the maximum number of bits per symbol supported by the augmentation framework, and N ′ ≤ N
+
+the number of bits per symbol for which the primary detector provides LLR estimates. Accordingly, the primary detector is represented by the mapping ψ, which produces the estimated LLRs written as 
+
+ˆLi
+
+= ψ(Y i) ∈ RB×K×N ′
+
+, (5) where [ ˆLi
+
+]b,k,n represents the LLR assigned to the nth bit at subcarrier b for user k. The augmentation module should thus refine the primary detector LLRs in (5) along with the channel output Y i into estimates of the LLRs for the full set of B · K · Ns bits that are encoded in Si. Table I summarizes the key symbols used throughout the paper. To ensure broad applicability and practical relevance, we require the augmentation to satisfy the following key properties: R1 Model-agnostic operation: The augmentation should not rely on a specific parametric channel model, and must generalize across diverse channel conditions and impairments. R2 Architecture-agnostic compatibility: The augmenta-tion should be applicable to different receiver designs, i.e., ψ(·) in (5) can be a model-based, data-driven, or a hybrid receiver, and the augmentation should not require modifications to its internal structure. R3 Low-latency implementation: The augmentation should incur minimal computational overhead, ensuring compatibility with real-time receiver processing constraints. R4 Modulation scaling / LLR completion: The augmentation should support settings where the number of bits recovered by the primary detector differs from that encoded in the symbol, i.e., N ′ 6 = Ns in (5). The above requirements reflect our key design principles. Re-quirement R1 promotes robustness to modeling inaccuracies by ensuring that the augmentation does not depend on a spe-cific channel formulation, and can thus adapt to a wide range of propagation conditions and hardware impairments. Re-quirementR2enforcescompatibilitywithdiversereceiverde-signs, allowing the augmentation to be seamlessly integrated with different primary detectors without redesign, thereby facilitating practical deployment across heterogeneous sys-tems. Requirement R3 ensures that the benefits of augmenta-tion do not come at the cost of excessive computational over-head, preserving the real-time operation of the receiver chain. Requirement R4 further extends the notion of invariance introduced in R2 by decoupling the augmentation from the specific modulation scheme used by the primary detector. In particular, it enables receivers that are designed or tuned for a specific number of bits per symbol (i.e., N ′ < N ) to be effectively applied in higher-order modulation settings. This arises in two distinct scenarios: (i) the primary detector is configured for a lower-order modulation scheme than the architecture supports (modulation scaling); or (ii ) the primary detector computes only a subset of the bit LLRs for the current modulation (LLR completion). Scenario (i)
+
+corresponds to, e.g., using deep learning-based receivers that are trained for a fixed modulation scheme (e.g., QPSK [17]), and exhibit limited generalization to other constellations. Scenario (ii ) arises, for example, in model-based detectors such as sphere decoders, whose computational complexity grows rapidly with the constellation size, often limiting their practical use to lower-order modulations. Requirement R4 indicates that the augmentation should enable these receivers to be extended to higher-order modulations without altering the primary model, thereby enhancing their flexibility and scalability. To meet requirements R1–R4, we adopt a data-driven design approach. Specifically, during the training phase, we assume access to the primary detector as well as to a dataset of channel outputs and their corresponding transmitted bits (which can vary between samples), given by 
+
+D = {Y j , Dj , N js
+
+}|D|  
+
+> j=1
+
+. (6) where N js ∈ { 1, . . . , N } denotes the number of transmitted bits of the j-th training sample, i.e., the number of bits per symbol encoded in Dj . This dataset is used to learn a mapping that refines the LLRs produced by the primary detector, enabling improved performance under realistic, potentially mismatched operating conditions. III. Receiver Neural Augmentation In this section, we present the proposed neural augmentation framework for soft detection. The design of the augmentation is directly guided by the requirements outlined in Subsection II-C, namely: channel-model-agnostic operation (R1), compatibility with diverse receiver architectures (R2), low-latency implementation (R3), and supporting modulation scaling (R4). To satisfy R1, we adopt a data-driven approach in which a DNN is trained to refine the primary detector. Rather than relying on an explicit parametric channel model, the augmentation learns to correct the soft outputs directly from data. Our design is inspired by the DeepSIC algorithm [42], which demonstrated the effectiveness of learning interference mitigation in complex, nonlinear settings. Extending this principle to multi-carrier systems, the proposed augmentation is tailored to capture and compensate for cross-subcarrier dependencies, enabling effective mitigation of ICI and other non-ideal effects arising in practical MIMO-OFDM channels. To address both R2 and R4, the augmentation is designed to operate on top of the soft outputs of the primary detector, namely, its bit-wise LLRs in (5). This choice provides a unified interface that is agnostic to the internal structure of the receiver, allowing seamless integration with model-based, data-driven, and hybrid architectures. Moreover, since LLRs represent bit-wise probabilities, they naturally decouple the augmentation from the specific modulation scheme used by the primary detector, enabling compensation for modulation mismatches and supporting scalable receiver implementations. To meet R3, we design the augmentation to be lightweight and efficient. The proposed architecture, termed ESCNN, is based on convolutional layers with kernels spanning adjacent subcarriers, allowing it to exploit local spectral correlations while maintaining low computational complexity. The use of shared convolutional kernels promotes parameter efficiency by leveraging approximate shift-invariance across subcarriers,whileelement-wisescalingenablesadaptationto subcarrier-specific variations. Furthermore, the architecture is structured as a set of parallel per-user modules, facilitating efficient hardware implementation and enabling improved generalization and faster training with limited data [49]. We next present the proposed method. Subsection III-A introduces the augmentation architecture. The training procedure is described in Subsection III-B, and a discussion of the resulting properties is provided in Subsection III-C. A. Architecture The main building block of our augmentation architecture is the ESCNN. Each ESCNN module is dedicated to a single user, and its task is to map the soft information produced by the primary detector, denoted ˆLi
+
+∈ RB×K×N , along Zero-fill   
+
+> missing LLRs
+> Feature
+> stacking
+> Primary Detector
+> (all users)
+> Element-wise scale
+> (user 1)
+> Sigmoid
+> Yes
+> No
+> Feature
+> Pre Processing
+> CNN
+> (user 1)
+> Element-wise scale
+> (user 2)
+> CNN
+> (user 2)
+> Element-wise scale
+> (user K)
+> CNN
+> (user K)
+> Learned
+> Processing
+
+Fig. 3. ESCNN based receiver augmentation architecture at time i 
+
+with the corresponding channel outputs Y i ∈ CB×nr , into enhanced LLRs, which we denote by ˜Lik ∈ RB×N for the 
+
+kth user. The operation is comprised of two key stages: 
+
+(i) feature pre-processing and (ii ) learned processing that applies the ESCNN modules to the extracted features.. 1) Feature Pre-Processing: To support modulation scaling and LLR completion (R4), when the primary detector produces N ′ < N LLRs per symbol, the missing entries are zero-filled prior to further processing, where a zero LLR corresponds to an uninformative soft output with equal probability for both bit values. The zero-padded primary detector LLRs are given by the tensor ˆLi 
+
+> ext
+
+∈ RB×K×N ,whose elements are given by 
+
+[ ˆLi
+
+> ext
+
+] 
+
+> b,k,n
+
+=
+
+{[ ˆLi] 
+
+> b,k,n
+
+n ≤ N ′
+
+0 n > N ′ . (7) For numerical stability, we then convert the (possibly zero-padded) input LLRs into probabilistic values bounded in [0 , 1] . This conversion into probabilities uses the sigmoid function, denoted σ(·), leveraging the observation that 
+
+σ(lib,k,n ) = 11 + exp( −lib,k,n )
+
+> (a)
+
+= 11 + p(dib,k,n =0 |Y i)  
+
+> p(dib,k,n =1 |Yi)(b)
+
+= p(dib,k,n = 1 |Y i), (8) where (a) stems from (4), while (b) follows from the fact that p(dib,k,n = 0 |Y i) = 1 − p(dib,k,n = 1 |Y i).Accordingly, the probabilistic features σ( ˆLi
+
+> ext
+
+) are reshaped as the B × K · N matrix ˆP , and are stacked along with the real and imaginary parts of Y i to form the input matrix Xi ∈ RB×(2 nr +K·N ). This representation provides the network with both soft information from the primary receiver about the transmitted bits from all users and the received signal context, while enhancing numerically stable and training-compatible feature values. 2) Learned Processing: The structured input Xi is processed by the learned processing module, which is implemented as an element-wise scale followed by aCNN representing a one-dimensional convolutional kernel spanning adjacent subcarriers for each user k. The trainable parameters θk include both the scale factors matrix, denoted 
+
+W k ∈ RB×(2 nr +K·N ),andtheCNNkernels,denoted θC 
+
+> k
+
+,i.e., 
+
+θk = {W k, θC 
+
+> k
+
+}. The CNN, which is particularly designed to be compact (e.g., in our numerical study we use merely three convolutional layers), produces an output with exactly N
+
+channels, corresponding to the maximal number of bits per constellation symbol. The CNN, whose mapping is denoted by CNN θC 
+
+> k
+
+, yields bit-wise LLR values which we write as 
+
+˜Lik = fθk (Xi) := CNN θC
+
+> k
+
+(W k Xi) ∈ RB×N , (9) where is the Hadamard product. This design enables the network to exploit local correlation across neighboring subcarriers, while emphasizing the uniqueness of each subcarrier, and jointly operating over all receive antennas and user probabilities. Note that while the CNN has N
+
+supported outputs, only the Ns outputs corresponding to the current modulation are utilized for LLRs. 3) Overall Algorithm: Since each ESCNN module is dedicated to refining the LLRs of a single user, we employ 
+
+K such modules in parallel, one per user in the system. Each module processes the soft outputs of the primary detector corresponding to all users, together with the shared channel outputs, and produces enhanced bit-wise LLRs. The final augmented receiver output is then obtained by concatenating the outputs of all K modules, yielding the complete set of enhanced LLRs as 
+
+[ ˜Li]:,k, : = ˜Lik. (10) This parallel modular structure preserves low latency and supports efficient parallelization in practical implementations. The overall procedure is summarized as Algorithm 1, and illustrated in Fig. 3. Algorithm 1: Augmented Receiver at Time i
+
+Init: Primary detector ψ; ESCNN weights {θk}Kk=1 
+
+Input: Y i ∈ CB×nr 
+
+> 1
+
+Apply primary detector ˆLi
+
+= ψ(Y i) ∈ RB×K×N ′
+
+; 
+
+> 2
+
+if N ′ < N (i.e., LLRs are missing) then  
+
+> 3
+
+Zero-pad ˆLi
+
+7 → ˆLi 
+
+> ext
+
+∈ RB×K×N via (7);  
+
+> 4
+
+Convert to bit-wise probabilities ˆP i
+
+= σ( ˆLi
+
+> ext
+
+); 
+
+> 5
+
+Rearrange [ ˆP i
+
+, Y i] 7 → Xi ∈ RB×(2 nr +K·N ); 
+
+> 6
+
+for k = 1 , . . . , K do  
+
+> 7
+
+Apply kth ESCNN: ˜Lik = fθk
+
+(Xi); 
+
+> 8
+
+return ˜Li as in (10) B. Training Methodology The goal of the training procedure is to tune the proposed augmentation to operate on top of a given primary detector, tailored for a prescribed modulation scheme with N ′ bits per symbol. In particular, the augmentation is trained to refine the soft outputs of the primary detector such that the resulting LLRs are reliable and well calibrated for subsequent channel decoding under realistic channel conditions. To this end, we adopt a data-driven approach in which the augmentation parameters are learned from a dataset 
+
+D defined in (6). Recall that the feature pre-processing stage maps the primary detector outputs into probabilistic values via the sigmoid function, yielding the structured input Xi, which combines soft information from all users with the corresponding channel observations. Each ESCNN module, parameterized by θk, processes Xi to produce refined probabilistic estimates of the transmitted bits. Loss Function: The training objective is formulated as the empirical risk associated with predicting the true transmitted bits from the dataset. Specifically, we adopt the binary cross-entropy loss, which is well suited for probabilistic outputs and promotes accurate bit-wise predictions. The empirical loss for the kth user is given by 
+
+LD (θk) = − 1
+
+|D| 
+
+> |D|
+
+∑
+
+> j=1
+> B
+
+∑
+
+> b=1
+
+1
+
+N jsN js∑
+
+> n=1
+
+(
+
+djb,k,n log[ fθk (Xj )] b,n 
+
++ (1 − djb,k,n 
+
+) log (1 − [fθk (Xj )] b,n 
+
+))
+
+, (11) where fθk (·) denotes the mapping implemented by the kth augmentation module stated in (9). Note that the loss is evaluated only over the N js active bit outputs, rather than all N supported outputs. The objective (11) encourages the network to produce probabilistic outputs that are well aligned with the true bit values, resulting in logits that correspond to reliable LLRs. Moreover, the loss is fully differentiable, enabling efficient end-to-end training using gradient-based optimization. Training Procedure: The parameters {θk}Kk=1 are thus learned using conventional DNN training methods, i.e., mini-batch stochastic gradient descent (SGD) or its variants. In each iteration, a batch of samples from D is processed through the primary detector and the augmentation, the loss in (11) is evaluated, and the parameters are updated via backpropagation. The overall training procedure is summarized in Algorithm 2. C. Discussion Suitability for Handling Requirements R1–R4: The pro-posed augmentation framework is designed to directly ad-dress the requirements outlined in Subsection II-C. In partic-ular, it satisfies R1 by adopting a data-driven design that does notrelyonanexplicitchannelmodel,enablingrobustnesstoa wide range of impairments and mismatches. Requirement R2 is met by operating on the soft outputs of the primary detector, allowing seamless integration with diverse receiver architectures without modifying their internal structure. Re-quirement R3 is addressed through the use of a compact and efficient architecture, ensuring that the augmentation intro-duces only minimal processing overhead. The framework also satisfies R4, extending the notion of invariance to the modu-lation domain. Since the augmentation operates on bit-wise Algorithm 2: SGD Training of Augmented Receiver Init: Step-size μ; # batches Q; epochs eM;initial weights {θk}Kk=1 ; primary detector ψ
+
+Input: Training dataset D 
+
+> 1
+
+for j = 1 , . . . , |D| do  
+
+> 2
+
+Apply primary detector ˆLj
+
+= ψ(Y j ); 
+
+> 3
+
+Form Xj via feature pre-processing;  
+
+> 4
+
+for e = 1 , . . . , e M do  
+
+> 5
+
+Randomly divide D into Q batches {D (q)}Qq=1 ; 
+
+> 6
+
+for each batch D(q) do  
+
+> 7
+
+for k = 1 , . . . , K do  
+
+> 8
+
+Apply ESCNN θk to each X ∈ D (q); 
+
+> 9
+
+Compute loss LD(q) (θk) using (11);  
+
+> 10
+
+Update θk ← θk − μ∇θk LD(q) (θk); 
+
+> 11
+
+return {θk}Kk=1 
+
+LLRs, it is inherently decoupled from the specific constella-tion assumed by the primary detector. As a result, receivers designed for lower-order constellations can be effectively applied in higher-order settings, either by enhancing incom-plete soft information or by correcting mismatched outputs. Complexity: An important aspect of the proposed design is its low computational complexity. As we empirically demonstrate in Section IV, the latency overhead induced by Algorithm 1 is minor and often negligible compared to that of the primary detector. From a model complexity perspective, the number of trainable parameters remains small due to the use of CNNs with short one-dimensional kernels and shared weights across subcarriers. To quantify its complexity, consider a three-layer CNN with 3×1 kernels, where the number of output channels in the first and second layers are α1 and α2, respectively. In this case, each ESCNN module includes B·(2 nr +K·N ) parameters for theelement-wisescaling,and 3·((2 nr +K·N +α2)α1+N ·α2
+
+)
+
+parameters for the convolutional layers. In the settings con-sidered in Section IV, this results in only a few thousand pa-rameters, amounting to less than 1% of the parameter count of DeepRx applied to the same scenario. Combined with the modular per-user structure, this compactness facilitates efficient training with limited data and enables low-latency inference suitable for practical hardware implementations. Universality across operating regimes: A key property of the proposed framework, which extends beyond the impairment-compensation perspective of [1], is its unified treatment of two structurally distinct operating regimes: LLR completion, where reduced-complexity detection leaves a subset of bit LLRs unestimated, and LLR corruption due to hardware impairments such as CFO, IQMM, or clipping. In both cases, the augmentation refines and reconstructs the soft information through the same mechanism, and can si-multaneously handle cases where LLRs are both missing and corrupted by impairments. This task-agnostic nature follows directly from the data-driven approach: observing only the soft outputs of the primary detector and the received signal, the augmentation learns to correct both the sign and magni-tude of the incoming LLRs, producing well-calibrated out-puts suitable for channel decoding without requiring knowl-edgeoftheoperatingregimeorthenatureoftheimpairments. Future Extensions: The proposed augmentation framework admits several natural extensions. First, since Algorithm 1 is designed to refine input LLRs, multiple augmentation modules could be cascaded, forming a deeper architecture reminiscent of learned unfolding methods [50]. Further, while the current design emphasizes compactness and offline training, its integration with online learning [51], modularadaptation[52],anddriftdetectionmechanisms[49] constitutes a potential direction for future work. IV. Numerical Study In this section we present our experimental study. We first detail the experimental setup in Subsection IV-A. Then, we present the dedicated studies the corresponding results in Subsection IV-B. A. Experimental Setup We numerically evaluate Algorithm 1 in several relevant multi-user MIMO scenarios with different representative primary receivers, detailed as follows. 1) MIMO-OFDM Channels: We use two types of channel models. The first is the tapped delay line (TDL) channel, implemented using the NVIDIA Sionna library [46], specifically TDL-C with low and medium spatial correlation levels (low correlation, unless stated otherwise). The second is spatially consistent channel models implemented using QuaDRiGa [47], specifically the Rural Macro (RMa) and Urban Micro (UMi) models. For all scenarios we use B = 24 subcarriers per OFDM symbol with a subcarrier offset of 30kHz, and simulate 
+
+K = 4 users, each transmitting symbols modulated using 16QAM or 64QAM constellations. The subcarriers within each set of 14 OFDM symbols convey the encoded transport block, with the CRC included. The receiver is equipped with 
+
+nr ∈ { 4, 8} antennas, and the signals from these antennas are fed into the soft detectors. 2) Compared Algorithms: We compare four primary detectors: two model-based detectors based on LMMSE equalization and sphere decoder, as well two DNN-based receivers based on DeepSIC [42] and DeepRX [17]. For the purpose of performing channel estimation, which is required by the model-based algorithms, we provide the receivers with a signal with the same exact channel, noise and impairments as the original signal, but with staggered symbols such that symbols from different users do not overlap. Due to the increased complexity of sphere decoding for K = 4 users in 64 -QAM modulations, which requires search over 64 4
+
+joint hypotheses, we utilize in such settings a reduced-bit sphere decoder (RBSD), which recovers N ′ = 4 bits. This primary receiver thus operates on a reduced tree of size                 
+
+> TABLE II Training configurations per experiment Figure Epochs Primary Train ESCNN Train Test Figs. 4–8 150 2500 2000 10000 Fig. 9 150 6700 5300 27700 Fig. 10–11 500 1700 1300 6700
+> ∗Primary Train, ESCNN Train, and Test are in QAM symbols.
+
+16 4 by grouping the 64-QAM constellation into 16 symbol sets, each uniquely identified by 4 specific bit positions per symbol, corresponding to a setting where N ′ 6 = N = 6 (R4). Among the DNN-based receivers, DeepSIC is anarrowband algorithm, thus we run B DeepSIC instances, one for each subcarrier, while DeepRX jointly processes all subcarriers. We run these four primary detectors first as is, and then augmented by our ESCNN. The number of training samples and epochs used for training each module in the subsequent experiments are summarized in Table II, while our full source code is available online at https://github.com/oryeger/DeepOFDM/. 3) Performance Metrics: For all tests we generate random bits for each user, add cyclic redundancy code (CRC) and perform channel encoding using Low Density Parity Check (LDPC) code. Then, the bits are modulated and transmitted over a wireless channel, where noise and other impairments are introduced. At the receiver side, the resulting LLRs from the unaugmented and augmented detectors are supplied to a soft LDPC decoder. After decoding, the CRC is verified. We evaluate performance using two complementary metrics. The bit-wise mutual-information (MI) between the transmitted bits and the LLR outputs is computed using histogram-based density estimation [53]. In the bit-interleaved coded modulation framework, MI provides a direct measure of LLR quality, reflecting how much information the LLRs carry about the transmitted bits, both before and after refinement, independently of any specific code rate, code block length, or decoder implementation. We additionally report the block error rate (BLER) for a representative code rate, computed based on the CRC pass/fail outcome, which provides a concrete demonstration of the end-to-end gains in a practical receiver chain. B. Results We next present the results of our experimental study evaluating the proposed ESCNN-based augmentation. Our study gradually evaluates different capabilities of our proposed methodology in: (i) refining LLRs under hardware impairments; (ii ) being transferable across different primary receivers and different modulations; (iii ) completing LLRs for primary receivers that compute only a subset of the bit LLRs; and (iv ) inducing limited excessive latency. 1) LLR Refinement: We first evaluate the ability of ESCNN to refine LLR estimates in the presence of hardware impairments for receivers with nr = 8 antennas. We evaluate the performance of 16QAM modulation over a TDL-C channel with a delay spread of 300 ns. In all cases, 0 5 10 15 20 25            
+
+> SNR (dB)
+> 00.2 0.4 0.6 0.8 1
+> MI
+> Bit-wise Mutual Information
+> 0510 15 20 25
+> SNR (dB)
+> 10 -5
+> 10 -4
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+> BLER
+> Block Error Rate
+> LMMSE SPHERE DeepSIC DeepRx
+> LMMSE aug SPHERE aug DeepSIC aug DeepRx aug
+
+Fig. 4. MI and BLER (LDPC code-rate 0.82 ) versus SNR, TDL-C channel, 16QAM modulation, 4 users, nr = 8 
+
+zero Doppler and low spatial correlation are assumed. Three different 16QAM scenarios are evaluated. In the first scenario, whose results are reported in Fig. 4, we evaluate the baseline case with a linear channel and no ICI. As expected, all detectors achieve similar bit-wise MI and BLER performance regardless of augmentation, since this is the setting all detectors are designed or trained for. Accordingly, the augmentation offers little gain in this case. The exception is DeepRx, which due to its larger model capacity requires more training data and epochs to converge, and the augmentation helps stabilize its performance. In the second scenario shown in Fig. 5 we introduce CFO of 4.5 kHz, which causes ICI. The CFO is applied separately for the subcarriers of each transport block. We observe that the unaugmented detectors which assume that there is no ICI (LMMSE, sphere, and DeepSIC) perform very poorly, and their MI fails to reach unity, reflecting the uncompensated interference. Conversely, the unaugmented DeepRx that jointly processes all subcarriers and effectively handles ICI. When augmenting the malfunctioning LMMSE, sphere and DeepSIC detectors using ESCNN, the MI of all three is driven close to unity, their performance improves significantly, and they are able to reach very low BLERs. For DeepRx, we observe that the augmentation neither improves nor degrades performance. The results observed in Fig. 5 for TDL-C channels with CFO are consistent across different channel models. Specif-ically, the study is repeated under Quadriga RMa and UMi channel models, with the results reported in Fig. 6 and Fig. 7, respectively. There, we again consistently show the ability of our proposed augmentation in enabling the struggling primary receiver to cope with impairments induced by CFO. In the next scenario shown in Fig. 8 we introduce IQMM, which causes nonlinear signal distortion. We apply again mismatch of 1 dB and a phase mismatch of ϕ = 5 ◦
+
+over the received signal. From Fig. 8 we observe that the unaugmented LMMSE and sphere decoder struggle as they 0 5 10 15 20           
+
+> SNR (dB)
+> 00.2 0.4 0.6 0.8 1
+> MI
+> Bit-wise Mutual Information
+> 0510 15 20
+> SNR (dB)
+> 10 -5
+> 10 -4
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+> BLER
+> Block Error Rate
+> LMMSE SPHERE DeepSIC DeepRx
+> LMMSE aug SPHERE aug DeepSIC aug DeepRx aug
+
+Fig. 5. MI and BLER (LDPC code-rate 0.82 ) versus SNR, TDL-C channel, 16QAM modulation, 4 users, nr = 8 , CFO: 4.5 kHz 0 10 20 30 40           
+
+> SNR (dB)
+> 00.2 0.4 0.6 0.8 1
+> MI
+> Bit-wise Mutual Information
+> 010 20 30 40
+> SNR (dB)
+> 10 -5
+> 10 -4
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+> BLER
+> Block Error Rate
+> LMMSE SPHERE DeepSIC DeepRx
+> LMMSE aug SPHERE aug DeepSIC aug DeepRx aug
+
+Fig. 6. MI and BLER (LDPC code-rate 0.7) versus SNR, RMa channel, 16QAM modulation, 4 users, nr = 8 , CFO: 4.5 kHz 0 10 20 30 40           
+
+> SNR (dB)
+> 00.2 0.4 0.6 0.8 1
+> MI
+> Bit-wise Mutual Information
+> 010 20 30 40
+> SNR (dB)
+> 10 -5
+> 10 -4
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+> BLER
+> Block Error Rate
+> LMMSE SPHERE DeepSIC DeepRx
+> LMMSE aug SPHERE aug DeepSIC aug DeepRx aug
+
+Fig. 7. MI and BLER (LDPC code-rate 0.7) versus SNR, UMi, 16QAM modulation, 4 users, nr = 8 , CFO: 4.5 kHz assume the channel is linear and are unable to achieve reliable decoding. However, the unaugmented DeepSIC does not make the linearity assumption and achieves good results. The proposed ESCNN augmentation drives the MI of all detectors much closer to unity, significantly improving LMMSE and sphere decoder performance. For this scenario, DeepRx demonstrates stable learning, while the augmentation further improves its BLER performance. 2) Transferability: Wenextshowthe transferabilityofour methodology, i.e., that it can be transferred between primary detectors and between modulations. Table III reports the SNR needed to achieve 0.1 BLER under the same setup as Fig. 5: a TDL-C channel with a 4.5 kHz CFO, code rate 0.82, and 16QAM modulation. Here, we use four different ESCNN modules, each trained using LLRs from one of the four detec-tors (LMMSE, Sphere, DeepSIC, and DeepRx), while testing is always performed with LLRs from LMMSE. The results show that while the unaugmented receiver fails to cope with such ICI (not achieving 0.1 BLER in any of the considered SNRs), its augmentation trained with the LMMSE LLRs achieves the best performance as expected. Sphere and Deep-SIC augmentations yield only a slight degradation, since they are single-band methods and their augmentation still helps reduce ICI in a general way. For DeepRx, the primary detector itself already compensates for ICI, so the augmen-tation mainly provides additional support. Although there is still a clear improvement over the unaugmented case, the performance with DeepRx augmentation is noticeably worse compared to the other augmentation strategies. We proceed to evaluate modulation scaling. To that aim, we evaluate two different ESCNN augmentation DNNs. The first is a dedicated model, whose parameters are specifically designed for the target modulation (i.e., 
+
+N = Ns) and trained only on that modulation. The second is a modulation-agnostic model, whose parameters are configured for the highest modulation order (64QAM) (i.e., 
+
+N = 6 ), and is trained jointly on all three modulations. The dedicated ESCNN is trained using 900 QAM symbols, while the agnostic ESCNN is trained using 2700 symbols divided equally across the three modulation orders (900 per modulation) and randomly shuffled prior to training. Both models are trained for 500 epochs. Table IV presents the performance across different modulations under various CFO conditions for the considered ESCNN modules with an LMMSE primary receiver. The results show that the augmentation performance is not significantly different between the dedicated and agnostic DNNs. Notably, despite being trained across multiple modulation orders, the agnostic model achieves a slight improvement over the dedicated model for 16QAM (8.8 dB vs. 9.5 dB) and 64QAM (17.4 dB vs. 18.1 dB), suggesting that the larger effective training set partially compensates for the generalization constraint. 3) LLR Completion: We now investigate the capability of our augmentation to reconstruct missing LLRs. For this scenario we use the 64QAM constellation with a 0 5 10 15 20 25                                
+
+> SNR (dB)
+> 00.2 0.4 0.6 0.8 1
+> MI
+> Bit-wise Mutual Information
+> 0510 15 20 25
+> SNR (dB)
+> 10 -5
+> 10 -4
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+> BLER
+> Block Error Rate
+> LMMSE SPHERE DeepSIC DeepRx
+> LMMSE aug SPHERE aug DeepSIC aug DeepRx aug
+> 16 18 20 22 24
+> 0.97 0.98 0.99 1
+> Fig. 8. MI and BLER (LDPC code-rate 0.92 ) versus SNR, TDL-C channel, 16QAM modulation, 4 users, nr= 8 , IQMM: 1 dB, 5◦
+> TABLE III Transferability between primary detectors: measured SNR at 10% BLER (dB) Primary detector LMMSE Augmentation None LMMSE Sphere DeepSIC DeepRx SNR (dB) ∞11.7 11.8 12.1 15.3
+
+TDL-C channel under medium spatial correlation, for which sophisticated receiver algorithms such as the sphere decoder typically outperform linear ones. We evaluate the performance of an RBSD that computes only 4 out of the 6 LLRs per symbol, running an order of magnitude faster than a full sphere decoder at the cost of leaving the remaining 2 bits undetected. To assess this capability, we test a scenario where the number of users equals the number of receive antennas, both set to 4, which is particularly challenging in terms of spatial separation between users. In Fig. 9, the unaugmented RBSD assigns zero to the missing LLRs, which prevents its MI from rising above 23
+
+as expected, resulting in complete BLER saturation. When augmented with ESCNN, the information of the two missing bits is successfully reconstructed, driving the MI to unity and yielding a BLER that outperforms both the unaugmented and augmented LMMSE by 2 to 4 dB, consistent with the inherent advantage of sphere-decoder-based receivers over linear ones. Additionally, ESCNN is able to improve the per-formance of DeepRx, while DeepSIC achieves performance comparable to LMMSE with or without augmentation. We further evaluate ESCNN in a combined setting that                               
+
+> TABLE IV Unaugmented vs. dedicated vs. modulation-agnostic ESCNN augmentation: measured SNR at 10% BLER (dB) Modulation QPSK 16QAM 64QAM LDPC code-rate 0.59 0.7 0.75 CFO (kHz) 94.5 2.25 LMMSE without augmentation 5.0 14 .3∞
+> LMMSE with dedicated augmentation 0.6 9.5 18.1 LMMSE with agnostic augmentation 1.2 8.8 17.4 10 20 30 40
+> SNR (dB)
+> 10 -5
+> 10 -4
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+> BLER
+> Block Error Rate
+> LMMSE RBSD DeepSIC DeepRx
+> LMMSE aug RBSD aug DeepSIC aug DeepRx aug
+> 10 20 30 40
+> SNR (dB)
+> 00.2 0.4 0.6 0.8 1
+> MI
+> Bit-wise Mutual Information
+
+Fig. 9. MI and BLER (LDPC code-rate 0.7) versus SNR, TDL-C channel with medium spatial correlation, 64QAM modulation, 4 users, nr = 4 
+
+simultaneously exercises both of its core capabilities: LLR reconstruction of the missing bits produced by RBSD, and ro-bustness to hardware-induced distortion with two examples: clipping with ratio of 3 dB , and a CFO of 2.25 kHz. For this evaluation 64QAM constellation is used, while the clipping impairments is conducted over a UMi channel (Fig. 10) and the CFO is conducted over a TDL-C channel (Fig. 11). In Fig. 10 we first note that despite the unaugmented LMMSE exhibiting MI only marginally below its augmented counterpart, its BLER saturates at an error floor with no waterfall behavior. This highlights that MI alone does not fully predict BLER performance, as the latter is also governed by the LDPC code and graph structure, as well as the decoding algorithm employed. We further observe in both Figs. 10-11 that, across all four detectors, augmentation with ESCNN fully restores the waterfall behavior, yielding BLER curves that decrease smoothly down to less than 
+
+10 −3. Under clipping, the augmented receivers consistently achieve an MI above 0.8 at high SNR, though not reaching unity, likely due to the severity of the 3 dB clipping distortion. Beyond the common performance gains observed across all detectors, the ESCNN augmentation provides an additional benefit for RBSD by reconstructing the two missing LLRs. This substantially increases the MI relative to the unaugmented receiver and enables a clean waterfall region, despite the primary detector operating with only partial soft information. This ability to carry out successful LLR com-pletion in challenging settings is observed in both Figs. 10-11. 4) Latency and Complexity: We conclude our numerical study by assessing the latency overhead induced by the proposed ESCNN augmentation. Specifically, to show that our proposed augmentation induces minimal overhead, we report the running time averaged over 5000 OFDM symbols, each comprising 24 subcarriers with 16-QAM modulation, in Table V, along with the relative overhead compared to the primary receiver. All timings reported there were measured on the same platform equipped with an NVIDIA RTX -10 0 10 20 30 40              
+
+> SNR (dB)
+> 00.2 0.4 0.6 0.8 1
+> MI
+> Bit-wise Mutual Information
+> -10 010 20 30 40
+> SNR (dB)
+> 10 -4
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+> BLER
+> Block Error Rate
+> LMMSE RBSD DeepSIC DeepRx
+> LMMSE aug RBSD aug DeepSIC aug DeepRx aug
+> 36 38 40
+> 0.81 0.86
+
+Fig. 10. MI and BLER (LDPC code-rate 0.4) versus SNR, UMi channel, 64QAM modulation, 4 users, nr = 8 , Clip ratio: 3dB 0 10 20 30          
+
+> SNR (dB)
+> 00.2 0.4 0.6 0.8 1
+> MI
+> Bit-wise Mutual Information
+> 010 20 30
+> SNR (dB)
+> 10 -4
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+> BLER
+> Block Error Rate
+> LMMSE RBSD DeepSIC DeepRx
+> LMMSE aug RBSD aug DeepSIC aug DeepRx aug
+
+Fig. 11. MI and BLER (LDPC code-rate 0.75 ) versus SNR, TDL-C channel, 64QAM modulation, 4 users, nr = 8 , CFO: 2.25 kHz 
+
+4060 GPU. The results in Table V show that the overhead introduced by the augmentation is negligible compared to that of either of the primary detectors. Specifically, even for the relatively efficient LMMSE and DeepSIC receivers, the excessive latency is merely 5 − 6% , while being less than 
+
+1% of the primary receiver latency for the heavier sphere and DeepRx detectors. The low latency overhead of ESCNN stems from its lightweight parameterization. To see this, we report in Table VI the overall number of trainable parameters for all DNN-aided modules considered in this study. There, we note that the augmentation involves an order of magnitude less parmeters than DeepSIC, and three orders of magnitude less than DeepRx. These values complement the limited wall clock overhead values of Table V, showing that our proposed augmentation is indeed relatively lightweight and capable of enhancing existing primary receivers with limited overhead in latency and complexity. TABLE V Measured running time on Nvidia RTX 4060 GPU LMMSE Sphere DeepSIC DeepRx Without augmentation 70 .0 ms 100 s 75 .0 ms 800 ms 
+
+With augmentation 74 .0 ms ∼100 s 79 .0 ms 804 ms 
+
+Relative overhead 6% ∼0% 5% 0.5% TABLE VI Number of parameters ESCNN DeepSIC DeepRx 
+
+8.04 × 10 4 9.10 × 10 5 1.24 × 10 7
+
+V. Conclusion We introduced a neural augmentation framework for soft detection in multi-user MIMO-OFDM systems. Rather than replacing existing receiver architectures, the proposed approach operates as a lightweight post-processing module that refines the soft outputs of arbitrary primary detectors, including model-based, data-driven, and hybrid receivers.We developed the ESCNN architecture, a compact convolutional network that exploits local spectral dependencies and jointly processes received signals and detector-generated soft information to produce reliable bit-wise LLRs. The resulting framework is model-agnostic, receiver-agnostic, and modulation-aware, enabling a unified treatment of both impairment-induced LLR corruption and reduced-complexity LLR completion. Through extensive simulations over realistic 3GPP-compliant channel models and a variety of hardware impairment scenarios, we demonstrated that the proposed augmentation consistently improves the reliability of soft information and significantly enhancesdecodingperformanceacrossdiversereceiverarchi-tectures, while incurring only negligible computational and latency overhead. These results suggest that neural LLR aug-mentation constitutes a practical and scalable mechanism for extending the operating range of existing wireless receivers. References 
+
+[1] O. Eger and N. Shlezinger, “Learning to refine LLRs: Modular neural augmentation for MIMO-OFDM receivers,” in IEEE International Conference on Communications. Conference (ICC), 2026. [2] C.-X. Wang et al., “On the road to 6G: Visions, requirements, key technologies, and testbeds,” IEEE Commun. Surveys Tuts., vol. 25, no. 2, pp. 905–974, 2023. [3] W. Saad, M. Bennis, and M. Chen, “A vision of 6G wireless systems: Applications, trends, technologies, and open research problems,” IEEE Netw., vol. 34, no. 3, pp. 134–142, 2019. [4] M. A. Albreem, M. Juntti, and S. Shahabuddin, “Massive MIMO detection techniques: A survey,” IEEE Commun. Surveys Tuts., vol. 21, no. 4, pp. 3109–3132, 2019. [5] S. Yang and L. Hanzo, “Fifty years of MIMO detection: The road to large-scale MIMOs,” IEEE Commun. Surveys Tuts., vol. 17, no. 4, pp. 1941–1988, 2015. [6] C.-Y. Hung and T.-H. Sang, “A sphere decoding algorithm for MIMO channels,” in Proc. IEEE ISSPIT, 2006, pp. 502–506. [7] W.-J. Choi, K.-W. Cheong, and J. Cioffi, “Iterative soft interference cancellation for multiple antenna systems,” in Proc. IEEE WCNC, 2000. [8] A. Mohammadian and C. Tellambura, “RF impairments in wireless transceivers: Phase noise, CFO, and IQ imbalance – A survey,” IEEE Access, vol. 9, pp. 111 718–111 791, 2021. [9] Y. Li, C. Tao, G. Seco-Granados, A. Mezghani, A. L. Swindlehurst, and L. Liu, “Channel estimation and performance analysis of one-bit massive MIMO systems,” IEEE Trans. Signal Process., vol. 65, no. 15, pp. 4075–4089, 2017. [10] N. Shlezinger, Y. C. Eldar, and M. R. Rodrigues, “Asymptotic task-based quantization with application to massive MIMO,” IEEE Trans. Signal Process., vol. 67, no. 15, pp. 3995–4012, 2019. [11] A. F. Molisch, M. Toeltsch, and S. Vermani, “Iterative methods for cancellation of intercarrier interference in OFDM systems,” IEEE Trans. Veh. Technol., vol. 56, no. 4, pp. 2158–2167, 2007. [12] F. P. Guiomar, J. D. Reis, A. L. Teixeira, and Pinto, “Digital postcompensation using volterra series transfer function,” IEEE Photon. Technol. Lett., vol. 23, no. 19, pp. 1412–1414, 2011. [13] L. Dai, R. Jiao, F. Adachi, H. V. Poor, and L. Hanzo, “Deep learning for wireless communications: An emerging interdisciplinary paradigm,” IEEE Wireless Commun., vol. 27, no. 4, pp. 133–139, 2020. [14] N. Farsad and A. Goldsmith, “Neural network detection of data sequences in communication systems,” IEEE Trans. Signal Process., vol. 66, no. 21, pp. 5663–5678, 2018. [15] M. Goutay, F. Ait Aoudia, J. Hoydis, and J.-M. Gorce, “Machine learning for MU-MIMO receive processing in OFDM systems,” IEEE J. Sel. Areas Commun., vol. 39, no. 8, pp. 2318–2332, 2021. [16] H. Farhadi, J. Haraldson, and M. Sundberg, “A deep learning receiver for non-linear transmitter,” IEEE Access, vol. 11, pp. 2796–2803, 2023. [17] M. Honkala, D. Korpi, and J. M. Huttunen, “DeepRx: Fully convolutional deep learning receiver,” IEEE Trans. Wireless Commun., vol. 20, no. 6, pp. 3925–3940, 2021. [18] J. Pihlajasalo, D. Korpi, M. Honkala, J. M. Huttunen, T. Riihonen, J. Talvitie, A. Brihuega, M. A. Uusitalo, and M. Valkama, “Deep learning OFDM receivers for improved power efficiency and coverage,” IEEE Trans. Wireless Commun., vol. 22, no. 8, pp. 5518–5535, 2023. [19] J. Pihlajasalo, D. Korpi, E. Raninen, and M. Valkama, “Deep learning based OFDM physical-layer receiver with multidilated convolutions,” in IEEE Conference on Standards for Communications and Networking (CSCN), 2025. [20] J. Clausius, M. Rübenacke, D. Tandler, and S. Ten Brink, “Joint detection and decoding: A graph neural network approach,” IEEE Trans. Commun., vol. 73, no. 10, pp. 9043–9058, 2025. [21] X. Zhou, J. Zhang, C.-K. Wen, S. Jin, and S. Han, “Graph Neural Networks-Enhanced expectation propagation algorithm for MIMO turbo receiver,” IEEE Trans. Signal Process., vol. 71, pp. 3458–3473, 2023. [22] X. Li, J. Zhang, X. Zhou, Y. Li, and S. Jin, “Hypernetwork-enhanced GEPNet for MIMO-OFDM receiver with imperfect CSI,” IEEE Wireless Commun. Lett., vol. 14, 2025. [23] S. Cammerer, F. Aït Aoudia, J. Hoydis, A. Oeldemann, A. Roessler, T. Mayer, and A. Keller, “A neural receiver for 5G NR multi-user MIMO,” in IEEE Globecom Workshops, 2023, pp. 329–334. [24] A. Caciularu and D. Burshtein, “Unsupervised linear and nonlinear channel equalization and decoding using variational autoencoders,” IEEE Trans. on Cogn. Commun. Netw., vol. 6, no. 3, pp. 1003–1018, 2020. [25] Y. Xie, K. C. Teh, and A. C. Kot, “Comm-transformer: A robust deep learning-based receiver for OFDM system under TDL chan-nel,” IEEE Trans. Commun., vol. 72, no. 4, pp. 2014–2026, 2023. [26] A. Michon, F. Aït Aoudia, and K. P. Srinath, “Convolutional self-attention-based multi-user MIMO demapper,” in IEEE International Conference on Communications (ICC), 2022, pp. 2621–2626. [27] S. R. Doha and A. Abdelhadi, “Deep learning in wireless communication receivers: A survey,” IEEE Access, vol. 13, pp. 113 586–113 605, 2025. [28] R. Wiesmayr, S. Cammerer, F. Aït Aoudia, J. Hoydis, J. Zakrzewski, and A. Keller, “Design of a standard-compliant real-time neural receiver for 5G NR,” in IEEE International Conf. Machine Learning and Communications and Networking (MLCN), 2025. [29] T. Raviv, S. Park, O. Simeone, Y. C. Eldar, and N. Shlezinger, “Adaptive and flexible model-based AI for deep receivers in dynamic channels,” IEEE Wireless Commun., vol. 31, no. 4, pp. 163–169, 2024. [30] N. Shlezinger and Y. C. Eldar, “Model-based deep learning,” Foundations and Trends® in Signal Processing, vol. 17, no. 4, pp. 291–416, 2023. [31] S. Deka, K. Deka, N. T. Nguyen, S. Sharma, V. Bhatia, and N. Rajatheva, “Comprehensive review of deep unfolding techniques for next-generation wireless communication systems,” IEEE Internet Things J., vol. 13, no. 6, pp. 10 379–10 406, 2026. [32] A. Balatsoukas-Stimming and C. Studer, “Deep unfolding for communications systems: A survey and some new directions,” arXiv preprint arXiv:1906.05774, 2019. [33] N. Shlezinger, S. Segarra, Y. Zhang, D. Avrahami, Z. Davidov, T. Routtenberg, and Y. C. Eldar, “Deep unfolding: Recent developments, theory, and design guidelines,” arXiv preprint arXiv:2512.03768, 2025. [34] R. Sun, N. Cheng, C. Li, W. Quan, H. Zhou, Y. Wang, W. Zhang, and X. Shen, “A comprehensive survey of knowledge-driven deep learning for intelligent wireless network optimization in 6G,” IEEE Commun. Surveys Tuts., vol. 28, pp. 1099–1135, 2025. [35] M. Honkala, D. Korpi, E. Raninen, and J. M. Huttunen, “EqDeepRx: Learning a scalable MIMO receiver,” arXiv preprint arXiv:2602.11834, 2026. [36] L. Bai, Q. Zeng, R. Han, J. Choi, and W. Zhang, “Deep learning-based low complexity MIMO detection via partial MAP,” IEEE Trans. Wireless Commun., vol. 24, no. 3, pp. 2126–2139, 2025. [37] B. Fesl and F. Capar, “Learning successive interference cancellation for low-complexity soft-output MIMO detection,” arXiv preprint arXiv:2601.16586, 2026. [38] O. Shental and J. Hoydis, ““Machine LLRning”: Learning to softly demodulate,” in IEEE Globecom Workshops, 2019. [39] M. Khani, M. Alizadeh, J. Hoydis, and P. Fleming, “Adaptive neural signal detection for massive MIMO,” IEEE Trans. Wireless Commun., vol. 19, no. 8, pp. 5635–5648, 2020. [40] H. He, C.-K. Wen, S. Jin, and G. Y. Li, “Model-driven deep learning for MIMO detection,” IEEE Trans. Signal Process., vol. 68, pp. 1702–1715, 2020. [41] Z. Liu, N. Wu, D. He, W. Yuan, Y. Li, and T. Q. Quek, “GNN-assisted BiG-AMP: Joint channel estimation and data detection for massive MIMO receiver,” IEEE Trans. Wireless Commun., vol. 24, no. 6, pp. 4631–4646, 2025. [42] N. Shlezinger, R. Fu, and Y. C. Eldar, “DeepSIC: Deep soft interference cancellation for multiuser MIMO detection,” IEEE Trans. Wireless Commun., vol. 20, no. 2, pp. 1349–1362, 2021. [43] T. Van Luong, N. Shlezinger, C. Xu, T. M. Hoang, Y. C. Eldar, and L. Hanzo, “Deep learning based successive interference cancellation for the non-orthogonal downlink,” IEEE Trans. Veh. Technol., vol. 71, no. 11, pp. 11 876–11 888, 2022. [44] R. C. Loli, O. Dizdar, B. Clerckx, and C. Ling, “Model-based deep learning receiver design for rate-splitting multiple access,” IEEE Trans. Wireless Commun., vol. 22, no. 11, pp. 8352–8365, 2023. [45] 3rd Generation Partnership Project (3GPP), “Study on channel model for frequencies from 0.5 to 100 GHz,” Tech. Rep. 38.901, 2025, https://www.3gpp.org/dynareport/38901.htm. [46] J. Hoydis, S. Cammerer, F. Ait Aoudia, M. Nimier-David, L. Maggi, G. Marcus, A. Vem, and A. Keller, “Sionna,” 2022, https://nvlabs.github.io/sionna/. [47] S. Jaeckel, L. Raschkowski, K. Börner, and L. Thiele, “Quadriga: A 3-D multi-cell channel model with time evolution for enabling virtual field trials,” IEEE Trans. Antennas Propag., vol. 62, no. 6, pp. 3242–3256, 2014. [48] R. Shaked, N. Shlezinger, and R. Dabora, “Joint estimation of carrier frequency offset and channel impulse response for linear periodic channels,” IEEE Trans. Commun., vol. 66, no. 1, pp. 302–319, 2017. [49] N. Uzlaner, T. Raviv, N. Shlezinger, and K. Todros, “Asynchronous online adaptation via modular drift detection for deep receivers,” IEEE Trans. Wireless Commun., vol. 24, no. 5, pp. 4454–4468, 2025. [50] V. Monga, Y. Li, and Y. C. Eldar, “Algorithm unrolling: Inter-pretable, efficient deep learning for signal and image processing,” IEEE Signal Process. Mag., vol. 38, no. 2, pp. 18–44, 2021. [51] Y. Gusakov, O. Simeone, T. Routtenberg, and N. Shlezinger, “Online learning of modular bayesian deep receivers: Single-step adaptation with streaming data,” IEEE Trans. Signal Process., vol. 74, pp. 2192–2207, 2026. [52] T. Raviv and N. Shlezinger, “Modular hypernetworks for scalable and adaptive deep MIMO receivers,” IEEE Open Journal of Signal Processing, vol. 6, pp. 256–265, 2025. [53] P. Fertl, J. Jalden, and G. Matz, “Performance assessment of MIMO-BICM demodulators based on mutual information,” IEEE Trans. Signal Process., vol. 60, no. 3, pp. 1366–1382, 2011.

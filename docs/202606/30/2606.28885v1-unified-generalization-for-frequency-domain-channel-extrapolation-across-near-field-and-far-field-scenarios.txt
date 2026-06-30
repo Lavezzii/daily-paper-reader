@@ -1,0 +1,1461 @@
+Title: Unified Generalization for Frequency-Domain Channel Extrapolation Across Near-Field and Far-Field Scenarios
+
+URL Source: https://arxiv.org/pdf/2606.28885v1
+
+Published Time: Tue, 30 Jun 2026 00:40:27 GMT
+
+Number of Pages: 14
+
+Markdown Content:
+> 1
+
+# Unified Generalization for Frequency-Domain Channel Extrapolation Across Near-Field and Far-Field Scenarios 
+
+Haoyu Wang, Graduate Student Member, IEEE, Zhi Sun, Senior Member, IEEE, 
+
+Shuangfeng Han, Senior Member, IEEE, Xiaoyun Wang, and Zhaocheng Wang, Fellow, IEEE 
+
+Abstract —With the increasing number of antennas, the near-field effect becomes non-negligible in large-scale multiple-input multiple-output (MIMO) systems. Accurate and low-overhead channel acquisition is therefore essential to maintain system performance in both far-field and near-field scenarios. Deep learning (DL)-based frequency-domain channel extrapolation of-fers an effective solution for achieving low-overhead and accurate channel acquisition. However, due to the challenges posed by distance-dependency and environment-dependency, existing DL extrapolators fail to simultaneously generalize to unseen near-field and far-field channels, hindering their practical deployment. In this paper, we propose a physically interpretable framework that unifies the generalization capability of frequency-domain DL extrapolators across near-field and far-field scenarios. Firstly, we propose the key insights of heterogeneous angular profile and unified delay profile for unified generalization. Explicitly, the angular profiles are heterogeneous across near-field and far-field scenarios, while the delay profiles exhibit a unified sparsity pat-tern that can be aligned. Secondly, we introduce a physics-based disentanglement and alignment framework consisting of three steps: multi-cluster decoupling, angle-delay feature disentangle-ment, and delay-domain alignment. This allows the DL model to learn distributionally stable delay-domain features while directly reusing heterogeneous angular-domain features. Thirdly, we de-sign a Unified Near-field and Far-field DL Extrapolator (UNiFi-DLE) and elaborate its workflow, including dataset preparation, model training, and inference. Extensive simulations and sim-to-real experiments validate that the proposed UNiFi-DLE robustly generalizes across both unseen near-field and far-field scenarios, consistently outperforming state-of-the-art methods. 
+
+Index Terms —MIMO, Near-field and far-field, Deep learning, Feature disentanglement, Generalization 
+
+I. I NTRODUCTION 
+
+A. Background 
+
+Multiple-input multiple-output (MIMO) stands as a pivotal technology for enhancing the spectral efficiency and capacity of wireless communication systems. With a large number of 
+
+Haoyu Wang, Zhi Sun, and Zhaocheng Wang are with the Department of Electronic Engineering, Tsinghua University, Beijing 100084 China (e-mail: wanghy22@mails.tsinghua.edu.cn; zhisun@ieee.org; zcwang@tsinghua.edu.cn). Shuangfeng Han and Xiaoyun Wang are with the China Mobile Research Institute, Beijing 100053, China. (e-mail: hanshuangfeng@chinamobile.com; wangxiaoyun@chinamobile.com) This work was supported by the National Key R&D Program of China under Grant 2022YFB2902004. Corresponding Author: Zhi Sun. 
+
+antennas, the large-scale MIMO arrays introduce significant multiplexing and diversity gains. Fully realizing these gains, however, necessitates accurate acquisition of channel state information (CSI) [1]. Moreover, to ensure these theoretical gains translate into effective spectral efficiency, the overhead associated with CSI acquisition should be minimized [2]. The increasing aperture of antenna arrays introduces a paradigm shift in electromagnetic wave propagation, where near-field and far-field regions coexist [3]. This shift poses significant challenges for accurate and low-overhead CSI acquisition in large-scale MIMO systems. Conventionally, the wavefronts of the electromagnetic waves are assumed to be planar [4]–[6]. Then, the MIMO channel exhibits obvious sparsity in the angular-domain and motivates various accurate and low-overhead channel acquisition algorithms, e.g., the compressed sensing-based algorithms [7]. However, such an approximation is only valid in the far-field scenarios and is invalid in the near-field regions, where the wavefront of the propagated electromagnetic wave is spherical. Then, the cross-antenna channel correlation is not only determined by the propagation directions, but also affected by the distances [8], [9]. Consequently, the angular-domain sparse nature of the large-scale MIMO channel is not held in the near-field scenarios, which degrades the accuracy and efficiency of the conventional CSI acquisition algorithms designed under far-field assumptions. Based on electromagnetic wave propagation theory, the boundary between near-field and far-field is deter-mined by the Rayleigh distance, which scales quadratically with the array aperture [10]. When the aperture reaches the scale of meters, the near-field region can achieve tens or even hundreds of meters [8], [9]. Thus, how to achieve unified and efficient CSI acquisition across near-field and far-field scenarios is vital and of practical significance to provide seamless service in large-scale massive MIMO systems [3], [11], [12]. Frequency-domain channel extrapolation serves as a unified CSI acquisition approach to reduce the pilot overhead in large-scale MIMO systems, which is based on the frequency-invariant geometrical path parameters across near-field and far-field scenarios [11], [13]. Based on the electromagnetic wave propagation theory, paths in the far-field and near-field share the same parameters, which implies that the channel responses at different subcarriers inherently exhibit the same      
+
+> arXiv:2606.28885v1 [eess.SP] 27 Jun 2026 2Decoupled 𝑚𝑚 clusters
+> Decoupled 𝑛𝑛 clusters
+> (a) Heterogenous near-field and far-field channels
+> angle
+> Far-field input
+> delay
+> Near-field input
+> angle
+> delay
+> (b) Multi-cluster decoupling
+> Delay-domain features
+> …
+> Near-field channels
+> user
+> Far-field channels
+> user
+> …
+> (c) Angle-delay disentanglement
+> Angular-domain features
+> (d) Delay-domain alignment
+> Aligned delay features
+> Channel at target frequency band
+> Extrapolate
+> via NN
+> Reuse Dispersive (near-field)
+> Sparse (far-field)
+> Sparse (far-field)
+> Sparse (near-field)
+> …
+> Decoupled clusters
+> Debias & leakage compression
+> Fig. 1: (a) Heterogeneous electromagnetic propagation across near-field and far-field scenarios. (b)-(d) Proposed physics-based disentanglement and alignment framework to address the heterogeneity between near-field and far-field channels, which yields the heterogeneous angular-domain features and aligned delay-domain features.
+
+underlying physical structure. Thus, the channel at a target fre-quency band can be extrapolated from the measured band. The frequency-domain dependency, governed by complex elec-tromagnetic propagation, is inherently non-linear and high-dimensional. Conventional model-based extrapolation often relies on explicit parameter estimation, whose performance is affected by the noise and inter-path interference. This gap motivates the adoption of deep learning (DL), which excels at approximating non-linear dependency. Therefore, numerous neural network structures have been proposed to enhance the channel extrapolation accuracy [14]–[17]. 
+
+B. Research Challenge 
+
+In the co-existence of near-field and far-field effects, uni-fied frequency-domain channel extrapolation encounters two fundamental challenges as follows.  
+
+> ∙
+
+Distance-dependency: Owing to the near-field effect, the channels are not only determined by the parameters of angle of departure/arrival, delay, and complex gain, but also affected by the distance parameter. Thus, the degrees of freedom of the large-scale MIMO channel distribution are further increased in the co-existence of near-field and far-field effects.  
+
+> ∙
+
+Environment-dependency: Based on the geometrical channel model, the propagated paths interact with the user, base station (BS), and scatterers in the environment, which determines the multipath parameters. Owing to the diversity of the wireless environment, the distribution of both near-field and far-field channels is highly diverse across different environments [18]. Consequently, out-of-distribution (OOD) channel samples are inevitable across far-field and near-field scenarios, which fundamentally limits the unified generalizability. 
+
+C. Motivation and Our Contributions 
+
+In our previous work, the path-oriented DL extrapolator with path alignment (PO-DLE+PA) was proposed to partly address the environment-dependency of large-scale MIMO channel in the far-field scenarios [19]. Nevertheless, the PO-DLE+PA heavily relies on the angular-delay domain joint sparsity of the extracted responses, which is severely dete-riorated owing to the distance-dependency. To the best of our knowledge, there is no existing work to achieve unified gen-eralization for frequency-domain channel extrapolation across diverse near-field and far-field scenarios. In this paper, we aim to achieve unified generalizability in frequency-domain DL extrapolators, which simultaneously resolves the environment-dependency and distance-dependency. Then, the trained DL-extraplator can directly generalize to unseen diverse near-field and far-field scenarios without domain adaptation, where the data collection cost for practical deployment can be greatly reduced. Our specific contributions can be summarized as follows:  
+
+> ∙
+
+Firstly, we propose two key insights for unified gen-eralizability, namely, the heterogeneous angular profile and unified delay profile. As depicted in Fig. 1(a), the clusters in the near-field and far-field exhibit hetero-geneous angular profiles, which is the bottleneck for unified generalizability. Under planar wavefront propa-gation, the angular profile of a far-field cluster is sparse, whereas its near-field counterpart becomes dispersive as a result of the spherical wavefront. Consequently, the heterogeneous angular-profile will directly degrade the distribution alignment for generalizability enhancement. In contrast, we prove that the delay-profile is unified across near-field and far-field scenarios. Explicitly, the delay-profiles of both near-field and far-field clusters are sparse, and independent of the specific propagation wavefronts.  
+
+> ∙
+
+Secondly, as shown in Fig. 1(b)-(d), a novel physics-based disentanglement and alignment framework is pro-posed based on the key insights, which is composed of the multi-cluster decoupling, angle-delay disentan-glement, and delay-domain alignment. We verify that both the near-field and far-field clusters share the rank-one and mutual orthogonal properties, and a singular value decomposition (SVD)-based multi-cluster decou-3
+
+pling is adopted. Then, angular-delay disentanglement is proposed to yield the heterogeneous angular-domain features and unified delay-domain features. Supported by the evidence from real-world channel measurements, we prove that the angular-domain features are frequency-independent and can be directly reused at the target fre-quency band. The delay-domain features are frequency-dependent and can be learned by neural networks. Fur-ther, the delay-domain alignment is applied to debias and compress leakage of the delay-domain features across various environments, which guarantees the model gen-eralizability.  
+
+> ∙
+
+Thirdly, a Unified Near-field and Far-field DL Extrapolator (UNiFi-DLE) is proposed to achieve the unified generalizability, where the dedicated workflow is designed. In the preparation of the training dataset, we enforce frequency-domain consistency. Explicitly, the label is constructed as the aligned delay-domain features from the target band, ensuring it retains the proper correlation with the aligned input features from the measured band. This theoretically allows the model to learn the valid cross-frequency mapping. Then, the model training and inference pipelines are designed to leverage the physics-based disentanglement and alignment.  
+
+> ∙
+
+Extensive simulations and sim-to-real experiments are conducted to justify the proposed UNiFi-DLE. Compared to the state-of-the-art, the proposed UNiFi-DLE can simultaneously achieve the best generalizability in both unseen far-field and near-field scenarios. Specifically, the generalizability gain of UNiFi-DLE becomes more obvious as the distance decreases. In the sim-to-real experiments, the unified generalizability of the proposed UNiFi-DLE is also robustly achieved, which further validates its feasibility in real-world deployment. 
+
+D. Notations 
+
+C𝑚 ×𝑛 denotes the space of 𝑚 × 𝑛 complex matrices; (·)𝑇 ,
+
+(·)𝐻 , conj (·) denote the transpose, Hermitian transpose, and conjugate operations; |·| , ‖·‖ 2 and ‖·‖ 𝐹 stand for the absolute value of a scalar, the 𝑙 2 norm of a vector and Frobenius norm of a matrix, respectively; E{·} denotes the statistical expectation; ⊙ denotes the element-wise Hadamard product; 
+
+𝑈 (𝑎, 𝑏 ) denotes the uniform distribution between 𝑎 and 𝑏 .II. R ELATED WORKS 
+
+A. Generalizable Learning for Frequency-Domain Channel Extrapolation 
+
+In [20]–[22], data augmentation techniques, including angular-delay domain shift (ADS), flip, and random phase shift (RPS), have been proposed to enhance the diversity of the training dataset. However, random data augmentation cannot fully address the diverse distribution shift under hetero-geneous propagation. In [23], a hierarchical neural network, HORCRUX, is designed to robustly give initial guesses for parameter optimization. However, channel distribution shift will affect the quality of the delay guesses, and the channel correlation between different antennas is not leveraged. In our previous work [19], PO-DLE+PA is proposed to partly address the distribution shift of the large-scale MIMO channel in the far-field scenarios. In the near-field region, the power dispersion will severely affect the distribution alignment per-formance, where the model generalizability will obviously degrade. 
+
+B. Unified Near-Field and Far-Field Communications 
+
+Unified near-field and far-field communications aim to develop a unified framework that can seamlessly serve the users across near-field and far-field regions, which is free of the user position knowledge. In [12], a modified Fourier plane-wave (FPW) series approximation is proposed to ac-commodate the presence of near-field and far-field. In [3], a unified codebook is proposed based on K-SVD, which serves as a unified measurement matrix for near-field and far-field users. In [24], a wavenumber-domain unified beam training framework is proposed, which interprets the spherical waves as the superposition of multiple planar waves. III. P ROBLEM FORMULATION AND KEY SOLUTION 
+
+In this section, we first formulate the unified frequency-domain extrapolation across near-field and far-field in Sec. III-A. To solve the unified generalization problem, two key insights are derived in Sec. III-B and Sec. III-C, re-spectively. Thereafter, the key solution with intuitive physics interpretation is proposed in Sec. III-D. 
+
+A. Problem Formulation: Unified Generalization for Frequency-Domain Channel Extrapolation 
+
+In this paper, we consider a multi-carrier large-scale MIMO system serving a single-antenna user, where the number of antennas at the BS is denoted as 𝑁 T. Assume the non-overlapping measured frequency band ℬ(m) = {𝑓 (m)  
+
+> 𝑖
+
+}𝐾 (m) 
+
+> 𝑖 =1
+
+and the target frequency band ℬ(e) = {𝑓 (e)  
+
+> 𝑖
+
+}𝐾 (e)  
+
+> 𝑖 =1
+
+, where 𝑓 (m) 
+
+> 𝑖
+
+and 𝑓 (e)  
+
+> 𝑖
+
+denote the 𝑖 th subcarrier in the measured and target frequency bands, respectively. Denote the channel response at frequency 𝑓 as h(𝑓 ) ∈ C𝑁 T×1. Thus, the frequency-domain channel extrapolation aims to construct the mapping from the channel in the measured frequency band ℬ(m) to the target frequency band ℬ(e) , i.e., 
+
+𝜓 : C𝑁 T×𝐾 m → C𝑁 T×𝐾 e , H(m) ↦ → H(e) = 𝜓 (H(m) ), (1) where H(𝑥 ) =[︀ h(︀ 𝑓 (𝑥 )1)︀ , . . . , h(︀ 𝑓 (𝑥 )
+
+> 𝐾 (𝑥 )
+
+)︀]︀ ∈ C𝑁 T×𝐾 (𝑥 )
+
+, and indicator 𝑥 ∈ { m, e}. To approximate the target mapping 𝜓 ,the DL channel extrapolator is usually adopted. Denote the training dataset as 𝒟 ={︀(︀ H(m)  
+
+> 𝑖
+
+, H(e) 
+
+> 𝑖
+
+)︀ |𝑖 = 1 , 2, . . . , 𝑀 }︀ ,where (︀ H(m)  
+
+> 𝑖
+
+, H(e) 
+
+> 𝑖
+
+)︀ denotes the 𝑖 th input-label sample in the dataset and 𝑀 denotes the dataset size. Then, the DL-channel extrapolator can be optimized by minimizing the mean square error (MSE) loss over 𝒟 .4
+
+Heterogeneous wave propagation occurs when the users are located in different positions in the large-scale MIMO systems, which is plotted in Fig. 1(a). Based on the electro-magnetic wave propagation theory, the far-field and near-field regions of a large-scale MIMO system can be distinguished with the Rayleigh distance 𝑍 = 2 𝐷 2/𝜆 , where 𝐷 denotes the array aperture and 𝜆 denotes the wavelength [10]. Explicitly, when the users and the last-hop scatterers are in the far-filed of the large-scale MIMO system, the propagated wavefronts are planar. Then, the channel h(FF) (𝑓 ) in the far-field can be formulated as [25] 
+
+h(FF) (𝑓 ) = 
+
+> 𝑁 cl
+
+∑︁ 
+
+> 𝑙 =1
+> 𝑁 r,𝑖
+
+∑︁ 
+
+> 𝑖 =1
+
+𝛼 𝑙,𝑖 𝑒 −j2 𝜋𝑓 𝜏 𝑙,𝑖 a(FF) (𝜙 𝑙,𝑖 , 𝜃 𝑙,𝑖 ), (2) where 𝑁 cl denotes the number of physical clusters, 𝑁 r,𝑖 de-notes the number of paths within 𝑖 th cluster, 𝛼 𝑙,𝑖 , 𝜏 𝑙,𝑖 , 𝜙 𝑙,𝑖 , 𝜃 𝑙,𝑖 
+
+denote the complex gain, delay, azimuth angle of departure, elevation angle of departure of the 𝑖 th path in the 𝑙 th cluster. Under the planar wave propagation, the 𝑛 th element in the steering vector a(FF) (𝜙, 𝜃 ) can be calculated by [︀ 
+
+a(FF) (𝜙, 𝜃 )]︀ 𝑛 = 𝑒 j𝜅 r(𝜙,𝜃 )𝑇 d𝑛 , (3) where 𝜅 = 2 𝜋𝑓 /𝑐 denotes the wavenumber ( 𝑐 denotes the lightspeed), r(𝜙, 𝜃 ) = [sin( 𝜃 ) cos( 𝜙 ), sin( 𝜃 ) sin( 𝜙 ), cos( 𝜃 )] 𝑇 
+
+denotes the wavefront direction, and d𝑛 denotes the location vector of the 𝑛 th antenna element in the array. When the users or the last-hop scatterers are in the near-field region, the propagated wavefronts are transformed into spherical. In this case, the channel h(NF) (𝑓 ) in the near-field can be represented by [8], [11] 
+
+h(NF) (𝑓 ) = 
+
+> 𝑁 cl
+
+∑︁ 
+
+> 𝑙 =1
+> 𝑁 r,𝑖
+
+∑︁ 
+
+> 𝑖 =1
+
+𝛼 𝑙,𝑖 𝑒 −j2 𝜋𝑓 𝜏 𝑙,𝑖 a(NF) (x𝑙,𝑖 ), (4) where x𝑙,𝑖 denotes the location of the scatter or the user, and the 𝑛 th element in the steering vector a(NF) (x) can be calculated by 
+
+[a(NF) (x)] 𝑛 = 𝑒 −j𝜅 (‖x−d𝑛 ‖2−‖ x−d0‖2). (5) Thus, the unified generalization aims to learn a unified model, which is robust and generalizable to extrapolate the channel in unseen near-field and far-field scenarios. 
+
+B. Key Insight 1: Heterogeneous Angular Profile 
+
+The heterogeneity of the planar and spherical wave propa-gation is the bottleneck for the unified generalization across near-field and far-field scenarios. In our previous study [19], the generalizability of the PO-DLE+PA relies on the joint-sparsity of extracted path/cluster responses in the angular-delay domain. Explicitly, the power of a single path or cluster is concentrated in the angular-delay domain to facilitate the path-level/cluster-level alignment. Nevertheless, this assump-tion cannot be guaranteed when confronted with spherical wave propagation in the near-field. In the heterogeneous far-field and near-field channels, the steering vectors a(FF) (𝜙, 𝜃 )
+
+and a(NF) (x) exhibit distinct phase structures among antenna elements. For the uniform linear array (ULA) or uniform planar array (UPA), the phase shift in [a(FF) (𝜙, 𝜃 )] 𝑛 is a linear function of index 𝑛 , while the counterpart in [a(NF) (x)] 𝑛 is a non-linear function [8]. Owing to the non-linear phase varia-tion among antenna elements, the spherical wave propagation results in a dispersive angular profile of a path or a cluster in the near-field. Consider a numerical example for the understanding of angular-profile heterogeneity. Denote the response of 𝑙 th path as H(m)  
+
+> 𝑙
+
+∈ C𝑁 T×𝐾 (m) 
+
+, then the angular profile 𝑃 (a)  
+
+> 𝑙
+
+(𝜙, 𝜃 ) can be defined as 
+
+𝑃 (a)  
+
+> 𝑙
+
+(𝜙, 𝜃 ) = 1
+
+𝑁 T⃦⃦⃦(︀ a(FF) (𝜃, 𝜙 ))︀ 𝐻 H(m) 
+
+> 𝑙
+
+⃦⃦⃦ 
+
+> 22
+
+, (6) which characterizes the power distribution in different spa-tial directions. Let the BS be equipped with a 32-antenna half-wavelength ULA operating at 3.4 GHz. The number of subcarriers 𝐾 (m) is set as 32, and the bandwidth is 40 MHz. Then, the angular profile of the line-of-sight (LOS) path when the user-BS distance varies from 5 m to 50 m is shown in Fig. 2(a). In the far-field region (user@50m), the power distribution of the LOS path is highly concentrated, and the path response can be easily aligned. Nevertheless, when the user is located in the near-field region (e.g., user@5m and user@10m in Fig. 2(a)), the angular-domain sparsity of the LOS path is degraded, which becomes dispersive. Meanwhile, the angular spread is distance-dependent, which further complicates the alignment of different paths. Based on the analysis above, the unified generalization for far-field and near-field channel extrapolation is more challenging compared to existing far-field cross-environment generalization. 
+
+C. Key Insight 2: Unified Delay Profile 
+
+Compared to the complicated angular profile, the delay profile is much more stable within a path or cluster across both near-field and far-field scenarios. This stability stems from the fact that propagation delays are primarily determined by geometric lengths, which remain consistent regardless of wavefront curvature. Without loss of generality, assume the subcarriers in ℬ(m) and ℬ(e) have equal spacing Δ𝑓 , i.e., 
+
+𝑓 (𝑥 ) 
+
+> 𝑖
+
+= 𝑓 (𝑥 )1 + ( 𝑖 − 1)Δ 𝑓 for 𝑥 ∈ { m, e}. In both far-field and near-field scenarios, the steering vectors a(FF) (𝜙, 𝜃 ) and 
+
+a(FF) (x) can be approximated as frequency independent when the gap between the measured and target frequency band is far less than the carrier frequency, i.e., max 𝑖,𝑗 |𝑓 (m)  
+
+> 𝑖
+
+−
+
+𝑓 (e)  
+
+> 𝑗
+
+| ≪ min {𝑓 (m) 1 , 𝑓 (e) 1 } [4], [9], [26]. Then, the channel matrixes H(m) and H(e) in the far-field and near-field can be represented by 
+
+H(𝑥, FF) =
+
+> 𝑁 cl
+
+∑︁ 
+
+> 𝑙 =1
+> 𝑁 r,𝑖
+
+∑︁ 
+
+> 𝑖 =1
+
+𝛼 𝑙,𝑖 𝑒 −j2 𝜋𝑓 (𝑥 )1 𝜏 𝑙,𝑖 a(FF) (𝜙 𝑙,𝑖 , 𝜃 𝑙,𝑖 )b𝑇 𝑥 (𝜏 𝑙,𝑖 ),
+
+(7) and 
+
+H(𝑥, NF) =
+
+> 𝑁 cl
+
+∑︁ 
+
+> 𝑙 =1
+> 𝑁 r,𝑖
+
+∑︁ 
+
+> 𝑖 =1
+
+𝛼 𝑙,𝑖 𝑒 −j2 𝜋𝑓 (𝑥 )1 𝜏 𝑙,𝑖 a(NF) (x𝑙,𝑖 )b𝑇 𝑥 (𝜏 𝑙,𝑖 ), (8) 5-0.5 -0.3 -0.1 0.1 0.3 0.5 00.2 0.4 0.6 0.8 1      
+
+> Angular profile
+> user@5m user@10m user@50m
+> (a) Angular profile 050 100 150 200 250 300
+
+Delay (ns)  
+
+> 00.2 0.4 0.6 0.8 1
+> Delay profile
+> user@5m user@10m user@50m (b) Delay profile
+
+Fig. 2: Normalized power profiles of a LOS path from near-field to far-field, where the Rayleigh distance is 45 m. 
+
+where b𝑥 (𝜏 ) denotes the frequency-domain response vector in the measured band and can be represented by 
+
+b𝑥 (𝜏 ) = [︁ 1, 𝑒 −j2 𝜋 Δ𝑓 𝜏 , . . . , 𝑒 −j2 𝜋 (𝐾 (𝑥 )−1)Δ 𝑓 𝜏 ]︁ 𝑇 
+
+, (9) for 𝑥 ∈ { m, e}. Similar to (6), the delay profile 𝑃 (d)  
+
+> 𝑙
+
+(𝜏 ) of 
+
+H(m)  
+
+> 𝑙
+
+can be defined as 
+
+𝑃 (d)  
+
+> 𝑙
+
+(𝜏 ) = 1
+
+𝑁 T⃦⃦⃦ H(m)  
+
+> 𝑙
+
+conj (bm(𝜏 )) ⃦⃦⃦ 22
+
+. (10) We consider the delay profile of the LOS path in the near-field and far-field as an example, where the user location is denoted as xue and the complex path gain is denoted as 𝛼 LOS . Then, the delay profile 𝑃 (d) LOS (𝜏 ) of the LOS path can be calculated 
+
+𝑃 (d) LOS (𝜏 ) = |𝛼 LOS |2⃒⃒⃒⃒⃒ sin (︀ 𝜋𝐾 (m) Δ𝑓 (𝜏 − 𝜏 LOS ))︀ 
+
+sin ( 𝜋 Δ𝑓 (𝜏 − 𝜏 LOS )) ⃒⃒⃒⃒⃒ 
+
+> 2
+
+, (11) where 𝜏 LOS = ‖xue − d0‖2/𝑐 . Thus, it can be found that the delay profile is unified for both near-field and far-field scenarios. Also, we consider a numerical example for more intuitive understanding, where the parameter settings are aligned with Fig. 2(a). Then, the delay profile of the LOS path from near-field to far-field is illustrated in Fig. 2(b). Despite the peak bias, the delay profile of the LOS path shares a unified shape across near-field and far-field regions. Thus, the utilization of the unified delay profile is critical to achieve unified generalization across near-field and far-field. 
+
+D. Solution: Physics-based Disentanglement and Alignment 
+
+Based on the detailed analysis in Sec. III-B and III-C, the physics-based distribution disentanglement and alignment framework is proposed to achieve the unified generalization across near-field and far-field scenarios, which is plotted in Fig. 1(b)-(d). Since the channels in both near-field and far-field scenarios are composed of multiple clusters [8], multi-cluster decoupling H(m) is first applied to decompose the original channel matrix into the summation of multiple clusters H(m) =∑︀ 𝑘 C(m)  
+
+> 𝑘
+
+, which is shown in Fig. 1(b). Thus, the complex shift of multi-cluster structure (including the number and dependency of the clusters) across far-field and near-field scenarios can be effectively addressed. Owing to the heterogeneous spherical and planar wave propaga-tion in the near-field and far-field scenarios, the decoupled clusters cannot be effectively aligned due to the angular-profile dispersion in the near-field channels. To this end, the decoupled clusters {C(m)  
+
+> 𝑘
+
+} are processed by the angle-delay disentanglement module in Fig. 1(c), which generates angular-domain features {f (a)  
+
+> 𝑘
+
+} and the delay-domain features 
+
+{f (d ,m)  
+
+> 𝑘
+
+}. Note that the disentanglement operation is invertible. In other words, the cluster C(m)  
+
+> 𝑘
+
+can be precisely reconstructed from the features (f (a)  
+
+> 𝑘
+
+, f (d ,m)  
+
+> 𝑘
+
+). Here, angular-domain feature 
+
+f (a)  
+
+> 𝑘
+
+∈ C𝑁 T×1 is frequency-independent. On the contrary, the delay-domain feature f (d ,m)  
+
+> 𝑘
+
+is frequency-dependent and can reflect the delay-domain cluster power distribution. To account for frequency dependency, the trained neural network takes the measured delay-domain feature {f (d ,m)  
+
+> 𝑘
+
+} as input and generates the extrapolated feature {̂︀ f (d ,e)  
+
+> 𝑘
+
+}. Then, the channel at the target frequency band can be reconstructed with the angular-domain features {f (a)  
+
+> 𝑘
+
+} and the extrapolated delay-domain features {̂︀ f (d ,e)  
+
+> 𝑘
+
+}. Since the angular-domain features 
+
+{f (a)  
+
+> 𝑘
+
+} are directly reused at the target frequency-band through the disentanglement, the DL extrapolator will not fit the distribution of {f (a)  
+
+> 𝑘
+
+}. Note that the delay-domain features 
+
+{f (d ,m)  
+
+> 𝑘
+
+} after the disentanglement are still biased, they are further processed by the delay-domain alignment module. Then, delay-domain alignment in Fig. 1(d) is applied to address the peak bias and the power leakage effect, which fundamentally guarantees the generalizability of the trained DL-extrapolator. 6
+
+IV. I MPLEMENTATION OF PHYSICS -B ASED 
+
+DISENTANGLEMENT AND ALIGNMENT FRAMEWORK 
+
+In this section, the implementation of the physics-based disentanglement and alignment framework is detailed. In Sec. IV-A, the SVD-based multi-cluster decoupling is verified for both near-field and far-field. Then, angle-delay disentan-glement is proposed in Sec. IV-B, which is supported by real-world measurement data. Next, delay-domain alignment for debiasing is proposed in Sec. IV-C. 
+
+A. Multi-Cluster Decoupling 
+
+The objective of multi-cluster decoupling is to decompose the original channel into a summation of multiple clusters. To support the unified generalization, the multi-cluster de-coupling algorithm should be effective in both near-field and far-field scenarios. In [27], an SVD-based multi-cluster decoupling is proposed based on the intra-cluster and inter-cluster properties in the far-field scenarios. The intra-cluster property indicates that the power of the cluster response matrix is concentrated in the largest singular value, which can be approximated by a rank-one matrix. The inter-cluster property proposes that different clusters are nearly orthogonal in both the angular domain and the delay domain. Thus, to justify the applicability of SVD for unified multi-cluster decoupling, we need to re-examine the intra-cluster and inter-cluster properties in the near-field scenarios, which is detailed as follows. To simulate the physics-grounded cluster characteristics in the near-field scenarios, we adopt the geometric-based stochastic channel model in near-field (GBSM-NF) [8], [11] to generate the cluster responses. To ground the cluster behaviour, we assume 𝑁 p paths are generated within the non-line-of-sight (NLOS) clusters, where the interacted po-sitions are randomly distributed within a sphere with radius 
+
+𝑅 s. Here, we assume that 𝑅 s = 0.5 m and 𝑁 p = 5.The number of clusters in LOS and NLOS scenarios is set as 5, and the Rician factor in LOS scenarios is set as 5 dB. We consider a half-wavelength ULA BS with 32 antennas, where the carrier frequency is 3.4 GHz. System bandwidth is set as 40 MHz, and the number of subcarriers is 32. Since the Rayleigh distance is 45 .2 m, we assume that the user and scatters are randomly distributed within a 120 ∘ sector with a range 5 ∼ 45 m, which falls into the near-field region. For the near-field cluster H(m ,NF)  
+
+> 𝑙
+
+=∑︀  
+
+> 𝑁 r,𝑖
+> 𝑖 =1
+
+𝛼 𝑙,𝑖 𝑒 −j2 𝜋𝑓 (m) 1 𝜏 𝑙,𝑖 a(NF) (x𝑙,𝑖 )b𝐻 𝑥 (𝜏 𝑙,𝑖 ), we adopt the rank-one concentration metric 𝛾 = 𝜎 2
+
+> 𝑙, 1
+
+/‖H(m ,NF)  
+
+> 𝑙
+
+‖2 
+
+> 𝐹
+
+, where 
+
+𝜎 𝑙, 1 denotes the largest singular value of H(m ,NF)  
+
+> 𝑙
+
+. Based on Monte-Carlo trials, the averages of 𝛾 in the LOS and NLOS scenarios are 0.994 and 0.993, respectively. Thus, it indicates that the power of the cluster is concentrated in the largest singular value. The rationale lies in the fact that the cluster power is concentrated in the delay-domain. Thus, although the angular-domain power distribution becomes dispersive due to the spherical wave propagation, the rank-one property of the near-field cluster is still held. Next, the inter-cluster level         
+
+> TABLE I ORTHOGONALITY OF SIMULATED NEAR -FIELD CLUSTERS
+> Scenarios LOS NLOS Average row orthogonality 𝜂 r0.0108 0.0221 Average column orthogonality 𝜂 c0.0319 0.0586
+
+orthogonality property in near-field is investigated. Here, the normalized row orthogonality 𝜂 r and column orthogonality 𝜂 c
+
+for different clusters H(m ,NF)  
+
+> 𝑙
+
+and H(m ,NF)  
+
+> 𝑙 ′
+
+are adopted for evaluation [27], which are defined as 
+
+𝜂 r = ‖(︀ H(m ,NF) 
+
+> 𝑙
+
+)︀ 𝐻 H(m ,NF)  
+
+> 𝑙 ′
+
+‖𝐹 
+
+‖(H(m ,NF) )𝐻 H(m ,NF) ‖𝐹 
+
+,𝜂 c = ‖H(m ,NF) 
+
+> 𝑙
+
+(︀ H(m ,NF) 
+
+> 𝑙 ′
+
+)︀ 𝐻 ‖𝐹 
+
+‖H(m ,NF) (︀ H(m ,NF) )︀ 𝐻 ‖𝐹 
+
+.
+
+(12) Under the aforementioned simulation settings, the averages of 𝜂 r and 𝜂 c are presented in Table I. It can be found that near-field clusters are also approximately orthogonal in the angular and delay domains. Since the rank-one intra-cluster property and the dual-orthogonal inter-cluster property are also held for near-field clusters, the unified SVD-based multi-cluster decoupling [27] can seamlessly adapt to the planar and spherical wavefronts and is applicable in both near-field and far-field scenarios, which is given as follows. 
+
+Theorem 1: In both near-field and far-field scenarios, clusters in original channel H(m) can be decoupled with SVD 
+
+H(m) =∑︀ rank (H(m) ) 
+
+> 𝑘 =1
+
+𝜎 𝑘 u𝑘 (︀ v(m) 
+
+> 𝑘
+
+)︀ 𝐻 , where 𝜎 𝑘 denotes the 
+
+𝑘 th largest singular value. The 𝑘 th decoupled cluster can be represented by C(m)  
+
+> 𝑘
+
+= 𝜎 𝑘 u𝑘 (︀ v(m) 
+
+> 𝑘
+
+)︀ 𝐻 .
+
+B. Angle-Delay Disentanglement 
+
+The objective of angle-delay disentanglement is to repre-sent the decoupled cluster C(m)  
+
+> 𝑘
+
+with angular-domain feature 
+
+f (a)  
+
+> 𝑘
+
+and delay-domain feature f (d ,m)  
+
+> 𝑘
+
+. Based on the physics meanings discussed in Sec. III-D, the angular-domain feature 
+
+f (a)  
+
+> 𝑘
+
+is frequency-independent while the delay-domain feature 
+
+f (d ,m)  
+
+> 𝑘
+
+is frequency-dependent. Through disentanglement, the frequency-domain channel extrapolation is transformed into the extrapolation of the delay-domain features {f (d ,m)  
+
+> 𝑘
+
+}. From 
+
+Theorem 1, the row-space (angular-domain) of the decoupled cluster C(m)  
+
+> 𝑘
+
+is spanned by the left singular vector u𝑘 , and the column-space (delay-domain) is spanned by the right sin-gular vector v(m)  
+
+> 𝑘
+
+. Therefore, the angle-delay disentanglement followed by the SVD-based multi-cluster decoupling is given as follows. 
+
+Proposition 1: With the SVD-based multi-cluster decou-pling H(m) =∑︀ rank (H(m) ) 
+
+> 𝑘 =1
+
+𝜎 𝑘 u𝑘 v𝐻 𝑘 , the angular-domain features {f (a)  
+
+> 𝑘
+
+} and delay-domain features {f (d ,m)  
+
+> 𝑘
+
+} can be formulated as 
+
+f (a)  
+
+> 𝑘
+
+= u𝑘 , f (d ,m)  
+
+> 𝑘
+
+= 𝜎 𝑘 · conj (︁ v(m) 
+
+> 𝑘
+
+)︁ . (13) Intutively, the decoupled cluster can be naturally reconstructed by C(m)  
+
+> 𝑘
+
+= f (a) 
+
+> 𝑘
+
+(︀ f (d ,m) 
+
+> 𝑘
+
+)︀ 𝑇 , which verifies the invertibility of 70.85 0.9 0.95 100.2 0.4 0.6 0.8 1    
+
+> (a) RENEW dataset (far-field) 0.85 0.9 0.95 100.2 0.4 0.6 0.8 1(b) ESPARGOS dataset (near-field)
+
+Fig. 3: Validation of frequency-independent angular-domain features based on real-world measurement data. 
+
+the disentanglement operation. Next, it can be proved that the disentanglement in (13) satisfies the desired physics mean-ings of angular-domain and delay-domain features, which are detailed as follows. The frequency-independence of the angular-domain fea-tures can be supported by the real-world far-field and near-field measurement channel data. Here, the far-field RENEW channel dataset [28] and the near-field ESPARGOS dataset [29] are adopted. The measurement settings are detailed in Sec. VI-C. Denote angular-domain feature matrices F(a) (𝑟 ) = [︀ 
+
+f (a) 1 , . . . f (a) 
+
+> 𝑟
+
+]︀ ∈ C𝑁 T×𝑟 with the largest 𝑟 singular value. Since angular-domain features {︀ f (a) 
+
+> 𝑙
+
+}︀ 𝑟 𝑙 =1 are mutually or-thogonal and have unit norms, we can measure the power portion of H(e) when projected on the dominant angular-domain features {︀ f (a) 
+
+> 𝑙
+
+}︀ 𝑟 𝑙 =1 . To this end, two quantities 
+
+𝜂 (m)  
+
+> proj
+
+(𝑟 ) = ‖(F(a) (𝑟 )) 𝐻 H(m) ‖2
+
+> 𝐹
+
+‖H(m) ‖2
+
+> 𝐹
+
+,𝜂 (e) 
+
+> proj
+
+(𝑟 ) = ‖(F(a) (𝑟 )) 𝐻 H(e) ‖2
+
+> 𝐹
+
+‖H(e) ‖2
+
+> 𝐹
+
+(14) are defined to evaluate the frequency independence of the angular-domain feature. For each channel instance, we con-sider the metric 𝜂 (e) proj (𝑅 ) with 𝑅 = min {︀ 𝑟 : 𝜂 (m) proj (𝑟 ) > 𝜂 th }︀ .Intuitively, when 𝜂 (e) proj (𝑅 ) approaches 𝜂 th , it indicates that the dominant angular-domain features are frequency-independent in the target frequency band. By selecting 𝜂 th = 0 .999 , the cumulative density functions (CDFs) of 𝜂 (e) proj (𝑅 ) in the real-world far-field and near-field scenarios are plotted in Fig. 3. A key observation is that the 10th percentile of 𝜂 (e) proj (𝑅 ) across all scenarios exceeds 0.9. This provides empirical evidence that the angular-domain features, extracted and optimized solely within the measured band, retain a dominant repre-sentation power (>95% on average) in the target frequency band. Thus, it can be concluded that the angular-domain features are frequency-independent in both near-field and far-field scenarios. The physics-meaning of the delay-domain feature {f (d ,m)  
+
+> 𝑘
+
+}
+
+can be theoretically verified. Based on the property of SVD, the angular-domain features {f (a)  
+
+> 𝑘
+
+} are mutually orthogonal, i.e., (︀ f (a) 
+
+> 𝑘
+
+)︀ 𝐻 f (a)  
+
+> 𝑘 ′
+
+= 0 is held for 𝑘 ̸ = 𝑘 ′. Thus, it can be derived that (︀ 
+
+f (a) 
+
+> 𝑘
+
+)︀ 𝐻 H(m) =
+
+> rank (H(m) )
+
+∑︁ 
+
+> 𝑘 ′=1
+
+(︀ 
+
+f (a) 
+
+> 𝑘
+
+)︀ 𝐻 f (a) 
+
+> 𝑘 ′
+
+(︀ f (d ,m) 
+
+> 𝑘 ′
+
+)︀ 𝑇 = ( f (d ,m) 
+
+> 𝑘
+
+)︀ 𝑇 .
+
+(15) Thus, the delay-domain feature f (d ,m)  
+
+> 𝑘
+
+can be derived as 
+
+f (d ,m)  
+
+> 𝑘
+
+=(︀ H(m) )︀ 𝑇 conj (︀ f (a) 
+
+> 𝑘
+
+)︀ . Based on the channel model in (7) and (8), the delay-domain feature f (d ,m)  
+
+> 𝑘
+
+can be further reformulated as 
+
+f (d ,m)  
+
+> 𝑘
+
+=
+
+> 𝑁 cl
+
+∑︁ 
+
+> 𝑙 =1
+> 𝑁 r,𝑖
+
+∑︁ 
+
+> 𝑖 =1
+
+𝛽 𝑘,𝑙,𝑖 𝑒 −j2 𝜋𝑓 (m)   
+
+> 𝑖 𝜏 𝑙,𝑖
+
+bm(𝜏 𝑙,𝑖 ), (16) where the complex gain 𝛽 𝑘,𝑙,𝑖 is calculated by 
+
+𝛽 𝑘,𝑙,𝑖 ={︃ 𝛼 𝑙,𝑖 a(FF) (𝜙 𝑙,𝑖 , 𝜃 𝑙,𝑖 )𝑇 conj (︀ u𝑘 )︀ , far-field; 
+
+𝛼 𝑙,𝑖 a(NF) (x𝑙,𝑖 )𝑇 conj (︀ u𝑘 )︀ , near-field. (17) Here, the delay-domain feature f (d ,m)  
+
+> 𝑘
+
+can precisely reserve the underlying path delays in the channel, which directly re-flects the delay-domain power distribution. Thus, the channel extrapolation can be reformulated as the extrapolation of the delay-domain features {︀ f (d ,m) 
+
+> 𝑘
+
+}︀ , which achieves the goal of angle-delay disentanglement in physics. 
+
+C. Delay-Domain Alignment 
+
+The objective of delay-domain alignment is to address the distribution shift of decoupled delay-domain features. As illustrated in Fig. 1(c), although the disentangled delay-domain features are sparse, the peak position varies and is environment-dependent. Additionally, the delay-domain power leakage effect exists due to the intra-cluster delay spread and the imperfect delay-domain orthogonality between clusters. To this end, the oversampled discrete Fourier trans-formation (DFT) codebook is utilized to debias the delay-domain peak position and mitigate the power leakage effect. Here, the 𝑂 -oversampled DFT codebook is adopted, where the 𝑛 -th codeword w(m)  
+
+> 𝑛
+
+∈ C𝐾 (m) ×1 (0 ≤ 𝑛 ≤ 𝑂𝐾 (m) − 1) 
+
+is defined as 
+
+w(m)  
+
+> 𝑛
+
+=[︂ 1, 𝑒 j2 𝜋 𝑛 𝑂𝐾 (m) , . . . , 𝑒 j2 𝜋 𝑛 (𝐾 (m) −1) 
+
+> 𝑂𝐾 (m)
+
+]︂ 𝑇 
+
+. (18) Consider the alignment of the delay-domain feature f (d ,m)  
+
+> 𝑘
+
+as an example. Then, the peak position 𝑛 ⋆𝑘 can be calculated by 
+
+𝑛 ⋆𝑘 = arg max 
+
+> 𝑛
+
+{︂⃒⃒⃒(︀ w(m) 
+
+> 𝑛
+
+)︀ 𝑇 f (d ,m) 
+
+> 𝑘
+
+⃒⃒⃒ 
+
+> 2
+
+}︂ . (19) With the searched peak position 𝑛 ⋆𝑘 , the aligned delay-domain feature ̃︀ f (d ,m)  
+
+> 𝑘
+
+can be calculated by ̃︀ 
+
+f (d ,m)  
+
+> 𝑘
+
+= w(m) 
+
+> 𝑛 ⋆𝑘
+
+⊙ f (d ,m)  
+
+> 𝑘
+
+. (20) Based on (16), the aligned delay-domain feature ̃︀ f (d ,m)  
+
+> 𝑘
+
+of the 
+
+𝑙 th decoupled cluster can also be represented by ̃︀ 
+
+f (d ,m)  
+
+> 𝑘
+
+=
+
+> 𝑁 cl
+
+∑︁ 
+
+> 𝑙 =1
+> 𝑁 r,𝑖
+
+∑︁ 
+
+> 𝑖 =1
+
+𝛽 𝑘,𝑙,𝑖 𝑒 −j2 𝜋𝑓 (m) 1 𝜏 𝑙,𝑖 bm(︂ 𝜏 𝑙,𝑖 − 𝑛 ⋆𝑘 
+
+𝑂𝐾 (m) Δ𝑓 )︂ .
+
+(21) 8Multi-cluster decoupling   
+
+> 𝐇𝐇 (m)
+> Angle-delay disentanglement
+> Delay-domain alignment
+> 𝐇𝐇 (e)
+> Angle-domain projection
+> Delay-domain
+> co-transformation
+> Aligned
+> dataset �
+> 𝐂𝐂 𝑘𝑘 m
+> 𝐟𝐟 𝑘𝑘 a
+> 𝐟𝐟 𝑘𝑘 d,m̃𝐟𝐟 𝑘𝑘 d,m
+> 𝑛𝑛 𝑘𝑘 ⋆
+> 𝐟𝐟 𝑘𝑘 d,ẽ𝐟𝐟 𝑘𝑘 d,e
+> Input
+> preparation
+> Label
+> preparation
+> Original
+> dataset 
+
+Fig. 4: Training dataset preparation for UNiFi-DLE. 
+
+It indicates that a constant shift − 𝑛 ⋆𝑘  
+
+> 𝑂𝐾 (m) Δ𝑓
+
+is applied to all underlying paths in the decoupled delay-domain feature 
+
+f (d ,m)  
+
+> 𝑘
+
+, which can effectively address the distribution shift. Owing to the preservation of the underlying physics structure in f (d ,m)  
+
+> 𝑘
+
+, the aligned delay-domain feature ̃︀ f (d ,m)  
+
+> 𝑘
+
+also be parameterized by the underlying path delays {̃︀ 𝜏 𝑘,𝑙,𝑖 }, where ̃︀ 
+
+𝜏 𝑘,𝑙,𝑖 = 𝜏 𝑙,𝑙 − 𝑛 ⋆𝑘  
+
+> 𝑂𝐾 (m) Δ𝑓
+
+. The physics preservation facilitates the label transformation to guarantee accurate frequency-domain correlation, which is detailed Sec. V-A. V. W ORKFLOW OF UN IFI-DLE Facilitating with the physics-based disentanglement and alignment, the end-to-end workflow of UNiFi-DLE is detailed. Firstly, the preparation of the training dataset is discussed in Sec. V-A, which theoretically preserves the frequency-domain correlation. Then, the pipelines of model training and inference are detailed in Sec. V-B and V-C. 
+
+A. Training Dataset Preparation 
+
+As illustrated in Fig. 4, the input and label for the training of the neural network in UNiFi-DLE should be transformed to facilitate the physics-based disentanglement and alignment. For the input preparation, the channel H(m) at the measured frequency band is firstly sampled from the original channel dataset 𝒟 . Then, the SVD-based multi-cluster decoupling is applied to H(m) , which yields the decoupled clusters {C(m)  
+
+> 𝑘
+
+}.Based on the angle-delay disentanglement in Sec. IV-B, the angular-domain features {f (a)  
+
+> 𝑘
+
+} and the delay-domain features 
+
+{f (d ,m)  
+
+> 𝑘
+
+} are obtained from the decoupled clusters {C(m)  
+
+> 𝑘
+
+}.Then, the delay-domain feature {f (d ,m)  
+
+> 𝑘
+
+} is further processed by the delay-domain alignment module in Sec. IV-C, which yields the aligned delay-domain features {̃︀ f (d ,m)  
+
+> 𝑘
+
+} and the searched peak positions {𝑛 ⋆𝑘 }. Then, the aligned delay-domain features {̃︀ f (d ,m)  
+
+> 𝑘
+
+} are served as the neural network input. In UNiFi-DLE, the labels are transformed to preserve the frequency-domain correlation with the measured fea-tures f (d ,m)  
+
+> 𝑘
+
+. This process comprises two steps: angle-domain projection and delay-domain co-transformation. Firstly, the channel H(e) at the target frequency band is sampled from the original channel dataset 𝒟 and input into the angular-domain projection module with the angular-domain features 
+
+{f (a)  
+
+> 𝑘
+
+}, which yields the delay-domain feature {f (d ,e)  
+
+> 𝑘
+
+} at the target frequency band with 
+
+f (d ,e)  
+
+> 𝑘
+
+=(︀ H(e) )︀ 𝑇 conj (︁ f (a) 
+
+> 𝑘
+
+)︁ . (22) Then, the feature {f (d ,e)  
+
+> 𝑘
+
+} and the searched peak positions 
+
+{𝑛 ⋆𝑘 } in the input preparation are further input into the delay-domain co-transformation module to yield the label ̃︀ 
+
+f (d ,e)  
+
+> 𝑘
+
+= 𝑒 j𝜖 (𝑛 ⋆𝑘 )(︀ f (d ,e)  
+
+> 𝑘
+
+⊙ w(e) 
+
+> 𝑛 ⋆𝑘
+
+)︀ , (23) where 
+
+𝜖 (𝑛 ) = 2 𝜋 (︀ 𝑓 (e) 1 − 𝑓 (m) 1)︀ 𝑛 𝑂𝐾 (m) Δ𝑓 (24) and 
+
+w(e)  
+
+> 𝑛
+
+=[︁ 1, 𝑒 j2 𝜋 𝑛 𝑂𝐾 (m) , . . . , 𝑒 j2 𝜋 𝑛 (𝐾 (e) −1) 
+
+> 𝑂𝐾 (m)
+
+]︁ 𝑇 
+
+. (25) Then, the aligned dataset ̃︀ 𝒟 is yieleded by pairing {̃︀ f (d ,m)  
+
+> 𝑘
+
+}
+
+and {̃︀ f (d ,e)  
+
+> 𝑘
+
+}. Compared to the label preparation with parame-ter estimation and clustering algorithms in our previous work [19], the label preparation in UNiFi-DLE can theoretically preserve the frequency-domain correlation, which is given below. 
+
+Theorem 2: The input {̃︀ f (d ,m)  
+
+> 𝑘
+
+} and label {̃︀ f (d ,e)  
+
+> 𝑘
+
+} is precisely correlated with the phase rotation effect of the underlying path delays. 
+
+Proof: Denote ̃︀ 𝛽 𝑘,𝑙,𝑖 = 𝛽 𝑘,𝑙,𝑖 𝑒 −j2 𝜋𝑓 (m) 1 
+
+> 𝑛 ⋆𝑘 𝑂𝐾 (m) Δ𝑓
+
+. Then, the input ̃︀ f (d ,m)  
+
+> 𝑘
+
+the label ̃︀ f (d ,e)  
+
+> 𝑘
+
+can be reformulated as ̃︀ 
+
+f (d ,m)  
+
+> 𝑘
+
+=
+
+> 𝑁 cl
+
+∑︁ 
+
+> 𝑙 =1
+> 𝑁 r,𝑖
+
+∑︁ 
+
+> 𝑖 =1
+
+̃︀ 
+
+𝛽 𝑘,𝑙,𝑖 𝑒 −j2 𝜋𝑓 (m) 1̃︀ 𝜏 𝑘,𝑙,𝑖 bm (̃︀ 𝜏 𝑘,𝑙,𝑖 ) ,̃︀ 
+
+f (d ,e)  
+
+> 𝑘
+
+=
+
+> 𝑁 cl
+
+∑︁ 
+
+> 𝑙 =1
+> 𝑁 r,𝑖
+
+∑︁ 
+
+> 𝑖 =1
+
+̃︀ 
+
+𝛽 𝑘,𝑙,𝑖 𝑒 −j2 𝜋𝑓 (e) 1̃︀ 𝜏 𝑘,𝑙,𝑖 be (̃︀ 𝜏 𝑘,𝑙,𝑖 ) .
+
+(26) It can be found that the input ̃︀ f (d ,m)  
+
+> 𝑘
+
+the label ̃︀ f (d ,e)  
+
+> 𝑘
+
+shares the common compelx gains {̃︀ 𝛽 𝑘,𝑙,𝑖 } and the delays {̃︀ 𝜏 𝑘,𝑙,𝑖 }, and correlates with the phase rotation of the delays {̃︀ 𝜏 𝑘,𝑙,𝑖 }.In the dataset preparation stage, the universal frequency-domain correlation between the input and label is guaranteed, which facilitates the unified generalization of UNiFi-DLE in both near-field and far-field scenarios. 
+
+B. Training Stage 
+
+The neural network in UNiFi-DLE is trained with the aligned dataset ̃︀ 𝒟 to guarantee the model generalizability in both near-field and far-field scenarios. Explicitly, the neural network 𝜉 in UNiFi-DLE is optimized with the loss function 
+
+𝒥 = E{︂⃦⃦⃦̃︀ f (d ,e)  
+
+> 𝑘
+
+− 𝜉 (︁̃︀ f (d ,m) 
+
+> 𝑘
+
+)︁⃦⃦⃦ 
+
+> 22
+
+}︂ . (27) Then, the neural network 𝜉 in UNiFi-DLE can focus on the frequency-domain correlation of the delay-domain features 9(a) Heterogenous near -field and far -field channels        
+
+> angle
+> Composited of
+> 𝑛 clusters
+> delay
+> Composited of
+> 𝑚 clusters
+> angle
+> delay
+> Multi -cluster decoupling
+> Angle -Delay disentanglement
+> Decoupled 𝑚 clusters
+> Decoupled 𝑛 clusters
+> (b) Physics -based disentanglement and alignment framework
+> delay
+> angle
+> delay
+> angle
+> Angle features
+> Delay features
+> Angle features
+> Delay features
+> Delay -domain alignment
+> Aligned delay features
+> Aligned delay features
+> …
+> Near -field channels
+> Far -field channels
+
+user 
+
+user 
+
+> …
+> Multi -cluster
+> decoupling
+
+𝐇 (m)
+
+> Angle -delay
+> disentanglement
+> Delay -domain
+> alignment
+
+𝐇 (e)
+
+> Angle -domain
+> projection
+> Delay -domain
+> co -transformation
+
+Aligned 
+
+dataset ෨
+
+𝐂 𝑙 
+
+> m
+
+𝐟 𝑙 
+
+> a
+
+𝐟 𝑙 
+
+> d,m
+
+ሚ𝐟 𝑘 
+
+> d,m
+
+𝑛 𝑙 
+
+> ⋆
+
+𝐟 𝑙 
+
+> d,e
+
+ሚ𝐟 𝑙 
+
+> d,e
+
+Input 
+
+preparation 
+
+Label 
+
+preparation 
+
+Original 
+
+dataset 
+
+> Multi -cluster
+> decoupling
+
+𝐇 (m)
+
+> Angle -delay
+> disentanglement
+> Delay -domain
+> alignment
+
+𝐂 𝑘  
+
+> m
+
+𝐟 𝑘 
+
+> d,m
+
+ሚ𝐟 𝑙 
+
+> d,m
+> Trained
+> neural network
+
+መሚ𝐟 𝑘 
+
+> d,e
+> Delay -domain
+> recovery
+
+Searched peak position 𝑛 𝑘 
+
+> ⋆
+
+መ𝐟 𝑘 
+
+> d,e
+> Angle -delay
+> entanglement
+
+Angle -domain features 𝐟 𝑘 
+
+> a
+
+෠𝐂 𝑘 
+
+> e
+
+∑ ෡𝐇 (e)
+
+> Fig. 5: End-to-end inference pipeline of UNiFi-DLE, which enables unified generalization for near-field and far-field channel extrapolation.
+
+and avoid fitting heterogeneous wave propagation in the near-field and far-field scenarios. Thus, UNiFi-DLE can be trained in a unified manner with both near-field and far-field channel data, which enhances the model generalizability in practical deployment. 
+
+Remark 1: The UNiFi-DLE can also generalize to different array shapes. Explicitly, the input and output dimensions of the neural network in UNiFi-DLE are 𝐾 (m) and 𝐾 (e) , which are independent of the antenna number 𝑁 T. Thus, UNiFi-DLE can generalize to different array shapes with the same frequency band settings. 
+
+C. Inference Stage 
+
+The objective of model inference is to accurately extrapolate the full channel matrix to the target frequency band, where the end-to-end pipeline is illustrated in Fig. 5. Firstly, the physics-based disentanglement and alignment modules in Sec. IV are applied to the input channel H(m) at the measured frequency band, which yields the angular-domain feature {f (a)  
+
+> 𝑘
+
+}, the searched peak positions {𝑛 ⋆𝑘 } and the aligned delay-domain features {̃︀ f (d ,m)  
+
+> 𝑘
+
+}. Then, the aligned delay-domain features 
+
+{̃︀ f (d ,m)  
+
+> 𝑘
+
+} are input into the trained neural network in UNiFi-DLE, which yields the extrapolated aligned delay-domain features at the target frequency band {̂︀̃︀ f 
+
+> (d ,e)
+> 𝑘
+
+}. Then, the searched peak position {𝑛 ⋆𝑘 } and {̂︀̃︀ f 
+
+> (d ,e)
+> 𝑘
+
+} are input into the delay-domain recovery module to recover the delay bias and the phase rotation term, which yields ̂︀ 
+
+f (d ,e)  
+
+> 𝑘
+
+= 𝑒 −j𝜖 (𝑛 ⋆𝑘 )(︂̂︀̃︀ f 
+
+> (d ,e)
+> 𝑘
+
+⊙ conj (︀ w(e) 
+
+> 𝑛 ⋆𝑘
+
+)︀)︂ . (28) Next, the recovered delay-domain features {̂︀ f (d ,e)  
+
+> 𝑘
+
+} and the angular-domain features {f (a)  
+
+> 𝑘
+
+} are input into the angle-delay entanglement module, which yields the extrapolated response ̂︀ 
+
+C(e)  
+
+> 𝑘
+
+of the decoupled cluster with ̂︀ 
+
+C(e)  
+
+> 𝑘
+
+= f (a)  
+
+> 𝑘
+
+(̂︀ f (d ,e)  
+
+> 𝑘
+
+)𝑇 . (29) Thus, the extrapolated channel ̂︀ H(e) can be obtained by sum-ming up all the extrapolated clusters, i.e., ̂︀ H(e) =∑︀ 𝑘 ̂︀ C(e)  
+
+> 𝑘
+
+.
+
+Remark 2: The proposed UNiFi-DLE serves as a versatile, generalizable learning framework capable of accommodating diverse neural network architectures. This is grounded in the principle that the input delay-domain features can be effectively aligned between the training and test environments. Meanwhile, based on Theorem 2, the universal frequency-domain correlation is precisely preserved in the training dataset preparation. Since the neural network exhibits uni-versal approximation capability to fit complex correlations, the UNiFi-DLE is compatible with various existing neural network structures. VI. E XPERIMENT RESULTS 
+
+In Sec. VI-A, the simulation setups are detailed. Then, extensive simulations are conducted in Sec. VI-B, which validate the unified generalizability of the proposed UNiFi-DLE. Further, sim-to-real results are provided to prove the effectiveness of the proposed UNiFi-DLE in real-world sce-narios. 
+
+A. Simulation Setup 
+
+In the simulations, we consider three types of simulated far-field and near-field channel datasets, and the default settings are detailed as follows. 1) UMa [26]: This dataset is generated based on the urban macro (UMa) scenario in 3GPP TR 38.901 document. Here, the LOS channel is composed of 12 clusters, and the NLOS channel is composed of 20 clusters, where 20 paths are generated within a cluster. The BS is equipped with a UPA with 8 horizontal antennas and 4 vertical antennas. The starting frequencies 𝑓 (m) 1 and 𝑓 (e) 1 are set as 3.5 GHz and 3.51 GHz, the numbers of subcarriers are set as 𝐾 (m) = 𝐾 (e) = 32 , and the spacing is set as Δ𝑓 = 0 .3125 MHz. Since the Rayleigh distance is 3.42 m, and the horizontal user distance ranges from 35 m to 250 m, this dataset falls in the far-field scenario. This dataset is used for model training and contains 10 5
+
+samples. 2) WAIR-D [30]: This dataset is generated from 100 real-world city maps based on a precise ray-tracer. The BS is equipped with a UPA with 8 horizontal antennas and 10                                                    
+
+> TABLE II UNIFIED GENERALIZABILITY COMPARISON OF NEAR -F IELD AND FAR -F IELD CHANNEL EXTRAPOLATION OVER SIMULATED DATASETS IN D BTest dataset Training dataset Vanilla-DLE [14] Vanilla-DLE w/ DA [20]–[22] HORCRUX [23] PO-DLE+PA [19] UNiFi-DLE ADS flipping RPS WAIR-D UMa 0.84 0.78 0.86 0.13 -0.09 -10.92 -11.47
+> GBSM-NF-Tr 2.26 2.71 1.98 2.20 -8.98 -12.99
+> UMa+GBSM-NF-Tr 0.35 0.42 0.52 -0.15 -11.60 -12.99
+> GBSM-NF-Te UMa 1.72 1.61 1.23 1.34 -9.64 -6.63 -11.94
+> GBSM-NF-Tr 3.16 3.09 3.06 3.12 -12.02 -15.99
+> UMa+GBSM-NF-Tr 1.71 1.75 1.56 1.59 -10.70 -15.97
+
+4 vertical antennas. The starting frequencies 𝑓 (m) 1 and 
+
+𝑓 (e) 1 are set as 2.6 GHz and 2.61 GHz, the numbers of subcarriers are set as 𝐾 (m) = 𝐾 (e) = 32 , and the spacing is set as Δ𝑓 = 0 .3125 MHz. The Rayleigh distance is 4.62 m and falls in a far-field scenario. The dataset size has 10 4 samples in total and is used for test. 3) GBSM-NF : This dataset falls in the near-field scenario. The generation process and default cluster settings have been discussed in Sec. IV-A. For the training dataset, an NLOS scenario with 5 clusters is considered, where the distances from the BS to the user and scatters are selected from 𝑈 (5m , 45m) . The starting frequencies 
+
+𝑓 (m) 1 and 𝑓 (e) 1 are set as 3.4 GHz and 3.44 GHz, and the spacing is set as Δ𝑓 = 1 .25 MHz. For the test dataset, a mixed LOS-NLOS scenario with LOS probability 
+
+𝑃 LOS = 0 .5 is considered. The number of clusters in both LOS and NLOS status is randomly chosen from 
+
+𝑈 (1 , 5) , and the Rician factor for LOS status is set as 5 dB. The distances from BS to the user and scatters are randomly selected from 𝑈 (5 m, 25 m). The starting frequencies 𝑓 (m) 1 and 𝑓 (e) 1 are set as 3.4 GHz and 3.41 GHz, and the spacing is set as Δ𝑓 = 0 .3125 MHz. The number of subcarriers in both training and test datasets is set as the number of subcarriers are set as 
+
+𝐾 (m) = 𝐾 (e) = 32 . The training dataset size is set as 
+
+10 5, and the test dataset size is set as 10 4. For expression clarity, we refer to the training and test datasets as GBSM-NF-Tr and GBSM-NF-Te, respectively. Further, we consider the following baselines for comparison: 1) Vanilla-DLE [14]: This baseline directly inputs the measured channel H(m) into the neural network to approximte H(e) at the target frequency band. 2) Vanilla-DLE w/ DA [20]–[22]: This baseline applies data augmentation (DA) techniques to the training dataset of Vanilla-DLE. Specific DA techniques include ADS [20], flipping [21], and RPS [22]. 3) HORCRUX [23]: This baseline is composed of eight parallel neural network channel dividers and eight mini-neural network distance estimators, where the channel is extrapolated in an antenna-wise manner. The training details and neural network configurations are aligned with [23]. 4) PO-DLE+PA [19]: This baseline is our previous work. It composes path-oriented DL extrapolator design and path alignment to address the distribution shift for far-0 10 20 30 40 50 60 
+
+Distance (m) 
+
+> -25 -20 -15 -10 -5 05
+> NMSE (dB)
+> Fig. 6: Generalizability comparison under different distances in the dataset GBSM-NF-Te.
+
+field large-scale MIMO channels. In the proposed UNiFi-DLE and the baselines of Vanilla-DLE, Vanilla-DLE w/ DA, and PO-DLE+PA, the multi-layer percep-tron with three hidden layers is adopted by default, where the hidden dimensions are all set as 512. The oversampling factors in UNiFi-DLE and PO-DLE+PA are set to 2. The normalized mean square error (NMSE) is defined as NMSE = E{︃ ‖̂︀ H(e) − H(e) ‖2
+
+> 𝐹
+
+‖H(e) ‖2
+
+> 𝐹
+
+}︃ (30) is adopted as the performance metric. 
+
+B. Simulation Results 1) Unified Generalizability Comparison: To justify the unified generalizability across near-field and far-field sce-narios, we test the proposed UNiFi-DLE in the simulated WAIR-D and GBSM-NF-Te datasets, which are presented in Table II. With different training datasets, proposed UNiFi-DLE can robustly achieve the best performance in both WAIR-D and GBSM-NF-Te, where the NMSE has been reduced for 1.39 ∼5.27 dB compared to the state-of-the-art. Specifically, when trained with the mixed far-field and near-field datasets, the proposed UNiFi-DLE can achieve the NMSE of -12.99 dB and -15.97 dB in WAIR-D and GBSM-NF-Te, which proves that the physics-based disentanglement and alignment can effectively address the heterogeneity across near-field and far-field scenarios. On the contrary, the Vanilla-DLE 11 5 10 15 20 25      
+
+> SNR (dB)
+> -14 -12 -10 -8 -6 -4 -2 02
+> NMSE (dB)
+> (a) WAIR-D (far-field) 510 15 20 25
+> SNR (dB)
+> -14 -12 -10 -8 -6 -4 -2 02
+> NMSE (dB) (b) GBSM-NF-Te (near-field)
+
+Fig. 7: Generalizability comparison under different SNR. 
+
+fails in both OOD near-field and far-field channels, which remains unresolved even with data augmentation techniques. The HORCRUX baseline can reach -9.64 dB NMSE in the GBSM-NF-Te but fails in WAIR-D. Further, the PO-DLE+PA exhibits weaker generalizability compared to the proposed UNiFi-DLE, especially in the near-field dataset. Thus, the motivation and the superiority of the proposed UNiFi-DLE are validated. In the following experiments, we consider the results with the mixed training dataset of UMa and GBSM-NF-Tr for simplicity. 
+
+2) Generalizabiltiy with Distance: To justify the mitigation of distance-dependency, we further investigate the model gen-eralizability under different distances. Explicitly, we vary the distance between the BS to the scatters and user in the GBSM-NF-Te from 5 m to 55 m. Then, the model generalizability of the trained UNiFi-DLE and the baselines are plotted in Fig. 6. When the distance is decreased from 55 m to 5 m, i.e., from far-field to near-field, the extrapolation NMSE of the proposed UNiFi-DLE can be gradually decreased from -13.5 dB to -24.5 dB. The rationale lies in the fact that the propagation delays of the LOS and NLOS paths in the channel decrease with distance. Note that the rate of phase variation in the response of each path is proportional to the propagation delay. Shorter propagation delays result in less rapid channel variations in the frequency domain and facilitate the alignment of the delay-domain feature. On the contrary, we find that the general-ization NMSE of the PO-DLE+PA gradually increases from -13.9 dB to -8.6 dB as the distance decreases. The rationale lies in the dispersive angular profile in the near-field region, which limits the path alignment performance. Thus, the results precisely align with our analysis in Sec. III-B and III-C, which lends interpretability to the proposed UNiFi-DLE. Meanwhile, we find that the proposed UNiFi-DLE can also converge to the extrapolation performance of PO-DLE+PA as the distance increases, which also achieves accurate channel extrapolation in the far-field region and realizes unified generalization. 
+
+3) Noise Robustness: Further, the noise robustness of the proposed UNiFi-DLE and the baselines is investigated. Here, we generate the channel samples at the measured frequency band in the training datasets under additive complex Gaussian noise with zero mean, where the signal-to-noise ratio (SNR) of each training sample is selected from 𝑈 (5 dB , 25 dB ). Next, the proposed UNiFi-DLE and the baselines are input with the noised channel at the measured frequency band, where the clean channel samples at the target frequency band are -50 -40 -30 -20 -10 0 10        
+
+> NSE (dB)
+> 00.2 0.4 0.6 0.8 1
+> CDF
+> (a) WAIR-D (far-field) -50 -40 -30 -20 -10 010
+> NSE (dB)
+> 00.2 0.4 0.6 0.8 1
+> CDF (b) GBSM-NF-Te (near-field)
+
+Fig. 8: Unified generalizability comparison, where the sequential LSTM is adopted as the neural network structure for UNiFi-DLE and the baselines. -50 -40 -30 -20 -10 0 10        
+
+> NSE (dB)
+> 00.2 0.4 0.6 0.8 1
+> CDF
+> (a) WAIR-D (far-field) -50 -40 -30 -20 -10 010
+> NSE (dB)
+> 00.2 0.4 0.6 0.8 1
+> CDF (b) GBSM-NF-Te (near-field)
+
+Fig. 9: Generalizability of UNiFi-DLE with different array sizes. 
+
+served as the supervision signals. After model training, the generalization NMSE of the proposed UNiFi-DLE and the baselines under different SNR is plotted in Fig. 7. It can be observed that the proposed UNiFi-DLE can achieve low NMSE in both WAIR-D and GBSM-NF-Te. The rationale lies in the fact that the SVD-based multi-cluster can capture the correlation of different antennas, which exhibits powerful denoising capability [31]. Thus, the proposed UNiFi-DLE is robust to the measurement noise to achieve unified general-ization. 
+
+4) Neural Network Structure Compatibility: Next, the uni-fied generalizability of the proposed UNiFi-DLE under dif-ferent neural network structures is investigated. Here, we adopt the sequential long-short term memory (LSTM) [16], [17] as the neural network structure in proposed UNiFi-DLE and the baselines of Vanilla-DLE and PO-DLE+PA to model the frequency-domain correlation. Then, the CDF of the normalized square error NSE = ‖̂︀ H(e) − H(e) ‖2 
+
+> 𝐹
+
+/‖H(e) ‖2 
+
+> 𝐹
+
+of each channel sample are plotted in Fig. 8 1. It can be ob-served that the proposed UNiFi-DLE can robustly achieve the best generalizability in both near-field and far-field scenarios with different neural network structures. Thus, the proposed UNiFi-DLE can serve as a versatile framework for unified generalization independent of specific NN structures. 
+
+5) Performance with Array Size: Next, the generalizability of the proposed UNiFi-DLE to different array sizes is further investigated. Explicitly, we fix the number of antennas in the UMa and GBSM-NF-Tr datasets as 32 and vary the number    
+
+> 1Note that the neural networks in HORCRUX do not directly model the frequency-domain correlation. In fact, the channel at the target frequency band in the HORCRUX baseline is calculated based on optimized path parameters. Owing to the distinct objective, we omit the results of HORCRUX under the different neural network structure. 12 Vanilla-DLE HORCRUX PO-DLE+PA UNiFi-DLE -20 -15 -10 -5 05
+> NSE (dB)
+> (a) RENEW LOS (far-field) Vanilla-DLE HORCRUX PO-DLE+PA UNiFi-DLE -15 -10 -5 05
+> NSE (dB) (b) RENEW NLOS (far-field) Vanilla-DLE HORCRUX PO-DLE+PA UNiFi-DLE -15 -10 -5 0
+> NSE (dB) (c) ESPARGOS LOS (near-field) Vanilla-DLE HORCRUX PO-DLE+PA UNiFi-DLE -12 -10 -8 -6 -4 -2 024
+> NSE (dB) (d) ESPARGOS NLOS (near-field)
+
+Fig. 10: Sim-to-real generalizability comparison of proposed UNiFi-DLE and the baselines.             
+
+> TABLE III END -TO -END RUNTIME INCREASE COMPARISON IN MS
+> Model 𝑁 T= 32 𝑁 T= 48 𝑁 T= 64
+> PO-DLE+PA [19] 158.75 159.15 158.89 UNiFi-DLE 0.91 0.96 1.09
+
+of antennas in the WAIR-D and GBSM-NF-Te datasets from 32 to 64. Then, the CDFs of generalization NSE in WAIR-D and GBSM-NF-Te are plotted in Fig. 9. It can be found that the proposed UNiFi-DLE can also accurately extrapolate the channel in larger antenna arrays. Specifically, when the number of antennas increases to 64 in GBSM-NF-Te, the Rayleigh distance increases to 180 m. Then, the trained UNiFi-DLE can still achieve a generalization NMSE with -13.79 dB. The rationale lies in the fact that proposed UNiFi-DLE learns the distributional stable delay-domain features and directly reuses the angular-domain features in channel extrapolation, which verifies Remark 1. Further, we consider the end-to-end runtime of the proposed UNiFi-DLE, which is measured on the Nvidia GeForce RTX 3090 device. Based on the end-to-end pipeline in Fig. 5, the inference time of UNiFi-DLE includes the inference time of the trained neural network and the other processing modules. Thus, to provide a meaningful runtime evaluation compatible with different neural network structures, we consider the end-to-end runtime increases compared to the Vanilla-DLE, which is listed in Table III. It can be found that the end-to-end runtime increase of UNiFi-DLE is in the scale of 1 ms as the number of antennas increases. On the contrary, the end-to-end runtime increase of the baseline PO-DLE+PA is in the scale of 100 ms. This originates from the SVD-based multi-cluster decoupling in UNiFi-DLE, which can be sped up with parallel computing, while the path extraction involving parameter estimation and clustering in PO-DLE+PA is much more time-consuming. Thus, the proposed UNiFi-DLE is more applicable for real-time channel extrapolation. 
+
+C. Sim-to-Real Experiments 
+
+To justify the unified generalizability of the proposed UNiFi-DLE in real-world scenarios, we consider the chal-lenging sim-to-real experiments for further validation, which includes following channel measurement data in far-field and near-field scenarios. 1) RENEW [28]: This dataset is measured in ourdoor scenarios. The starting frequencies 𝑓 (m) 1 and 𝑓 (e) 1 are set as 2.402 GHz and 2.410 GHz, and the numbers of subcarriers are set as 𝐾 (m) = 𝐾 (e) = 26 . The subcarrier spacing is set as Δ𝑓 = 0 .3125 MHz and 
+
+𝑓 (e) 1 − 𝑓 (m) 1 = 27Δ 𝑓 is held. A sub-array with 8 horizontal antennas and 4 vertical antennas is extracted, and the Rayleigh distance is 5 m. Since the horizontal distance between the user and the BS is larger than 15 m, the measured channel falls in a far-field scenario. 2) ESPARGOS [29]: This dataset is measured in an indoor near-field scenario. The starting frequencies 𝑓 (m) 1 and 
+
+𝑓 (e) 1 are set as 2.444 GHz and 2.453 GHz, and the numbers of subcarriers are set as 𝐾 (m) = 𝐾 (e) = 29 .The subcarrier spacing is set as Δ𝑓 = 0 .3125 MHz and 
+
+𝑓 (e) 1 − 𝑓 (m) 1 = 29Δ 𝑓 is held. A UPA with 8 horizontal antennas and 4 vertical antennas serves as the BS, and the Rayleigh distance is 4.91 m. The distance between the user and BS ranges from 1.65 m to 6.76 m, and the measured channel falls in a near-field scenario. In the sim-to-real experiments, we modify the number of subcarriers and the relative position of the measured and frequency bands in the simulated training datasets to align with the configuration of the real-world data. Then, the sim-to-real results are presented in Fig. 10. It can be found that the proposed UNiFi-DLE can achieve the best sim-to-real perfor-mance in the RENEW LOS, ESPARGOS LOS, and ESPAR-GOS NLOS datasets, surpassing the PO-DLE+PA for 3 ∼ 5
+
+dB. In the RENEW NLOS dataset, the proposed UNiFi-DLE can still achieve competitive generalizability compared to PO-DLE+PA. Specifically, in both LOS and NLOS scenarios of the near-field ESPARGOS datasets, the proposed UNiFi-DLE serves as the only solution to achieve the NMSE < −6 dB, while all other baselines fail. The rationale lies in two aspects. On the one hand, the spherical wave propagation significantly complicates the channel distribution in real-world and enlarges the sim-to-real gap, which severely degrades the alignment performance of PO-DLE+PA. On the other hand, the hetero-geneous spherical wave propagation can be addressed by the physics-based disentanglement and alignment in UNiFi-DLE. Thus, the results in the real-world experiments precisely align with our theoretical analysis for unified near-field generaliz-ability, which proves the practicality of proposed UNiFi-DLE 13 
+
+to achieve unified generalization. VII. C ONCLUSION 
+
+Unified generalizability across near-field and far-field is critical for frequency-domain DL extrapolators in large-scale MIMO systems, which can significantly reduce the model deployment costs in diverse scenarios. In this paper, the unified generalization of DL extrapolators is achieved with strong physics interpretation. Firstly, we propose two key insights for unified generalization. On the one hand, we derive that heterogeneous angular profiles of near-field and far-field clusters cannot be effectively aligned. On the other hand, the delay profile is distance independent, which is unified across near-field and far-field scenarios. Secondly, the physics-based disentanglement and alignment framework is designed to address the generalizability challenges caused by diverse environments and heterogeneous propagation. This framework comprises three key components: multi-cluster decoupling, angle-delay disentanglement, and delay-domain alignment. Explicitly, the channel extrapolation is achieved by extrap-olating the distributional stable aligned delay-domain features while directly reuse the heterogeneous angular-domain fea-tures. The physics-based interpretability can also be justified by the theoretical channel model and the real-world measure-ment data. Thirdly, the UNiFi-DLE is proposed for unified generalization and the workflow of training data preparation, model training, and inference. In the simulation and sim-to-real experiments, the proposed UNiFi-DLE is justified by comprehensive results comparing to the state-of-the-art, which achieves the best generalizability across diverse near-field and far-field scenarios. REFERENCES [1] R. Shafin and L. Liu, “Multi-cell multi-user massive FD-MIMO: Downlink precoding and throughput analysis,” IEEE Trans. Wireless Commun. , vol. 18, no. 1, pp. 487–502, Jan. 2019. [2] Y. Zeng and X. Xu, “Toward environment-aware 6G communications via channel knowledge map,” IEEE Wireless Commun. , vol. 28, no. 3, pp. 84–91, Jun. 2021. [3] Z. Wang, H. Wu, Y. Chen, and L. Lu, “New paradigm for unified near-field and far-field wireless communications,” IEEE Netw. , vol. 39, no. 6, pp. 112–118, Nov. 2025. [4] H. He, R. Wang, W. Jin, S. Jin, C.-K. Wen, and G. Y. Li, “Beamspace channel estimation for wideband millimeter-wave MIMO: A model-driven unsupervised learning approach,” IEEE Trans. Wireless Com-mun. , vol. 22, no. 3, pp. 1808–1822, 2023. [5] K. Ma, S. Du, H. Zou, W. Tian, Z. Wang, and S. Chen, “Deep learning assisted mmWave beam prediction for heterogeneous networks: A dual-band fusion approach,” IEEE Trans. Commun. , vol. 71, no. 1, pp. 115– 130, Jan. 2023. [6] K. Ma, D. He, H. Sun, Z. Wang, and S. Chen, “Deep learning assisted calibrated beam training for millimeter-wave communication systems,” 
+
+IEEE Trans. Commun. , vol. 69, no. 10, pp. 6706–6721, Oct. 2021. [7] X. Rao and V. K. N. Lau, “Compressive sensing with prior support quality information and application to massive MIMO channel estima-tion with temporal correlation,” IEEE Trans. Signal Process. , vol. 63, no. 18, pp. 4914–4924, Sept. 2015. [8] H. Miao, J. Zhang, P. Tang, L. Tian, W. Zuo, H. Xing, and G. Liu, “Far-field to near-field: Experimental studies of MIMO channel characteri-zation and modeling in the 6 GHz band,” IEEE J. Sel. Areas Commun. ,vol. 43, no. 11, pp. 3889–3902, Nov. 2025. [9] M. Cui and L. Dai, “Near-field wideband beamforming for extremely large antenna arrays,” IEEE Trans. Wirel. Commun. , vol. 23, no. 10, pp. 13 110–13 124, 2024. [10] K. T. Selvan and R. Janaswamy, “Fraunhofer and Fresnel distances: Unified derivation for aperture antennas,” IEEE Antennas Propag. Mag. ,vol. 59, no. 4, pp. 12–15, 2017. [11] M. Cui and L. Dai, “Channel estimation for extremely large-scale MIMO: Far-field or near-field?” IEEE Trans. Commun. , vol. 70, no. 4, pp. 2663–2677, Apr. 2022. [12] Y. Chen, X. Guo, Z. Wang, and C. Yuen, “Unifying far-field and near-field wireless communications in 6G MIMO,” IEEE Wireless Commun. Lett. , vol. 13, no. 10, pp. 2762–2766, 2024. [13] Y. Han, Q. Liu, C.-K. Wen, M. Matthaiou, and X. Ma, “Tracking FDD massive MIMO downlink channels by exploiting delay and angular reciprocity,” IEEE J. Sel. Topics Signal Process. , vol. 13, no. 5, pp. 1062–1076, Sept. 2019. [14] M. Alrabeiah and A. Alkhateeb, “Deep learning for TDD and FDD Massive MIMO: Mapping channels in space and frequency,” in Proc. 53th Asilomar Conf. Signal Syst. Comput. , Nov. 2019, pp. 1465–1470. [15] L. Pang, W. Han, Y. Zhang, H. Jin, Y. Chen, A. Wang, and J. Li, “Time-frequency-space joint extrapolation for 6G near-field non-stationary massive MIMO channels,” IEEE Commun. Lett. , vol. 29, no. 8, pp. 1953–1957, 2025. [16] W. Jiang and H. D. Schotten, “Deep learning for fading channel prediction,” IEEE Open J. Commun. Soc. , vol. 1, pp. 320–332, Mar. 2020. [17] L. Yao, K. Ma, Y. Ming, and Z. Wang, “Loss function fusion for learning-based CSI extrapolation enhancement,” IEEE Wireless Com-mun. Lett. , vol. 13, no. 8, pp. 2210–2214, Aug. 2024. [18] H. Wang, Z. Sun, S. Han, X. Wang, S. Zhou, and Z. Wang, “Path evolution model for endogenous channel digital twin toward 6G wireless networks,” IEEE Commun. Mag. , vol. 63, no. 6, pp. 34–40, Jun. 2025. [19] H. Wang, Z. Sun, S. Han, X. Wang, and Z. Wang, “Generalizable learning for frequency-domain channel extrapolation under distribution shift,” IEEE Trans. Wireless Commun. , vol. 25, pp. 9639–9655, Jan. 2026. [20] Z. Liu, L. Wang, L. Xu, and Z. Ding, “Deep learning for efficient CSI feedback in massive MIMO: Adapting to new environments and small datasets,” IEEE Trans. Wireless Commun. , vol. 23, no. 9, pp. 12 297– 12 312, Sept. 2024. [21] H. Xiao, Z. Wang, D. Li, W. Tian, X. Liu, W. Liu, S. Jin, J. Shen, Z. Zhang, and N. Yang, “AI enlightens wireless communication: A transformer backbone for CSI feedback,” China Commun. , vol. 21, no. 12, pp. 243–256, Dec. 2024. [22] J. Guo, Y. Zuo, C.-K. Wen, and S. Jin, “User-centric online gossip training for autoencoder-based CSI feedback,” IEEE J. Sel. Topics Signal Process. , vol. 16, no. 3, pp. 559–572, Apr. 2022. [23] A. Banerjee, X. Zhao, V. Chhabra, K. Srinivasan, and S. Parthasarathy, “HORCRUX: Accurate cross band channel prediction,” in Proc. Annu. Int. Conf. Mobile Comput. Netw. (Mobicom) , 2024, p. 1–15. [24] C. Weng, X. Guo, Y. Guo, and Y. Wang, “Wavenumber domain beam training in XL-MIMO systems: Unifying far-field and near-field,” IEEE Trans. Wirel. Commun. (Early Access) , pp. 1–1, 2025. [25] K. Ma, Y. Sang, Y. Ming, J. Lian, C. Tian, and Z. Wang, “Deep learning empowered CSI acquisition and feedback for B5G wireless systems,” 
+
+IEEE Trans. Commun. , vol. 72, no. 11, pp. 7124–7138, Nov. 2024. [26] Study on channel model for frequencies from 0.5 to 100 GHz (release 17) , document 3GPP, TR 38.901, 2020, version 17.0.0. [27] H. Wang, Z. Sun, S. Han, X. Wang, and Z. Wang, “Generalizable learning for massive MIMO CSI feedback in unseen environments,” 
+
+arXiv preprint arXiv:2512.22840 , 2025. [28] X. Du and A. Sabharwal, “Massive MIMO channels with inter-user angle correlation: Open-access dataset, analysis and measurement-based validation,” IEEE Trans. Veh. Technol. , vol. 71, no. 2, pp. 1602–1616, Feb. 2022. [29] F. Euchner and S. ten Brink, “CSI Dataset espargos-0002: Larger combined antenna array, indoor lab room with metal wall, LoS and NLoS areas,” 2024. [Online]. Available: https://doi.org/doi:10.18419/darus-4456 [30] Y. Huangfu, J. Wang, S. Dai, R. Li, J. Wang, C. Huang, and Z. Zhang, “WAIR-D: Wireless AI research dataset,” arXiv preprint arXiv:2212.02159 , Dec. 2022. 14 
+
+[31] R. R. Nadakuditi, “Optshrink: An algorithm for improved low-rank sig-nal matrix denoising by optimal, data-driven singular value shrinkage,” 
+
+IEEE Trans. Inf. Theory , vol. 60, no. 5, pp. 3002–3018, May 2014.

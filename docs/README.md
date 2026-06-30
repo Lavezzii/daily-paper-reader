@@ -6,39 +6,43 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-29
-- 运行时间：2026-06-29 21:01:38 UTC
+- 最新运行日期：2026-06-30
+- 运行时间：2026-06-30 21:33:36 UTC
 - 运行状态：成功
-- 本次总论文数：5
-- 精读区：1
-- 速读区：4
+- 本次总论文数：7
+- 精读区：5
+- 速读区：2
 
 ### 今日简报（AI）
-今日精读一篇高分论文（9.0/10），采用物理信息神经网络求解含分裂场完美匹配层的时域麦克斯韦方程组，速读涉及线性高斯无线网络、噪声场神经网络功能化及多用户预编码。
-
-最值得关注的是PINN在电磁仿真中的应用，其结合PML吸收边界可高效处理开放域电磁问题；速读中基于噪声场的部分功能化神经网络也为动态调制提供了新思路。
-
-建议普通读者优先精读电磁PINN论文，掌握其损失函数构建与PML耦合技巧；后续可尝试将论文代码复用于近场或非均匀介质仿真场景。
-- 详情：[/202606/29/README](/202606/29/README)
+今日精读5篇速读2篇，两篇9分论文聚焦自适应隐式神经表示和近远场统一信道外推。  
+最值得看的两方向：基于阻尼振荡的谱门控隐式神经表示，以及跨近远场频率域信道外推的泛化框架。  
+建议优先阅读这两篇高分论文，深入理解其自适应机制与通用性设计。
+- 详情：[/202606/30/README](/202606/30/README)
 
 ### 精读区论文标签
-1. [Physics-Informed Neural Networks for the Time-Domain Maxwell Equations with Split-Field Perfectly Matched Layers](/202606/29/2606.25323v1-physics-informed-neural-networks-for-the-time-domain-maxwell-equations-with-split-field-perfectly-matched-layers)  
+1. [Spectral Gating via Damped Oscillations for Adaptive Implicit Neural Representations](/202606/30/2606.23129v2-spectral-gating-via-damped-oscillations-for-adaptive-implicit-neural-representations)  
    标签：评分：9.0/10、query:channel-nn
-   evidence：将PINN应用于电磁波传播建模，支持通信信道仿真
+   evidence：提出将神经元建模为阻尼谐振子的新型激活机制
+2. [Unified Generalization for Frequency-Domain Channel Extrapolation Across Near-Field and Far-Field Scenarios](/202606/30/2606.28885v1-unified-generalization-for-frequency-domain-channel-extrapolation-across-near-field-and-far-field-scenarios)  
+   标签：评分：9.0/10、query:channel-nn
+   evidence：基于深度学习的频域信道外推，统一近场和远场
+3. [Neural Augmentation of MIMO-OFDM Receivers for Universal LLR Reconstruction](/202606/30/2606.29345v1-neural-augmentation-of-mimo-ofdm-receivers-for-universal-llr-reconstruction)  
+   标签：评分：9.0/10、query:channel-nn
+   evidence：DNN增强MIMO-OFDM接收机LLR重建
+4. [Physics Equivariance for Robust Generalization in Wireless Foundation Model](/202606/30/2606.28847v1-physics-equivariance-for-robust-generalization-in-wireless-foundation-model)  
+   标签：评分：8.0/10、query:channel-nn
+   evidence：物理等变性作为无线基础模型的归纳偏置
+5. [Effective Depth in Joint Source-Channel Coding: An Implicit Equilibrium Analysis](/202606/30/2606.29737v1-effective-depth-in-joint-source-channel-coding-an-implicit-equilibrium-analysis)  
+   标签：评分：8.0/10、query:channel-nn
+   evidence：深度JSCC的隐式均衡框架，自适应深度
 
 ### 速读区论文标签
-1. [Differentiable Conditional Mutual Information for Multi-Terminal Linear Gaussian Wireless Networks](/202606/29/2606.22301v1-differentiable-conditional-mutual-information-for-multi-terminal-linear-gaussian-wireless-networks)  
+1. [Brownian Bridge Diffusion-Based Joint Channel Estimation and Data Detection for Jamming-Resilient Receivers](/202606/30/2606.28778v1-brownian-bridge-diffusion-based-joint-channel-estimation-and-data-detection-for-jamming-resilient-receivers)  
    标签：评分：7.0/10、query:channel-nn
-   evidence：面向无线网络的可微条件互信息计算
-2. [Spatial Partial Functionalization of Neural Networks based on Noise Fields](/202606/29/2606.24588v1-spatial-partial-functionalization-of-neural-networks-based-on-noise-fields)  
-   标签：评分：7.0/10、query:channel-nn
-   evidence：提出基于噪声场的神经网络空间部分功能化
-3. [MAP-Based Task-Oriented Precoding for Multiuser Communication](/202606/29/2606.25722v1-map-based-task-oriented-precoding-for-multiuser-communication)  
-   标签：评分：7.0/10、query:channel-nn
-   evidence：基于学习的低复杂度预编码，适用于多用户通信
-4. [Co-Optimization of Analog Kolmogorov-Arnold Networks for Low-Power Function Approximation in Flexible Electronics](/202606/29/2606.27892v1-co-optimization-of-analog-kolmogorov-arnold-networks-for-low-power-function-approximation-in-flexible-electronics)  
-   标签：评分：7.0/10、query:channel-nn
-   evidence：Kolmogorov-Arnold网络的协同优化与低功耗
+   evidence：基于扩散神经网络的联合信道估计与检测
+2. [ScaLe-INR: Scale and Learn Implicit Neural Representations](/202606/30/2606.27862v1-scale-inr-scale-and-learn-implicit-neural-representations)  
+   标签：评分：6.0/10、query:channel-nn
+   evidence：用于隐式神经表示的新型多分支架构，克服谱偏置
 
 
 <div class="dpr-home-promo-card">
