@@ -1,0 +1,369 @@
+Title: Fluid-Antenna-Aided Active User Detection With 1D-CNN Channel Reconstruction for Unsourced Random Access
+
+URL Source: https://arxiv.org/pdf/2606.31139v1
+
+Published Time: Wed, 01 Jul 2026 00:32:53 GMT
+
+Number of Pages: 5
+
+Markdown Content:
+# Fluid-Antenna-Aided Active User Detection With 1D-CNN Channel Reconstruction for Unsourced Random Access 
+
+Haoyu Liang, Zhentian Zhang, Hao Jiang, Jian Dang, Zaichen Zhang 
+
+Abstract —In this paper, we investigate the application of fluid antenna systems (FAS) for active user detection (AUD) in unsourced random access (URA). A channel reconstruction method based on a one-dimensional convolutional neural network (1D-CNN) is proposed to effectively learn the nonlinear mapping from partial channel observations to the full channel vector. Fur-thermore, the reconstructed channel information is exploited to improve AUD performance via port selection. Simulation results demonstrate that the proposed 1D-CNN channel reconstructor significantly outperforms traditional methods under varying pilot lengths, achieving superior normalized mean squared error (NMSE) performance. Additionally, the reconstructed channel substantially reduces the AUD error rate compared with conven-tional approaches relying on traditional antenna configurations. 
+
+Index Terms —Fluid antenna system, unsourced random ac-cess, channel reconstruction, active user detection, convolutional neural network. 
+
+I. I NTRODUCTION 
+
+With the rapid proliferation of Internet of Things (IoT) devices and the escalating demand for massive connectivity, unsourced random access (URA) [ 1]–[ 6] has emerged as a promising transmission paradigm for future sixth-generation (6G) networks [ 7]. In URA, a large number of devices trans-mit messages without prior coordination, posing significant challenges for active user detection (AUD) [ 13 ] and channel estimation at the receiver. Fluid antenna systems (FAS) [ 8], [9], [ 21 ], which exploit spatial reconfigurability to dynamically sample the wireless channel, have demonstrated considerable potential for improving communication performance across a variety of scenarios [ 10 ]–[ 20 ]. Nevertheless, the use of FAS 
+
+Haoyu Liang, Zaichen Zhang, Zhentian Zhang are with the National Mobile Communications Research Laboratory, Frontiers Science Center for Mobile Information Communication and Security, Southeast University, Nanjing, 210096, China. Zaichen Zhang are also with the Purple Mountain Labora-tories, Nanjing 211111, China. (e-mails: {lianghaoyu, zczhang }@seu.edu.cn, zhentianzhangzzt@gmail.com). Jian Dang is with the National Mobile Communications Research Labo-ratory, Frontiers Science Center for Mobile Information Communication and Security, Southeast University, Nanjing 211189, China, also with the Key Laboratory of Intelligent Support Technology for Complex Environments, Ministry of Education, Nanjing University of Information Science and Tech-nology, Nanjing 210044, China, and also with Purple Mountain Laboratories, Nanjing 211111, China.(email: dangjian@seu.edu.cn). Hao Jiang is with School of Artificial Intelligence, Nanjing University of Information Science and Technology, Nanjing 210044, China. (email: jianghao@nuist.edu.cn) This work of Jian Dang and Zaichen Zhang is partly supported by the Fundamental Research Funds for the Central Universities (2242022k60001), Basic Research Program of Jiangsu (No. BK20252003), the Key Laboratory of Intelligent Support Technology for Complex Environments, Ministry of Education, Nanjing University of Information Science and Technology (No. B2202402). The work of Hao Jiang is partly supported in part by the National Natural Science Foundation of China (NSFC) projects (No. 62471238). 
+
+for AUD in URA remains insufficiently explored, particularly when accurate channel reconstruction is required under limited pilot resources and noisy observations. Compared with conventional antenna architectures, FAS provides enhanced flexibility in exploiting spatial diversity and channel variation. Prior studies have reported its advantages in scenarios such as reconfigurable intelligent surface (RIS) assisted systems [ 22 ], integrated sensing and communication (ISAC) [ 23 ], [ 24 ], and terahertz communications [ 25 ]. It has also been established in [ 1] that FAS can substantially improve URA performance in both single-user and multi-user settings. By switching among multiple antenna ports, FAS adaptively captures favorable channel realizations, thereby improving signal reception and mitigating interference [ 26 ], [ 27 ]. How-ever, the effectiveness of FAS in URA depends critically on reliable channel reconstruction from partial observations, which remains difficult when pilot resources are limited and received signals are corrupted by noise [ 28 ], [ 29 ]. Several methods have been developed for channel recon-struction in FAS. Representative model-based approaches in-clude orthogonal matching pursuit (OMP) [ 30 ] and selective minimum mean square error (SelMMSE) estimation [ 31 ]. A two-stage successive Bayesian reconstruction framework was further proposed in [ 32 ], where the spatial correlation of FAS channels is exploited to achieve promising reconstruction per-formance. Although these methods yield encouraging results, their performance often depends on model assumptions or carefully designed kernel selection, which may limit robust-ness and generalization in practical deployments. In contrast, deep learning techniques, particularly convolutional neural networks (CNNs), have shown strong capability for learning complex nonlinear mappings directly from data [ 33 ]–[ 35 ], rendering them well-suited for FAS channel reconstruction. By capturing the spatial correlation and nonlinear characteristics of wireless channels, CNN-based methods can achieve more accurate and robust reconstruction compared with conventional model-based approaches. Motivated by these considerations, this paper proposes a one-dimensional convolutional neural network (1D-CNN)-based channel reconstruction scheme to enhance AUD perfor-mance in FAS-enabled URA systems. First, a URA system model is formulated in which the receiver is equipped with FAS, and a switch matrix is designed to facilitate dynamic channel sampling. Then, a network comprising three 1D-CNN layers followed by two fully connected layers is de-veloped to reconstruct the full channel state information from partial observations. The proposed method effectively learns the nonlinear mapping from partial channel observations to 
+
+> arXiv:2606.31139v1 [cs.IT] 30 Jun 2026
+
+To be published in Signal Processing and Artificial Intelligence in Wireless Communications (IEEE SPAWC 2026)  
+
+> ...  RF 1
+> RF 2
+> RF M
+> ...
+> Receiver Fluid antenna
+> system
+> Active
+> users Inactive
+> users
+> Fig. 1. System model of FAS-enabled URA.
+
+the complete channel vector, and the reconstructed channel is further applied to port selection. Simulation results verify the effectiveness of the proposed scheme in both channel reconstruction accuracy and active user detection performance. II. S YSTEM MODEL 
+
+A. FAS-Enabled URA 
+
+Consider a URA system with K single-antenna users and a receiver equipped with an FAS. Among the K users, only a small subset of Ka ≪ K users is active, and each active user transmits B information bits over U channel uses. At the receiver, N ports are uniformly distributed along a fluid antenna of length W λ , where λ denotes the carrier wavelength, as shown in Fig. 1. By dynamically switching among these ports, the receiver samples the spatial channel responses over the antenna aperture. Let L denote the spreading sequence length, and let Hk ∈
+
+CN ×L denote the channel coefficient matrix between the k-th user and the receiver. The received signal is the superposition of transmissions from all active users, and is given by 
+
+Y = ∑
+
+> k∈K a
+
+Hkakxk (uk) + Z ∈ CN ×n, (1) where xk(uk) ∈ C1×n denotes the transmitted signal corre-sponding to the message bit sequence uk ∈ { 0, 1}B, ak ∈ CL
+
+denotes the spreading codeword selected by the k-th user from codebook A, and Z ∈ CN ×n is the noise matrix whose entries are i.i.d. CN (0 , σ 2 
+
+> Z
+
+), with σ2 
+
+> Z
+
+denoting the noise power. The spatial reconfigurability of the FAS enables channel acquisition through dynamic port switching, which is concep-tually analogous to a spatial sampling process. Assuming all 
+
+N ports are accessible, the receiver employs M RF chains to support simultaneous port switching with negligible switching delay. A larger M allows more spatial channel observations within one chip duration, at the cost of increased hardware complexity and energy consumption. Since the M selected ports are mutually non-overlapping, the port switching matrix at the l-th chip is defined as 
+
+S := 
+
+{
+
+Sl ∈ { 0, 1}N ×M |
+
+> N
+
+∑
+
+> n=1
+
+[Sl]n,m = 1 ,
+
+> M
+
+∑
+
+> m=1
+
+[Sl]n,m ≤ 1, ∀ l ∈ [L]
+
+}
+
+.
+
+(2) At the l-th chip, the received signal yl is expressed as 
+
+yl = ∑
+
+> k∈K a
+
+SH 
+
+> l
+
+hk,l ak,l xk (uk) + Z. (3) Aggregating over all L chips within one coherence frame, the received signal can be written in compact form as 
+
+y = ∑
+
+> k∈K a
+
+SHHkakxk (uk) + Z, (4) where y := [yH1 , . . . , yH
+
+> L
+
+]H, S := [S1, . . . , SL
+
+], and Hk := [Hk, 1, . . . , Hk,L 
+
+].
+
+B. Channel Model 
+
+The receiver observes signals over N spatially correlated ports. Let h = [h1, h 2, . . . , h N
+
+]T ∈ CN denote the channel coefficient vector across all N ports. The spatial correlation is characterized by the covariance matrix 
+
+Σ = E{hh H } ∈ CN ×N . (5) The channel is assumed to be fully correlated, and Σ is modeled as a Toeplitz matrix generated by a sinc correlation function. Specifically, the (i, j )-th entry of Σ is given by 
+
+[Σ]i,j = sinc 
+
+( 2πW 
+
+N − 1 (i − j)
+
+)
+
+, i, j = 1 , . . . , N, (6) where sinc( x) = sin( x)/x . This Toeplitz structure captures the spatial correlation induced by the limited aperture of the FAS. III. C HANNEL RECONSTRUCTION 
+
+A. Problem Formulation 
+
+The objective in URA is to recover the transmitted messages 
+
+uk, ∀k = 1 , 2, . . . , K a, from the received signal Y, while minimizing the required energy per bit, achieving a low AUD error rate, and meeting a target per-user probability of error (PUPE). The AUD error rate is defined as the average probability that an active user is missed, and the PUPE is defined as the average probability that an active user’s message is absent from the decoded list ˆL(Y):
+
+P AUD  
+
+> e
+
+= E
+
+∣∣∣AS \ ˆAS
+
+∣∣∣
+
+Ka
+
+ , (7) 
+
+PUPE = 1
+
+Ka
+
+∑
+
+> k∈K a
+
+Pr 
+
+{
+
+uk /∈ ˆL(Y)
+
+}
+
+, (8) 2To be published in Signal Processing and Artificial Intelligence in Wireless Communications (IEEE SPAWC 2026) 
+
+where AS and ˆAS denote the true and estimated active user sets, respectively. The energy per bit is expressed as 
+
+Eb
+
+N0
+
+= nP 
+
+cσ 2 
+
+> z
+
+B , (9) where P denotes the average transmit power per user per channel use, c = 2 for real-valued channels, and c = 1 for complex-valued channels. Reliable CSI across all ports is essential for achieving optimal detection performance. Let y ∈ CM×1 denote the observed signal and h ∈ CN ×1 denote the true channel vector. The channel reconstruction problem is formulated as 
+
+ˆh = argmin   
+
+> f(·),S∈S
+
+E (‖h − f (y)‖2) , (10) where f (·) denotes the reconstruction function, S denotes the port selection matrix, and S denotes the feasible set of selection matrices. The goal is to jointly optimize f (·) and S
+
+so as to minimize the mean squared error (MSE) between the reconstructed and true channels. 
+
+B. 1D-CNN Channel Reconstructor 
+
+A shallow one-dimensional convolutional neural network (1D-CNN) is employed to learn the nonlinear mapping from partial channel observations to the full channel vector. Let r ∈
+
+RDin denote the real-valued input formed from the observed channel samples, and let ˆg ∈ RDout denote the reconstructed channel vector. Since one-dimensional convolution requires an explicit channel dimension, the input is first reshaped as 
+
+R(0) ∈ R1×Din . (11) The network comprises three consecutive 1D convolu-tional layers, each followed by batch normalization and a LeakyReLU activation. The output of the l-th convolutional block is given by 
+
+R(l) = φ
+
+(
+
+BN (l)(
+
+Conv (l)(
+
+R(l−1) ))) 
+
+, l = 1 , 2, 3, (12) where Conv (l)(·) denotes the 1D convolution in the l-th layer, BN (l)(·) denotes batch normalization, and φ(·) is the LeakyReLU activation function, defined as 
+
+φ(x) = 
+
+{
+
+x, x ≥ 0,αx, x < 0, (13) where α is a small positive constant, typically set to 0.01 .The c-th output feature at spatial position i in the l-th layer is computed as 
+
+[
+
+Conv (l)(
+
+R(l−1) )]  
+
+> c,i
+
+= b(l) 
+
+> c
+
++
+
+> Cl−1
+
+∑
+
+> c′=1
+> Kl−1
+
+∑
+
+> m=0
+
+w(l) 
+
+> c,c ′,m
+
+R(l−1)  
+
+> c′, i +m−pl
+
+,
+
+(14) where Cl−1 denotes the number of input channels in the previous layer, Kl = 3 is the kernel size, pl = 1 is the zero-padding length, and w(l) 
+
+> c,c ′,m
+
+and b(l) 
+
+> c
+
+are the convolution kernel weights and bias, respectively.  
+
+> Fig. 2. Training and Validation NMSE for the Proposed 1D CNN-Based Channel Reconstruction Model
+
+The three convolutional layers progressively expand the channel dimension as 1 → 16 → 32 → 64 , yielding 
+
+R(1) ∈ R16 ×Din , R(2) ∈ R32 ×Din , R(3) ∈ R64 ×Din . (15) To compress the spatial dimension and extract a compact global representation, adaptive average pooling (AAP) is ap-plied to the output of the third convolutional layer, yielding 
+
+R(4) = AAP 
+
+(
+
+R(3) )
+
+∈ R64 ×16 . (16) The pooled feature map is then vectorized as 
+
+f = vec 
+
+(
+
+R(4) )
+
+∈ R1024 . (17) This feature vector is fed into a regression head composed of two fully connected layers. The first layer projects f into a 256-dimensional latent space followed by a LeakyReLU activation: 
+
+h = φ(W1f + b1) , h ∈ R256 , (18) where W1 and b1 denote the weight matrix and bias vector of the first fully connected layer. To improve generalization and mitigate overfitting, a dropout layer is applied to the hidden representation: 
+
+˜h = Dropout( h). (19) The reconstructed channel vector is finally obtained through a second linear transformation: 
+
+ˆg = W2 ˜h + b2, ˆg ∈ RDout , (20) where W2 and b2 denote the parameters of the output layer. The regression head thus maps the extracted high-level features to the target output space, producing the final reconstructed channel vector. The overall reconstruction process can be compactly ex-pressed as 
+
+ˆg = fΘ(r), (21) where fΘ(·) denotes the nonlinear mapping implemented by the 1D-CNN, and Θ denotes the full set of trainable parameters. 3To be published in Signal Processing and Artificial Intelligence in Wireless Communications (IEEE SPAWC 2026)                  
+
+>   
+>      
+>  
+>      
+>                 !
+
+Fig. 3. NMSE Comparison of Different Channel Reconstruction Methods under Varying Pilot Numbers        
+
+> -6 -5 -4 -3 -2 -1 0
+> 
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+>     
+> 
+>  
+> 
+> 
+> 
+> 
+> 
+> 
+
+Fig. 4. Performance comparison of active user detection: traditional antenna vs. FAS-GAMP with different W under various SNRs 
+
+IV. S IMULATION RESULTS 
+
+We first evaluate the proposed 1D-CNN channel recon-structor, then assess its utility for AUD against conventional antenna-based methods. The training and validation sets con-tain 100,000 and 5,000 samples, respectively. The input dimen-sion is Din = 2 M , where M denotes the number of selected ports, and the output dimension is Dout = 2 N across all N
+
+ports. The pilot sequence length is Bp = 14 , with Ka = 50 
+
+active users and K = 2 Bp total users. 
+
+A. Performance of the 1D-CNN Channel Reconstructor 
+
+As shown in Fig. 2, both training and validation NMSE curves exhibit a consistent downward trend, confirming that the 1D-CNN effectively learns channel reconstruction from partial observations. The training NMSE decreases rapidly        
+
+> -6 -5 -4 -3 -2 -1 0
+> 
+> 10 -4
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+>     
+> 
+>  
+> 
+> 
+> 
+> 
+> 
+> 
+
+Fig. 5. Performance comparison of active user detection: traditional antenna vs. FAS-GAMP with different N under various SNRs 
+
+in the early stage (before approximately the eighth epoch) and subsequently stabilizes, while the validation curve closely tracks the training curve, indicating good generalization with-out noticeable overfitting. The final validation NMSE demon-strates accurate reconstruction even under severe noise condi-tions. We further compare the proposed method against FAS-OMP [ 30 ], FAS-ML [ 32 ], SelMMSE [ 31 ], and S-BAR [ 32 ]. As shown in Fig. 3, the 1D-CNN consistently outperforms FAS-OMP, FAS-ML, and SelMMSE across all pilot settings, and also surpasses the best-kernel variant of S-BAR. These results confirm the advantage of deep learning for FAS channel reconstruction, particularly under limited pilot resources. 
+
+B. Performance of Port Selection for AUD 
+
+The reconstructed channel guides port selection in URA by directing the receiver to the port with the highest gain. As shown in Figs. 4 and 5, FAS-GAMP substantially outperforms OMP [ 36 ], correlation-based detection [ 37 ], and GAMP with conventional fixed antennas across the entire Eb/N 0 range. For a fixed N , increasing W significantly reduces the AUD error rate, as a longer antenna provides greater spatial degrees of freedom and a higher probability of selecting a high-gain port. For a fixed W , increasing N further reduces the error rate by providing more selection opportunities and higher received signal gain. These results confirm the importance of port selection in FAS-enabled URA and demonstrate that the reconstructed channel effectively guides this process. V. C ONCLUSION 
+
+In this paper, a 1D-CNN-based channel reconstruction scheme is proposed for FAS in URA scenarios. The proposed method learns the nonlinear mapping from partial observations to the full channel vector, achieving superior NMSE perfor-mance over conventional baselines under varying pilot condi-tions. Simulation results verify that the reconstructed channel 4To be published in Signal Processing and Artificial Intelligence in Wireless Communications (IEEE SPAWC 2026) 
+
+significantly improves AUD performance, with greater gains observed for larger antenna lengths and higher port counts. Future work will investigate more advanced architectures and training strategies to further enhance reconstruction accuracy and robustness in practical FAS deployments. REFERENCES [1] Z. Zhang et al. , “On fundamental limits of slow-fluid antenna multiple access for unsourced random access,” IEEE Wireless Commun. Lett. ,vol. 14, no. 11, pp. 3455–3459, Nov. 2025. [2] M. J. Ahmadi, et al. ,“Integrated sensing and communications for un-sourced random access: Fundamental limits and practical model,” IEEE Trans. Wireless Commun. , vol. 25, pp. 16547-16561, 2026. [3] Z. Zhang , et al. , “Integrated sensing and communications for unsourced random access via spectrum sharing compressive sensing approach with massive MIMO receiver,” IEEE Trans. Veh. Technol. , Early Access, DOI: 10.1109/TVT.2026.3657304. [4] Z. Zhang, et al. , “Unsourced random access via random scattering with turbo probabilistic data association detector and treating collision as interference,” IEEE Trans. Wireless Commun. , vol. 23, no. 12, pp. 17899-17914, Dec. 2024. [5] Z. Zhang, et al. , “Efficient ODMA for unsourced random access in MIMO and hybrid massive MIMO,” IEEE Internet Things J. , vol. 11, no. 23, pp. 38846-38860, 1 Dec.1, 2024. [6] Z. Zhang, et al. , “Joint pattern, data and channel estimation for un-sourced random access in GMAC and MIMO systems,” IEEE Trans. Wireless Commun. , Early Access, DOI: 10.1109/TWC.2026.3705749 [7] Z. Zhang, et al. , “Joint activity detection and channel estimation for fluid antenna system exploiting geographical and angular in-formation,” IEEE J. Sel. Top. Signal Process. , Early Access, doi: 10.1109/JSTSP.2026.3673148. [8] K. K. Wong, A. Shojaeifard, K.-F. Tong and Y. Zhang, “Fluid antenna systems,” IEEE Trans. Wireless Commun. , vol. 20, no. 3, pp. 1950–1962, Mar. 2021. [9] K. K. Wong, A. Shojaeifard, K. F. Tong, and Y. Zhang, “Performance limits of fluid antenna systems,” IEEE Commun. Lett. , vol. 24, no. 11, pp. 2469–2472, Nov. 2020. [10] T. Wu, et al. , “Variable block-correlation modeling and optimization for secrecy analysis in fluid antenna systems,” IEEE Trans. Wireless Commun. , vol. 25, pp. 15069-15085, 2026. [11] T. Wu, et al. , “Scalable fluid antenna systems: A new paradigm for array signal processing,” IEEE J. Sel. Topics Signal Process. , Early Access, 2026, DOI:10.1109/JSTSP.2026.3673981 .[12] Z. Zhang, et al. , “Finite-aperture fluid antenna array design: Analysis and algorithm,” IEEE Wireless Commun. Lett. , vol. 15, pp. 3199-3203, 2026. [13] Z. Zhang, et al. , “Cramer-rao bounds for activity detection in conven-tional and fluid antenna systems”, IEEE Wireless Commun. Lett. , vol. 15, pp. 3059-3063, 2026. [14] T. Wu, et al. , “Fluid antenna systems enabling 6G: Principles, applica-tions, and research directions”, IEEE Wireless Commun. , Early Access, 2025, doi:10.1109/MWC.2025.36295972025 .[15] T. Wu et al., “Reimagining wireless connectivity: The FAS-RIS synergy for 6G smart cities,” IEEE Commun. Mag. , DOI: 10.1109/MCOM.001.2500802. [16] H. Hong et al. , “Fluid antenna system-assisted self-interference cancel-lation for in-band full duplex communications,” IEEE Trans. Wireless Commun. , vol. 25, pp. 7476-7489, 2026. [17] H. Hong et al. , “FAS meets OFDM: Enabling wideband 5G NR,” IEEE Trans. Commun. , vol. 73, no. 11, pp. 12884–12898, Nov. 2025. [18] H. Hong et al. , “Downlink OFDM-FAMA in 5G-NR systems,” IEEE Trans. Wireless Commun. , vol. 24, no. 12, pp. 10116–10132, Dec. 2025. [19] H. Hong, K. -K. Wong, K. -F. Tong, H. Shin and Y. Zhang, “Coded fluid antenna multiple access over fast fading channels,” IEEE Wireless Commun. Lett. , vol. 14, no. 4, pp. 1249–1253, April 2025. [20] H. Hong et al. , “Fluid antenna multiple access for 6G: A holistic review,” 
+
+IEEE Open J. Commun. Soc. , vol. 7, pp. 2607–2633, 2026. [21] W. K. New et al. , “A tutorial on fluid antenna system for 6G networks: Encompassing communication theory, optimization methods and hard-ware designs,” IEEE Commun. Surv. Tuts. , vol. 27, no. 4, pp. 2325–2377, Aug. 2025 [22] Z. Zhang, et al. , “Fundamental tradeoffs for multiple access in finite-blocklength regime,” accepted to in Proc. IEEE Int. Conf. Computer Communication and Artificial Intelligence (CCAI) , preprint: arXiv: 2601.05165, 2026. [23] Z. Zhang, et al. , “On fundamental limits for fluid antenna-assisted integrated sensing and communications for unsourced random access,” 
+
+IEEE J. Sel. Areas Commun. , vol. 44, pp. 136-149, 2026. [24] Y. Zhang et al. , “Backscatter device-aided integrated sensing and com-munication: A pareto optimization framework,” IEEE Trans. Wireless Commun. , vol. 25, pp. 17958-17974, 2026. [25] L. Tlebaldiyeva, et al. , ”Outage Performance of Fluid Antenna System (FAS)-aided Terahertz Communication Networks,” in Proc. IEEE Int. Conf. Commun. (ICC) , Rome, Italy, 2023, pp. 1922-1927. [26] Z. Zhang, et al. , “Finite-blocklength fluid antenna systems with spatial block-correlation channel model,” IEEE Wireless Commun. Lett. , vol. 15, pp. 1911-1915, 2026. [27] Z. Zhang, et al. , “Coded pattern unsourced random access with analyses on sparse pattern demapper,” IEEE Trans. Wireless Commun. , vol. 25, pp. 5306-5319, 2026. [28] B. Xu, et al. , “Channel estimation for Rydberg atomic receivers,” IEEE Wirel. Commun. Lett. , vol. 14, no. 9, pp. 2957–2961, Jun. 2025. [29] B. Xu, et al. , “Resource allocation for near-field communications: Fundamentals, tools, and outlooks,” IEEE Wireless Commun. , vol. 31, no. 5, pp. 42–50, Jul. 2024. [30] H. Hong et al. , “A contemporary survey on fluid antenna systems: fundamentals and networking perspectives,” IEEE Trans. Netw. Sci. Eng. , vol. 13, pp. 2305–2328, 2026. [31] C. Skouroumounis, et al. , “Fluid antenna with linear MMSE channel estimation for large-scale cellular networks,” IEEE Trans. Commun. ,vol. 71, no. 2, pp. 1112–1125, Feb. 2023. [32] Z. Zhang, et al. , “Successive Bayesian Reconstructor for Channel Estimation in Fluid Antenna Systems,” IEEE Trans. Wireless Commun. ,vol. 24, no. 3, pp. 1992-2006, March 2025. [33] B. Lin, et al. , “A Novel OFDM Autoencoder Featuring CNN-Based Channel Estimation for Internet of Vessels,” IEEE Internet Things J. ,vol. 7, no. 8, pp. 7601-7611, Aug. 2020. [34] C. Wang, et al. , “Large Language Model Empowered Design of Fluid Antenna Systems: Challenges, Frameworks, and Case Studies for 6G,” IEEE Wireless Commun. , Early Access, DOI: 10.1109/MWC.2025.3600949. [35] C. Wang, et al. , “AI-Empowered Fluid Antenna Systems: Opportunities, Challenges, and Future Directions,” IEEE Wireless Commun. , vol. 31, no. 5, pp. 34-41, October 2024. [36] V. K. Amalladinne, et al. , “A coded compressed sensing scheme for unsourced multiple access,” IEEE Trans. Inf. Theory , vol. 66, no. 10, pp. 6509–6533, Oct. 2020. [37] A. K. Pradhan, et al. , “LDPC codes with soft interference cancellation for uncoordinated unsourced multiple access,” in Proc. IEEE Int. Conf. Commun. (ICC) , Jun. 2021, pp. 1–6. 
+
+5

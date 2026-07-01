@@ -6,43 +6,43 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-30
-- 运行时间：2026-06-30 21:33:36 UTC
+- 最新运行日期：2026-07-01
+- 运行时间：2026-07-01 21:59:02 UTC
 - 运行状态：成功
 - 本次总论文数：7
-- 精读区：5
-- 速读区：2
+- 精读区：3
+- 速读区：4
 
 ### 今日简报（AI）
-今日精读5篇速读2篇，两篇9分论文聚焦自适应隐式神经表示和近远场统一信道外推。  
-最值得看的两方向：基于阻尼振荡的谱门控隐式神经表示，以及跨近远场频率域信道外推的泛化框架。  
-建议优先阅读这两篇高分论文，深入理解其自适应机制与通用性设计。
-- 详情：[/202606/30/README](/202606/30/README)
+今日推荐7篇论文，精读2篇（8分），速读3篇，聚焦无线通信基础模型与联合信源信道编码。  
+最值得看的是《Fast Wireless Foundation Models with Early-Exits》中的早期退出机制和《Effective Depth in Joint Source-Channel Coding》的隐式均衡分析，均获8分。  
+下一步建议关注快速推理方法与联合编码深度分析，并搭配速读中的流体天线检测和傅里叶神经算子等方向。
+- 详情：[/202607/01/README](/202607/01/README)
 
 ### 精读区论文标签
-1. [Spectral Gating via Damped Oscillations for Adaptive Implicit Neural Representations](/202606/30/2606.23129v2-spectral-gating-via-damped-oscillations-for-adaptive-implicit-neural-representations)  
-   标签：评分：9.0/10、query:channel-nn
-   evidence：提出将神经元建模为阻尼谐振子的新型激活机制
-2. [Unified Generalization for Frequency-Domain Channel Extrapolation Across Near-Field and Far-Field Scenarios](/202606/30/2606.28885v1-unified-generalization-for-frequency-domain-channel-extrapolation-across-near-field-and-far-field-scenarios)  
-   标签：评分：9.0/10、query:channel-nn
-   evidence：基于深度学习的频域信道外推，统一近场和远场
-3. [Neural Augmentation of MIMO-OFDM Receivers for Universal LLR Reconstruction](/202606/30/2606.29345v1-neural-augmentation-of-mimo-ofdm-receivers-for-universal-llr-reconstruction)  
-   标签：评分：9.0/10、query:channel-nn
-   evidence：DNN增强MIMO-OFDM接收机LLR重建
-4. [Physics Equivariance for Robust Generalization in Wireless Foundation Model](/202606/30/2606.28847v1-physics-equivariance-for-robust-generalization-in-wireless-foundation-model)  
+1. [Fast Wireless Foundation Models with Early-Exits](/202607/01/2606.29640v1-fast-wireless-foundation-models-with-early-exits)  
    标签：评分：8.0/10、query:channel-nn
-   evidence：物理等变性作为无线基础模型的归纳偏置
-5. [Effective Depth in Joint Source-Channel Coding: An Implicit Equilibrium Analysis](/202606/30/2606.29737v1-effective-depth-in-joint-source-channel-coding-an-implicit-equilibrium-analysis)  
+   evidence：早期退出高效无线基础模型
+2. [Effective Depth in Joint Source-Channel Coding: An Implicit Equilibrium Analysis](/202607/01/2606.29737v2-effective-depth-in-joint-source-channel-coding-an-implicit-equilibrium-analysis)  
    标签：评分：8.0/10、query:channel-nn
-   evidence：深度JSCC的隐式均衡框架，自适应深度
+   evidence：联合源信道编码的隐式均衡框架
+3. [Dualformer: Efficient Feature Extractor for Complex-valued Blind Communication Signal Analysis](/202607/01/2606.31352v1-dualformer-efficient-feature-extractor-for-complex-valued-blind-communication-signal-analysis)  
+   标签：评分：8.0/10、query:channel-nn
+   evidence：用于盲通信信号分析的双通道神经网络新架构
 
 ### 速读区论文标签
-1. [Brownian Bridge Diffusion-Based Joint Channel Estimation and Data Detection for Jamming-Resilient Receivers](/202606/30/2606.28778v1-brownian-bridge-diffusion-based-joint-channel-estimation-and-data-detection-for-jamming-resilient-receivers)  
+1. [Fluid-Antenna-Aided Active User Detection With 1D-CNN Channel Reconstruction for Unsourced Random Access](/202607/01/2606.31139v1-fluid-antenna-aided-active-user-detection-with-1d-cnn-channel-reconstruction-for-unsourced-random-access)  
    标签：评分：7.0/10、query:channel-nn
-   evidence：基于扩散神经网络的联合信道估计与检测
-2. [ScaLe-INR: Scale and Learn Implicit Neural Representations](/202606/30/2606.27862v1-scale-inr-scale-and-learn-implicit-neural-representations)  
+   evidence：一维CNN用于无源随机接入中的信道重建
+2. [Higher-Order Fourier Neural Operator: Explicit Mode Mixer for Nonlinear PDEs](/202607/01/2606.28122v1-higher-order-fourier-neural-operator-explicit-mode-mixer-for-nonlinear-pdes)  
    标签：评分：6.0/10、query:channel-nn
-   evidence：用于隐式神经表示的新型多分支架构，克服谱偏置
+   evidence：适用于信道建模的新型傅里叶神经算子架构
+3. [Active Learning for Channel Knowledge Map Construction via Bayesian Inference Diffusion Models](/202607/01/2606.29862v1-active-learning-for-channel-knowledge-map-construction-via-bayesian-inference-diffusion-models)  
+   标签：评分：6.0/10、query:channel-nn
+   evidence：主动学习用于信道知识地图构建
+4. [Measurement-Driven Learning-Based Beam Selection for Hybrid Beamforming at 26.5 GHz](/202607/01/2606.30023v1-measurement-driven-learning-based-beam-selection-for-hybrid-beamforming-at-265-ghz)  
+   标签：评分：6.0/10、query:channel-nn
+   evidence：深度学习应用于毫米波通信波束选择
 
 
 <div class="dpr-home-promo-card">
