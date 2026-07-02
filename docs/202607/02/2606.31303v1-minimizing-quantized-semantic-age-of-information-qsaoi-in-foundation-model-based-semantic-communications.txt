@@ -1,0 +1,320 @@
+Title: Minimizing Quantized Semantic Age of Information (QSAoI) in Foundation Model-Based Semantic Communications
+
+URL Source: https://arxiv.org/pdf/2606.31303v1
+
+Published Time: Wed, 01 Jul 2026 00:52:27 GMT
+
+Number of Pages: 5
+
+Markdown Content:
+# Minimizing Quantized Semantic Age of Information (QSAoI) in Foundation Model-Based Semantic Communications 
+
+Huanyu Zhang †, Yulin Hu ‡, Xiaopeng Yuan †, Aydin Sezgin §, and Anke Schmeink ††INDA Chair, RWTH Aachen University, Germany, Email: zhang |yuan |schmeink @inda.rwth-aachen.de 
+
+> ‡
+
+School of Electronic Information, Wuhan University, China, Email: yulin.hu @whu.edu.cn 
+
+> §
+
+Department of Digital Communication Systems, Ruhr University Bochum, Germany, Email: aydin.sezgin @rub.de 
+
+Abstract —The emerging techniques of semantic communica-tions and edge computing in 6G networks necessitate a paradigm shift toward co-designed semantic-aware and adaptive resource allocation for short-packet transmissions. However, there is a fundamental gap between the semantic layer and the physical layer under low-latency finite blocklength (FBL) effects. To bridge this gap, we introduce the Quantized Semantic Age of Information (QSAoI), a novel metric that rigorously captures the trade-offs among freshness and semantic efficiency of high-level features in real-time communication in the FBL regime. Guided by this metric, we propose a novel foundation model-based efficient co-designed framework to minimize the expected QSAoI over wireless fading channels in latency-constrained semantic communication. Specifically, we formulate a non-linear joint optimization problem to dynamically optimize the block-wise mixed-precision quantization (MPQ) strategy and the physical blocklength. To efficiently resolve this complex problem, we develop a high-efficiency low-complexity algorithm based on fixpoint inspection and bisection search. Extensive simulations validate that our proposed algorithm dynamically adapts the semantic quantization precision to varying channel conditions, effectively minimizing the expected QSAoI compared to baselines. 
+
+Index Terms —Semantic communication, quantized semantic Age of Information (QSAoI), latency constraints, finite block-length (FBL), feature compression. 
+
+I. I NTRODUCTION 
+
+Towards the escalating demand for massive connections and high-speed communication, the advent of the 6G era has catalyzed a paradigm shift from conventional bit-level wireless communication towards content-aware or task-oriented cogni-tive networks. In this context, semantic communication has emerged as a prospective technology [1], [2]. An intelligent semantic-aware communication system aims to extract the meaningful content first, thus directly reducing redundancy under competitive resource management. The Age of Information (AoI) has been extensively inves-tigated to characterize the freshness of information updates in latency-critical applications. However, traditional AoI uni-formly penalizes information without considering the actual content or semantic significance of the delivered messages with direct task accuracy oriented goals [3], [4]. Despite their theo-retical elegance, the majority of existing goal-oriented metrics are confined to idealized upper-layer abstractions. To address the latency-critical scenarios, FBL [5] information theory has been introduced to more accurately characterize the inevitable reliability degradation in short-packet communications. While recent works have extensively researched the time-oriented AoI performance under the FBL regime [6], such literature isolates the temporal freshness from the actual semantic-level significance. The performance analysis of goal-oriented semantic metrics in the FBL regime remains in its infancy. Moreover, existing studies overwhelmingly isolate physical blocklength allocation from semantic precision and semantic computing delay [7], completely ignoring the dynamic inter-play between FBL-induced packet loss and computing-induced semantic penalty. Considering end-to-end AoI, deploying large AI models at the network edge for semantic feature extraction inevitably incurs substantial computing latency. To deal with comput-ing latency and transmission latency, model compression techniques [8] have become indispensable to enable real-time semantic communication. Specifically, dynamic mixed-precision quantization allows the system to flexibly compress high-precision semantic information into discrete packets of variable sizes [9]. However, existing compression schemes are predominantly designed for inference and are rarely co-optimized with physical-layer transmission mechanisms [10]. More critically, even when adaptive schemes are considered, existing studies overlook the necessity of incorporating the dynamic quantization process, along with its resulting semantic accuracy degradation and end-to-end time efficiency, into the system’s objective function. Motivated by these challenges, we propose a semantic communication system co-designed for semantic compression and adaptive resource allocation. By leveraging a pretrained foundation model, we focus on the dynamic block-wise mixed-precision quantization (MPQ) strategy at the computing stage. Furthermore, to ensure continuous and fresh semantic updates, we develop a co-designed resource scheduler that jointly optimizes the semantic quantization precision and the physical blocklength in FBL regime. The contributions of this work can be summarized as follows:  
+
+> •
+
+Split-inference semantic framework with block-wise adaptive MPQ : We propose a semantic cross-layer archi-tecture that seamlessly integrates the zero-shot generaliza-tion of the foundation model [11] with edge computing. By introducing a block-wise MPQ strategy, our frame-
+
+> arXiv:2606.31303v1 [eess.SP] 30 Jun 2026
+
+work dynamically compresses high-dimensional semantic features, thereby enabling significant adaptation to wire-less channel conditions without the prohibitive overhead of domain-specific retraining.  
+
+> •
+
+Novel QSAoI metric in semantic communications : To capture the effective freshness of semantic information in latency-constrained short-packet semantic communi-cation, we propose a novel quantized semantic Age of Information (QSAoI). This metric analytically couples information freshness with semantic fidelity under FBL constraints.  
+
+> •
+
+Low-complexity co-designed QSAoI minimization : To solve the complex QSAoI minimization problem, we de-velop a highly efficient algorithm that jointly determines the quantization precision and physical resource alloca-tion utilizing fixpoint inspection. Extensive simulations demonstrate that our strategy significantly outperforms baselines by executing a dynamic semantic-level transi-tion, scaling from basic semantics at low SNRs to high-resolution semantics under favorable channels. The remaining sections are organized as follows. In Sec-tion II, we state the system framework. Section III presents the proposed feature compression strategy and the QSAoI minimization algorithm, followed by extensive performance evaluations in Section IV and conclusion in Section V. II. S EMANTIC COMMUNICATION FRAMEWORK 
+
+In this work, we investigate a cognitive task-oriented seman-tic communication system as shown in Fig. 1, which comprises a resource-constrained edge device (transmitter) and an edge server (receiver). Constrained by the limited computational capacities typically in mission-critical applications like smart factories, we adopt a split-inference paradigm where the edge device acts exclusively as a visual feature extractor utilizing a pre-trained Contrastive Language-Image Pretraining (CLIP) foundation model. Specifically, the edge device operates exclu-sively as a feature extractor to generate continuous semantic embeddings. To alleviate bandwidth limitations, these embed-dings are subsequently dynamically quantized and transmitted over a fading channel to the edge server, which executes the computationally and memory intensive task inference. To rigorously orchestrate this cross-layer process, we introduce the QSAoI metric as our core objective. Driven by this metric, the system couples semantic utility precision with physical transmission reliability and delay. 
+
+A. Semantic Encoder 
+
+The edge device comprises a camera and a semantic en-coder, which consists of a transformer-based CLIP image encoder [12]. Specifically, a captured image I ∈ RH×W ×C
+
+is first resized and normalized, and then input to the image encoder. The output of this encoder is a feature of vision embedding, which we denote by 
+
+Fvis = Eω (I), (1) where Fvis ∈ RK , and Eω (·) indicates the feature extractor network with learnable parameters ω that would be applicable  
+
+> Fig. 1. System architecture for foundation model-based semantic communi-cations.
+
+to various data leveraging the inherent generalization capabil-ities of the foundation model. Although this 512-dimensional 32-bit floating point (FP32) output high-level semantic feature ( 1.6 × 10 4) is significantly smaller than the raw image, its volume remains prohibitive for latency-constrained semantic communication. In this way, we introduce an adaptive block-wise mixed-precision semantic quantizer followed by the image encoder. This adaptive quan-tizer assigns each block of the output embedding from a set of ultra-low bit choices of {1, 2, 3} in a hardware-friendly scalar quantization manner. The proposed adaptive block-wise quantizer can be denoted as 
+
+Fq,i = Q(Fvis ), (2) where Q(·) denotes quantization with non-learnable factors, and i indexes the blocks in the output high-level embedding. 
+
+B. Wireless Channel Model 
+
+To satisfy the stringent end-to-end latency requirements, we model the wireless transmission in the FBL regime for short-packet digital communications. Accordingly, the trans-mission latency is determined by mT s, where the blocklength 
+
+m represents the number of transmitted symbols, and the symbol duration Ts is reciprocal to the system bandwidth 
+
+B. The computational latency is bounded by a constant τp,comprising the semantic encoding, compression, and decoding processes. At the start of each coherence time, a pilot yields estimated channel state information (CSI) h. The estimation error is defined as ˜h. By treating the CSI estimation error as interference, the effective signal-to-noise ratio (SNR) is 
+
+γ(h) = |h|2P
+
+|˜h|2P + N0
+
+, (3) where P is the transmit power and N0 is the noise power. Based on this effective SNR, the determination of quantization strategy and resource scheduling is conducted. Furthermore, for a single transmission over wireless communication with SNR γ, blocklength m and packet size D, the decoding error probability can be tightly denoted as [5] 
+
+ε(m, γ, D ) = Q
+
+r mV (γ)
+
+
+
+C(γ) − Dm
+
+ 
+
+, (4) where V (γ) = (1 − 1(1+ γ)2 )(log 2 e)2 is the wireless channel dispersion, C(γ) = log 2 (1 + γ) is the Shannon capacity, and 
+
+Q(x) = 1√2π
+
+R ∞ 
+
+> x
+
+exp( − t2 
+
+> 2
+
+)d t represents the complementary Gaussian cumulative distribution function. C. Semantic Decoder 
+
+On the edge server (receiver) side, the received data F ′
+
+> q,i
+
+is dequantized to FP32 for the following computation. The dequantization and reconstruction can be denoted as 
+
+Fv = Q−1(F ′
+
+> q,i
+
+), (5) where Q−1(·) denotes dequantization. Then Fv is input into the similarity match, where a pre-computed textual embedding database is utilized. This comprehensive storage of semantic labels facilitates direct inference on unseen objects without any task-specific retraining. III. E FFICIENT BLOCK -W ISE BIT DETERMINATION AND 
+
+QSA OI M INIMIZATION 
+
+A. Block-Wise MPQ Bit Determination of Semantics 
+
+To efficiently compress the continuous semantic embeddings extracted by the visual encoder, we introduce a block-wise mixed-precision quantization (MPQ) strategy. We partition the high-dimensional semantic embedding into N distinct blocks, denoted by the set {f1, f 2, . . . , f N }. For each block, the system dynamically assigns a specific quantization precision selected from a predefined candidate set L = {d1, d 2, . . . , d J }.The ultimate objective of this design is to minimize the quantization distortion. The system must minimize the total feature reconstruction error while strictly satisfying the dy-namic payload constraint imposed by the overarching cross-layer scheduler. Consequently, we formulate this block-wise bit allocation problem as follows: 
+
+min 
+
+> x
+> N
+
+X
+
+> i=1
+> J
+
+X
+
+> j=1
+
+xi,j ∥fi − ˆfi,j ∥22 (6) s.t. 
+
+> J
+
+X
+
+> j=1
+
+xi,j = 1 , ∀i ∈ { 1, 2, . . . , N }, (6a) 
+
+> N
+
+X
+
+> i=1
+> J
+
+X
+
+> j=1
+
+xi,j dj ≤ D, (6b) 
+
+xi,j ∈ { 0, 1}, ∀i ∈ { 1, . . . , N }, ∀j ∈ { 1, . . . , J }, (6c) where x denotes the decision matrix collecting all binary variables xi,j ∈ {0, 1}, xi,j = 1 indicates that the i-th semantic block fi in FP32 is quantized using the j-th pre-cision dj , and ∥fi − ˆfi,j ∥22 represents the squared Euclidean distance quantifying the information loss of the i-th block under precision dj . The first constraint ensures that exactly one precision level is assigned to each individual block. The second constraint fundamentally guarantees that the total aggregated bits across all blocks do not exceed the discrete payload budget 
+
+D, which is also the package size in the problem (4) and strictly dictated by the time-aware metric evaluation. To satisfy strictly low-latency network, we pre-compute the optimal block-wise bit allocations for various bit budgets 
+
+D offline. These allocation profiles, alongside quantization parameters, are stored within a shared semantic knowledge base at both the transmitter and receiver. Ultimately, this mapping between the allocated bit budget D determined by quantized bits of features and the corresponding task accu-racy formally establishes the semantic utility function A(D),explicitly characterizing the fundamental trade-off between semantic precision and transmission payload size. 
+
+B. Joint Optimization for QSAoI 
+
+The temporal metrics fail to recognize that rapidly delivered features remain invalid if their semantic utility significantly degrades the task inference accuracy. To rigorously orchestrate the communication and computing resources in semantic com-munication, we formally introduce the QSAoI metric, which jointly evaluates latency and semantic utility. The total semantic update latency comprises the physical transmission delay mT s and the processing overhead τp. Over a Rayleigh fading channel, the average decoding success probability in the FBL regime is given by ¯Sp(m) = 1 −R 
+
+> h
+
+ε(m, γ (h), D )p(h)dh , where p(h) is the probability density function of h. By using the semantic utility function A(D)
+
+defined in the last subsection, we orchestrate the cross-layer parameters to formulate the effective semantic success proba-bility as Seff = A(D) ¯Sp(m). Under a zero-wait status gener-ation policy, the number of transmission attempts required to achieve a semantically successful update follows a geometric distribution with mean 1/S eff . The expected inter-update time is consequently mT s+τp 
+
+> Seff
+
+. By geometrically evaluating the area under the sawtooth age trajectory [4], the expected QSAoI is derived as 12 (mT s + τp) + mT s+τp 
+
+> Seff
+
+. Consequently, the joint optimization problem to minimize the expected QSAoI is formulated as follows: 
+
+min 
+
+> m,D
+
+12 (mT s + τp) + mT s + τp
+
+A(D)  1 − R 
+
+> h
+
+ε(m, γ (h), D )p(h)dh  ,
+
+(7) s.t. m > 0, (7a) 
+
+D ∈ D , (7b) where D = {D1, D 2, . . . , D G} denotes the finite set of pos-sible semantic payload sizes. This overall objective function reveals that degraded semantic precision or severe channel im-pairments will significantly amplify the expected age penalty. However, this problem is non-convex due to the discrete feasible set D and non-linear fractional objective involving an integral of the Q-function. To tackle this non-convex problem, we develop an efficient iterative algorithm based on bisection search. By introducing a continuous auxiliary variable μ to represent the objective value, we isolate the physical blocklength variable m and mathematically transform the objective equality to explicitly reveal the dynamic boundary condition: 
+
+m = g(m, μ, D ) ≜ 1
+
+Ts
+
+"
+
+μ 
+
+> 12
+
++ 1
+
+> A(D) ¯Sp(m)
+
+− τp
+
+#
+
+. (8) We propose Algorithm 1 to efficiently solve this problem via integrating an outer bisection search with an inner fixpoint inspection. The system initializes the boundaries μl and μu,alongside a candidate set of D denoted by Φ0. By evaluating the trial threshold μth in each loop, the algorithm systemati-Algorithm 1 Algorithm for Efficient QSAoI Minimization 
+
+Initialize: the lower bound μ(1)  
+
+> l
+
+and upper bound μ(1)  
+
+> u
+
+for the optimal QSAoI, and the full set Φ0 for all possible payloads. 
+
+repeat 
+
+μth ← (μl + μu)/2, and let Φ1 ← Φ0
+
+for each D ∈ Φ0 do if the trial threshold μth is infeasible (i.e., ∄m > 0 s.t. m =
+
+g(m, μ th , D )) then 
+
+Remove D from Φ1
+
+end if end for if Φ1 contains more than one element then 
+
+μu ← μth , Φ0 ← Φ1
+
+else if Φ1 is empty then 
+
+μl ← μth 
+
+else Break loop % Exactly one optimal candidate remains 
+
+end if until convergence 
+
+Output: Optimal D∗ ∈ Φ1 and blocklength m∗ satisfying m∗ =
+
+g(m∗, μ th , D ∗).
+
+cally prunes μth -unachievable candidates D. Since m is deeply embedded within the complex integral of error probability, we deploy an inner fixpoint inspection [13]. For every candidate 
+
+D in the active set Φ0, the fixpoint check solves the non-linear equation m = g(m, μ th , D ) to explicitly verify its subproblem feasibility. Subsequently, the search bounds are dynamically updated based on the number of surviving candidates in the updated set Φ1. If multiple feasible D remain, the system tightens the upper bound by setting μu = μth to further press the minimization potential. Conversely, an empty active set prompts the system to conservatively relax the lower bound by setting μl = μth . This rigorous elimination process systematically converges until the unique optimal D∗ and its corresponding optimal blocklength m∗ are jointly identified. Let ϵ denote the tolerance for the objective value. The outer bisection loop requires exactly O(log 2(( μu − μl)/ϵ )) 
+
+iterations to converge. Within each search step, the system evaluates at most G candidate quantization strategies. For each specific candidate, the inner fixpoint inspection demands 
+
+O(1) complexity for resolving the one-dimensional variable 
+
+m, according to [13]. Consequently, the overall computational complexity is strictly bounded by O(G log 2(( μu − μl)/ϵ )) .Given the highly limited dimension of the discrete candidate set and the rapid convergence of the inner equation, this lightweight processing overhead perfectly aligns with the stringent ultra-low latency requirements of edge devices. IV. N UMERICAL RESULTS 
+
+A. Simulation Details 
+
+To rigorously validate the superiority of the proposed task-oriented semantic communication system, we select the CI-FAR100 and the pretrained foundation model CLIP. The over-all evaluation metric is the QSAoI we proposed, which em-phasizes that degraded semantic features amplify the penalty, as they are inapplicable even when delivered with ultra-low latency. Based on pretrained CLIP, the edge server pre-10 5 0 5 10 15 20         
+
+> SNR (dB)
+> 10 2
+> 10 1
+> Optimal QSAoI  * (s) [Log Scale]
+> QSAoI Performance Comparison
+> Fixed D=1536 (3-bit Uniform)
+> Fixed D=1024 (2-bit Uniform)
+> Fixed D=512 (1-bit Uniform)
+> Fixed m=4000
+> Fixed m=2000
+> Proposed Adaptive Strategy
+> Fig. 2. QSAoI comparison between the proposed adaptive strategy and uniform methods under varying SNRs.
+
+computes the textual category embeddings to facilitate swift online similarity matching. Subsequently, an offline calibration process evaluates the visual embeddings on a small calibration set (10%) for quantization. Then, the system systematically solves the problem (6) to determine and cache the optimal block-wise adaptive MPQ strategies across various discrete payload budgets. We reasonably set the computing process time τp as 5 ms. During the online execution phase, the dynamically quantized semantic payload is transmitted over a Rayleigh fading channel with an available bandwidth B of 100kHz, and an SNR systematically ranging from -10 to 20 dB. This limited bandwidth is adopted to emulate a typical subchannel allocated to an individual edge device in a massive connected smart factory. 
+
+B. Result Analysis 
+
+Firstly, we implement the QSAoI performance comparison as illustrated in Fig. 2, where the optimal QSAoI versus the SNR ratio are presented. In order to validate the effectiveness of our proposed adaptive strategy, we compare it against two baselines, i.e., uniform precision (Fixed D) and uniform blocklength (Fixed m). As expected, QSAoI decreases as chan-nel conditions improve. In the low-SNR range, the channel necessitates conservative semantic payloads. The aggressive configurations, such as the 3-bit baseline (Fixed D = 1536 )and the fixed blocklength design (Fixed m = 2000 ), experi-ence severe performance degradation. In the high-SNR range, sufficient channel capacity allows for transmitting richer fea-tures. In stark contrast, fixed-precision baselines stagnate at a high QSAoI floor, while fixed-blocklength strategies inevitably suffer from extreme latency waste. Specifically, our proposed method outperforms other baselines across the entire spectrum, presenting intelligent and flexible adjustments on the discrete quantization bits and the physical blocklength according to the instantaneous channel variations. Then, we consider the influence of varying process time τp
+
+and bandwidth B. As demonstrated in Fig. 3, reducing the edge computing latency τp from 5 ms to 1 ms consistently lowers the QSAoI across the entire channel spectrum, thereby high-0.0 2.5 5.0 7.5 10.0 12.5 15.0 17.5 20.0              
+
+> SNR (dB)
+> 0.01
+> 0.02
+> 0.03
+> 0.04
+> 0.05
+> Optimal QSAoI  * (s)
+> Var_ p_B:p=5ms, B=100kHz
+> Var_ p:p=2ms, B=100kHz
+> Var_ p:p=1ms, B=100kHz
+> Var_ B:p=5ms, B=50kHz
+> Var_ B:p=5ms, B=500kHz
+
+Fig. 3. Comparison of QSAoI versus SNR under varying process time τp
+
+and bandwidth B.0.0 2.5 5.0 7.5 10.0 12.5 15.0 17.5 20.0          
+
+> SNR (dB)
+> 600
+> 800
+> 1000
+> 1200
+> 1400
+> Optimal Packet Size  D * (bits)
+> Var_ p:p=5ms, B=100kHz
+> Var_ p:p=2ms, B=100kHz
+> Var_ p:p=1ms, B=100kHz
+
+Fig. 4. Optimal payload D∗ versus SNR under varying process time τp and bandwidth B.
+
+lighting the importance of reducing processing latency. More-over, under a constrained bandwidth of 50kHz, the optimal QSAoI is sensitive to the SNR, deteriorating in the low SNR regime. Conversely, when the system is allocated an abundant bandwidth of 500 kHz, the performance curve becomes re-markably flat and highly robust against channel fluctuations. This physical phenomenon indicates that sufficient physical resources effectively eliminate the communication bottleneck, causing the overall system to be predominantly bounded by the inherent τp.To unveil the underlying mechanism of the proposed joint scheduling algorithm, Fig. 4 explicitly visualizes the optimally allocated discrete packet size D∗ versus SNR. As expected, the optimal payload exhibits discrete step transitions, reflecting the predefined mixed-precision candidate set governed by our formulation. Crucially, this visualization reveals an intelligent scheduling mechanism across the semantic layer and physical layer regarding the computing latency τp. When the terminal computing delay is dominant, the system aggressively selects a significantly larger semantic payload. Conversely, when the edge server possesses powerful computational capabili-ties with low τp, the dynamic algorithm consistently favors much smaller payloads across a significantly wider channel spectrum. This alternative strategy rigorously minimizes the physical transmission delay to maintain an ultra-fast semantic update cycle. Ultimately, this adaptive quantization trajectory proves that our algorithm effectively forces the system to dynamically shift its optimal QSAoI design according to the heterogeneous processing capabilities. V. C ONCLUSION 
+
+This paper investigated a time-aware co-designed seman-tic communication system. We introduced the novel QSAoI metric, which comprehensively considers the computing and communication delay, and the semantic task accuracy. To deliver continuous and fresh semantic updates, we introduced a dynamic block-wise mixed-precision quantization strategy employed on the edge device, flexibly adjusting the discrete semantic payload. Moreover, we developed an efficient joint optimization algorithm to adaptively determine the seman-tic quantization precision and physical resource scheduling. Extensive empirical simulations validated that our proposed cross-layer design is significantly effective and efficient. This rigorous analytical framework establishes a robust theoretical foundation for future extensions into complex multi-user se-mantic networks. REFERENCES [1] C. Chaccour, W. Saad, M. Debbah, and et al., “Less Data, More Knowl-edge: Building Next Generation Semantic Communication Networks,” 
+
+IEEE Commun. Surv. & Tut. , vol. 27, no. 1, pp. 37–76, 2024. [2] Y. Li, F. Zhou, L. Yuan, and et al., “Cognitive Semantic Communication: A New Communication Paradigm for 6G,” IEEE Commun. Mag. , vol. 63, no. 6, pp. 122–129, 2025. [3] Y. Sun, E. Uysal-Biyikoglu, R. D. Yates, and et al., “Update or Wait: How to Keep Your Data Fresh,” IEEE Trans. on Inf. Theory , vol. 63, no. 11, pp. 7492–7508, 2017. [4] B. Yu, Y. Cai, D. Wu, and Z. Xiang, “Average Age of Information in Short Packet based Machine Type Communication,” IEEE Trans. on Veh. Technol. , vol. 69, no. 9, pp. 10 306–10 319, 2020. [5] Y. Polyanskiy, H. V. Poor, and S. Verdú, “Channel Coding Rate in the Finite Blocklength Regime,” IEEE Trans. Inf. Theory , vol. 56, no. 5, pp. 2307–2359, 2010. [6] D. Zhang, M. Sun, L. Song, and et al., “Information Freshness and Timeliness Analysis in the Finite Blocklength Regime for Mission-Critical Applications,” IEEE Trans. on Commun. , 2025. [7] S. Meng, S. Wu, A. Li, and Q. Zhang, “Toward Goal-Oriented Semantic Communications: AoII Analysis of Coded Status Update System Under FBL Regime,” IEEE J. on Sel. Areas in Inf. Theory , vol. 4, pp. 718–733, 2023. [8] R. Krishnamoorthi, “Quantizing Deep Convolutional Networks for Effi-cient Inference: A Whitepaper,” arXiv preprint arXiv:1806.08342 , 2018. [9] H. Zhang, Y. Hu, X. Yuan, and A. Schmeink, “Latency-Driven Joint Feature Extraction and Resource Allocation for Multi-Task Multi-Access Semantic Communications,” IEEE J. on Sel. Areas in Commun. , vol. 43, no. 12, pp. 3984–3999, 2025. [10] J. Park, Y. Oh, Y. Kim, and Y.-S. Jeon, “Vision Transformer-Aided Importance-Aware Quantization for Digital Semantic Communications,” in ICC 2025-IEEE Int. Conf. on Commun. IEEE, 2025, pp. 1694–1699. [11] M. Awais, M. Naseer, S. Khan, and et al., “Foundation Models Defining a New Era in Vision: A Survey and Outlook,” IEEE Trans. on Pattern Analysis and Mach. Intelligence , vol. 47, no. 4, pp. 2245–2264, 2025. [12] A. Radford, J. W. Kim, C. Hallacy, and et al., “Learning Transferable Visual Models from Natural Language Supervision,” in Inte. conf. on mach. learning . PmLR, 2021, pp. 8748–8763. [13] X. Yuan, N. Guo, Y. Hu, R. Schober, and A. Schmeink, “Optimal Antenna Configuration Filtering and Joint Power Control in Fluid Antenna Multiple Access Networks,” IEEE J. on Sel. Areas in Commun. ,vol. 44, pp. 1227–1242, 2026.

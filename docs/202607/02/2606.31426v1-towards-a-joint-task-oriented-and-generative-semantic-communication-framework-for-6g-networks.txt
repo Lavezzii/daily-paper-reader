@@ -1,0 +1,538 @@
+Title: Towards a Joint Task-Oriented and Generative Semantic Communication Framework for 6G Networks
+
+URL Source: https://arxiv.org/pdf/2606.31426v1
+
+Published Time: Wed, 01 Jul 2026 00:53:36 GMT
+
+Number of Pages: 11
+
+Markdown Content:
+# Towards a Joint Task-Oriented and Generative Semantic Communication Framework for 6G Networks 
+
+Soheyb Ribouh ∗, Phil Polo Ditsia Di Ngoma ∗,
+
+∗Univ Rouen Normandie, LITIS Laboratory UR 4108, F-76000 Rouen, France 
+
+Abstract —Semantic Communication (SC) has emerged as a key enabler for 6G wireless systems by transmitting task-relevant meaning rather than raw data, thereby significantly reduc-ing bandwidth consumption while preserving communication intent. In this work, we propose an end-to-end OFDM-based semantic communication framework that integrates a semantic encoder–decoder pipeline with a neural receiver operating over a 3GPP vehicular channel. The semantic encoder extracts the underlying meaning of a visual scene by transforming it into a graph-based representation consisting of object-level features and relational structure. At the receiver, the reconstructed scene graph is processed by a spatio-temporal graph neural network (ST-GNN)-based module for collision-risk estimation, enabling task-oriented inference. In parallel, a diffusion-based semantic decoder reconstructs the visual scene from the recovered seman-tics, providing dual functionality: safety prediction and image reconstruction. The proposed framework is evaluated in a MIMO configuration under varying SNR conditions. Experimental re-sults show that it achieves up to 99 .1% data compression rel-ative to pixel-domain transmission, outperforming conventional compression-based methods (JPEG and HEVC) while preserving downstream inference performance. Furthermore, the diffusion-based reconstruction attains significantly lower fr´ echet inception distance (FID) scores than existing semantic communication approaches, reflecting superior semantic and perceptual fidelity. 
+
+Index Terms —Semantic communication, 6G, vehicular net-works, task-oriented communication, Autonomous Vehicle. 
+
+I. I NTRODUCTION 
+
+The next generation of wireless communication (6G) is expected to pursue the vision of achieving global connectivity 
+
+[1]. This vision is driven by the growing need to provide seam-less and ubiquitous network access, extending high-speed and reliable connectivity to underserved regions while ensuring continuous service without interruption for emerging appli-cations that demand persistent access to communication net-works [2]. Beyond bridging geographical and digital branches, 6G is also envisioned to enable mission-critical verticals such as the automotive industry. In particular, connected automated vehicles (CAVs) represent a transformative application, where vehicles and drivers progressively transition from individual decision-making to fully collaborative autonomy [3]. This evolution will enable advanced use cases such as cooperative 
+
+The source code is publicly available at: https://github.com/philpolo/rsgen. 
+
+perception and real-time traffic monitoring, while enhancing safety and efficiency in intelligent transportation systems (ITS) [4]. However, enabling such collaborative and safety-critical technology requires the transmission of massive amounts of sensor data. Sharing this high-volume information can result in significant bandwidth consumption, latency issues, and redundant data exchange [5]. To address these limitations, Semantic communication (SC 
+
+) has emerged as a promising paradigm. SC leverages artificial intelligence (AI) techniques to extract and transmit only the task-relevant, meaningful information [6]. This will improves bandwidth efficiency, offer an ultra-high data rate, and frees network resources for other users and services [7]. This paradigm shift aligns closely with the strategic standardization direction of the 3rd generation partnership project (3GPP) consortium, which has identified AI-driven approaches and semantic communications as integral components of future wireless communication [8]. Early SC approaches for visual data primarily relied on latent or feature-based semantics, where Lokumarambage et al. [9] proposed an end-to-end image transmission frame-work using semantic segmentation and a GAN-based decoder, demonstrating substantial bandwidth savings compared to conventional source–channel separation. Similarly, Huang et al. [10] introduced a reinforcement learning-assisted semantic encoder that adaptively controls the semantic rate, improving bitrate efficiency while maintaining recognizability. However, these methods operate on compact visual features rather than structured representations, which limits interpretability and downstream task reasoning. Beyond the visual domain, SC has been extended to other modalities such as audio. Tong et al. [11] developed afederated learning-based semantic transmission scheme for audio signals to reduce uplink communication overhead in distributed learning systems. Liang et al. [12] further explored semantic-aware synchronization mechanisms for the internet of sound (IoS), showing that higher-level semantic priors can reduce latency and improve temporal coherence in multimodal sensing. These studies illustrate that semantic compression is modality-agnostic, but they do not address scene-level reasoning required for autonomous driving. To improve interpretability and support structured down-
+
+> arXiv:2606.31426v1 [eess.SP] 30 Jun 2026
+
+stream tasks, recent works have adopted graph-based seman-tic representations. Sun et al. [13] introduced GRACE, a scene graph-based semantic communication system for image retrieval tasks, demonstrating greater robustness than pixel-domain transmission. Similarly, Wang et al. [14] proposed an explicit semantic-base architecture to enhance seman-tic reusability for multi-task scenarios. In parallel, knowl-edge graph–driven semantic communication frameworks have shown that incorporating structured prior knowledge enables semantic inference and improves robustness compared to purely latent feature representations [15]. These advances further highlight the potential of structured representations to bridge perception-driven semantics and symbolic reasoning. These systems, however, typically assume idealized channels and do not integrate with a realistic wireless PHY layer. Multi-task semantic communication has also attracted inter-est. Zhang et al. [16] proposed a unified multimodal semantic transmission system capable of jointly supporting multiple perception tasks. While their system highlights the versatility of SC, it does not address vehicular communication con-straints or PHY-layer robustness. In contrast, our approach focuses specifically on graph-based semantics for vehicular safety tasks and integrates them directly into the wireless transmission pipeline. A parallel line of research has begun to investigate gen-erative models for semantic reconstruction. Guo et al. [17] demonstrated the potential of diffusion models to improve image reconstruction quality in SC by operating beyond latent-space coding. However, their method does not incorporate structured semantics such as scene graphs, and still assumes simplified channel conditions. In addition, diffusion-based SC has not yet been explored in combination with semantic reasoning tasks such as collision prediction. From a physical-layer perspective, Liu et al. [18] proposed an OFDM-based digital semantic communication system with semantic importance awareness, where subcarrier and bit allocation are optimized according to the task relevance of semantic features. Their results demonstrate that importance-aware transmission significantly improves robustness to chan-nel impairments compared to conventional communication schemes. However, these systems still rely on feature-level se-mantic representations and do not support generative semantic reconstruction. In recent work Diao et al. [19] propose a framework that bridges task-oriented and reconstruction-oriented communica-tion paradigms for edge intelligence. The authors introduce an information reshaping mechanism combined with joint source channel coding to align inference performance with signal reconstruction objectives. However, their work lacks consideration of a realistic wireless transmission setting based on standardized 3GPP channel models, and a full PHY-layer communication pipeline is not addressed. In contrast to all prior studies, the framework proposed in this paper jointly addresses (i) structured scene-level seman-tics via scene graphs, (ii) task-oriented reasoning (collision prediction), (iii) high-fidelity semantic reconstruction using graph-conditioned diffusion models, and (iv) full PHY-layer integration over a 3GPP vehicular channel with a neural receiver. To the best of our knowledge, this is the first semantic communication framework that unifies graph-based semantics, generative reconstruction, and realistic MIMO channel mod-eling in a single end-to-end system. In this work, we propose a semantic communication frame-work for MIMO vehicular networks that jointly enables task-oriented inference and semantic image reconstruction over a realistic wireless channel. The main contributions of this paper are summarized as follows:  
+
+> •
+
+We introduce a graph-based semantic communication architecture for autonomous driving that transmits struc-tured scene semantics rather than pixel-domain data. The semantic encoder converts visual scenes into scene graphs capturing object-level features and inter-object re-lationships, while the semantic decoder reconstructs these graphs for downstream processing. The reconstructed semantics are used for both (i) collision-risk prediction via a GCNN–LSTM pipeline and (ii) semantic scene re-construction through a Stable-Diffusion-based generative module.  
+
+> •
+
+We integrate the proposed semantic communication pipeline into a full end-to-end MIMO wireless transmis-sion system equipped with a neural receiver, and eval-uate its performance under a 3GPP-compliant vehicular channel model across a wide range of SNR conditions. This allows us to jointly assess semantic fidelity, task performance, and reconstruction quality under realistic channel impairments. The remainder of this paper is organized as follows. Sec-tion II presents the proposed semantic communication frame-work, including both the semantic and bit-level processing modules. Section III describes the training methodology and experimental setup. Section IV reports performance results and provides a comparative analysis against state-of-the-art approaches. Finally, Section V concludes the paper and out-lines future research directions. II. P ROPOSED FRAMEWORK 
+
+The proposed semantic communication framework is illus-trated in Fig. 1. Unlike conventional communication systems that rely on signal reconstruction prior to task inference, the proposed framework directly operates on structured semantic representations, where task-relevant information is transmitted without requiring full signal reconstruction. This design avoids error propagation from reconstruction to task inference and improves overall system efficiency. The system operates across two levels: 1) Semantic level A graph-based semantic encoder extracts and compresses task-relevant information from the input data into a structured scene graph representation. The scene graph serves as the primary information carrier for collision prediction. At the receiver, a semantic Fig. 1: End-to-end semantic communication framework. The transmitter encodes a scene graph from the input image and transmits it over a wireless channel, while the receiver reconstructs the graph for collision risk prediction and scene understanding. decoder reconstructs this representation, enabling task-oriented inference (collision prediction), while a gener-ative reconstruction module provides an auxiliary visual interpretation of the transmitted semantics through scene generation. 2) Bit level A wireless communication module bridges the semantic encoder and decoder by mapping the com-pressed semantic representation into a bitstream, trans-mitting it over the physical channel, and recovering it at the receiver. By jointly integrating the semantic and bit levels, the framework enables efficient compression, robust transmission, and accurate reconstruction, thereby supporting both task-oriented communication and scene generation. The details of each level and the components included in it are provided in the following subsections. 
+
+A. Semantic level 1) Semantic Encoder : The semantic encoder is a key com-ponent designed to identify the most effective low-dimensional representation of the meaning conveyed by the input image. As outlined in Algorithm 1, the encoder operates through a two-step process as follows: 
+
+a) Scene Graph Extraction : The scene graph extraction process transforms the input image into a structured represen-tation that explicitly captures the relationships among objects in the scene. It proceeds through three main steps: (1) Object detection , which identifies and localizes all entities present in the image; (2) Inverse perspective mapping (IPM) ,which projects detected objects into a bird’s eye view (BEV) coordinate system to obtain spatially consistent positions with respect to the ego frame; and (3) Relationship estimation ,which infers pairwise relations between objects based on their relative spatial configurations and orientations in the BEV space. The result of this process is a structured graph representa-tion 
+
+G = ( V, E, R),
+
+where V denotes the set of detected objects (nodes), E the set of edges representing pairwise connections, and R the set of relation types inferred among them. 
+
+b) Scene Graph Encoding and Compression : The ex-tracted scene graph encodes both the semantic meaning and the structural relationships present in the input image. This representation is expressed through three key components:  
+
+> •
+
+Node feature matrix F, which aggregates the attributes of all detected objects, including geometric properties, appearance features, and class embeddings. This matrix facilitates object-level reasoning and supports feature-based reconstruction. • Adjacency tensor T, which consists of multiple relation-specific adjacency matrices. Each slice of T corresponds to a predefined relation type, where an entry Tij,k = 1 
+
+indicates that nodes i and j share relation rk, and Tij,k =0 otherwise.  
+
+> •
+
+Active relation set R′, which includes only the relation types that are actually present in the current scene. This pruning step ensures compactness and reduces the overall memory footprint of the representation. The final encoded representation of the visual scene is therefore given by 
+
+{T, F, R′},
+
+which jointly preserves the semantic attributes of individual objects, the structural topology of their interactions, and the subset of active relations that define the scene context. The overall process of scene graph extraction and encoding is summarized in Algorithm 1, which outputs the node feature matrix F, the adjacency tensor T, and the active relation set 
+
+R′ as the semantic representation of the visual scene. 
+
+2) Semantic Decoder : As outlined in Algorithm 2, the semantic decoder reverses the process performed by the se-mantic encoder. It reconstructs the original scene graph from the received compact representation by first decompressing the adjacency tensor and then rebuilding the complete relational structure of the scene. This reconstructed graph serves as the input to two parallel functional branches within the decoder:  
+
+> •
+
+Task-oriented branch: The reconstructed graph is fed into a neural network model to perform collision predic-tion.  
+
+> •
+
+Image regeneration branch: The reconstructed graph is converted into a structured textual description, which is used as conditioning input to a Stable Diffusion model to regenerate the transmitted image. The textual representa-tion enables bridging scene graphs and vision–language models, supporting a modular design and avoiding the need to retrain generative models. The image generation module thus serves as an auxiliary component for visu-alization. By integrating both task-oriented inference and semantic image generation, the semantic decoder provides a compre-hensive output that enables efficient communication while preserving semantic fidelity. 
+
+a) Decompression : The decompression stage restores the full adjacency tensor by reintroducing zero matrices corresponding to inactive relations that were pruned dur-ing encoding. Given the received compressed tensor T ∈{0, 1}N ×N ×|R ′| and the active relation set R′ ⊆ R, the decoder initializes an empty tensor bT ∈ {0, 1}N ×N ×|R| .For each active relation rk ∈ R ′, its slice is placed back at the appropriate position corresponding to its global index within the full relation set R, while all missing relations remain zero-filled. This step ensures that the decompressed tensor bT matches the dimensionality of the original encoder representation. 
+
+Algorithm 1 Semantic Encoder  
+
+> 1:
+
+Input: Image I; object detector D; IPM parameters 
+
+{K, E, Hipm }; relation set R = {r1, . . . , r |R| } with pred-icates {πr }; feature extractor φ; confidence threshold τ 
+
+> 2:
+
+Output: Adjacency tensor T ∈ { 0, 1}N ×N ×|R ′|; node feature matrix F ∈ RN ×d; active relation set R′ ⊆ R  
+
+> 3:
+
+(1) Object Detection: 
+
+Detect objects O = {(bi, c i, s i)} ˜Ni=1 ← D (I) and keep detections with si ≥ τ .Define node set V = {v1, . . . , v N } where N = |O| . 
+
+> 4:
+
+(2) BEV Projection: 
+
+For each object vi, compute BEV pose pi = ( xi, y i, θ i)
+
+using {K, E, Hipm }.Set ego/reference pose pego = (0 , 0, 0) in the BEV frame.  
+
+> 5:
+
+(3) Relation Estimation: 
+
+Initialize empty edge set E ← ∅ and adjacency tensor 
+
+T ← 0 ∈ { 0, 1}N ×N ×|R| . 
+
+> 6:
+
+for k = 1 to |R| do ▷ Each relation type rk 
+
+> 7:
+
+for all ordered pairs (i, j ), i ̸ = j do  
+
+> 8:
+
+Compute relative descriptor ∆ij = [ xj − xi, y j −
+
+yi, θ j − θi, dist ij , bearing ij ] 
+
+> 9:
+
+if πrk (pego , pi, pj , ∆ij ) = true then  
+
+> 10:
+
+T[i, j, k ] ← 1; add edge (vi, v j , r k) to E 
+
+> 11:
+
+end if  
+
+> 12:
+
+end for  
+
+> 13:
+
+end for  
+
+> 14:
+
+(4) Scene Graph Assembly: 
+
+Construct the scene graph G = ( V, E, R) representing all detected entities and relations.  
+
+> 15:
+
+(5) Scene Graph Encoding and Compression:  
+
+> 16:
+
+for each node vi ∈ V do  
+
+> 17:
+
+Compute geometric attributes gi = [ xi, y i, w i, h i, θ i] 
+
+> 18:
+
+Extract appearance embedding ai ← φ(I↾bi ) 
+
+> 19:
+
+Obtain class embedding ei ← Embed (ci) 
+
+> 20:
+
+Assemble node feature fi ← concat (gi, ai, ei) 
+
+> 21:
+
+end for  
+
+> 22:
+
+Stack features into F = [ f1; . . . ; fN ] ∈ RN ×d. 
+
+> 23:
+
+Prune inactive relations: K = {k : P 
+
+> i,j
+
+T[i, j, k ] > 0};set R′ = {rk}k∈K and compress T to |R ′| slices.  
+
+> 24:
+
+Return: {T, F, R′}
+
+b) Scene Graph Reconstruction : After decompression, the decoder reconstructs the scene graph by iterating over all relation types rm ∈ R and identifying active links between node pairs. For each pair (vi, v j ) such that bT[i, j, m ] = 1 ,a relational triplet (vi, r m, v j ) is added to the edge set bE.The node set V = {v1, . . . , v N } is obtained directly from the received feature matrix F, and the final reconstructed scene graph is given by 
+
+G = ( V, bE, R),Algorithm 2 Semantic Decoder  
+
+> 1:
+
+Input: Compressed adjacency tensor T ∈{0, 1}N ×N ×|R ′|; node feature matrix F ∈ RN ×d;active relation set R′ ⊆ R ; 
+
+> 2:
+
+Output: Reconstructed scene graph G = ( V, bE, R) 
+
+> 3:
+
+(1) Decompression (Zero-Fill Missing Relations): 
+
+Initialize bT ← 0 ∈ { 0, 1}N ×N ×|R|  
+
+> 4:
+
+for k = 1 to |R ′| do  
+
+> 5:
+
+Let rk ∈ R ′ and m ← idx( rk) ▷ global index in R 
+
+> 6:
+
+bT[: , :, m ] ← T[: , :, k ] 
+
+> 7:
+
+end for  
+
+> 8:
+
+(2) Graph Reconstruction: 
+
+Define node set V = {v1, . . . , v N } from rows of F
+
+Initialize bE ← ∅  
+
+> 9:
+
+for m = 1 to |R| do  
+
+> 10:
+
+for all ordered pairs (i, j ), i ̸ = j do  
+
+> 11:
+
+if bT[i, j, m ] = 1 then  
+
+> 12:
+
+Add edge (vi, v j , r m) to bE 
+
+> 13:
+
+end if  
+
+> 14:
+
+end for  
+
+> 15:
+
+end for  
+
+> 16:
+
+Construct G = ( V, bE, R) 
+
+> 17:
+
+Return: G
+
+where bE denotes the set of recovered edges and R the complete relation set. Once the scene graph G has been reconstructed, the system proceeds to the task-oriented inference stage. As described above, it comprises two parallel branches: (1) an image regeneration module that reconstructs the visual scene, and (2) a collision prediction module that estimates the risk level based on the decoded semantic relations. 
+
+3) Image Reconstruction : The reconstructed scene graph 
+
+G is used to regenerate the visual scene through a two-step process: (i) converting the decoded scene graph into a sequential textual description, and (ii) using this textual sequence as input to a Stable Diffusion model for image synthesis. Each step is detailed below. 
+
+a) Scene Graph Description : The reconstructed graph G
+
+is first converted into a textual representation that captures the semantics of all recovered relations. This is achieved by con-structing descriptive sentences from the triplets (vi, r m, v j ),where vi, v j ∈ V are nodes and rm ∈ R denotes the relation connecting them. Here, the initial node vi acts as the subject, the relation rm serves as the predicate, and the final node vj
+
+functions as the direct object All generated sentences are con-catenated to form a coherent textual description summarizing the relational structure and object interactions encoded in G.
+
+b) Image Generation : The textual description derived from G is then processed by the Stable Diffusion model [20], which synthesizes an image consistent with the described scene. Stable Diffusion operates through a two-phase process: a forward diffusion phase, where Gaussian noise is progres-sively added to an image until complete corruption, followed by a reverse denoising phase that iteratively reconstructs the image from noise. The denoising process is conditioned on a text embedding situated in a joint text–image latent space, ensuring semantic alignment between the generated image and the input description. It can also be further guided by auxiliary conditioning inputs such as semantic maps or sketches that refine the visual layout. Unlike conventional diffusion models that operate directly in the pixel space, Stable Diffusion per-forms all operations in a compressed latent space, significantly reducing computational requirements while maintaining high fidelity visual reconstruction. 
+
+4) Collision Prediction : The collision prediction module uses the reconstructed scene graph G to estimate the likelihood of collisions over time. To effectively interpret the structural and relational information encoded in G, we employ a spatio-temporal graph neural network (ST-GNN) architecture. The spatial component is implemented using graph convolutional networks (GCNs), combined with graph pooling and readout layers to capture both node- and edge-level dependencies. The resulting output, denoted by htG, represents a compact embed-ding that summarizes the semantic and spatial configuration of the scene at time t.To model temporal dynamics, the sequence of scene em-beddings {hG1 , h G2 , . . . , h GT } is processed by a recurrent temporal network. Specifically, a long short-term memory (LSTM) architecture aggregates the current spatial represen-tation hGt with contextual information from previous frames through its hidden and cell states (pt−1, c t−1), producing an updated hidden representation pt. This hidden state captures the spatiotemporal evolution of the driving environment and is subsequently passed to a multi-layer perceptron (MLP) for collision likelihood estimation. The MLP output passes through a final activation layer, yielding two confidence scores: ˆy0 corresponding to the prob-ability of a safe situation, and ˆy1 representing the probability of collision risk. The final decision for each frame is obtained through maximum-likelihood classification: 
+
+ˆYt =
+
+(
+
+1, if ˆy1 ≥ ˆy0 (Collision Risk )0, otherwise (Safe ) (1) By combining spatial reasoning via GNNs with temporal rea-soning through LSTMs, this hierarchical model enables robust and context-aware prediction of collision risks in dynamic driving environments. 
+
+B. Bit Level 
+
+At this stage, the input to the bit-level processing chain is the semantic representation of the visual scene, as detailed in Section II-A1. It is given by {T, F, R′}.These semantic structures are serialized and quantized into a binary sequence b, compatible with the channel coding stage. 
+
+1) LDPC Encoding : The binary stream b is processed by a low-density parity-check (LDPC) encoder that adds parity bits to enhance robustness against channel impairments. The encoded codeword is defined as 
+
+c = GLDPC b, (2) where GLDPC is the LDPC generator matrix. 
+
+2) Modulation : The encoded bits are subsequently mapped to complex baseband symbols using quadrature am-plitude modulation (M-QAM): 
+
+xnF ,n S ,n T = M(cnF ,n S ,n T ) = anF ,n S ,n T +j b nF ,n S ,n T ∈ X M ,
+
+(3) where M(·) is the modulation mapping function, 
+
+anF ,n S ,n T , b nF ,n S ,n T ∈ R are the in-phase (I) and quadrature (Q) components, XM is the M -QAM constellation alphabet, NF is the number of subcarriers, NS is the number of OFDM symbols per slot, NT is the number of transmit antennas, and (k, ℓ, n T ) with k ∈ {1, . . . , N F },
+
+ℓ ∈ { 1, . . . , N S }, nT ∈ { 1, . . . , N T } index subcarrier, OFDM symbol, and spatial layer respectively. 
+
+3) OFDM Resource Grid : For each spatial layer nT , the modulated symbols are arranged into the OFDM resource grid (RG) as follows: 
+
+XnT =
+
+
+
+x1,1,n T · · · x1,N S ,n T
+
+... . . . ...
+
+xN, 1,n T · · · xN,N S ,n T
+
+ ∈ CN ×NS , (4) Where rows correspond to subcarriers k and columns to OFDM symbols ℓ.
+
+4) OFDM Signal Generation : The modulated symbols are organized into the OFDM resource grid together with pilot symbols for channel estimation. The time-domain OFDM signal for spatial layer nT and OFDM symbol ℓ is produced by the NF -point inverse fast Fourier transform (IFFT): 
+
+xnT ,ℓ (l) = 1
+
+√NFNF −1X
+
+> k=0
+
+xk,ℓ,n T e j2πkl/N F , l = 0 , . . . , N F −1,
+
+(5) followed by the insertion of a cyclic prefix (CP) of length 
+
+NCP chosen to exceed the maximum channel delay spread, ensuring inter-symbol-interference-free reception. The received signal vector at subcarrier k and OFDM symbol ℓ is: 
+
+yk,ℓ = Hk,ℓ xk,ℓ + wk,ℓ , (6) where xk,ℓ = [xk,ℓ, 1, . . . , x k,ℓ,N T ]T ∈ CNT is the vector of transmitted symbols across NT layers, Hk,ℓ ∈ CNR×NT
+
+is the MIMO channel matrix ( NR denoting the number of receive antennas), wk,ℓ ∼ N (0, σ 2INR ) is the additive white Gaussian noise (AWGN) with per-antenna power σ2, and 
+
+yk,ℓ ∈ CNR is the received signal vector. 
+
+5) Neural Demaper: Joint CE, Equalization, and Demap-ping :a) Bootstrap LS Channel Estimate: A per-pilot least-squares (LS) estimation of the channel coefficient for layer 
+
+nT is computed at every pilot position : 
+
+ˆhk,ℓ,n T = p∗ 
+
+> k,ℓ,n T
+
+· yk,ℓ 
+
+pk,ℓ,n T 
+
+> 2
+
+, (7) where pk,ℓ,n T ∈ C is the known pilot symbol transmitted by layer nT , and (·)∗ denotes complex conjugation. Linear interpolation over the time-frequency grid yields estimates, giving the per-layer bootstrap estimate ˆHnT ∈ CNF ×NS ×NR .
+
+b) Neural Network Demaper: The neural network fθ ,whose architecture combines residual blocks with separable convolutional layers and a GNN component to capture multi-antenna spatial dependencies, jointly performs channel esti-mation, equalization, and soft demapping in a single forward pass. It maps the received resource grid Y, the pilot positions 
+
+{P nT }, the bootstrap LS estimates { ˆHnT }, to a tensor of soft log-likelihood ratios (LLRs): 
+
+ℓ = fθ
+
+
+
+Y, PnT 
+
+> NT
+> nT=1
+
+,  ˆHnT 
+
+> NT
+> nT=1
+
+, N 0
+
+
+
+, (8) where ℓ ∈ RNF ×NS ×NT ×m contains soft LLR values per layer. The parameters θ are fixed (pretrained) following the architecture of [21]. 
+
+6) LDPC Decoding : The LLR tensor ℓ from (8) is pro-cessed by the LDPC belief-propagation (BP) decoder to re-cover the transmitted bits. After T iterations, the a-posteriori LLR for bit i is computed as 
+
+Lout  
+
+> i
+
+= Li + X 
+
+> j∈N (i)
+
+m(T )
+
+> j→i
+
+, (9) where Li is the input LLR, N (i) represents the set of check nodes connected to variable node i, and m(T ) 
+
+> j→i
+
+is the final message from check node j to variable node i. The hard-decision rule yields the reconstructed bit: 
+
+ˆbi =
+
+(
+
+0, Lout  
+
+> i
+
+≥ 0,
+
+1, Lout  
+
+> i
+
+< 0, (10) producing the final decoded bitstream ˆb, which can be restructured to recover the original semantic representation 
+
+{ ˆT, ˆF, ˆR′} at the receiver. III. I MPLEMENTATION AND EXPERIMENTAL SETUP 
+
+This section presents the implementation details of the proposed end-to-end semantic wireless communication frame-work. We begin by describing the semantic-level processing pipeline, which includes both the semantic encoder and se-mantic decoder. At the receiver side, the semantic decoder reconstructs the transmitted scene graph and then performs task-oriented inference, instantiated either as image synthe-sis (via Stable Diffusion) or collision prediction. We then introduce the bit-level transmission module, responsible for LDPC encoding, modulation and OFDM-based delivery of the compressed semantic representation over the wireless channel. All experiments are conducted on a server equipped with an NVIDIA Tesla V100-PCIE-32GB GPU. 
+
+A. Semantic-Level implementation 
+
+The semantic-level pipeline consists of two components: 1) Semantic Encoder : For semantic encoding, we employ the RoadScene2Vec framework [22], which extracts a struc-tured scene graph from each input image. It is implemented in Python using PyTorch as the deep learning backend and relies on Detectron2 for object detection. In particular, the object detection stage uses a Faster R-CNN model with a ResNet-50 backbone and feature pyramid network (FPN) to identify dynamic road users (vehicles, pedestrians, cyclists) and static infrastructure elements (traffic signs, poles, lane markings). These detected objects are embedded and linked through a geometric reasoning module that computes pairwise spatial relations based on inter-object distance and orientation cues, which yields a raw serialized graph. This raw output is further compressed, where adjacency slices corresponding to inac-tive relations are removed, retaining only non-zero adjacency matrices associated with active object-to-object interactions. The node feature matrix F is preserved, and the relation set 
+
+R′ is pruned to include only relations corresponding to the remaining active adjacency slices. 
+
+2) Semantic Decoder : The semantic decoder reconstructs the scene graph from the received semantic tuple { ˆT, ˆF, ˆR′}
+
+and subsequently performs two downstream branches: (i) image generation for semantic scene reconstruction, and (ii) collision prediction for safety assessment, as detailed below. 
+
+(a) Dataset preparation : The training of both decoder branches relies on the 1043-syn dataset [23], which consists of 1,044 driving sequences comprising a total of 50,699 images generated using the CARLA simulator [24]. Each sequence includes rich spatial and temporal interaction cues between road users and static infrastructure, enabling supervision for both semantic reconstruction (via image synthesis) and hazard reasoning (via collision prediction). 
+
+(b) Collision-Prediction Branch : For collision-risk esti-mation, the reconstructed scene graph embeddings are pro-cessed by a graph-based temporal model(described in section II-A4) that predicts the collision likelihood for each frame. The model is trained using the Adam optimizer with a learning rate of 5 × 10 −5 and a batch size of 16 sequences, enabling temporal reasoning over safety-critical interactions. 
+
+(c) Image-Generation Branch : For semantic reconstruc-tion through visual synthesis, Stable Diffusion 1.4 [20] is used to regenerate images from textual descriptions derived from the recovered graph. The dataset is first converted into text–image pairs as described in Section II-A3a. Training is performed using the AdamW optimizer with a learning rate of 5 × 10 −6 and a batch size of 5. To guide the model toward improving reconstruction in safety-critical objects, the model was trained using a hybrid diffusion loss composed of a global denoising term and an object-specific penalty: 
+
+Loss image = 1
+
+S × M × N
+
+> S
+
+X
+
+> cM
+
+X
+
+> mN
+
+X
+
+> n
+
+(B[c, m, n ]− ˆB[c, m, n ]) 2,
+
+(11) 
+
+Loss car = 1
+
+S × M × N (I[c, m, n ] − ˆI[c, m, n ]) 2, (12) 
+
+> (a) Global loss curve.
+> (b) Car’s pixels loss curve
+
+Fig. 2: Training loss trend over epochs. 
+
+Loss = Loss image + k × Loss car , (13) where B and ˆB denote the noise added and predicted across the full image, while I and ˆI denote the corresponding noise restricted to car pixels. The weighting factor k increases the contribution of errors in object-level semantics, specifically for vehicles. This composite loss combines a standard diffusion objective with an object-specific correction term, which conditions the denoising process on vehicle pixels. As a result, the model prioritizes the accurate reconstruction of dynamic road users (i.e., the most safety-critical semantic entities) improving task-aligned semantic fidelity. The evolution of the loss during training is shown in Fig. 2, illustrating the model’s improved capability to reconstruct the transmitted images. 
+
+B. Bit-Level Implementation 
+
+The bit-level transmission module is implemented using the Sionna framework [25], which provides a differentiable and 3GPP-compliant physical layer simulation environment tai-lored for 6G wireless communication research. We consider an OFDM-based transmission setup consisting of 132 subcarriers spaced at 240 kHz. Each frame contains 14 OFDM symbols, and a Kronecker pilot arrangement is employed to facilitate accurate channel estimation. Data symbols are mapped using 
+
+64 -QAM modulation. A 2×4 MIMO configuration is adopted, where the semantic bitstream is transmitted through two transmit antennas over a 3GPP vehicular channel model. For robust generalization to diverse channel conditions, the neural demapper architecture described in [21] is trained on a dataset of 12 million samples using the Adam optimizer with a learning rate of 10 −3.This implementation leverages end-to-end optimization of the semantic communication chain within a realistic 6G physical-layer environment, where the semantic-level and bit-level are jointly integrated into a unified differentiable pipeline. IV. R ESULTS AND DISCUSSION 
+
+In this section, we present a comprehensive performance evaluation of the proposed end-to-end semantic communi-cation framework. First, we quantify the compression ratio achieved at the semantic layer. Second, we evaluate the effectiveness of the collision prediction module using task-oriented performance metrics. Third, we assess the robustness of the communication pipeline under varying SNR conditions, where both semantic fidelity and collision prediction accuracy are analyzed as a function of channel quality. Finally, in addi-tion to conventional compression baselines, we compare our method with recent semantic communication approaches using the fr´ echet inception distance (FID), which is widely adopted for evaluating generative reconstruction quality. This enables a fair comparison within the scope of semantic communications. 
+
+A. Compression rate 
+
+We evaluate the compression capability of the proposed semantic encoder by comparing the average payload of the transmitted semantic tuple {T, F, R′} against conventional codecs over a validation set of 5,000 images. As shown in Fig. 3, the total payloads for the full set are 5,290 MB for JPEG, 500 MB for HEVC, and 5.3 MB for the proposed method, corresponding to reductions versus RAW of 59 .5% ,
+
+96 .4% , and 99 .1% , respectively. These totals translate to per-frame averages of ≈ 1.06 MB (JPEG), ≈ 100 KB (HEVC), and ≈ 1.06 KB (Proposed). Overall, the proposed semantic encoding achieves a reduction of more than three orders of magnitude relative to RAW and is 94 × smaller than HEVC for the same dataset, highlighting its high compression efficiency. 
+
+B. Collision Prediction 
+
+We evaluate the collision prediction model using three standard metrics: Accuracy, Matthews Correlation Coefficient (MCC), and Area Under the ROC Curve (AUC). The model achieves an accuracy of 0.898 , an MCC of 0.546 , and an AUC of 0.836, indicating consistent predictive performance and strong separability between safe and hazardous driving scenes. The MCC score further confirms that the model suc-cessfully captures discriminative patterns relevant to collision likelihood. 
+
+Fig. 3: Compression rate These results demonstrate that structured semantic repre-sentations effectively capture task-relevant information for collision prediction. Importantly, this performance is achieved while transmitting significantly less data than image-based approaches, highlighting the communication efficiency of the proposed semantic communication framework. 
+
+C. Communication system robustness 
+
+To assess the communication system robustness, we evalu-ated the performance of the collision prediction module under varying SNR conditions, as shown in Fig. 4. The results demonstrate that the model benefits from improved channel quality, with the accuracy score increasing steadily as the SNR rises. The AUC and MCC curves exhibit a similar trend, showing stable behavior once the SNR exceeds approximately 8 dB, indicating that the semantic representation remains sufficiently preserved for reliable decision making even in moderately noisy conditions. These results confirm that the proposed framework maintains task-level robustness under realistic channel conditions. In addition to task-level performance, we also evaluate the system from a semantic perspective by measuring semantic fidelity under varying SNR conditions. Recent works have highlighted that semantic quality must be evaluated at the meaning level rather than at the pixel level. Getu et al. [26] discussed performance metrics for semantic and goal-oriented communication, emphasizing that conventional fidelity mea-sures such as SSIM or PSNR are insufficient for assessing correctness in task-oriented communication. Semantic fidelity quantifies the degree to which the transmitted meaning is preserved after decoding, and can be defined as SF = | ˆS ∩ S| |S| , (14) where S denotes the set of ground-truth semantic relations extracted at the transmitter, and ˆS is the set recovered at the receiver. A value of SF = 1 indicates perfect semantic preservation. Fig. 4: Collision model’s performance under varying SNR 
+
+Fig. 5: Semantic fidelity under varying SNR As shown in Fig. 5, the semantic fidelity increases steadily with SNR. It reaches above 0.80 for SNR values greater than 8 dB. The model achieves near-perfect preservation (0.95 to 1.0) for SNR values above 12 dB, indicating that the underlying semantic structure remains intact once the channel conditions are sufficiently reliable. In particular, semantic fidelity reflects the preservation of object-level attributes and relational dependencies encoded in the scene graph. Since the collision prediction task directly relies on these spatial rela-tionships, maintaining high semantic fidelity ensures that the task-relevant information is preserved after transmission. As a result, the proposed framework achieves stable downstream collision prediction performance even under varying channel conditions. 
+
+D. Comparison to State-of-the-Art Methods 
+
+The quality of the reconstructed images is quantitatively evaluated using the FID [27], which measures the statistical distance between the feature distributions of real and generated images. Formally, FID is defined as FID = ∥μr − μg ∥2 + Tr 
+
+
+
+Σr + Σ g − 2(Σ r Σg )1/2
+
+, (15) where (μr , Σr ) and (μg , Σg ) denote the mean and covariance of the real and generated image feature embeddings, respec-
+
+Fig. 6: Fr´ echet Inception Distance (FID) versus SNR compar-ison with state-of-the-art methods tively, extracted from the Inception network. Tr is the trace of a matrix (sum of diagonal elements). Lower FID values indicate higher semantic and perceptual similarity between the transmitted and reference images. Figure 6 compares our method against several represen-tative semantic communication approaches reported in [28], including GESCO [29], WITT [30], SG2SC [28], and the conventional BPG+LDPC pipeline. Across all tested SNR conditions, the proposed framework consistently achieves the lowest FID, ranging below 30 across diffrent SNR values, while existing semantic approaches such as SG2SC remain around 200 and BPG+LDPC and GESCO exceed 300. This large performance gap is expected and stems from a fundamental architectural difference: unlike prior works that decode directly in pixel or latent space, our framework recon-structs the image from a structured semantic representation. The recovered scene graph provides a strong generative prior that constrains the diffusion model to a narrower manifold of semantically valid images, significantly reducing uncer-tainty during denoising. Furthermore, the object-level loss used during fine-tuning reinforces reconstruction quality on safety-critical objects (cars), which are dominant contributors to perceptual realism. This highlights the effectiveness of semantic reconstruction through graph-based conditioning and confirms that the proposed model preserves both visual realism and semantic consistency. Taken together, the semantic fidelity and FID results confirm that the proposed framework achieves dual consistency: it preserves the meaning of the transmitted scene at the semantic level while simultaneously maintaining high perceptual quality in the regenerated image. This demonstrates that the seman-tic encoder not only compresses task-relevant information efficiently, but also retains sufficient structure for faithful downstream reconstruction under realistic wireless channel conditions. Transmitted Image Reconstructed Image Fig. 7: Examples of transmitted (left) and reconstructed (right) images at the receiver. 
+
+1) Qualitative Visual Comparison: Figure 7 presents exam-ple pairs of transmitted and reconstructed images. Although the regenerated images are not pixel-identical to the originals, they preserve the underlying scene semantics, including lane topology, road geometry, vehicle count, and inter-vehicle spa-tial relations. This confirms that the diffusion model does not perform appearance-level replication, but instead reconstructs the scene from a semantically grounded representation derived from the recovered graph. 
+
+E. Limitation 
+
+Since the scene graph encodes only spatial relationships and high-level object properties, the reconstructed images are restricted to semantically grounded structural attributes. Contextual appearance attributes such as weather conditions, illumination, surface texture, or visual style are not preserved, as they are not embedded in the transmitted semantic rep-resentation. In addition, although the decoder successfully regenerates spatial structure, it relies on CLIP-based textual conditioning for Stable Diffusion. The scene description grows proportionally with the number of detected objects and rela-tions, and can exceed the maximum token length allowed by the CLIP text encoder. This forces truncation when the scene is dense, which may lead to missing semantic cues during reconstruction. V. C ONCLUSION AND FUTURE WORK 
+
+This paper presented an end-to-end semantic communica-tion framework for vehicular environments in which scene understanding is transmitted in the form of structured se-mantics rather than raw visual data. By encoding images into graph-based representations that preserve object relations, the proposed system achieves a three-orders-of-magnitude reduction in payload size compared to conventional codecs while maintaining high semantic fidelity. At the receiver side, the recovered semantic graph enables both collision-risk estimation and image reconstruction through a diffusion-based semantic decoder, demonstrating dual task-level utility within a unified transmission pipeline. Experimental results showed that the framework remains robust under realistic channel impairments, with stable performance across varying SNR levels and a significantly lower FID score than state-of-the-art semantic communication methods. As part of future work, we plan to extend the semantic representation to incorporate environmental context such as weather, lighting, or road surface conditions, and to replace global text prompts with compact learned semantic embed-dings to remove the dependency on CLIP token limits. Further-more, another promising research direction is the joint training of the semantic encoder and diffusion-based decoder in an end-to-end manner, allowing task-oriented reconstruction to be optimized directly with respect to channel conditions. REFERENCES [1] C. Zhang, S. Dang, M.-S. Alouini, and B. Shihada, “Big communi-cations: Connect the unconnected,” Frontiers in Communications and Networks , vol. 3, p. 785933, 2022. [2] A. E. Kalor, G. Durisi, S. Coleri, S. Parkvall, W. Yu, A. Mueller, and P. Popovski, “Wireless 6g connectivity for massive number of devices and critical services,” Proceedings of the IEEE , 2024. [3] S. Ribouh, Y. Elhillali, and A. Rivenq, “Multiple sequential constraint removal algorithm for channel estimation in vehicular environment,” in                                     
+
+> 2020 International Symposium On Networks, Computers And Commu-nications (ISNCC) .IEEE, 2020, pp. 1–7. [4] V.-L. Nguyen, R.-H. Hwang, P.-C. Lin, A. Vyas, and V.-T. Nguyen, “Toward the age of intelligent vehicular networks for connected and autonomous vehicles in 6g,” IEEE Network , vol. 37, no. 3, pp. 44–51, 2022. [5] S. Ribouh and A. Hadid, “Is semantic communication for autonomous driving secured against adversarial attacks?” in 2024 IEEE 6th Interna-tional Conference on AI Circuits and Systems (AICAS) .IEEE, 2024, pp. 139–143. [6] T. M. Getu, G. Kaddoum, and M. Bennis, “Semantic communication: A survey on research landscape, challenges, and future directions,”
+> Proceedings of the IEEE , vol. 112, no. 11, pp. 1649–1685, 2025. [7] S. Ribouh and O. Saleem, “Large language model-based seman-tic communication system for image transmission,” arXiv preprint arXiv:2501.12988 , 2025. [8] X. Lin, L. Kundu, C. Dick, and S. Velayutham, “Embracing ai in 5g-advanced toward 6g: A joint 3gpp and o-ran perspective,” IEEE Communications Standards Magazine , vol. 7, no. 4, pp. 76–83, 2023. [9] M. U. Lokumarambage, V. S. S. Gowrisetty, H. Rezaei, T. Sivalingam, N. Rajatheva, and A. Fernando, “Wireless end-to-end image transmis-sion system using semantic communications,” IEEE Access , vol. 11, pp. 37 149–37 163, 2023. [10] D. Huang, F. Gao, X. Tao, Q. Du, and J. Lu, “Toward semantic communications: Deep learning-based image semantic coding,” IEEE Journal on Selected Areas in Communications , vol. 41, no. 1, pp. 55– 71, 2022. [11] H. Tong, Z. Yang, S. Wang, Y. Hu, W. Saad, and C. Yin, “Federated learning based audio semantic communication over wireless networks,” in 2021 IEEE Global Communications Conference (GLOBECOM) .IEEE, 2021, pp. 1–6.
+
+[12] C. Liang, Y. Sun, C. K. Thomas, L. Mohjazi, and W. Saad, “Semantic communication for the internet of sounds: Architecture, design princi-ples, and challenges,” IEEE Wireless Communications , 2025. [13] S. Sun, Z. Qin, H. Xie, and X. Tao, “Task-oriented scene graph-based semantic communications with adaptive channel coding,” IEEE Transactions on Wireless Communications , vol. 23, no. 11, pp. 17 070– 17 083, 2024. [14] F. Wang, Y. Zheng, W. Xu, J. Liang, P. Zhang, and Z. Han, “Explicit semantic-base-empowered communications for 6g mobile networks,” 
+
+Engineering , 2025. [15] F. Zhou, Y. Li, M. Xu, L. Yuan, Q. Wu, R. Q. Hu, and N. Al-Dhahir, “Cognitive semantic communication systems driven by knowl-edge graph: Principle, implementation, and performance evaluation,” 
+
+IEEE Transactions on Communications , vol. 72, no. 1, pp. 193–208, 2023. [16] G. Zhang, Q. Hu, Z. Qin, Y. Cai, G. Yu, and X. Tao, “A unified multi-task semantic communication system for multimodal data,” IEEE Transactions on Communications , vol. 72, no. 7, pp. 4101–4116, 2024. [17] L. Guo, W. Chen, Y. Sun, B. Ai, N. Pappas, and T. Quek, “Diffusion-driven semantic communication for generative models with bandwidth constraints,” IEEE Transactions on Wireless Communications , 2025. [18] C. Liu, C. Guo, Y. Yang, W. Ni, and T. Q. Quek, “Ofdm-based digital semantic communication with importance awareness,” IEEE Transactions on Communications , vol. 72, no. 10, pp. 6301–6315, 2024. [19] Y. Diao, Y. Zhang, C. She, P. G. Zhao, and E. L. Li, “Aligning task-and reconstruction-oriented communications for edge intelligence,” IEEE Journal on Selected Areas in Communications , 2025. [20] R. Rombach, A. Blattmann, D. Lorenz, P. Esser, and B. Ommer, “High-resolution image synthesis with latent diffusion models,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition ,2022, pp. 10 684–10 695. [21] S. Cammerer, F. A¨ ıt Aoudia, J. Hoydis, A. Oeldemann, A. Roessler, T. Mayer, and A. Keller, “A neural receiver for 5g nr multi-user mimo,” in 2023 IEEE Globecom Workshops (GC Wkshps) . IEEE, 2023, pp. 329–334. [22] A. V. Malawade, S.-Y. Yu, B. Hsu, H. Kaeley, A. Karra, and M. A. Al Faruque, “roadscene2vec: A tool for extracting and embedding road scene-graphs,” Knowledge-Based Systems , vol. 242, p. 108245, 2022. [23] B. Hsu, S.-Y. Yu, A. Malawade, D. Muthirayan, P. P. Khargonekar, and M. A. A. Faruque, “Scenegraph-risk-assessment dataset,” 2021. [Online]. Available: https://dx.doi.org/10.21227/c0z9-1p30 [24] A. Dosovitskiy, G. Ros, F. Codevilla, A. Lopez, and V. Koltun, “” carla: An open urban driving simulator”, conference on robot learning, pmlr,” 2017. [25] J. Hoydis, S. Cammerer, F. A. Aoudia, A. Vem, N. Binder, G. Marcus, and A. Keller, “Sionna: An open-source library for next-generation physical layer research,” arXiv preprint arXiv:2203.11854 , 2022. [26] T. M. Getu, G. Kaddoum, and M. Bennis, “Making sense of meaning: A survey on metrics for semantic and goal-oriented communication,” 
+
+IEEE Access , vol. 11, pp. 45 456–45 492, 2023. [27] Y. Wu, F. Liu, R. Yilmaz, H. Konermann, P. Walter, and J. Stegmaier, “A pragmatic note on evaluating generative models with fr \’echet inception distance for retinal image synthesis,” arXiv preprint arXiv:2502.17160 ,2025. [28] M. Yang, D. Gao, F. Xie, J. Li, X. Song, and G. Shi, “Sg2sc: A generative semantic communication framework for scene understanding-oriented image transmission,” in ICASSP 2024-2024 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) .IEEE, 2024, pp. 13 486–13 490. [29] E. Grassucci, S. Barbarossa, and D. Comminiello, “Generative semantic communication: Diffusion models beyond bit recovery,” arXiv preprint arXiv:2306.04321 , 2023. [30] K. Yang, S. Wang, J. Dai, K. Tan, K. Niu, and P. Zhang, “Witt: A wireless image transmission transformer for semantic communications,” in ICASSP 2023-2023 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) . IEEE, 2023, pp. 1–5.

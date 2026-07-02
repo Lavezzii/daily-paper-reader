@@ -6,43 +6,40 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-01
-- 运行时间：2026-07-01 21:59:02 UTC
+- 最新运行日期：2026-07-02
+- 运行时间：2026-07-02 21:35:37 UTC
 - 运行状态：成功
-- 本次总论文数：7
-- 精读区：3
-- 速读区：4
+- 本次总论文数：6
+- 精读区：1
+- 速读区：5
 
 ### 今日简报（AI）
-今日推荐7篇论文，精读2篇（8分），速读3篇，聚焦无线通信基础模型与联合信源信道编码。  
-最值得看的是《Fast Wireless Foundation Models with Early-Exits》中的早期退出机制和《Effective Depth in Joint Source-Channel Coding》的隐式均衡分析，均获8分。  
-下一步建议关注快速推理方法与联合编码深度分析，并搭配速读中的流体天线检测和傅里叶神经算子等方向。
-- 详情：[/202607/01/README](/202607/01/README)
+今日精读1篇6G联合任务导向与生成式语义通信框架（8.0分），速读涵盖神经架构搜索、物理信息神经网络及FPGA量化剪枝等5篇。  
+最值得关注精读论文的6G语义通信协同思想，以及速读中神经架构搜索的双层优化方法。  
+建议进一步探索语义通信与轻量化AI的融合，结合量化剪枝技术推动实际部署。
+- 详情：[/202607/02/README](/202607/02/README)
 
 ### 精读区论文标签
-1. [Fast Wireless Foundation Models with Early-Exits](/202607/01/2606.29640v1-fast-wireless-foundation-models-with-early-exits)  
+1. [Towards a Joint Task-Oriented and Generative Semantic Communication Framework for 6G Networks](/202607/02/2606.31426v1-towards-a-joint-task-oriented-and-generative-semantic-communication-framework-for-6g-networks)  
    标签：评分：8.0/10、query:channel-nn
-   evidence：早期退出高效无线基础模型
-2. [Effective Depth in Joint Source-Channel Coding: An Implicit Equilibrium Analysis](/202607/01/2606.29737v2-effective-depth-in-joint-source-channel-coding-an-implicit-equilibrium-analysis)  
-   标签：评分：8.0/10、query:channel-nn
-   evidence：联合源信道编码的隐式均衡框架
-3. [Dualformer: Efficient Feature Extractor for Complex-valued Blind Communication Signal Analysis](/202607/01/2606.31352v1-dualformer-efficient-feature-extractor-for-complex-valued-blind-communication-signal-analysis)  
-   标签：评分：8.0/10、query:channel-nn
-   evidence：用于盲通信信号分析的双通道神经网络新架构
+   evidence：基于神经接收机和时空图神经网络的语义通信框架
 
 ### 速读区论文标签
-1. [Fluid-Antenna-Aided Active User Detection With 1D-CNN Channel Reconstruction for Unsourced Random Access](/202607/01/2606.31139v1-fluid-antenna-aided-active-user-detection-with-1d-cnn-channel-reconstruction-for-unsourced-random-access)  
+1. [Bilevel Optimization for Neural Architecture Search](/202607/02/2606.29582v1-bilevel-optimization-for-neural-architecture-search)  
    标签：评分：7.0/10、query:channel-nn
-   evidence：一维CNN用于无源随机接入中的信道重建
-2. [Higher-Order Fourier Neural Operator: Explicit Mode Mixer for Nonlinear PDEs](/202607/01/2606.28122v1-higher-order-fourier-neural-operator-explicit-mode-mixer-for-nonlinear-pdes)  
+   evidence：通过双层优化进行神经网络架构搜索，直接涉及新型神经网络架构
+2. [Physics Informed Neural Networks for Nonlinear Delay Differential Equations](/202607/02/2607.00380v1-physics-informed-neural-networks-for-nonlinear-delay-differential-equations)  
+   标签：评分：7.0/10、query:channel-nn
+   evidence：物理信息神经网络用于时滞微分方程，方法可迁移至通信信道建模
+3. [RQP: Resource-Oriented Quantiser Pruning for Neural Networks on FPGAs](/202607/02/2606.30382v1-rqp-resource-oriented-quantiser-pruning-for-neural-networks-on-fpgas)  
    标签：评分：6.0/10、query:channel-nn
-   evidence：适用于信道建模的新型傅里叶神经算子架构
-3. [Active Learning for Channel Knowledge Map Construction via Bayesian Inference Diffusion Models](/202607/01/2606.29862v1-active-learning-for-channel-knowledge-map-construction-via-bayesian-inference-diffusion-models)  
+   evidence：面向资源的量化器剪枝用于高效神经网络加速器
+4. [AC$^2$P$^2$SL: Adaptive Communication-Computation Pipeline Parallel Split Learning over Edge Networks](/202607/02/2606.31276v1-ac2p2sl-adaptive-communication-computation-pipeline-parallel-split-learning-over-edge-networks)  
    标签：评分：6.0/10、query:channel-nn
-   evidence：主动学习用于信道知识地图构建
-4. [Measurement-Driven Learning-Based Beam Selection for Hybrid Beamforming at 26.5 GHz](/202607/01/2606.30023v1-measurement-driven-learning-based-beam-selection-for-hybrid-beamforming-at-265-ghz)  
+   evidence：自适应流水线并行分割学习用于边缘网络
+5. [Minimizing Quantized Semantic Age of Information (QSAoI) in Foundation Model-Based Semantic Communications](/202607/02/2606.31303v1-minimizing-quantized-semantic-age-of-information-qsaoi-in-foundation-model-based-semantic-communications)  
    标签：评分：6.0/10、query:channel-nn
-   evidence：深度学习应用于毫米波通信波束选择
+   evidence：深度学习应用于语义通信
 
 
 <div class="dpr-home-promo-card">
