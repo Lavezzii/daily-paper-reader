@@ -1,0 +1,792 @@
+Title: Message Passing Based Two-Timescale Bayesian Learning for Joint Channel and Memory Hardware Impairments Tracking
+
+URL Source: https://arxiv.org/pdf/2607.01660v1
+
+Published Time: Fri, 03 Jul 2026 00:28:51 GMT
+
+Number of Pages: 14
+
+Markdown Content:
+# Message Passing Based Two-Timescale Bayesian Learning for Joint Channel and Memory Hardware Impairments Tracking 
+
+Wei Xu, Graduate Student Member, IEEE, and An Liu, Senior Member, IEEE 
+
+Abstract—Hardware impairments in massive multiple-input multiple-output (MIMO) receivers introduce inter-symbol memory and inter-element coupling, severely degrading channel estimation. This paper employs a residual recurrent gated unit (RGRU) to model the intra-slot memory of the hard-ware impairments and proposes a message-passing-based two-timescale Bayesian deep learning (MP-TTBDL) framework for joint channel and impairment tracking. Owing to small-scale fading, the wireless channel varies rapidly across slots, whereas hardware impairments drift slowly due to hardware aging and environmental variations. To capture these distinct physical timescales, a fast-varying Markov prior and a slow-varying Gaussian Markov prior are assigned to the sparse channel and the network parameters, respectively. Based on a multi-slot factor graph formulation, a message-passing algorithm is developed. Specifically, the inter-slot messages admit closed-form updates, while the intra-slot factor graph, due to its com-plex recurrent structure, is partitioned into a channel tracking module and an impairments calibration module. The channel tracking module performs sparse channel estimation via turbo orthogonal approximate message passing (Turbo-OAMP), and the impairments calibration module updates the impairment parameters via a specially designed deep approximate message passing (DAMP) procedure, with the two modules iteratively exchanging extrinsic information through expectation propaga-tion (EP) until convergence. Simulation results show that the proposed framework robustly achieves lower channel estimation error than conventional compensators followed by channel estimation across different online impairment scenarios and signal-to-noise ratio (SNR) conditions. Index Terms—message passing, channel estimation, hard-ware impairments calibration, two-timescale joint tracking, expectation propagation, deep approximate message passing 
+
+I. Introduction Massive MIMO has become a cornerstone of modern wireless communications, with base stations (BSs) de-ploying large antenna arrays to exploit spatial diversity and multiplexing gains. To realize these gains, accurate channel estimation and beamforming are indispensable. However, as the number of antennas grows, RF front-end 
+
+This work was supported in part by the National Key Research and Development Program of China under Grant 2025ZD1301900; in part by National Key Laboratory of Millimeter-Wave and Terahertz Remote Sensing and the Zhejiang Provincial Key Laboratory of Information Processing, Communication and Networking (IPCAN), Hangzhou, China; in part by the Zhejiang Provincial Key Laboratory of Multi-Modal Communication Networks and Intelligent Informa-tion Processing, Hangzhou, China. (Corresponding authors: An Liu.) Wei Xu and An Liu are with the College of Information Science and Electronic Engineering, Zhejiang University, Hangzhou 310027, China (e-mails: 12231077@zju.edu.cn and anliu@zju.edu.cn). 
+
+hardware impairments including LNA nonlinearity [1], [2], crosstalk between RF chains [3], [4], and IQ imbalance [5], [6] become increasingly severe, introducing unknown phase and amplitude errors, distorting pilot signals, and severely degrading channel estimation performance. These impair-ments have gradually become a critical bottleneck in system design. To mitigate these impairments, conventional methods typically train an offline compensator to learn the inverse mapping of the hardware impairments, and then apply the learned model with fixed parameters during online reception [7], [8], [9], [10]. Since practical RF front-end hardware exhibits both nonlinearity and memory effects across symbols [11], [12], the Volterra series has been widely used to characterize these effects and their inverses [13], [14], [15]. However, the number of Volterra parameters grows combinatorially with the nonlinearity order, memory depth, and the number of RF chains, making it prohibitive for large-scale systems. As a practi-cal alternative, simplified models such as the generalized memory polynomial (GMP) [13] are often adopted for compensation. Yet, the exact inverse mapping may not be accurately representable by polynomials, and GMP-based compensators can therefore suffer from significant model mismatch. Recently, recurrent neural networks such as long short-term memory (LSTM) and GRU [16], [17], [18] have been employed to compensate for the combined impairments, achieving superior performance over GMP in many digital predistortion tasks thanks to their universal approximation capability. Existing compensation approaches suffer from two fun-damental issues. First, in the presence of inter-symbol memory and inter-chain crosstalk, each observation de-pends on multiple past transmitted symbols, and learning the inverse mapping that recovers the original signals from a mixed and overlapping set of contributions becomes an ill-posed problem, leading to poor compensation and limited generalization. In contrast, the forward hardware-impairment model possesses a natural causal and recursive structure; it describes how hardware distorts original signals symbol by symbol, a structure that is far easier to approximate with a recurrent network. With an accurate forward model, signal recovery can then be cast as a Bayesian inference problem together with priors, yielding more reliable results. Second, conventional methods typi-
+
+> arXiv:2607.01660v1 [cs.LG] 2 Jul 2026
+
+cally train the compensator offline, and the resulting static model may fail to track the actual hardware behavior during online operation due to temperature variations [19], component aging, and other environmental factors [20]. Online adaptation of the impairment-aware receiver can mitigate such drift by learning from live data [21], but most existing pipelines perform point estimation with-out an adaptive mechanism to regulate the update step size, and typically require buffering additional calibration samples and executing a separate retraining stage after coarse detection, which introduces substantial memory and computational overhead beyond the main receiver processing. Channel estimation error is critical to wireless commu-nication system performance. In recent years, Bayesian inference has been widely applied to various channel estimation scenarios and has achieved superior estimation performance. For example, subspace-constrained varia-tional Bayesian inference (SC-VBI) has been proposed for structured compressive sensing with a dynamic grid by replacing high-dimensional matrix inversions with low-dimensional subspace-constrained updates [22], an alter-nating maximum a posteriori (MAP) framework jointly detects visibility regions and estimates channels in near-field spatially non-stationary extra-large MIMO (XL-MIMO) systems [23], and a Turbo-CS-based sparse-Markov scheme enables robust multi-user uplink channel tracking in 5G New Radio (NR) under hopping sounding reference signal (SRS) patterns and system imperfec-tions [24]. However, few existing works consider channel estimation under non-ideal transceivers with hardware impairments. Message-passing-based Bayesian inference has also been widely applied to symbol detection, where embedding neural impairment models in a factor graph yields sig-nificant performance gains when the channel is assumed known [25], [26], validating the benefit of principled infer-ence over a compensator. Nevertheless, such approaches typically neglect the memory effects of hardware im-pairments, do not account for time-varying impairments during online operation, and do not consider multipath channel estimation in practical wireless communication scenarios, leaving the additional gains from jointly infer-ring the sparse multipath channel and impairment pa-rameters in a unified factor graph unexploited. Therefore, it is imperative to establish a joint Bayesian estimation framework that accounts for both the wireless channel and hardware impairments, whereas directly applying con-ventional compensation and then estimating the channel from the compensated signal inevitably leads to significant degradation in channel estimation performance. Building upon our prior work that considered the joint tracking problem under memoryless impairments [27], this paper further investigates the uplink channel estimation problem for a massive MIMO receiver with memory hardware impairments. We use an RGRU to model the forward impairment mapping, and integrate sparse chan-nel estimation with RGRU-based impairment learning in a unified factor graph. Then we propose the MP-TTBDL framework that jointly tracks the fast-varying channel and the slow-varying impairments. The main contributions of this paper are summarized as follows:  
+
+> •
+
+A Unified Bayesian Framework for Joint Channel and Memory Impairment Estimation: We employ a residual RGRU with probit activation functions to model the memory hardware impairments at the receiver. By embedding this RGRU as the observation likelihood in a unified factor graph together with the sparse channel model, we formulate the problem as a closed-loop joint Bayesian inference problem in which the channel and impairment parameters are estimated jointly from distorted pilots. By exploiting the natural causal and recursive structure of the forward impairment process, this framework avoids the ill-posed inverse mapping learned by conventional compensators and removes the need for a separately trained inverse compensator.  
+
+> •
+
+Two-Timescale Markov Transition Models for Joint Tracking: The wireless channel varies rapidly across slots due to small-scale fading, whereas hardware impairments drift slowly owing to temperature vari-ations and component aging. To reflect these distinct physical timescales, we design the transition prob-abilities of the sparse angular-domain channel as a fast-varying Markov chain, and those of the RGRU impairment parameters as a slow-varying Gaussian Markov chain. This two-timescale Markov transition model design aligns the statistical model with the practical transmission system and allows the receiver to continuously track both channel variations and hardware aging in a principled manner.  
+
+> •
+
+The Proposed MP-TTBDL Algorithm: Based on the proposed Bayesian tracking framework, we develop the MP-TTBDL algorithm that combines Turbo-OAMP for sparse channel tracking with a novel DAMP scheme tailored to the RGRU architecture. Given the complex factor graph structure of the RGRU, we design a dedicated DAMP procedure for message updating that specifies a coordinated mes-sage update schedule and closed-form approximation methods. Within each slot, the two modules itera-tively exchange extrinsic information via EP, and the updated messages are propagated across slots under the two-timescale Markov priors, enabling continuous online joint tracking.  
+
+> •
+
+Simulation Validation: Extensive simulations are con-ducted to validate the proposed contributions. On synthetically generated impairment data, the dedi-cated DAMP converges faster and achieves higher fitting accuracy than conventional optimizers for learning the RGRU parameters. When the online impairments match the offline pretraining configura-tion, the proposed joint Bayesian framework yields significantly lower channel estimation normalized mean squared error (NMSE) than compensation-based baselines across a wide signal-to-noise ratio (SNR) range, validating the advantage of the joint Bayesian framework. Under slowly time-varying im-pairments, the MP-TTBDL algorithm maintains ro-bust channel tracking performance, confirming the effectiveness of the two-timescale Markov prior and the MP-TTBDL algorithm. The remainder of this paper is organized as follows. Section II presents the system model, the RGRU-based im-pairment surrogate, and the two-timescale Markov priors. Section III details the MP-TTBDL framework, including the factor graph design and the inference algorithm. Section IV provides simulation results, and Section V concludes the paper. Notations: 0N refers to an all-zero column vector of dimension N . IN refers to an N × N identity matrix. 
+
+(·), (·)T, (·)H, and (·)−1 denote conjugate, transpose, conjugate transpose, and inverse, respectively. ℜ(·) de-notes the real part of a complex argument. R and C
+
+refer to the sets of real and complex numbers. |a| and 
+
+∥a∥2 denote the amplitude of scalar a and the 2-norm of vector a, respectively. an and Amn refer to the n-th entry of vector a and the (m, n )-th entry of matrix 
+
+A, respectively. [·]i,j denotes the (i, j )-th entry of amatrix. The Hadamard (element-wise) product is denoted by ⊙, and the Kronecker product is denoted by ⊗. O(·)
+
+denotes the order of complexity. o(·) denotes higher-order infinitesimals. R(·) = 
+
+[ℜ(·)
+
+ℑ(·)
+
+]
+
+facilitates computation in the real domain. II. System Model A. Ideal Uplink Pilot Signal Model In a 5G wideband communication system, a massive MIMO BS equipped with N antennas serves multiple single-antenna users. Without loss of generality, we focus on the uplink channel estimation problem for a single user under flat fading. The proposed framework admits straightforward extensions to frequency-selective channels and multi-user scenarios. We denote by P the number of pilot symbols per slot and by p ∈ { 1, . . . , P } the pilot symbol index. Then, the received signal yp(t) ∈ CN at symbol p of slot t is expressed as: 
+
+yp (t) = h (t) rp (t) + np (t) , p = 1 , . . . , P, (1) where rp(t) ∈ C is the uplink pilot symbol at symbol p,
+
+h(t) ∈ CN is the channel vector assumed constant within slot t, and np(t) ∈ CN is the additive white Gaussian noise (AWGN). Due to sparse multipath propagation, we express the channel h(t) as a linear combination of off-grid angular-
+
+Fig. 1: Block diagram of a practical massive MIMO uplink receiver with hardware impairments; RF-chain crosstalk, LNA nonlinearity, and IQ imbalance are shown as representative examples. domain basis vectors [28] to exploit angular-domain spar-sity for improved channel estimation accuracy: 
+
+h = A (ϑ) x,
+
+where ϑ ∈ RN is a dynamic grid with N grid points in angular domain, x ∈ CN is the sparse angular-domain channel vector, and columns in A (ϑ) are steering vectors 
+
+A (ϑ) = [ a (ϑ1) , . . . , a (ϑN )] ,
+
+a (ϑ) ≜
+
+[
+
+1, e jπ sin( ϑ), . . . , e j(N −1) π sin( ϑ)]T
+
+.
+
+For clarity, we adopt the half-wavelength spaced uniform linear array (ULA) steering-vector model above. Extension to other array geometries, such as uniform planar arrays (UPA), is straightforward by replacing the steering-vector dictionary A(ϑ) with the corresponding array response, while the overall Bayesian inference and message-passing framework remains unchanged. The dynamic angle grid ϑ
+
+is often initialized using a uniform grid and then updated based on gradient method. B. Uplink Signal Model with Memory Hardware Impair-ments In a practical massive MIMO receiver, the signal cap-tured by the antenna array is inevitably distorted by the non-ideal RF front-end. As illustrated in Fig. 1, the hardware impairments can take various forms. For in-stance: (i) electromagnetic coupling among closely spaced RF chains introduces linear and nonlinear crosstalk; (ii) the LNA exhibits nonlinear amplification with memory, where the output depends on current and several past inputs; and (iii) IQ imbalance arising from mismatched local oscillator branches results in phase and amplitude distortion of the complex baseband signal [9], [7], [29]. Together, these effects impose a nonlinear mapping with inter-symbol memory and inter-element coupling on the received pilot, making hardware distortion a severe bottle-neck for channel estimation as the antenna count grows. In prior digital predistortion works, such memory input-output behavior is typically modeled by memory polyno-mials [13] or recurrent neural networks [16], [17], [18], where GRU-type networks in particular achieve robustly low fitting error. Besides, neural networks are more general in modeling nonlinear mappings and can be used to characterize more complicated hardware impairments in practice. In such tasks, a single-layer RGRU already provides sufficient modeling accuracy, as demonstrated in [30]; deeper RGRUs, due to the large number of extra parameters, tend to overfit the training data and suffer performance degradation during online deployment. Therefore, in this paper, we only consider a single-layer RGRU. For each slot t, let πp(t) ∈ RNπ denote the hidden state of the RGRU after processing the p-th pilot symbol. Given yp(t) and πp(t), the RGRU outputs an estimate of 
+
+R(˜ yp(t)) with AWGN: 
+
+R (˜yp (t)) = R (yp (t)) + W ˜y (t) πp (t) + b˜y (t) + ˜ np, (2) where we employ R(·) to facilitate computing in the real domain, and denote the weights/bias in the output layer as W ˜y (t)/b˜y (t), respectively. ˜np ∼ ∏2Nn=1 N (nn; 0 , ˜σ2)
+
+represents the fitting error. The hidden state πp(t) encodes the symbol-level impairment memory accumulated along the pilot chain within slot t. It is recurrently updated by a single-layer GRU: zp(t) and cp(t) are the update and reset gates, ˇπp(t) filters the past memory, and ˜πp(t) extracts a new memory component from the current real-domain pilot R(yp(t)) :
+
+zp (t) = W z (t) [ πp−1 (t) ; R (yp (t))] + bz (t) , (3) 
+
+cp (t) = W c (t) [ πp−1 (t) ; R (yp (t))] + bc (t) , (4) 
+
+ˇπp (t) = Q (cp (t)) ⊙ πp−1 (t) , (5) 
+
+˜πp (t) = W ˜π (t) [ ˇ πp (t) ; R (yp (t))] + b˜π (t) , (6) 
+
+πp (t) = (1 − Q (zp (t))) ⊙ πp−1 (t)+ Q (zp (t)) ⊙ (2 Q (˜πp (t)) − 1) , (7) where Q(·) is an activation function applied element-wise, which is often chosen as the sigmoid function in traditional GRU networks. In this paper, we set Q to the probit function, i.e., 
+
+Q(x) = ´ x 
+
+> −∞
+
+N (t; 0 , 1) d t, to facilitate message passing. The RGRU parameters are summarized in a set ω(t) = 
+
+{W ˜y (t), W z (t), W c(t), W ˜π (t), b˜y (t), bz (t), bc(t), b˜π (t)}
+
+which are estimated via approximate message passing. C. Two-Timescale Markov Priors We adopt a random-process framework over time slots to jointly capture the angular-domain channel x and impairment-related parameters ω. Owing to small-scale fading, the channel is treated as approximately stationary within each slot, yet it varies rapidly across successive slots [31]. The parameters of the memory hardware impairment model, on the other hand, are assumed to evolve slowly throughout the channel tracking process. Consequently, the channel dynamics are modeled by a fast-varying Markov chain across slots, while the RGRU weights follow a slowly-varying Gaussian Markov chain. Specifically, for the channel x (t), we define two hidden variables ¯s (t) and ¯x (t), where ¯s (t) denotes the support vector to indicate activity, and ¯x (t) represents x (t) when active [28]. Therefore, x (t) can be written as (8): 
+
+x (t) = ¯ s (t) ⊙ ¯x (t) , (8) where ¯s (t) represents the binary support vector, which describes the dynamic sparsity of the channel support pattern, and the complex-valued vector ¯x (t) represents the hidden value. We assume independent dynamic priors for ¯s (t) and ¯x (t), i.e.: 
+
+p (¯ s (t) |¯s (t − 1)) = 
+
+> N
+
+∏
+
+> n=1
+
+p (¯ sn (t) |¯sn (t − 1)) ,p (¯ x (t) |¯x (t − 1)) = 
+
+> N
+
+∏
+
+> n=1
+
+p (¯ xn (t) |¯xn (t − 1)) ,
+
+where 
+
+p (¯ sn (t) |¯sn (t − 1)) =
+
+{
+
+ρ01 δ (¯ sn (t) − 1) + ρ00 δ (¯ sn (t)) ¯sn (t − 1) = 0 
+
+ρ11 δ (¯ sn (t) − 1) + ρ10 δ (¯ sn (t)) ¯sn (t − 1) = 1 , (9) 
+
+p (¯ xn (t) |¯xn (t − 1)) = CN (¯xn (t) ; (1 − α) ¯ xn (t − 1) + αξ, α 2κ) , (10) with ρ00 = 1 − ρ01 , ρ 10 = 1 − ρ11 , and we define 
+
+¯dts,n = p (¯ sn (t) |¯sn (t − 1)) , ¯dtx,n = p (¯ xn (t) |¯xn (t − 1)) in the following parts. Note that ρ01 /ρ 11 represents the probability that the support turns active from inac-tive/active, α represents the temporal correlation between time slots, ξ represents the mean of the angular-domain channel process, and κ represents the variance of Gaussian perturbation. Larger ρ01 , ρ10 , α, and κ mean that the channel varies faster over time. For the RGRU hidden states, we abbreviate the updating rules in (3)–(7) at symbol p to πp(t) =GRU( πp−1(t), R(yp(t)); ω(t)) in order to construct the top-level factor graph. To track slow impairment drift, we model each element ωi(t) ∈ ω(t) with a first-order Gaussian Markov transition, 
+
+p (ωi (t) |ωi (t − 1)) = N (ωi (t) ; ωi (t − 1) , σ 2
+
+> ωi
+
+) , (11) where σ2 
+
+> ωi
+
+controls the per-slot drift variance of ωi, with 
+
+σ2 
+
+> ωi
+
+chosen much smaller than the channel transition variance so that ω(t) evolves on a slower timescale than 
+
+¯s(t) and ¯x(t).III. Proposed Algorithm In this section, we detail the MP-TTBDL framework to jointly track the channel and the impairments from online pilots, based on the models in Section II. MP-TTBDL consists of two components: inter-slot forward message passing, which leverages the two-timescale Markov priors to propagate temporal messages across slots, and per-slot iterative message passing, which performs joint Bayesian inference of the channel and impairment parameters. The two components are elaborated in the following subsec-tions. A. Top-Level Factor Graph and Message Passing Overview To establish a Bayesian framework for joint channel estimation and impairment tracking, we formulate the probabilistic model over T slots. The objective is to estimate the marginal posteriors of channel variables 
+
+{¯s(t), ¯x(t), x(t)} and impairment parameters {ω(t)} from distorted observations {˜yp(t)}Pp=1 for t = 1 , . . . , T . Com-bining the RGRU-based observation model in (2)–(7), the two-timescale Markov prior in (9)–(11), and the channel observation model in (1), the joint distribution of all random variables is written as: 
+
+p
+
+({¯s(t), ¯x(t), x(t), {yp(t), πp(t), ˜yp(t)}Pp=1 , ω(t)}
+
+> t=1 ,...,T
+
+)
+
+∝ p (¯ s(1)) p (¯ x(1)) p (ω(1)) 
+
+×
+
+> T
+
+∏
+
+> t=2
+
+p (¯ s(t)|¯s(t − 1)) p (¯ x(t)|¯x(t − 1)) p (ω(t)|ω(t − 1)) 
+
+×
+
+> T
+
+∏
+
+> t=1
+
+δ (x(t) − ¯s(t) ⊙ ¯x(t)) 
+
+> P
+
+∏
+
+> p=1
+
+p (yp(t)|x(t))
+
+×
+
+> T
+
+∏
+
+> t=1
+> P
+
+∏
+
+> p=1
+
+δ(πp(t) − GRU( πp−1(t), R(yp(t)); ω(t)) )
+
+×
+
+> T
+
+∏
+
+> t=1
+
+p (π0(t)) 
+
+> P
+
+∏
+
+> p=1
+
+p (˜yp(t)|πp(t), yp(t), ω(t)) . (12) where p(yp(t)|x(t)) and p(˜ yp(t)|πp(t), yp(t), ω(t)) come from (1) and (2), respectively: 
+
+p (yp(t)|x(t)) = CN (yp(t); A(ϑ)x(t), σ 2IN
+
+). (13) 
+
+p (˜yp(t)|πp(t), yp(t), ω(t))
+
+= N (R (˜yp(t)) ; R (yp(t)) + W ˜y (t)πp(t) + b˜y (t), ˜σ2I2N
+
+).
+
+(14) In addition, p(π0(t)) = N (π0(t); 0Nπ , σ 2 
+
+> π0
+
+INπ ) assigns a zero-mean prior with small variance to the initial RGRU hidden state at the first pilot of each slot. To compute the marginal posterior distributions, we construct the multi-slot factor graph shown in Fig. 2, with the factor nodes summarized in Table I, and develop a corresponding approximate message passing algorithm. For notational convenience, we define the stacked obser-vation vector y = [ y1(t)T, . . . , yP (t)T]T ∈ CN P and the stacked noise vector n similarly, under which the per-slot observation model can be rewritten in the compact form y = (r ⊗ A(ϑ)) x + n, where r collects the P
+
+pilot symbols. At each slot t, inter-slot messages from slot t − 1 are first combined with the two-timescale Markov transition factors to form equivalent priors on TABLE I: Illustration of factor nodes in Fig. 2.                                           
+
+> Factor Distribution Functional form
+> dtsp(¯ s(t)|¯s(t−1)) (9)
+> dtxp(¯ x(t)|¯x(t−1)) (10)
+> dtp(x(t)|¯s(t),¯x(t)) δ(x(t)−¯s(t)⊙¯x(t))
+> ftp(y(t)|x(t)) (13)
+> ∆CT →IC (t)Extrinsic message from CT to IC on y(t)
+> (21)
+> dtωp(ω(t)|ω(t−1)) (11)
+> ∆IC →CT (t)Extrinsic message from IC to CT on y(t)
+> (25)
+> GRU tp(ˆ y(t)|y(t),ω(t)) δ(ˆ y(t)−GRU( y(t); ω(t)))
+> gtp(˜ y(t)|ˆy(t),y(t),ω(t)) (14)
+
+¯s(t), ¯x(t), and ω(t). Within the slot, the factor graph is partitioned into a channel tracking (CT) module and an impairments calibration (IC) module, which exchange extrinsic information over τmax turbo iterations: the CT module uses Turbo-OAMP to estimate the sparse channel 
+
+x(t), while the IC module uses DAMP to update the RGRU parameters ω(t). After convergence, the updated posteriors are forwarded to slot t+1 via inter-slot message passing, and the process repeats. Meanwhile, based on the channel estimation results from the CT module, an EM-based surrogate function for the angular-domain grid can be constructed, and the grid points are dynamically updated via gradient descent as detailed in [28]. We shall use ∆a→b to denote the message from node a to node b.B. Forward Message Passing Across Slots Here we only consider forward message passing across time slots. Based on sum-product rule, the messages are computed as follows: 
+
+∆¯s(t)→dt+1  
+
+> s
+
+= ∆ dts→¯s(t) · ∆dt→¯s(t), (15) 
+
+∆¯x(t)→dt+1  
+
+> x
+
+= ∆ dtx→¯x(t) · ∆dt→¯x(t), (16) 
+
+∆ω(t)→dt+1  
+
+> ω
+
+= ∆ dtω →ω(t) · ∆GRU t→ω(t), (17) For messages within the t-th time slot, we first denote equivalent input prior factors ˇdts, ˇdtx and ˇdtω that respec-tively represent the prior information of ¯s(t), ¯x(t) and 
+
+ω(t) extracted from all previous observations: 
+
+ˇdts = ∆ dts→¯s(t) =
+
+ˆ
+
+> ¯s(t−1)
+
+p (¯ s (t) |¯s (t − 1)) ∆ ¯s(t−1) →dts ,
+
+(18) 
+
+ˇdtx = ∆ dtx→¯x(t) =
+
+ˆ
+
+> ¯x(t−1)
+
+p (¯ x (t) |¯x (t − 1)) ∆ ¯x(t−1) →dtx ,
+
+(19) 
+
+ˇdtω = ∆ dtω →ω(t) =
+
+ˆ
+
+> ω(t−1)
+
+p (ω(t)|ω(t − 1)) ∆ ω(t−1) →dtω .
+
+(20) Based on the Markov priors in (9)–(11), (18)–(20) can be evaluated in closed form. Channel Tracking (CT) Module Impairments Calibration (IC) Module Fig. 2: Top-level factor graph for (12) with factor definitions in Table I. C. Message Passing Within Each Slot At each time slot t, the receiver performs joint inference by iteratively exchanging messages between the CT and IC modules for τmax turbo iterations. In each turbo iteration, the CT module updates messages via Turbo-OAMP, while the IC module updates messages via DAMP. Then, the two modules exchange extrinsic messages. In particular, 
+
+∆IC →CT aggregates the IC backward Gaussian messages on {yp(t)}Pp=1 and is treated as equivalent AWGN side information in the CT module, whereas ∆CT →IC is formed via EP and is treated as equivalent AWGN side information in the IC module. After convergence, the messages passed to time slot t + 1 are updated based on the sum-product rule as (15)–(17). The message passing procedures with respect to the CT and IC modules are elaborated in the following; the slot index t is dropped for brevity, as no ambiguity arises. 1) CT Module (Turbo-OAMP): The CT module esti-mates the sparse angular-domain channel x(t) from the stacked observations y within slot t. We apply Turbo-OAMP [28] to perform this estimation efficiently. Specif-ically, the CT module is further divided into sub-module A and sub-module B, which extract information from the observations and the sparse prior factors, respectively. Firstly, sub-module B treats the extrinsic message w.r.t. 
+
+x from sub-module A as equivalent AWGN observations, computes the posterior distribution of x based on standard sum-product rule, and then updates the extrinsic message to sub-module A via EP. Next, sub-module A treats the extrinsic message w.r.t. x from sub-module B as Gaussian prior, computes the posterior for x via linear minimum mean square error (LMMSE), and then updates the extrin-sic message to sub-module B via EP. The two sub-modules exchange extrinsic messages to fuse the observations and sparse prior information until convergence. The detailed updating rules for messages within the CT module are the same as Turbo-OAMP. Please refer to [32], [28] for the details. Here we only give the updating rule for the top-level extrinsic message ∆CT →IC from the CT module to the IC module. Plugging in the message ∆x→f =
+
+CN (x; μx→f , Σ x→f ) computed via Turbo-OAMP, the mean and variance of message ∆f →yp for each symbol 
+
+p are given by: 
+
+μf →yp = A(ϑ)μx→f , Σf →yp = A(ϑ)Σx→f AH (ϑ)+ σ2IN .
+
+The covariance matrix is not diagonal, and thus the extrinsic message is further approximated via EP: 
+
+∆CT →IC ≈P
+
+{
+
+∆IC →CT 
+
+∏Pp=1 ∆f →yp
+
+}
+
+∆IC →CT 
+
+. (21) where P {·} approximates the distribution as a product of independent Gaussian via moment matching. 2) IC Module (DAMP for RGRU): Under the turbo framework, the IC module within each slot is separated for processing the messages associated with the RGRU-based impairment model, where the memory hardware impairments evolve over the P pilot symbols. Based on the observation model given in (2)–(7), we take the processing of the p-th symbol as an illustrative example and construct the detailed factor graph of the IC module, as depicted in Fig. 3, with the definitions of the factor nodes provided in Table II. Owing to the recurrent state transitions and gating nonlinearities inherent in the RGRU architecture, the resulting factor graph contains numerous loops, making exact marginal inference computationally intractable. While the DAMP framework in [33] provides a powerful tool for Bayesian learning in feedforward deep neural networks (DNNs), it cannot be directly applied to our recurrent architecture. Extending DAMP to the RGRU presents two fundamental design challenges: (i) The recurrent state transition creates a non-trivial, loopy factor graph that requires a carefully coordinated message schedule, unlike the straightforward layer-wise schedule in feedforward networks. (ii) Both the probit activation functions Q(·) and the element-wise products between gates and states introduce non-Gaussian messages, requir-ing tailored approximations to keep the message passing tractable. To address these challenges, we develop a cus-tom DAMP procedure tailored to the RGRU. Our solution establishes a principled intra-symbol forward message pass (FMP) and backward message pass (BMP) schedule, as summarized in Table III, that systematically propagates messages along the P pilot symbols while respecting the complex loopy structure of the recurrent graph. Furthermore, for the nonlinear submodules, we derive closed-form variational Bayesian inference (VBI) updates in Appendix A to approximate the otherwise intractable messages. This extension of the DAMP framework to a recurrent, gated architecture is a key methodological contribution that enables efficient online Bayesian learning of the IC module. After completing message passing, the extrinsic message ∆IC →CT is approximated as the product of the backward Gaussian messages over all symbols, which is fed to the CT module as equivalent observations. The entire IC module naturally decomposes into four bilinear submodules and two nonlinear submodules, each with its own equivalent input priors and observation model. In the following, we name each submodule by its output and detail the message passing rules. Four bilinear submodules z, c, ˜π, and ˜y, share the same equivalent observation model: 
+
+ˆyeq = W Y ueq + bY + neq , (22) where W Y , ueq , and bY are jointly estimated, the en-tries of neq are i.i.d. AWGN. At symbol p of slot t,their corresponding equivalent inputs are [πp−1; R(yp)] ,
+
+[πp−1; R(yp)] , [ ˇ πp; R(yp)] , and πp, respectively. Since each bilinear submodule is identical to the linear layer model in the DAMP framework of [33]. The forward and backward message updates are similar to Bayesian gen-eralized approximate message passing (BiGAMP) in [34] (refer to [33] for details). Two submodules, ˇπ and π, deal with observation models 
+
+ˆyeq = f (ueq ) + neq , (23) where f (·) denotes a nonlinear transformation and ueq 
+
+collects the submodule input variables. Specifically, in Impairments Calibration (IC) Module 
+
+Fig. 3: Factor graph of the RGRU-based IC module at symbol p.TABLE II: Illustration of factor nodes in Fig. 3.                                          
+
+> Factor Distribution Functional form
+> ∆CT →IC Extrinsic message from CT to IC on yp
+> (21)
+> ˇdπp−1Equivalent prior for πp−1(24)
+> ˇdωzEquivalent prior for ωz
+> (20)
+> ˇdωcEquivalent prior for ωc
+> ˇdωπEquivalent prior for ωπ
+> ˇdω˜yEquivalent prior for ω˜y
+> gzpp(zp|πp−1,yp,ωz)δfunction from observation models (3)–(7) and (14), respectively.
+> gcpp(cp|πp−1,yp,ωc)
+> gˇπpp( ˇ πp|cp,πp−1)
+> g˜πpp( ˜ πp|ˇπp,yp,ωπ)
+> gπpp(πp|zp,πp−1,˜πp)
+> g˜ypp(R(˜ yp)|πp,yp,ω˜y)
+
+submodule ˇπ, f is defined by (5), ueq = {cp, πp−1},and the equivalent observation refers to the Gaussian backward message ∆ˇπ→gt 
+
+> ˇπ
+
+. In submodule π, f is de-fined by (7), ueq = {zp, πp−1, ˜πp}, and the equivalent observation refers to the Gaussian backward message 
+
+∆π→gt 
+
+> π
+
+. Because the observation models involve nonlinear mappings through Q(·), some message computations are intractable; we therefore introduce mean-field VBI. We take submodule π as an example to describe the compu-tation as detailed in Appendix A. The detailed updating rules for the submodules are omitted for brevity. Each intra-symbol DAMP iteration TABLE III: Equivalent priors and observations for IC submodules.                            
+
+> Submodule Prior Observation
+> z∆yp→gt
+> z∆πp−1→gt
+> z∆ωz→gt
+> z∆zp→gt
+> z
+> c∆yp→gt
+> c∆πp−1→gt
+> c∆ωc→gt
+> c∆cp→gt
+> c
+> ˇπ∆cp→gt
+> ˇπ∆πp−1→gt
+> ˇπ∆ˇπp→gt
+> ˇπ
+> ˜π∆ˇπp→gt
+> ˜π∆yp→gt
+> ˜π∆˜πp→gt
+> ˜π
+> π∆zp→gt
+> π∆πp−1→gt
+> π∆˜πp→gt
+> π∆πp→gt
+> π
+> ˜y∆yp→gt
+> ˜y∆πp→gt
+> ˜y∆ω˜y→gt
+> ˜y∆R(˜ yp)→gt
+> ˜y
+
+consists of an FMP and a BMP: the FMP computes equivalent priors for the submodules sequentially in the order listed in Table III, while the BMP computes equiv-alent observations in the reverse order. Messages among submodules are combined via the sum-product rule, and non-Gaussian extrinsic messages are approximated by EP. After the above message passing for symbol p completes, the messages on the hidden state πp are aggregated to form the equivalent prior for the message computation of the next symbol, i.e., 
+
+ˇdπp = ∆ gπp →πp ∆g˜yp →πp , (24) where the right-hand side collects the messages from the state transition factor gπp and the output factor g˜yp that point to πp. The entire forward message-passing procedure is executed sequentially for p = 1 , . . . , P , propagating the accumulated impairment memory along the pilot chain within slot t.After message passing within the IC module, the output extrinsic message on {yp}Pp=1 is updated by aggregating backward messages based on the sum-product rule: 
+
+∆IC →CT =
+
+> P
+
+∏
+
+> p=1
+
+∆gt 
+
+> z,p →yp
+
+∆gt
+
+> c,p →yp
+
+× ∆gt 
+
+> ˜π,p →yp
+
+∆gt 
+
+> ˜y,p →yp
+
+,
+
+(25) which is sent to the CT module as the estimated obser-vation without impairments. The MP-TTBDL algorithm is summarized in Alg. 1. D. Complexity Analysis To reduce model complexity, we exploit the localized crosstalk structure in practical massive MIMO receivers. Strong crosstalk is typically confined to adjacent RF chains [7], [29]. Consequently, the distorted sample on the 
+
+n-th RF chain depends only on ySn , where Sn is the index set of the RF chains that have strong crosstalk with the n-th chain. The RGRU can therefore be decomposed into N
+
+parallel sub-networks GRU n, each with input R(ySn ) and output in R2, as conceptually illustrated in Fig. 4, where the weight matrices and the hidden state πp are omitted for simplicity. Equivalently, constraining W z (t), W c(t),
+
+W ˜π (t), and W ˜y (t) to be block diagonal reduces the Algorithm 1 Online joint channel and impairments track-ing algorithm  
+
+> 1:
+
+for t = 1 , 2, . . . do  
+
+> 2:
+
+Compute input prior messages ˇdts, ˇdtx, ˇdtω . (Initializa-tion if t = 1 ) 
+
+> 3:
+
+Set ∆IC →CT to a non-informative (flat) Gaussian extrinsic message for the CT observation model.  
+
+> 4:
+
+for τ = 1 . . . τ max do  
+
+> 5:
+
+• CT Module:  
+
+> 6:
+
+Update messages within CT Module via Turbo-OAMP with input prior ˇdts, ˇdtx and extrinsic message ∆IC →CT . 
+
+> 7:
+
+Update output extrinsic message ∆CT →IC using (21).  
+
+> 8:
+
+• IC Module:  
+
+> 9:
+
+Update messages within IC Module via DAMP with input prior ˇdtω and extrinsic message 
+
+∆CT →IC . 
+
+> 10:
+
+Update output extrinsic message ∆IC →CT using (25).  
+
+> 11:
+
+end for  
+
+> 12:
+
+Update the output messages to the next time slot as (15)–(17).  
+
+> 13:
+
+Update angular domain grid points based on gradi-ent descent.  
+
+> 14:
+
+end for 
+
+Fig. 4: Factor graph of the parallel sub-network structure, where weights and hidden states are omitted for simplicity. model parameters from O(N 2N 2sub ) to O(N N 2sub ) without loss of fitting performance. In this parallel arrangement, each sub-network GRU n maintains its own hidden state; let Nsub denote its sub-network hidden dimension. The collection of these local states constitutes the overall memory of the impairment model. We compare the model sizes of the proposed RGRU with the two conventional compensators evaluated in Sec. IV: a GMP compensator and a GRU compensator that adopts the same parallel per-chain sub-network architecture as the RGRU. From (2) and (3)–(6), the proposed RGRU satisfies |ω| = ∑Nn=1 
+
+(3N 2sub + 6 Nsub |S n| + 5 Nsub + 2 ) ∼O(N N 2sub ). The parallel GRU compensator reuses the same per-chain sub-network architecture and therefore has the same |ω|. For the GMP compensator, each chain builds GMP bases with memory taps m = 0, . . . , M 
+
+and odd nonlinearity orders {1, 3, . . . , K }, giving Nb,n =(M + 1) ⌈K/ 2⌉ (2 |S n| − 1) basis functions per chain; with widely-linear fitting, the real coefficient count is |β| =4 ∑Nn=1 Nb,n ∼ O (N KM ).We next compare the per-slot computational complexity of Alg. 1 with the GMP and GRU compensators. All schemes share the same Turbo-OAMP channel estima-tor, which requires τmax internal iterations between sub-modules A and B and contributes O(τmax P N 2) operations per slot. Under the parallel per-chain architecture in Fig. 4, the proposed MP-TTBDL additionally executes the IC module (DAMP) in each of the τmax CT–IC turbo iterations, introducing an extra O(τmax P N N 2sub +
+
+τmax P N N sub ) per slot, plus O(N N 2sub ) for the cross-slot message updates, yielding CTTBDL = O(τmax P N 2 +
+
+τmax P N N 2sub + τmax P N N sub + N N 2sub ). For the baselines, the GMP compensator applies a fixed polynomial trans-form costing O(P N Kp md ) and the GRU compensator uses a feedforward pass of complexity O(P N N 2sub + P N N sub ),each followed by the same Turbo-OAMP stage, giv-ing CGMP = O(P N Kp md + τmax P N 2) and CGRU =
+
+O(P N N 2sub +P N N sub +τmax P N 2). As N grows large while 
+
+P , τmax , and Nsub remain fixed, the per-slot complexity of all three schemes asymptotes to O(τmax P N 2).IV. Performance Evaluation In this section, we present simulation results to evaluate the performance of the proposed algorithm. We first conduct offline pretraining to demonstrate the superiority of our message-passing-based neural network training algorithm over conventional methods. We then consider the case where the online impairments exactly match the offline pretraining configuration, and verify the ef-fectiveness of the proposed joint Bayesian deep learning framework. Finally, we evaluate the scenario where the online impairments drift slowly over time, confirming both the effectiveness of the two-timescale Markov transition model and the robustness of the MP-TTBDL algorithm design. A. Offline Pretraining The receiver is equipped with N = 64 antennas in the following simulations. To generate representative training and test data, we synthesize the distorted observations by cascading a linear crosstalk model, a nonlinear amplifier with memory, and a phase-only IQ imbalance model, all of which are widely adopted in the literature for hardware impairment simulation. Crosstalk is assumed only between adjacent RF chains [7], [29], with linear coupling coefficient 
+
+ϵ = 0 .1778 (−15 dB). The IQ imbalance is modeled as a phase mismatch ϕ = 0 .1778 (−15 dB). The amplifier nonlinearity follows a GMP with memory depth pmd = 4 
+
+and nonlinearity order K = 3 , whose coefficients are taken from a measured-data example in MATLAB [35]. These      
+
+> (a) Nsub = 64 (b) Nsub = 32
+
+Fig. 5: Fitting performance comparison of EM-TDAMP and Adam for Nsub = 64 and Nsub = 32 .specific parametric models are used only to generate eval-uation data and are not assumed by the proposed method, which can handle more general hardware impairments. We generate 10 ,000 independent sequences of 10 sym-bols, randomly split into 5,000 training and 5,000 test samples. For each symbol, the entries of the ideal received vector yp ∈ CN are independently drawn from CN (0 , 1) .To demonstrate the advantages of our expectation-maximization turbo deep approximate message passing (EM-TDAMP) algorithm [33] in neural network training, we conducted simulations with two sub-network hidden dimensions, Nsub = 32 and Nsub = 64 , for each sub-network shown in Fig. 4. We used a batch size of 100 and trained for 5 epochs. For the Adam baseline [36], the initial learning rate was set to 0.01 . The fitting performance is presented in Fig. 5, which clearly shows that our algorithm achieves faster convergence and superior fitting accuracy than Adam under both configurations. Our method performs Bayesian inference on the top-level factor graph during online tracking and requires no separately trained compensator. For fair comparison, we train two conventional compensators on the same pretraining dataset: a GMP compensator (nonlinearity order K = 3, memory depth pmd = 4) with 15 ,168 
+
+real coefficients obtained by least squares, and a GRU compensator that adopts the same parallel per-chain sub-network architecture with Nsub = 32 , giving a total of 
+
+243 ,456 real parameters identical to the proposed RGRU. B. Online Joint Tracking For online joint tracking, we used the same RGRU ensemble as in offline pretraining, with Nsub = 32 per sub-network. The time-varying flat-fading uplink channel 
+
+h(t) was generated by the QuaDRiGa ray-tracing sim-ulator [37] under the 3GPP TR 38.901 urban macro-cell non-line-of-sight (NLOS) scenario, with carrier fre-quency 6 GHz, two propagation clusters, and per-cluster azimuth/elevation angular spreads of 1◦. The user speed was set to 1 m/s, with P = 4 pilot symbols per slot and a slot duration of 1 ms. The proposed method is compared against the following benchmark schemes:  
+
+> •
+
+MP-BDL: joint inference with a static ω prior; used to validate the necessity of the slow Markov prior for tracking impairment drift.  
+
+> •
+
+MP-BDL-Frozen: CT–IC message passing with frozen 
+
+ω; used to confirm the benefit of online impairment adaptation.  
+
+> •
+
+w/o compensation: Turbo-OAMP is applied directly to the distorted observations ˜y to quantify the degra-dation caused by hardware impairments.  
+
+> •
+
+GMP for compensation: an offline-trained GMP com-pensator is followed by Turbo-OAMP to demonstrate the advantage over a conventional polynomial com-pensator.  
+
+> •
+
+GRU for compensation: an offline-trained parallel GRU compensator of the same model size is followed by Turbo-OAMP to assess the gain of the proposed joint Bayesian framework over a decoupled approach that performs compensation and channel estimation separately. We first consider the scenario where the online impair-ments are identical to those used in offline pretraining. Since no impairment drift occurs, only MP-BDL-Frozen and the conventional compensators are compared, so as to validate the intra-slot joint Bayesian inference framework. The channel estimation NMSE is averaged over 100 
+
+consecutive slots with τmax = 5 turbo iterations between the CT and IC modules. Fig. 6 reports the channel NMSE versus SNR for all schemes, along with an upper bound obtained from impairment-free observations and a lower bound corresponding to the uncompensated case. Hard-ware impairments are seen to severely degrade channel estimation accuracy. Although conventional compensators mitigate this degradation to some extent, a considerable gap to the impairment-free upper bound persists. By con-trast, the proposed MP-BDL-Frozen achieves the lowest channel NMSE among all compared schemes and closely approaches the upper bound across the entire SNR range, with the advantage being especially pronounced at high SNR. To reveal the source of this gain, Fig. 7 plots the NMSE of the recovered signal y versus the turbo iteration index τ ,where SNR = 20 dB is taken as a representative case. Un-der the joint Bayesian inference framework, the IC module reconstructs y by exploiting the prior information supplied by the CT module. As the turbo iterations proceed, the two modules progressively refine their extrinsic messages, yielding an estimate of y that is more accurate than that produced by the baseline compensators and, in turn, a lower channel estimation error. This gain becomes more prominent at high SNR, where the prior variance from 0 5 10 15 20 
+
+SNR (dB) 
+
+> -35 -30 -25 -20 -15 -10 -5
+> NMSE (dB)
+> GMP for compensation
+> GRU for compensation
+> MP-BDL-Frozen
+> w/o compensation
+> w/o impairments
+
+Fig. 6: Channel estimation NMSE versus SNR when the online impairments coincide with the offline pretraining. 1 2 3 4 5
+
+> -18 -16 -14 -12 -10
+> NMSE (dB)
+> GMP for compensation
+> GRU for compensation
+> MP-BDL-Frozen
+
+Fig. 7: NMSE of the estimated y versus τ at SNR = 20 dB when the online impairments coincide with the offline pretraining. the CT module is smaller and the prior information is therefore more precise, further amplifying the benefit of joint inference. It is observed that the NMSE converges within τmax = 3 iterations, and this value is consequently adopted as the default in all subsequent simulations. The performance under slowly time-varying impair-ments is evaluated next, so as to validate the effectiveness of the proposed two-timescale Markov transition model MP-TTBDL algorithm. Let θ(t) collect all time-varying impairment parameters at slot t, including the coefficients for LNA, the IQ phase mismatches, and the crosstalk cou-pling coefficients. At t = 0 , the crosstalk and IQ mismatch amplitudes are set to ϵn(0) = ϕn(0) = 0 .2239 (−13 dB). The LNA coefficients are initialized by scaling the fixed coefficients used in the matched-online experiment by 1.02 ,
+
+1.05 , and 1.1 for the linear, third-order, and fifth-order taps, respectively, yielding a degraded amplifier state. For t = 1 , . . . , 600 , the parameters evolve according to 
+
+θ(t) = ρ θ(t − 1) + (1 − ρ) θ⋆ + η |θ(t − 1) |2 ⊙ ξ(t), with 
+
+ρ = 0 .995 , η = 0 .01 , and ξ(t) ∼ N (0, I) element-wise independent across slots. The target θ⋆ drives the IQ and crosstalk amplitudes from −13 dB toward −12 dB, and drives the third- and fifth-order LNA taps further upward by approximately 2% and 5% relative to their initial degraded values, while the linear LNA taps remain largely unchanged. Over the 600 slots, the parameters therefore evolve gradually from the degraded initial con-dition toward the more severe impairment state specified by θ⋆, with the small per-slot step size governed by ρ
+
+and η capturing the slow drift characteristic of practical hardware aging and environmental variations. To evaluate the tracking capability under time-varying impairments, the channel estimation NMSE and the NMSE of the recovered signal y are first examined at SNR = 20 dB over 600 slots. Fig. 8 presents the channel estimation NMSE versus t. The MP-BDL-family algo-rithms (MP-BDL, MP-BDL-Frozen, and the proposed MP-TTBDL) consistently outperform the conventional schemes that apply compensation followed by Bayesian channel estimation. Within the MP-BDL family, MP-TTBDL achieves an increasingly larger gain over both MP-BDL and MP-BDL-Frozen as tracking proceeds, val-idating the effectiveness of the two-timescale Markov prior in refining the impairment parameter estimates over time. Fig. 9 reports the NMSE of the recovered signal 
+
+y versus t. It is observed that MP-TTBDL produces a more accurate estimate of y than the competing schemes, confirming that the channel estimation gain observed in Fig. 8 originates from the improved recovery of the input signal y, which in turn provides higher-quality input to the CT module. The forward RGRU fitting NMSE, defined as 
+
+∥ˆy−˜y∥2F/∥˜y∥2F, is further examined in Fig. 10 to isolate the contribution of the online RGRU parameter update. This metric quantifies how accurately the RGRU forward model reproduces the impaired observations. As online pilot data accumulate, MP-TTBDL progressively refines the RGRU parameters via inter-slot message passing, and the fitting NMSE exhibits an overall decreasing trend over time. MP-BDL, which retains the inter-slot message passing but lacks the slow Markov prior to model the gradual parameter drift, demonstrates a limited tracking capa-bility and thus falls short of the proposed MP-TTBDL. The baselines without online adaptation, i.e., MP-BDL-Frozen and other baseline schemes, are unable to adjust the impairment model based on live observations and show no improvement over time. These results confirm that the two-timescale message passing mechanism effectively exploits live observations to enhance the fidelity of the impairment surrogate, which drives the channel estimation gain observed in Fig. 8. Fig. 11 reports the channel estimation NMSE averaged over the last 100 slots versus SNR. MP-TTBDL consis-0.1 0.2 0.3 0.4 0.5 0.6 
+
+t/s 
+
+> -22 -21 -20 -19 -18 -17 -16 -15
+> NMSE (dB)
+> GMP for compensation
+> GRU for compensation
+> MP-BDL-Frozen
+> MP-BDL
+> MP-TTBDL
+
+Fig. 8: Channel tracking NMSE versus t under time-varying impairments at SNR = 20 dB, where each data point is averaged over 100 slots (0.1 s) and the total tracking duration is 600 slots ( 0.6 s). 0.1 0.2 0.3 0.4 0.5 0.6 
+
+t/s 
+
+> -10 -9.5 -9 -8.5 -8 -7.5 -7 -6.5
+> NMSE (dB)
+> GMP for compensation
+> GRU for compensation
+> MP-BDL-Frozen
+> MP-BDL
+> MP-TTBDL
+
+Fig. 9: NMSE of estimated y versus t.tently achieves the lowest NMSE among all compared schemes, confirming its robustness. The performance gain is particularly pronounced at high SNR, since observations at higher SNR provide more informative messages for the online RGRU parameter update and thus amplify the advantage of the two-timescale tracking framework. V. Conclusion This paper proposed an MP-TTBDL framework for joint channel and hardware impairment tracking in mas-sive MIMO receivers. An RGRU was adopted to cap-ture the intra-slot memory of the impairments. Distinct Markov priors were placed on the fast-varying sparse channel and the slow-varying network parameters, al-lowing temporal messages to propagate across slots at two different timescales and thereby track both channel 0.1 0.2 0.3 0.4 0.5 0.6 
+
+t/s 
+
+> -21 -20 -19
+> NMSE (dB)
+> MP-BDL-Frozen
+> MP-BDL
+> MP-TTBDL
+
+Fig. 10: Forward RGRU fitting NMSE versus t.0 5 10 15 20 
+
+SNR (dB) 
+
+> -22 -21 -20 -19 -18 -17 -16 -15 -14
+> NMSE (dB)
+> GMP for compensation
+> GRU for compensation
+> MP-BDL-Frozen
+> MP-BDL
+> MP-TTBDL
+
+Fig. 11: Channel tracking NMSE versus SNR under time-varying impairments (averaged over the last 100 slots). dynamics and hardware aging. To handle the complex intra-slot structure, the factor graph within each slot was split into a CT module and an IC module. Turbo-OAMP handled the sparse channel estimation, while a proposed DAMP procedure updated the impairment parameters, and the two modules refined their estimates by exchanging extrinsic information through EP. Specifically, a mean-field VBI scheme was employed to approximate the non-Gaussian messages produced by the nonlinear observa-tion models. Simulation results demonstrated that the proposed framework achieves consistently lower channel estimation error than the baselines that apply compensa-tion followed by Bayesian channel estimation across both static and slowly time-varying impairment conditions. This advantage is particularly pronounced at high SNR and accumulates over time during online tracking, while the per-slot computational complexity stays within aconstant factor of these baselines. Several directions deserve further investigation. First, extending the framework to multi-user scenarios, where multi-user pilot design may be jointly optimized to fur-ther improve the overall channel estimation performance, represents a natural generalization of this work. Second, more advanced recurrent architectures, e.g., Transformers, may be explored to address more complex hardware impairments expected in future transceivers. In such sce-narios, message passing algorithms for the corresponding factor graphs should be developed. Third, since the per-slot computational cost of the proposed framework is dominated by the online tracking of slow-varying network parameters, low-complexity implementations are desirable for practical deployment to achieve a favorable tradeoff between tracking performance and algorithm complexity. Appendix A VBI Updates for Submodule π
+
+This appendix derives the closed-form mean-field VBI updates for the nonlinear submodule π in Sec. III-C2. The update formulas for ˇπ are structurally similar and can be obtained by adapting the same procedure to its specific observation model (5). Since the observation model is element-wise, we consider the derivation in the scalar case. We denote by ˆyeq the equivalent observation with noise variance σ2eq .a) Forward Updates (FMP): During FMP, the pos-terior distribution of πp is approximated by a Gaussian distribution. Since Eq. (7) is a deterministic mapping, the corresponding mean and variance are expressed based on the variational posteriors q(zp), q(˜ πp), and q(πp−1):
+
+μπp = (1 − E[Q(zp)] )μπp−1 + E[Q(zp)] (2E[Q(˜ πp)] − 1),vπp = (1 − E[Q(zp)] )2vπp−1 + μ2 
+
+> πp−1
+
+Var[ Q(zp)] + Var[ Q(zp)] vπp−1 + (E[Q(zp)] )2 · 4Var[ Q(˜ πp)] + (2E[Q(˜ πp)] − 1)2Var[ Q(zp)] + 4Var[ Q(zp)]Var[ Q(˜ πp)] ,
+
+where for any Gaussian variable X, the expectation 
+
+E[Q(X)] and variance Var[ Q(X)] can be expressed in terms of the bivariate normal cumulative distribution function, and the specific expressions can be found in [38], [39]. The forward message is N (μπp , v πp ), and is computed once after the BMP procedure below converges. b) Backward Updates (BMP): Under the mean-field assumption, the variational distribution factor-izes as q(zp, ˜πp, π p−1) = q(zp)q(˜ πp)q(πp−1), with each factor constrained to a Gaussian form: q(zp) =
+
+N (zp; μzp , v zp ), q(˜ πp) = N (˜ πp; μ˜πp , v ˜πp ), and q(πp−1) = 
+
+N (πp−1; μπp−1 , v πp−1 ), where μzp , vzp , μ˜πp , v˜πp , μπp−1 ,and vπp−1 denote the updated posterior parameters. The equivalent priors are written as N (·; μzp→gtπ , v zp→gtπ ),
+
+N (·; μ˜πp→gtπ , v ˜πp→gtπ ), and N (·; μπp−1→gtπ , v πp−1→gtπ ), re-spectively. During BMP, the KL divergence between this variational distribution and the true posterior under (7) is minimized with respect to the variational parameters. For a given variable, e.g., πp−1, the optimal factor satisfies 
+
+log q(πp−1) = Eq(zp)q(˜ πp)
+
+[log p(ˆ yeq , z p, ˜πp, π p−1)] + const ,
+
+where 
+
+p(ˆ yeq , z p, ˜πp, π p−1)= N (ˆyeq ; (1 − Q (zp)) πp−1 + Q(zp)(2 Q(˜ πp) − 1) , σ 2eq 
+
+)
+
+× ∆zp→gtπ ∆˜πp→gtπ ∆πp−1→gtπ , (26) Based on this expression, the update of πp−1 yields a Gaussian distribution whose mean and variance are obtained in closed form, whereas those of zp and ˜πp
+
+require linearization of Q(·) around the current variational means. The three factors are updated alternately until convergence, and the specific updating rules are provided below.  
+
+> •
+
+Update for πp−1:
+
+vπp−1 =
+
+( 1
+
+vπp−1→gtπ
+
++ 1 − 2E[Q(zp)] + E[Q(zp)2]
+
+σ2eq 
+
+)−1
+
+,μπp−1 = vπp−1
+
+( μπp−1→gtπ
+
+vπp−1→gtπ
+
++ 1
+
+σ2eq 
+
+(ˆyeq 
+
+(1 − E[Q(zp)] )
+
+− (E[Q(zp)] − E[Q(zp)2])( 2E[Q(˜ πp)] − 1)) )
+
+. 
+
+> •
+
+Update for zp: Since the variational mean μzp varies slowly across successive iterations, a first-order Taylor expansion around μzp is sufficiently accurate, i.e., 
+
+Q(zp) ≈ Q (μzp ) + ϕ(μzp )( zp − μzp ),
+
+where ϕ(·) denotes the standard normal probability density function. With this approximation, the pos-terior mean and variance of zp are given by 
+
+vzp =
+
+( 1
+
+vzp→gtπ
+
++ ϕ(μzp )2
+
+σ2eq 
+
+E[(2 Q(˜ πp) − 1 − πp−1)2])−1
+
+μzp = vzp
+
+μzp→gtπ
+
+vzp→gtπ
+
++ vzp
+
+ϕ(μzp )
+
+σ2eq 
+
+(Q(μzp ) − ϕ(μzp )μzp
+
+)
+
+× E[(2 Q(˜ πp) − 1 − πp−1)2]
+
++ vzp
+
+ϕ(μzp )
+
+σ2eq 
+
+(ˆyeq − E[πp−1]) × (2E[Q(˜ πp)] − 1) 
+
+> •
+
+Update for ˜πp: Similarly, linearizing 2Q(˜ πp) − 1
+
+around μ˜π gives 
+
+v˜πp =
+
+( 1
+
+v˜πp→gtπ
+
++ E[Q(zp)2] (2 ϕ(μ˜πp )) 2
+
+σ2eq 
+
+)−1
+
+,μ˜πp = v˜πp
+
+( μ˜πp→gtπ
+
+v˜πp→gtπ
+
++ 2ϕ(μ˜πp )
+
+σ2eq 
+
+(
+
+ˆyeq − E[Q(zp)] E[πp−1]
+
+− (2Q(μ˜πp ) − 1)E[Q(zp)] 
+
+))
+
+.
+
+The three updates are performed alternately until con-vergence. In our simulations, this process typically requires only two iterations. References 
+
+[1] M. H. Moghaddam, S. Rezaei Aghdam, N. Mazzali, and T. Eriksson, “Statistical modeling and analysis of power am-plifier nonlinearities in communication systems,” IEEE Trans. Commun., vol. 70, no. 2, pp. 822–835, Feb. 2022. [2] H. Wang, M. Eleraky, B. Abdelaziz, B. Lin, E. Liu, Y. Liu, M. Ghorbanpoor, C. Chu, A. Ruffino, J. Xu, and others, “Power amplifiers performance survey 2000–present,” [Online]. Available: https://ideas.ethz.ch/surveys/pa-survey.html. [3] S. A. Bassam, M. Helaoui, and F. M. Ghannouchi, “Crossover digital predistorter for the compensation of crosstalk and non-linearity in MIMO transmitters,” IEEE Trans. Microw. Theory Techn., vol. 57, no. 5, pp. 1119–1128, May 2009. [4] S. A. Bassam, M. Helaoui, S. Boumaiza, and F. M. Ghannouchi, “Experimental study of the effects of RF front-end imperfection on MIMO transmitter performance,” in 2008 IEEE MTT- Int. Microw. Symp. Dig., Jun. 2008, pp. 1187–1190. [5] A. Tarighat, R. Bagheri, and A. H. Sayed, “Compensation schemes and performance analysis of IQ imbalances in OFDM receivers,” IEEE Trans. Signal Process., vol. 53, no. 8, pp. 3257– 3268, Aug. 2005. [6] Ö. Alaca, S. Althunibat, S. L. Miller, and K. A. Qaraqe, “Anal-ysis of receiver IQ-imbalance in IM-OFDMA uplink systems,” IEEE Commun. Lett., vol. 26, no. 4, pp. 917–921, Apr. 2022. [7] L. Zhao, H. Qian, W. Feng, M. Li, and K. Kang, “A low-complexity digital predistorter for large-scale MIMO systems with crosstalk,” IEEE Trans. Veh. Technol., vol. 72, no. 10, pp. 13 203–13 213, Oct. 2023. [8] J. Li, C. You, C. Zhou, Y. Zeng, and Z. Feng, “Near-field target localization: Effect of hardware impairments,” IEEE Trans. Wirel. Commun., 2026. [9] J. Qi and S. Aissa, “Analysis and compensation for the joint effects of HPA nonlinearity, I/Q imbalance and crosstalk in MIMO beamforming systems,” in 2011 IEEE Wirel. Commun. Netw. Conf. Cancun, Mexico: IEEE, Mar. 2011, pp. 1562–1567. [10] C.-Y. Wu, Y.-K. Lin, C.-K. Wu, and C.-H. Lee, “Deep learning-based end-to-end design for OFDM systems with hardware impairments,” IEEE Open J. Commun. Soc., vol. 4, pp. 2468– 2482, 2023. [11] S. Amin, P. N. Landin, P. Händel, and D. Rönnow, “Behavioral modeling and linearization of crosstalk and memory effects in RF MIMO transmitters,” IEEE Trans. Microw. Theory Tech., vol. 62, no. 4, pp. 810–823, Apr. 2014. [12] B. O’Brien, J. Dooley, A. Zhu, and T. J. Brazil, “Estimation of memory length for RF power amplifier behavioral models,” in 2006 Eur. Microw. Conf., Sep. 2006, pp. 680–682. [13] D. Morgan, Z. Ma, J. Kim, M. Zierdt, and J. Pastalan, “A generalized memory polynomial model for digital predistortion of RF power amplifiers,” IEEE Trans. Signal Process., vol. 54, no. 10, pp. 3852–3860, Oct. 2006. [14] M. Kong, J. Shi, B. Sang, J. Ding, K. Wang, W. Li, F. Wang, C. Liu, Y. Wang, Y. Wei, L. Zhao, W. Zhou, X. Xin, B. Liu, B. Ye, W. Chen, and J. Yu, “800-Gb/s/carrier WDM coherent transmission over 2000 km based on truncated PS-64QAM utilizing MIMO Volterra equalizer,” IEEE J. Lightw. Technol., vol. 40, no. 9, pp. 2789–2797, 2022. [15] M. Goffioul, P. Wambacq, G. Vandersteen, and S. Donnay, “Analysis of nonlinearities in RF front-end architectures using a modified Volterra series approach,” in Proc. Design, Automation and Test in Europe Conf. Exhib. (DATE), Mar. 2002, pp. 352– 356. [16] A. Fawzy, S. Sun, T. J. Lim, Y. Yu, C. Yu, and Y. Guo, “Itera-tive learning control based digital pre-distortion for mitigating impairments in MIMO wireless transmitters,” IEEE Trans. Veh. Technol., vol. 72, no. 6, pp. 6933–6947, Jun. 2023. [17] Z. X. Li and R. Lv, “High-relative-bandwidth multiband LNA distortion elimination with neural network,” IEEE Access, vol. 12, pp. 81 398–81 409, 2024. [18] P. Jaraut, M. Rawat, and F. M. Ghannouchi, “Composite neural network digital predistortion model for joint mitigation of crosstalk, I/Q imbalance, nonlinearity in MIMO transmitters,” IEEE Trans. Microw. Theory Tech., vol. 66, no. 11, pp. 5011– 5020, Nov. 2018. [19] P. Taghikhani, K. Buisman, M. Versleijen, J.-R. Perez-Cisneros, and C. Fager, “Temperature-dependent characterization of power amplifiers using an efficient electrothermal analysis tech-nique,” IEEE Trans. Microwave Theory Techn., vol. 70, no. 2, pp. 1349–1360, Feb. 2022. [20] X. Zheng and V. Lau, “Online DNN-based channel estimator for massive MIMO systems with nonlinear distortion,” in 2021 IEEE Glob. Commun. Conf. GLOBECOM. Madrid, Spain: IEEE, Dec. 2021, pp. 1–6. [21] J. Kwon, S. Jeon, Y.-S. Jeon, and H. V. Poor, “MIMO detection under hardware impairments: Learning with noisy labels,” IEEE Trans. Wirel. Commun., vol. 23, no. 6, pp. 6015–6029, Jun. 2024. [22] Y. Zhou, A. Liu, and W. Xu, “Subspace constrained variational Bayesian inference for structured compressive sensing with a dynamic grid,” IEEE Trans. Signal Process., vol. 73, pp. 781– 794, 2025. [23] W. Xu, A. Liu, M.-M. Zhao, and G. Caire, “Joint visibility region detection and channel estimation for XL-MIMO systems via alternating MAP,” IEEE Trans. Signal Process., vol. 72, pp. 4827–4842, 2024. [24] Y. Wan, G. Liu, A. Liu, and M.-M. Zhao, “Robust multi-user channel tracking scheme for 5G new radio,” IEEE Trans. Wirel. Commun., vol. 23, no. 6, pp. 5878–5894, Jun. 2024. [25] D. Gao, Q. Guo, G. Liao, Y. C. Eldar, Y. Li, Y. Yu, and B. Vucetic, “Signal detection in MIMO systems with hardware imperfections: Message passing on neural networks,” IEEE Trans. Wirel. Commun., vol. 23, no. 1, pp. 820–834, Jan. 2024. [26] D. Gao, Q. Guo, M. Jin, Z. Yuan, G. Liao, W. Li, and Y. Wu, “Bayesian joint nonlinear system model learning, sensing and signal detection in ISAC with hardware imperfections,” IEEE Trans. Wirel. Commun., vol. 25, pp. 5685–5700, 2026. [27] W. Xu and A. Liu, “Message passing based two-timescale bayesian deep learning for joint channel and hardware impair-ments estimation,” in 2025 IEEE 101st Veh. Technol. Conf. (VTC2025-Spring). Oslo, Norway: IEEE, 2025. [28] L. Lian, A. Liu, and V. K. N. Lau, “Exploiting dynamic sparsity for downlink FDD-massive MIMO channel tracking,” IEEE Trans. Signal Process., vol. 67, no. 8, pp. 2007–2021, Apr. 2019. [29] T. Uthayakumar, A. Abdelhafiz, X. Wang, and M. Jian, “Scal-able single-input behavioral modeling architecture for MIMO systems with crosstalk,” IEEE Trans. Circuits Syst. Regul. Pap., vol. 70, no. 5, pp. 2179–2188, May 2023. [30] Y. Wu, G. D. Singh, M. Beikmirza, L. C. N. de Vreede, M. Alavi, and C. Gao, “OpenDPD: An open-source end-to-end learning & benchmarking framework for wideband power amplifier modeling and digital pre-distortion,” in 2024 IEEE Int. Symp. Circuits Syst. ISCAS, May 2024, pp. 1–5. [31] J. Ziniel and P. Schniter, “Dynamic compressive sensing of time-varying signals via approximate message passing,” IEEE Trans. Signal Process., vol. 61, no. 21, pp. 5270–5284, Nov. 2013. [32] A. Liu, L. Lian, V. K. N. Lau, and X. Yuan, “Downlink channel estimation in multiuser massive MIMO with hidden markovian sparsity,” IEEE Trans. Signal Process., vol. 66, no. 24, pp. 6436– 6451, Dec. 2018. [33] W. Xu, A. Liu, Y. Zhang, and V. Lau, “Bayesian deep learning via expectation maximization and turbo deep approximate message passing,” IEEE Trans. Signal Process., vol. 72, pp. 3865–3878, 2024. [34] J. T. Parker, P. Schniter, and V. Cevher, “Bilinear generalized approximate message passing—part I: Derivation,” IEEE Trans. Signal Process., vol. 62, no. 22, pp. 5839–5853, Nov. 2014. [35] MathWorks, “Generalized memory polynomial power amplifier model fitting,” MATLAB Example, 2024, [Online]. Available: https://www.mathworks.com/help/simrf/ug/ generalize-memory-polynomial-power-amplifier-model-fitting. html. [36] D. P. Kingma and J. Ba, “Adam: A method for stochastic optimization,” in 3rd Int. Conf. Learn. Represent. (ICLR), 2015. [37] S. Jaeckel, L. Raschkowski, M. Rürup, L. Thiele, K. Borner, K. Zwikiera, S. Fries, J. Jemai, C. Priebe, D. Hampicke et al., “QuaDRiGa: A 3-d multi-layer channel model for multi-user massive MIMO,” IEEE Access, vol. 7, pp. 168 171–168 185, 2019. [38] C. E. Rasmussen and C. K. I. Williams, Gaussian Processes for Machine Learning. Cambridge, MA: MIT Press, 2006. [39] A. Genz, “Numerical computation of rectangular bivariate and trivariate normal and t probabilities,” Statistics and Comput-ing, vol. 14, no. 3, pp. 251–260, 2004.

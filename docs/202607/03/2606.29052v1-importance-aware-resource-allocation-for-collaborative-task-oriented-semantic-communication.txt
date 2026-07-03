@@ -1,0 +1,458 @@
+Title: Importance-Aware Resource Allocation for Collaborative Task-Oriented Semantic Communication
+
+URL Source: https://arxiv.org/pdf/2606.29052v1
+
+Published Time: Tue, 30 Jun 2026 00:47:45 GMT
+
+Number of Pages: 6
+
+Markdown Content:
+# Importance-aware Resource Allocation for Collaborative Task-Oriented Semantic Communication 
+
+Kaiyi Lei 1, Yuanzhe Peng 1, Letian Zhang 2, and Jie Xu 11University of Florida, USA 2Middle Tennessee State University, USA Email: {kaiyi.lei, pengy1, jie.xu }@ufl.edu, letian.zhang@mtsu.edu 
+
+Abstract —Task-oriented semantic communication must allo-cate scarce radio resources to semantic features under fast fading wireless conditions and strict end-to-end latency budgets. Existing solutions are either optimization-heavy, leading to prohibitive computational overhead during online operation, or rely on end-to-end retraining procedures together with slowly varying channel assumptions. We propose iCoTASC (importance-aware Collaborative Task-Oriented Semantic Communication), a hy-brid offline–online framework designed for collaborative multi-device semantic communication systems. iCoTASC leverages attribution-based importance to guide per-dimension embedding selection as a practical communication control signal, models diminishing semantic returns of quantization through a data-driven utility function, and precomputes per-transmitter utility lookup tables offline, which together enable lightweight online scheduling via table lookup and low-complexity refinement under time-varying channels. The proposed framework supports real-time, channel-adaptive semantic resource allocation in distributed systems without requiring retraining of the underlying task inference model. 
+
+Index Terms —semantic communication, task-oriented commu-nication, resource allocation, importance attribution 
+
+I. I NTRODUCTION 
+
+The rapid proliferation of intelligent devices, such as cameras, wearables, and embedded sensors, has transformed modern computing into a distributed, multi-modal ecosystem. Instead of relying on a single powerful processor, today’s sys-tems increasingly operate as teams of interconnected devices that collectively perceive, interpret, and act on their surround-ing environment in a coordinated manner [1]. Conventional wireless communication pipelines, grounded in Shannon’s sep-aration principle, are designed to faithfully transmit raw data or accurately reconstructed signals over bandwidth-limited links. Yet, in many emerging applications, the real objective is no longer to preserve raw bits themselves, but to preserve task-relevant meaning that directly supports downstream in-ference or decision-making. This shift motivates the emerging paradigm of task-oriented semantic communication, in which transmitters directly encode information that is most infor-mative for maximizing downstream task performance rather than signal-level fidelity [2]. By prioritizing semantic utility instead of bit-level fidelity, semantic communication enables more efficient, adaptive, and intelligent interactions among Reasoner 
+
+Input data 
+
+Importance -aware 
+
+resource allocation 
+
+Semantic 
+
+embeddings 
+
+Downstream reasoning output 
+
+Semantic 
+
+encoder 1
+
+Semantic 
+
+encoder 𝑘  Semantic 
+
+encoder 𝐾 
+
+# … …
+
+# … …
+
+# … …
+
+Fig. 1. We propose iCoTASC, an importance-aware Collaborative TAsk-oriented Semantic Communication framework for multi-device systems oper-ating under dynamic wireless conditions. 
+
+distributed devices and users, particularly under constrained wireless resources and dynamic operating conditions [3], [4]. Recent years have witnessed growing efforts to develop semantic communication architectures and learning-based transceivers [5], [6]. However, most existing approaches re-main primarily limited to single-transmitter scenarios and often assume relatively stable channel conditions together with fixed or pre-determined resource budgets [7], [8]. Such assumptions become increasingly restrictive in practical multi-device use cases such as AR/VR streaming, collaborative perception for autonomous systems, and multi-sensor health monitoring, where task success critically depends on the coor-dinated and complementary contributions of multiple devices. Meanwhile, fluctuating bandwidth, latency, and interference conditions demand agile, real-time adaptation of both trans-mission precision and resource allocation strategies. Address-ing these intertwined challenges calls for a new paradigm, namely collaborative task-oriented semantic communica-tion , which ensures that distributed devices convey not merely raw data, but task-relevant semantic information that directly supports the user’s inference objective or operational goal. Designing a collaborative task-oriented semantic communi-cation system introduces several fundamental challenges that extend beyond existing single-transmitter semantic compres-sion. First, in multi-device settings, the utility of one encoder’s 
+
+> arXiv:2606.29052v1 [cs.DC] 27 Jun 2026
+
+representation depends on the embeddings provided by oth-ers, because downstream inference relies on the joint, and often complementary, semantic evidence aggregated across devices. Training each encoder independently therefore risks redundancy, omission of key information, and even implicit overfitting to a single viewpoint or modality, which can reduce robustness under distribution shifts. Hence, encoders across devices should be jointly trained to produce complementary, synergistic, and non-redundant semantic representations that collectively maximize task performance. Second, even when semantically rich embeddings are produced, limited bandwidth and time-varying wireless conditions prevent all information from being transmitted, which is particularly problematic for mobile and immersive systems where channel quality can fluctuate rapidly within short time scales. Therefore, the system must dynamically determine which components of the semantic embeddings to transmit, at what precision, and with what resource allocation, so that it can remain responsive and task-effective under constrained and volatile connectivity. To address these challenges, we propose iCoTASC, an importance-aware Collaborative TAsk-oriented Semantic Communication framework. iCoTASC jointly trains multi-device encoders and extracts dimension-level importance via Integrated Gradients to quantify each embedding component’s contribution to task performance. These importance scores serve as criter for runtime embedding selection and quanti-zation. We model the impact of quantization using a Weibull-shaped surrogate utility function and formulate a joint opti-mization problem under per-device bit budgets and a shared RB constraint. To enable real-time operation, we decom-pose the problem into offline per-transmitter utility tabulation and lightweight online greedy scheduling. Simulation results show that iCoTASC achieves higher inference accuracy than importance-agnostic baselines under tight bandwidth and fast-varying channels in practical deployment scenarios. II. R ELATED WORK 
+
+Single-User Semantic Communication. Early works in-tegrated deep learning into communication systems to jointly optimize transmitter and receiver models [3]. Subsequent stud-ies extended this framework to image and language tasks [9]. Unlike these single-user settings, we focus on collaborative multi-device scenarios with shared resource constraints. 
+
+Multi-User Semantic Communication. Recent studies considered multi-device training and feature fusion [10]–[13]. These works primarily emphasize signal aggregation or joint modeling. In contrast, our approach targets importance-aware resource allocation and online scheduling under dynamic chan-nel conditions for real-time distributed inference. 
+
+Task-Oriented Semantic Communication. Vision-based semantic encoders and large-model approaches have been proposed to maximize inference accuracy [2], [5]. However, resource awareness and fine-grained precision control are often not explicitly incorporated into the communication design. 
+
+Resource Allocation in Semantic Communication. Adap-tive allocation and rate-splitting strategies have been ex-plored to balance semantic fidelity and communication effi-ciency [14]. Our work differs by explicitly linking dimension-level semantic importance with offline utility tabulation and lightweight online scheduling. III. ICOTASC F RAMEWORK 
+
+A. System Model 
+
+We consider a system of K transmitters collaboratively delivering task-relevant semantic representations to a shared receiver. The system operates in discrete time slots. In each slot, transmitter k ∈ [K] observes a local input xk (e.g., a video frame, audio segment, or sensor measurement) and encodes it into a compact latent embedding hk = fk(xk; θk),where fk(·; θk) denotes the local encoder parameterized by 
+
+θk. The receiver hosts an inference model g(·; ϕ), which fuses the embeddings (h1, . . . , h K ) from all transmitters to produce a task-level prediction ˆy = g(h1, . . . , h K ; ϕ).
+
+Wireless Transmission Model. The underlying wireless system employs orthogonal frequency-division multiple access (OFDMA) with a total of B resource blocks (RBs) available in each time slot. All RBs share the same time-frequency structure, but their effective payload capacities differ across transmitters due to heterogeneous and time-varying channel conditions. Specifically, if transmitter k is allocated bk RBs, its total transmission budget (in bits) equals bkck, where ck
+
+denotes the achievable payload per RB determined by the instantaneous channel state. We assume that all RBs allocated to the same transmitter experience homogeneous channel conditions within a slot, i.e., ck is constant across those RBs during that slot. For notational simplicity, we omit the time index, while noting that ck varies across time and is revealed at the beginning of each slot. 
+
+Embedding Selection and Quantization. Due to limited bandwidth, each transmitter cannot send its full embedding vector in every slot. Let Hk = {1, . . . , M k} denote the index set of embedding dimensions for transmitter k, where Mk is the embedding size. In each slot, the system selects a subset of dimensions Sk ⊆ Hk to transmit. For each selected dimension 
+
+m ∈ Sk, a quantization level qk,m ∈ Q is assigned to further compress the data before transmission. The joint resource allocation, embedding selection, and quantization decisions must satisfy the following bandwidth constraints: 
+
+P 
+
+> m∈Sk
+
+qk,m ≤ bkck, ∀k ∈ [K]; PKk=1 bk ≤ B. (1) The first constraint enforces that each transmitter’s total trans-mitted bits do not exceed its instantaneous channel budget, while the second ensures that the total number of allocated RBs does not exceed the system-wide RB budget. 
+
+Impact on Downstream Inference. Embedding selection and quantization inevitably lead to perturbed representations 
+
+(ˆh1, . . . , ˆhK ) received by the server, which can degrade the ac-curacy of the downstream task g(·; ϕ). Therefore, determining which embedding dimensions to transmit and at what precision is crucial for preserving task performance under dynamic bandwidth constraints. Our iCoTASC framework addresses this challenge by using importance-aware attribution to guide selection and quantization decisions, and by adapting RB allocation to per-slot channel variations. 
+
+B. Importance Attribution via Integrated Gradients 
+
+To enable adaptive and task-effective communication, iCo-TASC quantifies the semantic importance of each embedding dimension with respect to the downstream inference task in practice. The key idea is to measure how much each component of a transmitter’s embedding directly influences the receiver’s final task output after multi-device fusion. We adopt Integrated Gradients (IG) [15], a widely used and theoretically grounded attribution method in explainable AI. IG computes feature importance by integrating the gradient of the model output with respect to its input along a straight-line path from a baseline (uninformative) input to the actual input, thereby providing a principled, sensitivity-based and model-consistent importance score. For transmitter k with embedding 
+
+hk, the importance of dimension m is formally defined as 
+
+IG k,m = ( hk,m − h′
+
+> k,m
+
+)·
+
+Z 10
+
+∂g (h1, . . . , h ′ 
+
+> k
+
++ α(hk − h′
+
+> k
+
+), . . . , h K ; ϕ)
+
+∂h k,m 
+
+dα, (2) where h′ 
+
+> k
+
+is a baseline embedding (e.g., h′ 
+
+> k
+
+= 0 ). The resulting attribution vector ak = [IG k, 1, . . . , IG k,M k ]
+
+quantifies how much each embedding dimension contributes to the task prediction in the presence of other devices’ embed-dings. After normalization, these values form the importance map wk, which serves as actionable local metadata for runtime transmission control and scheduling decisions. 
+
+C. Data-driven Quantization Utility 
+
+To characterize how quantization affects downstream in-ference performance, we empirically evaluate task accuracy on a validation dataset under varying quantization levels. The results reveal a clear diminishing-return behavior: as the quantization level steadily increases, the marginal gain in accuracy eventually saturates, indicating that a small number of additional bits on high-importance dimensions can yield disproportionately large gains under tight resource budgets. To model this behavior, we adopt a modified Weibull cumulative distribution function of the following form 
+
+u(q) = u0 + ( u∞ − u0) 1 − e−(q/τ )4 , (3) where u0 and u∞ denote the lower and upper bounds of the achievable utility, and τ controls the overall rate of growth. These parameters are fitted using validation data offline. Figure 2 illustrates the fitted accuracy curves as a function of quantization level across different datasets and numbers of transmitters, demonstrating that the Weibull-shaped surrogate provides a close approximation to the empirically observed quantization–utility relationship. 0 2 4 6 8 10 12 14 16  
+
+> q (bits per dimension)
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> accuracy
+> case1 fit curve
+> case1 data point
+> case2 fit curve
+> case2 data point
+> case3 fit curve
+> case3 data point
+> Fig. 2. Accuracy and fitted utility curves under different quantization levels. The results for cases 1 and 2 correspond to two and four encoders on the Fashion-MNIST dataset, while case 3 corresponds to three encoders on the CIFAR-10 dataset. These results verify that the modified Weibull model closely approximates the quantization–utility relationship.
+
+D. Problem Formulation 
+
+Given the importance scores wk,m obtained from Inte-grated Gradients and the quantization utility function u(qk,m ),our goal is to maximize the overall semantic utility of the transmitted embeddings under practical bandwidth constraints. Formally, the joint optimization problem is expressed as 
+
+max   
+
+> b1: K, S 1: K, q 1: K
+> K
+
+X
+
+> k=1
+
+X
+
+> m∈Sk
+
+wk,m u(qk,m )
+
+s.t. X
+
+> m∈Sk
+
+qk,m ≤ bkck, ∀k ∈ [K],
+
+> K
+
+X
+
+> k=1
+
+bk ≤ B, Sk ⊆ Hk, q k,m ∈ Q; bk ∈ Z≥0. (4) This formulation captures the fundamental tradeoff between transmitting semantically important information and adhering to limited per-slot transmission resources under dynamically time-varying channels. The problem above is combinatorial. Each transmitter must jointly decide (i) which embedding dimensions to transmit 
+
+Sk, (ii) their quantization levels qk,m , and (iii) the number of allocated resource blocks bk. Because the objective couples discrete selections with a nonlinear utility function and a shared RB constraint across transmitters, the problem is NP-hard. In particular, even a simplified version with fixed {bk}
+
+and linear u(q) reduces to a 0–1 knapsack-type selection prob-lem under a per-transmitter bit budget, which is known to be NP-hard. Allowing multiple quantization levels and coupling transmitters through the shared RB budget further enlarges the search space, motivating low-complexity algorithms that remain effective under real-time constraints, as developed next. IV. H YBRID ONLINE -O FFLINE RESOURCE ALLOCATION 
+
+The optimization problem in (4) is NP-hard due to its discrete decision space and coupling between embedding selection, quantization, and bandwidth allocation. To enable real-time adaptivity, iCoTASC adopts a hybrid offline-online optimization strategy that separates time-invariant and time-varying components. A. Offline Phase 
+
+The offline phase is executed once per trained model and dataset. Since the semantic importance weights wk,m and the quantization utility u(q) do not depend on instantaneous channel conditions, we pre-compute quantities that accelerate online decisions. For transmitter k, the semantic utility is: 
+
+Uk(x) = max  
+
+> Sk, q k
+
+{ X
+
+> m∈Sk
+
+wk,m u(qk,m ) s.t. X
+
+> m∈Sk
+
+qk,m ≤ x}, (5) which is the maximum utility achievable by transmitter k
+
+when allocated x bits. Computing Uk(x) exactly by exhaus-tive search is prohibitive when the number of embedding dimensions or quantization levels grows. We therefore adopt an efficient greedy approximation that iteratively assigns one bit at a time to the embedding dimension with the largest current marginal gain. Let the marginal gain for increasing the quantization of dimension m from q to q + 1 be 
+
+∆k,m (q) = wk,m 
+
+ u(q + 1) − u(q). (6) At each step, the algorithm selects the dimension with the largest ∆k,m (q), increments its quantization by one, and repeats until the bit budget x is exhausted. Pseudocode is given in Algorithm 1. When u(·) is nondecreasing and concave, the greedy rule above is optimal for Uk(x). However, since our u(·) is non-concave, greedy is not guaranteed optimal in general and can be suboptimal. 
+
+Algorithm 1 Offline Allocation Algorithm 
+
+Input: Importance scores wk,m , quantization set Q, bit bud-get x
+
+Output: Offline allocation about {qk,m } and local util-ity Uk(x) 
+
+> 1:
+
+Initialize qk,m = 0 for all m 
+
+> 2:
+
+for total bits allocated t = 1 to x do  
+
+> 3:
+
+Compute marginal gains when allocating 
+
+∆k,m (qk,m ) = wk,m [u(qk,m +1) − u(qk,m )]  
+
+> 4:
+
+Select feature m⋆ = arg max  
+
+> m
+
+∆k,m (qk,m ) 
+
+> 5:
+
+Update qk,m ⋆ ← qk,m ⋆ +1  
+
+> 6:
+
+end for  
+
+> 7:
+
+Compute Uk(x) = P 
+
+> m
+
+wk,m u(qk,m )
+
+B. Online Phase 
+
+During real-time operation, the online phase executes in every time slot to adapt resource allocation and transmis-sion decisions to instantaneous channel conditions. At the beginning of each slot, each transmitter k observes its current achievable payload ck (bits per resource block), while the pre-computed offline utility function Uk(x) remains fixed. The system must then decide how many resource blocks bk to allocate to each transmitter, subject to the total constraint P 
+
+> k
+
+bk ≤ B. Pseudocode is given in Algorithm 2. 
+
+a) Real-Time Resource Allocation: Given the offline-computed local utility functions Uk(x) for each transmitter, the corresponding online optimization problem becomes 
+
+max 
+
+> b1,...,b K
+> K
+
+X
+
+> k=1
+
+Uk(bkck) s.t. 
+
+> K
+
+X
+
+> k=1
+
+bk ≤ B, bk ∈ Z≥0. (7) This problem captures how limited resource blocks should be distributed among transmitters to maximize overall semantic utility in practice. Because Uk(x) is generally non-concave in realistic settings, exact optimization would require enumerat-ing all integer allocations, which is computationally prohibitive for real-time use. To enable low-latency decision making in practical systems, we employ a greedy marginal allocation strategy: in each iteration, the algorithm computes the marginal utility gain of assigning one additional RB to transmitter k,
+
+∆k(bk) = Uk(( bk + 1) ck) − Uk(bkck), (8) and allocates the next RB to the transmitter with the highest 
+
+∆k(bk). This process repeats until the total budget B is exhausted. Although not guaranteed to find the global opti-mum under non-concavity, this greedy allocation yields near-optimal results in practice due to the empirical smoothness and monotonicity of Uk(x).
+
+Algorithm 2 Online RB Scheduling with Precomputed Uk(·)
+
+Input: Precomputed Uk(x); per-slot payloads {ck}Kk=1 ; total RB budget B
+
+Output: RB allocation {bk} and transmitter allocation 
+
+{(S⋆k , q ⋆k)} 
+
+> 1:
+
+Initialize bk = 0 for all k ∈ [K] 
+
+> 2:
+
+for total RBs allocated r = 1 to B do  
+
+> 3:
+
+k⋆ = arg max 
+
+> k∈[K]
+
+h
+
+Uk
+
+ (bk+1) ck
+
+ − Uk
+
+ bkck
+
+ i 
+
+> 4:
+
+if Uk⋆
+
+ (bk⋆ +1) ck⋆
+
+ − Uk⋆
+
+ bk⋆ ck⋆
+
+ ≤ 0 then break  
+
+> 5:
+
+bk⋆ = bk⋆ + 1  
+
+> 6:
+
+end for  
+
+> 7:
+
+for k = 1 to K do  
+
+> 8:
+
+Retrieve (S⋆k , q ⋆k) attaining Uk(bkck) from the offline table  
+
+> 9:
+
+end for  
+
+> 10:
+
+return {bk} and {(S⋆k , q ⋆k)}
+
+b) Local Embedding and Quantization Reconstruction: 
+
+After RB allocation, each transmitter reconstructs its detailed transmission plan by consulting the offline-computed utility table Uk(x). Specifically, transmitter k selects the subset of embedding dimensions and quantization levels (S∗ 
+
+> k
+
+, q ∗
+
+> k
+
+) that achieve the value Uk(bkck). This ensures consistency between offline utility estimation and online scheduling without requir-ing any per-slot optimization at the transmitter. 
+
+c) Complexity and Practicality: The greedy online al-gorithm requires at most B iterations per slot, with each iteration updating the marginal gains of K transmitters. Using a priority queue, this achieves O(B log K) complexity per slot, which is well within real-time constraints for typical wire-less systems. Since all expensive computations (importance attribution, quantization fitting, and Uk(x) estimation) are performed offline, the online phase involves only table lookups and incremental updates, allowing iCoTASC to respond to fast channel fluctuations while maintaining high semantic utility. V. S IMULATION 
+
+A. Experimental Setup 
+
+Datasets. We use two public datasets. (1) CIFAR-10 con-tains 50,000 training images and 10,000 testing images in RGB format ( 32 ×32 ) across ten classes. Each sample is pro-cessed by K=3 encoders, and each encoder produces a 256-dimensional latent representation. (2) Fashion-MNIST contains 60,000 training images and 10,000 testing images in grayscale format ( 28 ×28 ) from ten apparel categories. We consider configurations with K=2 and K=4 encoders. Each encoder outputs a 256-dimensional latent representation in the two-encoder case and a 128-dimensional latent representation in the four-encoder case. The reasoner concatenates all received embeddings and applies a classifier to generate predictions. 
+
+Implementation and Metrics. To emulate a resource-constrained edge environment, each run was limited to 16 CPU cores and 32 GB of system memory. Training was performed offline in a collaborative manner, where all encoders were jointly optimized with the classifier. During this stage, em-bedding importance was estimated using IG, an explainable AI technique that assigns an importance score to each embedding dimension. The quantization level q was set to multiples of 2 to ensure binary representation. Quantization parameters were then determined based on the embedding distribution in the validation set. In the online phase, each channel gain was randomly sampled from the range [0 .1, 0.3] during transmis-sion. The resource block (RB) size was both set to 256 bits for Fashion-MNIST and CIFAR-10, ensuring that results are directly comparable under the same budget setting. Evaluation metrics include accuracy and computing time. Accuracy is reported as a function of the RB budget, while computing time refers to the online phase only, excluding offline training. 
+
+Baselines. We compare iCoTASC with three baselines. 
+
+Baseline 1: At each slot, given the instantaneous {ck} and the RB budget B, we use a convex optimization toolbox (CVX) to solve (4). Then, the discrete solution is obtained according to q ∈ { 0, 2, 4, . . . , Q max }, and RBs are integerized greedily. Baseline 1 requires no offline allocation and adapts to the current channel but incurs higher computing time and may be suboptimal due to relaxation and rounding. Baseline 2: 
+
+At each RB, the encoder with the highest instantaneous channel gain is selected as the winner. Two-bit chunks are randomly distributed across that encoder’s dimensions within its capacity and qmax . This method is channel-aware but fails to incorporate importance information into resource allocation. 
+
+Baseline 3: This baseline adopts a similar winner selection strategy as Baseline 2 but assigns two-bit chunks with a bias toward lower-q dimensions, giving higher priority to coarsely quantized coordinates. It achieves broader coverage of dimensions but still ignores the learned importance profile. In other words, Baseline 2 allocates bits uniformly, whereas Baseline 3 favors lower-q coordinates. 
+
+B. Results and Analysis 
+
+This section presents the results of iCoTASC, including (1) accuracy under tight bandwidth budgets and (2) latency and scalability performance. The results demonstrate the advan-tages of iCoTASC in achieving higher inference accuracy and lower runtime under dynamic wireless conditions. 0 10 20 30      
+
+> RB budget
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> Accuracy
+> Baseline 1
+> Baseline 3
+> Baseline 2
+> Ours
+> Fig. 3. Accuracy of Fashion-MNIST with two encoders under tight budgets. 010 20 30
+> RB budget
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> Accuracy  Baseline 1
+> Baseline 3
+> Baseline 2
+> Ours
+> Fig. 4. Accuracy of CIFAR-10 with three encoders under tight budgets.
+
+Accuracy under tight budgets. Figure 3 shows the accu-racy versus the RB budget on the Fashion-MNIST dataset, while Table I summarizes selected operating points for Fashion-MNIST and CIFAR-10. Across both datasets, iCo-TASC and Baseline 1 consistently outperform the two other baselines in the low-RB region. On Fashion-MNIST, the accuracy reaches 0.59 with four resource blocks and increases monotonically to 0.85 at thirty two blocks. On CIFAR-10, as shown in Figure 4, iCoTASC achieves the highest accuracy at RB = 32 and maintains that lead through 32 blocks. The most significant accuracy gains occur within the threshold budget range (e.g., 4 to 32 RBs), where a few additional quantization steps on high-importance dimensions yield sub-stantial improvements in utility. This observation supports the effectiveness of our quantization design and importance attribution mechanism. As the available resources increase beyond 8 to 32 RBs, the accuracy improvement gradually slows down while the curves converge, indicating diminishing marginal returns once most dimensions exceed their effective quantization thresholds. 
+
+Latency and scalability. The online scheduling latency ranges from sub-millisecond to a few milliseconds and grows with B, as shown in Table II. iCoTASC operates within a similar time-scale envelope as Baselines 2 and 3 and is significantly faster than Baseline 1 (CVX), which must solve a complex allocation problem at each slot followed by rounding. As the number of resource blocks increases, the runtime grows slightly. From RB = 8 to RB = 16, our method adds 0.266 ms on Fashion-MNIST and 0.318 ms on CIFAR-10 because the latter dataset is more complex. However, compared with Base-line 1, the increase in computing time remains substantially smaller. These results align with our motivation of offloading heavy computations (importance extraction, u(q) fitting, and 
+
+Uk tabulation) to the offline phase while keeping the per-slot process lightweight and limited to priority-queue. TABLE I ACCURACY ACROSS DATASETS (F ASHION -MNIST WITH 2/4 ENCODERS ;CIFAR-10). 
+
+Fashion-MNIST (2 encoders) — Accuracy 
+
+Method RB=1 RB=4 RB=8 RB=16 RB=32 Baseline1 0.237 ±0.072 0.573 ±0.082 0.673 ±0.083 0.762 ±0.050 0.814 ±0.026 Baseline2 0.100 ±0.000 0.181 ±0.050 0.330 ±0.086 0.503 ±0.126 0.656 ±0.140 Baseline3 0.100 ±0.000 0.180 ±0.051 0.314 ±0.077 0.499 ±0.122 0.640 ±0.137 Ours 0.216 ±0.072 0.593 ±0.082 0.707 ±0.070 0.796 ±0.039 0.853 ±0.024 
+
+Fashion-MNIST (4 encoders) — Accuracy 
+
+Method RB=1 RB=4 RB=8 RB=16 RB=32 Baseline1 0.189 ±0.065 0.529 ±0.101 0.648 ±0.082 0.753 ±0.053 0.818 ±0.030 Baseline2 0.100 ±0.000 0.165 ±0.049 0.312 ±0.089 0.493 ±0.122 0.644 ±0.136 Baseline3 0.100 ±0.000 0.162 ±0.050 0.294 ±0.081 0.483 ±0.126 0.627 ±0.137 Ours 0.194 ±0.065 0.540 ±0.100 0.688 ±0.070 0.789 ±0.040 0.857 ±0.025 
+
+CIFAR-10 — Accuracy 
+
+Method RB=1 RB=4 RB=8 RB=16 RB=32 Baseline1 0.239 ±0.082 0.595 ±0.178 0.829 ±0.037 0.829 ±0.051 0.885 ±0.006 Baseline2 0.100 ±0.000 0.100 ±0.000 0.100 ±0.000 0.102 ±0.006 0.121 ±0.038 Baseline3 0.100 ±0.000 0.100 ±0.000 0.101 ±0.004 0.104 ±0.011 0.109 ±0.025 Ours 0.239 ±0.082 0.615 ±0.142 0.809 ±0.081 0.836 ±0.050 0.870 ±0.024 
+
+TABLE II COMPUTING TIME (MS ) ACROSS DATASETS (F ASHION -MNIST WITH 2/4 
+
+> ENCODERS
+
+; CIFAR-10). 
+
+Fashion-MNIST (2 encoders) — Time (ms) 
+
+Method RB=1 RB=4 RB=8 RB=16 RB=32 Baseline1 0.189 ±0.018 0.300 ±0.027 0.475 ±0.028 0.733 ±0.058 1.382 ±0.134 Baseline2 0.584 ±0.126 0.568 ±0.106 0.556 ±0.073 0.533 ±0.075 0.566 ±0.087 Baseline3 0.581 ±0.169 0.578 ±0.121 0.547 ±0.075 0.529 ±0.077 0.575 ±0.075 Ours 0.150 ±0.023 0.263 ±0.034 0.410 ±0.052 0.676 ±0.046 1.219 ±0.138 
+
+Fashion-MNIST (4 encoders) — Time (ms) 
+
+Method RB=1 RB=4 RB=8 RB=16 RB=32 Baseline1 0.170 ±0.016 0.272 ±0.018 0.449 ±0.033 0.721 ±0.041 1.403 ±0.093 Baseline2 0.571 ±0.120 0.563 ±0.108 0.553 ±0.074 0.546 ±0.076 0.573 ±0.089 Baseline3 0.576 ±0.140 0.568 ±0.113 0.549 ±0.070 0.552 ±0.070 0.586 ±0.071 Ours 0.144 ±0.024 0.251 ±0.021 0.394 ±0.034 0.658 ±0.038 1.252 ±0.093 
+
+CIFAR-10 — Time (ms)                          
+
+> Method RB=1 RB=4 RB=8 RB=16 RB=32 Baseline1 0.596 ±0.014 2.171 ±0.174 3.958 ±0.169 7.727 ±0.092 15.900 ±0.410 Baseline2 0.070 ±0.002 0.385 ±0.107 0.799 ±0.183 1.183 ±0.198 1.954 ±0.091 Baseline3 0.073 ±0.002 0.404 ±0.116 0.723 ±0.097 1.162 ±0.088 1.991 ±0.040 Ours 0.035 ±0.001 0.124 ±0.039 0.385 ±0.020 0.703 ±0.098 1.554 ±0.183
+
+Impact of K. We further investigate the impact of the number of encoders K. We present results on the Fashion-MNIST dataset and observe similar trends on CIFAR-10. As shown in Table I, under small RB budgets, the accuracy with the configuration of K=2 slightly outperforms that with that of K=4 from four to nine resource blocks. The maximum accuracy gap is approximately 0.05. As the RB budget in-creases, this gap gradually narrows and largely disappears around ten RBs, reflecting the strategy of prioritizing early coverage before refining precision. VI. C ONCLUSION 
+
+In conclusion, we present iCoTASC, an importance-aware collaborative task-oriented semantic communication frame-work specifically designed for multi-device systems operating under dynamic wireless conditions. iCoTASC enables multiple transmitters to jointly deliver task-relevant information by integrating explainability-based importance attribution with a data-driven quantization utility model for embedding selection and adaptive precision control. We propose a hybrid offline and online algorithm that precomputes transmitter utilities and performs efficient real-time resource allocation based on instantaneous channel states. The proposed framework is model-agnostic and readily scalable across different tasks. Experimental results demonstrate that iCoTASC consistently achieves higher inference accuracy than the baselines under tight bandwidth and time-varying channel conditions, clearly highlighting the effectiveness of importance-aware resource allocation for scalable distributed intelligence systems. ACKNOWLEDGMENT 
+
+The work of Y. Peng, and J. Xu was supported in part by the U.S. National Science Foundation under Awards No. 2515982, 2505381, 2433886. The work of L. Zhang was supported in part by the U.S. National Science Foundation under Award No. 2348279 and the MTSU Stark Land Project. REFERENCES [1] Y. Peng, L. Xiang, K. Yang, F. Jiang, K. Wang, and D. O. Wu, “Simac: A semantic-driven integrated multimodal sensing and communication framework,” IEEE Journal on Selected Areas in Communications , 2025. [2] C. Liu, C. Guo, Y. Yang, M. Chen, and T. Q. Quek, “Lightweight task-oriented semantic communication empowered by large-scale ai models,” 
+
+IEEE Transactions on Vehicular Technology , 2025. [3] H. Xie, Z. Qin, G. Y. Li, and B.-H. Juang, “Deep learning enabled semantic communication systems,” IEEE transactions on signal pro-cessing , vol. 69, pp. 2663–2675, 2021. [4] L. Wang, W. Wu, F. Zhou, Z. Yang, Z. Qin, and Q. Wu, “Adaptive resource allocation for semantic communication networks,” IEEE Trans-actions on Communications , vol. 72, no. 11, pp. 6900–6916, 2024. [5] J. Park, Y. Oh, Y. Kim, and Y.-S. Jeon, “Vision transformer-based semantic communications with importance-aware quantization,” IEEE Internet of Things Journal , 2025. [6] X. Zhang, Y. Wang, Y. Sun, Q. Cui, and X. Tao, “Seer: A unified transmission performance metric for wireless semantic communication,” 
+
+IEEE Network , 2025. [7] J. Zhang, M. Chen, Y. Zhu, H. Shihao, T. Luo, and Z. Zhang, “Performance optimization of semantic communications for users with heterogeneous knowledge,” in ICC 2024-IEEE International Conference on Communications . IEEE, 2024, pp. 5515–5520. [8] L. Xia, Y. Sun, D. Niyato, L. Zhang, and M. A. Imran, “Wireless resource optimization in hybrid semantic/bit communication networks,” 
+
+IEEE Transactions on Communications , 2024. [9] S. R. Pokhrel et al. , “On harnessing semantic communication with natural language processing,” IEEE Internet of Things Journal , 2025. [10] M. Gong, S. Wang, and S. Bi, “A Scalable Multi-device Semantic Communication System for Multi-task Execution,” in 2023 IEEE Global Communications Conference . IEEE, 2023, pp. 2227–2232. [11] Y. Peng, W. Zhao, Z. Lu, and J. Xu, “Equilibrium-Driven Vertical Federated Learning with Selective Privacy Protection,” in Proceedings of the AAAI Conference on Artificial Intelligence , vol. 40, no. 35, 2026, pp. 29 625–29 632. [12] Y. Peng, Z. Lu, and J. Xu, “Joint Horizontal and Vertical Federated Learning for Multimodal IoT,” in Proceedings of the 30th Annual International Conference on Mobile Computing and Networking , 2024, pp. 2371–2376. [13] S. Wei, C. Feng, C. Guo, B. Zhang, and J. Chen, “Task-Oriented Multi-user Semantic Communication based on Deep Over-the-Air Computa-tion,” IEEE Transactions on Vehicular Technology , 2025. [14] Z. Qin, L. Liang, Z. Wang, S. Jin, X. Tao, W. Tong, and G. Y. Li, “Ai empowered wireless communications: From bits to semantics,” 
+
+Proceedings of the IEEE , 2024. [15] M. Sundararajan, A. Taly, and Q. Yan, “Axiomatic attribution for deep networks,” in Proceedings of the 34th International Conference on Machine Learning . PMLR, 2017, pp. 3319–3328.

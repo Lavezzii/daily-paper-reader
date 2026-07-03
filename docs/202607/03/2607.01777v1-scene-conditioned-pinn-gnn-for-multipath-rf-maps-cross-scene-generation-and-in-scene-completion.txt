@@ -1,0 +1,1147 @@
+Title: Scene-Conditioned PINN-GNN for Multipath RF Maps: Cross-Scene Generation and In-Scene Completion
+
+URL Source: https://arxiv.org/pdf/2607.01777v1
+
+Published Time: Fri, 03 Jul 2026 00:37:26 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+> 1
+
+# Scene-Conditioned PINN-GNN for Multipath RF Maps: Cross-Scene Generation and In-Scene Completion 
+
+Lizhou Liu, Xiaohui Chen, Zihan Tang, Mengyao Ma, and Wenyi Zhang, Senior Member, IEEE 
+
+Abstract —Radio frequency (RF) maps provide a compact representation of multipath propagation characteristics and are fundamental to channel modeling, coverage analysis, and environment-aware wireless optimization. This paper proposes a unified RF map construction framework based on a physics-informed neural network (PINN) and a graph neural network (GNN), supporting both cross-scene generation and in-scene completion with 2D and 2.5D environmental representations. The PINN embeds electromagnetic propagation constraints to establish a physically consistent mapping from receiver locations to multipath parameters, including path gain, time of arrival, and angles, while the GNN enforces spatial consistency by modeling correlations among neighboring receivers. To comprehensively evaluate multipath reconstruction quality, we propose a peak-weighted dynamic time warping metric that jointly accounts for amplitude errors and peak delay misalignment in channel im-pulse responses. Extensive experiments demonstrate that the pro-posed method consistently outperforms image-based, diffusion-based, and interpolation baselines across both map-level and multipath-level metrics, achieving robust generalization and high-fidelity RF map construction under sparse observations. 
+
+Index Terms —Artificial intelligence (AI), graph neural net-work (GNN), multipath propagation, peak-weighted dynamic time warping, physics-informed neural network (PINN), radio frequency (RF) map. 
+
+I. I NTRODUCTION 
+
+# TO meet the requirements of 6G networks for immersive interaction, ultra-reliable low-latency communications (URLLC), and high-precision localization, prior knowledge of spatial radio frequency (RF) propagation is essential [2]. As systems evolve toward massive multiple-input multiple-output (MIMO) and ultra-wide bandwidths, conventional pilot-based active measurements incur substantial signaling over-head and latency [3]. Furthermore, deploying mobile access nodes like autonomous aerial vehicles (AAVs) requires proac-tive trajectory planning [4], necessitating the prediction of regional RF distributions before communication occurs. Con-sequently, wireless networks are shifting from measurement-driven reactive paradigms to environment-aware architectures [5]. As a key enabler of this transition, RF maps provide a 
+
+Preliminary results of this work have been presented in part at 2025 International Conference on Future Communications and Networks [1]. Sup-ported by the National Key Research and Development Program of China (2025YFF0514400) and the National Natural Science Foundation of China (62231022). Lizhou Liu, Xiaohui Chen, and Wenyi Zhang are with the Depart-ment of Electronic Engineering and Information Science, University of Science and Technology of China, Hefei, Anhui 230026, China (e-mail: liulizhou@mail.ustc.edu.cn; cxh@ustc.edu.cn; wenyizha@ustc.edu.cn). (Cor-responding author: Wenyi Zhang) 
+
+Zihan Tang and Mengyao Ma are with the Wireless Technology Lab, Huawei, Shenzhen 518129, China (e-mail: tangzihan1@huawei.com; ma.mengyao@huawei.com). 
+
+spatial representation of wireless propagation characteristics. Specifically, multipath RF maps incorporate diverse param-eters including path gain, time of arrival (ToA), and angle of arrival (AoA). These maps facilitate multi-dimensional channel state inference and intelligent resource allocation with reduced overhead, supporting applications like high-precision localization and integrated sensing and communication (ISAC) [6]. However, constructing high-fidelity multipath RF maps in urban environments featuring complex blockages and rich scattering remains fundamentally challenging. Existing RF map construction generally falls into two cat-egories: physics-based models and data-driven interpolation. Empirical models like Okumura–Hata [7], [8] and 3GPP Urban Macro [9] primarily address large-scale path loss, failing to capture site-specific multipath details in complex geometries. While ray tracing (RT) explicitly models physical interactions like reflection and diffraction [10], [11], its pro-hibitive computational overhead limits large-scale or real-time applications. Alternatively, interpolation methods like Kriging [12], tensor completion [13], and matrix completion [14] exploit spatial correlation for computational efficiency but lack physical awareness. In non-line-of-sight (NLoS) urban envi-ronments, these methods struggle with strong non-stationarity and shadow boundaries, yielding physically inconsistent RF maps under sparse sampling. Recent artificial intelligence (AI) advances introduce new paradigms for RF map construction. RadioUNet [15] leverages deep neural networks to efficiently learn path loss distribu-tions from simulation data. Building on this, cascaded U-Nets [16] integrate environmental and sparse RT data for re-fined spatial predictions, while graph neural networks (GNNs) [17] capture spatial topologies to enhance channel modeling. With the rapid development of generative models, RF map construction is increasingly formulated as a data generation problem. Generative adversarial networks (GANs) [18], [19], [20] and diffusion models [21], [22] are widely adopted for high-fidelity spatial generation and channel knowledge map (CKM) construction [23], [24]. Despite these advances, most methods frame RF map construction as a computer vision (CV) image-to-image translation problem [25]. These pixel-grid representations force continuous, floating-point physi-cal measurements into quantized pixel intensities, inevitably losing fine-grained physical information during this image-centric transformation. Furthermore, they typically predict a single macroscopic quantity like path loss or received signal strength. While a few attempts incorporate spatial features like AoA [22], [26], they largely focus on the dominant path and overlook the multipath effects critical for practical wideband 
+
+> arXiv:2607.01777v1 [eess.SP] 2 Jul 2026 2
+
+propagation [27]. Therefore, overcoming these image-centric quantization errors to construct high-fidelity, multi-parameter RF maps encompassing path gain, ToA, and AoA is essential for accurate wireless channel modeling. Practical multipath RF map construction involves two chal-lenging tasks. First, cross-scene generation requires predicting the global multipath distribution in uncharted areas using only accessible two-dimensional (2D) or three-dimensional (3D) environmental geometry to support proactive network deployment. Second, in-scene completion demands recon-structing high-resolution global channel distributions using strictly sparse measurements from mobile nodes when prior environmental information is unavailable. Under these data-restricted conditions, purely data-driven pixel-grid methods exhibit significant limitations. Lacking physical constraints and the ability to model non-Euclidean spatial topologies, they struggle to infer highly coupled multipath characteristics. Therefore, these approaches often yield estimation errors and physically inconsistent predictions that violate fundamental electromagnetic laws. Accurately characterizing complex multipath features re-quires integrating electromagnetic propagation mechanisms with spatial topology modeling. Physics-informed neural net-works (PINNs) address this by embedding physical constraints into the learning process. Widely recognized in fluid dynamics [28], PINNs are increasingly explored for wireless propagation [29]. By incorporating electromagnetic principles, like the geometric relationship among propagation distance, the speed of light, and ToA, as soft constraints, PINNs maintain physical consistency during data fitting and improve inference reliabil-ity. Furthermore, GNNs [30] expertly handle non-Euclidean topologies and model long-range node dependencies, effec-tively capturing spatial correlations induced by scattering and diffraction. Combining the physical constraint mechanisms of PINNs with the spatial reasoning capabilities of GNNs estab-lishes a unified multipath RF map modeling framework. This integrated approach systematically overcomes the limitations of existing methods in complex urban environments under severely limited data conditions. To overcome the limitations of strictly pixel-grid representa-tions and single-path predictions, we propose a unified PINN-GNN framework for RF map construction. This approach extends conventional modeling to joint multipath, multi-parameter characterization, simultaneously predicting path gain, ToA, and AoA. By directly utilizing original measure-ments and environmental semantics, the method extracts 2D or 2.5D geometric priors, including explicit height, from complex urban scenarios to assist LoS and NLoS identification. To de-couple multipath parameters and prevent physical inconsisten-cies, PINNs embed electromagnetic propagation laws as soft constraints during data fitting. Subsequently, GNNs construct spatial graphs over sampling points and environmental features to model node correlations, ensuring the spatial consistency of the inferred parameters. We comprehensively evaluate this dual-consistency framework on cross-scene generation and in-scene completion tasks. Notably, to accurately characterize the temporal consistency of multipath structures, we propose a novel peak-weighted dynamic time warping (PW-DTW) metric. For cross-scene generation, comparing 2D and 2.5D maps verifies the critical role of explicit height information in recovering spatial multipath structures. Experimental results demonstrate that the proposed framework outperforms state-of-the-art learning and traditional interpolation methods in first-path prediction accuracy. Moreover, it achieves the stable, robust, and physically consistent inference of high-order mul-tipath components in complex environments. Consequently, this work provides an effective solution for high-precision environment-aware communications and sensing in future 6G networks. The remaining part of this paper is organized as follows. Section II introduces the system model and formulates the multipath, multi-parameter RF map construction problem. Section III details the proposed scene-conditioned PINN-GNN framework. Section IV outlines the baseline methods and evaluation metrics, while Section V presents experimental results and analysis. Finally, Section VI concludes the paper. II. S YSTEM MODEL AND PROBLEM FORMULATION 
+
+This section establishes a unified system model for mul-tipath RF map construction based on two environment rep-resentations for scene conditioning. Grounded in wireless propagation theory, the multipath channel is parameterized by channel gain, delay, and angular information. Subsequently, RF map completion and generation are formulated within a common framework, which aims to map scene conditions to multipath parameters under varying observation settings. 
+
+A. System Scenario and Environment Representation 
+
+We consider a wireless communication system consisting of a fixed transmitter (Tx) located at t ∈ R3 and multiple receivers (Rx) distributed within a region of interest (RoI). The position of an arbitrary receiver is denoted by r ∈ R3. To unify the description of signal propagation, the environmental geometry is modeled as a grid map, where each grid coordinate 
+
+(u, v ) corresponds to a physical coordinate (x, y ). Depending on the available information granularity, the environment E
+
+can be represented in two forms:  
+
+> •
+
+2D environment map ( E2D ): a binary occupancy map indicating buildings or accessible regions, which captures the topological structure of building boundaries and out-door open spaces.  
+
+> •
+
+2.5D environment map ( E2.5D ): an extension of the 2D map that additionally records the building height at each grid location. This representation explicitly characterizes variations in blockage severity and provides more reliable geometric cues for LoS visibility and dominant path formation, while avoiding the high cost and complexity of full 3D modeling. To exclude non-target regions such as building interiors from prediction and evaluation, an effective region mask 
+
+R(u, v ) ∈ { 0, 1} is defined for each scene, where R(u, v ) = 1 
+
+indicates a valid outdoor location. RF maps are constructed exclusively over the effective region defined by R.
+
+B. Multipath Signal Model and Tensor Representation 
+
+In wireless signal propagation, information is encoded in both amplitude and phase of electromagnetic waves. Governed 3
+
+by Maxwell’s equations, transmitted signals reach receivers via LoS and NLoS paths induced by reflection, scattering, and diffraction. When waves interact with environmental scatterers having different dielectric properties, they produce multipath components with varying delay, direction, and fading charac-teristics. The superposition of these multipath components in both temporal and spatial domains creates the received signal, a phenomenon formally known as multipath propagation. Consider a wideband wireless communication system where a Tx sends a baseband equivalent signal s(t). For a Rx equipped with an M × N uniform planar array (UPA), the received signal r(t) under multipath propagation is given by     
+
+> r(t) =
+> LX
+> l=1
+> αla(θl, φ l)s(t−τl) + n(t),
+
+(1) where L denotes the number of multipath components, αl =
+
+|αl|e−j2πf cτl is the complex gain of the l-th path with carrier frequency fc and delay τl, θl ∈ [0 , π ] and φl ∈ [−π, π ]
+
+represent the elevation and azimuth angles, respectively, and 
+
+n(t) is the additive white Gaussian noise (AWGN) vector. For a UPA placed on the x–y plane with antenna spacings 
+
+dx and dy , the array response vector a(θl, φ l) ∈ CM N ×1 is             
+
+> a(θl, φ l) =
+> h
+> e−j2πλ(md xsin θlcos φl+nd ysin θlsin φl)i
+> M N ×1
+> ,
+
+(2) where λ = c/f c is the wavelength, c is the speed of light, and 
+
+m ∈ { 0, 1, . . . , M − 1} and n ∈ { 0, 1, . . . , N − 1} index the antennas along the x- and y-axes, respectively. The corresponding time-domain channel impulse response (CIR) is expressed as     
+
+> h(t) =
+> LX
+> l=1
+> |αl|e−j2πf cτla(θl, φ l)δ(t−τl),
+
+(3) where δ(t) denotes the Dirac delta function. As seen from (1)–(3), the multipath channel is fully char-acterized by the physical parameters {αl, τ l, θ l, φ l}. To fa-cilitate neural network processing while preserving physical interpretability, the complex-valued channel is represented as a fixed-size real-valued tensor. For each receiver location r,we define a multipath parameter tensor Y(r) ∈ RL×4 as     
+
+> Y(r) = [ p1,p2, . . . , pL]T,
+
+(4) where each row pl = [ gl, τ l, θ l, ϕ l] contains four key physical parameters of the l-th path: the path gain (gl = |αl|), propagation delay ( τl), and angles of arrival (AoA), including the elevation angle θl and azimuth angle ϕl.To accommodate spatially varying path counts, the tensor size is fixed to L (e.g., L = 5 ). Zero-padding is applied for fewer paths, whereas excess paths are truncated to retain the L components with the highest received power. This representation enables the model to jointly learn the energy distribution and spatial directionality of multipath propagation. 
+
+C. Unified Task Statement 
+
+This work aims to generate or complete the multipath RF map across the target region. To unify different levels of information availability, all prior knowledge or observations are collectively referred to as conditioning information , and a common output space Y is adopted to describe the task. Depending on the available conditioning information, the problem encompasses two representative operating modes:  
+
+> •
+
+Geometry-conditioned cross-scene generation : In this setting, the environment map E, represented as either 
+
+E2D or E2.5D , and the Tx configuration t are available, with no observations provided ( S = ∅). The objective is to directly generate the complete tensor Y over the effective region. This approach enables transferable pre-diction in unseen environments by learning the geometry-to-propagation mapping from extensive training data.  
+
+> •
+
+Measurement-conditioned in-scene completion : When the environment map is unavailable (E = ∅), the model relies on a small set of observed locations S =
+
+{(rk, Yk)}Kk=1 . The goal is to exploit these sparse ob-servations alongside physical constraints to recover the spatial distribution Y across the entire effective region. To effectively accomplish these tasks and ensure physical consistency across both operating modes, the design and im-plementation details of the proposed scene-conditioned PINN– GNN framework are presented in Section III. III. A U NIFIED SCENE -C ONDITIONED PINN-GNN FRAMEWORK 
+
+This section presents a unified framework for constructing multipath RF maps. As illustrated in Fig. 1, the cross-scene task takes the environmental information of the target scene as input, whereas the in-scene completion task relies on sparse sampled points within the scene and does not require explicit environmental information. The adaptive scene condition en-coder serves as a unified input interface that flexibly processes heterogeneous inputs according to the current operating mode. Using the encoded conditions, a physics-guided predictor generates an initial estimate of the multipath parameter tensor by incorporating electromagnetic physical constraints. Finally, a graph-consistent refiner constructs a spatial graph over the predicted points and aggregates neighborhood information to suppress local noise and sharpen signal boundaries. 
+
+A. Overall Pipeline and Two Operating Modes 
+
+Let Qvalid denote the set of valid query locations determined by the environmental mask or validity rules. For any query location ri ∈ Q valid , the model outputs a predicted multipath tensor ˆYi ∈ RL×Q, where L denotes the number of paths and 
+
+Q is the dimension of the physical parameters for each path. The overall mapping process is formulated as           
+
+> ˆYi=GΦ
+> ˜Yi,Nk(i)
+> 
+> ,˜Yi=FΘ(ri,zi),
+
+(5) where FΘ denotes the point-wise predictor, GΦ acts as a spatial refiner that aggregates local information from the k-nearest-neighbor set Nk(i) of node i, primarily responsible for mitigating local noise and enhancing spatial consistency. Specifically, FΘ produces a physically plausible initial esti-mate ˜Yi conditioned on the feature vector zi. To provide a unified interface across different operating modes and govern model transferability, zi is decomposed into geometric, envi-ronmental condition, and observation-guided features,     
+
+> zi= [ gi,ei,si],
+
+(6) 4    
+
+> Fig. 1. PINN-GNN architecture for RF map construction. Missing input modalities ( Eor S) are automatically zero-padded to form the unified condition zi.
+
+where gi characterizes the Tx-Rx geometric relationship, supplying essential spatial cues and references for physical regularization. All spatial inputs are normalized to eliminate cross-scene scale discrepancies and enhance training stability. 
+
+ei encodes the environmental geometry, and si represents sparse observation guidance. To maintain a unified interface across operating modes, ei and si automatically default to zero vectors when unavailable. Through this task-aware encoding mechanism, the frame-work switches functionality by adjusting the conditional fea-tures. When environmental maps are available but sparse observations are absent, the framework performs cross-scene generation, whereas given only sparse observations, the model performs in-scene completion. 
+
+B. Environment Encoding and Feature Alignment 
+
+To exploit environmental geometry and provide condition inputs with physical semantics for the subsequent PINN predictor, we design a unified U-Net-based environment en-coder Eψ . This module transforms environmental maps into high-dimensional feature representations spatially aligned with query locations. In the cross-scene generation mode, the input is a 2D or 2.5D environmental grid tensor E ∈ RCin ×H×W , where 
+
+H and W denote the height and width of the grid map, respectively, and Cin is the number of input channels, which adapts to the environment representation. Specifically, Cin = 1 
+
+for a 2D binary occupancy mask, and Cin = 2 for a 2.5D map combining a normalized height field and an occupancy mask. The encoder extracts multi-scale features via successive downsampling, while the decoder upsamples and fuses shallow geometric features through skip connections. This preserves global context and local boundaries, yielding a dense feature field with matched spatial resolution as         
+
+> F=Eψ(E)∈RDf×H×W,
+
+(7) where Df denotes the dimensionality of the encoded feature channels. The resulting feature field F maintains the same spatial resolution as the input environment, ensuring geometric alignment for subsequent feature sampling. Given small batch sizes in cross-scene training, convolu-tional blocks adopt group normalization rather than batch normalization, enhancing robustness against distribution shifts. To explicitly capture physical semantics like height and block-age, auxiliary supervision is applied during training, using lightweight prediction heads to reconstruct the input height field or occupancy mask. Since convolutions alone struggle with long-range LoS occlusions, we construct point-wise environmental features ei
+
+via a “local sampling + profile enhancement” strategy. For an arbitrary query location ri, local sampling is performed at the corresponding coordinates in the dense feature field F using 
+
+s × s regional pooling, resulting in a location-aligned local feature vector fi ∈ RDf . To explicitly incorporate occlusions, we sample along the direct path between the Tx and Rx to form a profile feature pi, encoding statistics like the first obstruction, maximum blockage depth, and 2.5D clearance. The final vector is concatenated as ei = [ fi, pi].For in-scene completion where environmental maps are unavailable, ei either defaults to 0 or is generated by a lightweight implicit encoder as an embedding fenv,i ∈ Rde ,preserving the unified interface. 
+
+C. Physics-Guided Point-wise Predictor 
+
+The point-wise predictor, implemented via a PINN, serves as the core physical engine of the proposed framework. It is essentially a physics-guided multi-task neural network that aims to learn a nonlinear mapping from the unified scene-conditioned feature vector zi to the multipath parameter tensor 
+
+˜Yi, i.e., ˜Yi = FΘ(ri, zi). By embedding electromagnetic propagation principles into both the network architecture and the loss design, this module is able to produce physically plausible inferences even in regions with sparse observations. 
+
+1) PINN Architecture: The point-wise predictor adopts a physics-guided multi-task multilayer perceptron (MLP) ar-chitecture to learn the mapping from point-level conditional features zi to the set of multipath parameters. The network input is the unified conditional feature vector zi constructed in Section III-B. 
+
+Point-wise PINN Regressor : This backbone network ex-tracts deep physical representations and regresses multipath parameters. Specifically, the geometric features gi and envi-ronmental features ei are fused through attention mechanisms to form a joint representation hi. This representation is then processed by a residual MLP to output preliminary estimates of the path gain, ToA, and angular information for each path. 
+
+Propagation Type Classifier : As an auxiliary branch, the propagation type classifier takes the deep features extracted by the regressor backbone as input. It consists of a lightweight 5
+
+MLP and predicts the propagation mechanism probability vector ˜pi,l ∈ R4 for each path l, corresponding to LoS, reflection, scattering, and diffraction. These probabilities are utilized for both auxiliary supervision and computing adaptive entropy-based weights in the physical regularization terms. 
+
+Physics-aware Predictions : To ensure regressed outputs strictly conform to electromagnetic propagation characteris-tics, raw network outputs undergo dedicated activations and normalizations. A scaled hyperbolic tangent activation con-strains path gain to a physically meaningful negative dynamic range consistent with path loss definitions. Similarly, a sigmoid function restricts ToA to a non-negative interval bounded by the maximum admissible delay. To prevent numerical insta-bility from direct angular regression, the model predicts sine and cosine components, enforcing unit-circle normalization via projection. These transformations yield physically consistent multipath parameter estimates. 
+
+2) Training Objective and Loss Design: The network pa-rameters are optimized by minimizing a composite loss func-tion LPINN . Let Isup denote the set of supervised samples, which depends on the operating mode. In the in-scene com-pletion mode, Isup corresponds to the set of sparsely observed locations S; in the cross-scene generation mode, Isup consists of the sampled locations from the training scenes. The overall training objective is formulated as a weighted combination of a supervised loss term, a physics-based regularization term, and a propagation-type consistency term: 
+
+LPINN = Lsup + λphy Lphy + λtype Ltype . (8) 
+
+Supervised Loss ( Lsup ): On the supervising set Isup , the mean squared error (MSE) is adopted as 
+
+Lsup = 1
+
+|I sup |
+
+X
+
+> i∈I sup
+
+∥˜yi − yi∥22 , (9) where ˜yi = vec( ˜Yi) and yi = vec( Yi) denote the vector-ized predicted and ground-truth multipath parameter tensors, respectively. 
+
+Propagation Type Consistency Loss (Ltype ): For each location i and each path l, the model outputs a probability vector over four propagation mechanisms, 
+
+pi,l = [ pLoS  
+
+> i,l
+
+, p Refl  
+
+> i,l
+
+, p Scat  
+
+> i,l
+
+, p Diff  
+
+> i,l
+
+], X
+
+> k
+
+pki,l = 1 . (10) A cross-entropy loss is formulated as 
+
+Ltype = − 1
+
+|I sup |
+
+X
+
+> i∈I sup
+> L
+
+X
+
+> l=1 4
+
+X
+
+> k=1
+
+yi,l,k log  pki,l + ϵ, (11) where yi,l,k denotes weak labels constructed based on elec-tromagnetic propagation rules, and ϵ is a small constant introduced for numerical stability. 
+
+Physics Loss ( Lphy ) : To regularize predictions in unsu-pervised regions by enforcing fundamental electromagnetic propagation laws, the physics loss is introduced. It consists of four complementary components, jointly formulated as 
+
+Lphy = λ1LCG + λ2LToA + λ3Langle + λ4Lconsist . (12) Specifically, channel gain, ToA, and angular terms constrain the physical range and geometric consistency of individual paths, while the last consistency term enforces self-consistency across the multipath set. Propagation-type priors are incor-porated via probability expectations, with constraint strength adaptively tuned using entropy-based confidence weighting. Since diverse propagation mechanisms like LoS, reflection, scattering, and diffraction exhibit fundamentally different at-tenuation and delay characteristics, uniform physical bounds cannot apply to all paths. For example, LoS components strictly follow geometric ToA constraints, whereas scattered paths experience significant delay spreading. To enable type-dependent physical regularization, we define reference coeffi-cient vectors for each propagation mechanism as 
+
+α = [ αLoS , α Refl , α Scat , α Diff ],
+
+β = [ βLoS , β Refl , β Scat , β Diff ]. (13) Here, α specifies the allowable upper-margin tolerance per path type relative to free-space channel gain, with tighter margins for LoS paths and larger deviations for diffracted components. Similarly, β defines lower-bound scaling factors relative to the geometric LoS ToA, where βLoS approaches unity and larger values apply to non-LoS components. The predicted propagation type ˜pi,l is a continuous prob-ability distribution rather than a discrete label. To preserve differentiability during training, the discrete coefficients are transformed into continuous, path-level prior coefficients via probability-weighted expectations, which are expressed as 
+
+¯αi,l = X
+
+> k
+
+pki,l αk, ¯βi,l = X
+
+> k
+
+pki,l βk, (14) where k ∈ { LoS , Refl , Scat , Diff }. Through this formulation, the boundaries of the physical constraints are dynamically adjusted according to the model’s confidence in the predicted propagation mechanism. To avoid imposing incorrect physical constraints during early training stages when the propagation-type predictions are highly uncertain, we introduce an entropy-based confidence gating mechanism. The entropy of the predicted probability distribution and the corresponding adaptive confidence weight are defined as 
+
+H(pi,l ) = − X
+
+> k
+
+pki,l log( pki,l + ϵ), (15) 
+
+wi,l =
+
+
+
+1 − H(pi,l )log 4 
+
+η
+
+, (16) where η denotes a focusing factor. When the predicted dis-tribution approaches a uniform one, the entropy increases and the weight wi,l vanishes, effectively disabling physical regular-ization and preventing erroneous guidance. Conversely, when the predicted distribution becomes sharp, wi,l approaches a zero-one degenerated distribution, and full-strength physical constraints are enforced. 
+
+Out-of-Bound Penalties for Gain and ToA (LCG , LToA ): Let the Tx–Rx distance be denoted by di. The theoretical LoS ToA is given by τ LoS  
+
+> i
+
+= di/c , where c is the speed of light. The LoS reference power loss P FSPL  
+
+> i
+
+follows the free-space path loss model and is written as 
+
+P FSPL  
+
+> i
+
+= 20 log 10 (di) + 20 log 10 (fc) + 20 log 10 
+
+ 4πc
+
+
+
+, (17) 6
+
+where fc denotes the carrier frequency. For each path l,a smooth hinge penalty based on the softplus function 
+
+softplus( x) = log(1 + ex) is adopted to penalize boundary violations. Using the type-dependent coefficients ¯αi,l and 
+
+¯βi,l , the physical constraints on channel gain and ToA are formulated as (18), and 
+
+LToA = 1
+
+|I sup |
+
+X
+
+> i∈I sup
+> L
+
+X
+
+> l=1
+
+wi,l softplus 
+
+ ¯βi,l τ LoS  
+
+> i
+
+− ˜τi,l 
+
+2
+
+, (19) where ˜gi,l and ˜τi,l denote the predicted gain and ToA of the 
+
+l-th path at location i, respectively. 
+
+Angular Geometric Consistency Loss (Langle ): This term enforces geometric self-consistency between the predicted spatial arrival directions and the inferred propagation types. A geometric consistency score si ∈ [0 , 1] is constructed based on the ToA and angular deviations of the first path relative to the geometric LoS reference, which is defined as 
+
+si = exp 
+
+
+
+− |˜τi, 1 − τ LoS  
+
+> i
+
+|
+
+στ
+
+
+
+· exp 
+
+
+
+− d∠(˜θi, 1, ˜ϕi, 1; θLoS  
+
+> i
+
+, ϕ LoS  
+
+> i
+
+)
+
+σ∠
+
+
+
+.
+
+(20) The angular distance metric accounting for phase periodicity is expressed as 
+
+d∠ = |˜θi, 1 − θLoS  
+
+> i
+
+| + min 
+
+
+
+| ˜ϕi, 1 − ϕLoS  
+
+> i
+
+|, 360 ◦ − | ˜ϕi, 1 − ϕLoS  
+
+> i
+
+|
+
+
+
+.
+
+(21) The score si intuitively measures the similarity between the predicted first path and an ideal LoS component. Using si as a soft label, a binary cross-entropy loss super-vises the predicted LoS probability ˜pLoS  
+
+> i, 1
+
+, which is written as (22). This loss establishes closed-loop feedback where ToA or angular deviations reduces predicted LoS probabilities, while consistent estimates reinforce geometric alignment. 
+
+Multipath Consistency Loss (Lconsist ) Beyond single-path constraints, the multipath parameter set should also satisfy structural consistency at the set level. This term consists of a ranking consistency component and a gain–ToA coupling component, which are jointly defined as 
+
+Lconsist = λrank Lrank + λpair Lpair . (23) To mitigate permutation ambiguity, paths are enforced into descending gain and ascending ToA orders. Slack variables mp
+
+and mτ permit minor ordering violations, yielding the ranking loss as (24). Physically, longer ToA paths typically traverse greater dis-tances or undergo more reflections, yielding higher attenuation. To penalize violations, we formulate a pairwise consistency loss (25), where P = {(l, m ) | 1 ≤ l < m ≤ L} defines all path pairs, and training-set standard deviations sp and sτ
+
+normalize scale differences. 
+
+D. Spatial Refinement via Graph Learning 
+
+Although the PINN predictor incorporates physical con-straints, it fundamentally operates in a point-wise manner, treating each query location separately and neglecting the strong spatial correlation induced by the continuous variation of wireless channels. To address this limitation and further suppress local prediction noise, a GNN is introduced to refine the PINN outputs by enforcing spatial consistency. Specifically, a k-nearest neighbor graph G = ( V, E ) is con-structed over the valid query set Qvalid to explicitly model the topological relationship among receivers. Each node vi ∈ V
+
+corresponds to a valid receiver location, while edges in E
+
+connect the k closest neighbors according to the Euclidean distance in the coordinate space. In 2D scenarios, the distance metric is defined on the (x, y ) plane, whereas in 2.5D settings, the (x, y, h ) coordinates are used, where the height h is normalized to the same scale as the planar coordinates to ensure isotropic neighborhood construction. The initial node features are primarily given by the point-level predictions of the PINN, denoted as ˜yi ∈ R4L, optionally concatenated with a small set of geometric features to enhance discrimination in non-stationary regions such as building boundaries. For the network architecture, the GraphSAGE [31] frame-work is adopted to perform message passing, where local outliers are mitigated through neighborhood feature aggrega-tion. To preserve the physical priors embedded in the PINN predictions as much as possible, the refinement network is formulated in a residual learning manner. Rather than directly predicting the final multipath parameters, the GNN learns a correction term ∆yi relative to the initial PINN estimates. The refined output is thus expressed as 
+
+ˆyi = ˜ yi + ∆ yi, (26) where ˆyi denotes the final multipath parameter estimation. This residual formulation encourages the graph network to focus on learning spatially consistent adjustments, thereby reducing the risk of violating the physical plausibility of the point-wise predictions. To ensure training stability, the objective function of the refinement stage, denoted by Lgraph , is defined by minimizing the MSE between the refined predictions and the ground truth 
+
+LCG = 1
+
+|I sup |
+
+X
+
+> i∈I sup
+> L
+
+X
+
+> l=1
+
+wi,l softplus 
+
+
+
+˜gi,l −
+
+
+
+−P FSPL  
+
+> i
+
++ 10 log 10 ¯αi,l 
+
+ 2
+
+. (18) 
+
+Langle = − 1
+
+|I sup |
+
+X
+
+> i∈I sup
+
+h
+
+si log(˜ pLoS  
+
+> i, 1
+
++ ϵ) + (1 − si) log(1 − ˜pLoS  
+
+> i, 1
+
++ ϵ)
+
+i
+
+. (22) 
+
+Lrank = 1
+
+|I sup |
+
+X
+
+> i∈I sup
+> L−1
+
+X
+
+> l=1
+
+h
+
+softplus(˜ gi,l +1 − ˜gi,l + mp) + softplus(˜ τi,l − ˜τi,l +1 + mτ )
+
+i
+
+. (24) 
+
+Lpair = 1
+
+|I sup |
+
+X
+
+> i∈I sup
+
+1
+
+|P| 
+
+X
+
+> (l,m )∈P
+
+softplus 
+
+
+
+− (˜ gi,l − ˜gi,m )(˜ τi,m − ˜τi,l )
+
+spsτ
+
+
+
+. (25) 7
+
+over the supervised sample set Isup , given as      
+
+> Lgraph =1
+> |I sup |
+> X
+> i∈I sup
+> ∥ˆyi−yi∥22.
+
+(27) 
+
+E. Joint Construction of RF Map via PINN and GNN 
+
+As illustrated in the system architecture, the proposed framework constructs high-fidelity RF maps by integrating physical consistency with spatial correlation. First, the frame-work processes the raw environment map E and geometric coordinates into unified condition vectors zi. A point-wise PINN then independently estimates the multipath parameters 
+
+˜Yi for each location, enforcing physical validity via embed-ded constraints such as channel gain-ToA bounds and LoS alignment. To overcome the limitation of isolated point-wise predictions, a GNN is subsequently employed to refine these estimates. By constructing a k-nearest neighbor graph over the domain, the GNN models spatial dependencies and learns a residual correction ∆Yi, effectively smoothing out local noise while preserving the physical structure. During training, the scene encoder is trained jointly with the PINN and GNN in an end-to-end manner. Its parameters are updated implicitly through the back-propagated physics-informed loss without introducing additional supervision. This design enables the encoder to learn task-specific environmental features, such as recognizing diffraction edges. The com-plete construction process, incorporating the two-stage training strategy to ensure stability, is summarized in Algorithm 1. IV. C OMPARISON SCHEMES AND EVALUATION METRICS 
+
+A. Baseline Methods and Ablation Studies 
+
+Existing studies on RF map construction mainly focus on predicting the received power or path loss of the first-arriving path under cross-scene conditions, with the core objective of generating continuous radio coverage distributions given only environmental information. Since no prior work is capable of directly predicting the complete multipath parameter tensor in a cross-scene setting, a fair comparison with existing meth-ods requires following their established evaluation protocol. Accordingly, the channel gain corresponding to the first path is extracted from the multipath predictions of the proposed framework, and the comparison is conducted at this scalar level. Under this alignment setting, RF map construction is for-mulated as a two-dimensional image generation or completion problem conditioned on environmental representations, where the goal is to predict first-path power maps or path loss maps. Three representative sampling-free, image-based methods are selected as cross-scene baselines.  
+
+> •
+
+RadioUNet [15] (Supervised Regression): RadioUNet is a classical end-to-end image regression approach that formulates RF map construction as a direct mapping from environmental layouts to path loss maps. It adopts a fully convolutional U-Net as the backbone and learns the nonlinear relationship between environmental structures and radio attenuation through pixel-wise supervision. Owing to its simplicity and effectiveness, RadioUNet has been widely used as a baseline in prior studies. 
+
+Algorithm 1: RF Map Construction with Scene-Conditioned Joint PINN–GNN                                                                           
+
+> Input: Scene information E(2D / 2.5D environment map)
+> or sparse samples {xm,ym}Mm=1
+> Output: RF map or point-wise predictions ˆY
+> // Condition Initialization
+> 1ei←Extract environment field F=Eψ(E)(if available, else
+> 0);
+> 2si←Encode sparse measurements (if available, else 0);
+> // Query Construction
+> 3Construct input queries {qi}from either (i) grid locations implied by Eor (ii) given sparse coordinates xm;
+> // Joint PINN-GNN Training
+> 4for each training epoch do
+> 5Point-wise PINN inference:
+> 6Obtain physics-aware multipath predictions ˜Yi;
+> 7Graph construction:
+> 8Build spatial neighborhood graph G= ( V, E )according to query locations;
+> 9Graph-based refinement:
+> 10 Refine point-wise predictions via message passing ˆY;
+> 11 Loss computation:
+> 12 Compute PINN loss LPINN and GNN loss LGNN ;
+> 13 Parameter update:
+> 14 Update all trainable parameters via backpropagation;
+> 15 end
+> // RF Map Generation /Completion
+> 16 Freeze model parameters;
+> 17 Construct inference queries {qtest
+> i}over the target scene;
+> 18 Predict ˜Yi;
+> 19 Refine via GNN to obtain ˆYi;
+> 20 Post-processing and inverse normalization;
+> 21 return ˆY;
+> •
+
+RME-GAN [18] (Adversarial Generation): RME-GAN represents RF map generation methods based on condi-tional GANs. Through adversarial training, it is able to better capture high-frequency details in path loss distri-butions. The original RME-GAN relies on sparse path loss samples as conditional inputs. To ensure fairness in the sampling-free cross-scene setting, only environmental information is retained as the conditioning input in our experiments.  
+
+> •
+
+RadioDiff [21] (Diffusion-Based Generation): RadioD-iff is a recent sampling-free RF map construction method based on denoising diffusion probabilistic models. It formulates RF map generation as a conditional diffusion process and progressively recovers high-fidelity first-path power maps through multi-step reverse denoising. Its ar-chitecture integrates attention mechanisms and frequency-domain modeling modules, achieving strong performance in both structural similarity and prediction accuracy. It is worth noting that all the above cross-scene base-line methods are designed exclusively for modeling first-path power or path loss, and do not involve tensor-level prediction of multipath parameters. Therefore, they only participate in the aligned comparison at the first-path level. To ensure consistency and fairness across different methods, a unified alignment protocol is adopted for cross-scene first-path power evaluation. At the variable level, all comparisons are strictly restricted to the first-path power map G. For 8
+
+the proposed method, only the channel gain component ˆG
+
+corresponding to the first path is extracted from the predicted multipath parameter tensor ˆY for evaluation, ensuring con-sistency with methods that solely predict first-path power or path loss maps. At the spatial level, all image-based evaluation metrics are computed only within the receiver region ΩR =
+
+{(u, v ) | R(u, v ) = 1 } to avoid interference from unreachable areas. At the normalization level, the structural similarity index (SSIM) is computed after min–max normalization within ΩR
+
+for each scene, thereby mitigating the impact of dynamic range variations across different environments. To systematically evaluate each component of the proposed unified framework, we report results under identical cross-scene settings using 2D and 2.5D representations. Accordingly, three ablation schemes analyze the distinct impacts of physical and spatial consistency modeling.  
+
+> •
+
+w/o PINN: The physical consistency constraint is re-moved, and the model relies solely on data-driven re-gression without incorporating physics-based loss terms. This setting is used to assess the impact of physical priors on the stability and generalization of multipath parameter learning.  
+
+> •
+
+w/o GNN: The graph-based spatial refinement module is removed, and RF maps are generated directly from point-wise predictions. This configuration evaluates the role of explicit spatial relationship modeling in continuous map construction.  
+
+> •
+
+Separate: A decoupled learning scheme is adopted as a baseline, where physics-aware regression and graph-based propagation are conducted in two independent stages. Specifically, a PINN is first trained to predict multipath parameters at each location under physical constraints, after which its outputs are fixed and a GNN is trained for neighborhood aggregation and spatial re-finement. Unlike the proposed unified framework, this scheme does not employ end-to-end joint optimization and does not allow feature sharing across modules. In addition to cross-scene generation, the proposed method is further evaluated under a sparse-sample completion setting. In this scenario, besides the above ablation baselines, the classical spatial interpolation method Kriging is included for comparison. 
+
+B. Evaluation Metrics 
+
+We adopt a two-level evaluation protocol to comprehen-sively assess the performance of the proposed method under different task settings. The first level consists of map-level metrics for aligned cross-scenario comparison on first-path gain prediction, while the second level includes tensor-level metrics for evaluating the reconstruction accuracy of complete multipath parameters. Furthermore, the proposed PW-DTW metric is utilized to evaluate multipath temporal consistency. 
+
+1) Map-Level Metrics (First-Path Gain): Let G(u, v ) and 
+
+ˆG(u, v ) denote the ground-truth and predicted first-path gain maps, respectively. All map-level metrics are computed only within the receiver region ΩR = {(u, v ) | R(u, v ) = 1 }.The root mean square error (RMSE) is defined as       
+
+> RMSE( G, ˆG) =
+> s1
+> |ΩR|
+> X
+> (u,v )∈ΩR
+> ˆG(u, v )−G(u, v )
+> 2
+> .
+
+(28) The normalized mean square error (NMSE) is given by        
+
+> NMSE( G, ˆG) =
+> P
+> (u,v )∈ΩR
+> ˆG(u, v )−G(u, v )
+> 2
+> P
+> (u,v )∈ΩRG(u, v )2.
+
+(29) To measure structural similarity, the structural similarity index (SSIM) is employed. To mitigate the impact of dynamic range variations across different scenarios, both the ground-truth and predicted maps are first min–max normalized within 
+
+ΩR for each scenario as                   
+
+> Gnorm =G−Gmin
+> Gmax −Gmin +ϵ ,ˆGnorm =ˆG−ˆGmin
+> ˆGmax −ˆGmin +ϵ .
+
+(30) Then, the SSIM metric is computed between the normalized maps x = Gnorm and y = ˆGnorm . The standard SSIM formulation is applied as                
+
+> SSIM( x, y ) = (2 μxμy+C1)(2 σxy +C2)(μ2
+> x+μ2
+> y+C1)( σ2
+> x+σ2
+> y+C2),
+
+(31) where μx and μy denote the local means, σ2 
+
+> x
+
+and σ2 
+
+> y
+
+denote the local variances, and σxy represents the local covariance of 
+
+x and y. These local statistics are computed using an 11 ×
+
+11 Gaussian sliding window. The constants are set to C1 =(0 .01 Lmax )2 and C2 = (0 .03 Lmax )2 with Lmax being the dynamic range of the normalized images. 
+
+2) Tensor-Level Metrics (Multipath Parameters): Let Y,
+
+ˆY ∈ RH×W ×L×Q denote the ground-truth and predicted multipath parameter tensors, respectively, where L is the number of paths and Q denotes the dimensionality of physical parameters per path. All tensor-level metrics are evaluated only within the effective propagation region ΩM , which is automatically inferred from the environmental map. Prior to calculating error metrics, all physical parameters are normalized using their respective statistical mean and standard deviation along each feature dimension to avoid bias caused by inconsistent units. The tensor-level RMSE is defined as      
+
+> RMSE ten =
+> vuut1
+> |ΩM|LQ
+> X
+> (u,v )∈ΩM
+> LX
+> l=1
+> Q
+> X
+> q=1
+> (∆ u,v,l,q )2,
+
+(32) where ∆ denotes the prediction error of the corresponding parameter. For angular parameters with periodicity, such as the azimuth angle ϕ, the circular distance is adopted as           
+
+> ∆ϕ= min
+> 
+> |ˆϕ−ϕ|,360 ◦− | ˆϕ−ϕ|
+> 
+> ,
+
+(33) to ensure that the periodic nature of angular predictions is correctly handled. 
+
+3) PW-DTW for CIR Evaluation: Point-wise error metrics such as RMSE, NMSE, or SSIM are insufficient to capture the peak misalignment phenomenon commonly observed in multipath prediction. To jointly evaluate amplitude and delay alignment errors while assigning higher importance to the dominant or strong paths, PW-DTW is introduced to measure the similarity between predicted and ground-truth CIRs. 
+
+CIR Synthesis and Normalization : For each receiver loca-tion, the Top-Lpw dominant propagation paths are selected, 9               
+
+> cw(i, j ) =
+> 
+> w0+βpw
+> 2
+>  Wx(ti) + Wy(tj)
+> ·
+> 
+> (˜ xi−˜yj)2+λt(ti−tj)2
+> .
+
+(39) with their gains and times of arrival represented as {(gl, τ l)}.Here, gl denotes the path gain in dB and τl is measured in ns. The dB gains are first converted to linear amplitudes 
+
+pl = 10 gl/10 . A discrete CIR is then synthesized on a unified delay grid {ti}Npw  
+
+> i=1
+
+using Gaussian pulses as      
+
+> x(ti) =
+> Lpw
+> X
+> l=1
+> plexp
+> 
+> −(ti−τl)2
+> 2σ2
+> g
+> 
+> ,
+
+(34) where σg controls the temporal spread of each path. The predicted and ground-truth CIRs are denoted by y(ti) and 
+
+x(ti), respectively, and are jointly normalized using their global maximum amplitude as       
+
+> ˜x(ti) = x(ti)
+> α,˜y(ti) = y(ti)
+> α,
+
+(35) with      
+
+> α= max
+> 
+> max
+> ix(ti),max
+> iy(ti)
+> 
+> .
+
+(36) 
+
+Standard DTW Distance : Given normalized CIRs, the stan-dard DTW local cost is c(i, j ) = (˜ xi −˜yj )2, and the cumulative cost matrix is computed via dynamic programming as          
+
+> G(i, j ) = c(i, j ) + min {G(i−1, j ), G (i, j −1) , G (i−1, j −1) },
+
+(37) yielding the DTW distance DDTW = G(Npw , N pw ), where 
+
+G(i, j ) denotes the minimum cumulative alignment cost be-tween prefixes ˜x1: i and ˜y1: j . However, treating dominant and weak paths equally fails to prioritize critical propagation alignments. 
+
+Peak-Weighted Modeling : To highlight dominant and strong paths, a time-dependent weighting function is constructed based on peak detection. Peak sets Kx and Ky are identified on ˜x(t) and ˜y(t), respectively, and the Top-Lpw peaks with the largest relative amplitude are retained. Taking ˜x(t) as an example, the peak-weighting function is defined as           
+
+> Wx(t) = max
+> k∈K x
+> 
+> ˜akexp
+> 
+> −(t−tk)2
+> 2σ2
+> 
+> ,
+> ˜ak=˜x(tk)max i˜x(ti),
+
+(38) where tk denotes the peak location and σ controls the influence range of each peak. The function Wy (t) is constructed in the same manner, and both are linearly normalized to [0 , 1] .
+
+PW-DTW Weighted Cost and Constraints : By jointly consid-ering amplitude discrepancies, delay misalignment, and peak importance, the weighted local cost in PW-DTW is expressed as (39), where w0 is the base weight, βpw controls the strength of peak weighting, and λt balances the delay penalty. To constrain the maximum allowable peak displacement, a Sakoe–Chiba band constraint |i − j| ≤ r is applied, where 
+
+r ≈ ∆tmax /∆t, ∆tmax denotes the maximum permitted delay offset, and ∆t is the delay grid resolution. Under this constraint, dynamic programming is performed using cw(i, j )
+
+in place of c(i, j ) in (37) to obtain the PW-DTW distance D.Since D increases with the length LDTW of the optimal warping path, a normalized distance is defined as    
+
+> ¯D=DLDTW
+> .
+
+(40) Averaging ¯D across valid test-set receivers yields the final PW-DTW score, comprehensively evaluating CIR prediction quality regarding peak alignment and amplitude consistency. PW-DTW particularly suits CIR sequences featuring sparse peak structures dominated by a few strong paths. For scenarios involving dense multipath, indistinguishable peaks, or severe noise, increasing the detection threshold or pre-denoising the CIR sequences effectively improves stability. V. E XPERIMENTS AND ANALYSIS 
+
+A. Experimental Setup 
+
+We comprehensively evaluate the proposed framework un-der cross-scene generation and in-scene completion settings. Given the prohibitive cost and complexity of acquiring dense real-world multipath measurements at scale, relying on RT-based datasets has become the standard practice. High-fidelity RT rigorously simulates electromagnetic propagation to yield accurate multipath parameters, serving as the widely accepted ground truth in related literature [15], [32]. 
+
+1) Cross-Scene Generation: For the task of RF map gen-eration in unseen environments, the large-scale OpenPathNet dataset [33] was adopted. Comprising tens of thousands of realistic urban scenes from multiple metropolitan cities, it provides diverse building layouts and environmental structures. Each 128 × 128 m 2 scene includes environmental data and multipath RF ray-tracing measurements sampled at a 1 m resolution. The receiver height is fixed at 1 m, with the transmitter at (0,0,30) m operating at 3.6 GHz. Both 2D and 2.5D environmental features were extracted from the environment files provided by the dataset, as illus-trated in Fig. 2. The model was trained on a subset consisting of 3,000 distinct scenes. To rigorously assess generalization capability, the optimal model checkpoint was selected based on performance on an independent validation set, which was strictly excluded from gradient updates throughout training.   
+
+> (a) (b) Fig. 2. Scene environment map: (a) 2D, (b) 2.5D.
+
+2) In-Scene Completion: For the task of reconstructing RF maps from sparse observations within a single scene, experiments were conducted on two representative scenarios:  
+
+> •
+
+Scenario 1 (Indoor): This scenario was constructed based on the DeepMIMO dataset [34] and consists of a 10 × 10 × 5 m 3 indoor environment, as shown in Fig. 3(a). The access point was located at a height of 2.5 10 
+
+m and operated at 2.4 GHz. A total of 30,280 receivers were distributed over two grids with a spacing of 50 cm.  
+
+> •
+
+Scenario 2 (Outdoor): This scenario covers a large-scale area of 512 × 512 m2 on the west campus of the University of Science and Technology of China (USTC), as illustrated in Fig. 3(b). The multipath data were generated using the Sionna ray-tracing platform [11], following the procedure described in [33]. Operating at 3.6 GHz, a base station sits 30 m high above the Third Electronics Building, serving receivers uniformly spaced at 1 m intervals at a 1 m height. desk  desk     
+
+> BS x
+> y
+> z
+> (a) (b) BS (c) Fig. 3. Experimental scenarios: (a) DeepMIMO dataset, (b) USTC campus, (c) 3D model of USTC campus buildings.
+
+For both completion scenarios, model performance was evaluated under a fixed sparse sampling ratio of 10%. The randomly selected sparse observation points were divided into training, validation, and test sets with a ratio of 7 : 1 .5 : 1 .5.Since the fifth propagation path’s power typically drops to approximately 2%–5% of the dominant path, the number of multipath components is set to L = 5 to balance reconstruction fidelity and computational efficiency. The AdamW optimizer is adopted alongside a validation-driven adaptive decay strat-egy, using an initial learning rate of 1 × 10 −4 globally and 
+
+5 × 10 −5 specifically for the encoder. To mitigate overfitting, weight decay is set to 1 × 10 −5, and a 0.2 dropout rate is applied to both the PINN and GNN modules. Finally, the key hyperparameters are summarized in Table I and remain fixed unless otherwise specified in the ablation studies. 
+
+B. Simulation Results 1) Performance on Cross-Scene Generation (Map-level): 
+
+Table II reports the quantitative results for the cross-scene generation task. Our unified framework consistently outper-forms all image-based baselines across all evaluation metrics. In particular, the proposed 2.5D model achieves the lowest RMSE and NMSE. In terms of structural fidelity, the highest SSIM is obtained by the proposed method, indicating that the physics-guided spatial refinement is more effective at preserv-ing sharp signal discontinuities and shadow boundaries than purely generative models or the regression-based RadioUNet. Notably, even the proposed 2D setting yields lower predic-tion errors than the diffusion-based RadioDiff. This result suggests the performance advantage stems not solely from richer input representations, but largely from the robustness of the integrated PINN-GNN architecture. Finally, the additional performance gains observed in the 2.5D mode confirm that explicitly encoding height information E2.5D provides critical geometric cues for modeling diffraction and blockage effects in complex urban environments.    
+
+> TABLE I KEY HYPERPARAMETERS AND DEFAULT SETTINGS
+
+Symbol Description Value 
+
+Model Architecture 
+
+P Number of predicted paths 5
+
+Q Parameters per path 4
+
+k Number of kNN neighbors 16 
+
+dgraph GNN hidden dimension 128 
+
+Lgraph Number of GNN layers 4
+
+Physics and Regularization 
+
+α Power reference coefficients [1 , 0.7, 0.3, 0.1] 
+
+β ToA reference coefficients [1 , 1.2, 1.4, 1.6] 
+
+η Entropy exponent 2
+
+ϵ Numerical stability constant 10 −8
+
+σ∠ LoS angular tolerance 30 ◦
+
+λmax  
+
+> phy
+
+Maximum physics loss weight 0.5 
+
+λmax  
+
+> type
+
+Maximum type loss weight 0.3 
+
+PW-DTW Evaluation 
+
+Kpw Number of dominant peaks 5
+
+Npw Delay grid resolution 5000 
+
+σg , σ Gaussian pulse width 3.5 ns 
+
+βpw Peak emphasis factor 3.0 
+
+λt Temporal penalty weight 1 × 10 −4
+
+∆tmax Maximum delay offset 20 ns    
+
+> TABLE II MAP -LEVEL COMPARISON ON CROSS -S CENE GENERATION
+
+Method RMSE ↓ NMSE ↓ SSIM ↑
+
+RadioUNet [15] 0.0237 0.0069 0.9583 RME-GAN [18] 0.0296 0.0121 0.9299 RadioDiff [21] 0.0190 0.0049 0.9691 
+
+Proposed 2D 0.0188 0.0046 0.9700 
+
+2.5D 0.0171 0.0040 0.9725 
+
+2) Performance on Cross-Scene Generation (Tensor-level): 
+
+Fig. 4 presents the cumulative distribution function (CDF) curves of the prediction errors for four key physical parameters across 2D and 2.5D input configurations alongside ablation variants. Owing to the large dynamic range among path gains, path-gain error is evaluated as a relative error. The proposed 2.5D method consistently achieves the best first-path predic-tion performance across all parameters, significantly outper-forming the 2D configuration and all ablated variants. Under the 2.5D setting, approximately 95% of first-path gain pre-dictions exhibit relative errors below 20%, while 80% of ToA errors fall within 50 ns. Elevation and azimuth angle errors are largely constrained within 10 ◦ and 20 ◦, respectively, demon-strating that explicit height information effectively improves modeling accuracy for complex geometric relationships. In contrast, the w/o PINN variant exhibits pronounced long-tail behavior in ToA and angular predictions, substantially increasing the proportion of large-error samples. This validates the critical role of physics-based constraints in preventing parameter divergence. Moreover, as path order increases, en-hanced multipath randomness complicates the prediction task, slowing CDF convergence. Even in this regime, the proposed 2.5D method maintains competitive performance, highlighting its robustness in capturing secondary and weak multipath 11 0 20 40 60 80 100 
+
+> Relative Error in Channel Gain (%)
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Cumulative Probability
+> 2.5D (Path 1)
+> 2.5D (Path 2)
+> 2.5D (Path 3)
+> 2D (Path 1)
+> 2D (Path 2)
+> 2D (Path 3)
+> Separate_2.5D (Path 1)
+> w/o PINN_2.5D (Path 1)
+> w/o GNN_2.5D (Path 1)
+
+(a) 0 50 100 150 200 250  
+
+> Absolute Error in ToA (ns)
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Cumulative Probability
+> 2.5D (Path 1)
+> 2.5D (Path 2)
+> 2.5D (Path 3)
+> 2D (Path 1)
+> 2D (Path 2)
+> 2D (Path 3)
+> Separate_2.5D (Path 1)
+> w/o PINN_2.5D (Path 1)
+> w/o GNN_2.5D (Path 1)
+
+(b) 0 10 20 30 40 50 
+
+> Absolute Error in Elevation (°)
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Cumulative Probability
+> 2.5D (Path 1)
+> 2.5D (Path 2)
+> 2.5D (Path 3)
+> 2D (Path 1)
+> 2D (Path 2)
+> 2D (Path 3)
+> Separate_2.5D (Path 1)
+> w/o PINN_2.5D (Path 1)
+> w/o GNN_2.5D (Path 1)
+
+(c) 0 10 20 30 40 50 60 70 80  
+
+> Absolute Error in Azimuth (°)
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Cumulative Probability
+> 2.5D (Path 1)
+> 2.5D (Path 2)
+> 2.5D (Path 3)
+> 2D (Path 1)
+> 2D (Path 2)
+> 2D (Path 3)
+> Separate_2.5D (Path 1)
+> w/o PINN_2.5D (Path 1)
+> w/o GNN_2.5D (Path 1)
+
+(d) Fig. 4. CDFs of multipath prediction errors for the cross-scene generation task: (a) channel gain, (b) ToA, (c) elevation angle, and (d) azimuth angle. 
+
+components. 
+
+TABLE III CROSS -S CENE ABLATION RESULTS UNDER 2D AND 2.5D E NVIRONMENT 
+
+REPRESENTATIONS 
+
+Method RMSE ↓ NMSE ↓ PW-DTW (×10 −3) ↓
+
+2D 2.5D 2D 2.5D 2D 2.5D w/o PINN 2.0923 1.9879 0.0657 0.0597 3.102 2.351 w/o GNN 1.8986 1.7029 0.0519 0.0486 2.317 1.958 Separate 1.7982 1.5657 0.0497 0.0454 2.330 1.946 Proposed 1.3877 1.2714 0.0352 0.0324 1.642 1.353 
+
+Table III details the cross-scene generation ablation results, quantitatively evaluating how architectural components and input dimensionalities impact multipath parameter prediction. The experimental results indicate that the proposed 2.5D framework achieves the best performance across all evaluation metrics, thereby validating the effectiveness of jointly incor-porating physics-based constraints and graph-based reasoning. Specifically, removing physical constraints (w/o PINN) causes the severest degradation, yielding the highest RMSE and NMSE. This underscores that purely data-driven regression struggles to model complex physical parameters across wide dynamic ranges accurately. Furthermore, the Separate scheme highlights the necessity of end-to-end joint optimization, as decoupled PINN and GNN training fails to fully exploit their complementary benefits. The PW-DTW metric and qualitative results in Fig. 5further corroborate these conclusions. Under the 2D setting, the w/o PINN variant’s sharp PW-DTW error increase directly corresponds to the severe peak misalignment shown by the 0 100 200 300 400 500 
+
+> ToA (ns)
+> 0.00
+> 0.25
+> 0.50
+> 0.75
+> 1.00
+> Normalized Amplitude
+> Ground Truth
+> Proposed 2D
+> Separate 2D
+> w/o PINN 2D
+> w/o GNN 2D
+
+(a) 200 300 400 500 
+
+> ToA (ns)
+> 0.00
+> 0.25
+> 0.50
+> 0.75
+> 1.00
+> Normalized Amplitude
+> Ground Truth
+> Proposed 2.5D
+> Separate 2.5D
+> w/o PINN 2.5D
+> w/o GNN 2.5D
+
+(b) Fig. 5. CIR of cross-scene generation scheme: (a) 2D, and (b) 2.5D. 
+
+green dotted curve in Fig. 5(a). This confirms the physics loss’s decisive role in anchoring ToA predictions. Conversely, the proposed method minimizes numerical errors while generating power delay spectra whose peak locations and amplitudes closely track the ground truth. Furthermore, the 2.5D model consistently outperforms its 2D counterpart across all metrics, demonstrating that explicit height information provides critical diffraction-related geometric cues to enhance overall multipath prediction accuracy. 
+
+3) In-Scene Completion Results: Fig. 6 quantifies these performance gains through cumulative distribution function curves. The proposed method significantly outperforms all 12 0 20 40 60 80 100 
+
+> Relative Error in Channel Gain (%)
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Cumulative Probability
+> Proposed (Path 1)
+> Proposed (Path 2)
+> Proposed (Path 3)
+> Proposed (Path 4)
+> Proposed (Path 5)
+> Separate (Path 1)
+> w/o PINN (Path 1)
+> w/o GNN (Path 1)
+> Kriging (Path 1)
+
+(a) 0 50 100 150 200 250  
+
+> Absolute Error in ToA (ns)
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Cumulative Probability
+> Proposed (Path 1)
+> Proposed (Path 2)
+> Proposed (Path 3)
+> Proposed (Path 4)
+> Proposed (Path 5)
+> Separate (Path 1)
+> w/o PINN (Path 1)
+> w/o GNN (Path 1)
+> Kriging (Path 1)
+
+(b) 0 10 20 30 40 50 
+
+> Absolute Error in Elevation (°)
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Cumulative Probability
+> Proposed (Path 1)
+> Proposed (Path 2)
+> Proposed (Path 3)
+> Proposed (Path 4)
+> Proposed (Path 5)
+> Separate (Path 1)
+> w/o PINN (Path 1)
+> w/o GNN (Path 1)
+> Kriging (Path 1)
+
+(c) 0 10 20 30 40 50 60 70 80  
+
+> Absolute Error in Azimuth (°)
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Cumulative Probability
+> Proposed (Path 1)
+> Proposed (Path 2)
+> Proposed (Path 3)
+> Proposed (Path 4)
+> Proposed (Path 5)
+> Separate (Path 1)
+> w/o PINN (Path 1)
+> w/o GNN (Path 1)
+> Kriging (Path 1)
+
+(d) Fig. 6. CDFs of multipath prediction errors for the in-scene completion task in S2: (a) channel gain, (b) ToA, (c) elevation angle, and (d) azimuth angle. 
+
+baselines in first-path prediction, whereas Kriging exhibits pronounced ToA and angle estimation deficiencies. Specifi-cally, approximately 90% of first-path gain relative errors fall below 20%, 80% of ToA errors remain within 50 ns, and most azimuth errors are confined within 10 ◦. Furthermore, while enhanced multipath randomness complicates higher-order path predictions, the PINN-GNN framework successfully bounds these errors, validating its robustness in resolving multipath components across complex environments. 
+
+TABLE IV PERFORMANCE COMPARISON ON IN-S CENE COMPLETION 
+
+Method RMSE ↓ NMSE ↓ PW-DTW (×10 −3) ↓
+
+S1 S2 S1 S2 S1 S2 Kriging 2.3166 2.6835 0.0786 0.0914 2.673 3.445 w/o PINN 1.8952 2.2473 0.0566 0.0673 2.260 2.398 w/o GNN 1.6133 1.9072 0.0460 0.0542 1.803 2.356 Separate 1.5027 1.7492 0.0437 0.0501 1.818 2.232 Proposed 1.2106 1.3522 0.0317 0.0363 1.287 1.862 
+
+Table IV details the in-scene completion performance across Scenarios 1 and 2. The PINN-GNN framework consistently outperforms the Kriging baseline and all ablation variants across all metrics. Particularly in the challenging Scenario 2, the proposed method reduces RMSE by approximately 50% against Kriging, highlighting the superiority of physics-aware propagation learning over purely statistical interpolation. Fur-ther insights can be obtained by jointly examining the PW-DTW metric and the power delay profiles shown in Fig. 7. Yielding the highest PW-DTW errors in both scenarios, Krig-ing produces severely misaligned spurious peaks, as visualized by the green dotted curve in Fig. 7(a). This failure stems from a lack of physical awareness regarding light-speed wave 150 200 250 300 350 400 450 500 
+
+ToA (ns) 
+
+0.00 
+
+0.25 
+
+0.50 
+
+0.75 
+
+1.00 
+
+> Normalized Amplitude
+
+Ground Truth 
+
+Proposed 
+
+Kriging 
+
+Separate 
+
+w/o PINN 
+
+w/o GNN 
+
+(a) 0 200 400 600 800 1000 1200 1400 
+
+ToA (ns) 
+
+0.00 
+
+0.25 
+
+0.50 
+
+0.75 
+
+1.00 
+
+> Normalized Amplitude
+
+Ground Truth 
+
+Proposed 
+
+Kriging 
+
+Separate 
+
+w/o PINN 
+
+w/o GNN 
+
+(b) Fig. 7. CIR of in-scene completion scheme: (a) S1, and (b) S2. 
+
+propagation and environmental geometry. Similarly, removing physical constraints (w/o PINN) severely degrades PW-DTW performance, confirming the physics loss’s critical role in an-choring ToA predictions within physically plausible distances. Conversely, the proposed method minimizes PW-DTW scores, generating curves that closely track the ground truth to capture dominant path delays and multipath structures accurately. Ultimately, these results validate the jointly optimized PINN-GNN framework’s effectiveness in reconstructing high-fidelity channel fingerprints. Note that the reported RMSE/NMSE values are not directly comparable to those obtained in our earlier work [1], as the current evaluation adopts per-path and per-feature normaliza-tion together with tensor-wise averaging. 13 
+
+VI. C ONCLUSION 
+
+In this paper, we propose a unified PINN-GNN frame-work for constructing high-fidelity multipath radio maps in complex urban environments, supporting both cross-scenario generation and sparse-sampling completion using 2D and 2.5D representations. By embedding physical constraints, the PINN learns a physically consistent mapping from receiver locations to multipath parameters, while the GNN captures spatial correlations via a k-nearest-neighbor graph to refine predictions. The PINN-GNN framework jointly models the physical relationships among multipath components and their spatial consistency, enabling accurate characterization of mul-tipath propagation. Extensive experimental results demonstrate that the proposed method exhibits strong generalization per-formance in both cross-scenario generation and in-scenario completion tasks, achieving consistently superior map-level metrics compared to relevant baselines. Notably, under sparse sampling, the PINN-GNN framework maintains significantly higher robustness than Kriging interpolation. Through ablation studies and the PW-DTW metric, we further verify the decisive role of physical constraints in anchoring time-domain signal characteristics. These results validate the effectiveness of inte-grating physical knowledge with deep learning, and provide a reliable solution for high-precision digital twins and real-time channel prediction in future 6G networks. REFERENCES [1] L. Liu, X. Chen, Z. Tang, M. Ma, and W. Zhang, “PINN and GNN-based RF map construction for wireless communication systems,” in 
+
+2025 International Conference on Future Communications and Networks (FCN) , Belgrade, Serbia, Aug. 2025, pp. 1–6. [2] W. Rafique, J. Barai, A. O. Fapojuwo, and D. Krishnamurthy, “A survey on beyond 5G network slicing for smart cities applications,” IEEE Commun. Surveys Tuts. , vol. 27, no. 1, pp. 595–628, Feb. 2025. [3] Z. Wang et al. , “A tutorial on extremely large-scale MIMO for 6G: Fundamentals, signal processing, and applications,” IEEE Commun. Surveys Tuts. , vol. 26, no. 3, pp. 1560–1605, 3rd Quart., 2024. [4] T. Ma, B. Qian, X. Qin, X. Liu, H. Zhou, and L. Zhao, “Satellite-terrestrial integrated 6G: An ultra-dense LEO networking management architecture,” IEEE Wireless Commun. , vol. 31, no. 1, pp. 62–69, Feb. 2024. [5] R. Sun et al. , “A comprehensive survey of knowledge-driven deep learning for intelligent wireless network optimization in 6G,” IEEE Commun. Surveys Tuts. , vol. 28, pp. 1099–1135, May 2025. [6] Y. Zeng et al. , “A tutorial on environment-aware communications via channel knowledge map for 6G,” IEEE Commun. Surveys Tuts. , vol. 26, no. 3, pp. 1478–1519, 3rd Quart., 2024. [7] Y. Okumura, “Field strength and its variability in VHF and UHF land-mobile radio service,” Rev. Electr. Commun. Lab. , vol. 16, pp. 825–873, 1968. [8] M. Hata, “Empirical formula for propagation loss in land mobile radio services,” IEEE Trans. Veh. Technol. , vol. 29, no. 3, pp. 317–325, Aug. 1980. [9] 3GPP, “3GPP TR38.901,” 3rd Generation Partner-ship Project (3GPP), Tech. Rep., 2023. [On-line]. Available: https://portal.3gpp.org/desktopmodules/Specifications/ SpecificationDetails.aspx?specificationId=3173 [10] K. Rizk, J.-F. Wagen, and F. Gardiol, “Two-dimensional ray-tracing modeling for propagation prediction in microcellular environments,” 
+
+IEEE Trans. Veh. Technol. , vol. 46, no. 2, pp. 508–518, May 1997. [11] J. Hoydis, F. A. Aoudia, S. Cammerer, M. Nimier-David, N. Binder, G. Marcus, and A. Keller, “Sionna RT: Differentiable ray tracing for radio propagation modeling,” arXiv preprint arXiv:2303.11103 , 2023. [12] E. Dall’Anese, S.-J. Kim, and G. B. Giannakis, “Channel gain map tracking via distributed Kriging,” IEEE Trans. Veh. Technol. , vol. 60, no. 3, pp. 1205–1211, Mar. 2011. [13] D. Schaufele, R. L. G. Cavalcante, and S. Stanczak, “Tensor completion for radio map reconstruction using low rank and smoothness,” in 
+
+Proc. IEEE 20th Int. Workshop Signal Process. Adv. Wireless Commun. (SPAWC) , Cannes, France, Jul. 2019, pp. 1–5. [14] S. Chouvardas, S. Valentin, M. Draief, and M. Leconte, “A method to reconstruct coverage loss maps based on matrix completion and adaptive sampling,” in Proc. IEEE Int. Conf. Acoust., Speech Signal Process. (ICASSP) , Shanghai, China, Mar. 2016, pp. 6390–6394. [15] R. Levie, C. Yapar, G. Kutyniok, and G. Caire, “RadioUNet: fast radio map estimation with convolutional neural networks,” IEEE Trans. Wireless Commun. , vol. 20, pp. 4001–4015, Jun. 2021. [16] Y. Li, Z. Li, Z. Gao, and T. Chen, “Geo2SigMap: High-fidelity RF signal mapping using geographic databases,” in 2024 IEEE International Symposium on Dynamic Spectrum Access Networks (DySPAN) , May 2024, pp. 277–285. [17] G. Chen, Y. Liu, T. Zhang, J. Zhang, X. Guo, and J. Yang, “A graph neural network based radio map construction method for urban environment,” IEEE Commun. Lett. , vol. 27, no. 5, pp. 1327–1331, May 2023. [18] S. Zhang, A. Wijesinghe, and Z. Ding, “RME-GAN: A learning framework for radio map estimation based on conditional generative adversarial network,” IEEE Internet Things J. , vol. 10, no. 20, pp. 18 016–18 027, Oct. 2023. [19] Q. Chen, J. Yang, M. Huang, and Q. Zhou, “ACT-GAN: Radio map construction based on generative adversarial networks with ACT blocks,” 
+
+IET Commun. , vol. 18, no. 19, pp. 1541–1550, Dec. 2024. [20] S. Sarkar, M. H. Manshaei, M. Krunz, and H. Ravaee, “RecuGAN: A novel generative AI approach for synthesizing RF coverage maps,” in 33rd International Conference on Computer Communications and Networks (ICCCN) , Kailua-Kona, HI, USA, 2024, pp. 1–9. [21] X. Wang, K. Tao, N. Cheng, Z. Yin, Z. Li, Y. Zhang, and X. Shen, “RadioDiff: An effective generative diffusion model for sampling-free dynamic radio map construction,” IEEE Trans. Cogn. Commun. Netw. ,vol. 11, no. 2, pp. 738–750, Apr. 2025. [22] X. Wang et al. , “RadioDiff-3D: A 3D ×3D radio map dataset and generative diffusion based benchmark for 6G environment-aware com-munication,” IEEE Trans. Netw. Sci. Eng. , vol. 13, pp. 3773–3789, Jul. 2025. [23] S. Fu, Z. Wu, D. Wu, and Y. Zeng, “Generative CKM construction using partially observed data with diffusion model,” arXiv preprint arXiv:2412.14812 , 2024. [24] L. Zhao, Y. Wang, X. Wang, Z. Fei, and Y. Zeng, “BeamCKMDiff: Beam-aware channel knowledge map construction via diffusion trans-former,” arXiv preprint arXiv:2601.10207 , 2026. [25] Z. Wu, D. Wu, S. Fu, Y. Qiu, and Y. Zeng, “CKMImageNet: A dataset for AI-based channel knowledge map toward environment-aware communication and sensing,” IEEE Trans. Commun. , vol. 73, no. 12, pp. 14 430–14 443, Dec. 2025. [26] R. Mo et al. , “Deep machine learning-based AoD map and AoA map construction for wireless networks,” in IEEE Vehicular Technology Conference (VTC) , Singapore, Singapore, Jun. 2024, pp. 1–5. [27] R. Amiri et al. , “Indoor environment learning via RF-mapping,” IEEE J. Sel. Areas Commun. , vol. 41, no. 6, pp. 1859–1872, Jun. 2023. [28] G. E. Karniadakis et al. , “Physics-informed machine learning,” Nat. Rev. Phys. , vol. 3, no. 6, pp. 422–440, May 2021. [29] E. Zhu, H. Sun, and M. Ji, “Physics-informed generalizable wireless channel modeling with segmentation and deep learning: Fundamentals, methodologies, and challenges,” IEEE Wireless Commun. , vol. 31, no. 6, pp. 170–177, Dec. 2024. [30] F. Scarselli, M. Gori, A. C. Tsoi, M. Hagenbuchner, and G. Monfardini, “The graph neural network model,” IEEE Trans. Neural Netw. , vol. 20, no. 1, pp. 61–80, Jan. 2009. [31] W. Hamilton, Z. Ying, and J. Leskovec, “Inductive representation learning on large graphs,” in Proc. Int. Conf. Neural Inf. Process. Syst. (NeurIPS) , Long Beach, CA, USA, Dec. 2017, pp. 1025–1035. [32] R. Hoppe, G. Wolfle, and U. Jakobus, “Wave propagation and radio network planning software WinProp added to the electromagnetic solver package FEKO,” in Proc. Int. Appl. Comput. Electromagn. Soc. Symp. Italy (ACES) , Florence, Italy, Mar. 2017, pp. 1–2. [33] L. Liu, X. Chen, and W. Zhang, “OpenPathNet: An open-source RF multipath data generator for AI-driven wireless systems,” arXiv preprint arXiv:2512.17286 , 2025. [34] A. Alkhateeb, “DeepMIMO: A generic deep learning dataset for mil-limeter wave and massive MIMO applications,” in Information Theory and Applications Workshop (ITA) , Feb. 2019, pp. 1–8.
