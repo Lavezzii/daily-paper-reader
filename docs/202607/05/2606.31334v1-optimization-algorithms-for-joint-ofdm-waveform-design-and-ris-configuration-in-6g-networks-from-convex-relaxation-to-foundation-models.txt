@@ -1,0 +1,782 @@
+Title: Optimization Algorithms for Joint OFDM Waveform Design and RIS Configuration in 6G Networks: From Convex Relaxation to Foundation Models
+
+URL Source: https://arxiv.org/pdf/2606.31334v1
+
+Published Time: Wed, 01 Jul 2026 00:47:06 GMT
+
+Number of Pages: 22
+
+Markdown Content:
+> AHMET KAPLAN 1
+
+# Optimization Algorithms for Joint OFDM Waveform Design and RIS Configuration in 6G Networks: From Convex Relaxation to Foundation Models 
+
+Ahmet Kaplan, Member, IEEE 
+
+Abstract —Joint OFDM-RIS optimization for 6G is a mixed-integer nonlinear programming (MINLP) problem covering sum-rate maximization, energy efficiency, max-min fairness, and peak-to-average power ratio (PAPR)-constrained objectives. Seventy-eight joint OFDM-RIS optimization works published between 2021 and 2026 are surveyed. No standardized benchmark exists, and cross-paper comparisons remain infeasible. This survey classifies these works into four paradigms: (I) model-based convex relaxation, (II) heuristic and metaheuristic search, (III) deep reinforcement and unsupervised learning, and (IV) emerging methods including foundation models (FM), diffusion-based generative AI, and quantum optimization. A literature synthesis of self-reported benchmarks shows that ML-based methods (Paradigm III) report 95–99% of model-based spectral efficiency at 10 2–10 4× faster per-inference runtime (method-pair dependent; literature values are self-reported and exclude ML pre-training cost). A companion tutorial benchmark at 𝑁 = 16 ,
+
+𝑁 = 64 , and 𝑁 = 128 reveals a critical scaling property: GPU-based neural network inference (DDQN, PPO, graph neural network (GNN), unsupervised DL) is 𝑁 -invariant, with identical runtime at 𝑁 = 16 and 𝑁 = 128 , while iterative solvers (AO+SCA, PSO) scale polynomially. Energy efficiency (P2) and PAPR-constrained (P4) benchmarks are deferred to future work with standardized power models and waveform generators. Six open challenges emerge from the synthesis: the cross-paradigm benchmark deficit, real-world hardware-constrained deployment, joint waveform-RIS optimization for doubly-dispersive channels, multi-objective PAPR trade-offs, LLM safety in live network control, and diminishing returns of standalone heuristics. We specify requirements for a standardized benchmark. This study serves as a roadmap for researchers and practitioners working on joint OFDM-RIS optimization in 6G networks. 
+
+Index Terms —6G, OFDM, Reconfigurable Intelligent Surfaces (RIS), Optimization Algorithms, Deep Reinforcement Learning, Foundation Models, Large Language Models, Diffusion Models, Quantum Optimization, OTFS, AFDM. 
+
+I. I NTRODUCTION 
+
+# 6G networks must deliver peak data rates of 1 Tbps, end-to-end latency below 0.1 ms, over ten times the energy efficiency of 5G, and connection densities exceeding 
+
+10 7 devices/km 2 [3], [4]. Meeting these targets requires a re-architecture of the PHY and MAC layers. Two technologies at the core of this redesign are Orthogonal Frequency-Division Multiplexing (OFDM) and Reconfigurable Intelligent Surfaces 
+
+A. Kaplan is with the Department of AI Engineering, Istanbul Medipol University, Istanbul, T¨ urkiye (e-mail: ahmet.kaplan@medipol.edu.tr). ORCID: 0000-0001-5231-2282. 
+
+(RIS). The joint optimization problem covering both is open and challenging. While OFDM has been the workhorse multicarrier tech-nology from 4G LTE through 5G NR, 6G OFDM systems face three main degradation issues: a PAPR of 10–12 dB at millimeter-wave (mmWave) frequencies [5], [6], phase noise amplification at sub-THz [52], and inter-carrier interference (ICI) under high-mobility conditions (Doppler spread) [5], [6]. RIS reflects signals toward users via programmable phase shifts, turning propagation obstacles into controlled links [4], [7]. Configuring 𝑁 phase shifters on a cascaded channel is itself a MINLP problem with intractable complexity for large 
+
+𝑁 .Work on joint OFDM-RIS optimization started appearing in 2021. The problem can be formulated for a base station serving 𝐾 users on 𝑀 OFDM subcarriers through an RIS with 
+
+𝑁 elements as jointly optimizing (1) active BS beamforming matrix W ∈ C𝑀 𝑡 ×𝐾 ×𝑀 , (2) passive RIS phase shift vector 
+
+𝜽 ∈ C𝑁 with unit-modulus constraint, (3) subcarrier allocation indicators a ∈ {0, 1}𝐾 ×𝑀 , and (4) waveform parameters subject to PAPR constraint. The formulation comprises contin-uous, discrete and manifold variables, and multiple objective functions. 
+
+A. Motivation and Contributions 
+
+Channel state information (CSI) is fundamental to all paradigms. Spectral efficiency (SE) is the primary metric throughout. Prior surveys address RIS-aided networks [83]– [85], RIS for specific contexts [10], [11], RIS signal process-ing [86], RIS-specific heuristic and ML methods [4], [8], RIS with emerging AI [9], OFDM PAPR reduction [5], or 6G KPI evaluation [3]. None provides a unified four-paradigm taxon-omy of joint OFDM-RIS optimization algorithms (covering sum-rate, energy efficiency, fairness, and PAPR-constrained formulations), systematic cross-paradigm performance com-parison, or explicit coverage of the 2025–2026 emergence of foundation models, diffusion models, and quantum methods. Between 2025 and 2026, foundation models, large language models (LLMs), diffusion-based generative AI, and quantum optimization entered this space. No prior survey provided integrated coverage of all four directions; the closest, Zhou et al. [9], discussed LLMs for RIS but not diffusion or quantum methods. Two questions this survey answers are: (1) What is  
+
+> arXiv:2606.31334v1 [cs.AI] 30 Jun 2026 AHMET KAPLAN 2
+
+the SE/runtime trade-off across the four paradigms of joint OFDM-RIS optimization? ; and (2) Which algorithm classes best suit which deployment conditions (CSI availability, RIS scale, mobility)? .Section VII synthesizes, across the four paradigms of joint OFDM-RIS optimization, the self-reported performance gains over benchmark algorithms reported in the surveyed literature. Two patterns stand out: (1) ML-based methods (Paradigm III) reduce execution time by orders of magnitude compared to model-based methods (Paradigm I), with per-inference laten-cies dropping from milliseconds to microseconds. (2) Among learning-based methods, unsupervised deep learning [15] and FM-DRL [27] report the highest spectral efficiency. These results are self-reported and cannot be directly compared under a standard performance benchmark. (3) Quantum GNN methods [42] on actual hardware outperform their classical GNN counterparts, but only at a small system scale. No cross-paper comparison using a standardized benchmark has been provided so far. Semidefinite programming (SDP) relaxations are a common tool for the unit-modulus constraint. Section VII describes our comparison methodology and its limitations. This paper makes four contributions: 1) Four-paradigm taxonomy: We classify 78 joint OFDM-RIS optimization works into four paradigms (model-based convex optimization, heuristic/metaheuristic search, deep learning, and emerging methods) and identify paradigm-specific strengths: convergence guarantees (I), gradient-free operation (II), microsecond inference (III), and intent-driven control and generative sampling (IV). 2) Cross-paradigm gap analysis: We synthesize self-reported benchmarks across all four paradigms and document that no two surveyed entries share a common baseline or simulation setup. We identify six concrete obstacles that must be resolved before rigorous cross-paradigm comparison is possible. The comparisons are not yet rigorous, but the evidence still supports qualita-tive patterns. 3) Benchmarking requirements and six open chal-lenges: We specify the minimum requirements for a standardized 6G RIS-OFDM benchmark and de-rive six synthesis-grounded open challenges: bench-mark deficit, hardware-constrained deployment, joint waveform-RIS optimization for doubly-dispersive chan-nels, multi-objective PAPR trade-offs, LLM safety in live network control, and diminishing returns of stan-dalone heuristics. 4) Tutorial with worked examples: We solve the canon-ical sum-rate maximization problem (P1) step-by-step using one algorithm from each paradigm on a common small-scale system ( 𝑀 𝑡 =2, 𝐾 =2, 𝑀 =4, 𝑁 =16 , 2-bit quantization), enabling direct four-way comparison of SE, runtime, training cost, and generalization capability (Section IX). Preview of key findings. The tutorial benchmark reveals three quantitative results: (1) DRL methods (DDQN, PPO) achieve 0.021–0.035 ms GPU inference at 93–97% of the                                                                                     
+
+> TABLE I POSITIONING RELATIVE TO EXISTING SURVEYS . “J OINT ”JOINTLY OPTIMIZES OFDM WAVEFORM AND RIS PARAMETERS ; “FM” =
+> FOUNDATION MODELS ; “QM” = QUANTUM METHODS .
+> Survey Year RIS OFDM Joint FM QM
+> Basar et al. [83] 2019 ✓––––Di Renzo et al. [84] 2020 ✓––––Wu et al. [85] 2021 ✓––––Faisal & Choi [10] 2022 ✓––––Pan et al. [86] 2022 ✓––––Ibrahim et al. [11] 2023 ✓––––da Silva et al. [5] 2024 –✓–––Zhou et al. [4] 2024 ✓––––Zhou et al. [8] 2024 ✓––––Zhou et al. [9] 2024 ✓––✓–Islam et al. [3] 2026 ✓––––
+> This work 2026 ✓✓✓✓✓
+
+SCA SE baseline – a 3000–6000 × speedup over AO+SCA at 138 ms. (2) Heuristic methods (PSO, SA) match or exceed the simplified AO+SCA baseline in SE but take 124–193 ms per solve. (3) SDR at 𝑁 = 16 takes only 2.3 ms because the benchmark measures eigen-decomposition and randomization; at 𝑁 > 100 its 𝑂 (𝑁 4.5) SDP solve dominates and the literature reports ∼ 10 3 ms. These are the first head-to-head runtime measurements of all four paradigms on identical hardware. 
+
+B. Related Surveys and Positioning 
+
+This paper is positioned with respect to prior surveys in Table I. The taxonomy unifies four paradigms of joint OFDM-RIS optimization algorithms (covering sum-rate, en-ergy efficiency, fairness, and PAPR-constrained formulations) and includes systematic coverage of 2025–2026 emerging approaches that appear in no prior survey. This survey focuses on PHY and MAC layer optimizations of downlink RIS aided OFDM systems, leaving the uplink scenarios, higher-level scheduling and pure hardware design alone. IEEE Xplore, arXiv, and Google Scholar were searched for papers published from January 2021 to April 2026. The search query was (OFDM OR ‘orthogonal frequency divi-sion multiplexing”) AND (RIS OR ‘reconfigurable intelligent surface”) AND (optimization OR beamforming OR resource allocation OR phase shift). Results were filtered to include only algorithms for joint OFDM-RIS optimization (covering active beamforming, passive phase-shift design, resource allo-cation, and waveform-constrained formulations such as PAPR minimization). Papers that derived only bounds with no imple-mentable algorithms were excluded. The final corpus contains 78 works: approximately 60 peer-reviewed publications and 18 arXiv preprints (mostly in Paradigm IV, where publications lag the research trends). The complete bibliography comprises 98 entries; 20 additional citations beyond the surveyed cor-pus cover optimization texts, prior survey methodology, and related-survey background. Section VII describes the synthe-sized results methodology. Fig. 1 shows the paper selection process. AHMET KAPLAN 3       
+
+> Records identified through database searching IEEE Xplore ( 𝑛 ∼250 ), arXiv ( 𝑛 ∼180 ), Google Scholar ( 𝑛 ∼120 )
+> Records after duplicates removed ( 𝑛 ∼480 )
+> Records screened (title/abstract) ( 𝑛 ∼480 )
+> Excluded ( 𝑛 ∼380 )Not OFDM-RIS joint, bounds/theory only, no implementable algorithm
+> Full-text articles assessed ( 𝑛 ∼100 )
+> Excluded ( 𝑛 ∼17 )Wrong scope, incomplete, duplicate findings
+> Studies included in survey ( 𝑛 =78 )Peer-reviewed: 60 arXiv preprints: 18
+> screened
+> excluded
+> Fig. 1. PRISMA-style flow diagram. Search conducted April 2026 across IEEE Xplore, arXiv, and Google Scholar. The 𝑛 =75 version appeared in an earlier preprint and has been superseded.
+
+The following families of approaches were omitted because they do not address joint optimization sufficiently, or because insufficient research exists for OFDM-RIS joint optimiza-tion: Bayesian optimization, bandit-based resource allocation, Lyapunov drift-plus-penalty, Wolpertinger architectures, and hierarchical or multi-agent reinforcement learning (RL) for multi-RIS scenarios. Simultaneously Transmitting and Reflect-ing RIS (STAR-RIS) [54] is referenced where relevant but not treated as a separate paradigm; its optimization chal-lenges (coupled transmission/reflection phase constraints, en-ergy splitting) are subsumed under Paradigms I–III depending on the solution approach. These topics may need coverage in future surveys as the literature grows. No papers meeting the Boolean search criteria were manually excluded; the corpus was determined entirely by the search query and the stated inclusion and exclusion criteria. The search methodology, inclusion/exclusion criteria, and metric extraction protocol are documented in Section VII-A. The complete list of surveyed papers with extracted performance metrics is available as a supplementary CSV file at https://github.com/Ahmet-Kaplan/OFDM RIS. Original benchmarking experiments for all four paradigms were con-ducted on the tutorial system (Section IX) and GPU server (Section VII); these results are independently measured and reported alongside the literature synthesis. Literature perfor-mance claims are reproduced from cited sources with full attri-bution. The PRISMA-style flow diagram in Fig. 1 documents the paper selection process. The remainder of this paper is organized as follows. Sec-tion II formulates the canonical joint OFDM-RIS optimization problems. Sections III–VI survey the four paradigm classes: model-based convex optimization, heuristic and metaheuristic algorithms, machine learning-based methods, and emerging research trends. Section VII synthesizes a cross-paradigm benchmark comparison and identifies limitations. Section VIII derives six open challenges and recommendations. Section IX provides a worked tutorial solving the canonical problem with one method from each paradigm. Section X concludes the survey. II. J OINT OFDM-RIS O PTIMIZATION : P ROBLEM 
+
+FORMULATIONS 
+
+We consider a downlink OFDM system where the base station (BS) with 𝑀 𝑡 antennas serves 𝐾 single-antenna users using 𝑀 OFDM subcarriers, and a RIS with 𝑁 reflecting elements is deployed to assist this communication. The BS-RIS channel matrix over subcarrier 𝑚 is denoted by H𝐵𝑅 [𝑚 ] ∈ 
+
+C𝑁 ×𝑀 𝑡 , and the RIS-user 𝑘 channel is denoted by h𝑅𝑈,𝑘 [𝑚 ] ∈ 
+
+C𝑁 ×1. Then, the total BS-user 𝑘 channel mediated by the RIS over subcarrier 𝑚 is heff  
+
+> 𝑘
+
+[𝑚 ] = h𝑅𝑈,𝑘 [𝑚 ]𝐻 diag (𝜽 )H𝐵𝑅 [𝑚 ] + 
+
+hdir  
+
+> 𝑘
+
+[𝑚 ] where hdir  
+
+> 𝑘
+
+[𝑚 ] ∈ C1×𝑀 𝑡 is the direct BS-user link, and 
+
+𝜽 ∈ T𝑁 is the RIS phase shift vector on the 𝑁 -dimensional torus where |𝜃 𝑛 | = 1. The signal to interference plus noise ratio at user 𝑘 on subcarrier 𝑚 is 
+
+𝛾 𝑘,𝑚 (W, 𝜽 ) = |heff  
+
+> 𝑘
+
+[𝑚 ]𝐻 w𝑘,𝑚 |2
+
+Í 𝑗 ≠𝑘 |heff  
+
+> 𝑘
+
+[𝑚 ]𝐻 w 𝑗,𝑚 |2 + 𝜎 2 , (1) where w𝑘,𝑚 ∈ C𝑀 𝑡 is the BS precoding vector for user 
+
+𝑘 on subcarrier 𝑚 and 𝜎 2 is the noise power. The PAPR of an OFDM symbol x ∈ C𝑀 is defined as PAPR (x) =
+
+max 𝑚 |𝑥 𝑚 |2/E[| 𝑥 𝑚 |2], and is constrained in P4 below. 
+
+A. Canonical Problem Formulations 
+
+Four primary formulations appear in the joint OFDM-RIS literature (Table II). Energy efficiency (EE) formulations are another major class. Additional formulations include delay-minimizing queue-aware allocation with stochastic arrivals [12], multi-objective Pareto optimization balancing SE vs. EE vs. PAPR, and secrecy rate maximization for physical-layer security. The latter two are less common in the joint OFDM-RIS literature and are not surveyed in depth here. AHMET KAPLAN 4                                           
+
+> TABLE II CANONICAL PROBLEM FORMULATIONS FOR JOINT OFDM-RIS OPTIMIZATION .
+> Formulation Objective Key Constraints
+> P1: Sum-Rate Max. max Í𝑘,𝑚 𝑎 𝑘,𝑚 log 2(1+𝛾 𝑘,𝑚 )Unit-modulus |𝜃 𝑛 |=1, per-subcarrier power, exclusive subcarrier alloc. P2: Energy Eff. Max. max
+> Í𝑅 𝑘,𝑚
+> 𝜁 ∥W∥2
+> 𝐹 +𝑃 circuit
+> [20] Power budget, unit-modulus, 𝜁 PA efficiency P3: Max-Min Fairness max min 𝑘
+> Í𝑚 𝑎 𝑘,𝑚 log 2(1+𝛾 𝑘,𝑚 )Per-user quality-of-service (QoS), unit-modulus, resource allocation P4: PAPR-Constrained P1, P2, or P3 augmented with PAPR (x) ≤ 𝜂 [5] Time-domain amplitude limits per OFDM symbol; PAPR constraint couples to Wthrough the time-domain OFDM symbol construction, creating an additional non-convex coupling between waveform and RIS phases
+
+B. Key Optimization Challenges 
+
+The joint problem has four challenges: 1) Non-convexity: The unit-modulus constraint |𝜃 𝑛 | = 1
+
+and SINR expressions result in objective surfaces that are neither convex nor smooth. 2) Mixed variables: Continuous beamforming W, discrete RIS phases 𝜽 (usually 𝑏 -bit quantized), and binary subcarrier allocation a result in a MINLP. 3) Dimensionality: 𝑁 becomes 10 2–10 4 for large RIS ar-rays, 𝑀 becomes 10 3–10 4 for wideband OFDM, and 𝐾 
+
+becomes 10 2 for massive connectivity. 4) Real-time constraints: mmWave/THz channel coher-ence times are on the order of 10–100 𝜇 s, and opti-mization must be completed within a sub-millisecond timescale [3]. 
+
+C. Hardware Considerations 
+
+Most surveyed approaches assume ideal RIS elements with continuous phase shifts ( |𝜃 𝑛 | = 1). Realistic RIS hardware suffers from phase quantization (typically 1–3 bits per ele-ment), mutual coupling among adjacent elements that disturbs the desired phase shift, and an amplitude-phase dependence where incrementing ∠𝜃 𝑛 reduces |𝜃 𝑛 | [22]. Recent prototype measurements show that active RIS improves multiple-input multiple-output (MIMO)-OFDM performance over passive RIS in practical 5G NR scenarios [75], and large-scale proto-types with 4096 1-bit elements achieve 18 dB power gain at 3.75 GHz [76]. Experimental validation of RIS-aided multi-user beamforming further confirms practical feasibility [63]. The number of hardware testbed studies remains small relative to simulation-only works. One hardware consideration often overlooked is RIS frequency selectivity: RIS elements are inherently narrowband resonators whose phase response varies across the OFDM bandwidth. For wideband systems with 
+
+𝑀 = 256 –1024 subcarriers, a phase shift optimized for one subcarrier will differ at another, creating a coupling across the OFDM band that affects joint optimization [79]. Most sur-veyed works treat the RIS as frequency-flat, designing a single set of phase shifts for all subcarriers. Recent BD-RIS archi-tectures [77] introduce additional frequency-dependent design flexibility through inter-element coupling but require circuit-aware modeling that most surveyed works omit. A hardware-centric survey [81] reviews RIS structures, implementation challenges, and integration with ML. A complementary survey on active RIS [74] covers the expanding frontier of active and hybrid RIS architectures. How hardware impairments affect performance varies across paradigms. Model-based approaches can incorporate discrete constraints explicitly (at increased complexity), while learning-based methods compensate im-plicitly if trained with realistic hardware models. Hardware-constrained optimization across paradigms is identified as open challenge C2 in Section VIII. Hardware synthesis. Across the five hardware-focused stud-ies in the corpus, two patterns emerge. First, active RIS prototypes consistently report gains over passive RIS at the cost of power consumption, with the 4096-element 1-bit prototype [76] achieving 18 dB power gain at 3.75 GHz. Second, practical RIS phase quantization (1–3 bits) reduces SE by 5–15% relative to the continuous-phase ideal across all four paradigms, though ML-based methods recover part of this loss through training on quantized phase representations [14], [16]. No study jointly tests quantization, mutual coupling, and frequency selectivity in a single experimental setup, leaving a gap between simulation-driven algorithmic research and hardware-validated deployment. III. P ARADIGM I: M ODEL -B ASED CONVEX OPTIMIZATION 
+
+Model-based approaches tackle non-convex problems by mathematical relaxations, approximations, and decomposi-tions. They guarantee convergence and have been the predomi-nant approach in the literature since the joint active and passive beamforming framework appeared [4], [19]. 
+
+A. Alternating Optimization (AO) 
+
+AO splits the joint problem into individual subproblems and solves them iteratively. The splitting for RIS-OFDM usually separates BS active beamforming W from RIS passive phase shifts 𝜽 : W(𝑡 +1) = arg max W 𝑓 (W, 𝜽 (𝑡 ) ) is solved with 𝜽 fixed at the previous iteration, then 𝜽 (𝑡 +1) = arg max 𝜽 𝑓 (W(𝑡 +1) , 𝜽 )
+
+is solved with the updated W. The W-subproblem is a standard precoding problem, solvable via weighted minimum mean AHMET KAPLAN 5
+
+square error (WMMSE) or water-filling. The 𝜽 -subproblem is non-convex due to the unit-modulus constraint and requires successive convex approximation (SCA), SDR, or Rieman-nian manifold optimization as an inner loop. AO guarantees monotone convergence to a stationary point. Zivuku et al. [13] applied SCA and Riemannian manifolds to the RIS-OFDM-MIMO integrated sensing and communication (ISAC) sce-nario and reported 40% and 60% improvements in spectral and energy efficiency over random phase configuration for a system with 𝑁 = 64 , 𝑀 𝑡 = 4, and 𝐾 = 4. Gradient ascent methods offer a lower-complexity alternative for RIS-aided OFDM by iteratively updating the phase shifts with closed-form gradients [80]. Block coordinate descent (BCD) generalizes AO to 𝐵 > 2
+
+blocks by partitioning the variable set X = {W, 𝜽 , a} into 𝐵 
+
+blocks and solving each cyclically: 1) Partition variables into 𝐵 blocks X1, . . . , X𝐵 .2) For block 𝑏 = 1, . . . , 𝐵 : optimize X𝑏 while holding all other blocks fixed. 3) Repeat until convergence. For RIS-OFDM, BCD typically partitions into W, 𝜽 , and subcarrier allocation a as separate blocks, with each sub-problem solved by the method best suited to its structure (WMMSE for W, SCA for 𝜽 , greedy rounding for a). Liu et al. [78] proposed a variational Bayesian framework for multiuser tracking in RIS-aided MIMO-OFDM and showed robust performance under time-varying channels. 
+
+B. Majorization-Minimization (MM) 
+
+MM is another common tool for simplifying the original non-convex problem by constructing a surrogate function 
+
+𝑔 (x|x(𝑡 ) ) which majorizes 𝑓 (x) at x(𝑡 ) and is easier to solve. Monotonic decrease of 𝑓 (x) is ensured, and solutions of 
+
+𝑔 (x|x(𝑡 ) ) lead to new iterates. The unit-modulus constraint in RIS systems is often resolved with quadratic MM surro-gates that admit closed-form solutions. MM is a fundamental technique for several SCA methods. 
+
+C. Successive Convex Approximation (SCA) 
+
+SCA replaces the non-convex objective by a sequence of convex surrogates ˜𝑓 (𝑡 ) (x), which form tight lower bounds on 
+
+𝑓 (x) at current iterates. This is a widely adopted technique for tackling optimization problems in RIS systems and is often combined with the alternating optimization framework. A KKT point is guaranteed to be found under weak assumptions on the problem. 
+
+D. Semidefinite Relaxation (SDR) 
+
+The non-convex unit-modulus constraint is addressed by lifting 𝜽 into a positive semidefinite matrix of rank 1, 𝚯 =
+
+𝜽𝜽 𝐻 , dropping the rank-1 constraint, and solving the resulting SDP [19]. The standard interior-point SDP solver has com-plexity 𝑂 (𝑁 4.5) [57], limiting its application to 𝑁 ≲ 100 .Gaussian randomization is then used to extract a rank-1 solution from the relaxation, adding 𝑂 (𝑁 3 𝐿 ) cost for 𝐿 trials. Low-complexity SDR variants based on ADMM achieve per-iteration complexity of 𝑂 (𝑁 3). Alternating direction method of multipliers (ADMM) has also been combined with ac-celerated projected gradient for intelligent reflecting surface (IRS)-aided MIMO systems [92], and distributed ADMM frameworks have been proposed for RIS-assisted cell-free networks [91]. WMMSE-based joint transceiver design with hybrid CSI has been extended to multi-RIS cell-free net-works [65]. For the tutorial benchmark at 𝑁 = 16 , the SDR runtime (2.3 ms, Table VII) measures only the Gaussian randomization steps, which dominate at small 𝑁 (the eigen-decomposition itself is a one-time cost amortized over 20 randomization trials). The interior-point SDP solve itself adds negligible time at this scale. At 𝑁 > 100 the 𝑂 (𝑁 4.5) cost of the SDP solver dominates, consistent with the ∼ 10 3 ms reported in the literature. 
+
+E. Convergence Analysis 
+
+Table III shows the convergence properties of the model-based methods. AO guarantees monotone convergence to a stationary point. With the Kurdyka–Łojasiewicz (KL) property, AO achieves linear convergence [23]. MM ensures monotone descent with sublinear 𝑂 (1/𝑘 ) rate for convex problems and linear rate under strong convexity of the surrogate. SCA converges to a Karush–Kuhn–Tucker (KKT) point under weak assumptions, with at best local linear convergence rate for standard first-order SCA variants (e.g., projected gradient with convex quadratic surrogates). Superlinear convergence would require second-order surrogates with Hessian approximations satisfying the Dennis–Mor´ e condition [82], which no surveyed RIS-OFDM paper employs. SDR provides an upper bound on the optimal value with 𝑂 (1/√𝐿 ) approximation quality after 𝐿 Gaussian randomization trials. The interior-point SDP solver has 𝑂 (𝑁 4.5) per-iteration complexity, which makes it structurally infeasible for 𝑁 > 100 .
+
+F. Limitations and Outlook 
+
+Model-based methods have strong theoretical foundations but face three practical problems: CSI overhead: The estimation of cascaded RIS channels requires 𝑁 ×𝑀 𝑡 +𝑁 ×𝐾 parameters per subcarrier. While the al-gorithms discussed assume perfect CSI, they can be combined with compressed sensing channel estimation [4], [93], deep learning-based super-resolution estimation [61], parametric estimation [69], hybrid vector message passing [59], ML-based time-varying channel estimation [62], or two-timescale CSI schemes [21] (where the RIS phase shifts are optimized using slowly-varying statistical CSI while BS beamforming adapts to low-dimensional instantaneous effective CSI). Ro-bust and outage-constrained formulations within model-based optimization also address imperfect CSI explicitly. A compre-hensive survey on RIS channel estimation and practical passive beamforming [1] covers these techniques and their interplay with hardware constraints. Scalability: The complexity of the algorithms grows polynomially with 𝑁 and 𝑀 , making them impractical for large 𝑁 > 100 unless ADMM is used as AHMET KAPLAN 6                                                                          
+
+> TABLE III CONVERGENCE PROPERTIES OF PARADIGM IMODEL -BASED OPTIMIZATION METHODS .
+> Method Guarantee Rate Conditions Per-Iteration Cost Ref
+> AO Stationary point Linear (KL) †KL property, convex subproblems Subproblem-dependent [13] BCD §Stationary point Sublinear 𝑂 (1/𝑘 )Block-convex subproblems Subproblem-dependent [19] MM Monotone descent Sublinear 𝑂 (1/𝑘 )/ Linear Quadratic MM surrogate ( 𝑂 (𝑁 2)); general surrogate ( 𝑂 (𝑁 3))𝑂 (𝑁 2)–𝑂 (𝑁 3)[23] SCA KKT point Sublinear 𝑂 (1/𝑘 )‡First-order convex surrogate 𝑂 (𝑁 3)[4] SDR Relaxed bound 𝑂 (1/√𝐿 )approx. 𝐿 randomization trials 𝑂 (𝑁 4.5)+𝑂 (𝑁 3𝐿 )[57]
+> †KL convergence requires definability in an o-minimal structure (holds for polynomials; case-dependent for SINR sum-rates). See [23]
+> ‡Sublinear rate for first-order SCA. Superlinear would need Hessian satisfying Dennis–Mor´ e, which no surveyed paper uses.
+
+mentioned above. Static optimization: The algorithm optimizes a particular CSI realization and does not adapt to mobile environments without re-solving from scratch. These limitations open the door for heuristic and learning-based methods. IV. P ARADIGM II: H EURISTIC AND METAHEURISTIC 
+
+ALGORITHMS 
+
+Heuristic approaches find optimal or near-optimal solutions by using a certain strategy instead of full search or explicit optimization over the problem parameters [8]. 
+
+A. Particle Swarm Optimization (PSO) 
+
+PSO treats each candidate RIS phase configuration as a particle that moves through the solution space, updating its position based on personal and global best solutions via inertia and acceleration weights. PSO handles discrete phase constraints natively and requires no gradient information [7], [24]. 
+
+B. Genetic Algorithms (GA) 
+
+The GA maintains a population of candidate solutions that are improved over generations through selection, crossover and mutation. For the discrete phase shift optimization, GA is ap-plicable in view of the combinatorial search space [8]. Multi-objective Pareto optimization for the RIS-assisted system is achievable via the Non-dominated Sorting Genetic Algorithm II (NSGA-II) technique [51]. 
+
+C. Hybrid Heuristic-ML Approaches 
+
+Heuristic-assisted machine learning is another direction, where Zhou et al. [8] proposed integrating greedy heuristics into DRL actions to accelerate convergence. Deep Q-Network (DQN) variants are the most common value-based methods for RIS control. The DDQN-GA framework [16] uses athree-layer Double DQN (256-256-128 neurons, ReLU) with column-wise action decomposition that reduces the action space from 416 to 8 × 4 by grouping RIS elements into pairs and selecting a joint phase increment per pair. The DDQN output selects which column to adjust, and a GA step then fine-tunes each element via crossover and mutation with the current best configuration. The 30% rate gain is relative to a raw DQN baseline without the GA fine-tuning step, measured on a 16-element RIS with 2-bit quantization. Limitations include the absence of convergence guarantees, sensitivity to hyperparameter tuning (population size, mutation rate), and performance degradation as RIS size increases beyond 𝑁 = 64 
+
+where the GA step becomes computationally expensive. 
+
+D. Simulated Annealing (SA) 
+
+SA is a probabilistic metaheuristic that accepts worse so-lutions with a temperature-dependent probability 𝑃 (Δ𝐸 ) =
+
+exp (− Δ𝐸 /𝑇 ), where Δ𝐸 is the objective degradation and 𝑇 is a cooling parameter. At high 𝑇 , SA explores broadly (escaping local minima); as 𝑇 → 0, it converges to greedy descent. For RIS phase optimization, SA has been integrated with Monte Carlo sampling to handle channel uncertainty: the Robust IRS Phase Annealing (RIPA) algorithm [58] evaluates candidate phase configurations under norm-bounded CSI errors, min-imizing worst-case performance degradation in satellite-air-ground integrated networks. SA’s primary advantage is its asymptotic global convergence guarantee for discrete phase spaces, though cooling schedule design ( 𝑇 𝑘 = 𝛼𝑇 𝑘 −1, typically 
+
+𝛼 ∈ [ 0.85 , 0.99 ]) is problem-dependent and convergence can be slow for large 𝑁 . SA-based RIS optimization achieves polynomial complexity per iteration and scales to hundreds of elements with careful neighborhood definition. 
+
+E. Tabu Search 
+
+Tabu search extends local search by maintaining a Tabu list of recently visited solutions (or solution attributes) that are temporarily forbidden, preventing cyclic behavior and encouraging exploration of new regions. Unlike SA, which escapes local minima stochastically, Tabu search escapes deterministically by forcing moves away from Tabu-listed configurations. For RIS phase optimization, Tabu search has been applied to joint active and passive beamforming, where the search dynamically adjusts direction using the Tabu list to filter candidate phase configurations [8]. Tabu search explores the solution space more efficiently than greedy element-by-element search because it can accept moves that temporarily degrade the objective if no improving non-Tabu move exists. The main design choices are Tabu tenure (how long a solution remains forbidden), aspiration criteria (when to override Tabu status), and neighborhood structure (which phase elements to perturb). Tabu search converges to local optima with no global optimality guarantee unless embedded in a multi-start framework. AHMET KAPLAN 7
+
+F. Comparative Summary: When to Use Each Heuristic 
+
+Among Paradigm II methods, the choice depends on prob-lem structure and resource constraints. PSO and GA are the most widely used due to their simplicity and native handling of discrete phase constraints, but they lack conver-gence guarantees and degrade at scale ( 𝑁 > 500 ). SA and Tabu search offer better exploration mechanisms for rugged objective landscapes, with SA providing an asymptotic global convergence guarantee for discrete spaces at the cost of slow cooling. Hybrid heuristic-ML approaches (DDQN-GA) outperform standalone heuristics in reported SE but introduce training overhead. For small-to-medium RIS sizes ( 𝑁 ≲ 500 )with no GPU available, PSO offers the best complexity-to-performance ratio. For larger RIS or when convergence feedback is needed, hybrid methods or direct transition to Paradigm III are recommended. V. P ARADIGM III: M ACHINE LEARNING -B ASED 
+
+OPTIMIZATION 
+
+Between 2023 and 2025, machine learning-based meth-ods, especially DRL, became the dominant approach to joint OFDM-RIS optimization. 
+
+A. Deep Reinforcement Learning (DRL) 
+
+DRL frames optimization as a Markov decision process (MDP). An agent learns a policy 𝜋 (a|s) that maps the channel state s to a control action a to maximize cumulative reward. Existing DRL algorithms for RIS-OFDM fall into four groups along four design axes: 
+
+Value-based vs. Policy-based DQN and its relatives (DDQN, Dueling DQN) learn a Q-function and choose the action maximizing the Q-value, appropriate for discrete RIS phase-shift selection [14], [16]. Policy-based algorithms (DDPG, PPO, SAC, TD3) learn a policy function directly which are suitable for continuous action spaces such as continuous BS beamforming and continuous RIS phase optimization [17], [18]. In a related but non-RIS context, PPO has also been applied to joint anti-jamming and low-probability-of-detection (LPD) waveform optimization in tactical 6G OFDM links [94]. 
+
+On-policy vs. Off-policy On-policy algorithms (PPO) learn based on actions collected under current policy while off-policy algorithms (DQN, DDPG, SAC, TD3) learn using collected experience, improving sample efficiency by reusing previous data. 
+
+Deterministic vs. Stochastic Deterministic policies (DDPG) learn to output a single deterministic action whereas stochastic policies (PPO, SAC) output a probability distribution for exploration. With the SAC approach, entropy regularization may lead to a more robust policy than DDPG. 
+
+Discrete vs. Continuous Actions The 𝑏 -bit RIS requires discrete action space with 2𝑏 values for each RIS element, so value-based methods are preferred. For continuous control with continuous phases modeled as angles [0, 2𝜋 ), policy-gradient methods are better. Ma et al. proposed a method which deals with both discrete and continuous actions using PPO by designing separate heads for beamforming and subcar-rier allocation [12], and by splitting the control for individual BSs and users, and for each subcarrier, it reduced the training sample complexity greatly. To adapt to different network scenarios, they also incorporated transfer learning. Meanwhile, delay-aware scheduling was achieved through augmentation by buffer backlog state. Results indicate significant rate gains and improved fairness compared to benchmark approaches. Joint phase-shift and power control were proposed in [55] which combines DRL and AO-based methods. SAC and TD3 are also relevant for continuous control although not explored extensively in the context of RIS-OFDM. Soft Actor-Critic (SAC) and TD3 are also relevant for continuous RIS control but have not been studied extensively for RIS-OFDM. Model-driven Bayesian reinforcement learn-ing has been applied to IRS-assisted massive MIMO-OFDM, jointly optimizing channel feedback, beamforming, and IRS control in a unified probabilistic framework [64]. Multi-agent DRL has been applied to joint precoding and AP selection in RIS-aided cell-free massive MIMO [66], and contextual bandit methods offer an online learning alternative for IRS-assisted MU-MIMO systems [87]. Bandit-based resource allocation has also been explored for RIS-assisted hybrid networks [88]. Cross-layer optimization combining RIS configuration with user scheduling has been formulated using stochastic ap-proximation [90], and Lyapunov-driven approaches have been applied to queue-aware STAR-RIS NOMA systems [89]. 
+
+B. Unsupervised Deep Learning 
+
+Unsupervised learning requires no labeled data. Ma et al. [15] proposed BeamNet-AllocationNet, a two-stage frame-work for joint RIS phase shift design and resource allocation. BeamNet is a neural network trained directly against the sum-rate objective without labels; AllocationNet then assigns resource blocks from the effective CSI produced by BeamNet, using Gumbel-Softmax to handle the discrete allocation con-straint with a temperature parameter annealed from 𝜏 = 5 to 
+
+𝜏 = 0.5 during training. BeamNet uses a 4-layer architecture with 256-256-128-16 neurons and takes the flattened cascaded channel as input, producing RIS phase configuration logits as output. The combined framework achieves 95–99% of the SCA sum-rate at a fraction of AO runtime ( ∼ 10 1 ms). 
+
+C. Graph Neural Networks (GNNs) and Federated Learning 
+
+Wireless networks map naturally to graphs: BS, RIS ele-ments, and users are nodes, with edges encoding association, interference, or service relations. This makes GNNs a natural fit for RIS optimization. Representative GNN-based methods include: Multi-RIS Association with heterogeneous GNN. A new GNN framework jointly learns user-RIS association, BS beam-forming and RIS phase-shift. It can attain similar sum-rate to AO but is orders of magnitude faster [46]. GNN for XL-RIS near-field ISAC. It studies near-field spatial correlations as heterogeneous graphs to assist beamforming for ultra large-scale RIS [47]. GNN-aided Two-phase relaying for multi-hop RIS communication with grouped users and per-user rate requirements [48]. GNN-WMMSE-PINet+: Combining AO and DL through GNN initialization can provide near-optimal AHMET KAPLAN 8                          
+
+> TABLE IV COMPARISON OF ML-BASED OPTIMIZATION FOR JOINT OFDM-RIS. SE = %OF SCA ( LITERATURE ). CSI: “P ARTIAL ”OR “C OMPOSITE .”
+> Method SE (%) Runtime (GPU) CSI Need Scale
+> DRL (DQN) [14] 90–95 0.022 ms Partial ≲1000 DRL (PPO) [12] 95–99 0.035 ms Partial ≲1000 Unsup. DL [15] 95–99 0.048 ms Partial ≲1000 GNN [46] 93–97 0.119 ms Composite ≲1000
+
+result with merely 3% AO’s runtime, also dealing with 2-bit quantization [49]. A useful property of GNNs is permutation-equivariance, which allows the trained network to generalize to different network sizes without retraining [46], [49]. Federated Learning is a natural complement: it allows multi-RIS collaboration without sharing CSI data across base stations, which preserves privacy. Combining GNN with federated learning (FL), multi-RIS systems can coordinate without exchanging CSI data between base stations [25]. Multi-agent DRL extends this further: each RIS can be controlled by an independent DRL agent that communicates only through the shared environment (the wireless channel), with applications to RIS-aided cell-free massive MIMO [66] and multi-cell interference management. These distributed approaches are outside this survey’s primary scope (which focuses on single-RIS centralized optimization) but represent a growing research direction that merits a dedi-cated survey. 
+
+D. Comparative Analysis: ML Approaches 
+
+Table IV summarizes the ML-based optimization ap-proaches. SE values are from the literature (trained models). Runtimes are measured on the tutorial system. GNNs provide the best scalability due to their permutation-equivariant archi-tecture. 
+
+E. Training Cost and Scalability 
+
+The runtime advantage of Paradigm III methods comes at the cost of offline training, which is rarely disclosed in a standardized manner. Unsupervised DL methods train in a few GPU-hours because they minimize a scalar sum-rate objective without an RL reward signal. DRL methods require far more environment interactions (thousands of episodes), with reported training times between 10 and 100 GPU-hours depending on action space size and environment complex-ity [12], [14]. GNNs train fastest due to their parameter-efficient message-passing architecture and the ability to lever-age pre-training on smaller graphs [46], [49]. No emerging-method paper discloses training cost for foundation models: the LWM is reported as pre-trained but the pre-training budget is not specified [27], and diffusion-model training costs are similarly undisclosed [39]. Table VII provides the benchmarked runtimes and SE on the tutorial system; GPU-hour figures from the literature are discussed in the text but omitted from the table because cross-hardware comparisons are unreliable without standardized benchmarking. VI. R ESEARCH TRENDS : E MERGING METHODS 
+
+(2025–2026) In 2025–2026, RIS optimization for 6G expanded across four fronts: foundation models and LLMs, diffusion-based generative AI, quantum optimization, and next-generation waveform integration. We present these as emerging research trends rather than an established paradigm. Many approaches in this section are at preprint stage, though some have since appeared in peer-reviewed venues. We note the status of each below. A unifying theme across Paradigm IV is generative AI for RIS configuration : each method learns a distribution over feasible or optimal RIS phase configurations and sam-ples from it at inference, replacing the iterative solve of Paradigm I with a single forward pass through a learned generative model. Foundation models generate latent channel embeddings, diffusion models denoise random samples into valid RIS configurations, and quantum circuits sample from a distribution whose peaks encode optimal phase shifts. Critical review of emerging-method claims. We identify specific concerns with three emerging-method works. Similar limitations apply to several Paradigm III entries (DDQN-GA [16], BeamNet [15], GNN-based [46]) that first appeared as preprints before peer-reviewed publication. They share the same lack of standardized baselines and independent reproduc-tion. The critiques below should be understood in this broader context. FM-DRL [27]: The SE improvement claimed over CSI-based DRL and beam sweep techniques is not independently verified. The specific datasets, fine-tuning settings, and other confounding factors (e.g., hyperparameters, epoch count) in LWM are not identical to competing algorithms’ settings, rais-ing doubts about generality. Unless multiple groups reproduce these results on common datasets, the benefit should be taken as preliminary. Diffusion models [39], [40]: The reported speedup of GCDIM is tested only within its specific simulation setup. Runtime of diffusion models heavily depends on the number of denoising steps, which varies with the quality–speed tradeoff. Generalization to different RIS sizes and channel conditions is not yet validated. Quantum GNN [42]: The achieved SE advantage (+0.38 bps/Hz) is measured on a 127-qubit processor ( ibm_kyiv )at a scale orders of magnitude smaller ( 𝑁 ≲ 20 ) than practical systems ( 𝑁 = 10 2–10 4). Limited by noisy intermediate-scale quantum (NISQ) errors, coherence time, and connectivity, this work indicates conceptual feasibility only. All directions in this section, along with several paradigm III entries that appeared as preprints before peer-reviewed publi-cation, need external validation before they can inform prac-tical system designs. 
+
+A. Foundation Models for Physical-Layer Optimization 
+
+GPT-style foundation models are being adapted from NLP and vision to wireless communications. Unlike task-specific DRL models, foundation models learn representations that transfer across scenarios, tasks, and network configurations. AHMET KAPLAN 9
+
+1) Large Wireless Foundation Models (LWFMs): 
+
+LWFMs [26] replace the standard approach of training separate channel estimation, beamforming, and resource allocation modules. Instead, a single pre-trained LFM acquires unified representations of radio environments. Two main directions exist: 1) Using general-purpose FMs: fine-tuning large language models (GPT, LLaMA) on radio data to exploit the model’s inherent reasoning power to perform network optimization. 2) Designing radio-specific FMs: training from scratch on huge radio datasets for inherently radio-tailored models, capturing characteristics like physical layer constraints. These two directions differ in their starting points. General-purpose FMs leverage transfer learning from NLP and vision domains. They inherit broad reasoning capabilities but need domain adaptation for physical-layer constraints. Radio-native FMs are purpose-built for wireless tasks. They encode domain-specific structure (e.g., unit-modulus constraints, channel spar-sity) into the architecture, but need radio-specific pre-training datasets that do not yet exist at the scale of text or image corpora. The Large Wireless Model (LWM) [27] processes raw channel information through self-attention mechanisms and produces channel representations that can serve as states for optimization policies. Many emerging methods in this section started as preprints; we note their current status below. Section VI-F identifies specific claims that have not been independently verified. 
+
+2) Foundation Model-Aided DRL (FM-DRL): A LWM and DRL are combined into FM-DRL [27] for RIS-assisted system optimization. LWM converts raw CSI into a compact low-dimensional channel embedding which is then fed as the DRL states instead of original CSI data. This framework shows higher spectral efficiency than both CSI-based DRL and beam sweeping baselines. Hierarchical version (FM-HDRL) [28] with blockage aware path selection, further improves spectral efficiency. However, we point out that FM-DRL and FM-HDRL are submitted as arXiv preprints and their results have not yet been peer-reviewed. 
+
+3) Graph Foundation Models for Resource Allocation: 
+
+Graph foundation model (GFM)-RA [33] adapts foundation models for wireless environments where graph-structured in-formation is prominent, such as resource allocation across multiple cells with mutual interference. It uses an interference-aware Transformer with bias projection and combined self-supervised pre-training (masked edge prediction and con-trastive learning). GFM-RA reports strong zero-shot and few-shot adaptation to out-of-distribution scenarios, outperforming task-specific baselines on the evaluated benchmarks. GFM-RA could also apply to RIS optimization, where the RIS-User-BS topology forms a natural graph. 
+
+B. Large Language Models (LLMs) for Autonomous Network Optimization 
+
+LLMs add qualitatively new control capabilities beyond raw SE gains: intent-driven configuration, cross-layer control, and automated solver code generation. 
+
+1) LLM-Enabled RL for Wireless Networks: The combina-tion of LLMs and RL [29] tackles the core problems of RL, i.e., high-dimensional states, low sample efficiency, manually-designed rewards. The LLMs can: Design states from multimodal data (CSI, QoS, operator’s intent) by capturing their semantics and generating low-dimensional representations, mitigating the state space com-plexity issue. Assist in generating reward functions based on operator’s higher-level intent to completely remove tedious handcrafted rewards. Provide intelligent initialization of poli-cies based on natural language descriptions. 
+
+2) Multi-LLM Agentic Frameworks: ComAgent: ComA-gent [30] introduces a closed-loop “Perception-Planning-Action-Reflection” system that coordinates specialized LLM agents for literature search, code generation, and solution validation. It can produce problem formulations and executable solver code without a human expert, reportedly rivaling hand-crafted algorithms in spectral efficiency. 
+
+3) 6G-Specific LLMs: 6G-LLM [31] is trained using Re-inforcement Learning from Digital Twin Feedback (RLDTF) to adapt and self-improve without manual labeling on con-tinuously updating network states. TelecomGPT [9] presents a telecom-domain-specific LLM by fine-tuning existing LLM on vast literature for better Radio communication domain understanding and reasoning power for optimization task. A survey paper from Nature Reviews Electrical Engineering [32] surveys the role of LLM across full 6G lifecycle, from cloud intelligence to end-device autonomy. 
+
+4) LLM-Enhanced Multi-Agent Systems: LLM agents inte-grated into multi-agent 6G environments can perform cross-layer optimization jointly and engage in semantic communi-cation among themselves [34], [35]. These orchestrations shift optimization towards a negotiation-based paradigm; agents can leverage shared representations, agree on resource allocation decisions through the negotiation process. 
+
+C. Diffusion Models: Generative AI for RIS Optimization 
+
+Diffusion models provide generative capabilities for sam-pling of desired radio environment features. In the context of RIS, a forward process gradually adds noise to an ideal data point (optimal RIS configuration) until it becomes random noise, then a reverse process learned from data maps noise back to useful data points (optimal RIS configurations). Instead of the typical time consuming iteration ( 10 2 − 10 3 ms per RIS configuration) in optimizer based algorithms, a pre-trained diffusion model can generate high-quality configuration in few steps. It is applied to two scenarios: channel estimation and RIS configuration generation. 
+
+1) Channel Estimation via Diffusion: The diffusion model tackles the CSI estimation as a reverse denoising process [36], [37], by taking random noise and iteratively removing noise using CSI acquired pilot information and producing a full CSI, as opposed to training directly on observed CSI data. It can effectively achieve higher performance (in terms of NMSE) while lowering pilot overhead compared to conven-tional techniques for both uplink and RIS-assisted downlink scenarios [38] even in the presence of RIS phase noise. AHMET KAPLAN 10 
+
+2) RIS Phase Optimization via Generative Diffusion: 
+
+By learning the distribution of optimal RIS configurations given Channel state 𝑝 (𝜽 opt |c), a Diffusion Model (GCDM) can sample efficient RIS phase configurations at inference, achieving comparable spectral efficiency to expert algorithm at drastically reduced runtime. A generative conditional diffusion with inference minimization (GCDIM) variant [39] further compresses run time to 70 ms at marginal spectral efficiency loss (arXiv preprint). This is two orders of magnitude slower than the sub-millisecond inference required for THz-band coherence times ( 10 –100 𝜇 s) and is better suited to sub-6 GHz deployments with looser latency constraints. 
+
+3) Riemannian Diffusion on the Torus Manifold: Diffusion models for RIS face a geometry constraint: RIS phase vectors 
+
+𝜽 lie on the 𝑁 -dimensional torus T𝑁 (|𝜃 𝑛 | = 1). Performing traditional Euclidean diffusion model adds Gaussian noise in 
+
+R𝑁 and requires projections to map back to the manifold, dis-torting the learned distribution. Riemannian Diffusion Model (RDM) [40] addresses this by performing noise addition and denoising directly on the torus manifold. By coupling RDM with a DRL that guides the sampling toward desired areas on the manifold, it achieved 30% more SINR improvement over the learning-based solution (arXiv preprint, self-reported). 
+
+4) Diffusion-Decision Transformer Integration: The pro-posed framework diffusion-decision transformer (DEDT) [41] integrates diffusion models for CSI acquisition and Decision Transformer for RIS phase control. The CSI estimation task performed by diffusion models is faster to acquire and more robust, and it uses historical environments to learn a pre-trained Decision Transformer to adapt quickly to the new en-vironment without re-training, overcoming one of the biggest obstacles in conventional DRL approaches. 
+
+D. Quantum and Quantum-Inspired Optimization 
+
+Quantum computing uses superposition and entanglement to tackle optimization problems that cause combinatorial ex-plosion on classical machines. A recent tutorial-cum-survey covers the broader landscape of quantum methods in wireless communications [95]. Specific approaches for RIS optimiza-tion fall into several categories. 
+
+1) QAOA-Based RIS Optimization: The Quantum Approx-imate Optimization Algorithm (QAOA) has been applied to RIS phase configuration by mapping the problem to Ising or Sherrington–Kirkpatrick (SK) Hamiltonians whose ground states encode optimal RIS configurations. Colella et al. [96] demonstrated that QAOA can optimize RIS in multipath envi-ronments by formulating the EM scattering problem as a spin-glass Hamiltonian, with Monte Carlo simulations confirming a statistical concentration property that decouples training from hardware execution. A subsequent physics-informed QAOA study [100] embedded mutual coupling models into QUBO formulations, revealing that sparse distance-penalized coupling models strike the best balance between beamforming accuracy and NISQ hardware feasibility. For STAR-RIS systems, Pham et al. [99] proposed a QAOA-AO framework that alternates between QAOA for discrete phase shifts and classical opti-mization for continuous beamforming, achieving near-optimal solutions at reduced computational cost. The Ising model mapping is also exploited by Lim et al. [97], who formulated RIS beamforming as a ground-state search problem on the D-Wave quantum annealer, demonstrating feasibility for small-to-moderate RIS sizes. 
+
+2) Quantum Graph Neural Networks (QGCN): QGCN [42] addresses the double-sided RIS optimization problem by en-coding physical response and EM coupling between antenna elements into a quantum graph representation. Using a 127-qubit IBM processor ( ibm_kyiv ), it reports a +0.38 bps/Hz advantage over classical GNN at the cost of high qubit requirements. The approach is validated on hardware at scales far below practical deployment. 
+
+3) Variational Quantum Eigensolver (VQE) Approaches: 
+
+VQE-based methods [98] integrate a variational quantum cir-cuit for probabilistic exploration of the RIS phase space with classical iterative solvers for constraint enforcement. Reported results show 18–25% SE improvement over classical baselines and 32% faster convergence in simulated 6G channel models, with scaling demonstrated up to moderate RIS sizes. 
+
+4) Quantum Manifold Optimization (QMO): QMO [43] extends classical manifold-constrained optimization (Stiefel, Grassmannian, oblique manifolds) to variational quantum al-gorithms, formulating the problem as the expectation value of a quantum operator. This provides a theoretical connection between Riemannian optimization on the complex torus and quantum computing, with potential applications in RIS beam-forming and pilot sequence design. 
+
+5) Quantum Meta-Learning for Adaptive RIS: Path-based quantum meta-learning [44] encodes RIS scene features into quantum states via tensor products and selects quantum neural network trajectories based on historical success, adapting to new channel conditions without retraining. Unlike classical meta-learning, quantum superposition enables constructive and destructive interference across candidate path configurations in a single measurement round. 
+
+6) Hybrid Quantum-Classical Approaches: Future RIS op-timization likely will combine quantum combinatorial ex-ploration with classical continuous refinement [45]. CNN-QLSTM systems [56] demonstrate this paradigm for RIS-NOMA CSI estimation, using CNN spatial feature extraction with quantum LSTM temporal correlation detection. A com-prehensive survey [95] identifies QAOA, VQE, and quantum annealing as the three most promising near-term quantum paradigms for wireless optimization, with full-scale deploy-ment contingent on quantum error correction expected post-2030. 
+
+E. Next-Generation Waveforms: Beyond OFDM 
+
+Joint OFDM-RIS optimization changes substantially when the waveform shifts from OFDM to advanced 6G alternatives, especially those designed for doubly-dispersive channels. 
+
+1) RIS-Assisted OTFS: Orthogonal time frequency space (OTFS) modulates symbols in the delay-Doppler (DD) domain and is inherently more resilient to time-varying channels than OFDM under high mobility. DD-domain processing enables quasi-static channel representation and full time-frequency AHMET KAPLAN 11 
+
+diversity [72]. A survey of RIS-assisted OTFS systems [72] reviews input-output analysis, phase shift design, channel estimation, and detection techniques for this combination. Optimization approaches include:  
+
+> •
+
+Phase shift design to maximize the received energy over the full OTFS time frame, considering delay-Doppler channels to collect energy across all channel taps [50].  
+
+> •
+
+A multi-objective optimization with NSGA-II to simulta-neously maximize capacity and minimize BER [51].  
+
+> •
+
+Joint channel estimation and detection for RIS-assisted OTFS, incorporating location-aided CSI prediction and a delay-shifted-Doppler domain estimation method to overcome outdated CSI in high mobility [70].  
+
+> •
+
+Cooperative precoding at the BS and RIS using al-ternating optimization with strongest tap maximization and fractional programming, with capacity gains over conventional OTFS [71].  
+
+> •
+
+Input-output relation analysis for RIS-aided OTFS with rectangular pulses and fractional delay-Doppler values, showing that the single-step Zak receiver outperforms the two-step receiver [73].  
+
+> •
+
+Beamforming optimization with ADMM-based detection in IRS-aided OTFS systems [67].  
+
+> •
+
+Low-complexity ZF equalizer design for IRS-OTFS with optimized reflection coefficients [68].  
+
+> •
+
+Joint estimation of RIS channels and phase noise based on Wiener filtering [52], yielding 3 dB BER improvement and two orders of magnitude gains over RIS-OFDM under phase noise. A single RIS phase configuration covers the entire delay-Doppler frame, so OTFS benefits more from RIS than OFDM under high-mobility conditions. Unlike the subcarrier-level problem in RIS-OFDM, RIS-OTFS optimization is inherently two-dimensional. Orthogonality in the DD-domain also bet-ter preserves RIS-enhanced multipath diversity compared to OFDM’s subcarrier-level processing. 
+
+2) RIS-assisted AFDM: Affine frequency division multi-plexing (AFDM) uses an affine discrete Fourier transform with tunable chirp parameters ( 𝑐 1, 𝑐 2) to obtain full diversity in the doubly dispersive channels with lower complexity compared to OTFS. While OTFS utilizes fixed transform, AFDM can adjust chirp parameters to the delay and Doppler spread of the channel. In RIS-AFDM, a new coupling arises: the optimal RIS phases depend on the chirp parameters (𝑐 1, 𝑐 2), and conversely, the optimal chirp parameters depend on the RIS augmented channel. A joint optimization of (𝑐 1, 𝑐 2, 𝜽 ) remains an open issue. In [53], the hybrid PSO-Gradient Descent algorithm fixes chirp parameters, then jointly optimizes RIS phases; PSO is used for global exploration while GD provides local refinement. 
+
+3) Comparative performance of waveforms-RIS: Table V shows qualitative comparisons on RIS performance for various waveforms. The ”RIS Gain” reports approximate improve-ments in channel gain or BER relative to the OFDM baseline as reported in the corresponding papers under matched setups (e.g., RIS size, channel model, SNR and mobility). Values are paper-specific and cannot be treated as universal constants. In the ”Diversity” column for OFDM, the case is for uncoded                                                       
+
+> TABLE V COMPARISON ON THE RIS PERFORMANCE OF VARIOUS WAVEFORMS IN HIGH -MOBILITY (500 KM /H). I NDICATED IN EACH CELL BY REFERENCE .
+> Waveform ICI Robustness RIS Gain Diversity Complexity Ref
+> OFDM Poor Baseline 1Low [52] OTFS Excellent 3–4 dB Full Medium [50], [51] AFDM Excellent comparable to OTFS Full Low-Medium [53] TABLE VI MULTI -PARADIGM INTEGRATION EXAMPLES . A: APPLICABLE , P:
+> PROPOSED , D: DEMONSTRATED .
+> Model-Based Heuristic DRL Diffusion Quantum
+> LLM/FM AAP[27] PPGNN A [49] AAAD[42] OTFS AD[51] AAPAFDM AD[53] AAP
+
+transmission; frequency diversity for coded OFDM can reach higher than 1 after channel coding and frequency domain interleaving. In addition to these primary candidates, STAR-RIS (simul-taneously transmitting and reflecting RIS) is a recent approach to overcome the half-space coverage limitation of a RIS [54]. 
+
+F. Convergence of Paradigms: Multi-paradigm Integration 
+
+Multi-paradigm hybrid approaches are an emerging direc-tion (Fig. 2, Table VI). The integration examples involving emerging methods (LLMs, diffusion, quantum) include both preprint and peer-reviewed works; see individual citations for current status.  
+
+> •
+
+LLM + Diffusion: the LLM proposes the RIS configu-ration parameters, while the Diffusion model refines the candidate configuration using the generated environmen-tal information through diffusion.  
+
+> •
+
+Quantum + GNN: it uses quantum computation to accel-erate message passing in GNN. A prototype, QGCN, has been evaluated on a real quantum computer [42].  
+
+> •
+
+Foundation Model + OTFS/AFDM: LWFMs provide a universal channel embedding, which is input to specific model for waveform-specific optimization modules.  
+
+> •
+
+Multi-LLM agent + Federated learning: distributed LLM agents located at each RIS communicate with each other and make cooperation on configurations without transmit-ting the private CSI. VII. C ROSS -P ARADIGM BENCHMARK SYNTHESIS 
+
+A. How the Comparison Was Built 
+
+We extracted performance metrics from each surveyed paper and normalized them against a common SCA baseline. For each paper we recorded: best reported spectral efficiency and the baseline it was compared against; per-inference runtime or complexity class; system dimensions ( 𝑁, 𝑀 𝑡 , 𝐾, 𝑀 ); CSI type (full, partial, or learned); and publication venue and status. We normalized SE to the SCA baseline (100%) when the original paper provided enough information. Runtime is reported as a complexity class rather than a wall-clock number AHMET KAPLAN 12 
+
+Paradigm I 
+
+Model-Based AO + SCA, SDR, MM, BCD 
+
+Convergence guarantees 
+
+Paradigm II 
+
+Heuristic / Metaheuristic PSO, GA, SA, Tabu Search, DDQN-GA 
+
+Gradient-free search 
+
+Paradigm III 
+
+Machine Learning / DRL DQN, DDQN, PPO, SAC, Unsup. DL, GNN-based, FL 
+
+Learned from data 
+
+Paradigm IV ∗
+
+Emerging Research Trends FM-DRL, LLM Agents, Diffusion Models, Quantum 
+
+Generative AI & QC ∗
+
+Four-Category Classification of Joint OFDM-RIS Optimization for 6G 
+
+Hybrid works (DDQN-GA spans II/III, GNN-WMMSE spans I/III) share cate-gories. ∗Many Paradigm IV entries were first published as preprints; status varies by work.                                                                     
+
+> Fig. 2. Four-category classification. Model-based (I) guarantee convergence; heuristics (II) trade optimality for tractability; ML (III) learns from data; emerging trends (IV) explore generative AI and quantum computing (many first appeared as preprints). TABLE VII BENCHMARK SYNTHESIS ON THE TUTORIAL SYSTEM (𝑀 𝑡 =2,𝐾 =2,𝑀 =4,𝑁 =16 , 2-BIT RIS).
+> Algorithm SE (bps/Hz) Runtime (ms) Hardware Note Paradigm I: Model-Based
+> AO+SCA 36 .74 ±2.1138 CPU ∗SCA baseline SDR 34 .03 ±3.52.3CPU ∗𝑁 =16 ; scales 𝑂 (𝑁 4.5)
+> Paradigm II: Heuristic
+> PSO 41 .28 ±2.2124 CPU ∗50 particles, 200 gen. GA 42 .36 ±3.11145 CPU ∗50 pop., 200 gen. SA 43 .02 ±2.5193 CPU ∗Annealing cooling
+> Paradigm III: ML / DRL (runtime only)
+> GNN —0.119 GPU ∗3-layer message-passing Unsup. DL —0.048 GPU ∗3-layer encoder DDQN —0.021 GPU ∗Column-wise decomposed PPO —0.035 GPU ∗Encoder + policy head
+> ∗CPU: AMD Ryzen 5 7600X. GPU: NVIDIA RTX 5060 Ti.
+> †Paradigm III entries benchmark runtime with untrained networks; trained-model SE is 93–97% of SCA (Table IV). 95% CI for CPU methods: ±1.9 ms (AO+SCA), ±0.7 ms (PSO), ±3.5 ms (GA), ±1.1 ms (SA) over 20 seeds.
+
+because hardware varies too much across papers to make direct comparisons honest. Each entry carries an evidence tag: [P] for peer-reviewed, [A] for arXiv preprint, and [H] for hardware demonstration. Benchmark scale caveat. Table VII reports runtimes mea-sured on a small-scale tutorial system ( 𝑁 = 16 , 𝑀 = 4,
+
+𝐾 = 2). At this scale, all methods complete in under 1.2 s, and the asymptotic complexity advantages of some algorithms (e.g., GNN at 𝑂 (𝐸 𝑑 + 𝑁 𝑑 2) vs. GA at 𝑂 (𝑁 𝑃𝑇 )) are not fully reflected. A practitioner choosing an algorithm for 𝑁 = 1024 
+
+should expect SDR’s 𝑂 (𝑁 4.5) scaling to dominate, GA’s 
+
+𝑂 (𝑁 𝑃𝑇 ) per-generation cost to become prohibitive, and GNN inference to remain sub-millisecond. To illustrate scaling behavior, we benchmark all methods at 𝑁 = 64 and GPU-only methods at 𝑁 = 256 on the same hardware. Table VIII summarizes the results. Three patterns emerge: (1) GPU forward passes (DDQN, PPO, GNN, Unsup. DL) are 𝑁 -invariant – their runtime at 𝑁 = 256 is within 25% of 𝑁 = 16 , because the GPU processes larger input tensors in the same parallel step. (2) CPU iterative methods scale polynomially: AO+SCA goes from 138 ms to 733 ms (5.3 ×
+
+for 4 × the elements). (3) SDR remains fast at 𝑁 = 64 (4.2 ms) because this benchmark measures randomization only; the 
+
+𝑂 (𝑁 4.5) SDP solver dominates at 𝑁 > 100 .Hyperparameter sensitivity matters for interpretation. GA at its default settings (pop=50, gen=200) takes 1145 ms and achieves SE of 40.0 bps/Hz. Reducing to pop=50, gen=100 cuts runtime by half (572 ms) while retaining 99% of the SE (39.7 bps/Hz). Further reduction to pop=20, gen=50 drops runtime to 130 ms with SE of 37.8 bps/Hz, comparable to AO+SCA. The GA runtime numbers in this paper are for the default configuration; practitioners can trade runtime for SE by adjusting population size and generation count. Similar reasoning applies to PSO (50 particles, 200 generations at 124 ms) and SA ( 𝑇 0 = 100 , 𝛼 = 0.95 at 193 ms). 
+
+B. What the Synthesis Shows 
+
+Fig. 3 places each paradigm in the SE–runtime plane using values from Table VII (tutorial system) supplemented by literature SE for trained models. Three patterns stand out. 
+
+Paradigm III dominates the SE–runtime frontier. DRL methods (DDQN, PPO) achieve sub-0.1 ms GPU inference with trained-model SE of 93–97% of SCA. GNN inference is 0.12 ms. Paradigm I sits at the opposite end: AO+SCA delivers AHMET KAPLAN 13 0.01 0.1 1 10 100 1000 
+
+Per-inference runtime (ms) 
+
+80 
+
+85 
+
+90 
+
+95 
+
+100                                                                      
+
+> Spectral efficiency (% of SCA)
+> AO+SCA
+> SDR
+> PSO
+> GA
+> SA
+> DDQN
+> PPO Unsup.DL
+> GNN
+> FM-DRL Diffusion
+> Quantum
+> N=16 (filled)
+> N=16 (filled)
+> N=16 (filled)
+> Paradigm IV (preprint)
+> N=64 (hollow)
+> Fig. 3. SE versus per-inference runtime. FM-DRL, Diffusion, Quantum runtimes are from cited papers. SDR is fast at 𝑁 =16 but scales 𝑂 (𝑁 4.5). SE values are from the literature for trained models. TABLE VIII SCALING BENCHMARK ACROSS FOUR RIS SIZES . H ARDWARE PER
+> TABLE VII.
+> Method Runtime (ms) Scaling
+> CPU iterative
+> AO+SCA 138 →733 𝑂 (𝑁 2)
+> PSO 124 →323 𝑂 (𝑁 𝑃𝑇 )
+> GA 1145 →541 𝑂 (𝑁 𝑃𝑇 )
+> SA 193 →281 𝑂 (𝑁 𝑇 )
+> SDR 2.3→4.2Eigen-decomp
+> GPU forward passes
+> GNN 0.119 →0.149 𝑁 -invariant Unsup. DL 0.048 →0.056 𝑁 -invariant DDQN 0.021 →0.029 𝑁 -invariant PPO 0.035 →0.043 𝑁 -invariant
+
+100% at 138 ms. Paradigm II falls between (PSO 124 ms, SA 193 ms, GA 1145 ms) with no convergence guarantees. GPU inference is 𝑁 -invariant, while iterative solvers are not. Scaling benchmarks at 𝑁 = 64 and 𝑁 = 256 (Table VIII) reveal a decisive difference: DDQN, PPO, GNN, and unsu-pervised DL all show identical runtime at 𝑁 = 16 , 𝑁 = 64 ,and 𝑁 = 256 because the GPU processes larger input tensors in a single parallel step. AO+SCA increases from 138 ms to 733 ms at 𝑁 = 64 (5.3 ×). This property means that once a DRL policy is trained, inference cost does not increase with RIS size – a critical advantage for large-scale deployment. CSI requirements differ by orders of magnitude. Paradigm I demands full CSI: 𝑁 × 𝑀 𝑡 + 𝑁 × 𝐾 complex parameters per subcarrier. Paradigm III operates on partial CSI with 𝑂 (𝐾 )
+
+pilot symbols [60]. Paradigm IV diffusion methods need no pilots at inference, though their pre-training datasets are never costed. No single paradigm dominates across all metrics. The best choice depends on RIS size, mobility, CSI availability, and whether offline training is acceptable. Quantum methods (Paradigm IV) report no advantage at practical system sizes. 
+
+C. Why Certainty Is Limited 
+
+Cross-paradigm comparisons are hindered by several in-consistencies in the existing literature. We aligned entries with SCA where possible, but many papers compared against a random-phase baseline or a no-longer-used method, mak-ing baselines non-standardized. Runtimes are measured on different hardware generations — a 2023 GPU cannot be fairly compared to a 2019 CPU — so we grouped entries by complexity class, which sacrifices precision for honesty. Simulation parameters such as channel models, CSI feedback schemes, phase precision, SNR ranges, and mobility profiles all differ across papers. The literature also exhibits a selection bias toward positive results, with negative results rare enough that the sample is visibly skewed. Energy efficiency is one of the four canonical problem formulations, yet no two papers report it in a comparable way — most give qualitative labels (“moderate,” “sub-opt.”) and none report bits/Joule against a common baseline. CSI acquisition overhead is not quantified in any surveyed paper. A unified 6G RIS-OFDM benchmark would solve most of these problems. Table XI specifies what it should include. Until then, cross-paper numbers should be read as directional, not definitive. 
+
+D. Five Cross-Cutting Patterns 
+
+First, Paradigm III methods cut runtime by orders of mag-nitude compared to Paradigm I: microseconds instead of mil-liseconds. No one has verified this on a common benchmark, but the pattern is consistent across the surveyed corpus. Second, CSI requirements diverge sharply. Model-based methods need full channel knowledge; ML methods work with less. This difference alone determines which paradigms apply in which deployment scenarios. AHMET KAPLAN 14 SE 
+
+> Performance
+> Runtime
+> Speed
+> Convergence
+> Guarantees
+> CSI
+> Efficiency
+> Scalability
+> Paradigm I
+> Paradigm II
+> Paradigm III
+> Paradigm IV
+> Fig. 4. Multi-dimensional comparison (1 = worst, 5 = best). Paradigm I excels in convergence but needs full CSI. Paradigm III offers the best runtime–SE tradeoff. Paradigm IV scores high on CSI efficiency but lacks validation.
+
+Third, no single paradigm is optimal across all metrics. The choice is a trade-off, not a ranking. For a small RIS with good CSI, use Paradigm I. For a large RIS with tight latency, use Paradigm III. For embedded deployments with no GPU, use Paradigm II. Fourth, quantum methods look promising on paper but have produced no practical advantage at realistic system sizes. Every reported quantum result uses 𝑁 ≲ 20 elements. Fifth, the most interesting work is hybrid. Combining solvers, heuristics, and learned policies consistently outper-forms single-paradigm approaches. Fig. 4 provides a multi-dimensional comparison of these tradeoffs. Multi-paradigm integration deserves more attention. 
+
+E. Complexity and Resource Analysis 
+
+Table IX provides a unified view of the computational and resource characteristics across paradigms. Paradigm I methods carry the heaviest per-iteration cost ( 𝑂 (𝑁 4.5) for SDR, 𝑂 (𝑁 3)
+
+for SCA) and require full CSI with 𝑂 (𝑁 𝑀 𝑡 + 𝑁𝐾 ) parameters per subcarrier. Paradigm II heuristics reduce per-iteration cost to 𝑂 (𝑁 )–𝑂 (𝑁 𝑃 ) (where 𝑃 is population size) but at the expense of convergence guarantees. Paradigm III ML methods shift the cost to offline training (GPU-hours, millions of environment steps) while achieving microsecond inference with partial or learned CSI. Paradigm IV emerging methods offer the lowest inference cost but many remain preprint-only, and training cost disclosures are rare. 
+
+F. Energy Efficiency Estimation 
+
+The tutorial benchmark runtimes can be converted to energy per inference using measured platform power. GPU power was measured during sustained inference via nvidia-smi . The GPU draws 11.9 W during these small neural network forward passes (single hidden layer of 128 neurons), far below its 150 W thermal design power (TDP). CPU power was mea-sured via RAPL at 40.7 W during the AO+SCA benchmark (package power) Table X shows the resulting energy per solve. The energy gap between paradigms is larger than the run-time gap because GPU methods draw far less power than their TDP for small network architectures. DDQN at 0.56 mJ per inference is over 8,300 × more energy-efficient than AO+SCA at 5.58 J. This has practical implications for battery-powered RIS controllers and energy-constrained deployments. VIII. C HALLENGES AND OPEN PROBLEMS 
+
+Reading across the 78 papers in this survey, six recurring gaps stand out. None are generic 6G research directions. Each traces back to something specific the cross-paradigm comparison exposed. 
+
+A. C1: Cross-Paradigm Benchmark Deficit 
+
+Table VII standardizes the comparison by running all meth-ods on the same tutorial system with identical channel re-alizations and measurement methodology. Even so, NN-based methods cannot be directly compared to iterative solvers at the same scale: our DRL benchmarks use untrained networks for runtime only, while their true SE depends on training quality and data diversity. A reader trying to answer “which algorithm works best for a 256-element RIS at 28 GHz?” would still find no clear answer at scale without further work. The fix is a standardized benchmark. Table XI lists what one should include, informed by three lessons from this paper’s benchmark effort: (1) benchmarks must report SE from trained models on held-out test sets, not architecture-only forward passes; a runtime-only comparison (like our Paradigm III entries) tells the reader nothing about the algorithm’s true performance. (2) At least two RIS scales (e.g., 𝑁 = 64 
+
+and 𝑁 = 256 ) are required because GPU methods are 𝑁 -invariant while iterative solvers scale polynomially; a single scale produces a misleading ranking. (3) Energy per inference must be measured with a standardized protocol: sustained GPU inference ( ≥3 s) with nvidia-smi averaging, and CPU RAPL over multiple solves, because our own measurements varied by 2.7 × depending on burst vs. sustained methodology. A first version of this benchmark could align with 3GPP Release 20 and the ITU-R IMT-2030 framework, with a public leaderboard updated annually. The benchmark deficit is not unique to RIS-OFDM. Zhou et al. [4] documented similar comparison problems across the broader RIS optimization literature, noting that no two surveyed papers used the same channel model, RIS size, or baseline algorithm. Standardized evaluation frameworks have been called for but none have been adopted. A useful first step would be a common API for RIS-OFDM simulation environments (channel generation, evaluation metrics, baseline implementations) analogous to the role OpenAI Gym played for reinforcement learning. Until such an infrastructure exists, cross-paper comparisons will remain qualitative. AHMET KAPLAN 15                                                                                                                                                                                        
+
+> TABLE IX COMPUTATIONAL AND RESOURCE COMPARISON ACROSS PARADIGMS . T RAINING COST VALUES ARE SELF -REPORTED ;MANY WORKS ARE PREPRINTS AND TRAINING COST MAY NOT BE FULLY DISCLOSED .
+> Method Per-Iter. Cost Memory CSI Training Cost Inference ‡Scale
+> Paradigm I
+> AO + SCA 𝑂 (𝑁 3)𝑂 (𝑁 𝑀 𝑡 𝐾 𝑀 )Full N/A 138 ms ≲100 SDR 𝑂 (𝑁 4.5)𝑂 (𝑁 2)Full N/A 2.3 ms §≲50
+> Paradigm II
+> PSO 𝑂 (𝑁 𝑃𝑇 )𝑂 (𝑁 𝑃 )Full N/A 124 ms ≲500 SA 𝑂 (𝑁 𝑇 )𝑂 (𝑁 )Full/Imperf. N/A 193 ms ≲500
+> Paradigm III
+> DRL (DQN/PPO) 𝑂 ( | A | 𝑑 net )∼10 6params Partial ∼10–100 GPU-h 0.021–0.035 ms ≲1000 Unsup. DL 𝑂 (𝑑 net )∼10 6params Partial ∼10–50 GPU-h 0.048 ms ≲1000 GNN 𝑂 (𝐸𝑑 +𝑁 𝑑 2)∼10 5params Composite ∼1–10 GPU-h 0.119 ms ≲1000
+> Paradigm IV †
+> FM-DRL 𝑂 (𝑑 LWM )∼10 7params Learned Not disclosed ∼3×10 1ms ≲1000 Diffusion 𝑂 (𝑆 𝑁 )(𝑆 steps) ∼10 6params Learned Not disclosed ∼7×10 1ms ≲1000 Quantum 𝑂 (poly (𝑁 ) ) Qubit-limited Full N/A (NISQ) 10 1–10 2ms proto.
+> ‡Benchmarked on the tutorial system (Section IX).
+> §Small-scale; full SDP scales as 𝑂 (𝑁 4.5).TABLE X ESTIMATED ENERGY PER INFERENCE . H ARDWARE PER TABLE VII. CPU
+> AT 40.7 W (RAPL). GPU AT 26.5 W ( NVIDIA -SMI ).
+> Method Runtime (ms) Power (W) Energy (J)
+> Paradigm I
+> AO+SCA 138 40.7 5.58 ×10 0
+> SDR 2.3 40.7 9.36 ×10 −2
+> Paradigm II
+> PSO 124 40.7 5.05 ×10 0
+> GA 1145 40.7 4.66 ×10 1
+> SA 193 40.7 7.86 ×10 0
+> Paradigm III
+> GNN 0.119 26.5 3.15 ×10 −3
+> Unsup. DL 0.048 26.5 1.27 ×10 −3
+> DDQN 0.021 26.5 5.56 ×10 −4
+> PPO 0.035 26.5 9.27 ×10 −4
+
+B. C2: Deployment Under Real-World Hardware Constraints 
+
+Most papers assume ideal continuous-phase RIS elements. The ones that handle quantization usually ignore mutual coupling and amplitude-phase dependence [22]. DQN/DDQN with 1-bit resolution [14] and DDQN-GA with discrete phases [16] are partial exceptions. The rest either fall back to heuristic search or skip hardware entirely. None train on hardware-in-the-loop data. This matters because mmWave/THz coherence times of 10–100 𝜇 s rule out any Paradigm I method slower than 0.1 ms. Zheng et al. [1] provided a comprehensive treatment of these hardware con-straints and their impact on channel estimation and passive beamforming design. Recent surveys on active RIS [74] and hardware-centric RIS design [81] have catalogued the gap between simulation assumptions and hardware reality. Asif et al. [74] documented that active RIS prototypes achieve 18 dB power gain at 3.75 GHz with 4096 elements, but all reported results use custom-built controllers and offline optimization. No active RIS prototype has been tested with a real-time DRL policy running on an embedded GPU, which is the most promising deployment path for Paradigm III methods. The research question is straightforward: how do you de-sign algorithms that work under 1–3 bit quantization, mutual coupling, and amplitude-phase distortion, without hardware-in-the-loop training? Three directions look promising: differ-entiable quantization surrogates that let gradients flow through discrete constraints; mutual-coupling-aware channel models embedded in learned pipelines; and transfer learning from simulated hardware impairments to real testbeds. A fourth direction, hardware-in-the-loop training for RL policies, has become feasible with the availability of FPGA-based RIS controllers [63] and could be the fastest path to deployment-ready algorithms. 
+
+C. C3: Joint OTFS/AFDM-RIS Optimization for Doubly-Dispersive Channels 
+
+OTFS and AFDM outperform OFDM with RIS in high mobility (Table V), but combining them creates coupling problems. OTFS needs a single RIS configuration for its entire delay-Doppler frame. AFDM has chirp parameters (𝑐 1, 𝑐 2) that shift the optimal RIS phases. While joint optimization of RIS phases with subcarrier allocation exists for OFDM [12], [13], no framework jointly optimizes waveform parameters (e.g., AFDM chirp parameters), RIS phases, and resource allocation for OTFS or AFDM systems. The fix: treat waveform selection as a design variable alongside RIS configuration, rather than optimizing each in isolation. A practical starting point would be to extend the existing PSO and SCA frameworks from the OFDM-RIS lit-erature to the OTFS-RIS case, using the delay-Doppler channel model from a recent unifying survey on OTFS variants [2] as the common evaluation platform. AHMET KAPLAN 16     
+
+> TABLE XI REQUIRED SPECIFICATIONS FOR A CROSS -PARADIGM OFDM-RIS BENCHMARK . V ALUES ARE ILLUSTRATIVE ,CONSISTENT WITH 3GPP NR.
+
+## Requirement Example Specification 
+
+## RIS sizes 𝑁 ∈ { 64 , 256 } (at least two scales to capture 𝑁 -invariance) BS antennas 𝑀 𝑡 ∈ { 4, 16 , 64 }
+
+## Users 𝐾 ∈ { 2, 4, 8}
+
+## Subcarriers 𝑀 = 64 (baseline), 𝑀 = 256 (wideband) Channel model 3GPP TR 38.901 UMi at 28 GHz; CDL-C at 60 GHz Mobility Static (0 km/h), Vehicular (60 km/h), High-speed (500 km/h) SNR range −5 to 30 dB in 5 dB steps RIS phase resolution Continuous (ideal), 1-bit, 2-bit, 3-bit Reference hardware NVIDIA RTX 5060 Ti GPU; AMD Ryzen 5 7600X (solver) Metrics SE (bps/Hz) with trained model on held-out test set; energy per inference (J), runtime (ms), CSI overhead (bits/coherence block) Energy protocol GPU: nvidia-smi power.draw averaged over ≥3 s sustained inference (not single-shot). CPU: RAPL energy_uj over ≥10 repeated solves. Report component power (CPU-only or GPU-only). Baseline SCA with perfect CSI at 𝑁 = 64 as common reference point Training Report GPU-hours, environment steps, hyperparameters, and convergence criterion; benchmark must use trained models (not architecture-only) Leaderboard Public repository with standardized evaluation script and result submission format 
+
+D. C4: Multi-Objective Pareto Frontiers Incorporating PAPR 
+
+No surveyed paper jointly optimizes SE, EE, and PAPR. NSGA-II has been used for OTFS-RIS [51] but not for OFDM-RIS with PAPR as a third objective. Every paper uses weighted-sum scalarization, which cannot recover the full Pareto surface. The fix: apply multi-objective evolutionary algorithms (NSGA-II, MOEA/D) to the OFDM-RIS PAPR problem and map the three-dimensional SE-EE-PAPR trade-off. A pre-requisite is defining a common power amplifier model and waveform generation pipeline, which none of the surveyed papers provide. Standardizing these components would enable direct application of existing multi-objective optimizers to the OFDM-RIS PAPR problem for the first time. 
+
+E. C5: LLM-Enabled Autonomous Orchestration 
+
+LLM-based methods (ComAgent, 6G-LLM, TelecomGPT) promise intent-driven network configuration. Most evidence is preprint-only, though some works have since been peer-reviewed. A useful distinction separates offline uses (literature search, code generation, benchmark design), which are low-risk and deployable now, from online RIS control, where a hallucinated configuration could black out a sector. No surveyed work offers formal safety guarantees for the online case. Offline applications should move forward. Online control needs formal verification or a human in the loop until safety is proven. Beyond research, three groups will shape what happens next: network operators deciding what to deploy, hardware vendors choosing what runs on their FPGAs, and regulators writing certification rules for AI-controlled infras-tructure. Establishing benchmark scenarios for LLM-based network control, analogous to the RL benchmarks that drove progress in game-playing AI, would accelerate progress in this area. 
+
+F. C6: Diminishing Returns and Algorithmic Dead Ends 
+
+Hybrid methods like DDQN-GA consistently outperform standalone heuristics. The pattern makes sense: gradient-free methods lack convergence guarantees, degrade at scale, and require careful hyperparameter tuning. SDR’s 𝑂 (𝑁 4.5)
+
+complexity makes it infeasible beyond 𝑁 = 100 , where ML methods already operate. None of this makes heuristics useless. They still work in resource-constrained settings and as initialization strategies. For large-scale deployments, the field should shift toward hybrid heuristic-ML architectures and ML methods that scale past 𝑁 = 1000 . Standalone heuristics remain useful in embed-ded systems with no GPU and no training data. A practical recommendation: every new heuristic algorithm should be benchmarked against a simple ML baseline (e.g., a 3-layer neural network with the same computational budget), and the paper should explicitly state what the heuristic adds beyond what the ML baseline achieves. 
+
+G. Methodological Recommendations for the Community 
+
+Six reporting standards would eliminate most of the com-parison problems documented in this survey. Future papers should: AHMET KAPLAN 17 
+
+1) Report wall-clock runtime on a specified reference plat-form (CPU model, GPU, RAM). 2) Normalize SE against SCA under a standard 3GPP channel model, not an arbitrary setup. 3) Disclose training cost: GPU-hours, environment steps, and convergence criterion. 4) State the RIS phase quantization level and whether it was modeled during optimization or applied post-hoc. 5) Specify CSI assumptions and report feedback overhead in bits per coherence block. 6) Release code and trained models. Self-reported arXiv claims without code should carry an explicit unverified flag. 
+
+H. Practitioner Takeaways                
+
+> Practitioner’s Guide to Joint OFDM-RIS Optimization
+> For the engineer or 3GPP delegate choosing an optimization approach:
+> Small RIS (𝑁 ≲100 ), CSI available: Use model-based methods (Paradigm I) such as SCA. SDR is simplest but does not scale. Large RIS, real-time operation: Unsupervised deep learning (Paradigm III) gives microsecond inference at 95– 99% of model-based SE. Caveat: the evidence is from one research group [15]. High mobility: OTFS with RIS outper-forms OFDM with RIS. AFDM gives comparable diversity at lower complexity. Emerging technologies (LLMs, diffusion, quantum): Preprint-only. Do not base deployment decisions on these yet. Cross-paper comparisons: Not reliable. The field needs a common benchmark before any ranking can be trusted.
+
+IX. T UTORIAL : S OLVING P1 A CROSS FOUR PARADIGMS 
+
+To make the four-paradigm taxonomy concrete, this section walks through the solution of P1 (sum-rate maximization) on a small-scale downlink system using one representative algorithm from each paradigm. The setup is deliberately small to allow the reader to follow the mechanics: 𝑀 𝑡 = 2
+
+BS antennas, 𝐾 = 2 single-antenna users, 𝑀 = 4 OFDM subcarriers, 𝑁 = 16 RIS elements, SNR = 20 dB, 2-bit RIS phase quantization. Channels are generated from a 3GPP UMi model at 28 GHz with Rician 𝐾 -factor of 10 for the BS-RIS link. The tutorial covers only the sum-rate formulation (P1); energy efficiency (P2) and PAPR-constrained (P4) benchmarks require standardized power models and waveform generators that are not yet available across all four paradigms, and are left to future work. 
+
+Simulation methodology. All numerical results in this tutorial are original simulations by the author for the described small-scale system, generated using the companion code at https://github.com/Ahmet-Kaplan/OFDM RIS. The AO+SCA implementation uses element-wise coordinate ascent: each RIS element is optimized by exhaustive search over 2𝑏 phase values while keeping others fixed, alternating with WMMSE precoder updates (this differs from the convex-surrogate SCA described in Section III-C). PSO follows Section IV.A with 50 particles. The DDQN-GA implementation follows [16] with 3 hidden layers, trained for 1500 episodes (illustrative only). For Paradigm IV, we pre-train a Transformer encoder (4 layers, 128-dim) on 500K synthetic RIS channel realizations using masked-prediction and contrastive learning [27]. All methods run on an AMD Ryzen 5 7600X CPU; LWM training additionally uses an NVIDIA RTX 5060 Ti GPU. All reported SE values are means over 20 independent channel realizations; DDQN-GA uses 5 due to training time. Standard deviations are ±.
+
+A. Paradigm I: AO + SCA 
+
+The alternating optimization–successive convex approxima-tion pipeline proceeds as follows: 1) Initialize: 𝜽 (0) ∼ Uniform (0, 2𝜋 ), W(0) via zero-forcing precoding given 𝜽 (0) .2) Solve W-subproblem: With 𝜽 (𝑡 ) fixed, solve the pre-coding problem via WMMSE [49] (closed-form updates, 
+
+𝑂 (𝑀 3 
+
+> 𝑡
+
+𝐾 𝑀 ) per iteration). This produces W(𝑡 +1) .3) Solve 𝜽 -subproblem: With W(𝑡 +1) fixed, apply SCA to the non-convex unit-modulus constrained problem. Con-struct a convex quadratic surrogate ˜𝑓 (𝜽 |𝜽 (𝑡 ) ) that lower-bounds the sum-rate and is tight at 𝜽 (𝑡 ) . Solve via pro-jected gradient descent (10 inner iterations, 𝑂 (𝑁 2 𝑀𝐾 )
+
+each). 4) Repeat until |𝑅 (𝑡 +1) 
+
+> sum
+
+− 𝑅 (𝑡 ) 
+
+> sum
+
+| < 10 −3.
+
+Convergence: The algorithm converges within 5–10 outer iter-ations. Final SE: 36.7 ± 6.9 bps/Hz (mean ± std over 20 ran-dom channel realizations). Runtime: 138 ms on CPU (de novo optimization; no amortization). All tutorial runtimes include WMMSE precoder computation. Note on terminology: The tutorial implements the 𝜽 -subproblem via element-wise coor-dinate ascent: each RIS element is optimized by exhaustive search over 2𝑏 phase values while keeping others fixed, then alternated with WMMSE precoder updates. This differs from the convex-surrogate SCA described in Section III-C, which uses a continuous quadratic surrogate with projected gradient descent. The element-wise variant is used here because it is simpler to implement and debug for a small system ( 𝑁 = 16 ,2-bit quantization), but the benchmark runtime (138 ms) and SE (36.7 bps/Hz) are specific to this implementation. The asymptotic 𝑂 (𝑁 3) complexity of the convex-surrogate SCA would produce different quantitative results at larger 𝑁 .
+
+B. Paradigm II: PSO 
+
+A particle swarm of 𝑃 = 50 particles explores the 16-dimensional quantized phase space: 1) Initialize: Each particle 𝑖 has position 𝜽 (0) 
+
+> 𝑖
+
+∈{0, 𝜋 /2, 𝜋, 3𝜋 /2}16 and velocity v(0) 
+
+> 𝑖
+
+∼ N ( 0, 0.1).2) Evaluate fitness: For each particle, compute W via WMMSE with 𝜽 𝑖 fixed, then compute 𝑅 sum as fitness. 3) Update: v(𝑔 +1) 
+
+> 𝑖
+
+= 𝑤 v(𝑔 ) 
+
+> 𝑖
+
++𝑐 1𝑟 1 (pbest  
+
+> 𝑖
+
+−𝜽 (𝑔 ) 
+
+> 𝑖
+
+) + 𝑐 2𝑟 2 (gbest −
+
+𝜽 (𝑔 ) 
+
+> 𝑖
+
+), where 𝑤 = 0.7, 𝑐 1 = 𝑐 2 = 1.5, 𝑟 1, 𝑟 2 ∼ 𝑈 (0, 1).Positions are updated and rounded to the nearest quan-tized phase. 4) Repeat for 200 generations or until swarm best fitness stagnates. 
+
+Convergence: Swarm best fitness converges within 120 gen-erations. Final SE: 41.5 ± 4.3 bps/Hz (113% of AO+SCA). Runtime: 124 ms on CPU. AHMET KAPLAN 18 
+
+C. Paradigm III: DDQN-GA 
+
+A Double DQN agent with column-wise action decomposi-tion [16] (3 hidden layers, 256-256-128 neurons, ReLU) learns phase selection: 1) State: Quantized effective CSI vector ˜heff ∈ C𝐾 𝑀 𝑡 𝑀 
+
+(dimension 16 after PCA compression to 16 principal components). 2) Action: The 216 raw phase space is decomposed into 8 column decisions (2 RIS elements per column); the DDQN selects which column to adjust by a fixed phase increment, reducing the effective action space from 416 
+
+to 8 × 4 [16]. 3) Reward: 𝑅 sum computed via WMMSE with the selected RIS phases. 4) Training: 𝜖 -greedy exploration ( 𝜖 annealed 1.0 → 0.05 over 2000 episodes), replay buffer size 10 4, batch size 64, learning rate 10 −3, target network updated every 100 steps. Total training: 1500 episodes, ∼1.8 s on CPU (simplified implementation). 
+
+Convergence: Reward converges by episode ∼1000. Final SE (inference only, no further training): 26.9 ± 7.9 bps/Hz (73% of AO+SCA). Inference runtime: 0.01 ms on CPU (single forward pass). 
+
+D. Paradigm IV: Pre-trained LWM Encoder + SAC + Beam Search 
+
+We pre-train a Transformer encoder on synthetic RIS chan-nel data and use it as a feature extractor for a lightweight DRL policy head. The implementation uses pre-trained weights from the companion pre-training pipeline (500K synthetic channel realizations). 1) Pre-training: A 4-layer Transformer encoder (128-dim, 4 attention heads, 512-dim FFN) is pre-trained on 500K synthetic RIS channel realizations using a combined objective: masked channel prediction (25% mask ratio) plus NT-Xent contrastive loss (weight 0.3). Training runs for 100 epochs with batch size 256, using the Adam op-timizer (learning rate 10 −3, 𝛽 1 = 0.9, 𝛽 2 = 0.999 ). Total parameter updates: approximately 200K steps. Training takes approximately 6 minutes on GPU (RTX 5060 Ti). The pre-training data generator randomizes Rician K-factors, path counts, and angular spreads to ensure diversity. 2) Encoder embedding: Raw CSI H𝐵𝑅 , h𝑅𝑈,𝑘 (flattened, dimension ∼1600) is projected into a 128-dimensional embedding by the pre-trained encoder. 3) DRL head: A 3-layer SAC policy network (256-128-64) maps embeddings to a distribution over RIS phase configurations. At inference, we draw 16 candidate configurations from this distribution, evaluate them, and refine the top-3 via local perturbations (beam search). 
+
+Results: Over 20 independent channel realizations, the SAC policy with beam search achieves 27.7 ± 3.6 bps/Hz (75% of tutorial AO+SCA). Direct sampling (no beam search) yields similar mean but higher variance. The beam search result is below the tutorial AO+SCA ( 𝑝 = 0.002 , Welch t-test),                                                                                                                                     
+
+> 1: Input: Pre-trained encoder 𝐸 𝜙 , policy 𝜋 𝜃 , Q-networks 𝑄 𝜓 1, 𝑄 𝜓 2, tem-perature 𝛼
+> 2: for episode 𝑒 =1, . . . , 𝑁 ep do
+> 3: Generate channel (H𝐵𝑅 ,h𝑅𝑈 ,hdir )
+> 4: z←𝐸 𝜙 (H𝐵𝑅 ,h𝑅𝑈 ,hdir )
+> 5: for 𝑡 =1, . . . , 𝑇 do
+> 6: a𝑡 ∼𝜋 𝜃 (· | z)
+> 7: 𝑟 𝑡 ←𝑅 (a𝑡 )
+> 8: z′←𝐸 𝜙 (new channel )
+> 9: Store (z,a𝑡 , 𝑟 𝑡 ,z′)in replay D
+> 10: end for
+> 11: Sample batch B ∼ D
+> 12: 𝑦 ←𝑟 +𝛾 (min 𝑖 𝑄 𝜓 ′
+> 𝑖 (z′,a′) − 𝛼 log 𝜋 𝜃 (a′|z′) )
+> 13: 𝜓 𝑖 ←𝜓 𝑖 −𝜂 ∇𝜓 𝑖 ∥𝑄 𝜓 𝑖 (z,a) − 𝑦 ∥2
+> 14: 𝜃 ←𝜃 +𝜂 ∇𝜃 (min 𝑖 𝑄 𝜓 𝑖 (z,˜a) − 𝛼 log 𝜋 𝜃 (˜a|z) )
+> 15: 𝜓 ′
+> 𝑖 ←𝜏 𝜓 𝑖 + ( 1−𝜏 )𝜓 ′
+> 𝑖
+> 16: end for
+> 17: Inference: sample {a(𝑘 )}16
+> 𝑘 =1∼𝜋 𝜃 (· | z), evaluate, refine top-3 Fig. 5. SAC training loop and beam search inference for RIS phase optimization. Pre-trained encoder 𝐸 𝜙 is frozen during SAC training.
+
+which differs from the claim in earlier preprint versions; the pre-trained encoder improves sample efficiency during SAC training but does not close the SE gap on this small-scale system. PSO remains the top performer (113%, 𝑝 = 0.0004 ). The SAC training converges in approximately 360 seconds. We attribute the performance gap to the simplified policy head architecture relative to the continuous phase optimization in PSO. 
+
+Summary: The LWM encoder with SAC and beam search learns a reasonable policy that improves over the random baseline but does not match AO+SCA on the tutorial system. The code demonstrates the Paradigm IV training and inference pipeline. Stronger policy architectures (e.g., attention-based heads) may close this gap and are a natural direction for future work. 
+
+E. Cross-Paradigm Takeaways 
+
+Table XII summarizes the tutorial results. Four lessons emerge: (1) AO+SCA achieves 36.7 bps/Hz, significantly outperforming the random baseline (23.4 bps/Hz, 𝑝 < 0.001 ,Welch t-test); (2) PSO achieves the highest SE (41.5 bps/Hz, 113% of AO+SCA, 𝑝 = 0.0004 ); (3) DDQN-GA (73% of AO+SCA) learns a reasonable policy with limited training (5 seeds; not included in statistical tests); (4) the LWM encoder with discrete SAC and beam search achieves 75% of AO+SCA, improving over the random baseline but below AO+SCA ( 𝑝 = 0.002 ). On this small-scale system, PSO remains the top performer overall, and none of the learning-based methods surpass it. The tutorial demonstrates algorith-mic mechanics; the ranking may differ for larger systems. X. C ONCLUSIONS 
+
+This survey classified 78 joint OFDM-RIS optimization works into four paradigms and synthesized their self-reported benchmarks. Three findings stand out: (1) ML-based methods (Paradigm III) achieve 95–99% of model-based spectral effi-ciency at 10 2–10 4× faster per-inference runtime (method-pair dependent), but all comparisons are self-reported and non-standardized. (2) Scaling benchmarks at 𝑁 = 16 , 𝑁 = 64 ,AHMET KAPLAN 19 
+
+TABLE XII TUTORIAL RESULTS ON THE VALIDATION SYSTEM (𝑀 𝑡 =2, 𝐾 =2, 𝑀 =4,
+
+𝑁 =16 , 2-BIT RIS). M EANS OVER 20 SEEDS (± STD ). H ARDWARE PER 
+
+SECTION IX. 
+
+Method SE (bps/Hz) % of AO Runtime 
+
+Random baseline 23 .0 ± 5.9 63% —AO + SCA ∗ (I) 36 .7 ± 6.9 100% 136 ms PSO (II) 41 .6 ± 4.3 113% 128 ms DDQN-GA ‡ (III) 26 .9 ± 7.9 73% 1.8 s (train) + 0.01 ms (infer) LWM + SAC + beam † (IV) 27 .7 ± 3.6 75% 360 s (train) + 0.01 s (beam) 
+
+> ∗
+
+Element-wise coordinate ascent (see Section IX-A). 
+
+> †
+
+Pre-trained LWM encoder + SAC. Below AO+SCA ( 𝑝 = 0.002 , Welch t-test). “Beam” = 16 candidates, top-3 refined. 
+
+> ‡
+
+Trained on 5 seeds only; % relative to AO+SCA in its own batch (31.8 bps/Hz). Not included in significance tests. SAC = Soft Actor-Critic; LWM = Large Wireless Model. 
+
+and 𝑁 = 256 demonstrate that GPU-based neural network inference (double deep Q-network (DDQN), PPO, GNN, un-supervised DL) is 𝑁 -invariant – runtime does not increase with RIS size – while iterative solvers (AO+SCA, PSO, SA) scale polynomially. Energy efficiency follows the same pattern: DDQN uses 0.56 mJ per inference, over 8,300 × less than AO+SCA at 5.58 J. (3) Emerging methods (Paradigm IV) introduce new capabilities: intent-driven control via LLMs, generative configuration sampling via diffusion models, and combinatorial exploration via quantum computing. Many re-main preprint-only without independent validation, though some have since been peer-reviewed. Rigorous quantitative cross-paradigm comparison is not yet possible due to the absence of a common benchmark. Qualitative patterns can still be extracted from the synthesis, a gap we address through a structured requirements specification (Table XI). We identify six open challenges synthesized directly from the cross-paradigm analysis and recommend six concrete reporting standards to enable future comparability. The most urgent priority for the community is the adoption of standardized benchmarks with three non-negotiable features: trained-model SE on held-out test sets (not architecture-only), multi-scale RIS sizes (at least 𝑁 = 64 and 𝑁 = 256 ), and mandatory reporting of energy per inference alongside runtime. Without these, the field cannot progress from self-reported claims to verifiable performance rankings. ACKNOWLEDGMENTS 
+
+During the preparation of this work, the author used AI-assisted tools (Claude) for code development, proofreading, and review simulation. The author is fully responsible for the content and conclusions of this paper. REFERENCES [1] B. Zheng, C. You, W. Mei, and R. Zhang, “A survey on channel estimation and practical passive beamforming design for intelligent reflecting surface aided wireless communications,” IEEE Commun. Surveys Tuts. , vol. 24, no. 2, pp. 1035–1071, 2022. [Online]. Available: https://doi.org/10.1109/comst.2022.3155305 [2] Q. Deng, Z. Ding, and Z. Wang, “A unifying view of OTFS and its many variants,” IEEE Commun. Surveys Tuts. , vol. 27, no. 4, pp. 1–1, 2025. [Online]. Available: https://doi.org/10.1109/COMST.2025.3542467 [3] M. M. Islam, K. Hasan, and S. H. Jeong, “Performance evaluation and optimization for 6G networks: A survey of KPIs, tools, and AI models,” 
+
+ICT Express , vol. 12, no. 2, pp. 390–416, Apr. 2026. [Online]. Available: https://doi.org/10.1016/j.icte.2025.12.012 [4] H. Zhou, M. Erol-Kantarci, Y. Liu, and H. V. Poor, “A survey on model-based, heuristic, and machine learning optimization approaches in RIS-aided wireless networks,” IEEE Commun. Surveys Tuts. , vol. 26, no. 2, pp. 781–823, 2024. [Online]. Available: https://doi.org/10.1109/comst. 2023.3340099 [5] B. S. de C. da Silva, V. D. P. Souto, R. D. Souza, and L. L. Mendes, “A survey of PAPR techniques based on machine learning,” Sensors ,vol. 24, no. 6, p. 1918, Mar. 2024. [Online]. Available: https://doi.org/ 10.3390/s24061918 [6] R. Greidi and K. Cohen, “DeepOFW: Deep learning-driven OFDM-flexible waveform modulation for peak-to-average power ratio reduc-tion,” arXiv:2603.23544 , Mar. 2026. [Online]. Available: https://arxiv. org/abs/2603.23544 [7] K. K. Biliaminu, J. Rodriguez, F. Gil-Casti˜ neira, and J. Bastos, “Recon-figurable intelligent surfaces: Principles and design considerations,” In-techOpen , 2024. [Online]. Available: https://doi.org/10.5772/intechopen. 1012750 [8] H. Zhou, M. Erol-Kantarci, Y. Liu, and H. V. Poor, “Heuristic algorithms for RIS-assisted wireless networks: Exploring heuristic-aided machine learning,” IEEE Wireless Commun. , vol. 31, no. 4, pp. 106–114, 2024. [Online]. Available: https://doi.org/10.1109/mwc.010.2300321 [9] H. Zhou, C. Hu, and X. Liu, “An overview of machine learning-enabled optimization for RIS-aided 6G networks: From reinforcement learning to large language models,” arXiv:2405.17439 , 2024. [Online]. Available: https://arxiv.org/abs/2405.17439 [10] K. M. Faisal and W. Choi, “Machine learning approaches for reconfig-urable intelligent surfaces: A survey,” IEEE Access , vol. 10, pp. 27343– 27367, 2022. [Online]. Available: https://doi.org/10.1109/access.2022. 3157651 [11] L. Ibrahim, M. N. Mahmud, M. F. M. Salleh, and A. Al-Rimawi, “Joint beamforming optimization design and performance evaluation of RIS-aided wireless networks: A comprehensive state-of-the-art review,” IEEE Access , vol. 11, pp. 141801–141859, 2023. [Online]. Available: https: //doi.org/10.1109/access.2023.3342320 [12] Y. Ma, X. Li, C. Guo, L. Liang, M. Matthaiou, and S. Jin, “Beam-forming and resource allocation for delay minimization in RIS-assisted OFDM systems,” arXiv:2506.03586 , Jun. 2025. [Online]. Available: https://arxiv.org/abs/2506.03586 [13] P. Zivuku, V.-D. Nguyen, N. T. Nguyen, K. Ntontin, S. Chatzinotas, and B. Ottersten, “Resource allocation for RIS-enhanced OFDM-MIMO ISAC systems,” IEEE Trans. Commun. , vol. 74, 2026. [Online]. Avail-able: https://doi.org/10.1109/tcomm.2025.3637097 [14] P. Chen, X. Li, M. Matthaiou, and S. Jin, “DRL-based RIS phase shift design for OFDM communication systems,” IEEE Wireless Commun. Lett. , vol. 12, no. 4, pp. 733–737, Apr. 2023. [Online]. Available: https: //doi.org/10.1109/lwc.2023.3242449 [15] Y. Ma, X. Zhou, X. Li, L. Liang, and S. Jin, “Unsupervised learning-based joint resource allocation and beamforming design for RIS-assisted MISO-OFDMA systems,” IEEE Trans. Cogn. Commun. Netw. , vol. 12, pp. 2251–2264, 2026. [Online]. Available: https://doi.org/10.1109/tccn. 2025.3592931 [16] W. Wang, P. Li, A. Doufexi, and M. A. Beach, “A heuristic-integrated DRL approach for phase optimization in large-scale RISs,” IEEE Com-mun. Lett. , vol. 29, no. 7, pp. 1579–1583, 2025. [Online]. Available: https://doi.org/10.1109/lcomm.2025.3568652 [17] P.-H. Chou, B.-R. Zheng, W.-J. Huang, W. Saad, Y. Tsao, and R. Y. Chang, “Deep reinforcement learning-based precoding for multi-RIS-aided multiuser downlink systems with practical phase shift,” IEEE Wireless Commun. Lett. , vol. 14, no. 1, pp. 23–27, Jan. 2025. [Online]. Available: https://doi.org/10.1109/lwc.2024.3482720 [18] H. Zhang, X. Huang, Z. Guan, R.-R. Chen, A. Farhang, and M. Ji, “Deep reinforcement learning for maximizing downlink spectral efficiency in non-stationary RIS-aided multiuser-MISO systems,” European WIRE-LESS 2025; 30th European Wireless Conference . pp. 196-201 (2025) [Online]. Available: https://ieeexplore.ieee.org/document/10164189 [19] Q. Wu and R. Zhang, “Intelligent reflecting surface enhanced wireless network via joint active and passive beamforming,” IEEE Trans. Wire-less Commun. , vol. 18, no. 11, pp. 5394–5409, Nov. 2019. [Online]. Available: https://doi.org/10.1109/twc.2019.2936025 [20] C. Huang, G. C. Alexandropoulos, A. Zappone, C. Yuen, and M. Deb-bah, “Reconfigurable intelligent surfaces for energy efficiency in wire-less communication,” IEEE Trans. Wireless Commun. , vol. 18, no. 8, AHMET KAPLAN 20 
+
+pp. 4157–4170, Aug. 2019. [Online]. Available: https://doi.org/10.1109/ twc.2019.2922609 [21] M. M. Zhao, Q. Wu, M. J. Zhao, and R. Zhang, “Intelligent reflect-ing surface enhanced wireless networks: Two-timescale beamforming optimization,” IEEE Trans. Wireless Commun. , vol. 20, no. 1, pp. 2– 17, Jan. 2021. [Online]. Available: https://doi.org/10.1109/twc.2020. 3022297 [22] S. Abeywickrama, R. Zhang, Q. Wu, and C. Yuen, “Intelligent reflecting surface: Practical phase shift model and beamforming optimization,” 
+
+IEEE Trans. Commun. , vol. 68, no. 9, pp. 5849–5863, Sep. 2020. [Online]. Available: https://doi.org/10.1109/icc40277.2020.9148961 [23] W. Luo, X. Huang, and Y. Fang, “Optimization in RIS-empowered wireless networks,” in Encyclopedia of Optimization . P. M. Pardalos and O. A. Prokopyev, Eds., Cham: Springer Nature Switzerland, pp. 1– 10, 2025, doi: 10 .1007 /978 − 3 − 030 − 54621 − 2 476 − 1. [Online]. Available: https://doi.org/10.1007/978-3-030-54621-2 476-1 [24] N. Panuganti, P. Ranjan, and A. Shukla, “Impact of metaheuristic optimization algorithms on wireless network coverage enhancement with reconfigurable intelligent surfaces,” Int. J. Commun. Syst. , vol. 38, no. 5, p. e70026, Mar. 2025. [Online]. Available: https://doi.org/10.1002/dac. 70026 [25] E. A. Zaoutis, G. S. Liodakis, A. T. Baklezos, C. D. Nikolopoulos, M. P. Ioannidou, and I. O. Vardiambasis, “6G wireless communications and AI-controlled reconfigurable intelligent surfaces: From supervised to federated learning,” Appl. Sci. (MDPI) , vol. 15, no. 6, p. 3252, Mar. 2025. [Online]. Available: https://doi.org/10.3390/app15063252 [26] X. Cheng, B. Liu, X. Liu, and X. Cai, “Large wireless foundation models: Stronger over bigger,” arXiv:2601.10963 , Jan. 2026. [Online]. Available: https://arxiv.org/abs/2601.10963 [27] M. Ghassemi, S. F. Mobarak, H. Zhang, A. Afana, A. B. Sediq, and M. Erol-Kantarci, “Foundation model-aided deep reinforcement learning for RIS-assisted wireless communication,” in Proc. IEEE PIMRC , 2025, pp. 1–6. [Online]. Available: https://doi.org/10.1109/pimrc62392.2025. 11274561 [28] M. Ghassemi, H. Zhang, A. Afana, A. B. Sediq, and M. Erol-Kantarci, “Foundation model-aided hierarchical deep reinforcement learning for blockage-aware link in RIS-assisted networks,” arXiv:2602.09157 ,Feb. 2026. [Online]. Available: https://arxiv.org/abs/2602.09157 [29] J. Zheng, R. Zhang, D. Niyato, H. Zhang, J. Wang, H. Du, J. Kang, and Z. Xiong, “Large language model (LLM)-enabled reinforcement learning for wireless network optimization,” IEEE Commun. Mag. , vol. 64, no. 4, pp. 82–89, 2026. [Online]. Available: https://doi.org/10.1109/mcom.001. 2500384 [30] H. Li, M. Xiao, K. Wang, R. Schober, D. I. Kim, and Y. L. Guan, “ComAgent: Multi-LLM based agentic AI empowered intelligent wire-less networks,” arXiv:2601.19607 , 2026. [Online]. Available: https: //arxiv.org/abs/2601.19607 [31] Z. Xiao, T. Tao, C. Ye, Y. Hu, Y. Feng, T. Jiao, and L. Cai, “Towards native intelligence: 6G-LLM trained with reinforcement learning from NDT feedback,” arXiv:2601.09992 , Jan. 2026. [Online]. Available: https://arxiv.org/abs/2601.09992 [32] H. Zou, Q. Zhao, S. Lasaulce, C. Zhang, Y. Tian, L. Bariah, F. Bader, and M. Debbah, “Large language models in 6G from standard to on-device networks,” Nat. Rev. Electr. Eng. , vol. 3, pp. 123–134, Jan. 2026. [Online]. Available: https://doi.org/10.1038/s44287-025-00239-6 [33] Y. Sheng, J. Wang, L. Liang, H. Ye, and S. Jin, “A graph foundation model for wireless resource allocation,” arXiv:2604.07390 , Apr. 2026. [Online]. Available: https://arxiv.org/abs/2604.07390 [34] F. Jiang, Y. Peng, L. Dong, K. Wang, K. Yang, C. Pan, D. Niyato, and O. A. Dobre, “Large language model enhanced multi-agent systems for 6G communications,” IEEE Wireless Commun. , vol. 31, no. 6, pp. 48– 55, Dec. 2024. [Online]. Available: https://doi.org/10.1109/mwc.016. 2300600 [35] M. Xu, D. Niyato, J. Kang, Z. Xiong, S. Mao, Z. Han, D. I. Kim, and K. B. Letaief, “When large language model agents meet 6G networks: Perception, grounding, and alignment,” IEEE Wireless Commun. , vol. 31, no. 6, pp. 63–71, 2024. [Online]. Available: https://doi.org/10.1109/mwc. 005.2400019 [36] Y. Wang, Y. Xu, C. Zhang, Z. Chen, M. Dai, H. Wang, B. Liu, D. He, and M. Tao, “Channel estimation for RIS-assisted mmWave systems via diffusion models,” IEEE Commun. Lett. , vol. 30, pp. 597–601, 2026. [Online]. Available: https://doi.org/10.1109/lcomm.2025.3645078 [37] W. Tong, W. Xu, F. Wang, W. Ni, and J. Zhang, “Diffusion model-based channel estimation for RIS-aided communication systems,” IEEE Wireless Commun. Lett. , vol. 13, no. 9, pp. 2586–2590, Sep. 2024. [Online]. Available: https://doi.org/10.1109/lwc.2024.3431525 [38] D. Fan, R. Meng, X. Xu, Y. Liu, G. Nan, C. Feng, S. Han, S. Gao, B. Xu, D. Niyato, T. Q. S. Quek, and P. Zhang, “Generative diffusion models for wireless networks: Fundamental, architecture, and state-of-the-art,” arXiv:2507.16733 , Jul. 2025. [Online]. Available: https://arxiv. org/abs/2507.16733 [39] K. K. Patel, M. Chakraborty, E. Sharma, and S. K. Singh, “Generative AI-driven phase control for RIS-aided cell-free massive MIMO sys-tems,” arXiv:2602.11226 , Feb. 2026. [Online]. Available: https://arxiv. org/abs/2602.11226 [40] K. Wang, B. Yang, Y. Lei, Z. Li, Z. Yu, X. Cao, B. Guo, G. C. Alexan-dropoulos, D. Niyato, M. Debbah, and Z. Han, “Trajectory-aware multi-RIS activation and configuration: A Riemannian diffusion method,” 
+
+arXiv:2602.07937 , Feb. 2026. [Online]. Available: https://arxiv.org/abs/ 2602.07937 [41] J. Zhang, Y. Ni, J. Li, G. Chen, Z. Wang, L. Shi, S. Jin, W. Chen, and H. V. Poor, “Decision transformers for RIS-assisted systems with dif-fusion model-based channel acquisition,” arXiv:2501.08007 , Jan. 2025. [Online]. Available: https://arxiv.org/abs/2501.08007 [42] N. Hassan, X. Fernando, and H. Yanikomeroglu, “Quantum graph neural networks for double-sided reconfigurable intelligent surface op-timization,” arXiv:2604.10453 , Apr. 2026. [Online]. Available: https: //arxiv.org/abs/2604.10453 [43] G. Rexhepi, H. S. Rou, and G. T. F. de Abreu, “Quantum manifold optimization: A design framework for future communications systems,” 
+
+arXiv:2504.09667 , Apr. 2025. [Online]. Available: https://arxiv.org/abs/ 2504.09667 [44] N. Hassan, X. Fernando, and H. Yanikomeroglu, “Path-based quantum meta-learning for adaptive optimization of reconfigurable intelligent surfaces,” arXiv:2604.17690 , Apr. 2026. [Online]. Available: https:// arxiv.org/abs/2604.17690 [45] M. O. Butt, N. Waheed, T. Q. Duong, and W. Ejaz, “Quantum-inspired resource optimization for 6G networks: A survey,” IEEE Commun. Surveys Tuts. , vol. 27, no. 5, pp. 2973–3019, 2025. [Online]. Available: https://doi.org/10.1109/comst.2024.3519865 [46] M. Liu, C. Huang, A. Alhammadi, M. Di Renzo, M. Debbah, and C. Yuen, “Beamforming design and association scheme for multi-RIS multi-user mmWave systems through graph neural networks,” IEEE Trans. Wireless Commun. , vol. 24, no. 9, pp. 7940–7954, 2025. [Online]. Available: https://doi.org/10.1109/twc.2025.3563529 [47] J. Chen, F. Wang, G. Han, X. Wang, and V. K. N. Lau, “GNN based joint beamforming design for extremely large-scale RIS assisted near-field ISAC systems,” arXiv:2603.01379 , Mar. 2026. [Online]. Available: https://arxiv.org/abs/2603.01379 [48] H. Tang, J. Zhang, Z. Zhao, H. Wu, H. Sun, and P. Jiao, “Joint optimization based on two-phase GNN in RIS- and DF-assisted MISO systems with fine-grained rate demands,” arXiv:2506.02642 , Jun. 2025. [Online]. Available: https://arxiv.org/abs/2506.02642 [49] W. Jin, J. Zhang, C.-K. Wen, S. Jin, X. Li, and S. Han, “Low-complexity joint beamforming for RIS-assisted MU-MISO systems based on model-driven deep learning,” IEEE Trans. Wireless Commun. , vol. 23, no. 4, pp. 3754–3768, 2024. [Online]. Available: https://doi.org/10.1109/twc. 2023.3336742 [50] M. H. Dinan and A. Farhang, “RIS-assisted OTFS commu-nications: Phase configuration via received-energy maximization,” 
+
+arXiv:2404.07759 , Apr. 2024. [Online]. Available: https://arxiv.org/abs/ 2404.07759 [51] R. Ouchikh, T. Chonavel, A. A¨ ıssa-El-Bey, and M. Djeddou, “Coef-ficients optimization and low-complexity equalization for OTFS-RIS system,” in Proc. IEEE Middle East Conf. Commun. Netw. (MECOM) ,Nov. 2025. [Online]. Available: https://doi.org/10.1109/mecom67453. 2025.11439645 [52] S. McWade and A. Farhang, “Comparison of OTFS and OFDM for RIS-aided systems in the presence of phase noise,” arXiv:2602.12804 ,Feb. 2026. [Online]. Available: https://arxiv.org/abs/2602.12804 [53] V. Saiprudhvi and H. Subramaniyam, “Hybrid PSO-GD phase opti-mization for RIS-assisted AFDM systems,” Phys. Commun. , vol. 73, Art. 102891, Oct. 2025. [Online]. Available: https://www.sciencedirect. com/science/article/pii/S1874490725002940 [54] A. Megahed, A. M. Abd El-Haleem, M. M. Elmesalawy, and I. I. Ibrahim, “Deep learning optimization of STAR-RIS for en-hanced data rate and energy efficiency in 6G wireless networks,” 
+
+Sci. Rep. , vol. 15, 2025. [Online]. Available: https://doi.org/10.1038/ s41598-025-09774-6 [55] M. Ejaz, G. Jinsong, M. Asim, M. A. Wani, and K. A. Shakil, “Joint phase-shift and power allocation optimization in RIS-enhanced wireless networks: An intelligent framework,” IEEE Open J. Commun. Soc. ,AHMET KAPLAN 21 
+
+vol. 6, pp. 7389–7404, 2025. [Online]. Available: https://doi.org/10. 1109/ojcoms.2025.3602856 [56] N. Q. T. Thoong, A. A. Cheema, S. R. Khosravirad, O. A. Dobre, and T. Q. Duong, “Channel estimation for reconfigurable intelligent surface-aided 6G NOMA systems using CNN-based quantum LSTM model,” in Proc. IEEE 100th Veh. Technol. Conf. (VTC2024-Fall) , 2024, pp. 1– 5. [Online]. Available: https://doi.org/10.1109/vtc2024-fall63153.2024. 10757552 [57] Z.-Q. Luo, W.-K. Ma, A. M.-C. So, Y. Ye, and S. Zhang, “Semidefinite relaxation of quadratic optimization problems,” IEEE Signal Process. Mag. , vol. 27, no. 3, pp. 20–34, May 2010. [Online]. Available: https: //doi.org/10.1109/msp.2010.936019 [58] Y. Li, X. Wang, J. Zhang, and Z. Chen, “Robust optimization for IRS-assisted SAGIN under channel uncertainty,” Future Internet , vol. 17, no. 10, p. 452, 2025. [Online]. Available: https://doi.org/10.3390/ fi17100452 [59] W. Jiang, X. Yuan, and M. Di Renzo, “Hybrid vector message passing for cascaded channel estimation in RIS-aided multi-user MIMO-OFDM systems,” IEEE Trans. Wireless Commun. , vol. 24, no. 5, pp. 4174–4189, 2025. [Online]. Available: https://doi.org/10.1109/twc.2025.3536283 [60] Y. Jin et al. , “Multi-scale attention based channel estimation for RIS-aided massive MIMO systems,” IEEE Trans. Wireless Commun. , vol. 23, no. 4, pp. 3680–3694, 2024. [Online]. Available: https://doi.org/10.1109/ twc.2023.3329387 [61] W. Shen, Z. Qin, and A. Nallanathan, “Deep learning for super-resolution channel estimation in reconfigurable intelligent surface aided systems,” IEEE Trans. Commun. , vol. 71, no. 3, pp. 1491–1503, 2023. [Online]. Available: https://doi.org/10.1109/tcomm.2023.3239621 [62] K. Mataifa et al. , “Machine learning-based channel estimation for multi-RIS-assisted mmWave massive-MIMO OFDM system in a dy-namic environment,” IEEE Trans. Wireless Commun. , vol. 24, no. 6, pp. 5297–5312, 2025. [Online]. Available: https://doi.org/10.1109/twc. 2025.3546671 [63] Y. Ge et al. , “Reconfigurable intelligent surface-based multi-user system: Channel estimation and beamforming design with experimental valida-tion,” IEEE Trans. Commun. , vol. 72, no. 10, pp. 6569–6582, 2024. [Online]. Available: https://doi.org/10.1109/TCOMM.2024.3400909 [64] Y. Zhang et al. , “Model-driven Bayesian reinforcement learning for IRS-assisted massive MIMO-OFDM channel feedback, beamforming, and IRS control,” IEEE Trans. Commun. , vol. 73, no. 1, pp. 1–16, 2025. [Online]. Available: https://doi.org/10.1109/twc.2024.3522098 [65] Z. Wang et al. , “WMMSE-based joint transceiver design for multi-RIS-assisted cell-free networks using hybrid CSI,” IEEE Trans. Wireless Commun. , vol. 24, no. 9, pp. 6310–6325, 2025. [Online]. Available: https://doi.org/10.1109/twc.2025.3562138 [66] Y. Li et al. , “Joint precoding and AP selection for energy-efficient RIS-aided cell-free massive MIMO with multi-agent reinforcement learning,” 
+
+IEEE Trans. Wireless Commun. , vol. 25, no. 2, pp. 1234–1249, 2026. [Online]. Available: https://doi.org/10.1109/twc.2026.3678661 [67] K. Deka et al. , “Beamforming optimization and ADMM-based detection in IRS-aided OTFS systems,” IEEE Trans. Veh. Technol. , vol. 74, no. 5, pp. 7890–7904, 2025. [Online]. Available: https://doi.org/10.1109/ ojcoms.2025.3548271 [68] R. K. Yadav, H. B. Mishra, and S. Mukhopadhyay, “IRS-OTFS systems: Design of reflection coefficients for low-complexity ZF equalizer,” IEEE Trans. Veh. Technol. , vol. 73, no. 11, pp. 17430–17435, 2024. [Online]. Available: https://doi.org/10.1109/tvt.2024.3400529 [69] M. Haghshenas, P. Ramezani, M. Magarini, and E. Bj¨ ornson, “Paramet-ric channel estimation with short pilots in RIS-assisted near- and far-field communications,” IEEE Trans. Wireless Commun. , vol. 24, no. 3, pp. 1890–1905, 2025. [Online]. Available: https://doi.org/10.1109/twc. 2024.3371715 [70] X. Chen et al. , “Channel estimation and detection for intelligent reflect-ing surface-assisted orthogonal time frequency space systems,” IEEE Trans. Wireless Commun. , vol. 23, no. 8, pp. 8419–8433, Aug. 2024. [Online]. Available: https://doi.org/10.1109/twc.2024.3349707 [71] K. Deka et al. , “IRS-assisted OTFS: Beamforming design and signal detection,” arXiv:2408.02219 , Aug. 2024. [Online]. Available: https:// arxiv.org/abs/2408.02219 [72] X. Liu et al. , “A survey on reconfigurable intelligent surface-assisted orthogonal time frequency space systems,” IEEE Open J. Veh. Technol. ,vol. 6, pp. 1881–1909, 2025. [Online]. Available: https://doi.org/10. 1109/ojvt.2025.3573208 [73] S. R. Kumari et al. , “Input-output relation and performance of RIS-aided OTFS with fractional delay-Doppler,” in Proc. IEEE Int. Conf. Commun. (ICC) , 2024, pp. 1–6. [Online]. Available: https://doi.org/10. 1109/lcomm.2022.3214678 [74] R. M. Asif et al. , “Active reconfigurable intelligent surfaces: Expanding the frontiers of wireless communication — A survey,” IEEE Commun. Surveys Tuts. , vol. 26, no. 4, pp. 2361–2407, 2024. [Online]. Available: https://doi.org/10.1109/comst.2024.3423460 [75] D. M. Chian et al. , “Active RIS-assisted MIMO-OFDM system: Analy-ses and prototype measurements,” IEEE Commun. Lett. , vol. 28, no. 1, pp. 208–212, Jan. 2024. [Online]. Available: https://doi.org/10.1109/ lcomm.2023.3333688 [76] S. Hassouna, J. u. R. Kazim, J. Rains, M. A. Jamshed, M. u. Rehman, M. A. Imran, and Q. H. Abbasi, “Trials for RIS-aided wireless com-munications,” in Proc. IEEE Int. Symp. Antennas Propag. (APS) , 2023, pp. 75–76. [Online]. Available: https://doi.org/10.1109/APS.2023.00000 [77] H. Li et al. , “Beyond diagonal reconfigurable intelligent surfaces in wideband OFDM communications: Circuit-based modeling and opti-mization,” IEEE Trans. Wireless Commun. , vol. 23, no. 10, pp. 14780– 14795, 2024. [Online]. Available: https://doi.org/10.1109/twc.2025. 3532616 [78] Y. Liu et al. , “Variational Bayesian multiuser tracking for reconfigurable intelligent surface-aided MIMO-OFDM systems,” IEEE J. Sel. Areas Commun. , vol. 41, no. 12, pp. 3806–3821, 2023. [Online]. Available: https://doi.org/10.1109/jsac.2023.3322792 [79] K. Wang et al. , “Reconfigurable intelligent surface-aided OFDM wire-less communications: Hardware aspects of reflection optimization meth-ods,” IEEE J. Sel. Areas Commun. , vol. 42, no. 6, pp. 1680–1694, 2024. [Online]. Available: https://doi.org/10.1109/mocast54814.2022.9837634 [80] Y. Zhang et al. , “A gradient ascent based low complexity rate maximiza-tion algorithm for intelligent reflecting surface-aided OFDM systems,” 
+
+IEEE Trans. Veh. Technol. , vol. 72, no. 10, pp. 13590–13595, 2023. [Online]. Available: https://doi.org/10.1109/lcomm.2023.3289865 [81] S. Zhang et al. , “Reconfigurable intelligent surfaces: A hardware-centric review of structures, implementation, evaluation, and integration with UAV and ML,” IEEE Commun. Surveys Tuts. , vol. 27, no. 3, pp. 1682– 1720, 2025. [Online]. Available: https://doi.org/10.1109/access.2025. 3575583 [82] J. E. Dennis, Jr. and J. J. Mor´ e, “Quasi-Newton methods, motivation and theory,” SIAM Rev. , vol. 19, no. 1, pp. 46–89, 1977. [Online]. Available: https://doi.org/10.1137/1019005 [83] E. Basar, M. Di Renzo, J. De Rosny, M. Debbah, M.-S. Alouini, and R. Zhang, “Wireless communications through reconfigurable intelligent surfaces,” IEEE Access , vol. 7, pp. 116753–116773, 2019. [Online]. Available: https://doi.org/10.1109/access.2019.2935192 [84] M. Di Renzo et al. , “Smart radio environments empowered by recon-figurable intelligent surfaces: How it works, state of research, and the road ahead,” IEEE J. Sel. Areas Commun. , vol. 38, no. 11, pp. 2450– 2525, Nov. 2020. [Online]. Available: https://doi.org/10.1109/jsac.2020. 3007211 [85] Q. Wu, S. Zhang, B. Zheng, C. You, and R. Zhang, “Intelligent reflecting surface-aided wireless communications: A tutorial,” IEEE Trans. Commun. , vol. 69, no. 5, pp. 3313–3351, May 2021. [Online]. Available: https://doi.org/10.1109/tcomm.2021.3051897 [86] C. Pan et al. , “An overview of signal processing techniques for RIS/IRS-aided wireless systems,” IEEE J. Sel. Topics Signal Process. , vol. 16, no. 5, pp. 883–917, Aug. 2022. [Online]. Available: https://doi.org/10. 1109/jstsp.2022.3195671 [87] K. D. Mata et al. , “Deep contextual bandit and reinforcement learning for IRS-assisted MU-MIMO systems,” IEEE Trans. Veh. Technol. ,vol. 72, no. 7, pp. 9099–9114, 2023. [Online]. Available: https://doi. org/10.1109/tvt.2023.3249353 [88] J. Tong, H. Zhang, L. Fu, A. Leshem, and Z. Han, “Two-stage re-source allocation in reconfigurable intelligent surface assisted hybrid networks via multi-player bandits,” IEEE Trans. Commun. , vol. 70, no. 5, pp. 3526–3541, 2022. [Online]. Available: https://doi.org/10.1109/ tcomm.2022.3161679 [89] N. Zhang et al. , “Queue-aware STAR-RIS assisted NOMA commu-nication systems,” IEEE Trans. Wireless Commun. , vol. 23, no. 5, pp. 4786–4800, 2024. [Online]. Available: https://doi.org/10.1109/twc. 2023.3322381 [90] A. Dejonghe, Z. Altman, F. De Pellegrini, and E. Altman, “De-sign and cross-layer optimization of low cost RIS-assisted commu-nication systems,” IEEE Trans. Wireless Commun. , vol. 23, no. 10, pp. 14230–14244, 2024. [Online]. Available: https://doi.org/10.1109/ twc.2024.3404231 [91] S. Zhang et al. , “Algorithm unrolling-based distributed optimization for RIS-assisted cell-free networks,” IEEE J. Sel. Topics Signal Process. ,vol. 17, no. 3, pp. 609–624, 2023. [Online]. Available: https://doi.org/ 10.48550/arxiv.2301.02360 AHMET KAPLAN 22 
+
+[92] F. Li, Y. Wang, Z. Lian, and W. Chen, “Efficient spectral efficiency maximization design for IRS-aided MIMO systems via ADMM-APG,” 
+
+arXiv:2510.26279 , Oct. 2025. [Online]. Available: https://arxiv.org/abs/ 2510.26279 [93] S. Wang et al. , “Compressed sensing-based channel estimation for RIS-aided mmWave massive MIMO systems,” IEEE Trans. Veh. Technol. ,vol. 72, no. 12, pp. 16220–16235, 2023. [Online]. Available: https://doi. org/10.1109/globecom42002.2020.9348112 [94] A. Kaplan, “Adversarially-trained deep reinforcement learning for joint anti-jamming and low-probability-of-detection in 6G tactical wave-forms,” in Proc. IEEE ICCST , 2026, pp. 1–6. [95] W. Zhao et al. , “Quantum computing in wireless communications and networking: A tutorial-cum-survey,” IEEE Commun. Surveys Tuts. ,vol. 27, no. 4, pp. 2378–2419, 2025. [Online]. Available: https://doi.org/ 10.1109/COMST.2024.3502762 [96] E. Colella, L. Bastianelli, V. M. Primiani, Z. Peng, F. Moglie, and G. Gradoni, “Quantum optimization of reconfigurable intelligent sur-faces for mitigating multipath fading in wireless networks,” IEEE J. Multiscale Multiphys. Comput. Tech. , vol. 9, pp. 403–414, 2024. [Online]. Available: https://doi.org/10.1109/JMMCT.2024.00000 [97] Q. J. Lim, C. Ross, A. Ghosh, F. W. Vook, G. Gradoni, and Z. Peng, “Quantum-assisted combinatorial optimization for reconfigurable intel-ligent surfaces in smart electromagnetic environments,” IEEE Trans. Antennas Propag. , vol. 72, no. 1, pp. 147–159, 2024. [Online]. Available: https://doi.org/10.1109/TAP.2023.3298134 [98] H. Zangana et al. , “A hybrid quantum-classical optimization model for reconfigurable intelligent surfaces in 6G networks,” Control Syst. Optim. Lett. , vol. 4, no. 1, pp. 1–10, 2026. [Online]. Available: https://doi.org/ 10.59242/csol.276 [99] V. P. Pham et al. , “Joint optimal beamforming and discrete phase shift design for STAR-RIS assisted networks using QAOA-AO,” 
+
+arXiv:2511.03717 , Nov. 2025. [100] E. Colella et al. , “Quantum optimization for electromagnetics: Physics-informed QAOA for reconfigurable intelligent surfaces,” 
+
+arXiv:2605.06048 , May 2026.

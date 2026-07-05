@@ -6,22 +6,26 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-04
-- 运行时间：2026-07-04 21:20:52 UTC
+- 最新运行日期：2026-07-05
+- 运行时间：2026-07-05 21:18:26 UTC
 - 运行状态：成功
-- 本次总论文数：0
-- 精读区：0
-- 速读区：0
+- 本次总论文数：2
+- 精读区：1
+- 速读区：1
 
 ### 今日简报（AI）
-> 今日无新推荐，系统未产出可展示论文。
-- 详情：[/202607/04/README](/202607/04/README)
+今日精读1篇高分论文（9.0）《Geometry-Aware R-Structured Kolmogorov-Arnold Networks》，速读1篇6G波形与RIS优化论文（6.0）。最值得关注的是几何感知KAN网络对复杂几何数据建模的提升，以及6G中联合优化方向。建议优先精读KAN论文，关注其几何先验设计思路。
+- 详情：[/202607/05/README](/202607/05/README)
 
 ### 精读区论文标签
-- 本次无精读推荐。
+1. [Geometry-Aware R-Structured Kolmogorov-Arnold Networks](/202607/05/2607.01449v1-geometry-aware-r-structured-kolmogorov-arnold-networks)  
+   标签：评分：9.0/10、query:channel-nn
+   evidence：提出新的KAN架构（GRS-KAN），融合几何感知
 
 ### 速读区论文标签
-- 本次无速读推荐。
+1. [Optimization Algorithms for Joint OFDM Waveform Design and RIS Configuration in 6G Networks: From Convex Relaxation to Foundation Models](/202607/05/2606.31334v1-optimization-algorithms-for-joint-ofdm-waveform-design-and-ris-configuration-in-6g-networks-from-convex-relaxation-to-foundation-models)  
+   标签：评分：6.0/10、query:channel-nn
+   evidence：综述涵盖通信中的深度学习方法
 
 
 <div class="dpr-home-promo-card">
