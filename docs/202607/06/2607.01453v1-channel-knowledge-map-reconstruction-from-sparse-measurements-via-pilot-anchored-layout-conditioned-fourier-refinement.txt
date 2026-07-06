@@ -1,0 +1,874 @@
+Title: Channel Knowledge Map Reconstruction From Sparse Measurements via Pilot-Anchored Layout-Conditioned Fourier Refinement
+
+URL Source: https://arxiv.org/pdf/2607.01453v1
+
+Published Time: Fri, 03 Jul 2026 00:18:16 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+> SUBMITTED TO IEEE TRANSACTIONS ON WIRELESS COMMUNICATIONS 1
+
+# Channel Knowledge Map Reconstruction From Sparse Measurements via Pilot-Anchored Layout-Conditioned Fourier Refinement 
+
+Zhonghao Jiu, Fan Meng, Yongming Huang, Fellow, IEEE , Hang Zhan, Zening Liu, Xiaohu You, Fellow, IEEE 
+
+Abstract —Channel knowledge maps (CKMs) enable environment-aware wireless systems by providing location-specific channel knowledge, but long-term environmental variations, such as construction, traffic redistribution, and foliage changes, require periodic map refresh. In practice, channel measurements are often sparse and irregular, while environmental knowledge may be limited to coarse layout or topology descriptors. This paper studies CKM reconstruction from sparse measurements. We show that reconstruction pipelines that apply local aggregation or spectral operators directly to a zero-filled pilot grid can entangle the sampling mask with the channel field, allowing structural priors to act on mask-induced distortions before the measurements define a supported radio field. To address this issue, we propose Anchor-CKM, a measurement-first, knowledge-aided reconstruction framework. Anchor-CKM first uses support-aware partial convolutions to construct a pilot-supported representation, and then performs layout-conditioned dual-path Fourier refinement followed by coordinate-based heteroscedastic prediction of the CKM mean and per-location predictive variance. Experiments on transmitter-disjoint DeepMIMO scenarios cover missing ratios from 0.3 to 0.95 , including stringent 5% –10% 
+
+pilot-coverage settings. In explicit-layout outdoor scenarios, Anchor-CKM reduces received-power root-mean-square error (RMSE) by 0.79 –1.33 dB relative to the strongest reproduced baseline, while ablations identify pilot-support stabilization as the largest contributor and layout conditioning as beneficial for line-of-sight/non-line-of-sight (LOS/NLOS) boundary fidelity. 
+
+Index Terms —Channel knowledge maps, sparse measurements, radio map reconstruction, neural operators, predictive variance. 
+
+I. I NTRODUCTION 
+
+# SIXTH-generation (6G) wireless networks are evolving from connectivity-centric systems toward infrastructures characterized by ubiquitous intelligence and sustainability. Beyond higher data rates, lower latency, and broader coverage, 6G is expected to integrate communication, sensing, artificial intelligence (AI), and digital twins to support real-time and controllable network optimization [1], [2]. This shift requires the network to anticipate propagation conditions before each 
+
+This work was supported in part by the National Natural Science Foun-dation of China under Grant Nos. 62225107 and 62201394, the Mobile Information Networks National Science and Technology Major Project under Grant 2025ZD1305000, the Natural Science Foundation on Frontier Leading Technology Basic Research Project of Jiangsu under Grant BK20222001, and the Fundamental Research Funds for the Central Universities under Grant 2242022k60002. (Corresponding author: Yongming Huang) Z. Jiu, Y. Huang, and X. You are with the School of Information Science and Engineering, Southeast University, Nanjing 210096, China. F. Meng, Y. Huang, H. Zhan, Z. Liu, and X. You are also with Purple Mountain Laboratories, Nan-jing 211111, China (e-mail: 230228222@seu.edu.cn; mengfan@pmlabs.com.cn; huangym@seu.edu.cn; zhanxing@pmlabs.com.cn; liuzening@pmlabs.com.cn; xhyu@seu.edu.cn). 
+
+link is explicitly sounded, so that coverage management, handover, scheduling, and beamforming can exploit predicted channel conditions instead of relying solely on instantaneous per-link feedback. Channel knowledge maps (CKMs) [3]–[5] provide a compact form of location-specific channel knowledge for this purpose. A CKM records large-scale propagation attributes over a geographic area, including received power, dominant angles of arrival, delay spread, and blockage statistics, and can be queried at candidate receiver positions. Unlike instantaneous channel state information (CSI), a CKM captures slowly varying, location-indexed propagation knowledge that can be reused across network decisions and digital-twin-assisted optimization. Once available, CKMs can support predictive beam manage-ment, proactive handover, coverage-hole identification, cell association, and network planning [3], [6]. Their practical value therefore depends not only on initial construction accuracy, but also on whether they can be maintained as the environment changes. A CKM cannot be built once and used indefinitely. New construction, seasonal foliage, traffic-pattern changes, and deployment updates alter the effective radio environment, while each transmitter, carrier, or propagation state may require refreshed observations. Exhaustive drive tests, aerial surveys, dense pilot sweeps, and repeated high-fidelity simulations can track such changes, but their labor, spectrum, and coordination costs grow with the deployment area. The 3GPP minimization-of-drive-tests (MDT) initiative alleviates this burden by leverag-ing user-equipment reports [7], [8]; however, these opportunistic measurements are confined to service areas and inherit the spatial bias of user traffic. Consequently, practical CKM refresh must reconstruct or update the map from sparse and irregular spatial measurements rather than idealized dense surveys. We model this setting by discretizing the valid probing region into spatial cells onto which scheduled pilots, mobile-user feedback, and crowd-sourced reports are aggregated, with a binary sampling mask recording which cells are probed. The estimator also has access to quasi-static environmental knowledge, such as coarse layout or topology descriptors, which evolves more slowly than the pilot measurements. The central question is how to exploit this slow prior without allowing it to overrule the limited current measurements.   
+
+> arXiv:2607.01453v1 [eess.SP] 1 Jul 2026 SUBMITTED TO IEEE TRANSACTIONS ON WIRELESS COMMUNICATIONS 2
+> Fig. 1. CKM refresh with sparse probing. Blue cells denote pilot probes; gray/dashed regions are excluded from the probing domain. Zeros at unprobed cells indicate absence of measurement, not physical channel values.
+
+A. Related Work 
+
+Existing CKM and radio-map reconstruction methods pri-marily differ in the priors used to compensate for missing measurements. They broadly fall into four categories: classical spatial reconstruction, learned grid and graph completion, physics-aware operator and implicit field modeling, and reliability-aware reconstruction. We review each category with emphasis on how measurement evidence and structural priors are combined under sparse probing support. 
+
+Classical spatial reconstruction. Geostatistical and model-based methods treat measured cells as samples from a spatial random field. Kriging [9], inverse-distance weighting [10], low-rank matrix completion [11], and compressed sensing [12] can be effective when the sampled support is sufficiently dense and the field is smooth or low-rank over the region of interest. When the measurement support becomes sparse, however, many unobserved cells may be far from any pilot, while local line-of-sight/non-line-of-sight (LOS/NLOS) transitions can violate stationarity or global-structure assumptions. The key risk is that the assumed regularizer, which is fixed before any probe is collected, dominates predictions wherever nearby measurements are scarce. 
+
+Learned grid and graph completion. Learning-based methods replace explicit covariance models with learned spatial priors. RadioUNet [13] and PMNet [14] fuse a scene represen-tation with a pilot-observation grid, whereas graph neural networks (GNNs) and attention/message-passing variants [15]– [18] model non-Euclidean measurement or geometry relations; RadioGAT [19] is a representative CKM-oriented graph model. These architectures are valuable for encoding layout and nonlo-cal relations. Under low pilot coverage, however, their earliest aggregation layers often operate on a masked grid or a grid-derived neighborhood graph, so sampling-induced distortions from the zero-filled grid can enter before a propagation field is recovered. 
+
+Physics-aware, operator, and implicit field modeling. Astronger line of work constrains the reconstructed field itself. Diffusion-based radio-map synthesis [20] uses a learned gener-ative prior under measurement constraints. Physics-informed neural networks (PINNs) [21], [22] encode propagation laws as soft constraints, although multi-objective PINN training can be unstable when the governing relation is empirical [23], [24]. Fourier neural operators (FNOs) [25]–[27] exploit low-mode structure in large-scale fields and are beginning to appear in wireless extrapolation and multiple-input multiple-output (MIMO) studies [28], [29]. Implicit representations such as sinusoidal representation networks (SIREN) and neural radiance fields (NeRF) [30], [31] provide continuous prediction over receiver coordinates. These tools strengthen the field prior, but they do not by themselves determine when that prior should act relative to sparse measurement evidence. 
+
+Reliability-aware reconstruction. CKM refresh from sparse measurements also benefits from uncertainty or reliability reporting. Active-learning radio-map reconstruction uses un-certainty to select informative measurement locations when campaigns are costly [32]. Such reporting steers where to measure next, not how priors and current measurements are ordered within the reconstructor. In this paper, predictive variance is used more narrowly as a deployment-side reliability indicator near coverage holes, LOS/NLOS boundaries, and scene edges, while the mean estimate remains constrained by the current sparse measurements. In summary, prior work provides useful reconstruction mechanisms, but CKM refresh from sparse measurements exposes a common ordering vulnerability. Classical estimators can lean heavily on stationarity; learned models can process mask-induced distortions in early layers; and field-level priors can shape the estimate before the measurement support is stabilized. 
+
+B. Contributions 
+
+The above comparison of sparse-reconstruction methods exposes a representation-level limitation in CKM refresh from sparse measurements. The issue is not simply whether the environmental or spectral prior is strong enough, but whether it is applied before the sparse measurements have formed a reliable radio-field representation. As illustrated in Fig. 1, a zero-filled pilot grid contains physical measurements only at the probed cells, while zeros elsewhere denote absence of measurement rather than true channel values. Local aggregation or spectral mixing on this raw grid can therefore entangle the sampling mask with the channel field before a pilot-supported representation has formed. In the spectral view, spatial masking convolves the channel spectrum with a broadband mask spectrum, producing mask-induced spectral distortion. Under uniform random probing with missing ratio ρ, naive spectral debiasing inflates the operator-input variance by a factor of 
+
+ρ/ (1 − ρ), which grows rapidly as the probing budget shrinks. This factor is not a universal penalty for every estimator; it isolates one mechanism by which early aggregation or spectral processing on the raw masked grid can weaken the tie to current measurements. We therefore develop Anchor-CKM, a measurement-first, knowledge-aided framework for CKM refresh from sparse mea-surements. Anchor-CKM adopts a staged reconstruction order: sparse pilots first form a supported radio-field representation, and only then are layout-conditioned spectral and local priors used for propagation-aware refinement. This ordering keeps the slow environmental prior useful without allowing it to replace SUBMITTED TO IEEE TRANSACTIONS ON WIRELESS COMMUNICATIONS 3
+
+the current sparse measurements. The main contributions are summarized as follows.  
+
+> •
+
+CKM refresh from sparse measurements with mask-distortion analysis. We formulate measurement-limited CKM refresh from sparse spatial measurements and coarse layout or topology side information. We show that a zero-filled pilot grid can be mask-dominated rather than a partially observed radio field: the sampling mask disrupts local neighborhoods and aliases with the channel spec-trum. A second-moment analysis under random probing quantifies this effect through the variance-inflation factor 
+
+ρ/ (1 − ρ), providing an analytical rationale for stabilizing pilot support before imposing spectral or environmental priors.  
+
+> •
+
+A pilot-anchored layout-conditioned Fourier frame-work. We propose Anchor-CKM, which implements this ordering through three components: a partial-convolution initializer that forms a pilot-supported field, a layout-conditioned dual-path Fourier operator for propagation-aware refinement, and a coordinate-based heteroscedastic prediction head that outputs both the reconstructed CKM and per-location predictive variance. This design sepa-rates fast pilot-driven refresh from slow environmental encoding.  
+
+> •
+
+Deployment-oriented evaluation. We evaluate Anchor-CKM on transmitter-disjoint DeepMIMO benchmarks with shared sparse-probing masks and explicit layout or topology priors, across missing ratios from 0.3 to 
+
+0.95 , including stringent 5% –10% pilot-coverage settings. At ρ = 0 .9, Anchor-CKM reduces received-power root-mean-square error (RMSE) by 1.33 and 0.79 dB on the explicit-layout O1-28 and O1-60 scenarios relative to the strongest reproduced baseline, markedly improves low-coverage detection and best-cell selection, and obtains the lowest RMSE on the indoor I1-2.5 portability test under a weaker indirect prior. Ablations and robustness checks identify pilot-support stabilization as the largest observed contributor, with layout conditioning improving LOS/NLOS boundary fidelity and predictive variance providing a secondary reliability cue near coverage-hole and noisy-pilot regions. The remainder of this paper is organized as follows. Sec-tion II defines CKM refresh from sparse measurements, includ-ing the valid probing domain, spatial mask, task objective, and direct-reconstruction limitation. Section III presents Anchor-CKM and the analytical motivation for its staged ordering. Section IV reports the experimental evaluation, and Section V concludes the paper. II. S YSTEM MODEL AND TASK FORMULATION 
+
+We first specify CKM refresh from sparse measurements independently of any reconstruction architecture: the CKM field, valid probing domain and mask, missing ratio, estimator information set, and expected-risk objective. We then char-acterize the limitation of direct reconstruction in this regime. Table I lists the main symbols used in the formulation and method description. 
+
+TABLE I MAIN NOTATION .                                                                
+
+> Symbol Meaning Task and channel model
+> Ω,G, N, H, W region, grid graph, cell count, and grid size (N=HW )
+> xi,xTX ,Ωbldg cell/transmitter coordinates and obstacle region
+> PTX , P LS ,¯P , ePtransmit power, large-scale power, trend, and residual field
+> LOS( ·),θ(x), d cLOS indicator, local propagation parameters, and shadowing correlation distance
+> pi,P, F per-cell attributes, CKM field, and feature dimension
+> Ωvalid ,Ωo,Ωuvalid, observed, and unobserved valid sets
+> vi, m i,M,Pobs validity indicator, observation indicator, broadcast mask, and masked CKM
+> ρ, p, S, q ρmissing ratio, probing probability, sampled support, and mask law
+> Estimator, architecture, and loss
+> Π,Genv , f θenvironmental prior, site-layout/topology graph, and estimator
+> DCKM ,Rθ, d CKM data distribution, task risk, and discrepancy metric
+> ˆμ,ˆσ2,ˆPpredicted mean, predictive variance, and reconstructed CKM
+> F,Fu,bZ,∆Fourier transforms, debiased spectrum, and centered mask
+> X0,X(l),Φpilot-supported initial field, operator latent, and propagated latent field
+> LF, C, (Kh, K w), R conditional Fourier-operator depth, latent width, retained modes, and factorization rank
+> γl,βl,Z(l)spec ,Z(l)spat modulation fields and spectral/local updates
+> W(l)spec ,Θ(l)spectral weights and local convolutional branch
+> S,hi,eij , b ij graph-to-grid feature map, node embedding, edge feature, and attention bias
+> Vqry ,xq,ψ, L rff requested receiver set/coordinate, Fourier coordinate features, and their count
+> si,f , Q off , η, r b,f,j clipped log variance, off-grid sample count, interpolated validity, and off-grid residual
+> Ltotal ,Loff , w obs , λ unc total/off-grid losses, observed-cell weight, and variance regularizer
+
+F is the non-unitary 2D discrete Fourier transform (DFT) in (12); Fu is the unitary DFT in Lemma 1 and Corollary 1. 
+
+A. Channel Modeling 
+
+Let Ω ⊂ R2 denote a two-dimensional (2D) deployment region of interest discretized into a regular H × W grid 
+
+G = ( V, E ) with N = HW = |V | nodes. Each node i ∈ V
+
+corresponds to a spatial cell centered at xi ∈ Ω; the transmitter (TX) is located at xTX .The following large-scale model serves as a structural abstraction for CKM behavior; the ray-tracing experiments do not assume it as their data-generating process. Under this abstraction, the received power at cell i is governed by distance-dependent path loss and shadow fading. Using the standard log-distance model [33], 
+
+PLS (xi) = PTX −10 n log 10 
+
+ ∥xi − xTX ∥
+
+r0
+
+
+
++Xσ (xi) [dB] ,
+
+(1) where n is the path-loss exponent, r0 is a reference distance, and Xσ (xi) ∼ N (0 , σ 2SF ) is the shadow-fading term. Shadow fading is spatially correlated and is classically modeled by an exponentially decaying kernel in Gudmundson’s formula-tion [34], so the large-scale field varies slowly over regions in which the propagation condition remains homogeneous. LOS/NLOS transitions introduce sharp local deviations wherever obstacles block the direct path. Let Ωbldg denote the union of obstacle footprints. With the LOS indicator 
+
+LOS( xi, xTX ) = 1(seg( xi, xTX ) ∩ Ωbldg = ∅), the effective SUBMITTED TO IEEE TRANSACTIONS ON WIRELESS COMMUNICATIONS 4
+
+propagation parameters θ(x) = [ n(x), σ SF (x) ] ⊤ become spatially varying, not globally stationary [33], producing sharp local nonstationarity at street corners and building edges that the reconstructor should preserve. The same model also motivates an operator-level bias toward low spatial modes. Away from transmitter singularities and abrupt blockage boundaries, the long-range component of a propagation field is dominated by relatively low spatial frequencies under standard parabolic-wave approximations [35], [36]. This observation motivates low-mode propagation, while the local LOS/NLOS deviations motivate a separate local correction path. These physical abstractions guide Anchor-CKM’s architecture; the model does not solve the governing partial differential equation (PDE) explicitly. Beyond received power, a CKM may collect multiple channel attributes such as dominant angle of arrival (AoA), delay spread, or LOS probability. For feature dimension F , the per-cell attributes are stacked into a multi-attribute field P = {pi}Ni=1 ∈
+
+RN ×F , which is the target of the reconstruction task. The experiments instantiate this definition with a received-power-only setting and a three-target setting containing received power, AoA azimuth, and AoA elevation. 
+
+B. Pilot-Based Sparse Spatial Measurement Model 
+
+Every CKM cell value must ultimately be inferred from physical probes such as pilot snapshots at active users, drive-test campaigns, or opportunistic crowd-sourced measurement reports [3], [6]. Spatial probing density is therefore limited by pilot and signaling budgets, survey costs, and the spatial nonuniformity of measurement locations, so the input to any CKM reconstructor is spatially incomplete by construction. Not every grid cell is physically meaningful: building interiors, out-of-coverage regions, or locations structurally unreachable for user devices must be excluded from the reconstruction target. We introduce a per-cell validity indicator 
+
+vi ∈ { 0, 1} and define the valid domain 
+
+Ωvalid = { i ∈ V : vi = 1 }, (2) so that probing is restricted to Ωvalid . The probing event at a valid cell is captured by a binary observation indicator mi ∈{0, 1}, with mi = 1 iff cell i has been probed. The masked observation is written compactly as 
+
+Pobs = M ⊙ P, (3) where M is the feature-broadcast form of {mi} and ⊙ denotes elementwise multiplication. Zeros in Pobs denote missing entries only through the pair (Pobs , M); they are not interpreted as physical channel values. In the reported experiments, the observation mask is cell-level and is broadcast across the reconstructed attributes; feature-dependent probing masks can be incorporated by replacing M with an attribute-specific mask. The observed and unobserved valid-index sets are 
+
+Ωo = { i : vi = 1 , m i = 1 }, Ωu = { i : vi = 1 , m i = 0 },
+
+(4) and are used both to construct the sparse-measurement input and to evaluate reconstruction error on unobserved valid cells. Sparsity carries several distinct meanings in the wireless literature: sparse angular or delay channel support, sparse training data, low-rank channel structure, or sparse spatial probing locations. To avoid ambiguity, we fix the usage through the following definition and the accompanying probing assumption. 
+
+Definition 1 (Spatial-probing sparsity and missing ratio) .
+
+Throughout this paper, spatial-probing sparsity refers exclu-sively to the fraction of cells in the valid domain Ωvalid at which no measurement is available; it does not describe the angular/delay support of the physical channel, nor the size of the training set. The corresponding missing ratio is 
+
+ρ = |Ωu||Ωvalid | , |Ωo| = (1 − ρ) |Ωvalid |. (5) The formulation applies to any missing ratio; the evaluation in Section IV additionally emphasizes stringent low-coverage settings ρ ∈ [0 .9, 0.95] , i.e., 5% –10% pilot coverage over the valid cells. 
+
+Assumption 1 (Uniform random spatial probing) . For a missing ratio ρ prescribed by Definition 1, the set of probed cells is drawn uniformly at random from the valid domain. Specifically, a subset S ⊂ Ωvalid of cardinality no = |Ωvalid | − ⌊ ρ|Ωvalid |⌋ 
+
+is sampled without replacement, and the observation indicator is set as mi = 1(i ∈ S ). The marginal probing probability is therefore 
+
+Pr( mi = 1 | vi = 1) = no
+
+|Ωvalid | , ∀ i ∈ Ωvalid , (6) which equals 1 − ρ up to integer rounding and is subject to the hard cardinality constraint |Ωo| = no.
+
+Remark 1 (Random and grid-uniform probing) . Uniform random probing serves as a controlled model of irregular support: it produces spatially heterogeneous gaps similar to opportunistic acquisition, while keeping the missing ratio a single adjustable scalar. It does not reproduce the traffic-induced spatial bias of opportunistic reports, which we leave to future work on trajectory-driven sampling. Periodic decimation, by contrast, creates highly structured holes whose mask spectrum differs from that of irregular field measurements. 
+
+C. Problem Formulation 
+
+Together, these elements define the task-level reconstruction problem. In addition to the sparse measurements Pobs and the observation mask M, the estimator has access to a quasi-static environmental prior Π that encodes coarse graph-structured knowledge about the propagation context. Depending on the deployment, Π encodes either explicit site-layout assets such as obstacle boundaries, transmitter locations, visibility relations, and zone adjacency, or weaker topological cues derived from auxiliary signatures when full map assets are unavailable. The key property of Π is its slow evolution relative to instantaneous channel samples. It can complement sparse measurements without being refreshed at the pilot rate, while the reconstruction path itself is recomputed for each pilot-refresh input. The parametric reconstruction model is written as 
+
+( ˆ μ, ˆσ2) = fθ (Pobs , M, Π) , (7) SUBMITTED TO IEEE TRANSACTIONS ON WIRELESS COMMUNICATIONS 5
+
+where ˆμ ∈ RN ×F is the predicted CKM mean and ˆσ2 ∈
+
+RN ×F is an optional spatially varying predictive-variance output used for deployment-side assessment. We use ˆP only when referring to the reconstructed CKM field as a whole. The joint dependence of ˆμ on both (Pobs , M) and Π distinguishes the task from classical interpolation, which does not use environmental side information, and from map synthesis models that are not explicitly anchored to the current sparse measurements. For training, let DCKM denote the distribution of CKM/prior pairs (P, Π) , and let qρ(M | Ωvalid ) denote the probing-mask law induced by Assumption 1. For a sampled mask, the unprobed valid-cell set is written as Ωu(M) to emphasize that the supervised evaluation locations are determined by the same pilot support that forms the input. The resulting task-level risk is 
+
+θ⋆ = arg min  
+
+> θ
+
+E(P,Π) ∼D CKM EM∼qρ(·| Ωvalid )
+
+Rθ (P, M, Π) ,
+
+( ˆ μθ , ˆσ2 
+
+> θ
+
+) = fθ (M ⊙ P, M, Π) ,
+
+(8) where the per-mask reconstruction risk is 
+
+Rθ = 1
+
+|Ωu(M)|
+
+X
+
+> i∈Ωu(M)
+
+dCKM 
+
+ pi, ˆμθ,i , ˆσ2
+
+> θ,i
+
+ . (9) Here dCKM is a generic task-level discrepancy evaluated only on unobserved valid cells, so the objective measures recon-struction instead of probe memorization. Possible instantiations of dCKM include squared-error, angular, probabilistic-scoring, and communication-oriented surrogates. The Anchor-CKM implementation uses a heteroscedastic likelihood with light observed-cell consistency and off-grid consistency terms, while the formulation itself remains independent of that particular loss choice. 
+
+D. Limitations of Direct CKM Reconstruction 
+
+This formulation clarifies why direct reconstruction becomes weakly tied to measurements as the probing support shrinks. Geostatistical interpolation methods such as ordinary kriging [9] and distance-weighted schemes such as inverse-distance weight-ing [10] estimate an unobserved location as 
+
+ˆp(x⋆) = X
+
+> i∈Ωo
+
+λi(x⋆) p(xi), (10) with weights λi(x⋆) obtained from a covariance model or distance kernel; in stringent low-coverage cases such as 5% –
+
+10% pilot coverage, most predictions are supported by only a few distant samples and local LOS/NLOS transitions violate the stationarity assumptions that make these estimators reliable. Compressed sensing and low-rank recovery [11], [12] share the same difficulty in a different form: at high missing ratios, the reconstruction is driven more by the regularizer than by the available measurements, and these methods do not directly incorporate environmental geometry. The same support issue also affects learned direct recon-struction when the first layers operate on the zero-filled observation grid before a pilot-supported representation has been formed. Although the mask M identifies missing entries, local aggregation and spectral transforms are still applied to neighborhoods and frequency statistics shaped by the sampling pattern, so the estimator must separate measured channel values from missing-entry zeros while simultaneously extrapolating the field; at high missing ratios these two roles become difficult to disentangle. The bottleneck is therefore the order in which information enters the model: the sparse pilot support should first be converted into an operator-ready field, with environmental and spectral refinement applied only afterward. Section III develops this ordering and its analytical motivation. III. A NCHOR -CKM M ETHOD 
+
+Anchor-CKM uses a staged, measurement-first reconstruc-tion. Fig. 2 summarizes the two time scales: cached layout-conditioned modulation on the slow scale, and pilot-driven densification, spectral propagation, and continuous location-wise prediction at each refresh. The corresponding modules are a partial-convolution densify-to-space (PConv-DtS) initializer, a conditional Fourier neural operator (C-FNO) modulated by feature-wise linear modulation (FiLM) [37], and a residual multi-layer perceptron (MLP) prediction head with predictive variance for deployment-side assessment. Let X0 denote the pilot-supported initial field, Φ the propagated latent field, xq a continuous receiver coordinate, and Γ = {(γl, βl)}LF 
+
+> l=1
+
+the cached collection of spatial FiLM fields. The Anchor-CKM forward pass factorizes as 
+
+Γ = flayout (Genv ), (Stage 1, cached) 
+
+X0 = fPConv (Pobs , M), (Stage 2, DtS) 
+
+Φ = fC-FNO (X0 | Γ) , (Stage 2, C-FNO) 
+
+  ˆμ(xq), ˆσ2(xq) = fdec (Φ, xq). (Stage 3) (11) Stage 1 can be computed before a pilot snapshot arrives, but the cached fields affect the radio map only after DtS forms 
+
+X0.
+
+A. Analytical Motivation 
+
+The masked pilot grid is a poor direct input to a spectral operator, but the underlying large-scale field becomes suitable for low-mode spectral propagation once pilot support has been stabilized. All expectations in this argument are taken over the random probing mask conditioned on a fixed CKM field 
+
+P, and the DFT is applied featurewise when F > 1. Since 
+
+Pobs = M ⊙ P, the 2D discrete Fourier transform (DFT) of the pilot-observation grid obeys 
+
+F[Pobs ] = F[P ⊙ M] = 1
+
+N F[P] ∗ F [M], (12) so the sampling pattern convolves the true spectrum with a broadband mask spectrum before any operator sees the field. For the second-moment analysis, the valid-cell field and mask are embedded on the H × W grid, with invalid cells excluded from the energy sums. This keeps the DFT notation rectangular while preserving the missing-ratio dependence over Ωvalid . We use a unitary-normalized DFT; under the convention of (12) ,the same ρ-dependence holds up to a constant factor. 
+
+Lemma 1 (Mask-induced spectral distortion under uniform probing) . Under Assumption 1 with p = 1 − ρ and Fu the SUBMITTED TO IEEE TRANSACTIONS ON WIRELESS COMMUNICATIONS 6forward data flow FiLM modulation residual sum +Sparse pilots 5–10% probed cells PConv-DtS support-aware densifier C-FNOlayer(×)LFspectral transport +local correction X()lSpectral Local(33DW)×residual skip X0+GELU X(+1)lCLKKR=32,=3,(,)=(4,12),=4FhwSite-layout encoder & spatial FiLM DtS + Conditional Fourier operator +FiLM conditioning bus Continuous heteroscedastic readout Dense precursor X0Bilinear sampleonΦFourier PE Location vConcat [(),()]ψvqvψ()vqv()Quasi-static · cached prior Real-time · per-snapshot Stage 1 Stage 2 Stage 3 Graph encoder edge-biased attention RBF graph-to-grid nodeembeddings→×HWSpatial FiLM per-layer(,)γβllγβll,Site-layout graph buildings, BS, edges 
+
+> PConv
+
+Φinfrom Stage 2 (̂)μvCKM estimate (mean head) ̂()σ2vpredictive variance (variance head) Residual MLP decoder heteroscedastic head LN + FiLM modulation  
+
+> input: Π
+> input:P ,M obs
+> pilot-supported field
+
+Fig. 2. Anchor-CKM architecture. Stage 1 caches layout-conditioned FiLM fields; Stage 2 applies PConv-DtS densification and FiLM-modulated C-FNO propagation per snapshot; Stage 3 predicts continuous mean and predictive variance. Dashed arrows denote cached conditioning. 
+
+unitary 2D DFT under this embedding, E[Fu[Pobs ]] = p Fu[P]
+
+and 
+
+E
+
+h
+
+∥F u[Pobs ] − p Fu[P]∥2
+
+F
+
+i
+
+= ρ(1 − ρ) ∥P∥2
+
+F . (13) 
+
+Proof. Let ∆ = M − p1. Then E[∆] = 0, giving the mean result. The residual equals Fu[∆ ⊙ P]; by Parseval, its squared norm is P
+
+i∈Ωvalid ∆2
+
+i ∥pi∥22. Taking expectations with E[∆ 2
+
+i ] = 
+
+ρ(1 − ρ) gives the stated expression. 
+
+Corollary 1 (Variance blow-up under naive spectral debiasing) .
+
+With the same notation as Lemma 1, define the naively debiased masked spectrum bZ ≜ p−1Fu[Pobs ]. Then E[bZ] = Fu[P] and 
+
+E
+
+bZ − F u[P] 2
+
+F
+
+
+
+= 1 − pp ∥P∥2
+
+F = ρ
+
+1 − ρ ∥P∥2
+
+F . (14) 
+
+Therefore, as ρ → 1, a spectral input formed by naively debiasing the raw masked grid incurs an increasingly large variance penalty even before model mismatch is considered. Proof. This follows by substituting bZ = p−1Fu[Pobs ] and applying Lemma 1, which scales the residual energy by p−2.The variance factor is already 9 at ρ = 0 .9 and 19 at 
+
+ρ = 0 .95 , which argues against spectral operations on the raw masked grid. Once pilot support has been stabilized, however, the smooth large-scale component is well suited to low-mode propagation. After removing the deterministic distance trend in (1) , the residual shadowing field has the following low-pass spectral form. 
+
+Proposition 1 (Spectral compactness of the large-scale com-ponent) . Let 
+
+PLS (x) = ¯P (x) + Xσ (x), (15) 
+
+where ¯P (x) = PTX − 10 n log 10 
+
+ ∥x − xTX ∥/r 0
+
+ is the deterministic log-distance trend and the shadow-fading term has covariance K(r) = σ2SF e−r/d c with correlation distance 
+
+dc. On any bounded tile that excludes the transmitter singularity, the fluctuation field eP (x) ≜ PLS (x)− ¯P (x) has isotropic power spectral density 
+
+S eP (ν) = 2πσ 2SF d2
+
+c
+
+(1 + d2
+
+c ν2)3/2 , ν = ∥k∥2, (16) 
+
+and therefore satisfies S eP (ν) ≤ C(1 + d2
+
+c ν2)−1 for some constant C > 0. Hence most modeled shadowing energy is concentrated below the characteristic spatial frequency scale 
+
+1/d c, while the high-frequency tail decays polynomially. 
+
+The expression follows from the Hankel transform of the isotropic exponential covariance. Proposition 1 justifies restrict-ing spectral propagation to low modes. Local nonstationarity remains: LOS/NLOS parameters can change abruptly near buildings and street corners, so Anchor-CKM pairs the low-mode C-FNO branch with a local correction path modulated by layout-conditioned FiLM fields. 
+
+B. Stage 1: Cached Site-Layout Encoder and Spatial FiLM 
+
+Stage 1 operates on the cached time scale: it converts quasi-static environmental knowledge, represented as a graph, into per-layer spatial modulation fields (γl, βl) for the conditional Fourier operator. Because the prior changes far more slowly than pilot reports, this stage is computed once and reused across snapshots. 
+
+1) Environmental Prior and Layout Graph: Anchor-CKM realizes the prior Π as a site-layout graph Genv = ( Venv , E env ),which serves as quasi-static environmental graph knowledge. With explicit layouts, nodes represent the transmitter, building SUBMITTED TO IEEE TRANSACTIONS ON WIRELESS COMMUNICATIONS 7
+
+corners, and retained-building centroids; edges encode perime-ters, corner-to-building membership, transmitter visibility, and local geometric context. Without explicit layouts, the same prior representation is constructed from indirect topology zones, such as strongest non-target base station (BS) components on I1-2.5, providing cached side information without target CKM values or current pilots. 
+
+2) Graph Encoder and Spatial FiLM Projection: The layout encoder extracts spatially varying propagation cues from Genv .Node interactions use edge-biased attention: 
+
+αij = softmax 
+
+> j
+
+ (Qh i)⊤(Kh j )
+
+√d + bij 
+
+
+
+,bij = w⊤ 
+
+> e
+
+eij ,
+
+(17) where the additive bias bij injects inter-node geometry di-rectly into the attention logits [38], [39]. The resulting node embeddings are projected to the H × W grid by Gaussian radial-basis-function (RBF) interpolation: 
+
+κi(h, w ) = exp 
+
+
+
+− ∥xhw − xi∥2
+
+2σ2rbf 
+
+
+
+,ωi(h, w ) = κi(h, w )
+
+P|Venv | 
+
+> j=1
+
+κj (h, w ) ,
+
+S(h, w ) =  
+
+> |Venv |
+
+X
+
+> i=1
+
+ωi(h, w ) hi,
+
+(18) where σrbf = exp(˜ σ) is a positive learnable bandwidth. The resulting spatial feature map is then mapped to per-layer FiLM fields: 
+
+ γl(h, w ), βl(h, w ) = Conv 1×1
+
+ S(h, w ), l = 1 , . . . , L F .
+
+(19) This construction is cell-dependent: nearby geometry dominates each cell’s modulation, so different regions receive different operator responses. The entire output {(γl, βl)}LF 
+
+> l=1
+
+is com-puted once and cached; only the pilot-dependent propagation path is recomputed on each refresh. 
+
+C. Stage 2: Pilot-Supported Conditional Fourier Neural Oper-ator 
+
+Stage 2 operates on the fast per-snapshot scale and runs for each current sparse pilot grid. It contains a pilot-support initialization sub-module followed by a C-FNO propagation sub-module that uses the cached FiLM modulation (γl, βl).
+
+1) Pilot-Support Initialization via Densify-to-Space: The first sub-module of Stage 2 turns scattered pilots into an operator-ready, pilot-supported field. Mask distortion arises before any operator propagation, so the support must be stabilized before spectral or local operations act on the latent field. We implement this stabilization using support-aware partial convolutions [40], which update only with valid neighbors and grow the effective support with depth. With sw = ∥Mw∥1 denoting the number of valid entries in the local mask patch, the PConv update at each spatial position is 
+
+x′ =
+
+
+
+k2pc 
+
+sw
+
+W⊤(x ⊙ Mw) + b, if sw > 0,
+
+0, if sw = 0 .
+
+(20) The factor k2pc /s w keeps the response roughly invariant to how much pilot support is available in the receptive field, and the updated mask M′ 
+
+> w
+
+= 1(sw > 0) lets the effective support expand with depth. The three-layer stack used here produces an initial field X0 for C-FNO propagation without treating missing entries as physical channel values; a light observed-cell consistency term during training keeps X0 consistent with the probed cells. 
+
+2) Conditional Fourier Neural Operator: Once the DtS sub-module has stabilized the pilot support, Stage 2 applies the C-FNO with two complementary paths: a global spectral branch for smooth long-range propagation and a local spatial branch for blockage-boundary correction. The spatial FiLM fields (γl, βl) cached from Stage 1 modulate both paths so that the same operator layer can respond differently across LOS corridors and shadow regions. Let X(0) = X0. For layer l = 1 , . . . , L F , the conditioned dual-path propagation evolves as 
+
+Z(l)spec = F−1
+
+W(l)spec ⊙ F (X(l−1) )
+
+
+
+,
+
+Z(l)spat = X(l−1) ⊛ Θ(l),
+
+∆X(l) = γl ⊙ LN 
+
+
+
+Z(l)spec + Z(l)spat 
+
+
+
++ βl,
+
+X(l) = X(l−1) + σGELU 
+
+
+
+∆X(l)
+
+.
+
+(21) Here LN denotes layer normalization, σGELU denotes the Gaussian error linear unit (GELU), F and F−1 are 2D DFTs, 
+
+W(l)spec acts only on the retained Kh × Kw low-frequency modes, and Θ(l) is a local convolutional correction branch. The cell-wise FiLM fields modulate the normalized sum of spectral and spatial responses. In the reported implementation, retained spectral weights are rank-R factorized and the local branch is depthwise separable. After LF layers, Φ = X(LF ).
+
+D. Stage 3: Continuous Location-Wise Prediction with Predic-tive Variance 
+
+To estimate the CKM at an arbitrary receiver location, the spatial coordinate xq = ( x, y ) is encoded via random Fourier features [41]: 
+
+ψ(xq) =  cos(2 πBx q)⊤, sin(2 πBx q)⊤⊤ ∈ R2Lrff , (22) where B ∈ RLrff ×2 is a fixed random matrix; we refer to ψ(xq)
+
+as Fourier coordinate features. Let q(xq) = bilinear( Φ, xq)
+
+denote the interpolated latent feature. The continuous prediction head is expressed as 
+
+z(xq) = ψ(xq)⊤, q(xq)⊤⊤,
+
+h(xq) = Hres (Win z(xq) + bin ) ,
+
+ˆμf (xq) = w⊤ 
+
+> μ,f
+
+h(xq) + bμ,f ,
+
+log ˆ σ2 
+
+> f
+
+(xq) = w⊤ 
+
+> σ,f
+
+h(xq) + bσ,f .
+
+(23) Here Hres is a two-layer residual MLP, and the log-variance output is clipped to [−9, 4] for numerical stability (we use 
+
+clip [a,b ](x) ≜ max {a, min {x, b }} throughout). The prediction head is continuous across arbitrary coordinates without per-scene fitting: the latent field carries the learned propagation rep-resentation, and the coordinate-based head remains lightweight. To train the mean prediction and obtain a predictive-variance output, Anchor-CKM uses a heteroscedastic Gaussian SUBMITTED TO IEEE TRANSACTIONS ON WIRELESS COMMUNICATIONS 8
+
+Algorithm 1 Measurement-first Anchor-CKM inference                                                                 
+
+> Require: Sparse pilots Pobs , mask M, prior Π, requested receiver set Vqry
+> Ensure: {ˆμ(xq),ˆσ2(xq)}xq∈V qry
+> 1: if Γis unavailable or Πhas changed then
+> 2: Build Genv from Π, encode it, project node embeddings to the grid, and cache Γ={(γl,βl)}LF
+> l=1 .3: else
+> 4: Reuse the cached Γ.5: end if
+> 6: Initialize X(0) ←fPConv (Pobs ,M)by DtS. 7: for l= 1 , . . . , L Fdo
+> 8: Compute low-mode spectral propagation and local spatial correction from X(l−1) .9: Modulate the combined update with (γl,βl).10: X(l)←C-FNO l(X(l−1) ;γl,βl).11: end for
+> 12: Φ←X(LF).13: for each requested location xq∈ V qry do
+> 14: Interpolate Φat xqand concatenate Fourier coordinate features. 15: Map the feature vector to mean and predictive variance ( ˆ μ,ˆσ2).16: end for
+
+regression loss on valid nodes, following the scoring-rule form commonly used for aleatoric predictive variance [42]. Let Ωo
+
+and Ωu denote the observed and unobserved valid-node sets. For feature f and either set S ∈ { o, u }, the per-set heteroscedastic negative log-likelihood (NLL) is 
+
+L(S) 
+
+> f
+
+= 1
+
+|ΩS |
+
+X
+
+> i∈ΩS
+
+h 12 e−si,f 
+
+ yi,f − ˆμi,f 
+
+2 + 12 si,f 
+
+i
+
+, (24) where si,f = clip [−8,4] (log ˆ σ2 
+
+> i,f
+
+) further tightens the log-variance clipping range in (23) for gradient stability of the heteroscedastic term, and ˆμi,f is the predicted mean for target 
+
+f at node i. The unobserved term L(u) 
+
+> f
+
+carries the main supervision, whereas L(o) 
+
+> f
+
+is kept deliberately light so that the prediction head remains consistent with probed cells without letting the probed set dominate learning. The reported models are trained with 
+
+Ltotal = X
+
+> f
+
+ L(u) 
+
+> f
+
++ wobs L(o)
+
+> f
+
+ + 1phase2 Loff 
+
++ λunc 
+
+X
+
+> f
+> 1
+> |Ωu|
+
+X
+
+> i∈Ωu
+
+  log ˆ σ2
+
+> i,f
+
+2, (25) where 1phase2 activates the off-grid term only in the second training phase, wobs controls the observed-cell consistency penalty, and λunc bounds the log-variance head. During phase 2, each training tile draws Qoff continuous coordinates xq,b,j 
+
+in the normalized tile domain. Let Ftar denote the set of reconstructed target attributes, Ih[Pf ] denote the bilinear inter-polation of the dense training target, ηb,j the interpolated valid-domain indicator, and rb,f,j = ˆ μf (xq,b,j ) − I h[Pf ]( xq,b,j ).The off-grid term is 
+
+Loff = 1
+
+B|F tar |
+
+> B
+
+X
+
+> b=1
+
+X 
+
+> f∈F tar
+
+P 
+
+> j
+
+ηb,j r2
+
+> b,f,j
+
+P 
+
+> j
+
+ηb,j + ϵ , (26) where the inner sums run over j = 1 , . . . , Q off . This term regularizes interpolation between grid nodes during supervised training only; it is not a PDE residual and is not used at inference, where Anchor-CKM receives only sparse pilots, the mask, and the cached prior. The cached inference flow is listed in Algorithm 1. During training, the forward pass is optimized using the loss in (25) ; during inference, the predicted mean and variance are returned at the requested receiver locations. 
+
+E. Complexity Analysis 
+
+Let N = HW , C be the latent width, LF the number of C-FNO layers, R the spectral rank, and (Kh, K w) the retained modes. With cached layout conditioning, Stage 2 inference costs 
+
+Ccached = O
+
+
+
+LF
+
+ CN log N + C2N + RCK hKw
+
+
+
++ Cpc N
+
+
+
+,
+
+(27) where the terms correspond to fast Fourier transform (FFT) propagation, channel mixing, retained-mode spectral multipli-cation, and the fixed-depth PConv initializer. With fixed width, rank, retained modes, and PConv kernel size, the grid-size scaling is summarized by the compact spectral-operator term 
+
+O(LF CN log N ) used in Table II. If the environmental prior changes, graph encoding and graph-to-grid FiLM projection add 
+
+Cuncached = Ccached + O |Eenv |d2 + N |Venv |d . (28) On the reported O1 tiles, N = 32 ×181 and |Venv | ≪ N , so the grid-domain terms dominate cached inference. Table II reports the cached footprint against reproduced single-pass baselines; diffusion estimators are excluded because their per-inference cost scales with reverse-sampling steps. IV. E XPERIMENTAL EVALUATION 
+
+The evaluation covers whole-field accuracy and downstream decision metrics, robustness to missing ratio and pilot noise, boundary behavior, predictive-variance assessment, and multi-target reconstruction. 
+
+A. Experimental Setup 1) Scenarios and Splits: We evaluate on three DeepMIMO ray-tracing scenarios [43]: O1-28, O1-60, and I1-2.5. The outdoor O1-28 and O1-60 scenes come with explicit layout and form the main matched-scenario benchmark; I1-2.5 lacks comparable explicit layout assets, so we treat it as a portability test under a weaker indirect prior. This indirect prior is built from receiver coordinates, reference BS locations, the identity of the strongest non-target BS at each cell, and the zone adjacency induced by that signature grid. All three splits are transmitter-disjoint, so no transmitter index appears in more than one of the train, validation, and test partitions. On O1-28 and O1-60, we assign transmitters t003 –
+
+t010 , t011 –t012 , and t013 –t014 to the three partitions, yielding 
+
+1360 /340 /340 tiles of size 32 ×181 = 5792 grid nodes each. On I1-2.5, we assign t001 –t008 , t009 , and t010 –t012 in the same order, yielding 192 /24 /72 tiles of size 32 ×201 = 6432 
+
+grid nodes each. At the main-result missing ratio ρ = 0 .9,an O1 test tile contains, on average, 580 observed and 5212 
+
+unobserved valid nodes, while an I1 test tile contains 644 
+
+observed and 5788 unobserved nodes. The per-tile mask is generated by drawing ⌊ρ |Ωvalid |⌋ unobserved cells uniformly at random within the valid domain and treating the remaining valid cells as probed, which matches Assumption 1 up to integer rounding. SUBMITTED TO IEEE TRANSACTIONS ON WIRELESS COMMUNICATIONS 9                                     
+
+> TABLE II CACHED INFERENCE FOOTPRINT ON ONE 32 ×181 O1 TILE .
+> Model Parameters (M) FLOPs (G) Latency (ms) Dominant cost
+> RadioUNet 0.93 0.44 3.42 O(k2C2N)
+> PMNet 0.52 0.84 2.85 O(k2C2N)
+> RadioGAT 0.13 1.53 5.67 O(|E|C2+|V|C2)
+> Anchor-CKM (Ours, cached) 0.27 0.98 2.53 O(LFCN log N)
+> Latency: A100, batch size 1,100 runs after 30 warm-ups. Cached Anchor-CKM excludes Stage 1; use uncached cost only when the prior changes.
+
+2) Baselines: We compare against low-rank matrix com-pletion (LRMC) [11], RadioUNet [13], PMNet [14], Radio-GAT [19], and RadioDiff [20]. All baselines share Anchor-CKM’s observed pilot values, binary masks, transmitter-disjoint split, unobserved-valid-cell evaluator, and validation-tuned training budget. Side information is supplied only through supported input channels or graph features, and no method sees dense target values at inference. Our RadioDiff reproduction is a grid-domain conditional denoising diffusion model with cosine noise scheduling and denoising diffusion implicit model (DDIM) sampling using observation replacement. It tests whether a heavier generative prior is competitive at this data scale and pilot density. 
+
+3) Evaluation Metrics: For ρ = 0 .9, we report RMSE, mean absolute error (MAE), standardized-domain normalized mean-square error ( NMSE z ), and the 90th-percentile absolute error (P90) on unobserved valid nodes; dB improvements are quoted as absolute reductions. P90 captures upper-tail service holes, while Regret@25 and low-coverage F1/recall evaluate candidate-cell selection and coverage-hole flagging, respec-tively. Multi-target experiments report per-target standardized RMSE and their mean. 
+
+4) Training Details: Training uses dense DeepMIMO tiles; inference uses only sparse pilots, the mask, and the envi-ronmental prior. We use a two-phase curriculum, AdamW with cosine annealing, batch size 16 , and early stopping. In phase 2, Anchor-CKM uses Qoff = 1024 continuous off-grid samples per training tile, with loss weights wobs = 0 .1 and 
+
+λunc = 0 .05 . Anchor-CKM O1 results are three-seed means over {42 , 123 , 7} (RMSE std 0.113 /0.102 dB on O1-28/O1-60); baselines use best validation-tuned checkpoints under the same split, mask, and evaluator. The predictive-variance and noisy-pilot assessment tables use fixed evaluation masks and, unless stated, the seed-42 Anchor-CKM checkpoint. All models use PyTorch on NVIDIA A100 hardware. Unless otherwise stated, the reported Anchor-CKM runs use latent width C = 32 , LF = 3 C-FNO layers, retained Fourier modes (Kh, K w) = (4 , 12) , rank-4 spectral factorization, and a three-layer PConv densifier with 3 × 3 kernels and dilations 
+
+(1 , 2, 1) . The layout encoder uses three graph-attention layers with four heads and hidden width 32 , and the location-wise prediction head uses Lrff = 12 random Fourier frequencies, a 
+
+128 -wide residual MLP, and clipped log variance. 
+
+B. Main Performance Analysis 1) Spectral Compressibility: Fig. 3 shows that fewer than 52 
+
+Fourier modes, under 1% of coefficients, carry 90% of O1-60 spatial-variation energy on average. The evaluated O1-60 fields are therefore not globally high-frequency; at ρ = 0 .9–0.95 ,the challenge is recovering low modes from mask-distorted observations while preserving local LOS/NLOS transitions. This supports the low-mode operator bias, with DtS still needed to stabilize pilot support. 
+
+2) Whole-Field Accuracy: Table III reports the main com-parison at ρ = 0 .9. O1-28 and O1-60 are the primary explicit-layout benchmarks; I1-2.5 probes portability under a weaker indirect prior. Relative to PMNet, the strongest reproduced baseline, Anchor-CKM reduces RMSE from 2.045 to 0.720 dB on O1-28 and from 1.781 to 0.988 dB on O1-60. P90 drops from 
+
+3.371 to 1.015 dB on O1-28 and from 2.997 to 1.377 dB on O1-60. The P90 gains are important because upper-tail errors correspond to localized service holes, so the improvement is not confined to easy open-area cells. These gains are consistent with the intended ordering: geometry conditions a pilot-supported representation instead of substituting for the measurement constraint. RadioDiff underperforms under the same transmitter-disjoint split and budget, suggesting that this reproduction is mismatched to the present pilot density and data scale; diffusion priors may remain useful in denser or larger radio-map settings. On I1-2.5, Anchor-CKM uses only the indirect prior yet attains the best RMSE and NMSE z . I1-2.5 has a different target scale and a smoother field, so the unweighted average is only a ranking summary. The narrower margin over RadioUNet ( 0.165 
+
+versus 0.176 dB) should therefore be read as portability under a weaker prior, not as a gain comparable to the outdoor margins or as evidence that all baselines remain measurement-anchored under sparse measurements. 
+
+3) Communication-Oriented Decision Metrics: Map accu-racy matters when it supports downstream decisions. On the O1 test tiles and using the fixed seed-42 checkpoints, we evaluate two decision-oriented metrics: best-cell regret and low-coverage-region detection. Regret@25 measures how far the best ground-truth cell captured by the predicted top-25 
+
+candidate set falls below the true strongest unobserved cell. Low coverage is defined scenario-wise by the lower 10 th percentile of the unobserved-node received-power distribution, so the threshold adapts to the O1-28/O1-60 scales instead of importing a common dBm cutoff. For this detection task, we report the F1 score and recall. Table IV shows that Anchor-CKM improves both decision-oriented metrics on O1-28/O1-60. The largest effect is in low-coverage detection: F1/recall increase from 0.117 /0.062 to 
+
+0.788 /0.982 on O1-28 and from 0.384 /0.238 to 0.879 /0.931 
+
+on O1-60. Regret@25 also decreases on both carriers, indicat-ing that the predicted top-25 set is more likely to retain a strong fallback cell. The whole-tile accuracy improvement therefore appears together with better coverage-hole identification and SUBMITTED TO IEEE TRANSACTIONS ON WIRELESS COMMUNICATIONS 10 
+
+Fig. 3. Fourier compressibility on O1-60: representative CKM and sorted-mode cumulative energy. Bands show tile percentiles; dashed line marks 90% 
+
+energy; orange marker is the C-FNO operating point. TABLE III RECONSTRUCTION ACCURACY AT ρ = 0 .9.                                                                                                                                  
+
+> Method O1-28 (Outdoor) O1-60 (Outdoor)
+> RMSE (dB) ↓MAE (dB) ↓NMSE z↓P90 (dB) ↓RMSE (dB) ↓MAE (dB) ↓NMSE z↓P90 (dB) ↓
+> LRMC 7.288 5.797 1.000 12.216 9.329 7.593 1.000 15.117 RadioUNet 3.566 2.889 0.239 5.659 3.744 2.749 0.161 6.339 RadioDiff 13.662 10.984 3.515 22.540 16.931 13.548 3.295 28.068 RadioGAT 2.256 1.510 0.096 3.295 3.605 2.603 0.149 5.964 PMNet 2.045 1.557 0.079 3.371 1.781 1.229 0.036 2.997
+> Anchor-CKM (Ours) 0.720 0.476 0.010 1.015 0.988 0.663 0.011 1.377 Method I1-2.5 (Indoor) Average (3 scenarios)
+> RMSE (dB) ↓MAE (dB) ↓NMSE z↓P90 (dB) ↓RMSE (dB) ↓MAE (dB) ↓NMSE z↓P90 (dB) ↓
+> LRMC 0.486 0.393 1.000 0.852 5.701 4.594 1.000 9.395 RadioUNet 0.176 0.127 0.132 0.313 2.496 1.922 0.177 4.104 RadioDiff 1.307 1.039 7.216 2.161 10.633 8.524 4.675 17.590 RadioGAT 0.207 0.178 0.180 0.316 2.022 1.430 0.142 3.192 PMNet 0.308 0.275 0.401 0.450 1.378 1.021 0.172 2.273
+> Anchor-CKM (Ours) 0.165 0.124 0.115 0.260 0.624 0.421 0.046 0.884
+
+O1 Anchor-CKM: three-seed means (RMSE std 0.113 /0.102 dB); baselines: validation-selected single runs under the same split, masks, and evaluator. I1-2.5 uses an indirect prior; Average is the unweighted scenario mean for ranking only. TABLE IV BEST -CELL REGRET AND LOW -COVERAGE DETECTION AT ρ = 0 .9.                      
+
+> Scenario Method Regret@25 (dB) ↓
+> F1 score ↑Recall ↑
+> O1-28 PMNet 0.290 0.117 0.062 O1-28 Anchor-CKM 0.170 0.788 0.982
+> O1-60 PMNet 0.287 0.384 0.238 O1-60 Anchor-CKM 0.214 0.879 0.931
+
+Low coverage: bottom 10% of unobserved cells (−115 .50 /−128 .66 dBm on O1-28/O1-60). Regret@25: true-best gap within the predicted top-25 . Seed-42 O1 checkpoints. 
+
+candidate ordering, both relevant to beam fallback and handover protection. 
+
+4) Boundary-Aware Error Analysis: We isolate LOS/NLOS transition behavior using an 8 m near-building band extracted from the O1 building footprints and pool valid unobserved band cells across transmitter-disjoint test tiles. Because only two tiles per carrier contain valid band nodes ( 490 on O1-60; 
+
+980 pooled over O1-28/O1-60), this remains a localized error analysis, not a standalone benchmark. Fig. 4 shows PMNet and RadioUNet smoothing the boundary contrast, while Anchor-CKM preserves a sharper transition and raises predictive standard deviation in the same region. On O1-60, boundary-band RMSE is 1.04 /3.26 /7.69 dB for Anchor-CKM/PMNet/RadioUNet; removing the layout graph raises Anchor-CKM to 1.77 dB. The pooled O1-28/O1-60 ordering is the same ( 0.84 /3.41 /6.84 dB). These results indicate a specific role for Stage 1: layout conditioning is not the main source of whole-field gain, but it helps localize regime transitions after the pilot-supported field has been formed. The predictive standard deviation is used here as a reliability cue around difficult boundaries; it is not evaluated as a separate edge detector. SUBMITTED TO IEEE TRANSACTIONS ON WIRELESS COMMUNICATIONS 11 Sparse pilots (input) Ground truth PMNet prediction RadioUNet prediction Anchor-CKM prediction   
+
+> 8-m boundary band
+> PMNet error
+> Band RMSE 3.88 dB
+> RadioUNet error
+> Band RMSE 9.00 dB
+> Anchor-CKM error
+> Band RMSE 1.70 dB Anchor-CKM predictive σ
+> −2
+> −1
+> 0
+> 1
+> 2
+> Mean-centered power (dB)
+> 0
+> 2
+> 4
+> 6
+> 8
+> 10
+> Absolute error (dB)
+> 0.13
+> 0.14
+> 0.15
+> 0.16
+> 0.17
+> 0.18
+> Predicted  σ
+> O1-60 boundary-band diagnostic (8-m band: 274 cells, 26 observed pilots)
+
+Fig. 4. Boundary-band error analysis on a representative O1-60 tile. Contour: 8-m near-building band; blue dots: pilots. Rows show mean-centered power, band/error maps, and Anchor-CKM predictive standard deviation; panel RMSE values are computed on the displayed tile, while pooled boundary-band RMSEs are reported in the text. TABLE V ABLATION ON O1-60 AT ρ = 0 .9.                        
+
+> Variant RMSE (dB) ∆RMSE (dB) Anchor-CKM (Ours) 0.988 –Sparse measurements
+> Without DtS 1.622 +0 .634
+> Operator/prediction head
+> Without C-FNO 1.414 +0 .426
+> Without Fourier coordinate features 1.337 +0 .349
+> Variance/layout
+> MSE loss / no variance head 1.271 +0 .283
+> With global FiLM 1.143 +0 .155
+> Without layout graph 1.389 +0 .401
+> Layout graph
+> Corner-only nodes 1.102 +0 .114
+> Without edge types 1.151 +0 .163
+> Without centroid links 1.136 +0 .148
+> Without transmitter-visibility edges 1.172 +0 .184
+
+∆RMSE is relative to full Anchor-CKM. Without DtS feeds Pobs 
+
+directly to C-FNO; MSE/no-variance uses MSE and removes the variance head. Same optimizer, schedule, masks, and seed. 
+
+C. Ablation Studies 
+
+Table V tests O1-60 ablations at ρ = 0 .9 under the full model’s seed and geometry setting. Removing DtS causes the largest degradation, increasing RMSE by 0.634 dB; this identifies pilot-support stabilization as the bottleneck. Removing C-FNO or Fourier coordinate features is less damaging but still measurable, indicating that long-range propagation and continuous location-wise prediction matter after the support has been stabilized. The MSE/no-variance variant also degrades the mean estimate, suggesting that the heteroscedastic scoring rule acts as useful training regularization even though predictive variance is not part of the main accuracy objective. Layout variants have smaller effects than removing DtS, but they are consistent with the boundary study: spatial FiLM and graph structure mainly supply local correction near propagation-regime transitions. Overall, the O1-60 ablation is inconsistent with a purely layout-driven explanation of Table III, because removing DtS is more harmful than removing any single layout component. 
+
+D. Robustness and Deployment-Oriented Assessment 1) Missing-Ratio Robustness: We evaluate Anchor-CKM, PMNet, RadioUNet, and RadioGAT at missing ratios 0.3, 0.5,
+
+0.7, 0.9, and 0.95 . Following Remark 1, this random-probing sweep approximates opportunistic reporting, blockage, and trajectory-induced gaps; it is not a full mobility-trace model. Fig. 5 shows that Anchor-CKM degrades more gradually than the reproduced deep baselines as the probing budget shrinks. At ρ = 0 .95 , PMNet and RadioUNet exhibit sharply rising P90 errors, whereas Anchor-CKM’s upper tail grows more slowly, consistent with DtS stabilizing the mask-distorted support before operator propagation. The P90 behavior is especially relevant for CKM refresh from sparse measurements because isolated high-error pockets can remain hidden when only average RMSE is monitored. RadioGAT’s nearly flat I1-2.5 curve should be interpreted cautiously because the weaker indirect prior may encode strong coordinate and topology regularity. We therefore interpret I1-2.5 primarily as a portability check under a weaker prior, not as evidence that all baselines remain measurement-anchored indoors. 
+
+2) Predictive-Variance Assessment and Noisy Pilots: Ta-ble VI summarizes deployment-oriented predictive-variance assessment under the fixed seed-42 O1 protocol. We report expected calibration error (ECE), 90% interval coverage, and Corr (|e|, ˆσ) only as deployment-side indicators of the variance head, not as a full uncertainty-method comparison. On O1-28 and O1-60, ECE values are 0.056 and 0.078 , and nominal 
+
+90% intervals cover 93 .7% and 95 .8% of evaluation nodes. Together with Corr (|e|, ˆσ) values of 0.301 and 0.137 , these quantities indicate useful but imperfect variance estimates; the SUBMITTED TO IEEE TRANSACTIONS ON WIRELESS COMMUNICATIONS 12 0.3 0.5 0.7 0.9 0.95                    
+
+> Missing Ratio ρ
+> 0
+> 2
+> 4
+> 6
+> RMSE (dB)
+> O1-28
+> 0.3 0.5 0.7 0.9 0.95
+> Missing Ratio ρ
+> 0
+> 2
+> 4
+> 6
+> RMSE (dB)
+> O1-60
+> 0.3 0.5 0.7 0.9 0.95
+> Missing Ratio ρ
+> 0.00
+> 0.15
+> 0.30
+> 0.45
+> 0.60
+> RMSE (dB)
+> I1-2.5
+> 0.3 0.5 0.7 0.9 0.95
+> Missing Ratio ρ
+> 0
+> 2
+> 4
+> 6
+> RMSE (dB)
+> Average
+> Anchor-CKM PMNet RadioUNet RadioGAT
+
+(a) RMSE under varying missing ratios. 0.3 0.5 0.7 0.9 0.95                     
+
+> Missing Ratio ρ
+> 0
+> 3
+> 6
+> 9
+> P90 (dB)
+> O1-28
+> 0.3 0.5 0.7 0.9 0.95
+> Missing Ratio ρ
+> 0
+> 3
+> 6
+> 9
+> P90 (dB)
+> O1-60
+> 0.3 0.5 0.7 0.9 0.95
+> Missing Ratio ρ
+> 0.00
+> 0.25
+> 0.50
+> 0.75
+> 1.00
+> P90 (dB)
+> I1-2.5
+> 0.3 0.5 0.7 0.9 0.95
+> Missing Ratio ρ
+> 0
+> 3
+> 6
+> 9
+> P90 (dB)
+> Average
+> Anchor-CKM PMNet RadioUNet RadioGAT
+
+(b) P90 under varying missing ratios. Fig. 5. Missing-ratio robustness. RMSE and P90 are computed on unobserved valid cells for each scenario and the unweighted average. TABLE VI PREDICTIVE -VARIANCE ASSESSMENT AND NOISY -PILOT ROBUSTNESS ON 
+
+O1 AT ρ = 0 .9.                            
+
+> Metric O1-28 O1-60
+> Predictive-variance assessment ECE ↓0.056 0.078 90% interval coverage ↑0.937 0.958 Corr (|e|,ˆσ)↑0.301 0.137 Noisy-pilot RMSE (dB) ↓
+> Anchor-CKM, σnoise = 0 dB 0.720 0.988 Anchor-CKM, σnoise = 3 dB 1.442 1.364 PMNet, σnoise = 3 dB 2.234 2.024
+
+ECE uses 15 bins; coverage is nominal 90% ; pilot noise is additive Gaussian in dB. 
+
+O1-60 correlation is weaker, while the intervals remain mildly conservative without being overconfident. Adding 3-dB Gaussian pilot noise increases Anchor-CKM RMSE from 0.720 to 1.442 dB on O1-28 and from 0.988 
+
+to 1.364 dB on O1-60, but the margin over PMNet at the same noise level is preserved. Combined with the reported correlations, this supports using the predictive variance as a secondary deployment-side indicator rather than a primary accuracy mechanism. 
+
+3) Multi-Target Reconstruction: To verify that Anchor-CKM is not restricted to power reconstruction, we evaluate a three-target CKM setting on O1-28 at ρ = 0 .9 with received power, AoA azimuth (AoA-Az), and AoA elevation (AoA-El). All methods are retrained for this setting, and Table VII reports the standardized RMSE of each target together with their mean. Anchor-CKM has the lowest mean standardized RMSE (0.125 versus PMNet’s 0.270 ) and improves every target, including AoA-Az and AoA-El. On O1-28, this indicates that the stabilized propagated field captures propagation structure useful for angular targets as well; transfer across more scenarios is left to future work. V. C ONCLUSION 
+
+We presented Anchor-CKM, a measurement-first, knowledge-aided framework for CKM reconstruction from sparse measure-
+
+TABLE VII THREE -TARGET STANDARDIZED RMSE ON O1-28 AT ρ = 0 .9.                            
+
+> Method Mean Power AoA-Az AoA-El
+> LRMC 0.985 0.930 1.012 1.012 RadioUNet 0.372 0.337 0.552 0.226 PMNet 0.270 0.230 0.390 0.192 RadioGAT 0.876 1.165 0.987 0.476 RadioDiff 2.041 2.179 2.055 1.888
+> Anchor-CKM 0.125 0.117 0.157 0.101
+
+Entries are standardized RMSE (lower is better), using each target’s training-set mean and standard deviation. 
+
+ments and coarse environmental knowledge. In stringent low-coverage regimes, zero-filled pilots can form a mask-dominated input rather than a partially observed radio field: mask-induced zeros disrupt local neighborhoods and alias the mask spectrum with the channel spectrum. Anchor-CKM separates pilot-support stabilization, layout-conditioned spectral refinement, and continuous location-wise prediction, so environmental knowledge and spectral operators act only after a pilot-supported representation has been formed. On the explicit-layout outdoor DeepMIMO scenarios, Anchor-CKM reduces received-power RMSE by 0.79 –1.33 dB relative to the strongest reproduced baseline. The indoor I1-2.5 result is best interpreted as a portability test under a weaker indirect prior, where Anchor-CKM obtains the lowest RMSE with a smaller margin. Ablations identify pilot-support stabilization as the largest observed contributor under the tested ablation setting, show that layout conditioning improves LOS/NLOS boundary reconstruction, and indicate that predictive variance provides a secondary reliability cue near coverage-hole and noisy-pilot regions. These observations support a measurement-first, knowledge-aided ordering for CKM maintenance from sparse measurements. The current implementation still assumes uniform random probing and relies on quasi-static layout information. Fu-ture work should test whether the same ordering extends to trajectory-driven sampling, dynamic environments, multi-frequency or three-dimensional CKMs, and closed-loop re-SUBMITTED TO IEEE TRANSACTIONS ON WIRELESS COMMUNICATIONS 13 
+
+source management. REFERENCES [1] X. You, Y. Huang, C. Zhang, J. Wang, H. Yin, and H. Wu, “When AI meets sustainable 6G,” Sci. China Inf. Sci. , vol. 68, no. 1, p. 110301, 2025. [2] L. Li, Y. Xu, Y. Xue, F. Yin, C. Shen, R. Zhang, and T.-H. Chang, “PEMNet: Towards autonomous and enhanced environment-aware mobile networks,” arXiv preprint arXiv:2601.11025 , 2026. [3] Y. Zeng, J. Chen, J. Xu, D. Wu, X. Xu, S. Jin, X. Gao, D. Gesbert, S. Cui, and R. Zhang, “A tutorial on environment-aware communications via channel knowledge map for 6G,” IEEE Commun. Surveys Tuts. , vol. 26, no. 3, pp. 1478–1519, 2024. [4] S. H. Lim, S. Kim, B. Shim, and J. W. Choi, “Deep learning-based beam tracking for millimeter-wave communications under mobility,” IEEE Trans. Commun. , vol. 69, no. 11, pp. 7458–7469, Nov. 2021. [5] R. Du, Z. Wei, Z. Yang, L. Yang, Y. Zeng, D. W. K. Ng, and J. Yuan, “Channel knowledge map-assisted dual-domain tracking and predictive beamforming for high-mobility wireless networks,” arXiv preprint arXiv:2506.22796 , 2025. [6] B. Feng, M. Zheng, W. Liang, and L. Zhang, “A recent survey on radio map estimation methods for wireless networks,” Electronics , vol. 14, no. 8, p. 1564, 2025. [7] 3GPP, “Radio measurement collection for Minimization of Drive Tests (MDT); Overall description; Stage 2,” 3rd Generation Partnership Project, Technical Specification TS 37.320, Jun. 2025, version 18.4.0, Release 18. [Online]. Available: https://www.3gpp.org/ftp/Specs/archive/ 37 series/37.320/37320-i40.zip [8] W. A. Hapsari, A. Umesh, M. Iwamura, M. Tomala, B. Gyula, and B. S ´ebire, “Minimization of drive tests solution in 3GPP,” IEEE Commun. Mag. , vol. 50, no. 6, pp. 28–36, Jun. 2012. [9] N. Cressie, “The origins of kriging,” Math. Geol. , vol. 22, no. 3, pp. 239–252, 1990. [10] D. Shepard, “A two-dimensional interpolation function for irregularly-spaced data,” in Proc. 1968 23rd ACM Nat. Conf. ACM Press, 1968, pp. 517–524. [11] E. J. Cand `es and B. Recht, “Exact matrix completion via convex optimization,” Found. Comput. Math. , vol. 9, no. 6, pp. 717–772, 2009. [12] E. J. Cand `es, J. Romberg, and T. Tao, “Robust uncertainty principles: Ex-act signal reconstruction from highly incomplete frequency information,” 
+
+IEEE Trans. Inf. Theory , vol. 52, no. 2, pp. 489–509, Feb. 2006. [13] R. Levie, C¸ . Yapar, G. Kutyniok, and G. Caire, “RadioUNet: Fast radio map estimation with convolutional neural networks,” IEEE Trans. Wireless Commun. , vol. 20, no. 6, pp. 4001–4015, Jun. 2021. [14] J.-H. Lee, J. Lee, S.-H. Lee, and A. F. Molisch, “PMNet: Large-scale channel prediction system for ICASSP 2023 first pathloss radio map prediction challenge,” in Proc. IEEE Int. Conf. Acoust., Speech, Signal Process. (ICASSP) , 2023, pp. 1–2. [15] Y. Shen, J. Zhang, S. Song, and K. B. Letaief, “Graph neural networks for wireless communications: From theory to practice,” IEEE Trans. Wireless Commun. , vol. 22, no. 5, pp. 3554–3569, May 2023. [16] G. Corso, L. Cavalleri, D. Beaini, P. Li `o, and P. Veli ˇckovi ´c, “Principal neighbourhood aggregation for graph nets,” in Proc. Adv. Neural Inf. Process. Syst. (NeurIPS) , vol. 33, 2020, pp. 13 260–13 271. [17] Z. Hou, X. Liu, Y. Cen, Y. Dong, H. Yang, C. Wang, and J. Tang, “GraphMAE: Self-supervised masked graph autoencoders,” in Proc. 28th ACM SIGKDD Conf. Knowl. Discov. Data Min. , 2022, pp. 594–604. [18] Z. Jiu, Y. Huang, F. Meng, H. Zhan, Z. Liu, and X. You, “RieIF: Knowledge-driven riemannian information flow for robust spatio-temporal graph signal prediction in 6G wireless networks,” arXiv preprint arXiv:2604.06971 , Apr. 2026. [19] X. Li, S. Zhang, H. Li, X. Li, L. Xu, H. Xu, H. Mei, G. Zhu, N. Qi, and M. Xiao, “RadioGAT: A joint model-based and data-driven framework for multi-band radiomap reconstruction via graph attention networks,” 
+
+IEEE Trans. Wireless Commun. , vol. 23, no. 11, pp. 17 777–17 792, Nov. 2024. [20] X. Wang, K. Tao, N. Cheng, Z. Yin, Z. Li, Y. Zhang, and X. Shen, “RadioDiff: An effective generative diffusion model for sampling-free dynamic radio map construction,” IEEE Trans. Cogn. Commun. Netw. ,vol. 11, no. 2, pp. 738–750, Apr. 2025. [21] M. Raissi, P. Perdikaris, and G. E. Karniadakis, “Physics-informed neural networks: A deep learning framework for solving forward and inverse problems involving nonlinear partial differential equations,” J. Comput. Phys. , vol. 378, pp. 686–707, 2019. [22] L. Liu, X. Chen, Z. Tang, M. Ma, and W. Zhang, “PINN and GNN-based RF map construction for wireless communication systems,” arXiv preprint arXiv:2507.22513 , 2025. [23] S. Wang, Y. Teng, and P. Perdikaris, “Understanding and mitigating gradient flow pathologies in physics-informed neural networks,” SIAM J. Sci. Comput. , vol. 43, no. 5, pp. A3055–A3081, 2021. [24] Z. Xiao, Z. Zhang, Z. Chen, Z. Yang, C. Huang, and X. Chen, “From data-driven learning to physics-inspired inferring: A novel mobile MIMO channel prediction scheme based on neural ODE,” IEEE Trans. Wireless Commun. , vol. 23, no. 7, pp. 7186–7199, Jul. 2024. [25] Z. Li, N. Kovachki, K. Azizzadenesheli, B. Liu, K. Bhattacharya, A. Stuart, and A. Anandkumar, “Fourier neural operator for parametric partial differential equations,” in Proc. Int. Conf. Learn. Represent. (ICLR) , 2021. [26] A. Tran, A. Mathews, L. Xie, and C. S. Ong, “Factorized Fourier neural operators,” in Proc. Int. Conf. Learn. Represent. (ICLR) , 2023. [27] Z. Li, N. Kovachki, C. Choy, B. Li, J. Kossaifi, S. Otta, M. A. Nabian, M. Stadler, C. Hundt, K. Azizzadenesheli, and A. Anandkumar, “Geometry-informed neural operator for large-scale 3D PDEs,” in Proc. Adv. Neural Inf. Process. Syst. (NeurIPS) , vol. 36, 2023, pp. 35 836– 35 854. [28] J. Xiao, J. Wang, Q. Sun, Q. Cui, X. Li, D. Niyato, and C.-L. I, “Learning function-to-function mappings: A Fourier neural operator for next-generation MIMO systems,” arXiv preprint arXiv:2510.04664 , 2025. [29] Y. Gao, X. Wu, J. Jiang, Z. Zhang, Z. Yang, S. Xu, C.-X. Wang, and Z. Han, “Channel extrapolation for MIMO systems with the assistance of multi-path information induced from channel state information,” arXiv preprint arXiv:2601.21524 , 2026. [30] V. Sitzmann, J. Martel, A. Bergman, D. Lindell, and G. Wetzstein, “Implicit neural representations with periodic activation functions,” in 
+
+Proc. Adv. Neural Inf. Process. Syst. (NeurIPS) , vol. 33, 2020, pp. 7462– 7473. [31] B. Mildenhall, P. P. Srinivasan, M. Tancik, J. T. Barron, R. Ramamoorthi, and R. Ng, “NeRF: Representing scenes as neural radiance fields for view synthesis,” in Proc. Eur. Conf. Comput. Vis. (ECCV) , ser. Lecture Notes in Computer Science, vol. 12346. Springer, 2020, pp. 405–421. [32] K. D. Polyzos, A. Sadeghi, W. Ye, S. Sleder, K. Houssou, J. Calder, Z.-L. Zhang, and G. B. Giannakis, “Bayesian active learning for sample efficient 5G radio map reconstruction,” IEEE Trans. Wireless Commun. ,vol. 23, no. 12, pp. 19 382–19 396, Dec. 2024. [33] T. S. Rappaport, Wireless Communications: Principles and Practice ,2nd ed. Upper Saddle River, NJ, USA: Prentice Hall PTR, 2002. [34] M. Gudmundson, “Correlation model for shadow fading in mobile radio systems,” Electron. Lett. , vol. 27, no. 23, pp. 2145–2146, Nov. 1991. [35] M. F. Levy, Parabolic Equation Methods for Electromagnetic Wave Propagation , ser. IEE Electromagnetic Waves Series. London, U.K.: Institution of Electrical Engineers, 2000, vol. 45. [36] G. Apaydin and L. Sevgi, “The split-step-fourier and finite-element-based parabolic-equation propagation-prediction tools: Canonical tests, systematic comparisons, and calibration,” IEEE Antennas Propag. Mag. ,vol. 52, no. 3, pp. 66–79, Jun. 2010. [37] E. Perez, F. Strub, H. de Vries, V. Dumoulin, and A. Courville, “FiLM: Visual reasoning with a general conditioning layer,” in Proc. AAAI Conf. Artif. Intell. , vol. 32, no. 1, 2018, pp. 3942–3951. [38] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, Ł . Kaiser, and I. Polosukhin, “Attention is all you need,” in Proc. Adv. Neural Inf. Process. Syst. (NeurIPS) , vol. 30, 2017. [39] C. Ying, T. Cai, S. Luo, S. Zheng, G. Ke, D. He, Y. Shen, and T.-Y. Liu, “Do transformers really perform badly for graph representation?” in Proc. Adv. Neural Inf. Process. Syst. (NeurIPS) , vol. 34, 2021, pp. 28 877–28 888. [40] G. Liu, F. A. Reda, K. J. Shih, T.-C. Wang, A. Tao, and B. Catanzaro, “Image inpainting for irregular holes using partial convolutions,” in Proc. Eur. Conf. Comput. Vis. (ECCV) , ser. Lecture Notes in Computer Science, vol. 11215. Springer, 2018, pp. 89–105. [41] M. Tancik, P. Srinivasan, B. Mildenhall, S. Fridovich-Keil, N. Raghavan, U. Singhal, R. Ramamoorthi, J. Barron, and R. Ng, “Fourier features let networks learn high frequency functions in low dimensional domains,” in Proc. Adv. Neural Inf. Process. Syst. (NeurIPS) , vol. 33, 2020, pp. 7537–7547. [42] A. Kendall, Y. Gal, and R. Cipolla, “Multi-task learning using uncertainty to weigh losses for scene geometry and semantics,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR) , 2018, pp. 7482–7491. [43] A. Alkhateeb, “DeepMIMO: A generic deep learning dataset for millimeter wave and massive MIMO applications,” arXiv preprint arXiv:1902.06435 , 2019.

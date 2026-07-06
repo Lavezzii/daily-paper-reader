@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-07-06 <!--dpr-date:20260706-->
+    * 精读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202607/06/2607.01453v1-channel-knowledge-map-reconstruction-from-sparse-measurements-via-pilot-anchored-layout-conditioned-fourier-refinement" data-sidebar-item="{&quot;title&quot;: &quot;Channel Knowledge Map Reconstruction From Sparse Measurements via Pilot-Anchored Layout-Conditioned Fourier Refinement&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2607.01453v1-channel-knowledge-map-reconstruction-from-sparse-measurements-via-pilot-anchored-layout-conditioned-fourier-refinement&quot;, &quot;score&quot;: &quot;8.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;channel-nn&quot;}], &quot;evidence&quot;: &quot;基于神经网络的信道知识图重建&quot;}">Channel Knowledge Map Reconstruction From Sparse Measurements via Pilot-Anchored Layout-Conditioned Fourier Refinement</a>
   * 2026-07-05 <!--dpr-date:20260705-->
     * 精读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202607/05/2607.01449v1-geometry-aware-r-structured-kolmogorov-arnold-networks" data-sidebar-item="{&quot;title&quot;: &quot;Geometry-Aware R-Structured Kolmogorov-Arnold Networks&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2607.01449v1-geometry-aware-r-structured-kolmogorov-arnold-networks&quot;, &quot;score&quot;: &quot;9.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;channel-nn&quot;}], &quot;evidence&quot;: &quot;提出新的KAN架构（GRS-KAN），融合几何感知&quot;}">Geometry-Aware R-Structured Kolmogorov-Arnold Networks</a>
