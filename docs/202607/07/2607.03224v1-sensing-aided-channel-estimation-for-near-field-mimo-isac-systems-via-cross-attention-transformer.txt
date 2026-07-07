@@ -1,0 +1,599 @@
+Title: Sensing-Aided Channel Estimation for Near-Field MIMO ISAC Systems via Cross-Attention Transformer
+
+URL Source: https://arxiv.org/pdf/2607.03224v1
+
+Published Time: Tue, 07 Jul 2026 00:52:31 GMT
+
+Number of Pages: 6
+
+Markdown Content:
+> 1
+
+# Sensing-Aided Channel Estimation for Near-Field MIMO ISAC Systems via Cross-Attention Transformer 
+
+Peihao Dong, Member, IEEE , Renbin Li, Shen Gao, Shuangshuang Li, Fuhui Zhou, Senior Member, IEEE ,Wei Xu, Fellow, IEEE , and Qihui Wu, Fellow, IEEE 
+
+Abstract —Near-field integrated sensing and communication (ISAC) can deliver the high spatial resolution and transmission capability with the shared spectrum and hardware. Due to the partial overlap between communication scatterers and radar targets, the sensing information can provide valuable priors to enhance the channel estimation while fusing the two heteroge-neous modalities remain challenging. To address this problem, a Cross-Attention Transformer based Channel Estimation Neural Network (CAT-CENet) is developed, which includes a communi-cation pilot branch generating the the Key and Value features and a sensing information branch generating the Query feature. By elaborating the three-module structure, CAT-CENet can focus on features of overlapped targets automatically without need of identifying them in advance. The modality contribution is theoretically analyzed based on the Shapley value to verify the cross-attention gain achieved by CAT-CENet. Simulation results show that CAT-CENet outperforms the state-of-the-art schemes, especially with the higher overlapping proportion, and is robust to the model pruning. 
+
+Index Terms —ISAC, near-field, channel estimation, deep learn-ing, cross-attention, Shapley value 
+
+I. I NTRODUCTION 
+
+The emerging demands of massive connectivity and high-precision environment sensing have intensified challenges of spectrum scarcity and network scalability, which can be po-tentially treated by extremely large-scale MIMO (XL-MIMO) and integrated sensing and communication (ISAC). The XL-MIMO significantly improves the spatial-resolution and multi-plexing capability by enlarging the array size [1], [2], [3]. The ISAC system facilitates sharing the spectrum and hardware via the joint design of communication and sensing functions [4], [5]. The integration of XL-MIMO and ISAC is thus seen as a promising direction for future wireless systems. 
+
+P. Dong, R. Li, S. Li, and Q. Wu are with the College of Electronic and Information Engineering, Nanjing University of Aeronautics and Astronautics, Nanjing 211106, China (e-mail: phdong@nuaa.edu.cn; renbinli@nuaa.edu.cn; lishsh@nuaa.edu.cn; wuqihui2014@sina.com). S. Gao is with the College of Telecommunications and Information En-gineering, Nanjing University of Posts and Telecommunications, Nanjing 210003, China, and also with the National Mobile Communications Re-search Laboratory, Southeast University, Nanjing 211111, China (e-mail: gaoshen@njupt.edu.cn). F. Zhou is with the College of Artifcial Intelligence, Nanjing University of Aeronautics and Astronautics, Nanjing 211106, China (e-mail: zhoufuhui @ieee.org). W. Xu is with the National Mobile Communications Research Laboratory, Southeast University, Nanjing 211111, China (e-mail: wxu@seu.edu.cn). 
+
+In near-field XL-MIMO scenarios, the assumptions of far-field plane-wave propagation no longer hold due to the large physical aperture of antenna arrays. The resulting spherical wavefront leads to distance-dependent channel characteristics and significantly increases channel dimensionality [6]. To address the complexity of such channels, prior studies have explored compressed sensing techniques, including orthogo-nal matching pursuit [7] and bayesian prior estimation [8]. These methods depend on stringent sparsity assumptions and typically entail high computational costs. Meanwhile, deep learning (DL) based approaches have been applied to XL-MIMO channel estimation to reduce complexity and improve performance, but robustness under high-dimensional noisy channels is still limited [9], [10], [11], [12]. In the context of ISAC channel estimation, a tensor-based approach was proposed in [13] to jointly estimate channel state information and target parameters. In [14], a Brownian Bridge-based diffu-sion channel denoising method was applied to massive MIMO ISAC systems. In [15], a three-stage deep learning framework was proposed for intelligent reflecting surface assisted ISAC systems to estimate direct and reflected channels. Since communication scatterers and radar targets often partially overlap [16], the communication channel estimation can be enhanced by using the radar sensing information. However, the inherent modality heterogeneity between the communication and sensing information makes the fusion task intractable and the dependence on the accurate overlapping knowledge exacerbates the challenge. Therefore, a cross at-tention transformer-based channel estimation neural network (CAT-CENet) is proposed in this article. The main novelty and contribution are summarized as follows. 1) To better accommodate the modality heterogeneity, the cross-attention is adopted to fuse the communication and sensing information instead of the widely used self-attention. The overlapped targets need not to be identified in advance since CAT-CENet can focus on their features automatically via the end-to-end learning. 2) CAT-CENet is composed of three modules, which have respective functions and collaborate with each other. The preprocessing module include two branches respectively in charge of generating the Query feature and generating the Key and Value features that can be better grasped via the convolutional embedding operation. The cross-modality fusion module includes the serial cross-attention and dual-attention blocks for each encoder, where the former helps the network     
+
+> arXiv:2607.03224v1 [eess.SP] 3 Jul 2026 2MAntennas
+> ISAC BS XL-MIMO UE
+> Single Antenna
+> Radar Target Communication Scatterer
+> Overlapped Scatterers and targets
+> Fig. 1. The XL-MIMO ISAC system with overlapped scatterers and targets.
+
+focus on features of overlapped targets based on the calculated cross-attention matrix and the latter further fuses the sensing information into the pilot feature from different dimensions of the feature tensor. The post-processing module connects the previous two modules via the residual structure to output the purified channel matrix. 3) A performance metric, Shapley value, is first applied to theoretically quantify the contributions of input tensors corresponding to the communication pilot and sensing infor-mation of different targets, which helps visualize the feature contribution change under different overlapping conditions and thus verify the cross-modality gain. Simulation comparison with the state-of-the-art schemes shows the superiority of the proposed CAT-CENet, which can be enlarged with the higher overlapping proportion. The pruned CAT-CENet can maintain the performance with the reduced model size. II. S YSTEM MODEL 
+
+We consider a near-field time-division duplexing (TDD) XL-MIMO ISAC system model illustrated in Fig. 1, where a base station (BS) with M antennas serves a single-antenna mobile user via an L-path channel while detects K radar targets. With the radar-only sensing mode, the BS trans-mits probing signals and receives the echoes reflected by surrounding targets to estimate their positions. Some radar targets also serve as communication scatterers of the BS-user channel [17]. Denote the communication scatterer set as C = {C1, C 2, . . . , C L} and the sensing target set as 
+
+S = {S1, S 2, . . . , S K }. Then their overlapping relationship can be denoted as D = C ∩ S = {D1, D 2, . . . , D X }, where the set cardinality satisfies 1 ≤ X ≤ min( K, L ). Due to the partial overlap, the radar sensing information is useful to enhance the communication channel estimation. To estimate the channel vector between the user and the BS 
+
+hc ∈ CM ×1, the user transmits the pilot √P x with the power 
+
+P . Then the received pilot signal at the BS y is given by 
+
+y = √P hcx + n, (1) where n ∼ CN  0, σ 2I represents the additive white Gaus-sian noise (AWGN) with variance σ2. In an XL-MIMO ISAC system, the separation of near-field and far-field propagation effects is determined by the Rayleigh distance. Assuming a uniform linear array (ULA) with M antennas and the adjacent antenna spacing d = λ 
+
+> 2
+
+, the Rayleigh distance is given by 
+
+DRay = 2D2a 
+
+> λ
+
+= 12 M 2λ with λ the carrier wavelength, indicat-ing the near-field effect should be considered when the XL-MIMO is used at the BS. Then the near-field communication channel is modeled as 
+
+hc =
+
+r ML
+
+> L
+
+X
+
+> l=1
+
+gla(ϕl, r l), (2) where gl and a(ϕl,r l) = 1√M[e−j 2πλ (rl, 1−rl),. . ., e −j 2πλ (rl, M−rl)]T
+
+respectively denote the path gain and the array response vector at the BS with the azimuth angle of arrival (AoA) 
+
+ϕl ∈ − π 
+
+> 2
+
+, π
+
+> 2
+
+ and the distance rl for the l-th path. Specifically, 
+
+rl and rl,m = pr2 
+
+> l
+
++ δ2
+
+> m
+
+d2 − 2rlδmd sin ϕl represent the distance from the l-th scatterer to the center and the mth antenna of the BS array with δm = 2m−M −12 , m = 1 , . . . , M .The radar sensing is actually a round-trip process of the probing signal, which is transmitted by the BS and then reflected by the targets back to the BS. Thus the radar sensing channel matrix can be modeled as 
+
+Hs =
+
+> K
+
+X
+
+> k=1
+
+ska(θk, v k)aH(θk, v k), (3) where sk and a(θk, v k) ∈ CM ×1 respectively denote the radar cross section (RCS) of the kth target and the array response vector at the BS with the azimuth AoA θk ∈ − π 
+
+> 2
+
+, π
+
+> 2
+
+ and the distance between the kth target and the center of the BS array 
+
+vk.In contrast to the conventional far-field channel mainly depending on the angular information, the near-field chan-nel is determined by not only the path angle but also the path distance and thus has a quite different sparsity domain, which compels traditional methods to identify the far or near field in advance. Though DL-based methods can get rid of this requirement, the network still needs to be elaborated to compensate the performance loss brought by the additional distance information as well as to overcome the challenge of the heterogeneous modality fusion. III. P ROPOSED CAT-CEN ET 
+
+In this section, CAT-CENet centered on the cross-modality fusion is proposed to enhance the communication channel estimation by exploiting the radar sensing information. The network with the three-module structure is first elaborated, after which the complexity is analyzed. Finally, the modality contribution is analyzed based the Shapley value to helps verify the cross-modality gain. 
+
+A. Network Inputs 
+
+By letting x = 1 in (1) without loss of generality, the least square (LS) estimate of hc is expressed by 
+
+˜hc = y
+
+√P = hc + n
+
+√P , (4) which will be refined by CAT-CENet to yield a more accu-rate version. By splitting the real and imaginary parts, ˜hc
+
+and hc are reshaped into tensors ˜Hc ∈ R√M ×√M ×2 and 
+
+Hc ∈ R√M ×√M ×2 to act as the communication input and the label, respectively. 3Convolutional post-processing    
+
+> 9
+> )6)666
+> 9
+> )6
+> 99
+> Conv2D
+> Reshape  Reshape
+> Cross
+> attention
+> Encoder1
+> Conv2D
+> Dual attention
+
+Modality preprocessing Cross-modality fusion     
+
+> Encoder2
+> :
+> Cross
+> attention
+> Dual attention
+> FC
+> FC
+> Dropout ADD
+> Reshape
+> Conv2D ×3
+> FC
+> FC
+> Dropout ADD
+> )6)66
+> 9 9ULZSG^) 6 )UTIGZKTGZK 6XUPKIZ: :XGTYVUYK
+> 3H
+> s
+> ~
+
+A
+
+> c
+> ~
+
+H
+
+> 2
+
+H
+
+> 1
+
+H
+
+> 5
+
+H
+
+> 6
+
+H
+
+> 7
+
+H 8H 9H c
+
+> Ÿ
+
+H                           
+
+> 5H
+> KTi
+> Qi
+> Ki
+> Vi
+> ¥
+> ŒWi¥kVMid
+> ¥
+> ŒW¥kKMid
+> ¥
+> ŒW¥kQMid
+> 4H
+> KTi
+> Qi
+> Ki
+> Vi
+> ¥
+> ŒW¥¥¥¥
+> kQMid
+> ¥
+> ŒW¥¥¥kKMid
+> ¥
+> ŒW
+> i
+> ¥¥¥¥kVMid
+> Ei
+> KTi
+> Qi
+> Ki
+> Vi
+> ¥
+> ŒW¥kQMid
+> ¥
+> ŒW¥¥¥¥kKMid
+> ¥
+> ŒW¥kVMid
+> 2H
+> 1H:
+
+Fig. 2. Illustration of the overall structure of CAT-CENet and Cross-Modality Attention mechanism of Encoder. 
+
+In the ISAC system, the communication channel is es-timated after the initial sensing of targets, also known as target searching, which can be carried out via array signal processing techniques [17]. In this article, we dedicate to en-hancing the communication channel estimation by exploiting the pre-estimated target information with estimation errors incorporated. Specifically, the estimated AoA and distance of 
+
+K targets are denoted as ˆθk = θk − ϵθrk and ˆvk = vk − ϵvk ,respectively, with ϵθrk and ϵvk the corresponding errors for 
+
+k = 1 , ..., K . By splitting the real and imaginary parts, the estimated response vectors a(ˆθk, ˆvk) are reshaped into the tensor ˜Ak ∈ R√M ×√M ×2 for k = 1 , ..., K . By combining these K tensors, the input tensor of the radar sensing branch, 
+
+˜As ∈ R√M ×√M ×2K , is obtained. It is noted that the number of targets, K, can be obtained from the preceding target tracking step and thus is not the additional prior knowledge. The number of scatterers, L, is unknown since the pilot matrix is processed as a whole. The number of overlapped targets, 
+
+X, also needs not to be known since CAT-CENet can identify their features automatically, making CAT-CENet get rid of the dependence on the overlapping knowledge. 
+
+B. Network Structure 
+
+As shown in Fig. 2, CAT-CENet is composed of three modules, which have respective specific functions and collab-orate with each other. The preprocessing module coverts input tensors into more tractable feature maps via the convolutional embedding operation. The cross-modality fusion module plays vital roles in finding and exploiting features corresponding to overlapped targets to enhance the feature extraction of the communication channel. The covolutional post-processing module extracts the noise and outputs the estimated commu-nication channel via the cross-module residual connection. 
+
+1) Modality Preprocessing: The input tensors ˜Hc and ˜As
+
+are respectively processed by the two-dimensional (2D) convo-lutional layer with F 3×3 kernels, yielding two √M ×√M ×
+
+F feature maps. This step acts as the embedding operation transforming input tensors into more tractable features. By combing the first two dimensions, the two feature maps are reshaped into H1 ∈ RM ×F and H2 ∈ RM ×F , respectively. 
+
+2) Cross-modality Fusion: To fully fuse the heterogeneous features H1 and H2, this module includes two encoders, each of which has a cross-attention block and a dual-attention block. The cross-attention block aims to learn structural characteristics of the communication channel, aided by the sensing information. The dual-attention block including the feature map attention and the spatial attention is appended to further fuse the sensing information into the pilot feature from different dimensions of the feature tensor for the efficient noise extraction. Encoder1 starts with the generation of Query, Key and Value matrices. Instead of using the communication and sensing inputs together to calculate each of them, CAT-CENet allocates the generation of Query matrix to the sensing branch by using 
+
+H2 and the generation of Key and Value matrices to the communication branch by using H1 to facilitate the calculation of the cross-attention matrix. To this end, the multi-head cross-attention is adopted with the number of heads J. For the jth head, we have 
+
+Qj = H2WQ 
+
+> j
+
+, Kj = H1WK 
+
+> j
+
+, Vj = H1WV 
+
+> j
+
+, (5) where WQ 
+
+> j
+
+∈ RF ×F , WK 
+
+> j
+
+∈ RF ×F , and WV 
+
+> j
+
+∈ RF ×F
+
+denote the corresponding learnable projection matrices. Then the attention matrix of the jth head is calculated as 
+
+Ej = Softmax Qj KT
+
+> j
+
+√F
+
+!
+
+, (6) which used to capture the common structural feature between the communication and sensing information corresponding to overlapped scatterers. The output of the the jth head is given by 
+
+Zj = Ej Vj , (7) which enhances the feature extraction of overlapped scatterers in the communication information Vi guided by the attention 4
+
+matrix Ej . By concatenating the outputs of all heads, a linear transformation matrix WO ∈ RJF ×F is applied to project the output features back to a compact feature with the original size of M × F , that is 
+
+Z = Concat (Z1, Z2, . . . , Zh)WO. (8) The resulting Z is then added to one of the original inputs H1
+
+via a shortcut connection to form H3 ∈ RM ×F , which im-proves training stability and mitigates issues such as gradient explosion. The output of the cross-attention module H3 is further refined through a dual-attention block across both the feature map and spatial dimensions, which effectively extracts the noise component and thereby improves the accuracy and robustness of channel estimation. In the first feature map attention sub-block, the multi-head self-attention is applied to generate Query, Key and Value matrices based on H3. After that, the operations are similar to those of the cross-attention block mentioned-above, yielding the output of this sub-block 
+
+H′ 
+
+> 4
+
+∈ RM ×F . Then H′ 
+
+> 4
+
+is transposed to H4 ∈ RF ×M to align with the dimension of the following spatial attention sub-block. The processing is similar to the feature map at-tention sub-block. The feature map after the concatenation and projection is transposed to H′ 
+
+> 5
+
+∈ RM ×F , in order to add with H′ 
+
+> 4
+
+to obtain the output H5. After a series of regular operations including two fully-connected (FC) layers, dropout and addition on H5, the output of Encoder1 H6 ∈ RM ×F
+
+is obtained. Encoder2 repeats the operations of Encoder1 by using H6 as the communication input and H2 as the sensing input. This is because the communication pilot information acts the dominating role that needs to be processed constantly for the noise extraction while the sensing information only acts the auxiliary role during the processing. The output feature of Encoder2 is denoted as H7 ∈ RM ×F .
+
+3) Convolutional Post-processing: The feature map H7 is first reshaped into H8 ∈ R√M ×√M ×F and then processed by three successive convolutional layers to obtain H9 ∈
+
+R√M ×√M ×2. Specifically, the first two convolutional layers with 64 3 × 3 kernels are designed to extract the noise component embedded in the channel observations, while the last convolutional layer 2 3 × 3 kernels generates the noise tensor H9. Finally, a cross-module residual connection is applied to subtract the extracted noise from the noisy channel 
+
+˜Hc, obtaining the final channel estimate ˆHc. Unlike the regular channel estimation networks, CAT-CENet benefits from both the residual denoising and auxiliary sensing information via the cross-modality residual backbone. CAT-CENet is trained to minimize the mean squared error loss expressed as 
+
+L = 1
+
+Ntr 
+
+> Ntr
+
+X
+
+> i=1
+
+H(i)c − ˆH(j)c
+
+> 2
+> F
+
+, (9) where Ntr denotes the number of training samples and the superscript ( i) indicates the ith sample with ∥ · ∥ 2 
+
+> F
+
+Frobenius norm. 
+
+C. Complexity Analysis 
+
+This subsection analyzes the inference computational com-plexity of CAT-CENet in terms of floating-point operations                      
+
+> TABLE I MODEL COMPLEXITY COMPARISON
+> Model Non-zero Parameters FLOPs HDF5 MAT-CENet 1.03M 37.01M 27.50M CAT-CENet 0.70M 28.93M 28.70M PCAT-CENet, κ= 0 .50.64M 28.93M 9.63M PCAT-CENet, κ= 0 .80.61M 28.93M 9.63M
+
+(FLOPs), which includes five convolutional layers and two encoders. The overall complexity is expressed as 
+
+CCAT-CENet ∼ O 
+
+ 5X
+
+> i=1
+
+NxNyG2Ci, in Ci, out + 4(5 JM F 2
+
++ 4 JM 2F + Qin Qout )
+
+
+
+,
+
+where Nx and Ny are the length and width of the output feature map, G is the length of side of the kernel, Ci, in and 
+
+Ci, out are numbers of the input and output feature maps of the 
+
+i-th convolutional layer, Qin and Qout are numbers of input and output neurons of FC layers. Since FC and Conv2D layers in CAT-CENet are highly redundant, weight pruning is applied in these layers by sorting weights as per their absolute values and removing the smaller portion according to the pruning ratio κ, yielding PCAT-CENet. From Table I comparing the model complexity, the number of non-zero parameters and FLOPs of CAT-CENet are lower than MAT-CENet [12]. PCAT-CENet further reduces the model size to facilitate the model storage while keeps the estimation accuracy almost unchanged, as shown in Fig. 5 in the following simulation results. 
+
+D. Modality Contribution Analysis 
+
+In this subsection, to justify the cross-modality gain of exploiting the radar sensing information for enhancing the communication channel estimation, the Shapley value, orig-inating from game theory, is introduced. Specifically, the Shapley value is used to measure contributions of the com-munication branch input ˜Hc = [ ˜HRc , ˜HIc] and the sensing branch input ˜Ak = [ ˜AR 
+
+> k
+
+, ˜AI
+
+> k
+
+], k = 1 , . . . , K . With the output 
+
+ˆHc = [ ˆHRc , ˆHIc], the contribution of anyone of these input tensors is given by 
+
+Φ =
+
+> M
+
+X
+
+> i=1
+> M
+
+X
+
+> j=1
+
+(φR 
+
+> i,j
+
++ φI 
+
+> i,j
+
+), (10) where φ∗ 
+
+> i,j
+
+denotes the Shapley value of the ith element in ˆH∗
+
+> c
+
+versus the jth element in ˜H∗ 
+
+> c
+
+or ˜A∗ 
+
+> k
+
+with ∗ ∈ { R, I} repre-senting the real or imaginary part. To reduce the computational complexity, φ∗ 
+
+> i,j
+
+can be approximated as [18] 
+
+φ∗ 
+
+> i,j
+
+≈ E 
+
+> B0∼D, α∼U (0 ,1)
+
+"
+
+(b∗ 
+
+> j
+
+− b∗ 
+
+> 0,j
+
+) ∂f ∗ 
+
+> i
+
+(B0 + α(B − B0)) 
+
+∂b ∗
+
+> j
+
+#
+
+, (11) where B ∈ { ˜Hc, ˜A1, . . . , ˜AK } and B0, randomly sampled from the dataset D, denote the original and reference input tensors, respectively, with b∗ 
+
+> j
+
+and b∗ 
+
+> 0,j
+
+the corresponding jth 5 
+
+> Fig. 3. SHAP-based input contribution visualization under different numbers of overlapped targets.
+
+elements. Besides, f ∗ 
+
+> i
+
+(·) indicates the ith element in ˆH∗ 
+
+> c
+
+and the scalar α uniformly ranging from 0 to 1 accounts for the change of the input from B0 to B. With the quantified contributions of the communication pilot and radar sensing information, Φ, the mechanism of the cross-modality gain can be revealed, as shown by Fig. 3 in the following Section IV. IV. S IMULATION RESULTS 
+
+In this section, simulation results are presented to demon-strate the superiority of the proposed CAT-CENet as well as to verify the cross-modality gain. The simulation parameters are configured as follows: the number of BS antennas M = 256 ,the wavelength λ = 0.01 meters, ϕl ∼ U  − π 
+
+> 2
+
+, π
+
+> 2
+
+, and 
+
+rl ∼ U (10 , 80) meters. The errors of the AoA and distance of sensing targets are modeled as ϵθrk ∼ CN  0, σ 2
+
+> θ
+
+ with 
+
+σθ = 10 −4 and ϵvk ∼ CN  0, σ 2
+
+> v
+
+ with σv = 10 −2. The training, validation, and testing sets include 45,000, 5,000, and 2,000 samples, respectively. The normalized mean square error (NMSE), defined as E{∥ Hc− ˆHc∥2 
+
+> F
+
+/∥Hc∥2 
+
+> F
+
+, is adopted to evaluate the estimation performance. The model is trained using the Adam optimizer with a batch size of 128 and an initial learning rate of 10 −3 for 200 epochs. The baseline schemes for comparison include LS estimation, Linear Mini-mum Mean Square Error (LMMSE) estimation, Polar-domain Simultaneous Orthogonal Matching Pursuit (P-SOMP) [7], Mixed Attention Transformer based Channel Estimation Neu-ral network (MAT-CENet) [12], More-Information-Assisted Generative Adversarial Network (MIA-GAN) [19], and Score-Based Generative Models(SBGM) [20]. To verify the cross-modality gain of CAT-CENet, Fig. 3 visualizes the contributions of input tensors with L = K = 3 
+
+based on the Shapley additive explanation (SHAP) method. In SHAP, the Shapley value formulated in (11) is used to measure the contribution. Specifically, the indices “ C”, “ S1”, “S2”, and “S3” of the horizontal axis in each subfigure denote the communication input tensor and the sensing input tensors corresponding to the first, second, and third targets, respectively. The four subfigures display the change of the -10 -5 0 5 10 15              
+
+> SNR(dB)
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+> 10 1
+> NMSE
+> LS
+> P-SOMP
+> LMMSE
+> MIA-GAN
+> SGM
+> MAT-CENet
+> CAT-CENet-1
+> CAT-CENet-2
+> CAT-CENet-3
+> -10 -5 0510 15
+> SNR(dB)
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+> 10 1
+> NMSE
+> LS
+> P-SOMP
+> LMMSE
+> MIA-GAN
+> SGM
+> MAT-CENet
+> CAT-CENet-1
+> CAT-CENet-4
+> CAT-CENet-6
+> Fig. 4. NMSE performance versus SNR of CAT-CENet and baseline schemes. (a) L=K= 3 . (b) L=K= 6 .
+
+overlapping condition with the number of overlapped targets ranging from zero to three. In Fig. 3(a) with no overlapped targets, the communication pilot contributes almost all the information for the channel estimation while contributions of the three targets are negligible. When one target is overlapped as shown in Fig. 3(b), the contribution of this target increases significantly to 0.3748 and becomes comparable with the communication input, leaving the contributions of other two non-overlapped targets still extremely small. This variation trend keeps for cases of two and three overlapped targets. This phenomenon demonstrates CAT-CENet can identify the features of overlapped targets and fully exploit them to en-hance the communication channel estimation, as shown in the following results. Fig. 4 compares the NMSE performance of CAT-CENet with baseline schemes versus signal-to-noise ratio (SNR) with 
+
+L = K = 3 and L = K = 6 , respectively, where “CAT-CENet-1” indicates one overlapped targets and other legends follow the same notation. As shown in Fig. 4, the proposed CAT-CENet consistently outperforms all baseline schemes under the whole SNR regime. In Fig. 4(a), LS, LMMSE, and P-SOMP based on the traditional estimation theory achieve the ordinary performance. DL-based schemes outperform them significantly, especially in the low SNR. SGM and MAT-CENet achieve the evenly matched performance better than MIA-GAN. CAT-CENet achieves the best estimation perfor-mance and the advantage is remarkable even with only one overlapped targets. When SNR = 10 dB, the NMSE of CAT-CENet-1 can approach to the order of magnitude of 10 −3
+
+while other schemes still maintain at 10 −2. The performance gap will be enlarged if more overlapped targets are considered. The scenario with L = K = 6 follows the similar trends besides the overall performance degradation, revealing the negative impact of the increased number of paths on the estimation accuracy. However, it can be seen that CAT-CENet can compensate this performance loss by comparing CAT-CENet-1 in Fig. 4(b) and SGM in Fig. 4(a), which benefits from the elaborated structure of CAT-CENet enabling the better fusion of the heterogeneous communication and sensing features. 6-10 -5 0 5 10 15      
+
+> SNR(dB)
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+> NMSE
+> CAT-CENet-1
+> PCAT-CENet-1
+> CAT-CENet-2
+> PCAT-CENet-2
+> CAT-CENet-3
+> PCAT-CENet-3
+> -10 -5 0510 15
+> SNR(dB)
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+> NMSE
+> CAT-CENet-1
+> PCAT-CENet-1
+> CAT-CENet-4
+> PCAT-CENet-4
+> CAT-CENet-6
+> PCAT-CENet-6
+
+Fig. 5. Performance comparison between PCAT-CENet and CAT-CENet.(a) 
+
+L = K = 3 . (b) L = K = 6 .
+
+To show the robustness of CAT-CENet to the weight pruning, Fig. 5 compares PCAT-CENet and CAT-CENet for 
+
+L = K = 3 and L = K = 6 following the same notation as Fig. 4, where the pruning ratio κ = 0 .8. From Fig. 5, PCAT-CENet achieves almost the same performance as CAT-CENet while can reduce the model size significantly. It also can be seen CAT-CENet in the scenario of L = K = 3 is more robust to the pruning, which can be even beneficial in the fully overlapped case. V. C ONCLUSION 
+
+In this article, CAT-CENet is proposed to enable the sensing-enhanced channel estimation for near-field ISAC XL-MIMO systems via the cross-modal fusion between the com-munication and sensing information, which is intractable for traditional methods and deep neural networks. The elaborated CAT-CENet can highlight and sufficiently exploit the infor-mation of those overlapped targets through the three-module structure and two-branch processing way. The Shapley value is introduced as the theoretical metric to quantify the input contribution and attempt to reveal the internal mechanism of the cross-modal gain. CAT-CENet can be simplified via the weight pruning with the almost unchanged accuracy. Simulation results show the superiority of CAT-CENet over the state-of-the-art schemes, which is more significant with the higher overlapping proportion. REFERENCES [1] H. Lu et al. , “A tutorial on near-field XL-MIMO communications toward 6G,” IEEE Commun. Surveys Tuts. , vol. 26, no. 4, pp. 2213-2257, Fourthquarter 2024. [2] Z. Wang et al. , “A tutorial on extremely large-scale MIMO for 6G: Fun-damentals signal processing and applications,” IEEE Commun. Surveys Tuts. , 2024. [3] W. Hu, Z. He, W. Xu, Y. Huang, D. W. Kwan Ng and N. Al-Dhahir, “Energy-efficient hybrid beamfocusing for near-field integrated sensing and communication,” IEEE Trans. Signal Process. , 2025. [4] J. Li et al. , “Networked integrated sensing and communications for 6G wireless systems,” IEEE Internet Things J ., vol. 11, no. 17, pp. 29062-29075, 1 Sept.1, 2024. [5] F. Liu et al. , “Integrated sensing and communications: Toward dual-functional wireless networks for 6G and beyond,” IEEE J. Sel. Areas Commun. , vol. 40, no. 6, pp. 1728-1767, June 2022. [6] Z. Wang, X. Mu and Y. Liu, “Near-field integrated sensing and com-munications,” IEEE Commun. Lett. , vol. 27, no. 8, pp. 2048-2052, Aug. 2023. [7] M. Cui and L. Dai, “Channel estimation for extremely large scale MIMO: Far field or near field,” IEEE Trans. Commun. , vol. 70, no. 4, pp. 2663–2677, Apr. 2022. [8] J. Cao, J. Du, M. Han, J. Liu, X. Li, and D. B. da Costa, “Efficient sparse bayesian channel estimation for near-field ultra-scale massive MIMO systems,” IEEE Wireless Commun. Lett. , vol. 12, no. 12, pp.2133–2137, Dec. 2023. [9] W. Xu, Z. Yang, D. W. K. Ng, M. Levorato, Y. C. Eldar and M. Debbah, “Edge learning for B5G networks with distributed signal processing: Semantic communication, edge computing, and wireless sensing,” IEEE J. Sel. Top. Signal Process. , vol. 17, no. 1, pp. 9-39, Jan. 2023. [10] S. Gao, P. Dong, Z. Pan and X. You, “Lightweight deep learning based channel estimation for extremely large-scale massive MIMO systems,” 
+
+IEEE Trans. Veh. Technol. , vol. 73, no. 7, pp. 10750-10754, July 2024. [11] B. Zhou, X. Yang, S. Ma, F. Gao and G. Yang, “Pay less but get more: A dual-attention-based channel estimation network for massive MIMO systems with low-density pilots,” IEEE Trans. Wireless Commun. , vol. 23, no. 6, pp. 6061-6076, June 2024. [12] S. Li and P. Dong, “Mixed attention transformer enhanced channel estimation for extremely large-scale MIMO systems,” in Proc. 16th Int. Conf. Wireless Commun. Signal Process. , Hefei, China, Oct. 2024. [13] R. Zhang et al., “Integrated sensing and communication with massive MIMO: A unified tensor approach for channel and target parameter estimation,” IEEE Trans. Commun. , vol. 23, no. 8, pp. 8571-8587, Aug. 2024. [14] S. Xu, J. Zhang, Y. Xu, C. Li and L. Yang, “Brownian bridge-based diffusion channel denoising for ISAC massive MIMO systems,” IEEE Trans. Cogn. Commun. Netw. , vol. 11, no. 2, pp. 764–776, April 2025. [15] Y. Liu, I. Al-Nahhal, O. A. Dobre and F. Wang, “Deep-learning chan-nel estimation for IRS-assisted integrated sensing and communication system,” IEEE Trans. Veh. Technol. , vol. 72, no. 5, pp. 6181-6193, May 2023. [16] Z. Huang, K. Wang, A. Liu, Y. Cai, R. Du and T. X. Han, “Joint pilot optimization, target detection and channel estimation for integrated sensing and communication systems,” IEEE Trans. Wireless Commun. ,vol. 21, no. 12, pp. 10351-10365, Dec. 2022. [17] F. Liu, C. Masouros, A. P. Petropulu, H. Griffiths, and L. Hanzo, “Joint radar and communication design: Applications, state-of-the-art, and the road ahead,” IEEE Trans. Commun. , vol. 68, no. 6, pp. 3834–3862, Jun. 2020. [18] P. Dong, J. Wang, S. Gao, F. Zhou, and Q. Wu, “Explainable deep learn-ing based adversarial defense for automatic modulation classification,” 
+
+IEEE Internet Things J ., vol. 12, no. 20, pp. 42418-42429, 15 Oct.15, 2025. [19] S. Luan, Y. Peng, C. Li, Z. Zhou, X. Ni and P. Xu, “MIA-GAN: More-information-assisted GAN for channel estimation of massive MIMO systems with one-bit ADCs and inadequate samples,” IEEE Trans. Veh. Technol. , vol. 74, no. 5, pp. 7731-7743, May 2025. [20] M. Arvinte and J. I. Tamir, “MIMO channel estimation using score-based generative models,” IEEE Trans. Commun. , vol. 22, no. 6, pp. 3698-3713, June 2023.

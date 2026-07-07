@@ -1,0 +1,529 @@
+Title: Cognitive Digital Twins for Self-Aware Channel Estimation
+
+URL Source: https://arxiv.org/pdf/2607.04299v1
+
+Published Time: Tue, 07 Jul 2026 02:11:28 GMT
+
+Number of Pages: 5
+
+Markdown Content:
+> JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, JULY 2026 1
+
+# Cognitive Digital Twins for Self-Aware Channel Estimation 
+
+Afan Ali, Ali Arshad Nasir, Senior Member, IEEE , and Daniel Benevides da Costa, Senior Member, IEEE 
+
+Abstract —Artificial intelligence (AI) and machine learning (ML)-based channel estimators silently degrade when propa-gation conditions drift from their training distributions. This letter proposes a model-agnostic cognitive digital twin (CDT) framework that combines a variational autoencoder (VAE) with latent activation monitoring to detect distribution drift and autonomously execute CONTINUE , UPDATE , or RETIRE lifecycle actions without requiring ground-truth channel knowledge. The proposed framework is fully compatible with the AI-native lifecycle management envisioned in 3rd Generation Partnership Project (3GPP). Simulations over various channels demonstrate accurate drift detection and robust channel estimation, consis-tently outperforming conventional offline-trained deep learning estimators under moderate and severe channel drift. 
+
+Index Terms —Channel estimation, digital twin, drift detection, model lifecycle management, variational autoencoder. 
+
+I. I NTRODUCTION 
+
+# THE transition toward Artificial Intelligence (AI)-native air interfaces in 5G-Advanced and 6G has made learned channel estimators viable for practical deployment. In 3rd Generation Partnership Project (3GPP) Release 19, channel estimation enhancement and AI model lifecycle management have both emerged as active standardization topics, reflecting the need to ensure reliable operation post-deployment, not just improved accuracy [1]. Recent deep learning approaches, including residual, attention-based, and transformer architec-tures [2]–[4], consistently outperform classical least squares (LS) and linear minimum mean square error (LMMSE) esti-mators, but implicitly assume the deployment channel matches the training distribution. In practice, wireless propagation continuously evolves as users move across environments, such as, a model trained under Extended Pedestrian (EPA) conditions may later operate under Extended Vehicular A (EVA) or Extended Typical Urban (ETU) statistics, but still continue producing estimates without any indication that its reliability has deteriorated [2], [3]. This silent degradation is evident across recent estimators, for example, attention mechanism and residual network (AttRNet) and symmetric convolutional neural networks (CNN) based channel estimation network (SCCENet) target accuracy alone [2], [3], recurrent estimators degrade once channel dynamics exceed their design assumptions [5], [6], and Channelformer flags autonomous online adaptation as an open challenge [4]. None of these techniques provide a mechanism to detect distribution shift or determine when adaptation is needed. Digital twin (DT) technology offers a natural foundation for this problem by continuously linking the physical channel 
+
+> The authors are with the Interdisciplinary Research Center for Communica-tion Systems and Sensing (IRC-CSS), Department of Electrical Engineering, King Fahd University of Petroleum and Minerals (KFUPM), Dhahran 31261, Saudi Arabia (e-mail: afan.ali@kfupm.edu.sa; anasir@kfupm.edu.sa; danielb-costa@ieee.org).
+
+with its virtual counterpart [7], [8], and recent work on Generative Digital Twin Channels shows that generative AI (GAI) can model wireless channel distributions and synthesize realizations for new environments [9]. Variational autoen-coders (VAEs) are further established as anomaly detectors in DT systems [10], yet existing wireless VAE applications target communication or sensing tasks rather than deployment reliability [11]–[13]. In particular, the closest related work in [14] detects distribution changes via a contrastive VAE, but requires environment-labelled data, maintains an unbounded model ensemble, and lacks structured lifecycle decisions. Consequently, no existing channel estimator jointly achieves label-free drift detection, 3GPP-aligned lifecycle management, and autonomous model replacement. In this letter, we propose a model-agnostic cognitive digital twin (CDT) framework that equips AI and machine learning (ML) channel estimators with continuous self-monitoring and autonomous lifecycle management. While lifecycle manage-ment is a standardized concept in 3GPP [1], no standardized mechanism exists to trigger it autonomously. The proposed CDT provides this mechanism by combining two comple-mentary monitoring signals, i.e., a VAE operating directly on received pilots to detect input distribution shift and an activation drift detector that monitors changes in internal neural representations. Their outputs are fused by a lifecycle controller that autonomously selects the CONTINUE , UPDATE ,or RETIRE actions defined in 3GPP TR 38.843 [1]. When retirement is required, a vector quantization (VQ)-VAE-based generative pipeline characterizes the new propagation environ-ment, synthesizes additional training samples, and validates a replacement estimator. The main contributions of this letter can be summarized as follows:  
+
+> •
+
+It is proposed a CDT framework that couples AI/ML channel estimation with autonomous lifecycle manage-ment to detect and respond to channel distribution drift, addressing the silent performance degradation commonly observed in deployed estimators.  
+
+> •
+
+To the best of our knowledge, this is the first work to employ VAE reconstruction error on received pilot observations as a ground-truth-free drift indicator. Com-bined with latent activation monitoring, it enables robust detection of both input-space and representation-space distribution shifts.  
+
+> •
+
+It is developed a GAI-driven VQ-VAE pipeline for au-tonomous model replacement using synthetic data gener-ated from limited post-drift observations, a capability not available in prior drift-aware channel estimation.           
+
+> arXiv:2607.04299v1 [eess.SP] 5 Jul 2026 JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, JULY 2026 2Receiver
+> CP Remove+ FFT LS Estimation Real-Valued Conversion AI/ML Channel Estimator Equaliser+ Decoder
+> YYpˆHLS
+> phpˆH
+> Known Xp
+
+Fig. 1: Receiver system model. II. S YSTEM MODEL AND PROBLEM STATEMENT 
+
+A. Signal Model 
+
+We consider a single-input single-output (SISO) orthogonal frequency-division multiplexing (OFDM) system with Nf
+
+subcarriers and Ns OFDM symbols per slot [3]. After cyclic prefix (CP) removal and Discrete Fourier transform (DFT) pro-cessing, the received signal on subcarrier k and OFDM symbol 
+
+ℓ can be formulatd as Y [k, ℓ ] = H[k, ℓ ]X[k, ℓ ] + W [k, ℓ ],where H[k, ℓ ] denotes the channel frequency response of the 
+
+ℓ-th symbol on k-th subcarrier, X[k, ℓ ] is the transmitted data symbol, and W [k, ℓ ] ∼ CN (0 , σ 2
+
+> n
+
+) is additive white Gaussian noise. Stacking of all subcarriers and symbols can be written as 
+
+Y = H ◦ X + W, (1) where ◦ denotes the Hadamard product. The complete receiver pipeline, including LS estimation, preprocessing, and AI/ML-based channel estimation, is illustrated in Fig. 1. 
+
+B. Pilot Structure and LS Estimation 
+
+Pilots are inserted following a comb-type demodulation ref-erence signal (DMRS) pattern over Nps pilot OFDM symbols with pilot spacing Ps, resulting in Npf pilot subcarriers per pi-lot symbol and Np = Npf Nps pilot resource elements per slot. Collecting the received signal, transmitted pilots, channel, and noise at all pilot positions into Yp, Xp, Hp, Wp ∈ CNpf ×Nps ,the pilot observation model can be expressed as 
+
+Yp = Hp ◦ Xp + Wp. (2) Since Xp is known at the receiver, the LS estimate can be obtained as ˆHLS  
+
+> p
+
+= Yp ⊘ Xp, (3) where ⊘ denotes element-wise division. The resulting estimate is vectorized by stacking its real and imaginary components to form the input of the AI/ML estimator. 
+
+C. Problem Statement 
+
+An AI/ML estimator fθ : R2Np → R2Nf Ns , which is realized as a neural network, such as, a convolutional or fully-connected architecture and maps the LS pilot estimate hp
+
+to the full channel, is trained offline on channel realizations drawn from a training distribution ptrain (H) by minimizing 
+
+Ltrain (θ) = EH∼ptrain ∥fθ (hp) − vec R(H)∥22 , (4) where vec R(H) ∈ R2Nf Ns is real-valued vectorization of the full channel matrix. The benchmark normalized mean square error (NMSE) under matched conditions can be written as 
+
+NMSE ∗ =
+
+Eptrain 
+
+ˆH − H 2
+
+> F
+
+Eptrain ∥H∥2
+
+> F
+
+. (5) Training Channel      
+
+> EPA environment
+> AI/ML Estimator
+> trained offline
+> Good Performance
+> NMSE ≈NMSE ∗
+> TRAINING
+> Deployment Channel
+> EVA or ETU environment
+> channel drift
+> Same AI/ML Model
+> no retraining
+> Silent Degradation
+> NMSE ≫NMSE ∗
+> No reliability warning
+> H(t)unavailable at receiver
+> DEPLOYMENT
+> Research Gap
+> No existing method detects channel drift without ground-truth CSI
+> Existing Works
+> AttRNet, SCCENet: no monitoring
+> incomplete
+> GAP
+
+Fig. 2: Silent degradation problem in the existing literature. During deployment, suppose the channel distribution shifts to 
+
+pdeploy (H)̸ = ptrain (H). The actual NMSE at time slot t can be expressed as 
+
+NMSE( t) = 
+
+fθ
+
+
+
+h(t)
+
+> p
+
+
+
+− vec R
+
+ H(t) 22
+
+vec R
+
+ H(t) 22
+
+. (6) Since H(t) is unavailable at the receiver during inference, 
+
+NMSE( t) cannot be evaluated and the estimator has no direct means to assess whether its output is reliable. This motivates the following definition. 
+
+Definition 1 (Silent Degradation). An estimator fθ suffers silent degradation at slot t if NMSE( t) ≫ NMSE ∗ while no observable signal at the receiver provides any indication of this deterioration, i.e., the estimator continues producing outputs 
+
+ˆH(t) without any internal reliability flag. Since H(t) grows increasingly dissimilar from the training mean under distri-bution shift, NMSE( t) increases correspondingly; however this deviation remains unobservable since H(t) is unknown, motivating the search for an observable proxy. 
+
+Observation 1. A distributional shift in H(t) induces a corresponding shift in the marginal distribution of the re-ceived pilot vector y(t) 
+
+> p
+
+∈ R2Np . Since y(t) 
+
+> p
+
+= h(t) 
+
+> p
+
++ w(t)
+
+> p
+
+is a deterministic function of H(t) 
+
+> p
+
+corrupted by noise, if 
+
+pdeploy (H)̸ = ptrain (H), it follows that 
+
+DKL 
+
+ pdeploy (yp) ptrain (yp) > 0, (7) where DKL (·∥· ) denotes the Kullback–Leibler (KL) diver-gence, which measures the statistical discrepancy between the deployment and training pilot distributions. Rather than evaluating NMSE( t) directly, the proposed system, therefore, monitors the statistical behaviour of the observable pilot vector 
+
+y(t) 
+
+> p
+
+as a proxy for distribution shift; a persistent increase in the divergence of (7) signals that the estimator is operating outside its training distribution and motivates a lifecycle action. Fig. 2 summarizes the silent degradation problem and research gap. III. P ROPOSED COGNITIVE DIGITAL TWIN FRAMEWORK 
+
+In this section, we present the proposed CDT framework. Drawing on the three-space DT architecture of [7], [8], the CDT organizes the AI/ML estimator, self-monitoring module, and lifecycle controller within a unified structure. JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, JULY 2026 3Physical Channel          
+
+> AI/ML Channel Estimator
+> Self-Monitoring Module
+> VAE +Activation Drift
+> Lifecycle Controller
+> YpYp,{al}¯ϵVAE ,¯δ
+> UPDATE : fine-tune fθ
+> Physical Space AI/ML Estimator
+> Channel Digital Twin (CDT)
+> Monitoring Lifecycle Controller
+
+(a) Overall system architecture. Monitoring Signals                       
+
+> ¯ϵVAE (t)— VAE scorer
+> ¯δ(t)— activation drift
+> Lifecycle Controller
+> CONTINUE
+> ¯ϵVAE <τVAE
+> ¯δ<τδ
+> UPDATE
+> τVAE ≤¯ϵVAE <2τVAE
+> or τδ≤¯δ < 2τδ
+> RETIRE
+> ¯ϵVAE ≥2τVAE
+> or ¯δ≥2τδ
+> below τ
+> moderate
+> severe
+> No Action
+> estimator unchanged monitoring continues
+> Fine-Tune fθ
+> lightweight online adaptation
+> Replace Model
+> LS fallback activated generative pipeline triggered
+> Threshold Calibration
+> calibrated
+> Monitoring Signals
+> Lifecycle Controller
+> Lifecycle Decisions Actions
+
+(b) Illustration of Lifecycle controller. 
+
+Fig. 3: Proposed framework. 
+
+A. CDT Architecture Overview 
+
+As illustrated in Fig. 3a, the CDT comprises a physi-cal space housing the real wireless channel and a digital space containing the AI/ML estimator, self-monitoring mod-ule, and lifecycle controller. The self-monitoring module fuses VAE-based input scoring and activation drift detection into smoothed signals, which the controller maps to structured actions, such as, moderate drift triggers fine-tuning of fθ ,while severe drift activates the generative pipeline to deploy a replacement fθ′ . Decision logic, thresholds, and resulting actions are detailed in Fig. 3b.. 
+
+B. AI/ML Channel Estimator 
+
+The proposed framework is model-agnostic which can be integrated with both lightweight and high-capacity AI/ML channel estimators. In this work, a four-layer fully convo-lutional network (FCN) is adopted as the default backbone, since this depth was found sufficient to capture the LS-to-channel mapping with diminishing NMSE gains beyond four layers, while keeping the per-layer activation dimensionality low enough to make activation-based drift monitoring com-putationally lightweight. More powerful architectures, such as AttRNet [2] and SCCENet [3], can also be incorporated without modification, provided they expose intermediate layer activations, yielding improved estimation performance at the expense of increased computational complexity. The resulting activations, {al}Ll=1 , are forwarded to the VAE-based mon-itoring module during inference with negligible additional overhead. 
+
+C. Self-Monitoring Module 
+
+The self-monitoring module produces two complementary reliability indicators from receiver-observable quantities with-out ground-truth channel, motivated by the established role of VAEs as anomaly detectors in DT architectures [10]. 
+
+1) VAE-Based Input Distribution Scoring: A VAE Vϕ can be trained on received pilot observations yp ∈ R2Np collected under training-matched conditions by minimizing the evidence lower bound as follows 
+
+LVAE = E
+
+h
+
+∥yp − ˆyp∥2i| {z }
+
+reconstruction 
+
++β·DKL 
+
+ N (μ, σ2) ∥ N (0, I)| {z }
+
+regularization 
+
+, (8) where β balances reconstruction fidelity against latent regular-ity. Rather than estimating pdeploy (yp) directly, which would need prohibitively many samples in 2Np dimensions, Vϕ is pre-trained once on ptrain (yp) and scores each new pilot observation individually against it, so drift is flagged from single samples rather than a batch-estimated distribution. The reconstruction error can be written as 
+
+ϵVAE (t) = y(t)
+
+p − ˆy(t)
+
+p
+
+2
+
+, (9) which is exponentially weighted moving average (EWMA)-smoothed over a sliding window (Section III-C2) to give a robust drift indicator from a modest observation stream rather than a large pre-collected sample set. It serves as a familiarity score during deployment, where low values indicate distributional consistency and elevated values signal departure. Moreover, VAE operates on raw yp rather than on pilots reconstructed from ˆH, since the latter would simply recover the LS residual already minimized in Section II, yielding no useful drift information. This non-circular design is absent from all prior wireless VAE applications [11]–[13]. 
+
+2) Activation Statistics Drift Detection: The second signal detects changes in the estimator’s internal behaviour motivated by the empirical finding of [4] that network representations shift measurably across EPA, EVA, and ETU conditions. Reference statistics can be recorded per layer l during initial deployment as 
+
+μref 
+
+l = E [al] , σref 
+
+l = std [al] , (10) and the drift score over a sliding window of W observations can be expressed as 
+
+δl(t) = 1
+
+dldlX
+
+j=1 
+
+μ(t)
+
+l,j − μref 
+
+l,j 
+
+σref 
+
+l,j + ϵ , (11) where dl is the layer dimension and ϵ = 10 −8 is a small con-stant that prevents division by zero when a neuron’s reference standard deviation σref 
+
+l,j is negligibly small due to near-constant activation across the calibration window. The overall score 
+
+δ(t) = max l δl(t) takes the layer-wise maximum since earlier layers respond to amplitude changes while deeper layers respond to correlation structure changes, and averaging would suppress localised shifts. The two signals are complementary in that the VAE responds rapidly to broad input transitions while activation drift detects subtler internal changes. 
+
+D. Autonomous Lifecycle Controller 
+
+The lifecycle controller applies EWMA smoothing with factor α ∈ (0 , 1) to the ϵVAE (t) and δ(t) defined in (9) and (11), giving the smoothed signals 
+
+¯ϵVAE (t) = α ϵ VAE (t) + (1 − α) ¯ ϵVAE (t − 1) , (12) 
+
+¯δ(t) = α δ (t) + (1 − α) ¯δ(t − 1) . (13) These signals are compared against calibrated thresholds τVAE 
+
+and τδ ,
+
+τVAE = ¯ ϵ cal VAE + 2 σcal 
+
+ϵ , τδ = ¯δ cal + 2 σcal 
+
+δ , (14) JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, JULY 2026 4
+
+Algorithm 1: CDT Lifecycle Management 
+
+Input: y(t) 
+
+> p
+
+, fθ , Vϕ, ref. stats, τVAE , τδ , Thold , R, γ
+
+Output: ˆH(t), A(t) 
+
+> 1
+
+Offline : train Vϕ (8); initiate ref. stats (10), thresholds (14), c ← 0; 
+
+> 2
+
+for each t do  
+
+> 3
+
+Estimate ˆH(t), latents via fθ ; compute 
+
+¯ϵVAE (t), ¯δ(t) (9)–(13);  
+
+> 4
+
+if ¯ϵVAE < τ VAE and ¯δ < τ δ then  
+
+> 5
+
+A(t) ← CONTINUE , c ← 0; 
+
+> 6
+
+else if ¯ϵVAE < 2τVAE and ¯δ < 2τδ then  
+
+> 7
+
+c ← c + 1 ; if c ≥ Thold : fine-tune fθ ,
+
+A(t) ← UPDATE , c ← 0; 
+
+> 8
+
+else  
+
+> 9
+
+A(t) ← RETIRE , ˆH(t) ← ˆHLS  
+
+> p
+
+; 
+
+> 10
+
+repeat  
+
+> 11
+
+if Dobs ∈ R then load fθ′ from R; 
+
+> 12
+
+else generate Dsyn (VQ-VAE), train fθ′ ; 
+
+> 13
+
+extend Dobs if retrying;  
+
+> 14
+
+until NMSE ′(Dsyn ) ≤ γ; 
+
+> 15
+
+deploy fθ′ , update R, reinitiate (10), (14);  
+
+> 16
+
+end  
+
+> 17
+
+end  
+
+> 18
+
+return ˆH(t), A(t)
+
+where ¯ϵ cal VAE , ¯δ cal and σcal  
+
+> ϵ
+
+, σcal  
+
+> δ
+
+denote the sample means and standard deviations of each signal, collected over a calibration period of Tcal slots under matched conditions, setting each threshold two standard deviations above the mean yields an empirical false-alarm rate of approximately 2.3% without manual tuning. This factor of two further defines, for each threshold τ ∈ {τVAE , τ δ }, a moderate drift region [τ, 2τ )
+
+triggering UPDATE and a severe region [2 τ, ∞) triggering 
+
+> RETIRE
+
+, separating recoverable shift from irrecoverable mis-match. As shown in Fig. 3b, the controller selects CONTINUE 
+
+when both smoothed signals lie below threshold, UPDATE 
+
+when a moderate crossing triggers lightweight fine-tuning of 
+
+fθ after Thold consecutive drift slots (a hold-off count prevent-ing premature retraining on transient fluctuations), and RETIRE 
+
+when a severe crossing activates the generative pipeline of Section III-E. This graded response distinguishes the CDT from [14], which treats all drift as requiring a new basis model. Algorithm 1 summarizes the complete operation. 
+
+E. GAI-Driven Synthetic Channel Pipeline 
+
+When RETIRE is triggered, the CDT initiates a replacement procedure aligned with the GDTC framework in [9], adapted here for model replacement rather than communication pa-rameter selection, and drawing on the established role of GAI in compensating for data scarcity in DT architectures [10]. A VQ-VAE is first trained on post-drift pilot observations, Dobs ,to characterise the new channel distribution, with VQ-VAE preferred over a standard VAE since its discrete codebook naturally captures the sparse multipath structure of wireless channels [9]. The decoder then generates a synthetic dataset, TABLE I: Simulation Parameters                      
+
+> Parameter Value
+> Channel models (Doppler) EPA (5 Hz), EVA (70 Hz), ETU (300 Hz) Carrier / subcarrier spac-ing / sampling 2.1 GHz / 15 kHz / 1080 kHz OFDM numerology Nf=72 ,Ns=14 , CP = 16 samples Modulation / pilots QPSK; Npf =3 ,Np=24
+> SNR range −5to 30 dB Estimator 4-layer FCN (ReLU) Training data / SNR 32000 EPA realizations, 12 dB Test data 4000 realizations per SNR VAE training / reference EPA pilots, 2000 samples Monitoring (W,α,threshold) 100 obs., 0.05, ¯μcal +2 σcal
+
+Dsyn , compensating for post-drift data scarcity, on which a replacement estimator fθ′ is trained offline while the LS fall-back maintains uninterrupted service. If the new environment matches a previously stored scenario, fθ′ is retrieved directly from the model repository R [15]. The candidate model is then validated on held-out synthetic channels against threshold 
+
+γ following the verify-before-deploy principle of [15], and deployed only upon passing, with monitoring re-initialized thereafter. IV. S IMULATION RESULTS 
+
+We evaluate the proposed framework using the 3GPP chan-nel models of TS 36.101, with OFDM parameters following [2], [3] and simulation parameters listed in Table I. The frame-work is compared against four baselines: LS, LMMSE (with perfect channel knowledge), AttRNet [2], and SCCENet [3]. Under matched conditions, LMMSE uses the training-channel statistics, while under EVA/ETU deployment it is given the true deployment-channel statistics, acting as an oracle bound. 
+
+A. Estimation Performance Under Matched Conditions 
+
+Fig. 4a compares the proposed framework using alightweight FCN backbone under matched EPA training and testing conditions. Although AttRNet and SCCENet achieve slightly lower NMSE at high SNR due to their larger net-work capacity, the proposed framework maintains competitive performance while using a significantly simpler estimator. Since no channel drift is present, the VAE-based monitoring correctly keeps the lifecycle controller in the C ONTINUE state throughout deployment. Fig. 4b replaces the FCN with SC-CENet while retaining the proposed monitoring and lifecycle management framework. The resulting performance closely matches the original SCCENet, demonstrating that the pro-posed VAE-based adaptation framework is model-agnostic and can be readily integrated with different deep learning channel estimators, allowing a trade-off between estimation accuracy and computational complexity. 
+
+B. Performance Under Distribution Shift 
+
+Fig. 5 demonstrates the practical benefit of the proposed framework, where all learning-based estimators are trained on EPA and deployed under channel drift without retraining, while LMMSE is assumed to have perfect knowledge of the deployment channel statistics. Under moderate EVA drift, JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, JULY 2026 5−5 0 5 10 15 20 25 30 
+
+> −15
+> −10
+> −5
+> 0
+> 5
+> 10
+> SNR (dB)
+> NMSE (dB)
+> LS
+> LMMSE
+> AttRNet*
+> SCCENet*
+> Proposed
+
+(a) Proposed method trained with lightweight 4-layer FCN. −5 0 5 10 15 20 25 30 
+
+> −15
+> −10
+> −5
+> 0
+> 5
+> 10
+> SNR (dB)
+> NMSE (dB)
+> LS
+> LMMSE
+> AttRNet*
+> SCCENet*
+> Proposed
+
+(b) Proposed method trained with SCCENet. 
+
+Fig. 4: NMSE vs. SNR under matched conditions. AttRNet and SCCENet saturate near −7 dB beyond 10 dB SNR, unable to adapt to the new statistics. The proposed framework instead detects the shift via VAE reconstruction error and activation drift, triggers U PDATE , and continues improving with SNR, reaching −17 .0 dB at 30 dB, only 4 dB from the oracle LMMSE bound. Under the more severe ETU channel, AttRNet and SCCENet plateau near −5 dB with little gain over LS, whereas the monitoring module identifies severe drift and initiates R ETIRE . The VQ-VAE-assisted replacement pipeline then restores accuracy to −14 .1 dB at 30 dB, only 
+
+0.8 dB above LMMSE. These results confirm that the graded UPDATE /R ETIRE strategy distinguishes moderate from severe drift, enabling autonomous lifecycle management with robust estimation performance. 
+
+C. Computational Complexity 
+
+The computational complexity of the proposed framework is established by the underlying AI/ML channel estimator. It increases with the number of network layers and neurons, i.e., 
+
+O(Nlayers Nneurons ) per forward/backward pass. The VAE-based monitoring module introduces only a lightweight auxil-iary network and simple threshold evaluation which makes its online inference overhead negligible compared to the backbone estimator. V. C ONCLUSION 
+
+This letter proposed a model-agnostic CDT framework for autonomous lifecycle management of AI/ML-based channel estimators. By jointly exploiting VAE reconstruction error and latent activation drift, the framework detects channel distribu-tion shifts without ground-truth channel information, achieving robust drift detection and improved estimation under moderate and severe drift. Future work will extend the framework to massive MIMO systems and online model replacement via generative digital twins. −5 0 5 10 15 20 25 30 
+
+> −20
+> −15
+> −10
+> −5
+> 0
+> 5
+> 10
+> SNR (dB)
+> NMSE (dB)
+> LS
+> LMMSE
+> AttRNet*
+> SCCENet*
+> Proposed
+
+(a) EVA test channel (moderate drift). −5 0 5 10 15 20 25 30 
+
+> −15
+> −10
+> −5
+> 0
+> 5
+> 10
+> SNR (dB)
+> NMSE (dB)
+> LS
+> LMMSE
+> AttRNet*
+> SCCENet*
+> Proposed
+
+(b) ETU test channel (severe drift). 
+
+Fig. 5: NMSE vs. SNR under distribution shift. REFERENCES [1] 3GPP, “Study on Artificial Intelligence (AI)/Machine Learning (ML) for NR Air Interface,” 3rd Generation Partnership Project, Technical Report TR 38.843, 2024, release 19. [2] W. Gao, W. Zhang, L. Liu, and M. Yang, “Deep residual learning with attention mechanism for OFDM channel estimation,” IEEE Wireless Commun. Lett. , vol. 14, no. 2, pp. 250–254, Feb. 2025. [3] S. Wang, T. H. Cheng, and K. C. Teh, “SCCENet: A symmetric CNN-based model for channel estimation in OFDM systems,” IEEE Wireless Commun. Lett. , vol. 14, no. 9, pp. 2872–2876, Sep. 2025. [4] D. Luan and J. S. Thompson, “Channelformer: Attention based neural sol. for wireless channel estimation and effective online training,” IEEE Trans. Wireless Commun. , vol. 22, no. 10, pp. 6562–6577, 2023. [5] A. K. Gizzini and M. Chafii, “RNN based channel estimation in doubly selective environments,” IEEE Trans. Mach. Learn. Commun. Netw. ,vol. 2, pp. 1–18, 2024. [6] S. Keykhosravi and E. Bedeer, “Joint superimposed pilot-aided channel estimation and data detection for FTN signaling over doubly-selective channels,” IEEE Trans. Veh. Tech. , vol. 75, no. 1, pp. 880–895, 2026. [7] J. N. Njoku, E. C. Nkoro, R. M. Medina, C. I. Nwakanma, J.-M. Lee, and D.-S. Kim, “Leveraging digital twin technology for battery management: A case study review,” IEEE Access , vol. 13, pp. 21 382–21 412, 2025. [8] C. Bae, E. Choi, and S. Lee, “Technologies, applications, and challenges of digital twin across industries: A systematic review of the state-of-the-art literature,” IEEE Access , vol. 13, pp. 152 843–152 869, 2025. [9] Z. Liu, J. Chen, Y. Xu, H. Du, and H. Zhou, “Generative digital twin channel: Bridging fully-decoupled RAN and AI-native solutions,” IEEE Commun. Mag. , vol. 63, pp. 20–26, Oct. 2025. [10] J. Chen, Y. Shi, C. Yi, H. Du, J. Kang, and D. Niyato, “Generative-AI-driven human digital twin in IoT healthcare: A comprehensive survey,” 
+
+IEEE Internet Things J. , vol. 11, no. 21, pp. 34 749–34 773, Nov. 2024. [11] M. Nemati, J. Park, and J. Choi, “VQ-VAE empowered wireless com-munication for joint source-channel coding and beyond,” in Proc. IEEE Global Commun. Conf. (GLOBECOM) , 2023, pp. 3155–3160. [12] A. Adhikary, M. S. Munir, A. D. Raha, Y. Qiao, Z. Han, and C. S. Hong, “Integrated sensing, localization, and communication in holographic MIMO-enabled wireless network: A deep learning approach,” IEEE Trans. Netw. Serv. Manag. , vol. 21, no. 1, pp. 789–809, Feb. 2024. [13] Z. Yang, G. Chi, C. Wu, H. Liu, Y. Gao, Y. Liu, Y. C. Eldar, J. Xu, and T. X. Han, “Generative AI for wireless communication and sensing: Toward unified foundation models,” IEEE Trans. Commun. , 2026. [14] L. Kong, X. Liu, X. Zhang, J. Xiong, H. Zhao, and J. Wei, “Representation-based continual learning for channel estimation in dy-namic wireless environments,” IEEE Trans. Wireless Commun. , vol. 24, no. 8, pp. 6382–6396, Aug. 2025. [15] R. Khaldi, A. Lehmann, B. Ghita, and U. Trick, “Agentic-AI framework for integ. design, implementation, testing, and operation of digital twin networks,” IEEE Open J. Commun. Soc. , vol. 7, pp. 4352–4375, 2026.

@@ -1,0 +1,393 @@
+Title: A Sheaf-Theoretic Framework for Distributed Multi-Site Channel Charting
+
+URL Source: https://arxiv.org/pdf/2607.03480v1
+
+Published Time: Tue, 07 Jul 2026 01:11:45 GMT
+
+Number of Pages: 5
+
+Markdown Content:
+> 1
+
+# A Sheaf-Theoretic Framework for Distributed Multi-Site Channel Charting 
+
+Enrico Grimaldi §∗† , Leonardo Di Nino §†‡ , Mario Edoardo Pandolfo §∗† ,Gabriele D’Acunto †‡ , Sergio Barbarossa ‡ and Paolo Di Lorenzo †‡ ∗Department of Computer, Control and Management Engineering, Sapienza University of Rome, Rome, Italy 
+
+> †
+
+National Inter-University Consortium for Telecommunications (CNIT), Parma, Italy 
+
+> ‡
+
+Department of Information Engineering, Electronics, and Telecommunications, Sapienza University, Rome, Italy E-mail: {name.surname }@uniroma1.it. §These authors contributed equally to this work. 
+
+Abstract —Channel charting (CC) enables data-driven user localization in wireless networks by embedding channel state information (CSI) into low-dimensional representations. In multi-cell scenarios, each base station independently learns a local chart via neural encoders, leading to misaligned representation spaces across overlapping coverage areas. This lack of consistency hinders network-level tasks such as user tracking, handover prediction, and resource allocation. To address this issue, we propose a principled framework for multi-site channel charting based on topological signal processing. We model the collection of local charts as a network sheaf, which encodes consistency constraints across the network and enables the coherent integration of locally learned representations into a shared global structure. This formulation introduces an interpretable inductive bias that promotes alignment across base stations while preserving local geometric fidelity. Building on this model, we develop a multi-site channel charting architecture and an alternating optimization algorithm that jointly updates neural encoders and inter-site orthogonal transport maps, with theoretical guarantees on consistency. Experimental results validate the effectiveness of the proposed approach, demonstrating improved cross-site alignment without degrading the quality of local embeddings. 
+
+Keywords —Channel charting, topological signal processing, sheaves, distributed representation learning. 
+
+I. INTRODUCTION 
+
+Channel Charting (CC) [1] has emerged as a powerful framework for addressing the high dimensionality of Channel State Information (CSI) in MIMO radio access systems, while preserving its intrinsic geometric structure. By leveraging di-mensionality reduction techniques ranging from linear methods to neural approaches [2], CC maps high-dimensional CSI mea-surements into compact latent representations that capture the underlying spatial relationships of the propagation environment. Extending CC to multi-cell scenarios, however, introduces new challenges. Charts learned independently from local channel observations may lack global consistency, particularly in regions where coverage overlaps. Ensuring aligned representations across cells, such as consistency at anchor points and continuity of user trajectories across cell boundaries, is essential for enabling reliable downstream tasks. In this work, we establish 
+
+> This work was supported by the SNS JU project 6G-GOALS under the EU Horizon Europe program, Grant Agreement No. 101139232, and by Huawei Technology France SASU under Grant No. Tg20250616041.
+
+a representation learning framework for network-wide channel charting that enforces global coherence. To this end, we leverage tools from cellular sheaf theory [3], [4], which provide a principled way to encode and enforce consistency constraints across distributed network entities. 
+
+Related works. Multi-point channel charting has been studied in [5] as a data fusion problem, where features collected by multiple base stations observing the same environment are coherently combined. Extensions of this setting have also been explored in federated frameworks [6]. In contrast, multi-site channel charting addresses the more challenging scenario in which sensing regions only partially overlap, requiring the alignment of representation spaces across different base stations. Prior work [7] approached this problem through optimal transport theory, whereas we instead formulate it using sheaf-theoretic tools [3], [4]. Sheaf-based methods have recently gained attention as a principled framework for modeling and optimizing distributed systems [8], [9], with applications ranging from federated learning [10] to network formation in semantic communications [11]. Our approach differs from these works in a fundamental way. In [10], sheaves are used as structural priors, acting as inductive biases in the parameter space. In contrast, we operate directly at the level of representation spaces. While [11] employs sheaf-based formulations for network-level alignment, it relies on pre-trained neural agents; in contrast, we jointly train the neural encoders together with the synchronization mechanism. 
+
+Contributions. In this paper, we develop a principled frame-work for multi-site channel charting that enforces global consistency across distributed representations. To this end, we make the following contributions. First, we introduce a network sheaf formulation for multi-site channel charting and connect it to the spectral theory of sheaves, yielding an inductive bias that ensures consistent global representations. Second, building on this formulation, we cast the joint learning problem as a regularized optimization that couples neural encoders with inter-site transport maps, and we propose an efficient distributed alternating optimization scheme, where base stations update their local models through message passing and perform closed-form updates for the alignment step. Third, we validate the proposed framework on standard channel charting benchmarks, demonstrating improved cross-site alignment while preserving local geometric fidelity and outperforming existing baselines. 
+
+> arXiv:2607.03480v1 [eess.SP] 3 Jul 2026 2
+
+II. SHEAF -THEORETIC CHANNEL CHARTING 
+
+Background. Network sheaves provide a mathematical frame-work to equip the nodes of a graph with local data structures, while enforcing global consistency through constraints on edges [3], [4]. In this work, we focus on network sheaves with vector space assignments. 
+
+Definition 1 (Network Sheaf) . Given a graph G(V, E), a network sheaf F(G) consists of: 
+
+• a vector space F(v) for each node v ∈ V (node stalk); 
+
+• a vector space F(e) for each edge e ∈ E (edge stalk); 
+
+• linear maps ρF(e) 
+
+> u
+
+: F(u) → F (e) and ρF(e) 
+
+> v
+
+: F(v) →F(e) for each edge e ∼ (u, v ) (restriction maps). 
+
+This structure encodes a local-to-global consistency principle: data are assigned at nodes and constrained to agree across edges. Global consistency is captured by the notion of global section. 
+
+Definition 2 (Global Sections) . Given a network sheaf F(G),the space of global sections H0 
+
+> F
+
+⊆ L 
+
+> v∈V
+
+F(v) consists of assignments of local data to nodes simultaneously satisfying all edge-wise consistency constraints: 
+
+s ∈ H 0 
+
+> F
+
+⇔ ρF(e) 
+
+> u
+
+su = ρF(e) 
+
+> v
+
+sv , ∀ e = ( u, v ) ∈ E . (1) 
+
+System model. We consider a sensing environment Ω and a certain number B of base stations B = {b1, ..., b B } such that their coverage areas {U b}b∈B satisfy Ω = S 
+
+> b∈B
+
+Ub. We further assume that the coverage regions are not disjoint, i.e., that there exists at least one pair of base stations (bi, b j ) such that Ubi ∩ U bj̸ = ∅. A single-antenna user moves within Ω
+
+and is observed at discrete time instants. At each time step, the user transmits a signal over F subcarriers, and the base stations estimate CSI. Each base station is equipped with a neural encoder Eb : CRb×F → Rn that maps CSI to channel chart embeddings, where Rb denotes the number of receiver antennas at the base station and n = 2 is typically chosen to ensure spatial interpretability. The guiding principle of a single-site channel charting pipeline is that CSIs measured from points being near in space should be mapped into embeddings being near in the representation space associated with the encoder performing dimensionality reduction. We extend this idea to multi-site channel charting, introducing a gluing principle such that CSIs measured from points being in overlapping coverages should be mapped to the same points in latent spaces of the encoders associated to the base stations of interest. To this aim, we introduce a multi-site channel charting network sheaf 
+
+specified as follows: 
+
+• For each base station b ∈ B , we associate a node with a corresponding node stalk: 
+
+F(b) = {Eb(Hb(x)) ∈ Rn : x ∈ U b} (2) collecting the embeddings of the CSI corresponding to points within the coverage area of base station b;
+
+• For each pair (bi, b j ) : Ubi ∩ U bj̸ = ∅, we associate an edge with a corresponding edge stalk: 
+
+F(bi, b j ) = {E∗(H∗(x)) ∈ Rn : x ∈ U bi ∩ U bj } (3) 
+
+Figure 1: Visualization of an edge of the proposed network sheaf as a composition of a domain restriction and an isometry locally defined on the nodes of the network. 
+
+collecting the CSI embeddings for points in the overlap of the coverage areas; 
+
+• On each edge, we define the following restriction maps: 
+
+ρF(bi,b j ) 
+
+> bi
+
+Ebi (Hbi (x)) = R(bi,b j ) 
+
+> bi
+
+Ebi (Hbi (x)) 1x∈U bi ∩U bj
+
+ρF(bi,b j ) 
+
+> bj
+
+Ebj (Hbj (x)) = R(bi,b j ) 
+
+> bj
+
+Ebj (Hbj (x)) 1x∈U bi ∩U bj
+
+where R(bi,b j ) 
+
+> bi
+
+, R(bi,b j ) 
+
+> bj
+
+∈ O( n) are orthogonal transfor-mations acting as isometries on the learned embeddings over the overlapping region. The proposed model can be interpreted as the composition of a discrete covering sheaf [12], capturing the restriction of data to overlapping coverage regions, and an O( n) bundle, modeling the orthogonal transformations that align local embeddings across base stations, as illustrated in Fig. 1. Orthogonal restriction maps [13], [14] transport the embed-dings across the edges of the sheaf without distorting their geometry, allowing the signal to propagate back and forth without information loss. The gluing property requires that local embeddings agree across overlapping coverage regions. This is captured by the global sections of the proposed sheaf, i.e., 
+
+{Eb(Hb(x)) }b∈B ∈ H 0 
+
+> F
+
+, satisfying ∀(bi, b j ), x ∈ U bi ∩ U bj :
+
+ρF(bi,b j ) 
+
+> bi
+
+Ebi (Hbi (x)) = ρF(bi,b j ) 
+
+> bj
+
+Ebj (Hbj (x)) , (4) Ideally, we would like to leverage this system model as an inductive bias to steer the learning trajectory of the encoders at each base station to satisfy this gluing principle. However, as defined, the sheaf does not guarantee the existence of non-trivial global sections. This issue can be addressed by leveraging the spectral characterization of sheaves. In particular, non-trivial global sections are ensured if the edge connections, defined by the isometries R(bi,b j ) 
+
+> bi
+
+, R(bi,b j ) 
+
+> bj
+
+, admit the following factorization: 
+
+R(bi,b j ) 
+
+> bi
+
+= R⊤ 
+
+> bj
+
+Rbi (5a) 
+
+R(bi,b j ) 
+
+> bj
+
+= I (5b) 3
+
+where Rbi , Rbj ∈ SO( n) denote local reference frames associated with each base station [15]. This shift from O( n)
+
+bundles to flat bundles [16], [17] not only guarantees the existence of global sections, but also reduces the complexity of the problem. Indeed, optimizing edge-wise maps over a graph incurs a worst-case space complexity of O(B2n2), whereas the proposed reparameterization scales linearly with the number of base stations, i.e., O(Bn 2).
+
+Problem formulation. We parametrize each encoder by θb
+
+and define the index set I = {(x, b i, b j ) : x ∈ U bi ∩ U bj }. The multi-site channel charting problem with the sheaf inductive bias is formulated as 
+
+min 
+
+> {θb,Rb∈SO( n)}b∈B
+
+X
+
+> b∈B
+
+Lb(θb)+ λ X 
+
+> (x,b i,b j)∈I
+
+Rbi Ebi (Hbi (x)) − Rbj Ebj (Hbj (x)) 2F. (6) The term Lb(θb) is an unsupervised representation learning loss. In particular, we adopt the triplet loss formulation [18], which enforces local geometric consistency by bringing nearby points closer while separating distant ones. Given an anchor sample xa acquired at time ta, we define positive samples xp
+
+as temporally coherent with the anchor, i.e., |tp − ta| ≤ ∆T
+
+with ∆T = 5 s , and negative samples xn as those outside this window, |tn − ta| > ∆T . For a fixed margin m > 0, the resulting loss is 
+
+L(θb) = X
+
+> (xa,xp,xn)
+
+h
+
+∥Eb(Hb(xa)) − Eb(Hb(xp)) ∥2F
+
+− ∥ Eb(Hb(xa)) − Eb(Hb(xn)) ∥2F + m
+
+i+
+
+(7) The second term in (6) enforces the sheaf-theoretic gluing constraint by promoting agreement between embeddings over overlapping coverage regions. By exploiting the factorization in (5) , it decouples the alignment problem over the edges into node-wise reference frames synchronization. III. DISTRIBUTED ALGORITHMIC SOLUTION 
+
+To solve (6) in a distributed manner, we adopt a message passing protocol among base stations. At each iteration, every base station exchanges information with its neighbors ˜b ∈ N (b).Specifically, base station b receives from each neighbor ˜b the em-beddings over their overlapping region, expressed in the neigh-bor’s reference frame. As a result, at each iteration, base station 
+
+b has access to the set {R˜bE˜b(H˜b(x)) 1x∈U b∩U ˜b }˜b∈N (b), which provides all the information required to perform the alternating optimization locally. 
+
+Local reference frame update. At each base station b, the update of the local reference frame is given by: 
+
+min 
+
+> Rb∈SO( n)
+
+X 
+
+> ˜b∈N (b)
+
+X
+
+> x∈U b∩U ˜b
+
+RbEb(Hb(x)) − R˜bE˜b(H˜b(x)) 2 
+
+> F
+
+.
+
+(8) We can easily derive a closed form solution for the problem (8) by noticing that, given the orthogonality constraints on 
+
+Rb, the problem can be rewritten as the following generalized eigenvalue problem: 
+
+max 
+
+> Rb∈SO( n)
+
+Tr 
+
+n
+
+Rb
+
+X
+
+> (b, ˜b)
+
+X
+
+> x∈U b∩U ˜b
+
+Eb(Hb(x))[ E˜b(H˜b(x))] ⊤R⊤
+
+> ˜b
+
+o
+
+(9) for which the solution is given by the Kabsch algorithm [19]. Specifically, at iteration k, the local reference frame Rb is updated by solving (8) via a Procrustes alignment. To this end, we consider the singular value decomposition of the cross-covariance matrix aggregated over the neighborhood: 
+
+C(k) 
+
+> b
+
+= X 
+
+> ˜b∈N (b)
+
+X
+
+> x∈U b∩U ˜b
+
+Eb(Hb(x)) E˜b(H˜b(x)) ⊤ (R(k)˜b )⊤
+
+= UΣV ⊤. (10) The update is then given by: 
+
+R(k+1)  
+
+> b
+
+= U ˜Σ V ⊤ ∈ SO( n), (11) where ˜Σ = diag(1 , . . . , 1, det( UV ⊤)) .
+
+Encoder parameters update. Given the reference frames 
+
+{R(k+1)  
+
+> b
+
+}b∈B , the encoder parameters {θb}b∈B are updated by minimizing (6) with respect to θb. This results in a gradient-based update, where each base station performs a local opti-mization step using its own data and the embeddings received from neighboring nodes. In practice, the update is implemented via stochastic gradient descent (or its variants) and can be efficiently computed using automatic differentiation within standard deep learning frameworks. The resulting procedure alternates between closed-form updates of the reference frames and gradient-based updates of the encoder parameters. 
+
+Remark. The work in [7] proposes a multi-site CC framework based on manifold alignment via optimal transport [20]. In contrast, our approach leverages tools from algebraic topology together with a Procrustes-type formulation [21]. While the two approaches are related and thus naturally comparable, ours provides stronger theoretical guarantees and a more interpretable, robust inductive bias. Moreover, [7] relies on a fully neural parametrization over the base station graph edges, whereas our formulation admits a closed-form alignment step that scales linearly with the number of nodes. The resulting over-parameterization can hinder training in optimal transport-based methods, particularly at large scale, while our approach remains computationally efficient and easier to optimize in a distributed fashion. IV. NUMERICAL RESULTS 
+
+Dataset and system configuration. We evaluate the proposed framework on the DICHASUS dataset [22], using the concatena-tion of the trajectories dichasus_cf02 , dichasus_cf03 ,and dichasus_cf04 1. The four available access points are treated as distinct base stations, each observing the same propagation environment from a different spatial perspective. Each base station is equipped with a neural encoder, preceded           
+
+> 1The source code for the numerical evaluation is available at: https://github. com/SPAICOM/sheaf-theoretic-channel-charting.git 4−12 .5−10 .0−7.5−5.0−2.50.02.5
+> −16
+> −14
+> −12
+> −10
+> −8
+> −6
+> −4
+> −2
+> Building
+> UE trajectory
+> b1coverage
+> b2coverage
+> b3coverage
+> b4coverage
+> b1
+> b2
+> b3
+> b4
+
+Figure 2: Visualization of the dataset and the partition of the sensing environment. −2 0 2 4 6   
+
+> −4
+> −2024
+> Private embeddings
+> b1
+> b2
+> b3
+> b4
+> −2024
+> −6
+> −4
+> −202
+> Aligned embeddings
+> b1
+> b2
+> b3
+> b4
+
+Figure 3: Learned embedding with flat bundle alignment and induced shared representation space. 
+
+by a non-trainable preprocessing layer as in [18], to extract channel features from raw CSI measurements. The embedding dimension is fixed to n = 2 to enable geometric interpretability of the learned charts. Coverage areas are defined as shown in Fig. 2 by partitioning the sensing region according to the presence of dominant scatterers, which results in partially overlapping coverage regions and thus provides the necessary conditions to study multi-site alignment. 
+
+Baselines. We compare the proposed method against a set of representative baselines covering different alignment strategies: 
+
+(i) unsupervised optimal transport [7], which performs non-linear alignment of latent spaces via neural mappings defined over graph edges; (ii) cover sheaf , corresponding to the flat bundle with identity reference frames, where embeddings are directly constrained to coincide in overlapping regions; (iii) 
+
+O( n) bundle , i.e., the sheaf formulation without connection factorization, where edge-wise orthogonal maps are learned independently via Procrustes alignment [23]; (iv) vanilla ,where base station encoders are trained independently without any form of alignment; and (v) federated methods, in both standard and personalized variants, where models are trained via parameter sharing across nodes. 
+
+Metrics. We assess both local embedding quality and cross-site consistency. For local geometric fidelity, we report Kruskal Stress (KS) [24], Trustworthiness (TW), and Continuity (CT) [25], which quantify how well the learned embeddings preserve neighborhood relationships; all metrics are averaged across base stations. For global alignment, we adopt the FOSCTTM metric [26], which measures how well corresponding samples from different sites are matched in the latent space. 
+
+Results. For reproducibility, all sheaf-theoretic algorithms impose a cosine schedule on the sheaf penalization term λ
+
+in (6) , which is gradually increased to a predefined maximum value over the training epochs. All results are reported for a total of 20 training epochs, using a decaying learning rate ( 10 −3
+
+for the first 10 epochs and 10 −4 thereafter) for the stochastic gradient descent updates that minimize (6) during the encoder parameter update step. The quantitative results in Table I show that the proposed sheaf-based methods achieve competitive dimensionality reduc-tion performance across all metrics. In particular, they match or slightly outperform the vanilla single-site baseline, while consistently improving over the optimal transport approach. Approaches relying on parameter averaging typically fail in multi-site channel charting: the federated approach encourages encoders to behave similarly from a functional perspective, whereas true comparability lies in the latent geometry of the sensing space, which should in turn shape the representation space. This suggests that injecting inductive bias directly at the latent-space level is a more effective strategy than enforcing consistency at the parameter level. From the perspective of local geometry preservation, the Bundle variant achieves the lowest KS and the highest TW, indicating the best reconstruction of the intrinsic structure of the sensing environment. The Flat Bundle attains nearly identical performance, confirming that the imposed alignment does not degrade local embedding quality. In contrast, federated baselines exhibit significantly higher KS and lower TW, highlighting the detrimental effect of parameter averaging on representation quality in this setting. Regarding cross-site alignment, the Flat Bundle achieves the best FOSCTTM score, outperforming all competing methods. This result is particularly significant: despite relying only on orthogonal transformations with a closed-form Procrustes solu-tion, it surpasses the optimal transport approach, which employs more expressive nonlinear mappings over graph edges. This behavior can be explained by the structure of the flat bundle: the factorization in (5) guarantees the existence of global sections, thereby inducing a consistent shared latent space across all base stations. In contrast, the O( n) bundle, which learns edge-specific transformations without such factorization, achieves inferior alignment despite its higher flexibility, suggesting that the additional degrees of freedom hinder optimization. The Cover Sheaf achieves intermediate alignment performance, confirming that enforcing agreement without learnable reference frames is too restrictive. The Vanilla baseline, while competitive in terms of KS and TW, fails to align representations across sites, emphasizing the need for explicit coupling mechanisms. Finally, the Flat Bundle provides a globally consistent geometric representation, as all embeddings are expressed in 5
+
+Method KS ↓ TW ↑ CT ↑ FOSCTTM ↓
+
+K=2 K=38 
+
+Bundle 0.386 0.834 0.964 0.927 0.295 
+
+Cover Sheaf 0.408 0.811 0.950 0.897 0 .227 
+
+Flat Bundle 0.387 0.830 0 .961 0.925 0.154 
+
+Opt. Transport [7] 0.404 0 .825 0.954 0.915 0.183 
+
+Federated 0.540 0.695 0.901 0.830 0.558 
+
+Pers. Fed. [6] 0 .390 0.796 0.946 0.902 0.500 
+
+Vanilla 0.391 0.823 0.968 0 .924 0.449 
+
+Table I: Mean KS, TW, CT, and FOSCTTM. TW is reported for K = 10 (approximately constant for K ∈ [5 , 40] ); CT (continuity) is shown at local ( K=2 ) and global ( K=38 )scales. Bold , underline , and italic denote best, second, and third per column. 
+
+a common reference frame {Rb}b∈B , as shown in Fig. 3. In contrast, methods based on edge-wise mappings only ensure pairwise consistency and do not yield a unified global geometry. Overall, the Flat Bundle offers the best trade-off between alignment accuracy, complexity, and interpretability. V. CONCLUSIONS 
+
+We proposed a sheaf-theoretic framework for multi-site channel charting that provides a principled way to enforce consistency across distributed representations. By casting the problem in terms of network sheaves, we introduce a structured, interpretable inductive bias that links local embeddings to a globally coherent latent space, with guarantees on the existence of consistent global representations. The resulting formulation leads to a distributed optimization scheme with closed-form alignment updates and linear complexity in the number of base stations, making it suitable for large-scale wireless networks. Numerical results show that the proposed approach improves cross-site alignment while preserving local geometric fidelity, consistently outperforming existing baselines; in particular, the flat bundle construction emerges as a key design choice, offering a favorable trade-off between alignment accuracy, computational efficiency, and interpretability. Future work will extend the sheaf-based modeling to more expressive encoder architectures and more complex propagation environments, and integrate task-driven objectives for adaptive network coordination and application-aware representation learning. REFERENCES [1] P. Ferrand, M. Guillaud, C. Studer, and O. Tirkkonen, “Wireless channel charting: Theory, practice, and applications,” IEEE Communications Magazine , vol. 61, no. 6, pp. 124–130, 2023. [2] C. Studer, S. Medjkouh, E. Gonulta s¸ , T. Goldstein, and O. Tirkkonen, “Channel charting: Locating users within the radio environment using channel state information,” IEEE Access , vol. 6, pp. 47682–47698, 2018. [3] J. M. Curry, Sheaves, cosheaves and applications , University of Pennsylvania, 2014. [4] J. Hansen, Laplacians of cellular sheaves: Theory and applications ,Ph.D. thesis, University of Pennsylvania, 2020. [5] J. Deng, S. Medjkouh, N. Malm, O. Tirkkonen, and C. Studer, “Multipoint channel charting for wireless networks,” in Asilomar Conference on Signals, Systems, and Computers , 2018, pp. 286–290. [6] P. Agostini, Z. Utkovski, and S. Sta ´nczak, “Federated learning for multipoint channel charting,” in IEEE 23rd International Workshop on Signal Processing Advances in Wireless Communication (SPAWC) .IEEE, 2022, pp. 1–5. [7] Y. Vindas and M. Guillaud, “Multi-site wireless channel charting through latent space alignment,” in IEEE 25th International Workshop on Signal Processing Advances in Wireless Communications , 2024, pp. 826–830. [8] J. Hansen and R. Ghrist, “Distributed optimization with sheaf homolog-ical constraints,” in 57th annual allerton conference on communication, control, and computing (allerton) . IEEE, 2019, pp. 565–571. [9] T. Hanks, H. Riess, S. Cohen, T. Gross, M. Hale, and J. Fairbanks, “Distributed multi-agent coordination over cellular sheaves,” in IEEE Conference on Decision and Control , 2025, pp. 3057–3064. [10] C. B. Issaid, P. Vepakomma, and M. Bennis, “Tackling feature and sample heterogeneity in decentralized multi-task learning: A sheaf-theoretic approach,” arXiv preprint arXiv:2502.01145 , 2025. [11] E. Grimaldi, M.E. Pandolfo, Gabriele G. D’Acunto, S. Barbarossa, and P. Di Lorenzo, “Learning network sheaves for ai-native semantic communication,” in 2025 59th Asilomar Conference on Signals, Systems, and Computers . IEEE, 2025, pp. 1692–1696. [12] M. Robinson, “Sheaves are the canonical data structure for sensor integration,” Information Fusion , vol. 36, pp. 208–224, 2017. [13] C. Bodnar, F. Di Giovanni, B. Chamberlain, P. Lio, and M. Bronstein, “Neural sheaf diffusion: A topological perspective on heterophily and oversmoothing in gnns,” Advances in Neural Information Processing Systems , vol. 35, pp. 18527–18541, 2022. [14] F. Barbero, C. Bodnar, H. S. de Oc ´ariz Borde, M. Bronstein, P. Veli ˇckovi ´c, and P. Li `o, “Sheaf neural networks with connection laplacians,” in 
+
+Topological, Algebraic and Geometric Learning Workshops . PMLR, 2022, pp. 28–36. [15] F. Chung, W. Zhao, and M. Kempton, “Ranking and sparsifying a connection graph,” Internet Mathematics , vol. 10, pp. 87–115, 2014. [16] L. Di Nino, G. D’Acunto, S. Barbarossa, and P. Di Lorenzo, “Learning the structure of connection graphs,” in ICASSP 2026-2026 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) . IEEE, 2026, pp. 76–80. [17] J. Bamberger, F. Barbero, X. Dong, and M. M. Bronstein, “Bundle neural network for message diffusion on graphs,” in The Thirteenth International Conference on Learning Representations .[18] P. Ferrand, A. Decurninge, L. G. Ordonez, and M. Guillaud, “Triplet-based wireless channel charting: Architecture and experiments,” IEEE Journal on Selected Areas in Communications , vol. 39, no. 8, pp. 2361– 2373, 2021. [19] W. Kabsch, “A solution for the best rotation to relate two sets of vectors,” 
+
+Foundations of Crystallography , vol. 32, no. 5, pp. 922–923, 1976. [20] D. Alvarez-Melis, S. Jegelka, and T. S. Jaakkola, “Towards optimal transport with global invariances,” in The 22nd International Conference on Artificial Intelligence and Statistics . PMLR, 2019, pp. 1870–1879. [21] C. Wang and S. Mahadevan, “Manifold alignment using procrustes analysis,” in Proceedings of the 25th international conference on Machine learning , 2008, pp. 1120–1127. [22] F. Euchner, M. Gauger, S. D ¨orner, and S. ten Brink, “A distributed massive mimo channel sounder for “big csi data”-driven machine learning,” in WSA ; 25th International ITG Workshop on Smart Antennas .VDE, 2021, pp. 1–6. [23] L. Di Nino, S. Barbarossa, and P. Di Lorenzo, “Learning sheaf laplacian optimizing restriction maps,” in 58th Asilomar Conference on Signals, Systems, and Computers . IEEE, 2024, pp. 59–63. [24] J. B. Kruskal, “Multidimensional scaling by optimizing goodness of fit to a nonmetric hypothesis,” Psychometrika , vol. 29, pp. 1–27, 1964. [25] J. Venna and S. Kaski, “Neighborhood preservation in nonlinear projection methods: An experimental study,” in International conference on artificial neural networks . Springer, 2001, pp. 485–491. [26] D. Chen, B. Fan, C. Oliver, and K. Borgwardt, “Unsupervised manifold alignment with joint multidimensional scaling,” in Eleventh International Conference on Learning Representations (ICLR ) , 2023.

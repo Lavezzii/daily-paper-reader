@@ -1,0 +1,314 @@
+Title: AirTF: Over-the-Air Token Fusion for Task-Oriented Multi-Modal Token Communications
+
+URL Source: https://arxiv.org/pdf/2607.03099v1
+
+Published Time: Tue, 07 Jul 2026 00:40:26 GMT
+
+Number of Pages: 7
+
+Markdown Content:
+> 1
+
+# AirTF: Over-the-Air Token Fusion for Task-Oriented Multi-Modal Token Communications 
+
+Bole Liu, Li Qiao, Minghui Wu, Yulin Shao, and Zhen Gao 
+
+Abstract —In the Internet of Vehicles (IoV), transmitting high-dimensional multi-modal sensory data to edge servers for time-sensitive tasks faces severe spectrum bottlenecks. To address this, we propose a foundation model-driven over-the-air token fusion (AirTF) framework for task-oriented multi-modal token communications. Unlike existing schemes for segmentation that rely on convolutional neural networks (CNNs) with limited local receptive fields, AirTF leverages vision transformer (ViT) encoders to extract globally contextualized semantic tokens from distributed heterogeneous sensors. By concurrently transmitting these spatially aligned tokens over a shared wireless channel, our framework exploits the superposition property of the multiple access channel to inherently fuse complementary multi-modal semantics (e.g., RGB and infrared) directly over the air. This mechanism significantly enhances spectral efficiency compared to orthogonal transmission. Furthermore, the integration of a pre-trained foundation model provides critical visual priors, effectively addressing the data-hungry nature of ViTs on limited, scenario-specific semantic segmentation datasets. Experiments demonstrate that AirTF consistently outperforms orthogonal transmission and CNN-based fusion baselines across AWGN and fading channels. Additional evaluations under a three-user setting, residual synchronization errors, and imperfect channel state information estimation further confirm its robustness. The source code will be made publicly available upon acceptance. 
+
+Index Terms —Token communication, multi-modality, founda-tion models, task-oriented communication. 
+
+I. I NTRODUCTION 
+
+As the Internet of Vehicles (IoV) evolves toward au-tonomous driving, connected vehicles are increasingly equipped with heterogeneous sensors (e.g., cameras, infrared (IR) sensors, and LiDAR). To overcome the limited sens-ing range and computational power of individual vehicles, transmitting these multi-modal data to edge servers for col-laborative inference becomes imperative [1]–[3]. However, uploading such high-dimensional, high-volume raw sensory data imposes a severe bottleneck on limited vehicular spectrum resources. To address this challenge, semantic communication and over-the-air computation (AirComp) have emerged as two complementary paradigms [4]. On one hand, semantic communications, such as end-to-end learning-based deep joint source–channel coding (DeepJSCC) [5], [6], and generative AI-enabled intent/token-based communications [7]–[11], ex-tract compact feature representations from raw data to sig-nificantly reduce transmission overhead and mitigate channel fading; on the other hand, AirComp exploits the superposi-tion property of wireless channels to compute nomographic functions, e.g., summation, of distributed data directly over   
+
+> B. Liu, M. Wu, and Z. Gao are with Beijing Institute of Technology (BIT), Beijing, China (e-mail: {leo2102, wuminghui, gaozhen16 }@bit.edu.cn.). L. Qiao and Y. Shao are with the Department of Electrical and Computer Engineering, The University of Hong Kong, Hong Kong (e-mail: {qiaoli, ylshao }@hku.hk).
+
+the air, thereby alleviating uplink transmission pressure and saving communication bandwidth [12]–[14]. Combining these technologies is particularly critical for emerging IoV applications that pose strict demands on col-laboration latency and efficiency [15]. Unlike the widely investigated image reconstruction tasks, autonomous driving requires task-oriented semantic communication for immediate decision-making, e.g., obstacle avoidance [12]. In this context, recent studies [16], [17] have combined DeepJSCC with AirComp for task-oriented multi-user multi-modal sensing and inference. In such systems, modality-specific representations are transmitted concurrently and decoded at the edge server, allowing the received representation to combine color and tex-ture cues from RGB images with thermal cues from IR images in low-light regions [18], [19]. Consequently, the optimization objective shifts from minimizing the mean squared error for signal reconstruction to maximizing the intersection over union for semantic segmentation. Under this task-oriented objective, end-to-end training encourages the received superposed repre-sentation to preserve complementary RGB and IR semantics for segmentation rather than reconstructing each modality at the pixel level. However, these works [16], [17] primarily employ convolutional neural networks (CNNs) for represen-tation extraction and fusion. While CNNs are attractive for lightweight deployment, they still exhibit intrinsic limitations: Due to their local receptive fields, CNN-based methods may struggle to learn discriminative representations of semantic features [20]. To address the above limitation and further improve com-munication efficiency, integrating vision foundation models, particularly vision transformers (ViTs) [21]–[23], becomes essential. In ViTs, an image is represented as a sequence of patch tokens with positional embeddings. Specifically, we propose an over-the-air token fusion (AirTF) framework driven by such foundation models, where spatially aligned multi-modal tokens are directly superposed over the wireless channel to enable efficient semantic fusion. The main contributions of this work are summarized as follows:  
+
+> •
+
+We propose an AirTF framework for task-oriented multi-modal semantic communications. Specifically, spatially indexed multi-modal tokens from different devices are directly superposed over a shared wireless channel, en-abling semantic fusion that exploits the complementarity between modalities.  
+
+> •
+
+We develop a foundation model-driven transmission paradigm by fine-tuning modality-specific ViT encoders initialized with ImageNet pre-trained weights, which pro-duce globally contextualized token representations and improve data efficiency compared to training the ViT backbone from scratch.  
+
+> •
+
+Extensive experiments validate the effectiveness of the  
+
+> arXiv:2607.03099v1 [eess.IV] 3 Jul 2026 2ViT Block
+> ViT Block UE1: RGB UE2: IR Fused Tokens
+> Decoder
+> Over the Air Token Fusion
+> IR Tokens RGB Tokens
+> Noise
+> Edge Server
+> Fig. 1. The overall architecture of the proposed multi-modal AirTF system. It consists of two modality-specific ViT encoders, over-the-air token fusion, and a unified semantic decoder. The token visualization depicts the magnitude of the generated tokens, where red indicates higher energy regions.
+
+proposed framework. At SNR = 0 dB and channel bandwidth ratio C = 1/256 under AWGN channels, AirTF improves the mean intersection over union (mIoU) by 1.61% and 2.07% compared with the orthogonalized counterpart and the CNN-based baseline, respectively. Additional evaluations under Rayleigh and Rician fading and a three-user setting further demonstrate its effective-ness across different channel and modality configurations.  
+
+> •
+
+We further evaluate AirTF under residual synchronization errors, imperfect channel state information (CSI) estima-tion, and spatial calibration errors, showing that it remains robust under moderate non-ideal conditions. 
+
+Notation : Scalars, vectors, and matrices are denoted by italic lower-case, bold lower-case, and bold upper-case letters, respectively. The superscript (·)T represents the transpose, E[·]
+
+denotes the expectation, and ∥·∥ F denotes the Frobenius norm. II. S YSTEM MODEL 
+
+As shown in Fig. 1, we consider an uplink task-oriented semantic communication scenario, where multiple user equip-ments (UEs) transmit their modality-specific sensory data to a central edge server (ES). Specifically, we focus on a two-user setting: UE 1 captures RGB images while UE 2 captures spatially aligned IR images of the same scene [17]. In this case, we define U = {rgb , ir } as the active UE set. The formulation can also be extended to a general case with 
+
+|U| > 2 active modalities and UEs by assigning one modality-specific encoder and transmit stream to each UE. To maximize spectral efficiency in the primary setting, both UEs transmit their semantic features simultaneously over the same time-frequency resource blocks to the ES. In this work, a token refers to a continuous-valued vector representation zi ∈ RD output by the ViT encoder, where each token encodes the semantic information of a spatial image patch. The proposed AirTF framework leverages two modality-specific ViT encoders to extract semantic tokens from RGB and IR images locally. These tokens are then compressed and transmitted concurrently over the multiple access channel (MAC). As visualized in Fig. 1, the token heatmap reveals that end-to-end training drives the encoders to adaptively allocate higher transmission power to tokens corre-sponding to semantically critical regions (shown in red), such as pedestrians and vehicles, thereby ensuring their robustness against channel noise. 
+
+A. Transmitter Architecture 
+
+Let Xu ∈ R3×H×W denote the three-channel encoder input of UE u ∈ U after modality-specific preprocessing, where (H, W ) is the spatial resolution. The ViT backbone processes images as sequences of semantic tokens. For each modality branch u ∈ U, the encoder input Xu is first reshaped into a sequence of flattened two-dimensional patches 
+
+xp,u ∈ RNp×(3 P 2), where P is the patch size and Np = HW P 2
+
+is the number of patches. These patches are mapped to a latent embedding space of di-mension D via a linear projection, yielding patch embeddings 
+
+Ep,u ∈ RNp×D . Following the standard ViT configuration, we define the input sequence length as L = Np + 1 . A learnable class token zcls ,u ∈ RD is prepended to the sequence, and position embeddings Epos ,u ∈ RL×D are added to encode spatial structure 
+
+Tu = [ zcls ,u , Ep,u ] + Epos ,u , (1) where [·, ·] denotes concatenation along the token dimension. The resulting sequence Tu ∈ RL×D is then fed into the transformer encoder 
+
+Zu = fvit (Tu; θu) ∈ RL×D , u ∈ U , (2) where fvit (·) represents the mapping function of the stacked transformer layers and θu denotes the learnable parameters of the modality-specific ViT encoder for the u-th UE, u ∈ U .Each output token vector zi corresponds to a global context-aware representation centered around its original spatial loca-tion. Considering the limited channel bandwidth, these high-dimensional tokens are projected into a compact transmission space and packed into complex channel symbols. Let PIQ :
+
+RNp×d → CNp×d/ 2 denote the I/Q packing operator for even 
+
+d, where I/Q denotes the in-phase and quadrature components. The operator is defined as [PIQ (A)] n,m = An, 2m−1 + jA n, 2m
+
+for any A ∈ RNp×d, n = 1 , . . . , N p, and m = 1 , . . . , d/ 2. The resulting complex token matrix is given by 
+
+Su = PIQ 
+
+
+
+(ZuWu + bu)patch 
+
+
+
+∈ CNp×d/ 2, u ∈ U , (3) where Wu ∈ RD×d and bu ∈ Rd are the learnable weight matrix and bias vector of the modality-specific dense projec-tion layer, respectively, and (·)patch denotes retaining only the patch-token rows after removing the class token. With 3
+
+the CSI estimate bhu available at the transmitters, each UE applies CSI-based phase pre-compensation and independent power normalization as 
+
+˜Su = pPuNs
+
+Sue−j∠bhu
+
+∥Su∥F
+
+. (4) This operation uses the CSI estimate for phase pre-compensation, while the transmit power is normalized in-dependently to satisfy the per-UE power constraint. The resulting transmit symbols satisfy E[∥˜Su∥2 
+
+> F
+
+]/N s ≤ Pu for each u ∈ U , where Pu denotes the average transmit-power budget per complex channel symbol for UE u. Accordingly, the number of shared complex channel uses per semantic frame is Ns = Npd/ 2. In practice, the ES can provide a common timing and carrier reference through synchronization signals or pilots, and uplink pilots can be used to estimate residual channel phases [24], [25]. Each UE then applies timing advance and the phase pre-compensation in (4) before simultaneous transmission. To quantify the communication overhead, we define the channel bandwidth ratio, denoted by C [5], [26]. It is calcu-lated as the ratio of the number of shared complex channel uses Ns to the dimension of the raw input source data, 
+
+C = Ns/(H × W × P 
+
+> u∈U
+
+Cu). Here, Cu denotes the number of raw source channels before modality-specific preprocessing. Hence, smaller C implies a higher compression rate, indicating that fewer symbols are transmitted. 
+
+B. Over-the-Air Token Fusion 
+
+The multi-modal signals are transmitted over a shared MAC. At the ES, the received complex baseband signal is modeled as 
+
+Y = X
+
+> u∈U
+
+hu ˜Su + N, (5) where Y ∈ CNp×d/ 2 denotes the received complex-valued to-ken matrix, hu denotes the complex channel coefficient of UE 
+
+u, and N ∈ CNp×d/ 2 has i.i.d. entries drawn from CN (0 , σ 2
+
+> n
+
+),with σ2 
+
+> n
+
+denoting the noise variance. We define the average transmit signal-to-noise ratio (SNR) under normalized fading as SNR = ( P 
+
+> u∈U
+
+Pu)/σ 2
+
+> n
+
+. For fading channels, this SNR denotes the average transmit SNR, while the instantaneous received power can vary with fading realizations. 
+
+C. Receiver Design 
+
+At the receiver, the received complex token matrix Y ∈
+
+CNp×d/ 2 is unpacked as Yr = P−1IQ (Y) ∈ RNp×d, where inverse I/Q unpacking places the real and imaginary parts of each complex symbol into adjacent feature dimensions. The semantic decoder then maps Yr back to the spatial domain for segmentation. The decoding process consists of two stages: token refinement and spatial upsampling. In the first stage, this noise-corrupted sequence is projected back to the original embedding dimension D and refined via a multi-layer perceptron (MLP) block with layer normalization and residual connections to mitigate the impact of channel noise. In the second stage, the refined tokens are reshaped into a 2D feature map F2D ∈ RD× HP × WP . The final segmentation map 
+
+cM ∈ RK×H×W is then generated through a decoder head comprising bilinear upsampling and convolutional layers 
+
+cM = g1×1
+
+ ϕ(BN (g3×3(Up( F2D )))) , (6) where K is the number of semantic classes, Up( ·) denotes bi-linear upsampling, gs×s(·) represents a convolution operation with kernel size s × s, BN is batch normalization, and ϕ is the ReLU activation function. 
+
+D. Pre-Training and Fine-Tuning 
+
+Acquiring pixel-level annotations for semantic segmenta-tion is labor-intensive, and ViTs are inherently data-hungry compared to CNNs due to the lack of inductive biases [21], [27], making training from scratch on small-scale semantic segmentation datasets challenging. To mitigate this challenge, we initialize the parameters of the RGB and IR ViT encoders with ImageNet-pre-trained weights [28]. Although ImageNet is based on visible-light images, the learned generic visual priors remain useful for thermal imagery. Subsequently, the entire system is fine-tuned in an end-to-end manner. The training objective is to minimize the discrepancy between the ground truth segmentation map M
+
+and the predicted map cM. For any spatial position (i, j ),the predicted logit vector is denoted by cM:,i,j ∈ RK , and the corresponding one-hot ground truth label is given by 
+
+M:,i,j ∈ { 0, 1}K . We employ the cross-entropy loss function, defined as 
+
+Lseg = −
+
+> H
+
+X
+
+> i=1
+> W
+
+X
+
+> j=1
+> K
+
+X
+
+> k=1
+
+Mk,i,j log exp( cMk,i,j )
+
+PKk′=1 exp( cMk′,i,j ) , (7) where Mk,i,j denotes the k-th element of the one-hot encoded label at position (i, j ).We evaluate segmentation performance using the mIoU metric, defined as mIoU = 1
+
+K
+
+> K
+
+X
+
+> k=1
+
+|P k ∩ G k||P k ∪ G k| , (8) where Pk and Gk denote the sets of pixels predicted as class k
+
+and the ground-truth pixels of class k, respectively. The mIoU quantifies the average overlap between predicted and ground-truth masks across all semantic classes. III. E XPERIMENTAL RESULTS AND ANALYSIS 
+
+A. Experimental Setup 
+
+Dataset and Implementation: We evaluate the proposed scheme on the SemanticRT dataset [29], following the original data split. The dataset contains 11,371 aligned pairs of RGB and IR images with 13 semantic classes. The images have a resolution of 512 × 640 and cover complex automotive scenarios, including low-light and pitch-black environments. RGB and IR inputs are resized to 512 × 640 ; random scal-ing/cropping is used only for training augmentation, and single-channel IR images are converted to three-channel en-coder inputs. For the multi-user evaluation, we use the PST900 dataset [19], which provides aligned RGB, thermal, and depth 40 1 2 3 4 5 6 7 8 9 10 SNR (dB)  
+
+> 0.75 0.8 0.85 mIoU
+> AirTF (C=1/256)
+> AirTF (C=1/512)
+> TokenCom-OMA (C=1/256)
+> TokenCom-OMA (C=1/512)
+> MFNet (C=1/256)
+> AirTF (Noiseless C=1/256)
+> Fig. 2. Semantic segmentation performance comparison versus SNR under AWGN channels.
+
+data. The simulation is conducted on a workstation equipped with a single NVIDIA RTX 5090 GPU, using PyTorch 2.5.1. We adopt the ViT-S/16 architecture [21] as the semantic back-bone. For the fading-channel experiments, each UE is assigned one complex fading coefficient hu for each image sample, and this coefficient is kept fixed over all transmitted semantic symbols of that image. Rayleigh fading uses hu ∼ CN (0 , 1) ,while Rician fading follows the same normalized setup with a line-of-sight component controlled by the Rician K-factor. CSI is available at the transmitters, and each UE applies phase pre-compensation with per-UE power normalization. We compare the proposed AirTF scheme with the following baselines: (1) TokenCom-OMA : This scheme constructs an orthogonal variant of the proposed system that transmits RGB and IR semantic features via orthogonal multiple access (OMA). For a fair comparison of spectral efficiency, the total channel bandwidth ratio is kept identical to that of the proposed non-orthogonal AirTF scheme; therefore, each modality is allocated half of the channel uses as that of the AirTF scheme. At the receiver, the recovered features from both modalities are concatenated along the feature dimension to form a unified representation before being fed into the semantic decoder. Note that, similar to the proposed AirTF, this baseline transmits continuous-valued semantic tokens fol-lowing the DeepJSCC paradigm. (2) MFNet : A representa-tive CNN-based fusion baseline adapted to the same non-orthogonal transmission setting, following the feature super-position paradigm in [16]. 
+
+Training Strategy: The pre-trained AirTF and TokenCom-OMA models in the main comparison are fine-tuned for 50 epochs, while the MFNet baseline is trained for 100 epochs. All models are optimized using AdamW with a weight decay of 1 × 10 −4 and a cosine annealing learning-rate scheduler. For AirTF and TokenCom-OMA, ViT encoders initialized with ImageNet pre-trained weights use an initial learning rate of 
+
+1×10 −5, while the remaining trainable modules use 1×10 −4.The MFNet baseline uses an initial learning rate of 1 × 10 −4.
+
+B. Performance Comparison 
+
+We evaluate the system performance under varying AWGN channel conditions. As shown in Fig. 2, at SNR = 0 dB and C = 1 /256 , AirTF achieves an mIoU of 85.78%, which is 1.61% higher than TokenCom-OMA (84.17%) and 2.07% higher than MFNet (83.71%). As SNR increases, TokenCom-OMA gradually approaches AirTF at C = 1 /256 . The noise-less AirTF curve is included as a reference performance ceiling of the same transmission architecture when channel noise is removed. For C = 1 /512 , a clear performance gap persists, demonstrating the bandwidth efficiency of AirTF under lim-ited channel resources. The performance gain of AirTF over MFNet is attributed to the advantage of the vision transformer architecture and the pre-training strategy. Specifically, while CNNs are limited by local receptive fields, ViT’s self-attention mechanism captures global semantic context, enabling the generation of high-quality semantic tokens that retain critical scene information even after channel corruption. Fig. 3 further evaluates the effects of channel bandwidth ratio, fading channels, the PST900 three-user setting, and encoder initialization. Fig. 3(a) evaluates task performance against varying channel bandwidth ratios at SNR = 0 dB. While all schemes exhibit a performance decline as the channel bandwidth ratio decreases, the orthogonal approach suffers a more pronounced degradation due to insufficient per-modality resources. In contrast, the proposed scheme maintains robust utility. At low channel bandwidth ratios, the performance gap between the Transformer-based AirTF and CNN-based MFNet becomes very small. This phenomenon suggests that uniform dimension reduction across all spatial to-kens imposes a representation bottleneck, limiting the expres-sion of semantically critical features under severe constraints. Consequently, integrating importance-aware token allocation into the proposed framework represents a promising avenue to further exploit the potential of ViTs. Nevertheless, the proposed over-the-air fusion mechanism effectively allevi-ates the severe degradation observed in orthogonal schemes, demonstrating superior robustness in preserving multi-modal semantics under bandwidth scarcity. Fig. 3(b) further evaluates the models under Rayleigh fading and Rician fading with K-factors of 5 and 10 dB. The curves show the expected trend that performance improves as the line-of-sight component becomes stronger, with Rayleigh fading serving as the no-line-of-sight limiting case. Across these fading settings, AirTF consistently achieves higher mIoU than TokenCom-OMA, although the gap narrows at high SNR, and maintains a clear advantage over MFNet, indicating that AirTF remains effective beyond AWGN channels. Fig. 3(c) reports the PST900 multi-user experiment with RGB, thermal, and depth inputs, where AirTF and MFNet use C = 1 /256 and TokenCom-OMA uses 
+
+C ≈ 1/213 .3. At SNR = 5 dB, AirTF achieves 79.33% mIoU, compared with 66.80% for TokenCom-OMA and 74.06% for MFNet, showing that the proposed framework can extend to heterogeneous multi-user sensing scenarios. 
+
+C. Robustness to Synchronization Imperfection and CSI Esti-mation Errors 
+
+To examine the sensitivity of AirTF to residual synchroniza-tion and CSI estimation errors, we test the trained models un-der residual phase offsets, residual timing offsets, and imper-fect CSI estimation without re-training. As shown in Fig. 5(a), 51/64 1/128 1/256 1/512 Channel Bandwidth Ratio                              
+
+> 0.75 0.8 0.85
+> mIoU
+> AirTF
+> TokenCom-OMA
+> MFNet
+> (a) 0246810 SNR (dB)
+> 0.75 0.8 0.85
+> mIoU
+> AirTF
+> TokenCom-OMA
+> MFNet
+> Rayleigh
+> Rician K=5 dB
+> Rician K=10 dB (b) 0246810 SNR (dB)
+> 0.6 0.65 0.7 0.75 0.8 mIoU
+> AirTF (3UE)
+> TokenCom-OMA (3UE)
+> MFNet (3UE)
+> (c) 0246810 SNR (dB)
+> 0.8 0.82 0.84 0.86 0.88
+> mIoU
+> RGB Random / IR Random
+> RGB Random / IR ImageNet
+> RGB ImageNet / IR Random
+> RGB ImageNet / IR ImageNet (d) Fig. 3. Quantitative results: (a) channel bandwidth ratio ablation under AWGN at SNR = 0 dB; (b) performance under Rayleigh and Rician fading channels at C= 1 /256 ; (c) performance under AWGN on the PST900 three-user setting, where AirTF and MFNet use C= 1 /256 and TokenCom-OMA uses
+> C≈1/213 .3; and (d) encoder initialization ablation at C= 1 /256 .
+
+AirTF and MFNet both remain stable under moderate phase offsets, while large phase mismatch causes clear degradation. For example, AirTF decreases from 87.04% mIoU at 0◦ to 85.60% at 30 ◦, but drops more noticeably at 60 ◦.Fig. 5(b) shows that residual sub-symbol timing offsets have limited impact after applying the aligned-sample estimator for misaligned AirComp [30], [31]. Increasing the residual delay from 0 to 0.5 symbol intervals changes the mIoU of both AirTF and MFNet by about 0.5%, indicating that the tested timing offsets are effectively mitigated. For imperfect CSI estimation, we model the CSI estimate as bhu = hu + eu,where eu ∼ CN (0 , σ 2 
+
+> e
+
+) and σe denotes the standard deviation of the complex CSI estimation error. Fig. 5(c) further shows gradual degradation as σe increases in Rayleigh fading, while AirTF remains consistently above MFNet across the tested error levels. We also test moderate spatial calibration errors by perturb-ing the IR input at SNR = 5 dB and C = 1 /256 . When the IR image is translated by 4 pixels, AirTF obtains 86.23% mIoU, compared with 84.19% for MFNet; when the IR image is rotated by 2◦, AirTF obtains 85.34%, compared with 83.40% for MFNet. These results indicate that AirTF remains robust to small spatial misalignment, while accurate calibration is still important. 
+
+D. Complexity and Latency 
+
+We further profile the computational cost, communication overhead, and latency at C = 1 /256 with input resolution 
+
+512 × 640 . Table I summarizes the UE-side encoder, ES-side receiver/decoder, and complete forward-pass complexity and latency measured on an NVIDIA RTX 5090 with batch size                          
+
+> TABLE I COMPUTATIONAL COMPLEXITY AND LATENCY COMPARISON. Model GFLOPs Latency (ms) Enc. Rx/Dec. Full Enc. Rx/Dec. Full AirTF 171.07 585.63 756.69 8.95 7.92 16.70 TokenCom-OMA 171.06 588.67 759.72 9.01 8.12 17.14 MFNet 11.31 8.54 19.85 0.86 0.47 1.36
+
+16 over 100 repeated runs and reported per image. AirTF and TokenCom-OMA incur higher computation than MFNet due to the ViT encoders and ES-side semantic decoder. Notably, although the AirTF ES-side decoder requires more than three times the FLOPs of its encoder, it incurs a slightly lower latency. This discrepancy reflects the different GPU utilization efficiencies of their underlying operations and indicates that FLOPs alone are not a reliable predictor of wall-clock latency. Therefore, the additional computational cost of AirTF is accompanied by the performance and robustness advantages observed under limited channel bandwidth, fading channels, residual synchronization errors, and imperfect CSI estimation. From the communication perspective, AirTF uses Ns = 5120 
+
+shared complex-valued channel uses at C = 1 /256 , corre-sponding to about 0.26 ms over a 20 MHz bandwidth. The two AirTF modality encoders take 8.95 ms in total, i.e., about 4.47 ms per UE when executed as separate branches, indicating that semantic encoding, rather than wireless transmission, dominates the latency. 
+
+E. Ablation Study 
+
+To assess the effect of encoder initialization, Fig. 3(d) compares four initialization choices for the RGB and IR ViT 6                                   
+
+> RGB
+> IR
+> Ground Truth
+> AirTF
+> MFNet
+> TokenCom -OMA
+> CarStop Bike Bicyclist Motorcycle Motorcyclist Car
+> Tricycle TrafficLight Box Pole Curve Person
+> Fig. 4. Visual comparison of semantic segmentation results on the SemanticRT dataset at SNR = 5 dB and C= 1 /512 . We compare the proposed scheme with baseline methods across 10 scenarios. The labels on the left indicate the input modalities (RGB, IR), the ground truth, and predictions from different methods. The color legend at the bottom denotes the semantic classes. 010 20 30 45 60 Phase Offset (degree)
+> 0.6 0.7 0.8
+> mIoU  (a) Phase offset
+> AirTF MFNet
+> 00.1 0.2 0.3 0.4 0.5 Timing Offset (symbol)
+> 0.82 0.84 0.86 0.88
+> mIoU  (b) Timing offset
+> 0 0.02 0.05 0.1 0.2 0.3 CSI estimation error standard deviation e
+> 0.8 0.85
+> mIoU  (c) CSI estimation error
+> Fig. 5. Robustness to synchronization imperfection and CSI estimation errors at SNR = 5 dB and C= 1 /256 : (a) residual phase offset; (b) residual timing offset; and (c) CSI estimation error standard deviation.
+
+encoders. In this ablation, encoders initialized with ImageNet pre-trained weights use a learning rate of 1 × 10 −5, while randomly initialized encoders use 5 × 10 −5. The fully random initialization setting is trained for 100 epochs, and the other initialization settings are trained for 50 epochs. At SNR 
+
+= 5 dB and C = 1 /256 , initializing both encoders from ImageNet achieves 87.05% mIoU, compared with 82.88% for random initialization of both encoders. Initializing only the IR encoder from ImageNet reaches 86.40%, while initializing only the RGB encoder from ImageNet reaches 84.75%. These results indicate that ImageNet pre-training provides useful visual priors for both modalities, and that jointly adapting both modality-specific encoders gives the most reliable per-formance. 
+
+F. Visual Demonstration 
+
+We first provide qualitative results to visually assess the segmentation quality. Fig. 4 showcases segmentation outputs under challenging conditions (SNR = 5 dB, C = 1 /512 ). AirTF produces segmentation maps that are generally more consistent with the ground truth, preserving more complete object regions and clearer object boundaries. MFNet can recover the main vehicle regions, but it occasionally misses small targets and produces coarser contours. TokenCom-OMA remains visually competitive, while a few local regions show fragmented predictions or loss of fine semantic details. This visual evidence is consistent with the quantitative results, sug-gesting that AirTF can better preserve object regions and fine semantic details than the baselines under the tested adverse channel conditions. To further interpret how the proposed system effectively fuses multi-modal information via token superposition, we visualize the internal attention mechanisms of the ViT en-coders alongside the final segmentation results. Fig. 6 presents a qualitative comparison comprising the input modalities, the ground truth, and the model prediction. Specifically, Fig. 6(b) and (e) overlay the self-attention probability maps of the last ViT block onto the input images. As observed in Fig. 6(b), the RGB branch’s attention is primarily focused on visually salient objects with clear textures, such as the pole and the white vehicle. However, the RGB sensor fails to clearly capture some targets in low-light or shadowed regions (e.g., the pedestrians in the top-right corner), rendering them almost invisible in Fig. 6(a). Crucially, the IR branch compensates for this deficiency. As shown in Fig. 6(e), the IR ViT encoder successfully attends to these heat-emitting targets, assigning them high attention scores (red regions) despite the lack of visible illumination. This obser-vation suggests that the two branches provide complementary cues before being superposed over the air. After end-to-end 7    
+
+> (a) Input RGB Image (b) RGB Attention Map (c) Ground Truth
+> (d) Input IR Image (e) IR Attention Map (f) Our Prediction
+
+Fig. 6. Visualization of multi-modal complementarity in the proposed system. High attention scores (red) indicate regions of high semantic importance. 
+
+training, the decoder can exploit the received superposed token representation to recover both visually salient structures and thermally visible targets, supporting the interpretation that token-level superposition can serve as a task-oriented semantic fusion mechanism. IV. C ONCLUSION 
+
+In this paper, we proposed the AirTF framework for task-oriented multi-modal semantic communications. The proposed system utilizes modality-specific ViT encoders to extract se-mantic tokens from RGB and IR images, which are then concurrently compressed and superposed over a shared wire-less channel. With end-to-end task training, the over-the-air superposed token representation can exploit the structural com-plementarity between modalities, effectively capturing both visually salient textures and thermally visible targets in low-light conditions. Furthermore, initializing the ViT encoders with pre-trained foundation models proves essential, as it provides the necessary visual priors to overcome the data-hungry nature of ViTs on limited-scale semantic segmentation datasets. Experimental results demonstrate that AirTF consis-tently outperforms the orthogonal token-transmission baseline and the CNN-based fusion baseline across the tested channel conditions, especially under limited channel bandwidth. Fu-ture work will extend AirTF beyond semantic segmentation to broader perception tasks and explore task-adaptive cross-modal token selection to improve the efficiency of multi-sensor semantic transmission. REFERENCES [1] D. Roy et al. , “Multi-modality sensing and data fusion for multi-vehicle detection,” IEEE Trans. Multimedia , vol. 25, pp. 2280–2295, 2023. [2] J. Lu et al. , “Generative Artificial Intelligence-enhanced multimodal semantic communication in Internet of Vehicles: System design and methodologies,” IEEE Veh. Technol. Mag. , vol. 20, no. 2, pp. 71–82, 2025. [3] C. Liu et al. , “Cooperative perception with learning-based V2V com-munications,” IEEE Wireless Commun. Lett. , vol. 12, no. 11, pp. 1831– 1835, 2023. [4] S. Wei et al. , “Task-oriented multi-user semantic communication based on deep over-the-air computation,” IEEE Trans. Veh. Technol. , vol. 74, no. 9, pp. 14 343–14 357, 2025. [5] E. Bourtsoulatze, D. B. Kurka, and D. G¨ und¨ uz, “Deep joint source-channel coding for wireless image transmission,” IEEE Trans. Cogn. Commun. Netw. , vol. 5, no. 3, pp. 567–579, Sep. 2019. [6] Z. Qin et al. , “AI empowered wireless communications: From bits to semantics,” Proc. IEEE , vol. 112, no. 7, pp. 621–652, 2024. [7] L. Qiao et al. , “Latency-aware generative semantic communications with pre-trained diffusion models,” IEEE Wireless Commun. Lett. , vol. 13, no. 10, pp. 2652–2656, 2024. [8] L. Qiao et al. , “Token communications: A large model-driven frame-work for cross-modal context-aware semantic communications,” IEEE Wireless Commun. , vol. 32, no. 5, pp. 80–88, 2025. [9] X. Liu et al. , “Communicate less, synthesize the rest: Latency-aware intent-based generative semantic multicasting with diffusion models,” 
+
+IEEE Trans. Veh. Technol. , early access, Feb. 2026. [10] O. Erak et al. , “Adaptive token merging for efficient transformer semantic communication at the edge,” arXiv preprint arXiv:2509.09955 ,2025. [11] Q. Wang et al. , “Knowledge distillation-driven semantic NOMA for im-age transmission with diffusion model,” IEEE Transactions on Wireless Communications , vol. 25, pp. 11 783–11 798, 2026. [12] G. Zhu et al. , “Over-the-air computing for wireless data aggregation in massive IoT,” IEEE Wireless Commun. , vol. 28, no. 4, pp. 57–65, 2021. [13] Z. Liu, Q. Lan, and K. Huang, “Over-the-air fusion of sparse spatial features for integrated sensing and edge AI over broadband channels,” 
+
+IEEE Trans. Wireless Commun. , vol. 24, no. 4, pp. 2999–3013, 2025. [14] L. Qiao et al. , “MD-AirComp+: Adaptive quantization for blind mas-sive digital over-the-air computation,” Chinese Journal of Electronics ,vol. 35, no. 5, pp. 1–12, 2026. [15] S. Liu et al. , “Communication and computation efficient federated learning for Internet of Vehicles with a constrained latency,” IEEE Trans. Veh. Technol. , vol. 73, no. 1, pp. 1038–1052, 2024. [16] M. Wu and Z. Gao, “E2E learning massive MIMO for multimodal semantic non-orthogonal transmission and fusion,” IEEE J. Select. Areas Commun. , early access, Dec. 2025. [17] X. Luo et al. , “Multimodal and multiuser semantic communications for channel-level information fusion,” IEEE Wireless Commun. , vol. 31, no. 2, pp. 117–125, Apr. 2024. [18] Y. Sun, W. Zuo, and M. Liu, “RTFNet: RGB-thermal fusion network for semantic segmentation of urban scenes,” IEEE Robotics and Automation Letters , vol. 4, no. 3, pp. 2576–2583, 2019. [19] S. S. Shivakumar et al. , “PST900: RGB-thermal calibration, dataset and segmentation network,” in Proc. IEEE Int. Conf. Robot. Autom. (ICRA) ,2020, pp. 9441–9447. [20] H. Wu et al. , “Transformer-aided wireless image transmission with channel feedback,” IEEE Trans. Wireless Commun. , vol. 23, no. 9, pp. 11 904–11 919, 2024. [21] A. Dosovitskiy et al. , “An image is worth 16x16 words: Transformers for image recognition at scale,” in Proc. Int. Conf. Learn. Representations (ICLR) , 2021. [22] X. Liu et al. , “Toward the unification of generative and discriminative visual foundation model: A survey,” The Visual Computer , vol. 41, pp. 3371–3412, 09 2024. [23] Z. Li et al. , “Large model enabled embodied intelligence for 6G inte-grated perception, communication, and computation network,” Chinese Journal of Electronics , vol. 35, no. 5, pp. 1–25, 2026. [24] M. Shafi et al. , “5G: A tutorial overview of standards, trials, challenges, deployment, and practice,” IEEE Journal on Selected Areas in Commu-nications , vol. 35, no. 6, pp. 1201–1221, 2017. [25] M. H. C. Garcia et al. , “A tutorial on 5G NR V2X communications,” 
+
+IEEE Communications Surveys & Tutorials , vol. 23, no. 3, pp. 1972– 2026, 2021. [26] J. Xu et al. , “Wireless image transmission using deep source channel coding with attention modules,” IEEE Transactions on Circuits and Systems for Video Technology , vol. 32, no. 4, pp. 2315–2328, Apr. 2022. [27] Y.-H. Cao, H. Yu, and J. Wu, “Training Vision Transformers with only 2040 images,” in Proc. Eur. Conf. Comput. Vis. (ECCV) , Tel Aviv, Israel, Oct. 2022, pp. 220–237. [28] J. Deng et al. , “ImageNet: A large-scale hierarchical image database,” in Proc. IEEE Conf. Comput. Vis. Pattern Recognit. (CVPR) , 2009, pp. 248–255. [29] W. Ji et al. , “SemanticRT: A large-scale dataset and method for robust semantic segmentation in multispectral images,” in Proc. 31st ACM Int. Conf. Multimed. , 2023, p. 3307–3316. [30] Y. Shao, D. G¨ und¨ uz, and S. C. Liew, “Federated edge learning with misaligned over-the-air computation,” IEEE Trans. Wireless Commun. ,vol. 21, no. 6, pp. 3951–3964, 2022. [31] L. Qiao et al. , “Massive digital over-the-air computation for communication-efficient federated edge learning,” IEEE J. Select. Areas Commun. , vol. 42, no. 11, pp. 3078–3094, 2024.

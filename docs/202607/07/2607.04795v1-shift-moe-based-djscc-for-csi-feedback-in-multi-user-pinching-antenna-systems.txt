@@ -1,0 +1,378 @@
+Title: Shift-MoE-Based DJSCC for CSI Feedback in Multi-User Pinching-Antenna Systems
+
+URL Source: https://arxiv.org/pdf/2607.04795v1
+
+Published Time: Tue, 07 Jul 2026 03:04:42 GMT
+
+Number of Pages: 5
+
+Markdown Content:
+> 1
+
+# Shift-MoE-Based DJSCC for CSI Feedback in Multi-User Pinching-Antenna Systems 
+
+Jian Zou, Yifan Lian, Yongsheng Liang, Fanyang Meng, Wenwu Xie, Liang Yang, and Jian Xiao 
+
+Abstract —In frequency-division duplexing systems, the per-formance gains of pinching-antenna systems (PASS) critically depend on accurate channel state information (CSI) at the base station. However, PASS CSI exhibits structured correlations over the waveguide-antenna grid and pronounced heterogeneity across users, making conventional fixed feedback mappings difficult to generalize. To address this challenge, this letter proposes an end-to-end CSI feedback scheme over a noisy uplink feedback link based on deep joint source-channel coding, termed Shift-based Mixture-of-Experts (Shift-MoE). Specifically, Shift-MoE leverages channel-grouped one-step shift operations to capture grid dependencies without global attention, and employs a gated multilayer perceptron mixture-of-experts module to adapt to heterogeneous CSI statistics across users. Numerical results demonstrate that the proposed Shift-MoE consistently outper-forms representative learning-based CSI feedback baselines in normalized mean squared error and remains effective under different system parameter settings. 
+
+Index Terms —Pinching-antenna systems, CSI feedback, deep joint source-channel coding, mixture-of-experts. 
+
+I. I NTRODUCTION 
+
+# PINCHING-antenna systems (PASS) have recently at-tracted increasing attention alongside reconfigurable intel-ligent surfaces and movable-antenna technologies as promising architectures for reconfigurable propagation, owing to their low power consumption, low cost, and flexible deployment, 
+
+This work was supported in part by the National Natural Science Foundation of China under Grant 62571160, in part by the Engineering Technology R&D Center of Guangdong Provincial Universities 2024GCZX004, and in part by the Natural Science Foundation of Hunan Province under Grant 2023JJ50045, Grant 2025JJ70287, Grant 2024JJ7218, and Grant 2024JJ7219. (Corresponding author: Yongsheng Liang.) Jian Zou is with the College of Applied Technology, Shenzhen University, Shenzhen 518060, China (e-mail: zoujian250@gmail.com). Yifan Lian is with the College of Electronics and Information Engineering, Shenzhen University, Shenzhen 518060, China (e-mail: yifanll@outlook.com). Yongsheng Liang is also with the School of Artificial Intelligence, Shenzhen Technology University, Shenzhen 518118, China, and also with the College of Electronics and Information Engineering, Shenzhen University, Shenzhen 518060, China (e-mail: liangys@szu.edu.cn). Fanyang Meng is with the Research Center of Networks and Com-munications, Pengcheng Laboratory, Shenzhen 518055, China (e-mail: mengfy@pcl.ac.cn). Wenwu Xie is with the School of Information Science and Engineering, Hunan Institute of Science and Technology, Yueyang 414006, China (e-mail: gavinxie@hnist.edu.cn). Liang Yang is with the College of Computer Science and Electronic Engineering, Hunan University, Changsha 410082, China, and also with the School of Communication and Electronic Engineering, Jishou University, Jishou 416000, China (e-mail: liangy@hnu.edu.cn). Jian Xiao is with the Department of Electronics and Information Engi-neering, College of Physical Science and Technology, Central China Nor-mal University, Wuhan 430079, China, and also with School of Electrical and Electronics Engineering, Nanyang Technological University (e-mail: jianx@mails.ccnu.edu.cn). Jian Zou and Yifan Lian contributed equally to this work. 
+
+and offering a new means to manipulate the propagation environment for performance enhancement [1]–[3]. Existing studies have shown that the achievable gains of PASS crit-ically depend on accurate channel state information (CSI) at the base station (BS) to support downlink precoding and multi-user interference management [4]. While many prior works are developed under time-division duplexing settings that leverage channel reciprocity, deploying PASS in practi-cal frequency-division duplexing (FDD) systems is also of strong practical relevance to current commercial networks. In FDD systems, frequency separation prevents exploiting uplink–downlink reciprocity, and accurate CSI feedback be-comes a key bottleneck to realizing PASS gains in downlink precoding and multi-user interference mitigation. Recent deep learning-based CSI feedback methods, exem-plified by CsiNet, have shown that compact latent repre-sentations can be learned effectively under limited feedback overhead [5]. However, most existing schemes essentially formulate CSI feedback as a source compression problem and implicitly assume an error-free feedback link, while practical feedback transmission inevitably suffers from noise and fad-ing, leading to a pronounced source-channel mismatch and performance degradation [6], [7]. To address this issue, deep joint source-channel coding (DJSCC) provides an end-to-end framework that jointly optimizes representation extraction and transmission robustness over impaired channels. A seminal work in [8] introduced DJSCC for wireless image transmission and demonstrated the advantage of end-to-end learning over noisy channels. Building upon this idea, DJSCC has also been extended to CSI feedback, allowing transmission impairments to be explicitly taken into account during the feedback pro-cess [9]. Nevertheless, PASS-oriented CSI feedback remains largely unexplored, and in multi-user PASS scenarios, hetero-geneous CSI statistics and PASS-specific spatial correlations make a single fixed feedback mapping difficult to generalize across users. Motivated by the above, this letter studies CSI feedback for multi-user PASS and proposes a Shift-MoE-based end-to-end feedback framework. Specifically, the proposed de-sign integrates a shift-based interaction mechanism to cap-ture structured correlations along the waveguide and antenna dimensions with low complexity, and a gated mixture-of-experts (MoE) module to enhance representation learning under heterogeneous user CSI distributions. Within a DJSCC framework, the encoder and decoder are jointly optimized over the noisy feedback channel to improve robustness against transmission impairments. Numerical results validate the ef-fectiveness of the proposed method in achieving superior  
+
+> arXiv:2607.04795v1 [eess.SP] 6 Jul 2026 2
+> Fig. 1. Pinching antennas assisted multi-user systems.
+
+CSI reconstruction performance under different user scales, antenna configurations, and compression ratios. II. S YSTEM MODEL AND PROBLEM FORMULATION 
+
+A. System Model 
+
+As shown in Fig. 1, we consider a downlink multi-user scenario where the BS serves K users via a PASS consist-ing of passive dielectric waveguides and pinching antennas (PAs) [11]. The PASS comprises M parallel dielectric waveg-uides deployed at a height a above the user plane. These waveguides are parallel to the x-axis and uniformly spaced along the y-axis with inter-waveguide distance d, where the m-th waveguide is located at ym = ( m − 1) d, m = 1 , 2, . . . , M .Each waveguide is equipped with N fixed PAs placed along the x-axis at positions lm,n = ( n − 1)∆ l, n = 1 , 2, . . . , N ,where ∆l denotes the PA spacing. The k-th user is located at uk = ( xk, y k) on the user plane. We adopt a geometric multipath channel model consisting of a LoS component and 
+
+P scattered (NLoS) components [10]. Specifically, the PA-level channel coefficient between the n-th PA on waveguide 
+
+m and user k is modeled as 
+
+hk,m,n = hLoS  
+
+> k,m,n
+
++ hNLoS 
+
+> k,m,n
+
+. (1) The propagation distance between the n-th PA on waveguide 
+
+m and user k is denoted by 
+
+Dk,m,n =
+
+q
+
+(lm,n − xk)2 + ( ym − yk)2 + a2, (2) and the corresponding LoS channel coefficient is modeled as 
+
+hLoS  
+
+> k,m,n
+
+= ξDk,m,n 
+
+e(−jκD k,m,n ), (3) where ξ = λ/ (4 π) is the free-space constant, λ = c/f is the wavelength with c denoting the speed of light and f the carrier frequency, and κ = 2 π/λ .To account for scattering, let the p-th scatterer be located at 
+
+(xs,p , y s,p ) with height as. The PA-to-scatterer distance and scatterer-to-user distance are given by 
+
+Dp,m,n =
+
+q
+
+(lm,n − xs,p )2 + ( ym − ys,p )2 + ( a − as)2,Dk,p =
+
+q
+
+(xs,p − xk)2 + ( ys,p − yk)2 + a2
+
+> s
+
+.
+
+(4) The NLoS component is then expressed as a superposition of P scattered paths 
+
+hNLoS  
+
+> k,m,n
+
+= λ
+
+(4 π)3/2
+
+> P
+
+X
+
+> p=1
+
+βk,p 
+
+Dp,m,n Dk,p 
+
+e(−jκ (Dp,m,n +Dk,p )) , (5) where βk,p denotes the complex gain of the p-th scattered path associated with user k.Due to signal propagation inside the dielectric waveguide, an additional phase shift is introduced before radiation at each PA. This effect is captured by the waveguide radiation vector 
+
+em =
+
+h
+
+pm, 1e(−jκi ref lm, 1), . . . , p m,N e(−jκi ref lm,N )iT
+
+∈ CN ×1,
+
+(6) where pm,n denotes the coupling gain from waveguide m to its n-th PA. In this work, uniform coupling is assumed, i.e., 
+
+pm,n = 1 /√N . Then, the effective radiation channel from waveguide m to user k is obtained by coherent combining as 
+
+gk,m (lm) = hTk,m em =
+
+> N
+
+X
+
+> n=1
+
+hk,m,n pm,n e(−jκi ref lm,n ), (7) where Λ = [ l1, . . . , lM ] ∈ RN ×M collects the PA position vectors on all waveguides. Then, the effective channel vec-tor from all waveguides to user k is defined as gk(Λ) = [gk, 1(l1), g k, 2(l2), . . . , g k,M (lM )] T ∈ CM ×1. To preserve the two-dimensional structural details across the waveguide and PA dimensions, we define the CSI matrix of user k as 
+
+Hk ∈ CM ×N , where the (m, n )-th entry is given by 
+
+[Hk]m,n = hk,m,n pm,n e(−jκi ref lm,n ), (8) which implies gk,m (lm) = PNn=1 [Hk]m,n .
+
+B. Problem Formulation 
+
+We investigate CSI feedback for an FDD multi-user PASS downlink. For each user k, the CSI to be fed back is the complex matrix Hk ∈ CM ×N . In this work, PASS is used for downlink data transmission, while CSI feedback is con-veyed from the UE to the BS via a conventional uplink control/feedback channel. Due to limited feedback overhead and an impaired uplink feedback link, we adopt an end-to-end DJSCC strategy that directly maps Hk to feedback-channel symbols and optimizes the reconstruction quality over the feedback link. Specifically, we concatenate the real and imaginary parts of Hk along the last dimension as an 
+
+M × N × 2 real-valued input. The encoder f1(•, θ1) outputs a real codeword 
+
+Zk = f1(Hk, θ1) ∈ RL×1, (9) where L denotes the network output dimension and Lc = L/ 2.We interpret Zk as two length-Lc I/Q sequences to form a complex symbol sk ∈ CLc×1, which is normalized to satisfy unit average transmit power per block. The compression ratio based on real dimensions is η ≜ L 
+
+> 2M N
+
+.The uplink feedback link is modeled as a quasi-static flat Rician fading channel with additive white Gaussian noise (AWGN). Over one feedback block of length Lc, the fading 3 
+
+> Fig. 2. Proposed Shift-MoE encoder architecture.
+
+coefficient hf b k remains constant, and the received signal at the BS is 
+
+yf b k = hf b k sk + nf b k , (10) where nf b k ∼ CN (0, σ 2
+
+> f b
+
+ILc ). The BS obtains ˆhf b k via pilot-aided channel estimation and applies one-tap equalization 
+
+˜sk = yf b k /ˆhf b k . To focus on the end-to-end DJSCC map-ping, we use an idealized receiver-side channel knowledge setting in simulations by taking ˆhf b k = hf b k , which yields 
+
+˜sk = sk + nf b k /hf b k .Given ˜sk, the decoder f2(·; θ2) reconstructs the CSI and outputs the estimate ˆHk ∈ CM ×N as 
+
+ˆHk = f2(˜ sk; θ2). (11) The encoder and decoder parameters (θ1, θ2) are optimized end-to-end by minimizing the expected reconstruction error over the CSI distribution and the feedback channel 
+
+(θ⋆ 
+
+> 1
+
+, θ⋆ 
+
+> 2
+
+) = arg min 
+
+> θ1,θ2
+
+E
+
+h
+
+∥Hk − ˆHk∥2
+
+> F
+
+i
+
+, (12) where ∥ · ∥ F denotes the Frobenius norm. III. S HIFT -M OE: CSI F EEDBACK FOR MULTI -U SER 
+
+PINCHING -A NTENNA SYSTEMS 
+
+The CSI dataset is generated based on the considered PASS geometry and the adopted channel model. Specifically, we repeatedly sample user locations uk = ( xk, y k) uniformly in the considered region and compute the PA-level CSI matrix 
+
+Hk ∈ CM ×N . For neural processing, we concatenate ℜ{ Hk}
+
+and ℑ{ Hk} along the last dimension to obtain an M × N × 2
+
+real-valued tensor, which is used as the network input and target. Motivated by the fact that multi-user PASS CSI exhibits structured spatial correlations along both the waveguide and PA dimensions, while its statistics may vary across users and operating conditions, we propose a Shift-MoE-based CSI feedback framework, as illustrated in Fig. 2. The proposed design targets two requirements: i) capturing the M ×N spatial dependencies without global attention, and ii) enhancing rep-resentation flexibility through input-adaptive expert modeling. The overall architecture follows a symmetric encoder–decoder structure: the encoder maps the real/imaginary concatenated CSI to a compact latent code for uplink feedback, and the decoder mirrors the encoder to reconstruct the CSI at the BS. 
+
+1) CSI representation and projection: We represent the input CSI by concatenating its real and imaginary parts and arrang-ing them into a two-channel tensor H ∈ R2×M ×N . A 1 × 1
+
+Conv2D layer projects H to a feature tensor F0 ∈ Rdm×M ×N ,followed by Layer Normalization (LN). The resulting features are then processed by N1 cascaded Shift-MoE blocks. 
+
+2) Shift mechanism: In each Shift-MoE block, the Shift module performs deterministic one-step feature shifts on chan-nel groups to enable local spatial interaction [12], [13]. Let 
+
+F ∈ Rdm×M ×N denote the block input and let g = ⌊dm/n div ⌋
+
+be the group width under ndiv channel groups. Using a slicing notation to describe the channel-group shifts, the shifted feature Fsh = S(F) is constructed by shifting the first four channel groups along four directions, while keeping the remaining channels unchanged 
+
+Fsh   
+
+> [: ,0: g, :,0: N−1]
+
+= F[: ,0: g, :,1: N ],
+
+Fsh   
+
+> [: ,g :2 g, :,1: N]
+
+= F[: ,g :2 g, :,0: N −1] ,
+
+Fsh   
+
+> [: ,2g:3 g, 0: M−1,:]
+
+= F[: ,2g:3 g, 1: M, :] ,
+
+Fsh  
+
+> [: ,3g:4 g, 1: M, :]
+
+= F[: ,3g:4 g, 0: M −1,:] ,
+
+Fsh  
+
+> [: ,4g:dm,:,:]
+
+= F[: ,4g:dm,:,:] .
+
+(13) The first two equations correspond to shifts along the PA dimension, and the next two correspond to shifts along the waveguide dimension. After shifting, LN is applied. The normalized feature map is then flattened by vectorizing the 
+
+M × N grid into a token representation T ∈ RM N ×dm for expert processing. 
+
+3) MLP-based mixture-of-experts: To improve modeling flexibility under heterogeneous CSI statistics, we introduce an MLP-based MoE module with gating control [14]. Before routing to experts, a token-wise gating mechanism modulates 
+
+T through a two-layer perceptron. Specifically, the gating mask is computed as 
+
+G = σ Wg, 2 ρ(Wg, 1T) ∈ RM N ×dm , (14) where ρ(·) denotes the ReLU activation, and σ(·) denotes the Sigmoid activation. The weight matrices satisfy Wg, 1 ∈
+
+Rdm×α1dm and Wg, 2 ∈ Rα1dm×dm , where α1 controls the hidden expansion of the gating mechanism. The gated tokens are obtained by element-wise suppression 
+
+Tg = G ⊙ T ∈ RM N ×dm , (15) where ⊙ denotes element-wise multiplication. We construct N2 expert MLPs {E n(·)}N2
+
+> n=1
+
+, each imple-mented as a two-layer feed-forward network with expansion controlled by α2. The n-th expert is given by 
+
+En(Tg ) = W(n)2 ϕ
+
+
+
+W(n)1 Tg
+
+
+
+, (16) 4
+
+where n = 1, . . . , N 2, ϕ(·) denotes the GELU activation, 
+
+W(n)1 ∈ Rdm×α2dm and W(n)2 ∈ Rα2dm×dm , and α2 is the expert expansion factor. To adaptively weight experts, we compute a pooled descriptor 
+
+¯t = 1
+
+M N 
+
+> M N
+
+X
+
+> i=1
+
+Tg [i, :] ∈ Rdm . (17) This descriptor is fed to a gating network consisting of a lin-ear layer and a softmax function. The resulting expert-weight vector is w = Softmax( Wr¯t) ∈ RN2 , where Wr ∈ RN2×dm .The MoE output is obtained via weighted aggregation of expert outputs 
+
+Tmoe =
+
+> N2
+
+X
+
+> n=1
+
+wn En(Tg ) ∈ RM N ×dm . (18) The aggregated tokens are then mapped back to the spatial feature tensor Fmoe ∈ Rdm×M ×N and combined with the shortcut connection to form the block output Fout = Fsh ⊕
+
+Fmoe , where ⊕ denotes element-wise addition. Stacking N1
+
+such blocks enables efficient spatial correlation modeling via shift-based interaction and adaptive nonlinear transformation via gated expert combination. 
+
+4) Symmetric decoder: The decoder mirrors the encoder. It first expands the equalized latent code into a spatial feature tensor through a linear layer, applies the same stack of Shift-MoE blocks to progressively recover spatial structures, and finally maps the decoded features back to a two-channel output 
+
+ˆH ∈ R2×M ×N , which is reassembled into the complex CSI estimate. IV. N UMERICAL RESULTS 
+
+This section validates the performance of the proposed Shift-MoE CSI feedback framework through numerical results. The system parameters, model configurations, and training settings adopted in our simulations are summarized in Table I. We evaluate the CSI reconstruction performance using the NMSE, defined as 
+
+NMSE = E
+
+"
+
+∥H − ˆH∥2
+
+> F
+
+∥H∥2
+
+> F
+
+#
+
+, (19) where H and ˆH denote the true and reconstructed CSI matrices, respectively. Fig. 3 compares the NMSE performance versus SNR under the configuration of K = 5 , M = 16 , N = 8 , and η = 1 /2.The compared methods include CsiNet [4], an MLP baseline without the shift module, Transformer-based schemes [7], [15], as well as the proposed ShiftViT without MoE and Shift-MoE. As SNR increases, the NMSE of all methods decreases due to reduced feedback-link distortions. Compared with the MLP baseline, ShiftViT achieves better performance in the medium-to-high SNR regime, indicating that the shift mechanism can effectively capture the structured correlations of CSI along the waveguide and PA dimensions, thereby improving repre-sentation efficiency and reconstruction accuracy. Furthermore, incorporating MoE on top of ShiftViT brings additional NMSE                                                      
+
+> TABLE I SYSTEM PARAMETERS , M ODEL CONFIGURATIONS ,AND TRAINING
+> SETTINGS
+> Parameter Symbol Value
+> Rectangular region Dx,Dy50 m ,6 m
+> Waveguides height a5 m
+> Inter-waveguide spacing dDy/(M−1)
+> Speed of light c3.0×10 8m/s
+> Carrier frequency f28 GHz
+> Refractive index iref 1.44 Number of scatterers (paths) P3Channel group number ndiv 12 Embedding dimensions dm48 Shift-MoE blocks, experts N1,N26, 5 Expansion factor α1,α22, 2 Learning rate –10 −4
+> Batch size, epochs –32 ,300 -10 -8 -6 -4 -2 02468
+> SNR (dB)
+> -30 -25 -20 -15 -10 -5 0
+> NMSE (dB)
+> Fig. 3. NMSE performance of different methods.
+
+improvements, indicating that expert routing better accom-modates heterogeneous CSI statistics in multi-user scenarios. From a complexity perspective, with the sequence length 
+
+M N and MLP expansion factor α1, a Transformer block has complexity O (M N )2dm +α1M N, d 2
+
+> m
+
+, where the quadratic term comes from MHSA. Replacing MHSA with channel-grouped one-step shifts removes the attention quadratic term, and a ShiftViT block is dominated by the MLP term, scaling as O α1M N, d 2
+
+> m
+
+.Fig. 4(a) shows the NMSE performance under different numbers of users with M = 16 , N = 8 , and η = 1 /2. As 
+
+K increases, the NMSE degrades over the considered SNR range, because a larger user set intensifies CSI heterogene-ity and makes the feedback representation more difficult to learn. The degradation is more evident at medium-to-high SNR, where reconstruction is less noise-limited and more dependent on the model’s ability to capture user-dependent structures. Fig. 4(b) depicts the effect of the compression ratio η under K = 5 , M = 16 , and N = 8 . A larger η
+
+consistently improves reconstruction accuracy by providing a higher-dimensional feedback representation and reducing information loss. The gain is more pronounced at moderate-to-high SNR, indicating that representation capacity becomes 5-10 -8 -6 -4 -2 0 2 4 6 8
+
+> SNR (dB)
+> -30 -25 -20 -15 -10 -5 0
+> NMSE (dB)
+
+(a) Different numbers of users. -10 -8 -6 -4 -2 0 2 4 6 8 
+
+> SNR (dB)
+> -30 -25 -20 -15 -10 -5 05
+> NMSE (dB)
+
+(b) Different compression ratios. -10 -8 -6 -4 -2 0 2 4 6 8 
+
+> SNR (dB)
+> -45 -40 -35 -30 -25 -20 -15 -10 -5
+> NMSE (dB)
+
+(c) Different antenna configurations. Fig. 4. NMSE performance of the proposed Shift-MoE under various parameter settings. User1 User2 User3 User4 User5 
+
+> 00.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1
+> Scores
+> expert 1
+> expert 2
+> expert 3
+> expert 4
+> expert 5
+
+Fig. 5. The proposed Shift-MoE gating weights for different users. 
+
+the dominant factor once feedback-channel distortions are sufficiently suppressed. Fig. 4(c) evaluates different antenna configurations under K = 5 and η = 1 /2. Increasing (M, N )
+
+leads to lower NMSE, suggesting that the proposed design can effectively exploit the richer spatial structure of larger waveguide-PA grids. Overall, the results confirm that Shift-MoE maintains favorable scaling behavior with respect to user scale, feedback rate, and PASS dimensions. Fig. 5 visualizes the expert gating weights produced by Shift-MoE for different users. The weight patterns vary no-tably across users, indicating that the MoE module performs input-adaptive routing rather than applying a fixed mapping to all CSI realizations. This adaptive expert fusion aligns well with the multi-user PASS setting, where CSI statistics can differ across users and operating conditions. V. C ONCLUSION 
+
+To the best of our knowledge, this letter is among the first to systematically investigate CSI feedback for multi-user PASS under FDD operation. To address the structured waveguide–PA correlations and the pronounced heterogeneity of CSI statistics across users, we develop an end-to-end DJSCC-based feedback framework with the proposed Shift-MoE architecture. Numerical results demonstrate that com-bining structure-aware modeling with adaptive expert learning effectively improves CSI feedback performance in multi-user PASS. Future work will consider more practical settings such as imperfect feedback-channel knowledge and pursue joint optimization with beamforming and resource allocation. REFERENCES [1] W. Xie, Z. Li, C. Yu, H. Xu, J. Wang, W. Wu, X. Li, and L. Yang, “Movable-antenna-assisted covert communications with reconfigurable intelligent surfaces,” IEEE Internet Things J. , vol. 12, no. 9, pp. 12369-12382, 1 May1, 2025. [2] J. Li, L. Yang, W. Hao, I. Ahmad, H. Liu, F. Shu, and D. Niyato, “Multi-layer transmitting RIS-aided receiver for collaborative jamming and anti-jamming networks,” IEEE Trans. Wireless Commun. , vol. 24, no. 8, pp. 6518-6534, Aug. 2025. [3] Y. Liu, Z. Wang, X. Mu, C. Ouyang, X. Xu, and Z. Ding, “Pinching-antenna systems: Architecture designs, opportunities, and outlook,” IEEE Commun. Mag. , vol. 64, no. 1, pp. 190–196, Jan. 2025. [4] Z. Wang, C. Ouyang, X. Mu, Y. Liu and Z. Ding, “Modeling and beamforming optimization for pinching-antenna systems,” IEEE Trans. Commun. , vol. 73, no. 12, pp. 13904-13919, Dec. 2025. [5] C. -K. Wen, W. -T. Shih and S. Jin, “Deep learning for massive MIMO CSI feedback,” IEEE Wireless Commun. Lett. , vol. 7, no. 5, pp. 748-751, Oct. 2018. [6] J. Zou, Q. Mao, J. Xiao, S. Liu and Y. Liang, “Distributed learning-based channel estimation and feedback for RIS-aided wireless communications,” 
+
+IEEE Wireless Commun. Lett. , vol. 14, no. 2, pp. 460-464, Feb. 2025. [7] Y . Cui, A. Guo, and C. Song, “TransNet: Full attention network for CSI feedback in FDD massive MIMO system,” IEEE Wireless Commun. Lett. ,vol. 11, no. 5, pp. 903–907, May 2022. [8] E. Bourtsoulatze, D. Burth Kurka and D. G¨ und¨ uz, “Deep joint source-channel coding for wireless image transmission,” IEEE Trans. Cogn. Commun. Netw. , vol. 5, no. 3, pp. 567-579, Sept. 2019. [9] J. Xu, B. Ai, N. Wang and W. Chen, “Deep joint source-channel coding for CSI feedback: An end-to-end approach,” IEEE J. Sel. Areas Commun., , vol. 41, no. 1, pp. 260-273, Jan. 2023. [10] G. Zhou, V. K. Papanikolaou, Z. Ding and R. Schober, “Channel estimation for mmWave pinching-antenna systems,” in Proc. IEEE 26th Int. Workshop Signal Process. Artif. Intell. Wireless Commun. (SPAWC) ,Jul. 2025, pp. 1–5. [11] J. Xiao, J. Wang and Y. Liu, “Channel estimation for pinching-antenna systems (PASS),” IEEE Commun. Lett. , vol. 29, no. 8, pp. 1789-1793, Aug. 2025. [12] G. Wang, Y. Zhao, C. Tang, C. Luo, and W. Zeng, “When shift operation meets vision transformer: An extremely simple alternative to attention mechanism.” in Proc. AAAI Conf. Artif. Intell. , Vol. 36, 2022, pp. 7083-7093. [13] J. Zou, J. Xiao, W. Xie, F. Meng, R. Feng, L. Yang, and Y. Liang, “Superimposed pilot-based adaptive semantic communications for wire-less image transmission,” IEEE Trans. Wireless Commun. , vol. 25, pp. 17576-17590, 2026 [14] W. Cai, J. Jiang, F. Wang, J. Tang, S. Kim, and J. Huang, “A survey on mixture of experts in large language models,” IEEE Trans. Knowl. Data Eng. , vol. 37, no. 7, pp. 3896–3915, Jul. 2025. [15] W. Xie, J. Zou, J. Xiao, M. Li and X. Peng, “Quan-transformer based channel feedback for RIS-aided wireless communication systems,” IEEE Commun. Lett. , vol. 26, no. 11, pp. 2631-2635, Nov. 2022.
