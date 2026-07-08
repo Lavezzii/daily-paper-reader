@@ -1,0 +1,280 @@
+Title: Joint Probabilistic and Geometric Constellation Shaping for Complexity-Constrained Direct Detection Optical Systems
+
+URL Source: https://arxiv.org/pdf/2607.06300v1
+
+Published Time: Wed, 08 Jul 2026 01:24:21 GMT
+
+Number of Pages: 4
+
+Markdown Content:
+# Joint Probabilistic and Geometric Constellation Shaping for Complexity-Constrained Direct Detection Optical Systems 
+
+Rodrigo Fischer (1) , Shrinivas Chimmalgi (1) , Andrej Rode (1) , Laurent Schmalen (1) (1) Communications Engineering Lab (CEL), Karlsruhe Institute of Technology (KIT) * Corresponding author: rodrigo.fischer@kit.edu 
+
+Abstract We evaluate joint probabilistic and geometric constellation shaping via reinforcement learning for complexity-constrained joint equalization and demodulation of direct detection optical signals. We demonstrate the proposed technique in a simulated 56 GBd, 2.2 km C-band direct-detection system, demonstrating its effectiveness for complexity-constrained receivers. ©2026 The Author(s) 
+
+Introduction 
+
+While direct detection (DD) remains the preferred technology for short-reach optical links due to its advantages in cost and power consumption [1], it can introduce significant impairments to the sig-nal. Specifically, DD combined with the effect of chromatic dispersion ( CD ) accumulated over the fiber results in an equivalent non-linear channel with memory. To mitigate this, various strategies have been explored; notably, machine learning-based non-linear digital signal processing ( DSP )has been evaluated for low-complexity equaliza-tion in DD links [2–4]. At the same time, constellation shaping ( CS )is required to close the gap to channel capac-ity [5] and has already been assessed for DD systems [6, 7]. However, constraining the com-putational complexity of the DSP at the receiver impacts the achievable information rate in the form of an equivalent degraded channel, and the analy-sis of the effect of such constraints on the shaped constellations remains an open challenge. In this work, we use soft thresholding algo-rithms [8] in order to constrain the computational complexity of convolutional neural network ( CNN )-based joint equalizers and demodulators, com-bined with reinforcement learning ( RL ) [9] tech-niques in order to perform joint probabilistic and geometric constellation shaping via the general-ized mutual information ( GMI ) [10], a metric that is able to take the degradation introduced by the constrained receiver into account during shaping. 
+
+System Model 
+
+Given the set of symbol probabilities 
+
+P = {p1, . . . , p M }, with M = 2m, the symbol indices Sn are sampled with PSn (i) = pi. Given an alphabet C = {c1, . . . , c M } ⊂ R, the transmitted symbols with normalized energy are given by 
+
+Xn = cSn /pE[|cSn |2]. Following Fig. 1, Xn are then modulated using a root-raised cosine ( RRC )filter with roll-off factor β. The signal is then fed to the fiber, where CD accumulates. Noise stemming from amplified spontaneous emis-sion ( ASE ) is modeled as complex AWGN with power spectral density ( PSD ) νopt , and electrical noise after DD is modeled as AWGN Nel (t)
+
+with PSD νel . DD is modeled by an absolute squared operation | · | 2, and in order to limit the noise bandwidth, we introduce brickwall filters 
+
+HPD (f ), H RX (f ) with bandwidths BPD = (1 + β)/T 
+
+and BRX = 2(1 + β)/T . The received signal Y (t)
+
+is sampled at a fixed rate of Nsps = 2 .We pass the received samples through a CNN that performs joint equalization and demodulation, referred here as the detector . At each symbol time step, the CNN outputs for each bit 1 ≤ i ≤ m
+
+the log-likelihood ratio ( LLR ) estimates Li(Yn; θ),where θ are the tunable parameters of the detec-tor and Yn = ( Y2n−LCNN /2, . . . , Y 2n, . . . , Y 2n+LCNN /2)
+
+are the Yk samples that are used for the nth sym-bol LLR estimates. 
+
+Optimization Metric 
+
+We optimize the detector, the symbol probabilities and the alphabet using the GMI [10] of the bits as-sociated with the nth symbol Bn and the samples used for detection Yn
+
+IGMI (Bn; Yn) = sup 
+
+> s> 0
+
+E
+
+> Bn,Yn
+
+log Q(Bn, Yn; θ)s
+
+E
+
+> B′
+> n
+
+[Q(B′
+
+> n
+
+, Y ; θ)s]
+
+
+
+for a detector Q(b, y; θ) parameterized by θ. For bit-wise decoding, Q(b, y; θ) = Qmi=1 qi(bi, y; θ),and we can rearrange the terms to obtain 
+
+IGMI (Bn, Yn) = sup s> 0 E [λ(Bn, Yn; θ)] , where 
+
+λ(b, y; θ) is given by 
+
+− log X
+
+> b′∈B m
+
+exp ln P (b′) + s
+
+> m
+
+X
+
+> i=1
+
+(bi − b′
+
+> i
+
+)Li(y; θ)
+
+!
+
+,
+
+where Li(y; θ) = ln (qi(0 , y; θ)/q i(1 , y; θ)) is the LLR estimate for the ith bit. CNN s can incorporate the scaling s on the last layer of Li(y; θ), so we drop that from the optimization objective without loss of generality. arXiv:2607.06300v1 [eess.SP] 7 Jul 2026 RRC β H(f ) HPD (f ) | · | 2 HRX (f ) CNN          
+
+> Nopt (t)Nel (t)
+> L1(Yn;θ)
+> Lm(Yn;θ)
+> ...
+> Xn
+> t=kT Nsps CD
+> X(t)Y(t)Yk
+> Fig. 1: System model with chromatic dispersion, direct detection and CNN-based joint equalization and demapping.
+
+Training the Detector 
+
+We optimize θ via proximal gradient descent [8], where a L1 regularization penalty is introduced in order to induce sparsity in θ. Setting fewer pa-rameters to nonzero reduces the complexity of the detector in terms of real valued multiplications per-formed, and also in terms of the memory required to store the parameters. 
+
+Constellation Shaping 
+
+We define probabilistic shaping when we optimize 
+
+P, geometric shaping when we optimize C and joint shaping when we optimize C and P. Since 
+
+C and P affect the distribution of B, Y , we can-not interchange expectation with differentiation [6]. Instead, we have to use either a continuous re-laxation of the sampling process of Sn based on the Gumbel distribution [11], or use RL ap-proaches [9]. We chose the latter, and the first step is to optimize the logits ℓ = ( ℓ1, . . . , ℓ M ) in-stead, which are related to the probabilities by 
+
+pi = softmax i(ℓ). The total gradients are given by ∇ℓi E[λ] = E[∇ℓi λ + ∇ℓi,score ], where the extra score term is given by [9] 
+
+∇li,score = λ(bn, yn; θ)
+
+
+
+#i(yn) − pi
+
+LCNN + 1 
+
+Nsps 
+
+
+
+,
+
+where we count how many times the symbol with index i appeared in the symbol sequence that generated yn, given by #i(yn), and we sub-tract by the expected occurrence of this symbol 
+
+pi(LCNN + 1) /N sps . If a particular sequence has more occurrences of index i than pi predicts on average, and also happens to have a better metric 
+
+λ(bn, yn; θ), then the score term will increase the value of li.
+
+10 0 10 2 10 4
+
+1
+
+2
+
+3 a) X = 15 dB 
+
+> 8PAM
+> 4PAM
+> 2PAM
+
+Complexity (rvmb) GMI           
+
+> Es/ν opt =XdB
+> Es/ν el =∞
+> Es/ν opt =∞
+> Es/ν el =XdB
+
+10 0 10 2 10 4   
+
+> b) X= 25 dB
+> 8PAM
+> 4PAM
+> 2PAM
+
+Complexity (rvmb)  
+
+> Fig. 2: Pareto fronts of GMI ×rvmb for 2,4,8PAM at two different noise levels, namely 15 dB and 25 dB, applied either in the optical or electrical domain.
+
+Simulation Results 
+
+We simulated a 2.2 km long fiber with a disper-sion coefficient of 16.3 ps · nm −1 · km −1 and a carrier wavelength of 1540 nm. We considered 2,4,8PAM signals modulated at 56 GBd with sym-bols C ⊂ R; bipolar signals can be generated with a single Mach-Zehnder modulator for the in-phase component. We used a batch size of 64 sequences and a batch length of 512 symbols. We perform filtering in the frequency domain, meaning all convolutions are cyclic. In order to simulate the full bandwidth of the signals, we used a simulation oversampling factor of Nos,sim = 4 . We limited the number of gradient steps to 8000, with a grace period of 1000 steps where C, P are not updated, only the detector. We found this to be vital for convergence, since we want to avoid C, P to adapt to a poorly fitted detector. We use the GMI as a performance metric and the number of real-valued multiplications per bit ( rvmb ) as a computational complexity metric. In order to explore a large range of complexities, we trained an ensemble of CNN architectures with 1 to 4 layers with varying kernel sizes for each layer and stored the achieved GMI , generating a 2D set suitable for multi-objective optimization, from which we extract the Pareto fronts. In Fig. 2 we optimize C, P, L i(·, θ) for the case where either the optical or electrical noise domi-nates. We find that under our simulation settings, where the detector complexity is constrained, the performance is dictated only by the noise level and doesn’t change if νel = 0 or νopt = 0 . For the remaining of the simulations, we consider 
+
+10 0 10 2 10 4
+
+> 12
+
+1 a) 4PAM  
+
+> R2PAM max = 0 .5
+
+Complexity (rvmb) NGMI   
+
+> FIR CNN
+> Joint shaping Without shaping
+
+10 0 10 2 10 4  
+
+> b) 8PAM
+> R2PAM max = 0 .¯3
+> R4PAM max = 0 .¯6
+
+Complexity (rvmb)   
+
+> Fig. 3: Pareto fronts of NGMI ×rvmb for 4,8PAM with joint shaping and without shaping for FIR filters and for n-layer CNNs.
+
+10 0 10 2 10 4
+
+> 12
+
+1 a) 4PAM  
+
+> Joint shaping
+> R2PAM max = 0 .5
+
+Complexity (rvmb)   
+
+> NGMI
+> FIR CNN
+> Geometric shaping Probabilistic shaping
+
+10 0 10 2 10 4   
+
+> b) 8PAM Joint shaping
+> R2PAM max = 0 .¯3
+> R4PAM max = 0 .¯6
+
+Complexity (rvmb)   
+
+> Fig. 4: Pareto fronts of NGMI ×rvmb for 4,8PAM with probabilistic shaping and with geometric shaping for FIR filters and for n-layer CNNs.
+
+Es/ν opt = 15 dB and νel = 0 .Next, in Fig. 3 we compare the normalized gen-eralized mutual information ( NGMI ) [12, 13], for 4,8PAM considering joint shaping and also with-out shaping. For 8PAM, we observe a NGMI gap of approximately 10% throughout the entire com-plexity range of the detector, whereas for 4PAM, we observe a gap of approximately 5% starting at 100 rvmb . As a reference, we also plot the Pareto fronts for FIR filters, where we see that for high-rate communications, linear processing is not sufficient for good performance. For 8PAM, we only achieve rates that are not achievable by 4PAM if the NGMI exceed the R4PAM max threshold, which occurs at around 10 3 rvmb, only reached by multi-layer CNN s. For 4PAM, we reach an NGMI of 0.9 at around 100 rvmb joint using shaping. In Fig. 4 we compare the Pareto fronts of geo-metric and probabilistic shaping. For an FIR-based DSP, probabilistic shaping provides greater gains than geometric shaping. However, once we al-low for non-linear DSP, we observe that there is no clear advantage of one over the other. For 4PAM, either geometric or probabilistic shaping is sufficient to achieve a similar performance than joint shaping. In this case, using only geometric shaping can be advantageous, since in this case no distribution matcher ( DM ) is necessary. Us-ing a DM has been proven challenging from the point of view of constellation design and decoding complexity in order to achieve reliable communica-tions [5]. For 8PAM, higher rates are obtained by joint shaping. In order to visualize the effect of the regular-ization coefficient αreg on the performance of the detector, we evaluated the CNN ensamble with both αreg > 0 and αreg = 0 , and we consider the compression factor given by the ratio of the num-ber of rvmb s for the sparse model and for the dense model defined as η = rvmb λ> 0 
+
+> rvmb λ=0
+
+. In Fig. 5, we see that η < 1% is achievable for 4PAM while still 
+
+0
+
+> 12
+
+1                   
+
+> a) 4PAM
+> NGMI
+> 50 < η %<100 10 < η %<20 0.1< η %<1
+> 20 < η %<50 1< η %<10 Failed
+
+10 −6 10 −4 10 −2 10 0
+
+0
+
+> 12
+> b) 8PAM
+
+Regularization αreg         
+
+> NGMI
+> Fig. 5: Impact of the regularization parameter αreg on the NGMI and the compression ratio η, including models that failed to converge.
+> Joint
+> Probabilistic
+> Geometric
+> a) 4PAM b) 8PAM 00
+> Fig. 6: Trained constellations for low-(hatched) and high-complexity (solid) detectors. The size of the constellation points is proportional to their probability pi.
+
+maintaining a close to the maximum NGMI for this SNR. For 8PAM, the compression of the models comes with a greater NGMI penalty and hence the higher complexity required for good performance as observed previously in Fig. 3. In Fig. 6 we plot some of the trained constella-tions for low-complexity decoders, with rvmb ≈ 100 
+
+for 4PAM and ≈ 1000 for 8PAM, and for very high complexity > 30000 rvmb for both 4,8PAM. We observe that, for high-complexity detectors, the constellations spread further into the x < 0 region of the line, following the intuition that a complex enough detector would enable the use of bipolar signals and therefore a more efficient allocation of the transmitted power. 
+
+Conclusions 
+
+Through extensive simulation results, we demon-strated that high achievable rates with DD are still possible with low-complexity non-linear DSP and constellation shaping. Furthermore, our find-ings indicate that while joint optimization is critical for 8PAM, geometric shaping alone offers a low-complexity alternative for 4PAM, since we avoid the implementation challenges of DM s. These in-sights provide a clear framework for optimizing DD systems considering the specific cost and power constraints of next-generation optical systems. Acknowledgements 
+
+This work has received funding from the Euro-pean Research Council (ERC) under the Euro-pean Union’s Horizon 2020 research and innova-tion program (grant agreement No. 101001899). 
+
+References 
+
+[1] X. Pang et al. , “200 Gbps/lane im/dd technologies for short reach optical interconnects”, Journal of Lightwave Technology , vol. 38, no. 2, pp. 492–503, 2020. DOI : 10. 1109/JLT.2019.2962322 .[2] R. Fischer, P. Matalla, S. Randel, and L. Schmalen, “Non-linear equalization in 112 Gb/s PONs using Kolmogorov-Arnold networks”, in Proc. Optical Fiber Communication Conference (OFC) , 2025, W4H.5. DOI : 10.1364/OFC. 2025.W4H.5 .[3] S. L. Murphy et al. , “High dynamic range 100G PON enabled by SOA preamplifier and recurrent neural net-works”, vol. 41, no. 11, pp. 3522–3532, 2023. DOI : 10. 1109/JLT.2023.3249046 .[4] V. Lauinger, P. Matalla, J. Ney, N. Wehn, S. Randel, and L. Schmalen, “Fully-blind neural network based equaliza-tion for severe nonlinear distortions in 112 Gbit/s passive optical networks”, in Proc. Optical Fiber Communication Conference (OFC) , 2024, Th3J.5. DOI : 10.1364/OFC. 2024.Th3J.5 .[5] G. Böcherer, F. Steiner, and P. Schulte, “Bandwidth effi-cient and rate-matched low-density parity-check coded modulation”, IEEE Transactions on Communications ,vol. 63, no. 12, pp. 4651–4665, 2015. DOI : 10.1109/ TCOMM.2015.2494016 .[6] V. Aref and M. Chagnon, “End-to-end learning of joint geometric and probabilistic constellation shaping”, in 
+
+Proc. Optical Fiber Communication Conference (OFC) ,2022, W4I.3. DOI : 10.1364/OFC.2022.W4I.3 .[7] S. Chimmalgi, L. Schmalen, and V. Aref, “End-to-end learning of probabilistic constellation shaping through im-portance sampling”, IEEE Photonics Technology Letters ,vol. 37, no. 18, pp. 1077–1080, 2025. DOI : 10.1109/ LPT.2025.3580672 .[8] A. Beck and M. Teboulle, “A fast iterative shrinkage-thresholding algorithm for linear inverse problems”, 
+
+SIAM Journal on Imaging Sciences , vol. 2, no. 1, pp. 183–202, 2009. DOI : 10.1137/080716542 .[9] R. J. Williams, “Simple statistical gradient-following al-gorithms for connectionist reinforcement learning”, Ma-chine Learning , vol. 8, no. 3–4, pp. 229–256, May 1992, 
+
+> ISSN
+
+: 1573-0565. DOI : 10.1007/bf00992696 .[10] G. Kaplan and S. Shamai, “Information rates and error exponents of compound channels with application to antipodal signaling in a fading environment”, AEU. Archiv für Elektronik und Übertragungstechnik , vol. 47, no. 4, pp. 228–239, 1993. [11] C. J. Maddison, A. Mnih, and Y. W. Teh, The concrete distribution: A continuous relaxation of discrete random variables , 2017. arXiv: 1611.00712 [cs.LG] . [Online]. Available: https://arxiv.org/abs/1611.00712 .[12] J. Cho, L. Schmalen, and P. J. Winzer, “Normalized gen-eralized mutual information as a forward error correction threshold for probabilistically shaped QAM”, in Proc. Eu-ropean Conference on Optical Communication (ECOC) ,2017, M.2.D.2. DOI : 10.1109/ECOC.2017.8345872 .[13] J. Cho and P. J. Winzer, “Probabilistic constellation shap-ing for optical fiber communications”, Journal of Light-wave Technology , vol. 37, no. 6, pp. 1590–1607, 2019. 
+
+> DOI
+
+: 10.1109/JLT.2019.2898855 .

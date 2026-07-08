@@ -1,0 +1,466 @@
+Title: ISTA-Based Joint Dictionary Learning and Channel Estimation for XL-MIMO Systems
+
+URL Source: https://arxiv.org/pdf/2607.03448v1
+
+Published Time: Tue, 07 Jul 2026 01:09:16 GMT
+
+Number of Pages: 5
+
+Markdown Content:
+> 1
+
+# ISTA-Based Joint Dictionary Learning and Channel Estimation for XL-MIMO Systems 
+
+Arttu Arjas and Italo Atzeni 
+
+Abstract —Channel estimation in extra-large multiple-input multiple-output systems is challenging due to near-field propa-gation, where the array response depends on both the angle and distance of the propagation paths. Existing near-field channel estimation methods typically rely either on fixed angle-distance grids, which suffer from grid mismatch effects, or on multi-stage refinement procedures with increased computational complexity. To address these limitations, this paper proposes the dictionary-learning iterative soft-thresholding algorithm (DL-ISTA) , a method for joint near-field dictionary learning and channel estimation based on the iterative soft-thresholding algorithm. The proposed method jointly estimates the sparse channel coefficients and the continuous angle-distance parameters through alternating optimization, thereby avoiding discretization errors associated with fixed grids. To promote robust convergence, the angle-distance parameters are initialized using Sobol sequences, which provide uniform coverage of the parameter space. Numerical results show that DL-ISTA outperforms a baseline with compa-rable computational complexity and attains comparable or better accuracy than a substantially more complex benchmark. 
+
+Index Terms —Channel estimation, dictionary learning, ISTA, near-field communications, XL-MIMO. 
+
+I. I NTRODUCTION 
+
+Accurate channel estimation is crucial in multiple-input multiple-output (MIMO) systems to enable efficient directional transmission through beamforming [1]. This task becomes especially important in extra-large MIMO (XL-MIMO), where large antenna arrays and high carrier frequencies give rise to near-field propagation [2]. In this regime, the waves seen at the base station (BS) must be modeled as spherical, making the array response dependent on both angle and distance [3]. In XL-MIMO settings, the channels typically exhibit spar-sity in the polar domain, with the signal propagating through only a few dominant paths. By exploiting this sparsity, compressive-sensing techniques can significantly reduce the channel estimation overhead [4]. A key challenge in this context is constructing a dictionary that accurately represents the continuous angle-distance parameter space. In near-field channel estimation, this dictionary is parameterized by the steering angles and distances of the received signal. Since these parameters are unknown, a common approach is to discretize them using a predefined grid. In [5], a low-coherence dictionary was constructed from such a grid and used to de-velop the polar-domain orthogonal matching pursuit (P-OMP) channel estimation method. However, when the actual angle-distance pairs do not lie on the grid, the estimation accuracy 
+
+The authors are with the Centre for Wireless Communications, University of Oulu, Oulu, Finland (e-mail: {arttu.arjas, italo.atzeni }@oulu.fi). This work was supported by the Research Council of Finland (336449 Profi6, 348396 HIGH-6G, and 369116 6G Flagship). 
+
+degrades due to basis mismatch. To mitigate this issue, a gradient-descent refinement step, referred to as polar-domain simultaneous iterative gridless weighted (P-SIGW) method, was employed to improve the angle and distance estimates [5]. Similarly, [6], [7] proposed two-stage approaches with refinement steps to reduce the performance loss caused by grid mismatch effects. The method in [8] addressed this problem from a data-driven perspective, but requires training data and incurs the associated training overhead. More recently, our prior work [9] proposed a cross-predictive sparse Bayesian learning (CP-SBL) framework for near-field channel estima-tion. Nevertheless, these approaches still rely either on dis-cretized parameter representations and multi-stage procedures, or on additional training data, motivating the need for methods that operate directly in the continuous parameter space. In this paper, we propose a novel near-field channel estimation method based on joint dictionary learning and the iterative soft-thresholding algorithm (ISTA) [10]. The proposed dictionary-learning ISTA (DL-ISTA) jointly esti-mates the sparse channel coefficients and the continuous angle-distance parameters via alternating optimization, thereby avoiding discretization errors associated with fixed angle-distance grids. Since the resulting optimization problem is highly non-convex, the initialization of the angle-distance parameters plays a crucial role in the performance. To promote robust convergence, we initialize the angle-distance pairs using Sobol sequences [11], which provide uniform coverage of the parameter space. Unlike existing two-stage approaches, such as P-OMP+P-SIGW, DL-ISTA performs channel estimation and parameter refinement within a single optimization frame-work. Furthermore, it achieves similar or better performance than CP-SBL with approximately one order of magnitude lower computational complexity. The main contributions are summarized as follows:  
+
+> •
+
+We propose DL-ISTA, a method for joint near-field dic-tionary learning and channel estimation based on ISTA.  
+
+> •
+
+We employ Sobol sequences to initialize the continuous angle-distance parameters, promoting convergence to a favorable local optimum.  
+
+> •
+
+We demonstrate that DL-ISTA consistently achieves the best overall performance, surpassing P-OMP+P-SIGW while matching or exceeding the performance of CP-SBL with a substantially lower computational cost. 
+
+Notation. Vectors and matrices are denoted by bold low-ercase and uppercase letters, respectively. The transpose and Hermitian transpose operators are denoted by (·)T and (·)H, re-spectively. The Frobenius inner product is defined as ⟨B, C⟩ =
+
+> arXiv:2607.03448v1 [eess.SP] 3 Jul 2026 2
+
+tr( BHC). The elementwise matrix ℓ1-norm is denoted as 
+
+∥B∥1,1 = P 
+
+> m,n
+
+|Bmn |. The complex soft-thresholding oper-ator is given by Sγ (b) = max( |b| − γ, 0) b 
+
+> |b|
+
+, with Sγ (0) = 0 .Lastly, Π[a,b ](·) denotes projection onto the interval [a, b ].II. S YSTEM MODEL 
+
+In this section, we describe the system and channels models, as well as the sparse channel representation. Consider an XL-MIMO system where a BS with M antennas serves K single-antenna UEs. The channels of the UEs are concatenated into the channel matrix H = [ h1, . . . , hK ] ∈ CM ×K . In each co-herence block, the UEs simultaneously transmit N pilot sym-bols, collected in the pilot matrix P ∈ CK×N , to enable uplink channel estimation. The resulting received pilot signal is 
+
+Y = √ρHP + E ∈ CM ×N , (1) where ρ > 0 is the transmit power and E ∈ CM ×N is a matrix of additive white Gaussian noise (AWGN) with variance σ2.
+
+A. Channel Model 
+
+In XL-MIMO systems, the large array aperture and high carrier frequency often result in near-field propagation, where the curvature of the impinging wavefront becomes significant and the array response depends on both angle and distance. The boundary of the near-field region is commonly charac-terized by the Fraunhofer distance rFraun = 2D2 
+
+> λ
+
+, where D
+
+denotes the BS array aperture and λ the carrier wavelength. Neglecting the distance dependence of the array response can therefore lead to degraded channel estimation performance. Considering a uniform linear array (ULA) at the BS and a near-field clustered multipath model, the channel for the k-th UE can be expressed as [5], [12, Ch. 5.6.1] 
+
+hk =
+
+r ML
+
+> L
+
+X
+
+> l=1
+
+gkl a(θkl , r kl ) ∈ CM , (2) where L is the number of propagation paths, gkl ∼ CN (0 , 1) 
+
+denotes the complex path gain of the l-th path, and θkl ∈ [0 , π ]
+
+and rkl > 0 are the angle or arrival and distance of the l-th path, respectively, referenced to the center of the ULA. The vector a(θ, r ) ∈ CM represents the ULA near-field steering vector associated with angle θ and distance r, defined as 
+
+a(θ, r ) = 
+
+r 1
+
+M
+
+e−j 2πλ (r1−r), . . . , e −j 2πλ (rM −r)T. (3) Letting δm = 2m−M −12 for m ∈ { 1, . . . , M }, the distance relative to the m-th antenna is given by 
+
+rm = pr2 + ( δmd)2 − 2r δ md cos θ, (4) where d denotes the inter-antenna spacing of the ULA. While we assume that the BS is equipped with a ULA, the proposed method is applicable to any array geometry. 
+
+B. Sparse Channel Representation 
+
+To capture the underlying physical structure of the channel, we parametrize H in terms of the complex path gains, angles, and distances. We define the angle cosine ϕ = cos θ ∈
+
+[−1, 1] and consider a set of Q candidate angle-distance pairs 
+
+{(ϕq , r q )}Qq=1 , which are used as dictionary. We collect the an-gles and distances in the vectors ϕ = [ ϕ1, . . . , ϕ Q]T ∈ RQ and 
+
+r = [ r1, . . . , r Q]T ∈ RQ, which are used to form the steering matrix A(ϕ, r) = [ a(ϕ1, r 1), . . . , a(ϕQ, r Q)] ∈ CM ×Q. The corresponding complex path gains are collected in the sparse matrix G ∈ CQ×K , where nonzero coefficients correspond to active paths. The channel matrix can then be approximated as H ≈ A(ϕ, r)G, where equality holds only when the dictionary includes the actual angle-distance pairs. In this setting, the received signal in (1) can be expressed as 
+
+Y = √ρA(ϕ, r)GP + eE, (5) where eE ∈ CM ×N represents the effective error comprising both AWGN and discretization errors. The goal of this paper is to jointly estimate the steering matrix parameters and the complex path gains. III. P ROPOSED DL-ISTA In this section, we propose an ISTA-based algorithm for near-field channel estimation, referred to as dictionary-learning ISTA (DL-ISTA) , analyze its computational complex-ity, and discuss the initialization of the angles and distances. 
+
+A. Problem Formulation 
+
+We begin by formulating the near-field channel estimation problem as an ℓ1-regularized optimization problem, given by 
+
+minimize  
+
+> G,ϕ,r
+
+∥A(ϕ, r)GP − Y∥2F + α∥G∥1,1, (6) where α > 0 is a regularization parameter promoting sparsity. The above problem is non-convex due to the coupling between 
+
+G, ϕ, and r, making direct joint optimization challenging. To address this challenge, we adopt an alternating minimization approach in which the variables are updated sequentially. In the following, we first derive the update of the sparse matrix 
+
+G followed by the updates of ϕ and r.
+
+B. Update of the Complex Path Gains 
+
+In this subsection, we write A(ϕ, r) simply as A for notational convenience. With ϕ and r fixed, (6) reduces to 
+
+minimize  
+
+> G
+
+∥AGP − Y∥2F + α∥G∥1,1. (7) This is a convex ℓ1-regularized least-squares problem, which can be addressed using ISTA. The method consists of a gradient-descent step applied to the quadratic term, followed by soft thresholding. Within the overall joint optimization procedure, a single ISTA iteration is performed per update. Specifically, the gradient of the quadratic term with respect to 
+
+G is 
+
+∇G ∥AGP − Y∥2F = AH (AGP − Y) PH, (8) and the resulting update at iteration t + 1 is given by 
+
+G(t+1) = Sαμ 
+
+ G(t) − μAH(AG (t)P − Y)PH, (9) where μ > 0 is the step size and where the threshold is the product of the step size and the regularization parameter. 3
+
+C. Updates of the Angles and Distances 
+
+With G fixed, ϕ and r are updated to reduce the objective 
+
+∥A(ϕ, r)GP − Y∥2F = ∥eE∥2
+
+> F
+
+. (10) This is the dictionary-learning step, where the continuous angle-distance parameters are refined to better align with the actual propagation paths. To this end, we employ a Gauss-Newton scheme, in which the Hessian is approximated by the Gauss-Newton matrix [13, p. 259]. The Gauss-Newton approx-imation is obtained by linearizing the nonlinear model A(ϕ, r)
+
+and neglecting the additional second-order curvature term. To avoid forming and inverting the full 2Q×2Q matrix, we further adopt a diagonal approximation, updating each parameter independently using only the corresponding diagonal element. This reduces computational complexity and mainly affects the convergence speed, while retaining a descent direction under a suitable step-size selection. The derivative of (10) with respect to ϕq and rq is given by 
+
+sξq = ∂∥eE∥2
+
+∂ξ q
+
+= 2Re 
+
+ ∂A(ϕ, r)
+
+∂ξ q
+
+GP , eE
+
+
+
+, ξq ∈ { ϕq , r q }.
+
+(11) The derivative of the steering matrix is given by 
+
+∂A(ϕ, r)
+
+∂ξ q
+
+=
+
+
+
+0, . . . , ∂a(ϕq , r q )
+
+∂ξ q
+
+, . . . , 0
+
+
+
+, (12) where the elements of the nonzero vector are expressed as 
+
+∂a m(ϕq , r q )
+
+∂ϕ q
+
+= am(ϕq , r q )j 2πλrq δmdrm
+
+, (13) 
+
+∂a m(ϕq , r q )
+
+∂r q
+
+= −am(ϕq , r q )j 2πλ
+
+ rq − δmdϕ q
+
+rm
+
+− 1
+
+
+
+,
+
+(14) for m = 1 , . . . , M . The diagonal entries of the Gauss-Newton matrix are defined as 
+
+dξq = 2 ∂A(ϕ, r)
+
+∂ξ q
+
+GP 
+
+> 2F
+
+, ξq ∈ { ϕq , r q }, (15) which follow from neglecting the second-order derivative term in the exact Hessian. Finally, the updates are given by 
+
+ϕ(t+1)  
+
+> q
+
+= Π [ϕmin , ϕ max ]
+
+
+
+ϕ(t) 
+
+> q
+
+− δ s(t)
+
+> ϕq
+
+d(t)
+
+> ϕq
+
+
+
+, (16) 
+
+r(t+1)  
+
+> q
+
+= Π [rmin , r max ]
+
+
+
+r(t) 
+
+> q
+
+− δ s(t)
+
+> rq
+
+d(t)
+
+> rq
+
+
+
+, (17) where δ > 0 is the step size and where the projections ensure that the parameters remain within physically valid limits. 
+
+D. Convergence 
+
+The objective function in (6) belongs to the class of functions considered in [14], which introduces the proxi-mal alternating linearized minimization (PALM) algorithm for solving such optimization problems. PALM alternates proximal gradient updates between subsets of optimization variables and converges to a critical point under standard regularity assumptions and sufficiently small step sizes, i.e., when the step sizes are chosen below the reciprocals of the corresponding Lipschitz constants. The proposed DL-ISTA follows a similar alternating optimization framework, but replaces the second proximal gradient update (for the angles and distances) with a projected Gauss-Newton step, which additionally incorporates local curvature information of the objective. Under appropriate damping or step-size selection, e.g., using an Armijo backtracking line search [13], the Gauss-Newton step also satisfies a sufficient decrease condition, yielding convergence behavior analogous to PALM. 
+
+E. Computational Complexity 
+
+We assume that the number of users K and the pilot length N are small compared with the number of antennas 
+
+M , and therefore omit them from the asymptotic complexity expressions. We compare the computational complexity of DL-ISTA with that of P-OMP+P-SIGW [5] and CP-SBL [9]. 
+
+DL-ISTA. The gradient evaluation in (8) requires O(2 M Q )
+
+operations. Furthermore, the diagonal Gauss-Newton approx-imation enables each angle or distance parameter update to be computed in O(M ) operations, yielding a total cost of O(M Q ) across the Q atoms. Consequently, the overall complexity of DL-ISTA is O NDL-ISTA 4M Q , where NDL-ISTA 
+
+denotes the number of DL-ISTA iterations. In our experiments, we set Q = M , resulting in a complexity of O NDL-ISTA 4M 2.
+
+P-OMP+P-SIGW. P-OMP requires O(bLM Q p) operations, where bL is the number of selected atoms and Qp the size of the polar-domain dictionary. For the considered setup, we have 
+
+Qp = 13 M , yielding a complexity of O(13 bLM 2). The result-ing estimate is subsequently refined using P-SIGW through 
+
+NP-SIGW gradient-descent iterations, each with complexity 
+
+O(M 2) [5]. Hence, the overall complexity of the combined P-OMP+P-SIGW pipeline is O (13 bL + NP-SIGW )M 2. With 
+
+NDL-ISTA = NP-SIGW = 50 , the two methods have comparable computational complexity at bL ≈ 12 , whereas DL-ISTA is less computationally demanding for larger values of bL. More generally, the complexities of DL-ISTA and P-OMP+P-SIGW are comparable with quadratic scaling with respect to M .
+
+CP-SBL. Using the same polar-domain dictionary as P-OMP, CP-SBL has per-iteration complexity O(13 M 3) and typically converges in around 50 iterations, making it sub-stantially more complex than the other two approaches. 
+
+F. Initialization 
+
+The proposed algorithm jointly estimates the complex path gains and the continuous angle-distance parameters through alternating optimization. As a result, its convergence behav-ior depends strongly on the initialization of the angles and distances. Since the objective function is highly non-convex, poor initialization may lead to undesirable local minima and degraded estimation performance. Consequently, obtaining a well-distributed initial set of angle-distance pairs is critical for reliable convergence. To mitigate this issue, we initialize the parameters using a low-discrepancy Sobol sequence [11], which provides a deter-ministic and space-filling sampling of the parameter domain. Compared with pseudo-random sampling, Sobol sequences offer superior uniformity and thus ensure a more even coverage of the feasible region. Let {sq }Qq=1 denote the first Q points of 4
+
+Algorithm 1 Proposed DL-ISTA for near-field channel esti-mation                                                       
+
+> 1: Input: Y,P,ϕmin ,ϕmax ,rmin ,rmax ,α,μ,δ
+> 2: Initialize:
+> 3: for q= 1 , . . . , Q do
+> 4: Initialize ϕ(0)
+> qand r(0)
+> qusing (18)–(19)
+> 5: end for
+> 6: Initialize G(0) =0
+> 7: t←0
+> 8: repeat
+> 9: Update of the complex path gains (ISTA):
+> 10: Update G(t+1) using (9)
+> 11: Updates of the angle and distances (dictionary learning):
+> 12: for q= 1 , . . . , Q do
+> 13: Update ϕ(t+1)
+> qand r(t+1)
+> qusing (16)–(17)
+> 14: end for
+> 15: t←t+ 1
+> 16: until convergence
+> 17: Output: Gt,ϕt,rt
+
+a two-dimensional Sobol sequence, with sq = [ sq, 1, s q, 2]T ∈
+
+[0 , 1] 2, ∀q ∈ { 1, . . . , Q }. These points are mapped to the parameter domain according to 
+
+ϕ(0)  
+
+> q
+
+= ϕmin + sq, 1(ϕmax − ϕmin ), (18) 
+
+r(0)  
+
+> q
+
+= rmin + sq, 2(rmax − rmin ). (19) This initialization yields a well-distributed set of angle-distance pairs, providing an effective starting point for the dictionary learning and requiring significantly fewer atoms compared with the structured polar-domain grid in [5]. The full DL-ISTA procedure is summarized in Algorithm 1. IV. N UMERICAL EXPERIMENTS 
+
+In this section, we evaluate the performance of the proposed DL-ISTA through simulations. We first describe the simulation setup and then present and discuss the results. 
+
+A. Simulation Setup 
+
+For the performance evaluation, we vary the signal-to-noise ratio (SNR), the number of antennas, the number of pilots, and the number of propagation paths. For each parameter configuration, the channels are generated using (2)–(3) and the corresponding observations at the BS are obtained as in (5). The performance is assessed using the normalized mean squared error (NMSE), defined as NMSE = E[∥ bH−H∥2] 
+
+> E[∥H∥2]
+
+, where 
+
+bH ∈ CM ×K is the estimated channel matrix. The expectations are approximated via Monte Carlo simulations with 2000 independent runs. Fixing the AWGN variance to σ2 = 1
+
+and given E[∥hk∥2] = M from (2)–(3), the transmit power 
+
+ρ corresponds to the SNR. As baselines, we consider P-OMP, P-OMP+P-SIGW [5], the conventional ISTA without dictionary learning, and CP-SBL [9], all using the polar-domain dictionary defined in [5]. P-OMP selects the angle-distance pairs via orthogonal matching pursuit, whereas P-OMP+P-SIGW includes a sub-sequent refinement stage based on gradient descent. CP-SBL is a data-driven variant of sparse Bayesian learning that learns the sparsity-inducing weights by minimizing a randomized cross-predictive objective. The proposed DL-ISTA jointly es-timates the sparse coefficients and continuous angle-distance                  
+
+> −10 −50510 15 20
+> 10 −4
+> 10 −3
+> 10 −2
+> 10 −1
+> SNR ρ[dB]
+> NMSE
+> P-OMP P-OMP+P-SIGW
+> ISTA CP-SBL
+> DL-ISTA
+> Fig. 1. NMSE versus SNR, with M= 256 ,N= 20 ,K= 5 , and
+> L= 5 .
+
+parameters, thereby avoiding both grid mismatch effects and the additional refinement stage required by P-OMP+P-SIGW. For DL-ISTA, we set Q = M , resulting in a dictionary of size M × M . By comparison, the size of the polar-domain dictionary in [5] depends on both the wavelength and the considered distance range. For the setup considered in this paper, the resulting dictionary size is M × 13 M .In all the experiments, the Fraunhofer distance is fixed to rFraun. = 81 .92 m, with the carrier wavelength selected accordingly. This ensures that the size of the polar-domain dictionary remains fixed at M × 13 M . The minimum and maximum distances are set to rmin = rF 
+
+> 8
+
+and rmax = rF 
+
+> 2
+
+,respectively, while the angle cosine ranges from ϕmin = −1
+
+to ϕmax = 1 . For DL-ISTA, the regularization parameter is set to α = √M N  
+
+> 5√ρL
+
+, reflecting its dependence on the sparsity level, governed by the ratio ML , and on the signal strength, determined by ρ and N . Although L is generally unknown in practice, our goal is to illustrate the potential of the method, and we thus allow α to depend on L. For P-OMP, the number of selected atoms is fixed to 3L.
+
+B. Results 
+
+Fig. 1 plots the NMSE as a function of the SNR ρ. All the methods exhibit approximately linear decrease in NMSE with increasing SNR. DL-ISTA consistently achieves the lowest NMSE across the entire SNR range. While CP-SBL attains nearly identical performance, a slight saturation effect can be observed at high SNR. Importantly, this comparable estimation accuracy is achieved by DL-ISTA with a substantially lower computational cost. In contrast, P-OMP+P-SIGW exhibits a clear performance gap throughout the considered SNR range, with DL-ISTA achieving approximately 40% lower NMSE at 
+
+ρ = 20 dB. The performance gap between DL-ISTA and the conventional ISTA highlights the importance of the dictionary-learning step during the estimation process. Fig. 2 shows the NMSE as a function of the number of antennas M . DL-ISTA and CP-SBL maintain nearly identical performance across the entire range of antenna configura-tions, further demonstrating that the proposed method achieves state-of-the-art estimation accuracy without the computational burden associated with CP-SBL. Although the performance gap with respect to P-OMP+P-SIGW gradually decreases with 5
+
+64 96 128 160 192 224 256 
+
+1
+
+2
+
+3
+
+4
+
+5
+
+×10 −3
+
+Number of antennas M  
+
+> NMSE
+> P-OMP P-OMP+P-SIGW ISTA CP-SBL DL-ISTA
+
+Fig. 2. NMSE versus M , with SNR = 10 dB, N = 20 , K = 5 , and 
+
+L = 5 .
+
+5 15 25 35 45 55 65 75 85 95 
+
+10 −4
+
+10 −3
+
+10 −2
+
+Pilot length N  
+
+> NMSE
+> P-OMP P-OMP+P-SIGW
+> ISTA CP-SBL
+> DL-ISTA
+
+Fig. 3. NMSE versus N , with SNR = 10 dB, M = 256 , K = 5 , and 
+
+L = 5 .
+
+M , DL-ISTA consistently provides the lowest NMSE. Fig. 3 illustrates the NMSE as a function of the pilot length N . For small N , DL-ISTA and CP-SBL are quite closely matched but the gap widens in favor of DL-ISTA when N increases. P-OMP+P-SIGW consistently yields higher NMSE values. Lastly, Fig. 4 plots the NMSE as a function of the number of propagation paths L. The channel estimation becomes increas-ingly challenging as L increases, leading to higher NMSE for all the methods. For the single-path case ( L = 1 ), DL-ISTA and P-OMP+P-SIGW achieve similar performance. However, as the L increases, the performance advantage of DL-ISTA becomes progressively more pronounced, suggesting that the proposed method is particularly effective in more complex propagation environments. Throughout the entire range of L,DL-ISTA remains virtually indistinguishable from CP-SBL in terms of NMSE performance, despite the substantially higher computational complexity of the latter. V. C ONCLUSION 
+
+We proposed DL-ISTA, a method for joint near-field dictio-nary learning and channel estimation that jointly estimates the sparse channel coefficients and the continuous angle-distance parameters, thereby avoiding discretization errors from fixed grids. Initialization based on Sobol sequences was employed to uniformly cover the parameter space and promote robust 
+
+1 2 3 4 5 6 7 8 9 10 
+
+0
+
+1
+
+2
+
+3
+
+4
+
+×10 −3
+
+Number of propagation paths L  
+
+> NMSE
+> P-OMP P-OMP+P-SIGW
+> ISTA CP-SBL
+> DL-ISTA
+
+Fig. 4. NMSE versus L, with SNR = 10 dB, M = 256 , N = 20 ,and K = 5 .
+
+convergence. Numerical results demonstrated that DL-ISTA consistently achieves the lowest NMSE among the considered methods, also outperforming CP-SBL while requiring approx-imately one order of magnitude lower computational com-plexity. Hence, DL-ISTA offers an attractive balance between estimation accuracy and computational efficiency for near-field channel estimation in XL-MIMO. Future work will investigate automatic regularization parameter selection to improve the practical applicability and robustness of DL-ISTA. REFERENCES [1] E. Bj¨ ornson, J. Hoydis, and L. Sanguinetti, “Massive MIMO networks: Spectral, energy, and hardware efficiency,” Found. and Trends Signal Process. , vol. 11, no. 3–4, pp. 154–655, 2017. [2] I. Atzeni et al. , “Sub-THz communications: Perspective and results from the Hexa-X-II project,” IEEE Open J. Commun. Soc. , vol. 6, pp. 7495– 7540, 2025. [3] M. Cui, Z. Wu, Y. Lu, X. Wei, and L. Dai, “Near-field MIMO communications for 6G: Fundamentals, challenges, potentials, and future directions,” IEEE Commun. Mag. , vol. 61, no. 1, pp. 40–46, 2022. [4] C. R. Berger, Z. Wang, J. Huang, and S. Zhou, “Application of com-pressive sensing to sparse channel estimation,” IEEE Commun. Mag. ,vol. 48, no. 11, pp. 164–174, 2010. [5] M. Cui and L. Dai, “Channel estimation for extremely large-scale MIMO: Far-field or near-field?” IEEE Trans. Commun. , vol. 70, no. 4, pp. 2663–2677, 2022. [6] X. Zhang, H. Zhang, and Y. C. Eldar, “Near-field sparse channel representation and estimation in 6G wireless communications,” IEEE Trans. Commun. , vol. 72, no. 1, pp. 450–464, 2023. [7] Y. Lu and L. Dai, “Near-field channel estimation in mixed LoS/NLoS environments for extremely large-scale MIMO systems,” IEEE Trans. Commun. , vol. 71, no. 6, pp. 3694–3707, 2023. [8] M. Ye, X. Liang, C. Pan, Y. Xu, M. Jiang, and C. Li, “GAN-based near-field channel estimation for extremely large-scale MIMO systems,” 
+
+IEEE Trans. Green Commun. & Netw. , vol. 9, no. 1, pp. 304–316, 2024. [9] A. Arjas and I. Atzeni, “Cross-predictive sparse Bayesian learning with application to XL-MIMO channel estimation,” in Proc. Eur. Conf. Signal Process. (EUSIPCO) , 2025. [10] I. Daubechies, M. Defrise, and C. De Mol, “An iterative thresholding algorithm for linear inverse problems with a sparsity constraint,” Comm. Pure Appl. Math. , vol. 57, no. 11, pp. 1413–1457, 2004. [11] I. M. Sobol’, “On the distribution of points in a cube and the approximate evaluation of integrals,” Zhurnal Vychislitel’noi Matematiki i Matem-aticheskoi Fiziki , vol. 7, no. 4, pp. 784–802, 1967. [12] E. Bj¨ ornson and ¨ O. T. Demir, Introduction to Multiple Antenna Commu-nications and Reconfigurable Surfaces . Boston–Delft: Now Publishers, 2024. [13] J. Nocedal and S. J. Wright, Numerical optimization . Springer, 1999. [14] J. Bolte, S. Sabach, and M. Teboulle, “Proximal alternating linearized minimization for nonconvex and nonsmooth problems,” Math. Program. ,vol. 146, no. 1, pp. 459–494, 2014.
