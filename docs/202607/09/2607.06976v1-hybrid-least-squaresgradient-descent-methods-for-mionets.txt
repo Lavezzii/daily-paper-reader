@@ -1,0 +1,1508 @@
+Title: Hybrid Least Squares/Gradient Descent Methods for MIONets
+
+URL Source: https://arxiv.org/pdf/2607.06976v1
+
+Published Time: Thu, 09 Jul 2026 00:25:29 GMT
+
+Number of Pages: 20
+
+Markdown Content:
+# Hybrid Least Squares/Gradient Descent Methods for MIONets 
+
+## Jun Choi 1, Chang-Ock Lee 1, and Minam Moon 21Department of Mathematical Sciences, KAIST, Daejeon 34141, KOREA 
+
+> 2
+
+Department of Mathematics, Korea Military Academy, Seoul 01805, KOREA 
+
+Abstract 
+
+In this paper, we propose an efficient hybrid least squares/gradient descent (LSGD) method for MIONets to accelerate training. This method generalizes the LSGD method for DeepONets. Since MIONet is the sum of the entrywise product of multiple branch networks and a trunk network, it can be viewed as a multilinear function with respect to the last layer parameters of each branch network. These sets of parameters can be optimized using the alternating least squares method, where we solve the LS system for a single branch network in turn. To handle the large-sized system matrix, we introduce Kronecker and Khatri-Rao products and tensor permutation matrices to factor the large matrix into small ones. Our method is compatible with a general type of L2 loss with regularization terms for the last layer parameters of each branch, where linear operators can be applied to the MIONet output in each loss term. 
+
+Key words. Hybrid least squares gradient descent method, MIONet, Kronecker product, Khatri-Rao product, tensor permutation matrix 
+
+MSC codes. 15A69, 47-08, 65F45, 65Y10, 68T07, 68T20 
+
+# 1 Introduction 
+
+Thanks to the recent advances in scientific machine learning, the core architectures, including deep learning (DL) and deep neural networks (DNNs) have migrated to the field of scientific computing to enhance existing numerical methods for solving various partial differential equa-tions (PDEs). In particular, physics-informed neural network (PINN) [25] is the most successful and widely used method, where PINN represents the solution of PDE as a DNN and finds the solution by training the DNN using a physics-informed loss (PI-loss) with the automatic differentiation method [1]. However, since PINN requires separate training for different PDE instances, the need for a mapping between components and solutions of PDEs using DL ar-chitecture has emerged, which has now been generalized to neural operator mapping between function spaces. There are various examples of neural operators, including Deep Operator Net-work (DeepONet) [19], Fourier Neural Operator [17], Graph Kernel Network [18], PCA-based Model Reduction [2], and Multi-Wavelet Neural Operator [8]. Among these neural operators, DeepONet is the most widely used framework for neural operators, which possesses the universal approximation property. It consists of the inner product  
+
+> Funding: This work was supported by Basic Science Research Program through the National Research Foundation (NRF) of Korea funded by the Ministry of Education [RS2025–25397599].
+
+1arXiv:2607.06976v1 [cs.LG] 8 Jul 2026 of outputs from two neural networks, branch and trunk, where the branch network encodes input functions and the trunk network encodes coordinates of the output function domain. Based on the DeepONet architecture, many variants have been proposed, such as POD-DeepONet [20], Multifidelity DeepONet [21], NOMAD [29], Multiple-Input Operator Network (MIONet) [13], Shift-DeepONet [9], HyperDeepONet [16], and Geom-DeepONet [10]. In this paper, we focus on MIONet since it is a direct generalization of DeepONet, which maps several input functions to a single output function with the corresponding universal ap-proximation theorem (UAT) [13, Theorem 3.1]. Instead of a single branch network in DeepONet, MIONet uses multiple branch networks to encode each input function and computes the entry-wise product of the outputs from each branch to perform an inner product with the output of the trunk network. However, the training for MIONet is challenging because the entrywise product and inner product among several networks make the structure more complex, and a sufficiently large dataset is needed for meaningful training. This makes the conventional MIONet training with the Adam optimizer [15] require very high computational resources and time. To optimize and accelerate MIONet training, we take a deeper look into the hybrid least squares/gradient descent (LSGD) method for DeepONet [5, 6]. We generalize the LSGD method into the MIONet framework with vanilla structure, where each output layer of the branch network is a fully connected linear layer. For a general type of L2 loss with regularization terms for the last layer parameters of the branch networks, we formulate a minimization problem of sums of squared multilinear functions in terms of the last layer parameters. To optimize this problem, we first fix the last layer parameters of all branches except one, then the minimization problem becomes an LS system for the unfixed last layer parameters. Now, by generating and solving LS problems for the unfixed last layer parameters, alternating branches in sequence, we can optimize the last layer parameters of all the branch networks. We call this the alternating least squares (ALS) method. Although each LS system is very large to handle, we can factor the large system matrix into smaller matrices from each branch and trunk network, where the column-wise Kronecker product (Khatri-Rao product [14]) and the usual Kronecker product are used. Additionally, we introduce tensor permutation matrices [27] to match the row order shuffled due to the Kronecker products to the lexicographic order of the dimension axes. After that, the LS system is transformed into a special type of matrix equation of the form AXB + λX = E,where the coefficient matrices A and B are from the component matrices of the LS system. Furthermore, we provide a theorem that helps reduce the complexity of the computation of data tensors, when the given data tensors depend only on one input function argument of MIONet. Finally, we propose the ALS plus Adam (ALS+Adam) method as a practical algorithm for LSGD for MIONet, which is a modification of the LS+Adam method [5]. This paper is organized as follows. In Section 2, we introduce MIONet and provide the UAT for vanilla MIONets. We also briefly summarize the LSGD method [6] and LSGD methods for DeepONets [5]. In Section 3, we formulate the minimization problem from the general type of squared L2 loss in terms of the last layer parameters of branch networks. After that, we will explain how this problem can be understood as an LS system of the last layer parameters and present the corresponding LSGD method for MIONets. In Section 4, we conduct experiments on supervised learning for a nonlinear PDE and unsupervised learning for linear PDEs to com-pare the training performance between conventional MIONet training with Adam and MIONet training with ALS+Adam. 2Table 1: Notation Table. 
+
+Notation Space Description 
+
+N N Number of branch networks 
+
+I N Number of output nodes of branch and trunk networks 
+
+Jm N Number of input nodes of output layer of m-th branch 
+
+Mm N Number of discretization points for m-th branch input 
+
+d0 N Number of dimension for output function coordinate 
+
+u(m) RMm Discretized input function for m-th branch 
+
+y Rd0 Coordinate for output function 
+
+bm(u(m)) RI Output of m-th branch network of vanilla MIONet 
+
+t(y) RI Output of trunk network of vanilla MIONet ˜bm(u(m)) RJm Output of layer before last layer of m-th branch 
+
+Cm RI×Jm Last layer parameter matrix of m-th branch 
+
+θBm - Hidden layer parameters of m-th branch 
+
+θT - Parameters of trunk network 
+
+θLm RIJ m Last layer parameters of m-th branch, θL = vec( CTm)[d1, . . . , d N ]D1,...,D N N Big-endian order for the entries of the rank N tensor in (3.2) 
+
+K N Number of loss terms except regularization terms 
+
+ϵk R>0 Weight for k-th loss term 
+
+λm R>0 Weight for L2 regularization term of θLm
+
+Lk L(C(R), C (R)) Linear operator for k-th loss term 
+
+Dk N Number of data pairs for k-th loss term 
+
+χk
+
+
+
+(QNm=1 RMm ) × Rd0
+
+Dk
+
+Data ( u(1) , . . . , u(N ), y ) collection for k-th loss term 
+
+Ak RDk Long vector whose dk -th entry is (3.4) 
+
+Ak,m RDk ×IJ m System matrix for k-th loss term of LS problem in θLm
+
+fk RDk Data for k-th loss term of LS problem 
+
+Pm N Number of input functions for m-th branch 
+
+Qk N Number of coordinate points of k-th loss term 
+
+βm (RMm )Pm Set of discretized input functions for m-th branch 
+
+τk (Rd0 )Qk Set of coordinate points of k-th loss term 
+
+KD,σ RD1··· Dm×D1··· Dm Tensor permutation matrix in Theorem 3.2 
+
+Bm RPm×Jm m-th branch pre-output matrix, 
+
+˜bj (u(m) 
+
+> p
+
+)
+
+
+
+Tk RQk ×I k-th trunk output matrix with Lk , ( Lk [ti]( yq )) 
+
+Fk RP1×···× PN ×Qk Data for k-th loss term in tensor form 
+
+# 2 Preliminaries 
+
+In this section, we introduce MIONet with its universal approximation property [13] and the hybrid LSGD method for DeepONets [5]. Refer to Table 1 for the meaning of symbols and variables used in this paper. 
+
+## 2.1 Multiple-Input Operator Network (MIONet) 
+
+Jin et al. [13] proved an UAT for multiple-input operators on the product of Banach spaces of functions with Schauder bases. We refer to [7, 12, 30] for more details of the Schauder basis and its canonical projections. The theorem states that a continuous multiple-input operator G on the product of compact subsets of Banach spaces Xm with Schauder bases can be approximated 3Figure 1: Structure of vanilla MIONet with fully connected layers. by the form D
+
+(b1 ◦ ϕ1 
+
+> M1
+
+)
+
+| {z }
+
+> branch 1
+
+⊙ · · · ⊙ (bN ◦ ϕNMN )
+
+| {z } 
+
+> branch N
+
+, t|{z} 
+
+> trunk
+
+E
+
+(2.1) with continuous vector functions bm ∈ C(RMm , RI ) and t ∈ Y I for sufficiently large positive integers I and Mm, where ϕmMm : Xm → RMm extracts the first Mm coefficients of the Schauder basis representation, Y is the target Banach space, and ⊙ denotes the Hadamard (entrywise) product. Here, from the inner product structure (2.1) of vector functions bm and t, a multiple-input operator network (MIONet) can be constructed by replacing those functions with neural net-works. In accordance with the UAT for DeepONet [19], we want to use discretized function values of u(m) as an input for bm, where ϕmn extracts function values at certain points. Note that for the sequence of distinct points {ti}∞ 
+
+> i=1
+
+in [0 , 1] with t1 = 0 and t2 = 1, which is dense in [0 , 1], there exists a Schauder basis {ei}∞ 
+
+> i=1
+
+of C([0 , 1]) (called the Faber-Schauder basis) where e1(t) = 1 and en is chosen as a piecewise linear function with en(tn) = 1, where the set 
+
+{e1, . . . , e n} forms a basis for the space of all piecewise linear functions with node points {ti}ni=1 .We refer to [7, 30] for detailed Faber-Schauder basis construction of C([0 , 1]) and [4] for the multivariate extension to C([0 , 1] d). Furthermore, without loss of generality, MIONet can have a vanilla structure similar to DeepONets in [5, 31], where the last layer of each branch network is a fully connected layer without bias and activation function. This can be achieved by adding an identity layer to the output of each branch network. See Figure 1 for the structure of vanilla MIONet. Note that MIONet with N = 1 becomes DeepONet with the same structure and the universal approximation property discussed in [5]. 4We now address the UAT for vanilla MIONets, where the input functions are discretized function values. This theorem is a modification of [12, Theorem 2] and [19, Theorem 2]. 
+
+Theorem 2.1 (Universal Approximation Theorem for vanilla MIONets) . Let ˜Xm be Banach spaces, ˜Km ⊂ ˜Xm, K0 ⊂ Rd0 be compact subsets of ˜Xm and Rd0 , respectively, Vm be a compact set in C( ˜Km), and G be a continuous operator which maps V1 × · · · × VN into C(K0). Then, for any ϵ > 0, there exist positive integers I, M m, continuous vector functions bm ∈ C(RMm , RI )
+
+and t ∈ C(Rd0 , RI ), and points x(m) 
+
+> i
+
+∈ ˜Km with m = 1 , . . . , N and i = 1 , . . . , M m such that 
+
+G(u(1) , . . . , u (N ))( y) −
+
+D
+
+b1(u(1) )
+
+| {z } 
+
+> branch 1
+
+⊙ · · · ⊙ bN (u(N ))
+
+| {z } 
+
+> branch N
+
+, t(y)
+
+|{z} 
+
+> trunk
+
+E
+
+< ϵ (2.2) 
+
+holds for all u(m) ∈ Vm and y ∈ K0, where ⟨· , ·⟩ denotes the inner product in RI and u(m) =
+
+h
+
+u(m)(x(m)1 ), . . . , u (m)(x(m) 
+
+> Mm
+
+)
+
+iT
+
+∈ RMm is a discretized input function u(m) at {x(m) 
+
+> i
+
+}Mm 
+
+> i=1
+
+. More-over, the functions bm and t can be chosen as diverse classes of neural networks satisfying the classical UAT of functions, where the branch networks bm(u(m)) = Cm ◦ ˜bm(u(m)) are decom-posed into a hidden layer part ˜bm : RMm → RJm and a linear last layer part Cm : RJm → RI
+
+with a matrix parametrization Cm = ( c(m) 
+
+> ij
+
+) ∈ RI×Jm .
+
+The MIONet approximating G in (2.2) can be expressed as a nested form of summations and products: 
+
+G(u(1) , . . . , u (N ))( y) ≈
+
+D
+
+b1(u(1) ) ⊙ · · · ⊙ bN (u(N )), t(y)
+
+E
+
+=
+
+> I
+
+X
+
+> i=1
+> N
+
+Y
+
+> m=1
+
+b(m) 
+
+> i
+
+(u(m))
+
+!
+
+ti(y)=
+
+> I
+
+X
+
+> i=1
+
+
+
+> N
+
+Y
+
+> m=1
+
+
+
+> Jm
+
+X
+
+> j=1
+
+c(m) 
+
+> ij
+
+˜b(m) 
+
+> j
+
+(u(m))
+
+ ti(y),
+
+(2.3) where ˜b(m) 
+
+> j
+
+is the j-th component of the vector function ˜bm, and b(m) 
+
+> i
+
+and ti are the i-th com-ponent of the vector function bm and tm, respectively. 
+
+## 2.2 Hybrid Least Squares/Gradient Descent Method for DeepONets 
+
+Cyr et al. [6] suggested the hybrid least squares/gradient descent (LSGD) method to improve deep neural network training. This method alternates between least squares (LS) steps and gradient descent (GD) steps. The LS steps solve an LS problem for the linear last layer parameters to optimize those parameters, and the GD steps optimize the hidden layer parameters with a gradient descent type optimizer. We have proposed the hybrid LSGD method for DeepONets in [5], where we accelerate and improve training for vanilla DeepONets in both supervised and unsupervised learning. As a starting point for the LSGD method for MIONets, we briefly explain the LSGD method for DeepONets in this section. Consider a vanilla DeepONet, which is the vanilla MIONet in (2.3) with N = 1. We use a general type of l2 loss, which consists of the sum of squared l2 error terms and a regularization term for the last layer parameters of the branch network: 
+
+> K
+
+X
+
+> k=1
+
+ϵk Lk [G(·)] ( u, y ) − L k
+
+⟨b(·; θB , θ L), t(·; θT )⟩ (u, y ) 2  
+
+> l2(χk)
+
++ λ θL 22, (2.4) 5where χk = {(ˆ udk , ˆydk )}Dk  
+
+> dk=1
+
+is a finite collection of data pairs ( u, y ), Lk is a linear operator between real-valued functions, fk = Lk [G(·)] (ˆ udk , ˆydk ) ∈ RDk is the given data for the k-th error term, ϵk > 0 and λ ≥ 0 are the weights for each error term and the regularization term, and θB ,
+
+θT , θL denote the parameters for the branch network except the last layer, the trunk network, and the last layer of the branch, respectively. We represent θL as the row-wise vectorization of the (branch) last layer parameter matrix 
+
+C ∈ RI×J :
+
+θL = vec( CT ) = [ c11 , . . . , c 1J , c 21 , . . . , c 2J , . . . , c I1, . . . , c IJ ]T ∈ RIJ .
+
+Then, (2.4) can be reformulated as an LS problem min 
+
+> θL
+> K
+
+X
+
+> k=1
+
+ϵk fk − AkθL 22 + λ θL 22, (2.5) where Ak ∈ RDk ×IJ is the matrix whose ( dk, J (i − 1) + j) entry is Lk
+
+h˜bj ti
+
+i
+
+(ˆ udk , ˆydk ). Under additional conditions for the data χk and the linear operator Lk such that 
+
+χk = β × τk = {up}Pp=1 × { yqk }Qk 
+
+> qk=1
+
+, (2.6a) 
+
+Lk
+
+h˜bj ti
+
+i
+
+(u, y ) = ˜bj (u)Lk [ti] ( y), (2.6b) we have a main theorem for the LS step of the LSGD method for DeepONets [5, Theorem 3]. In the theorem, the large matrix Ak in (2.5) can be factored into two small component matrices, each from the branch and trunk networks, using the Kronecker product, where a commutation matrix [22, 23] is introduced to permute the row order of the product matrix. Then, the LS problem can be reformulated to a matrix equation, which is a special case of the generalized Sylvester equation of type AXB + λX = E with symmetric positive semi-definite matrices A and B. Such matrix equation can be solved by using the spectral decompositions [5, Proposition 6]. 
+
+Proposition 2.2. Let A ∈ RR×R and B ∈ RS×S be symmetric positive semi-definite matrices, 
+
+E ∈ RR×S be any matrix, and λ be a nonnegative real number. Then, the solution of the matrix equation 
+
+AXB + λX = E (2.7) is given as 
+
+X = QA
+
+h
+
+(dAdTB + λ1R×S )⊙− 1 ⊙ (QTAEQ B )
+
+i
+
+QTB , (2.8) where A = QADAQTA and B = QB DB QTB are the spectral decompositions with orthogonal matrices QA, QB and diagonal matrices DA = diag( dA), DB = diag( dB ) when dA ∈ RR,
+
+dB ∈ RS . Here, ⊙−1 denotes the entrywise inverse, and 1R×S represents the R × S matrix with all entries equal to one. Therefore, the last layer parameters minimizing (2.5) can be found efficiently, which is now the LS step of the LSGD method for DeepONets. The remaining hidden parameters can be found by using a GD-type optimizer. See [5, Algorithms 1 and 2] for the workflow of the LSGD method for DeepONets and its practical modification with Adam optimizer [15], LS+Adam, respectively. 63 Hybrid Least Squares/Gradient Descent Methods for MIONets 
+
+We consider the following loss of the vanilla MIONet, which consists of the sums of squared l2
+
+error terms indexed by k and regularization terms for the N last layer parameters: 
+
+> K
+
+X
+
+> k=1
+
+ϵk Lk [G(·, . . . , ·)] ( u(1) , . . . , u (N ), y )
+
+− L k
+
+⟨b1(·; θB 
+
+> 1
+
+, θ L 
+
+> 1
+
+) ⊙ · · · ⊙ bN (·; θBN , θ LN ), t(·; θT )⟩ (u(1) , . . . , u(N ), y ) 2 
+
+> l2(χk)
+
++
+
+> N
+
+X
+
+> m=1
+
+λm θLm
+
+> 22
+
+,
+
+(3.1) where χk is a finite collection of data pairs 
+
+n
+
+(ˆ u(1)  
+
+> dk
+
+, . . . , ˆu(N ) 
+
+> dk
+
+, ˆydk )
+
+oDk 
+
+> dk=1
+
+, Lk is a linear operator between real-valued functions for the k-th error term, fk is the data for the k-th error term given as fk =
+
+
+
+Lk [G(·, . . . , ·)] (ˆ u(1)  
+
+> dk
+
+, . . . , ˆu(N ) 
+
+> dk
+
+, ˆydk )
+
+
+
+∈ RDk , ϵk > 0 and λm ≥ 0 are weights for error terms and the regularization terms, and θBm, θT , θLm denote the parameters for the m-th branch network except the last layer, the trunk network, and the last layer of the m-th branch, respectively, for m = 1 , . . . , N .For the convenience of notation, we use the big-endian lexicographic order defined below for the entries of the tensor. 
+
+Definition 3.1. Let T ∈ RD1×···× DN be a rank N tensor of size D1 ×· · ·× DN . The lexicographic order of the entry of T maps the coordinate index ( d1, . . . , d N ) to the corresponding big-endian lexicographic order [ d1, . . . , d N ]D1,...,D N such that [d1, . . . , d N ]D1,...,D N :=  
+
+> N−1
+
+X
+
+> m=1
+
+" NY
+
+> l=m+1
+
+Dl
+
+!
+
+(dm − 1) 
+
+#
+
++ dN . (3.2) Note that the above definition gives the row-wise lexicographic order of matrix entries. Let Cm ∈ RI×Jm be a parameter matrix of the m-th last layer, where θLm is the row-wise vectorization of Cm. The entries of Cm are sorted lexicographically in the order (3.2), i.e., 
+
+θLm = vec( CTm) = [ c(m)11 , . . . , c (m)1Jm , c (m)21 , . . . , c (m)2Jm , . . . , c (m) 
+
+> I1
+
+, . . . , c (m) 
+
+> IJ m
+
+]T
+
+∈ RIJ m .
+
+Here, (3.1) is reformulated as the following minimization problem in terms of the N last layer parameters {θL 
+
+> 1
+
+, . . . , θ LN }:min   
+
+> {θL
+> 1,...,θ LN}
+> K
+
+X
+
+> k=1
+
+ϵk fk − A k(θL 
+
+> 1
+
+, . . . , θ LN ) 2  
+
+> l2(χk)
+
++
+
+> N
+
+X
+
+> m=1
+
+λm θLm
+
+> 22
+
+, (3.3) where Ak(θL 
+
+> 1
+
+, . . . , θ LN ) ∈ RDk is the long vector whose dk entry is 
+
+Lk
+
+" IX
+
+> i=1
+
+b(1)  
+
+> i
+
+· · · b(N ) 
+
+> i
+
+ti
+
+#
+
+(ˆ u(1)  
+
+> dk
+
+, . . . , ˆu(N ) 
+
+> dk
+
+, ˆydk ), (3.4) 7and it is the result of an N -linear function applied to the last layer parameters θL 
+
+> 1
+
+, . . . , θ LN .Although the minimization problem (3.3) is not an LS problem, we can form an LS problem for θLn by fixing all last layer parameters except the n-th parameter θLn . By solving the LS problems generated for each last layer parameter in turn, we can optimize the N last layer parameters. The details will be discussed after formulating the LS problem for the single last layer parameter. Note that Ak(θL 
+
+> 1
+
+, . . . , θ LN ) is linear with respect to θLn for each n, we can write 
+
+Ak(θL 
+
+> 1
+
+, . . . , θ LN ) = Ak,n θLn
+
+for each k and n.Therefore, the LS step minimizing (3.3) in terms of θLn is min 
+
+> θLn
+> K
+
+X
+
+> k=1
+
+ϵk fk − Ak,n θLn 
+
+> 22
+
++ λn θLn 
+
+> 22
+
+(3.5) where Ak,n ∈ RDk ×IJ n is the matrix whose ( dk, [i, j ]I,J n ) entry is 
+
+Lk
+
+h
+
+b(1)  
+
+> i
+
+· · · b(n−1)  
+
+> i
+
+˜b(n) 
+
+> j
+
+b(n+1)  
+
+> i
+
+· · · b(N ) 
+
+> i
+
+ti
+
+i
+
+(ˆ u(1)  
+
+> dk
+
+, . . . , ˆu(N ) 
+
+> dk
+
+, ˆydk ).
+
+Here, the LS system (3.5) cannot be handled directly if I and Jn are not small unless Dk
+
+is small, but it is not desirable to use small Dk in MIONet training. We provide the data and operator conditions for MIONet, which correspond to the conditions for DeepONet in [5, Eqs. (3.4) and (3.5)]. Suppose that the data collection χk can be expressed as a Cartesian product of N + 1 input data as follows: 
+
+χk = β1 × · · · × βN × τk, (3.6) where βm =
+
+n
+
+u(m)
+
+> p
+
+oPm
+
+> p=1
+
+is the set of input functions for the m-th coordinate and τk = {yqk }Qk 
+
+> qk=1
+
+is the set of points of the discretized domain for Lk[G(·, . . . , ·)] with Dk = P1 · · · PN Qk. Thus, the input function for each branch network is independent of the input functions for other branch networks and is used equally for all error terms. Furthermore, the same discretization over the domain of Lk[G(·, . . . , ·)] is used for all tuples of input functions ( u(1)  
+
+> p1
+
+, . . . , u (N ) 
+
+> pN
+
+) for each error term. We also assume that the linear operator Lk satisfies 
+
+Lk
+
+h˜b(1)  
+
+> j1
+
+· · · ˜b(N ) 
+
+> jN
+
+ti
+
+i
+
+(u(1) , . . . , u(N ), y ) = 
+
+> N
+
+Y
+
+> m=1
+
+˜b(m) 
+
+> jm
+
+(u(m))
+
+!
+
+Lk [ti] ( y) (3.7) for all i, j m, k . This implies the linear operator Lk is independent of input functions and acts on each trunk component ti.Let ∗ denote the Khatri-Rao product (column-wise Kronecker product) [14]. Note that the Khatri-Rao product of two matrices X ∈ RR1×S and Y ∈ RR2×S is an R1R2 × S matrix whose entry is represented as (X ∗ Y )rs = Xr1sYr2s, (3.8) where r = [ r1, r 2]R1,R 2 .Under the conditions (3.6) and (3.7), we show the large matrix Ak,n in (3.5) can be fac-tored into the product of N + 1 smaller matrices with some permutations. For convenience, 8we define a sequence with the j-th term removed from the sequence {xi}Ni=1 and denote it as (x1, . . . , ˆxj , . . . , x N ). Also, for the generic associative binary operator ◦, we denote N
+
+◦
+
+> i=1
+> i̸=j
+
+xi as the repeated application of the operation to the sequence {xi}Ni=1 with xj omitted. We define the tensor permutation matrix introduced in [27] in terms of the lexicographic order of the entry of a rank N tensor. 
+
+Definition 3.2. Let T ∈ RD1×···× DN be a rank N tensor of size D1 × · · · × DN and t ∈ RD1··· DN
+
+be the lexicographically vectorized tensor T whose [ d1, . . . , d N ]D1,...,D N entry is Td1,...,d N . Let 
+
+σ ∈ SN be a permutation, where SN is the set of all permutations of {1, . . . , N }. Suppose ˜T ∈ 
+
+RDσ(1) ×···× Dσ(N ) be a transposed tensor satisfying Td1,...,d N = ˜Tdσ(1) ,...,d σ(N ) with the lexicographic vectorization ˜ t for Dσ(1) ×· · ·× Dσ(N ) tensors. If a permutation matrix KD,σ ∈ RD1··· DN ×D1··· DN
+
+satisfies ˜t = KD,σ t, (3.9) then we call KD,σ a tensor permutation matrix with dimension D = ( D1, . . . , D N ) and permu-tation σ.Note that ˜T is the tensor transpose of T associated with σ in [24] and KD,σ maps the lexicographic order of the entry of T to that of the entry of ˜T .Now, we state and prove the main theorem for a factorization of the system matrix in (3.5). 
+
+Theorem 3.3. Under the conditions (3.6) and (3.7) , the system matrix Ak,n ∈ RP1··· PN Qk ×IJ n
+
+in the least squares problem (3.5) can be factored as 
+
+Ak,n = KT  
+
+> ˜Dk,σ n
+
+(( Gn ∗ Tk) ⊗ Bn) ,
+
+with 
+
+Gn = N
+
+∗
+
+> m=1
+> m̸=n
+
+Hm ∈ RP1··· ˆPn··· PN ×I ,Hm = BmCTm ∈ RPm×I ,
+
+where Bm =
+
+˜b(m) 
+
+> j
+
+(u(m) 
+
+> p
+
+)
+
+
+
+∈ RPm×Jn and Tk = ( Lk [ti] ( yqk )) ∈ RQk ×I are the m-th branch pre-output matrix and the trunk output data with operator Lk, respectively, and K ˜Dk ,σ n ∈
+
+RP1··· PN Qk ×P1··· PN Qk is the tensor permutation matrix with dimension ˜Dk = ( P1, . . . , P N , Q k)
+
+and the permutation 
+
+σn =   1 ··· n−1 n n+1 ··· N N +1 1 ··· n−1 n+1 n+2 ··· N +1 n
+
+ ∈ SN +1 .
+
+Note that Hm is the final output of the m-th branch network, and since the Khatri-Rao product is associative, we generalize (3.8) to (X1 ∗ · · · ∗ XN )rs = ( X1)r1s · · · (XN )rN s, (3.10) where r = [ r1, . . . , r N ]R1,...,R N for the matrices Xn ∈ RRn×S . A similar result holds for the Kronecker product. The tensor permutation matrix K ˜Dk ,σ n is introduced to match the mixed row order of the product ( Gn ∗ Tk) ⊗ Bn to the lexicographic row order of the data fk.
+
+Proof. By (3.7), for each dk, there exist positive integers p1, . . . , p N and q such that dk =[p1, . . . , p N , q ]P1,...,P N ,Q k , where ˆu(m) 
+
+> dk
+
+= u(m) 
+
+> pm
+
+∈ βm and ˆydk = yq ∈ τk. Also, the tuple (p1, . . . , p N , q ) and dk have one-to-one correspondence as 1 ≤ pm ≤ Pm for m = 1 , . . . , N ,1 ≤ q ≤ Qk, and 1 ≤ dk ≤ Dk = P1 · · · PN Qk.9Hence, by (3.6), ([ p1, . . . , p N , q ]P1,...,P N ,Q k , [i, j ]I,J n ) entry of Ak,n can be expressed as 
+
+
+
+> N
+
+Y
+
+> m=1
+> m̸=n
+
+b(m) 
+
+> i
+
+(u(m) 
+
+> pm
+
+)
+
+ ˜b(n) 
+
+> j
+
+(u(n) 
+
+> pn
+
+)Lk [ti] ( yq ). (3.11) On the other hand, by using similar argument in (3.10), ([ p1, . . . , ˆpn, . . . , p N , q, p n]P1,..., ˆPn,...,P N ,Q k ,P n , [i, j ]I,J n )entry of the mixed product ( Gn ∗ Tk) ⊗ Bn is exactly (3.11). Using K ˜Dk ,σ n to permute the row order of ( Gn ∗ Tk) ⊗ Bn, we have Ak,n = KT 
+
+> ˜Dk,σ n
+
+(( Gn ∗ Tk) ⊗ Bn) as desired. Using the result of Theorem 3.3, let us observe the LS problem (3.5) and rearrange the data vector fk ∈ RP1··· PN Qk into a tensor Fk ∈ RP1×···× PN ×Qk . Both the ( p1, . . . , p N , q k) entry of Fk
+
+and the [ p1, . . . , p N , q k]P1,...,P N ,Q k entry of fk are 
+
+Lk [G(·, . . . , ·)] ( u(1)  
+
+> p1
+
+, . . . , u (N ) 
+
+> pN
+
+, y qk ). (3.12) Therefore, the LS problem with respect to the last layer parameter is min 
+
+> Cn
+> K
+
+X
+
+> k=1
+
+ϵk fk − KT  
+
+> ˜Dk,σ n
+
+(( Gn ∗ Tk) ⊗ Bn) vec( CTn ) 22
+
++ λn vec( CTn ) 22. (3.13) To write the normal equation concisely, we use the fact [28] that ( X ∗ Y )T (X ∗Y ) = ( XT X)⊙
+
+(Y T Y ) for all matrices X ∈ RR1×S and Y ∈ RR2×S . Here, the normal equation of (3.13) is given as " KX
+
+> k=1
+
+ϵk
+
+ GTn Gn
+
+ ⊙  T Tk Tk
+
+!
+
+⊗  BTn Bn
+
+#
+
+vec( CTn ) + λnvec( CTn )=
+
+> K
+
+X
+
+> k=1
+
+ϵk
+
+
+
+(Gn ∗ Tk)T ⊗ BTn
+
+
+
+KT  
+
+> ˜Dk,σ n
+
+fk.
+
+(3.14) Introducing a long data matrix ˆFk,n ∈ RPn×P1··· ˆPn··· PN Qk whose 
+
+
+
+pn, [p1, . . . , ˆpn, . . . p N , q ]P1,..., ˆPn,...,P N ,Q k
+
+
+
+entry is (3.12), we can write (3.14) as a matrix equation: 
+
+BTn BnCTn
+
+> K
+
+X
+
+> k=1
+
+ϵk
+
+ GTn Gn
+
+ ⊙  T Tk Tk
+
+!
+
++ λnCTn = BTn
+
+> K
+
+X
+
+> k=1
+
+ϵk ˆFk,n (Gn ∗ Tk)
+
+!
+
+. (3.15) Note that ( GTn Gn) ⊙ (T Tk Tk) can be effectively calculated without forming huge matrices since (GTn Gn) ⊙ (T Tk Tk) = 
+
+ N
+
+⊙
+
+> m=1
+> m̸=n
+
+(HTmHm)
+
+ ⊙ (T Tk Tk),
+
+where each component is an I × I matrix generated from each network. In the case of unsupervised learning where the given data Fk depends only on a single input argument u(mk ) of the operator G(u(1) , . . . , u (N )), we can reduce the rank ( N + 1) data tensor 
+
+Fk to the reduced matrix ˜Fmk ∈ RPmk ×Qk , where mk is the corresponding index of the input function coordinate. We provide a related theorem. 10 Theorem 3.4. Suppose the data tensor Fk ∈ RP1×···× PN ×Qk in (3.12) is given as the case of unsupervised learning, where the data varies only along the mk-th axis and the last axis. Then, 
+
+ˆFk,n (Gn ∗ Tk) = 
+
+
+
+1Pn×1
+
+ N
+
+⊙
+
+> m=1
+> m̸=n
+
+˜hTm
+
+ for n̸ = mk,
+
+1Pn×1
+
+ N
+
+⊙
+
+> m=1
+> m̸=n
+
+˜hTm
+
+ ⊙
+
+ ˜FnTk
+
+
+
+for n = mk,
+
+where ˜hTm ∈ R1×I is a row vector of length I defined by 
+
+˜hTm =
+
+(11×Pm Hm if m̸ = mk,
+
+11×Pmk (Hmk ⊙ ( ˜Fmk Tk)) if m = mk.Proof. By expanding the summation in the matrix multiplication ˆFk,n (Gn ∗ Tk) of intermediate dimension P1 · · · ˆPn · · · PN Qk into N summations, we have 
+
+ ˆFk,n (Gn ∗ Tk)
+
+ 
+
+> pni
+
+= X
+
+> l
+
+( ˆFk,n )pnl(Gn ∗ Tk)li 
+
+= X
+
+> p1
+
+· · · [X
+
+> pn
+
+· · · X
+
+> pN
+
+X
+
+> q
+
+( ˜Fmk )pmk q
+
+
+
+> N
+
+Y
+
+> m=1
+> m̸=n
+
+(Hm)pmi
+
+ (Tk)qi .
+
+(3.16) If n̸ = mk, by rearranging summations with respect to their corresponding indices, (3.16) becomes 
+
+ ˆFk,n 
+
+ Gn ∗ Tk
+
+
+
+> pni
+
+=
+
+
+
+> N
+
+Y
+
+> m=1
+> m̸=n,m k
+
+X
+
+> pm
+
+(Hm)pmi
+
+X
+
+> pmk
+
+(Hmk )pmk i
+
+X
+
+> q
+
+( ˜Fmk )pmk q (Tk)qi 
+
+!
+
+=
+
+
+
+> N
+
+Y
+
+> m=1
+> m̸=n,m k
+
+(11×Pm Hm)i
+
+X
+
+> pmk
+
+(Hmk )pmk i( ˜Fmk Tk)pmk i
+
+
+
+=
+
+
+
+> N
+
+Y
+
+> m=1
+> m̸=n,m k
+
+(11×Pm Hm)i
+
+
+
+11×Pmk (Hmk ⊙ ( ˜Fmk Tk)) 
+
+
+
+> i
+
+.
+
+(3.17) Therefore, by reordering products and broadcasting along the first axis of the matrix as (3.17) does not depend on the first axis variable pn we have ˆFk,n (Gn ∗ Tk) = 1Pn×1
+
+ N
+
+⊙
+
+> m=1
+> m̸=n
+
+˜hTm
+
+ .
+
+11 Algorithm 1 Alternating Least Squares Step for MIONet 
+
+Output: Optimized last layer parameters θL 
+
+> 1
+
+, . . . , θ LN 
+
+> 1:
+
+function ALS (θB 
+
+> 1
+
+, . . . , θ BN , θ T , θ L 
+
+> 1
+
+, . . . , θ LN ) 
+
+> 2:
+
+while Stopping criterion is not met do  
+
+> 3:
+
+Choose permutation π ∈ SN 
+
+> 4:
+
+for m = 1 , . . . , N do  
+
+> 5:
+
+θLπ(m) ← LS π(m)(θB 
+
+> 1
+
+, . . . , θ BN , θ T , θ L 
+
+> 1
+
+, . . . , θ LN )
+
+▷ Solve the LS problem in terms of θLπ(m) and update  
+
+> 6:
+
+end for  
+
+> 7:
+
+end while  
+
+> 8:
+
+end function 
+
+On the other hand, if n = mk, (3.16) becomes 
+
+ ˆFk,n (Gn ∗ Tk)
+
+
+
+> pni
+
+=
+
+
+
+> N
+
+Y
+
+> m=1
+> m̸=n
+
+X
+
+> pm
+
+(Hm)pmi
+
+X
+
+> q
+
+( ˜Fn)pnq (Tk)qi 
+
+!
+
+=
+
+
+
+> N
+
+Y
+
+> m=1
+> m̸=n
+
+(11×Pm Hm)i
+
+ ˜FnTk
+
+
+
+> pni
+
+.
+
+(3.18) Therefore, by reordering products and broadcasting terms along the first axis of the matrix which does not depend on the variable pn for (3.18), we have ˆFk,n (Gn ∗ Tk) = 
+
+1Pn×1
+
+ N
+
+⊙
+
+> m=1
+> m̸=n
+
+˜hTm
+
+ ⊙
+
+ ˜FnTk
+
+
+
+,
+
+which concludes the proof. This theorem enables us to efficiently compute each component of the matrix equation (3.15). Finally, we can use Theorem 2.2 to find the minimizer Cn of the LS problem (3.13) for the n-th last layer parameter. Now, we present the entire LS step for MIONet (Algorithm 1). Since the loss is the sum of squares of multilinear functions with last layer parameters ( θL 
+
+> 1
+
+, . . . , θ LN ) of N branches, along with regularization terms, we can formulate an alternating least squares (ALS) problem. Define the optimizing order of the last layer parameters as a permutation π ∈ SN . For m = 1 , . . . , N ,fix all parameters except θLπ(m), then solve the LS problem in terms of θLπ(m) to update θLπ(m).Note that a unique minimizer is guaranteed if λπ(m) > 0. Finally, the entire process is repeated until the stopping criterion is met, such as changes in the appropriate norm of the parameters or the loss being smaller than a specific threshold. The complete LSGD algorithm for MIONet (Algorithm 2) is similar to the LSGD algorithm for DeepONet introduced in [5, Algorithm 2]. To speed up the ALS step, one may introduce enhanced line search (ELS) [26] or partitioned ALS (PALS) [32]. 12 Algorithm 2 Hybrid Least Squares/Gradient Descent for MIONet ΘB = ( θB 
+
+> 1
+
+, . . . , θ BN ), Θ L = ( θL 
+
+> 1
+
+, . . . , θ LN ) 
+
+> 1:
+
+(Θ B , θ T , ΘL) ← (Θ B 
+
+> 0
+
+, θ T 
+
+> 0
+
+, ΘL 
+
+> 0
+
+): Initial parameters for the branches and the trunk  
+
+> 2:
+
+ΘL ← ALS (Θ B , θ T , ΘL) ▷ Solve the ALS problem for each θLm in the full batch  
+
+> 3:
+
+for i = 1 , . . . do  
+
+> 4:
+
+(Θ B , θ T ) ← GD (Θ B , θ T , ΘL) ▷ Use a gradient descent type optimizer to find Θ B and θT 
+
+> 5:
+
+ΘL ← ALS (Θ B , θ T , ΘL) 
+
+> 6:
+
+end for Algorithm 3 ALS+Adam for MIONet ΘB = ( θB 
+
+> 1
+
+, . . . , θ BN ), Θ L = ( θL 
+
+> 1
+
+, . . . , θ LN ) 
+
+> 1:
+
+(Θ B , θ T , ΘL) ← (Θ B 
+
+> 0
+
+, θ T 
+
+> 0
+
+, ΘL 
+
+> 0
+
+): Initial parameters  
+
+> 2:
+
+for i = 1 , . . . , I 0 do  
+
+> 3:
+
+(Θ B , θ T , ΘL) ← Adam (Θ B , θ T , ΘL) ▷ Initial Adam stage for all parameters  
+
+> 4:
+
+end for  
+
+> 5:
+
+ΘL ← ALS (Θ B , θ T , ΘL) ▷ Solve the ALS problem for each θLm in the full data batch  
+
+> 6:
+
+for i = 1 , . . . do ▷ Work unit block  
+
+> 7:
+
+for j = 1 , . . . , J 0 do  
+
+> 8:
+
+(Θ B , θ T ) ← Adam (Θ B , θ T , ΘL) ▷ Use Adam for hidden layer parameters  
+
+> 9:
+
+end for  
+
+> 10:
+
+ΘL ← ALS (Θ B , θ T , ΘL) 
+
+> 11:
+
+end for 
+
+# 4 Experimental results 
+
+In this section, we present numerical experiments on various PDEs with 2-branch MIONet to evaluate the proposed hybrid training schemes, ALS+Adam. We report training results and compare the proposed method, ALS+Adam, with the conventional Adam training in terms of training loss convergence behavior and relative error for unseen input functions. We propose ALS+Adam as a practical LSGD method for MIONets, which generalizes the LS+Adam method for DeepONets in [5] as follows. In the initial stage, we train all parameters using Adam for a moderate number of epochs. Then, we switch to the hybrid stage, where we use the ALS step to optimize the last layer parameters of each branch network in turn. After that, the ALS step is applied once every few Adam epochs for the hidden layer parameters. See Algorithm 3. For 2-branch MIONet training in supervised learning, we use the mean square error (MSE) loss 
+
+ϵ1Ldata + λ1∥C1∥2 
+
+> F
+
++ λ2∥C2∥2 
+
+> F
+
+, (4.1) and for the unsupervised learning, we use PI-loss 
+
+ϵ1Ldata + ϵ2Lphysics + λ1∥C1∥2 
+
+> F
+
++ λ2∥C2∥2 
+
+> F
+
+, (4.2) where ∥ · ∥ F denotes the Frobenius norm, ϵ1 = 1, Ldata is the L2 MSE on the data pairs (ˆ ud1 , ˆyd1 )where ˆ yd1 corresponds to the given data points of the governing PDE, and Lphysics is the L2 MSE of the PDE residuals (ˆ ud2 , ˆyd2 ) where ˆ yd2 corresponds to the residual computation points. Supervised learning requires labeled solutions for all possible pairs of input functions ( u(1) , u (2) ). On the other hand, unsupervised learning does not require precomputed reference solutions dur-ing the training stage. Here, we ensure that each data tensor Fk depends only on one input 13 argument of the target operator. According to Theorem 3.4, we do not need to form large matrices, and efficient computation is possible in the ALS steps. In each experiment, we use hyperparameters and network settings similar to those used for DeepONets [5]. We use the Adam optimizer with lr = 10 −3 and ( β1, β 2) = (0 .99 , 0.999). The Adam momentums are maintained between the LS steps. He normal initialization [11] is used for parameter initialization, and the Swish function x/ (1 + e−x) is used as the activation function. For training with Adam-only, no regularization terms for the last layer parameters are used, but for training with ALS+Adam, these regularization terms are applied with the same positive weights across the last layer parameters of each branch network, i.e., λ1 = λ2 = λ.We define one work unit (WU) as one Adam epoch for training all parameters and, in the hybrid stage, as a cycle of one Adam epoch followed by one ALS step in Algorithm 3. For training with ALS+Adam, we assign 50 WUs for the initial stage and then switch to the hybrid stage after applying one ALS step. We empirically found that using only one ALS step for each WU is sufficient, as it greatly reduces computational time while maintaining convergence behavior. In each experiment, the last parameters of the first branch network (branch f ) is optimized first in the ALS step. For the training data, we generate 1,000 data instances independently for each of the two input functions to generate 1,000,000 pairs of input functions, which are all possible combinations. For validation data, we generate 4,000 data pairs. In the Adam-only training stage, 100 × 100 data block is used as one batch in each Adam iteration. On the other hand, training with ALS+Adam uses the batch size of 50 × 50 in Adam iterations. All experiments are repeated three times using different seeds for random initialization of parameters and batching for the Adam iterations. For each model structure and details for problem statement and data generation, refer to Table 2 and the corresponding subsections. All computations were performed using Google JAX [3] on a machine with Intel Xeon Gold 6430 processors and NVIDIA GeForce RTX 4090 with 24 GB memory. 
+
+## 4.1 Reaction-diffusion with variable source and diffusivity 
+
+In this section, we consider a reaction-diffusion equation with variable source and diffusivity as inputs: 
+
+∂u ∂t = ∂∂x 
+
+
+
+D(x) ∂u ∂x 
+
+
+
++ R(u) + f (x), (x, t ) ∈ (0 , 1) × (0 , 1] ,u(x, 0) = 0 , x ∈ (0 , 1) ,u(0 , t ) = u(1 , t ) = 0 , t ∈ (0 , 1] ,
+
+where R(u) = 0 .01 u2. Here, we aim to learn a solution operator that maps the source f and dif-fusivity D to the solution u via MIONet. The inputs are generated from a Gaussian process (GP) in the interval [0 , 1] with zero mean and a squared exponential covariance kernel 
+
+k(x1, x 2) = σ2exp − |x1 − x2|2
+
+2l2
+
+!
+
+, (4.3) with a pair of scale and variance parameters ( l, σ 2) = (0 .2, 1) for f and ( l, σ 2) = (0 .2, 0.35) for 
+
+D. The input functions f and D are discretized at 33 equidistant grid points of [0 , 1], and the output function is evaluated at 33 × 33 equidistant grid points of [0 , 1] 2. The reference solutions are generated by the finite difference method (FDM) using the Crank-Nicolson scheme and the first Taylor approximation for the reaction term. The computational grid is size 129 × 257 in the space domain and time domain. For the training data, we note that 1,000,000 reference solutions from every pair of ( f, D ) need to be prepared, which takes about 8 GB of memory. 14 Table 2: Inputs for networks, network structures and weight of MIONet models. IC and BC stand for initial condition and boundary condition, respectively. FCN and CNN stand for fully connected network and convolutional neural network, respectively. CNN structures are described in the corresponding subsections. Swish activation is used on all branches and trunks.                                                
+
+> Equation Type Network Input Network structure λϵ2
+> Reaction-diffusion Supervised, Nonlinear Branch
+> f
+> 1D Source FCN [33 ,150 ,150 ,150] 10 −8–Branch
+> D
+> 1D Diffusivity FCN [33 ,150 ,150 ,150] Trunk (x, t )FCN [2 ,150 ,150 ,150] Advection Unsupervised, Linear Branch
+> f
+> 1D Source FCN [33 ,100 ,100 ,100] 10 −610 −1Branch
+> P Q BC+IC FCN [65 ,100 ,100 ,100] Trunk (x, t )FCN [2 ,100 ,100 ,100] Poisson Unsupervised, Linear Branch
+> f
+> 2D Source CNN + FCN [1024 ,150 ,150] 10 −12 10 −4Branch
+> gBC FCN [129 ,150 ,150 ,150] Trunk (x, y )FCN [2 ,150 ,150 ,150]
+
+## 4.2 Constant coefficient advection with variable source and IBC 
+
+In this section, we solve a 1D constant coefficient advection equation with a source term via MIONet: ∂u ∂t + a ∂u ∂x = f (x), (x, t ) ∈ (0 , 1] 2,u(x, 0) = P (x), x ∈ [0 , 1] ,u(0 , t ) = Q(t), t ∈ [0 , 1] ,
+
+where a is a fixed constant and P (0) = Q(0). We aim to learn a solution operator which maps the source f , BC P , and IC Q to the solution u.Note that the analytical solution is given as follows: 
+
+u∗(x, t ) = 
+
+( 1 
+
+> a
+
+(F (x) − F (x − at )) + P (x − at ), x − at ≥ 0, 
+
+> 1
+> a
+
+(F (x) − F (0)) + Q(t − xa ), x − at < 0,
+
+where F (x) = R x 
+
+> 0
+
+f (s) ds is the antiderivative of f . Since this solution may have non-differentiable cusps along the line x−at = 0, it is challenging to generate such a solution by minimizing the PI-loss via automatic differentiation in unsupervised learning. Therefore, we introduce an additional condition for input functions — f (0) = 0 and P ′(0) = − 1 
+
+> a
+
+Q′(0) — to ensure differentiability of the solution. Also, instead of having separate IC and BC as input functions, P and Q, they can be naturally concatenated into one input function along the domains of IC and BC. Let 
+
+p = [ P (0) · · · P (1)] and q = [ Q(0) · · · Q(1)] be the discretizations of P and Q along their domains, [0 , 1] × { 0} and {0} × [0 , 1], respectively. Since P (0) = Q(0), we can concatenate p and q by 15 r = [ Q(1) · · · Q(0) = P (0) · · · P (1)], where q is flipped and one of the duplicate values P (0) or 
+
+Q(0) is removed. r will be used for the second input argument of the operator. To generate input functions f , P and Q, we use the GP with zero mean and a squared exponential covariance kernel in (4.3). First, we sample g from the GP in the interval [0 , 1] with scale factor l = 0 .2 and variance σ2 = 1, and h from the GP in the interval [ −a, 1] with l = 0 .2and σ2 = 1. Then, we set 
+
+f (x) = g(x) − g(0) , x ∈ [0 , 1] ,P (x) = h(x), x ∈ [0 , 1] ,Q(t) = h(−at ), t ∈ [0 , 1] .
+
+The generated f , P and Q satisfy f (0) = 0, P (0) = Q(0) and P ′(0) = − 1 
+
+> a
+
+Q′(0). In this problem, we choose a = 0 .5. The original input functions f , P and Q are discretized at 33 equidistant grid points of [0 , 1], and the concatenated input r is a vector of length 65. The output function is evaluated on 33 × 33 equidistant grid points of [0 , 1] 2. The antiderivative of the exact solution is computed by the composite trapezoidal rule in finer grids of size 129 instead of 33. 
+
+## 4.3 2D Poisson equation with variable source and Dirichlet BC 
+
+In this section, we solve a 2D Poisson equation on the unit square with Dirichlet BC via MIONet: 
+
+−∇ · (κ∇u) = f, (x, y ) ∈ Ω = (0 , 1) 2,u = g, (x, y ) ∈ ∂Ω, (4.4) where κ ≡ 1 and the MIONet takes two inputs, source f and Dirichlet BC g, and generates a solution u. The reference solutions are generated by the finite difference method on finer grids of size 129 × 129. The 2D input source f is generated from a GP with zero mean and a 2D squared exponential covariance kernel 
+
+k(x1, x 2, y 1, y 2) = σ2exp − |x1 − x2|2
+
+2lx2 − |y1 − y2|2
+
+2ly 2
+
+!
+
+,
+
+with scale factors lx = ly = 0 .2 and variance σ2 = 0 .1. We take 33 × 33 equidistant grid points in [0 , 1] 2 for the discretization of the input function and as the evaluation points of the output function. The CNN of the branch network consists of three layers with 3 × 3, 2 × 2, and 2 × 2kernels each with 2 × 2 strides. Since the channel sizes are [1 , 16 , 32 , 64], the output of the CNN is a 4 × 4 image of 64 channels. For the BC input function g, we consider a flattened 1D function ˜ g on the interval [0 , 4], generated by a GP with zero mean and periodic covariance kernel 
+
+k(x1, x 2) = σ2exp 
+
+
+
+− 2
+
+l2 sin 2
+
+ π|x1 − x2|
+
+p
+
+ 
+
+,
+
+where the scale factor, the period, and the variance are l = 0 .3, p = 4, and σ2 = 0 .1, respectively, so that g(h(t)) = ˜ g(t) where h : [0 , 4] → ∂Ω is the arc length parametrization of ∂Ω such that 
+
+h(t) = 
+
+
+
+(t, 0) , t ∈ [0 , 1) ,
+
+(1 , t − 1) , t ∈ [1 , 2) ,
+
+(3 − t, 1) , t ∈ [2 , 3) ,
+
+(0 , 4 − t), t ∈ [3 , 4] .
+
+16 Figure 2: Solving various PDE problems via MIONet: Adam-only (Red) vs. ALS+Adam (Blue). 
+
+The top row denotes the training loss (without regularization terms in (4.1) and (4.2)) for different seeds, and the bottom row shows the mean relative L2 error for the validation data over time by the seeds. The shaded areas represent the maximum and minimum values among the seeds, and the solid lines represent their averages. The plots are drawn on log-log scales. The input function ˜ g is discretized on 129 equidistant grid points in [0 , 4], and the output function is evaluated on 33 × 33 equidistant grid points in [0 , 1] 2.
+
+## 4.4 Results 
+
+As shown in Figure 2, training with ALS+Adam outperforms classical Adam training in terms of training loss decay and model performance (relative L2 error for unseen data) in both supervised and unsupervised learning. Figure 3 illustrates the model errors of Adam-only’s and ALS+Adam’s for unseen pairs of test data functions at specific training time. Here, the errors for ALS+Adam training are significantly smaller than Adam-only’s. We note that errors in both training results tend to form in specific patterns. For the reaction-diffusion example, the error grows as t increases. In the advection example, the errors tend to form lines parallel to the line x−0.5t = 0. For the Poisson’s equation, the errors are concentrated near the boundary. 17 Figure 3: Test data evaluation for trained MIONet: Adam-only vs. ALS+Adam. From the top, the reaction-diffusion, advection, and Poisson examples are illustrated. The models are evaluated with parameters trained for 10,000 seconds. 
+
+# 5 Conclusion 
+
+In this paper, we propose a novel method to improve the training of vanilla MIONets, which generalizes the LSGD method for vanilla DeepONets [5]. By interpreting the general L2 type of loss in terms of the last layer parameters of branch networks, we can view it as a sum of squared multilinear functions. After that, we apply the ALS step to find the optimal set of last layer parameters that minimizes the loss, where we optimize by solving the corresponding LS problem of each last layer in turn. Since each LS system is too large to handle directly, we factor the large matrix into small matrices corresponding to each branch and trunk network. Those small matrices constitute the original large matrix using the Kronecker and Khatri-Rao products together with an appropriate tensor permutation matrix. The solution of the LS system can be found in an elementary manner without forming large matrices. Finally, the LSGD method for MIONet alternates between the ALS step optimizing the last layer parameters and the GD step for the hidden layer parameters. The numerical experiments involving a nonlinear PDE with supervised learning and linear PDEs with PI-loss show that our method (ALS+Adam) accelerates training and generates better results with unseen data compared to the conventional Adam training. 
+
+# References 
+
+[1] A. G. Baydin, B. A. Pearlmutter, A. A. Radul, and J. M. Siskind , Automatic differentiation in machine learning: a survey , Journal of Machine Learning Research, 18 (2018), pp. 1–43. 18 [2] K. Bhattacharya, B. Hosseini, N. B. Kovachki, and A. M. Stuart , Model reduction and neural networks for parametric PDEs , The SMAI Journal of Computational Mathemat-ics, 7 (2021), pp. 121–157. [3] J. Bradbury, R. Frostig, P. Hawkins, M. J. Johnson, C. Leary, D. Maclaurin, G. Necula, A. Paszke, J. VanderPlas, S. Wanderman-Milne, and Q. Zhang , JAX: composable transformations of Python+NumPy programs , 2018. [4] G. Byrenheid , Sparse representation of multivariate functions based on discrete point eval-uations , PhD thesis, Rheinische Friedrich-Wilhelms-Universit¨ at Bonn, Jan. 2019. [5] J. Choi, C.-O. Lee, and M. Moon , Hybrid least squares/gradient descent methods for DeepONets , arXiv preprint arXiv:2508.15394, (2025). [6] E. C. Cyr, M. A. Gulian, R. G. Patel, M. Perego, and N. A. Trask , Robust training and initialization of deep neural networks: An adaptive basis viewpoint , in Mathematical and Scientific Machine Learning, PMLR, 2020, pp. 512–536. [7] M. Fabian, P. Habala, P. H´ ajek, V. Montesinos, and V. Zizler , Banach space theory: The basis for linear and nonlinear analysis , Springer Science & Business Media, 2011. [8] G. Gupta, X. Xiao, and P. Bogdan , Multiwavelet-based operator learning for differential equations , Advances in Neural Information Processing Systems, 34 (2021), pp. 24048–24062. [9] P. S. Hadorn , Shift-DeepONet: Extending deep operator networks for discontinuous output functions , Master’s thesis, ETH Zurich, 2022. [10] J. He, S. Koric, D. Abueidda, A. Najafi, and I. Jasiuk , Geom-DeepONet: A point-cloud-based deep operator network for field predictions on 3D parameterized geometries ,Computer Methods in Applied Mechanics and Engineering, 429 (2024), p. 117130. [11] K. He, X. Zhang, S. Ren, and J. Sun , Delving deep into rectifiers: Surpassing human-level performance on imagenet classification , in Proceedings of the IEEE International Con-ference on Computer Vision, 2015, pp. 1026–1034. [12] J. Hu and P. Jin , A hybrid iterative method based on MIONet for PDEs: Theory and numerical examples , Mathematics of Computation, (2025). [13] P. Jin, S. Meng, and L. Lu , MIONet: Learning multiple-input operators via tensor product , SIAM Journal on Scientific Computing, 44 (2022), pp. A3490–A3514. [14] C. Khatri and C. R. Rao , Solutions to some functional equations and their applications to characterization of probability distributions , Sankhy¯ a: the Indian Journal of Statistics, Series A, (1968), pp. 167–180. [15] D. P. Kingma , Adam: A method for stochastic optimization , arXiv preprint arXiv:1412.6980, (2014). [16] J. Y. Lee, S. W. Cho, and H. J. Hwang , HyperDeepONet: learning operator with complex target function space using the limited resources via hypernetwork , arXiv preprint arXiv:2312.15949, (2023). 19 [17] Z. Li, N. Kovachki, K. Azizzadenesheli, B. Liu, K. Bhattacharya, A. Stuart, and A. Anandkumar , Fourier neural operator for parametric partial differential equations ,arXiv preprint arXiv:2010.08895, (2020). [18] , Neural operator: Graph kernel network for partial differential equations , arXiv preprint arXiv:2003.03485, (2020). [19] L. Lu, P. Jin, G. Pang, Z. Zhang, and G. E. Karniadakis , Learning nonlinear op-erators via DeepONet based on the universal approximation theorem of operators , Nature Machine Intelligence, 3 (2021), pp. 218–229. [20] L. Lu, X. Meng, S. Cai, Z. Mao, S. Goswami, Z. Zhang, and G. E. Karniadakis ,
+
+A comprehensive and fair comparison of two neural operators (with practical extensions) based on fair data , Computer Methods in Applied Mechanics and Engineering, 393 (2022), p. 114778. [21] L. Lu, R. Pestourie, S. G. Johnson, and G. Romano , Multifidelity deep neural op-erators for efficient learning of partial differential equations with application to fast inverse design of nanoscale heat transport , Physical Review Research, 4 (2022), p. 023210. [22] E. C. MacRae , Matrix derivatives with an application to an adaptive linear decision prob-lem , The Annals of Statistics, 2 (1974), pp. 337 – 346. [23] J. R. Magnus and H. Neudecker , The Commutation Matrix: Some Properties and Applications , The Annals of Statistics, 7 (1979), pp. 381 – 394. [24] R. Pan , Tensor transpose and its properties , arXiv preprint arXiv:1411.1503, (2014). [25] M. Raissi, P. Perdikaris, and G. E. Karniadakis , Physics-informed neural networks: A deep learning framework for solving forward and inverse problems involving nonlinear partial differential equations , Journal of Computational Physics, 378 (2019), pp. 686–707. [26] M. Rajih, P. Comon, and R. A. Harshman , Enhanced line search: A novel method to accelerate PARAFAC , SIAM Journal on Matrix Analysis and Applications, 30 (2008), pp. 1128–1147. [27] C. Rakotonirina , Tensor permutation matrices in finite dimensions , arXiv preprint math.GM/0508053, (2005). [28] C. R. Rao , Estimation of heteroscedastic variances in linear models , Journal of the Amer-ican Statistical Association, 65 (1970), pp. 161–172. [29] J. Seidman, G. Kissas, P. Perdikaris, and G. J. Pappas , NOMAD: Nonlinear mani-fold decoders for operator learning , in Advances in Neural Information Processing Systems, S. Koyejo, S. Mohamed, A. Agarwal, D. Belgrave, K. Cho, and A. Oh, eds., vol. 35, Curran Associates, Inc., 2022, pp. 5601–5613. [30] Z. Semadeni , Schauder bases in Banach spaces of continuous functions , vol. 918, Springer, Berlin, 2006. [31] H. Son , ELM-DeepONets: Backpropagation-free training of deep operator networks via extreme learning machines , IEEE Access, 13 (2025), pp. 86927–86934. [32] P. Tichavsk` y, A.-H. Phan, and A. Cichocki , Partitioned alternating least squares technique for canonical polyadic tensor decomposition , IEEE Signal Processing Letters, 23 (2016), pp. 993–997. 20
