@@ -1,0 +1,498 @@
+Title: DKDNet: Dual Knowledge and Data-Driven Network for Cross-Domain Automatic Modulation Classification
+
+URL Source: https://arxiv.org/pdf/2607.08031v1
+
+Published Time: Fri, 10 Jul 2026 00:27:23 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+> JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, JUNE 2026 1
+
+# DKDNet: Dual Knowledge and Data-Driven Network for Cross-Domain Automatic Modulation Classification 
+
+Shuang Wang, Senior Member, IEEE, Chenxu Wang, Hantong Xing, Student Member, IEEE, 
+
+Hanlin Mo, Member, IEEE, Lirong Han, and Licheng Jiao, Life Fellow, IEEE 
+
+Abstract —The dynamics of communication environments in-duce significant distribution shifts across domains, challenging the generalization of deep learning-based automatic modulation classification (AMC) models. While existing UDA methods alle-viate this problem by aligning source and target features, they give limited consideration to modulation-specific structures that remain informative across domain conditions. In this paper, we consider signal prior knowledge, grounded in communication protocols and physical principles, as a potential way to enhance cross-domain representation learning. Given that different priors may vary in modulation discriminability, domain stability, and complementarity, this paper first analyzes five commonly adopted signal representations that instantiate different signal priors. From them, in-phase/quadrature (IQ), amplitude–phase (AP), and autocorrelation function (ACF) are selected as compact prior-guided inputs. Based on that, a dual knowledge and data-driven network (DKDNet) is proposed for cross-domain AMC. The multi-representation feature encoder (MRFE) and dynamic lightweight fusion unit (DLFU) are designed to achieve unified representation learning and adaptive feature fusion, and the resulting fused features are optimized with modulation classifica-tion and adversarial domain alignment objectives. Experiments on both simulated and public datasets validate the rationality of the prior selection and demonstrate the superiority of the proposed method. 
+
+Index Terms —Automatic Modulation Classification, Unsuper-vised Domain Adaptation, Signal Prior Knowledge. 
+
+I. INTRODUCTION 
+
+# AUTOMATIC modulation classification (AMC) aims to identify the modulation type of received signals in a non-cooperative manner. As a key technique for radio-environment perception, AMC has been applied to both military and civilian communication scenarios, including cognitive radio [1], [2], threat assessment [3], [4], and spectrum monitoring [5], [6]. Traditional AMC methods mainly include likelihood-based and feature-based approaches [7]. Likelihood-based methods formulate AMC as composite hypothesis testing using the conditional probability density of received waveforms, achiev-ing statistical optimality but with high computational com-plexity [8], [9]. Feature-based methods classify signals using                      
+
+> This work was supported in part by the National Natural Science Foun-dation of China under Grant 62271377; in part by the Key Research and Development Program of Shaanxi Program under Grant 2024GX-ZDCYL-02-08. ( Corresponding author: Shuang Wang )Shuang Wang, Chenxu Wang, Lirong Han, and Licheng Jiao are with the School of Artificial Intelligence, Xidian University, Xi’an 710071, China. (email: shwang@mail.xidian.edu.cn; wcxlocal@163.com; hanlirong@xidian.edu.cn; lchjiao@mail.xidian.edu.cn). Hantong Xing is with the School of Electronics And Information, Northwestern Polytechnical Uni-versity, Xi’an 710072, China (email: xinghantong@126.com). Hanlin Mo is with the Unmanned System Research Institute, Northwestern Polytechnical University, Xi’an 710072, China (e-mail: mohanlin@nwpu.edu.cn).
+
+carefully designed hand-crafted features that provide compact and discriminative representations [10], [11]. Common fea-tures include instantaneous amplitude and phase (AP) [12], constellation diagrams (CD) [13], discrete Fourier transform (DFT) [14], and higher-order cumulants [15], [16]. Each of them captures essential signal characteristics, such as fre-quency information [17], the order of digital modulation [18], and periodicity [19]. Recently, deep learning (DL)-based AMC methods have emerged as a promising alternative to traditional approaches, as they leverage data-driven strategies to learn discrimina-tive features directly from raw in-phase and quadrature (IQ) signals [20], [21]. However, such data-driven models usually assume consistent training and testing distributions, which is often violated in practical communication systems. Factors such as transmission loss [22], multipath fading [23], envi-ronmental noise [24], and RF-device calibration errors [5] can induce significant distribution shifts. These shifts often lead to severe performance degradation when DL-based models are deployed in unseen scenarios, challenging their practical application in real-world communication systems [4], [25]. To address the performance degradation caused by distri-bution shifts, researchers have adopted unsupervised domain adaptation (UDA) methods [26], [27]. In UDA-based AMC, labeled source-domain samples and unlabeled target-domain samples from shifted distributions are jointly used to learn transferable features. By introducing adversarial learning strategies, existing UDA methods usually map source and target samples into a shared feature space to mitigate performance degradation caused by domain shift. However, in wireless signal scenarios, domain shifts are often induced by intertwined channel variations, noise perturbations, and hardware discrepancies, making cross-domain AMC subject to more complex distribution changes [4], [23]. Relying solely on data-driven feature alignment may therefore be insufficient to explicitly preserve modulation-specific structures that remain discriminative across domains. Existing knowledge-embedded AMC studies have shown that signal priors can improve representation learning and recognition performance under fixed-channel conditions. Mo-tivated by this observation, this work further investigates whether such priors can facilitate cross-domain representation learning. These priors are usually derived from the physical principles and protocol structures of digital modulation [22], [28], and are commonly introduced through explicit signal rep-resentations or auxiliary knowledge, such as CD [29], AP [30], statistical features [31], and semantic information [32]. Differ-ent from existing studies that mainly focus on classification arXiv:2607.08031v1 [eess.SP] 9 Jul 2026 JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, JUNE 2026 2
+
+accuracy or interpretability under fixed-channel conditions, this work explores whether signal priors can provide stable and modulation-discriminative structural cues for cross-domain representation learning. In communication theory and signal processing, different signal representations characterize complementary properties of modulated signals and provide concrete forms for signal pri-ors [33], [34]. Accordingly, we consider five commonly used representations, including IQ, AP, ACF, CD, and DFT, as can-didates for prior-guided representation learning. They describe the received signal from different perspectives: IQ preserves the raw complex waveform [20]; AP describes amplitude– phase evolution [35]; ACF captures statistical dependence and periodicity [36]; CD reveals constellation geometry [18]; and DFT characterizes spectral structure [37]. Nevertheless, a richer representation does not necessarily lead to better cross-domain generalization. Some representations may retain strong modulation-discriminative cues together with domain-specific distortions, whereas others may be more stable but less discriminative. Therefore, the key is to select and integrate signal priors that balance discriminability, complementarity, and cross-domain stability. Motivated by this observation, we propose DKDNet, a dual knowledge and data-driven framework for cross-domain AMC. We first analyze five commonly adopted signal representations from the perspectives of modulation discriminability, domain discrepancy, and complementarity. Based on both theoretical analysis and empirical evidence, IQ, AP, and ACF are selected as the prior-guided inputs of DKDNet: IQ preserves detailed waveform information, AP provides explicit amplitude–phase dynamics, and ACF introduces relatively stable correlation-domain statistics. To effectively exploit these heterogeneous inputs, DKDNet employs a multi-representation feature en-coder (MRFE) to extract representation-specific features in a unified latent space, and a dynamic lightweight fusion unit (DLFU) to adaptively fuse complementary information. The fused features are further optimized with modulation classifi-cation and domain-adversarial objectives, enabling the model to learn features that are both discriminative and transferable. This structure is highly flexible, allowing a variety of AMC classifier and UDA methods to be jointly applied to the fused features for modulation recognition and cross-domain alignment, respectively. Furthermore, we generated synthetic datasets, RML2025 Series, to evaluate the performance of AMC models under cross-domain conditions and have made the datasets publicly available. Experimental results show that DKDNet effectively improves the cross-domain generalization ability of AMC models, demonstrating the benefits of combin-ing signal knowledge with data-driven learning approaches. 1
+
+The main contributions of this paper are summarized as follows. 
+
+• The role of signal prior knowledge in cross-domain AMC is systematically investigated. Five signal representations are analyzed from the perspectives of discriminability, domain discrepancy, and complementarity, providing a 
+
+> 1Code is available at: https://github.com/FireTracer/DKDNet-AMC.
+
+basis for selecting IQ, AP, and ACF as compact and transferable prior-guided inputs. 
+
+• DKDNet is proposed as a dual knowledge and data-driven framework for cross-domain AMC. Structural signal pri-ors are introduced as representation-level inputs and integrated with data-driven feature learning to improve target-domain generalization under UDA. 
+
+• MRFE and DLFU are designed to encode heterogeneous signal representations in a unified feature space and adaptively fuse their complementary information. The resulting framework is compatible with different AMC backbones and UDA objectives. 
+
+• The RML2025 Series datasets are constructed with pro-gressively intensified channel impairments, and extensive experiments are conducted to validate DKDNet. Consis-tent improvements are demonstrated in cross-domain per-formance, robustness, flexibility, and sample efficiency. The remainder of this paper is organized as follows. Section II reviews related work on AMC and UDA-based AMC. Section III presents the problem formulation, signal-prior analysis, and DKDNet. Section IV describes the RML2025 Series datasets and reports experimental results. Section V concludes this paper. II. RELATED WORK This section reviews recent AMC methods in two cat-egories: in-domain and cross-domain AMC, according to whether distribution shifts exist between training and testing. 
+
+A. In-domain AMC 
+
+In-domain AMC relies on the assumption that the training and test data are independent and identically distributed. Here, we broadly categorize existing approaches into three types: traditional methods, data-driven DL-based methods, and knowledge-embedded DL-based methods. 
+
+Traditional methods: Traditional AMC methods mainly include likelihood-based and feature-based approaches [7]. Likelihood-based methods formulate AMC as composite hy-pothesis testing based on statistical criteria, achieving statis-tical optimality but suffering from high computational com-plexity [8], [38]. Feature-based methods extract hand-crafted signal features and combine them with classifiers such as decision trees or support vector machines (SVMs) [12], [13]. Although these methods offer flexibility and robustness, their performance largely depends on feature design and prior signal-processing expertise. 
+
+Data-driven DL-based methods: Data-driven DL-based AMC methods learn discriminative features directly from raw signals, improving flexibility and classification performance. O’Shea et al. introduced a public AMC dataset and a pio-neering convolutional neural network (CNN) for modulation classification [20]. Liu et al. compared several deep neural network (DNN) architectures and identified convolutional long short-term memory (LSTM) networks as an effective struc-ture [39]. Xing et al. proposed to transform feature learning into relationship learning through paired samples, thereby reducing sensitivity to distributional differences [21]. JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, JUNE 2026 3
+
+Knowledge-embedded DL-based methods: Recent studies have incorporated signal priors into DL-based AMC models to improve data efficiency, interpretability, and classification performance. Typical priors include CD [29], AP informa-tion [40], statistical hand-crafted features [31], and modulation semantics [32]. Other studies further combine representations, such as CD with IQ [41], time-frequency images with instan-taneous autocorrelation maps [42]. Different from these methods, this work investigates whether signal priors can provide modulation-discriminative and domain-stable cues for cross-domain representation learn-ing. By evaluating the discriminability, domain discrepancy, and complementarity of candidate representations, we select more transferable priors to enhance UDA generalization. 
+
+B. Cross-domain AMC 
+
+In practical communication systems, distribution discrep-ancies across domains are widespread, making cross-domain AMC increasingly important. Perenda et al. showed that unknown channel parameters can significantly degrade AMC performance across different channel conditions [4]. To mit-igate this problem, adversarial UDA has been introduced to align source and target signal distributions [26], [43]. Bu et al. further studied adversarial transfer learning under varying sampling rates [44]. Recent studies have also considered more complex domain shifts caused by multiple signal impair-ments [23] and label imbalance in cross-domain AMC [45]. Collectively, these studies demonstrate the effectiveness of UDA in improving AMC generalization. Nevertheless, most existing methods mainly rely on data-driven feature alignment, with limited consideration of modulation-specific structures that remain informative across domain conditions. This work introduces signal priors into cross-domain AMC and proposes DKDNet to enhance domain generalization. III. PROPOSED METHOD This section formulates the cross-domain AMC problem, analyzes representative signal priors, and presents DKDNet, including MRFE, DLFU, and the task-specific heads for modulation classification and domain alignment. 
+
+A. Problem Definition 1) Signal Model: In practical communication systems, the received signal is affected by the transmitter, the propagation channel, and the receiver. For a transmitted baseband signal 
+
+s(t), the received signal in domain d can be modeled as 
+
+xd(t) = adej(ϕd−2π∆fdt)s(t−∆td)⊛Hd(t, τ )+nd(t), (1) where ad denotes the amplitude scaling factor, ∆td is the timing offset, ∆fd is the carrier frequency offset (CFO), ϕd
+
+is the phase offset, Hd(t, τ ) denotes the domain-dependent multipath fading channel with delay component τ , and nd(t)
+
+is the AWGN. The convolution operation ⊛ characterizes the interaction between the transmitted signal and the channel response. The variations of ad, ∆td, ∆fd, ϕd, Hd(t, τ ), and 
+
+nd(t) across domains are the main sources of distribution shift in cross-domain AMC. After sampling xd(t) with sampling period Ts, we obtain the discrete complex sequence Xd[n] = xd(nT s), n = 1 , . . . , L .Each complex sample can be decomposed into its in-phase and quadrature components as Xd[n] = Id[n] + jQ d[n]. For a signal segment with length L, the raw IQ representation is written as 
+
+Xd 
+
+> IQ
+
+=
+
+Re {Xd[1] }, . . . , Re {Xd[L]}
+
+Im {Xd[1] }, . . . , Im {Xd[L]}
+
+
+
+∈ R2×L. (2) For simplicity, a received signal segment, either in its complex sequence form or raw IQ matrix form, is denoted by X in the following problem formulation. 
+
+2) Cross-Domain AMC Task: In this work, cross-domain AMC is formulated as modulation classification under domain-shifted channel conditions. The source and target domains share the same modulation label space but follow different signal distributions. The labeled source domain is denoted as Ds = {(Xsi , y si )}Ns
+
+> i=1
+
+, where Xsi is a received signal sample and ysi ∈ Y is its modulation label. The unlabeled target domain is denoted as Dt = {Xtj }Nt
+
+> j=1
+
+, where Xtj
+
+is collected under different channel or hardware conditions. Thus, Ps(X)̸ = Pt(X) and Ys = Yt = Y.The objective is to learn a feature extractor F (·) and a classifier C(·) by exploiting Ds and Dt, such that the expected target-domain risk is minimized: 
+
+min  
+
+> F,C
+
+ϵt(C ◦ F ) = E(X,y )∼Pt [ℓ (C(F (X)) , y )] , (3) where ℓ(·, ·) denotes the classification loss. Since the target labels are unavailable during training, (3) cannot be directly optimized. This motivates knowledge-guided representation learning, where structural signal priors are introduced to learn features that are discriminative on the source domain and transferable to the target domain. 
+
+B. Signal Priors for Cross-Domain Modulation Representa-tion 
+
+Based on the signal model in (1), the received signal in-volves multiple domain-dependent transformations. Each sig-nal representation can be viewed as a structural prior that em-phasizes specific physical or statistical properties. Analyzing these representations helps identify suitable priors for cross-domain representation learning. In this work, we examine five representations widely adopted in AMC: raw IQ samples, AP, DFT, ACF, and CD. They describe the received signal from complementary perspectives, including waveform, amplitude– phase, spectral, correlation, and constellation-geometry do-mains. However, richer signal descriptions do not necessarily imply better cross-domain generalization. A representation that retains detailed signal information may also preserve domain-specific distortions, whereas a more stable one may discard part of the modulation-discriminative information. Therefore, candidate signal priors should be analyzed according to their discriminability, cross-domain stability, and complementarity. Let ψm(·) denote the m-th signal representation con-structed from a received signal segment X, where m ∈{IQ , AP , DFT , ACF , CD }. To organize the analysis, we char-acterize each representation from two aspects: modulation discriminability and domain discrepancy. JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, JUNE 2026 4
+
+Modulation discriminability reflects whether different mod-ulation formats can be well separated after the mapping ψm(·).Conceptually, let P ym := P (ψm(X) | y) denote the class-conditional distribution induced by ψm(·). Then the class separability can be described as 
+
+Dcls (ψm) = Eyi̸ =yj [Div ( P yi 
+
+> m
+
+, P yj 
+
+> m
+
+)] , (4) where Div( ·, ·) denotes a generic distribution discrepancy measure. A larger Dcls (ψm) indicates stronger separability among modulation classes. Domain discrepancy characterizes how the source-target distribution mismatch is reflected in the representation space specified by ψm(·):
+
+Ddom (ψm) = Div ( Ps(ψm(X)) , P t(ψm(X))) . (5) A smaller Ddom (ψm) indicates a smaller representation-level distribution shift between the source and target domains. In the experiments, H-score and MMD are used as empirical indicators of class discriminability and domain discrepancy, re-spectively. Together with the complementarity among different signal descriptions, they help support the choice of structural priors in the proposed framework. Raw IQ samples provide the basic observation of the re-ceived complex baseband signal and preserve rich waveform-level modulation cues. However, as shown in (1), the received waveform is also affected by domain-dependent factors such as channel variations, noise, and transmission effects. When only IQ samples are used, the model must directly separate modulation-intrinsic structures from domain-specific varia-tions in the raw observation, which may increase its reliance on source-specific waveform patterns. Therefore, although IQ is essential, additional structural priors are needed to provide complementary and more domain-stable inductive biases. AP representation decomposes the received complex se-quence into amplitude and phase trajectories: 
+
+ψAP (Xd) =  |Xd[n]|, ∠Xd[n] Ln=1 . (6) By reorganizing the received waveform into an explicit am-plitude and phase view, AP makes amplitude and phase-dependent modulation structures more accessible. The ampli-tude trajectory reflects envelope variations, while the phase trajectory captures temporal phase evolution. These sequential amplitude-phase dynamics provide discriminative cues that are implicit in raw IQ samples but become more explicit in the AP representation. While these amplitude-phase dynamics provide useful com-plementary cues, they are not sufficient to ensure domain stability by themselves. For illustration, consider a simplified flat-fading case of (1), where timing offset and noise are neglected and the channel is approximated by a complex gain 
+
+gd. After sampling, the received sequence is expressed as 
+
+Xd[n] ≈ adgdS[n]ej(ϕd−2π∆fdnT s), (7) where S[n] denotes the sampled transmitted sequence. The phase component then satisfies 
+
+∠Xd[n] ≈ ∠S[n] + ∠gd + ϕd − 2π∆fdnT s. (8) This relation shows that the observed phase trajectory con-tains both modulation-related phase evolution and domain-dependent phase terms, including channel phase, phase offset, and CFO-induced phase drift. The amplitude trajectory can also be affected by amplitude scaling and channel gain. There-fore, AP mainly serves as a complementary discriminative prior, and its limited domain stability motivates the use of additional domain-stable structural priors. ACF captures the second-order temporal dependency of the received signal and provides a correlation-domain description. For a time lag ℓ, it is defined as 
+
+ψACF (Xd) = RXd [ℓ] = E [Xd[n]X∗ 
+
+> d
+
+[n − ℓ]] . (9) Compared with sample-level waveform representations, ACF describes the signal through second-order temporal statis-tics, providing a more regularized correlation-domain view of the received waveform. The stability of ACF can be illustrated from several common domain-dependent transformations. First, consider a constant phase rotation and amplitude scaling, i.e., Xd[n] = adS[n]ejϕ d , where S[n] denotes the sampled transmitted sequence. Then, 
+
+RXd [ℓ] = E adS[n]ejϕ d adS∗[n − ℓ]e−jϕ d
+
+
+
+= a2
+
+> d
+
+RS [ℓ]. (10) Thus, the constant phase rotation is canceled by conjugate multiplication, and the effect of amplitude scaling can be further reduced by normalization: 
+
+eRXd [ℓ] = RXd [ℓ]
+
+RXd [0] . (11) For additive noise, let Xd[n] = S[n] + Nd[n], where S[n] and 
+
+Nd[n] are independent and Nd[n] is zero-mean white noise. Then, 
+
+RXd [ℓ] = RS [ℓ] + RNd [ℓ], (12) where RNd [ℓ] = 0 for ℓ̸ = 0 . Therefore, non-zero-lag ACF can suppress uncorrelated white noise while preserving the temporal dependency of the modulated signal. ACF still has limitations under certain domain-dependent transformations. For example, under the CFO term in (1), if 
+
+Xd[n] = S[n]e−j2π∆fdnT s , then 
+
+RXd [ℓ] = E
+
+h
+
+S[n]e−j2π∆fdnT s S∗[n − ℓ]ej2π∆fd(n−ℓ)Ts
+
+i
+
+= e−j2π∆fdℓT s RS [ℓ].
+
+(13) This shows that CFO is transformed into a lag-dependent phase factor in the correlation domain, rather than being completely removed. Similarly, multipath fading can affect the second-order statistics of the received signal. Under a quasi-static linear channel approximation, this effect can be expressed in the frequency domain as 
+
+ΦXd (f ) = |Hd(f )|2ΦS (f ), (14) where ΦXd (f ) and ΦS (f ) denote the power spectral densities of Xd[n] and S[n], respectively. These effects indicate that ACF is not fully invariant, but its domain variations are expressed in a structured correlation-domain form. Therefore, ACF provides auxiliary correlation-domain information as JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, JUNE 2026 5
+
+a relatively domain-stable structural prior for cross-domain representation learning. DFT provides a frequency-domain view of the received sequence and can offer complementary spectral cues for mod-ulation classification: 
+
+ψDFT (Xd) = Rd[k] = 
+
+> L
+
+X
+
+> n=1
+
+Xd[n]e−j2πkn/L . (15) However, spectral structures may also encode domain-dependent variations. Under the CFO term in (1), a simplified frequency-domain form can be written as 
+
+Rd(f ) ≈ adejϕ d Hd(f + ∆ fd)S(f + ∆ fd) + Nd(f ), (16) where S(f ), Hd(f ), and Nd(f ) denote the spectra of the transmitted signal, channel response, and noise, respectively. This relation shows that CFO shifts the spectral location, while the domain-dependent channel response reshapes the spectral envelope. Sampling-rate mismatch and filtering may further alter the frequency-domain structure. Thus, DFT is informative but may introduce domain-sensitive spectral bias when spectral distortions vary across domains. Therefore, it is considered as a useful candidate representation, but is not selected as the final structural prior in this work. CD representation describes the geometric distribution of complex samples on the IQ plane. Let zd[n] = Re {Xd[n]}, Im {Xd[n]} denote the two-dimensional IQ point of the n-th sample. When implemented as a density map, CD can be formulated as 
+
+ψd
+
+> CD
+
+(u, v ) = 1
+
+L
+
+> L
+
+X
+
+> n=1
+
+1 [ zd[n] ∈ B u,v ] , (17) where Bu,v denotes the (u, v )-th bin on the IQ plane. CD can provide interpretable constellation-geometry patterns under well-synchronized and compensated conditions. However, in cross-domain scenarios, phase offset, CFO, fading, timing mismatch, and noise may distort the constellation density distribution. In addition, the density-map construction largely removes temporal ordering, which may weaken useful tem-poral evolution information. Therefore, CD may introduce domain-sensitive geometric bias when synchronization and channel conditions vary across domains. The above analysis shows that signal representations encode diverse prior information and exhibit different sensitivities to domain-dependent transformations. Therefore, structural priors should be selected by jointly considering discriminability, cross-domain stability, and complementarity. Although DFT and CD provide useful spectral and constellation-geometry cues, their structures are more closely coupled with domain-dependent impairments, making them informative candidates rather than final priors. Accordingly, IQ, AP, and ACF are selected as a compact prior set for cross-domain representation learning. Specifically, IQ preserves the fundamental waveform observation, AP makes amplitude–phase dynamics explicit, and ACF provides relatively stable second-order correla-tion statistics. Their combination retains discriminative signal information while introducing complementary and domain-stable structural cues. Based on this analysis, we design a dual knowledge and data-driven framework to learn, fuse, and align these prior-guided representations for cross-domain AMC. 
+
+C. Overview of DKDNet 
+
+DKDNet integrates structural signal priors with data-driven feature learning. Specifically, IQ, AP, and ACF are used as knowledge-guided inputs, which encode waveform structure, amplitude–phase evolution, and statistical periodicity, respec-tively. MRFE processes each representation independently and maps them into a unified feature space, while DLFU adaptively fuses the extracted features. The fused features are jointly optimized by modulation classification and domain alignment objectives, enabling robust cross-domain generalization. In this way, the signal priors provide structured and complementary inputs, and the network learns to extract, fuse, and align them for robust cross-domain modulation recognition. The overall architecture is shown in Fig. 1, and the training procedure is presented in Algorithm 1. 
+
+D. Multi-Representation Feature Encoder 
+
+Given the selected representations XIQ , XAP , and XACF ,the MRFE is designed to extract representation-specific fea-tures while mapping them into a unified latent space. After the representation construction described above, the received signal is represented as three real-valued matrices, i.e., XIQ ∈
+
+R2×L, XAP ∈ R2×L, and XACF ∈ R2×L, where L denotes the signal length. Although these inputs share the same matrix size, their channel semantics and statistical properties are different. Directly mixing them at the input level may therefore obscure representation-specific characteristics. To address this issue, MRFE adopts three independent en-coding branches to process the three representations separately. Specifically, input-level normalization is first applied to reduce scale differences among the inputs. The normalized representa-tions are then fed into three parallel feature extractors, denoted as EIQ , EAP , and EACF . These extractors share the same architecture but have independent parameters: 
+
+Fm = Em(Xm), m ∈ { IQ , AP , ACF }, (18) where FIQ , FAP , and FACF denote the extracted features. All three feature maps are projected into RB×D, where B
+
+is the batch size and D is the feature dimension. Feature-level normalization is further applied to place them in a common embedding space, making the features comparable for subsequent fusion. This branch-wise design enables each encoder to capture the characteristics of its corresponding representation while producing features with consistent dimensions. In our im-plementation, each feature extractor consists of four one-dimensional convolutional layers with kernel size 1 × 3, stride 1, and padding 1, producing feature maps with 16, 32, 64, and 2 channels, respectively. Each convolutional layer is followed by batch normalization and a LeakyReLU activation. A final LSTM layer with a hidden size of 128 is used to model temporal dependencies. During domain adaptation, source and target samples share the same MRFE parameters, ensuring consistent feature extraction across domains. JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, JUNE 2026 6                  
+
+> Fig. 1. Framework of the proposed DKDNet. Source samples xsand target samples xtare first transformed into three representations, from which MRFE extracts representation-specific embeddings. Then, DLFU produces fused features Fsand Ft. Subsequently, Fsis fed into the classifier Cfor modulation recognition, while both Fsand Ftare input to the discriminator Dfor cross-domain alignment.
+
+E. Dynamic Lightweight Fusion Unit 
+
+After MRFE, the three feature vectors FIQ , FAP , and FACF 
+
+lie in a unified feature space but may contribute differently to modulation classification and domain alignment. DLFU is designed to adaptively fuse these features with a lightweight dual-branch structure. The first branch performs global additive fusion: 
+
+Fglobal = FIQ + FAP + FACF , (19) where Fglobal ∈ RB×D. This branch preserves the overall information shared by the three representations. The second branch estimates representation-wise feature importance. The three features are first stacked along the representation dimension: 
+
+Fcat = Concat( FIQ , F AP , F ACF ), (20) where Fcat ∈ RB×3×D. Then, the pooling operations are per-formed along the feature dimension to obtain representation-level descriptors, which are then mapped and broadcast to generate A ∈ RB×3×D.
+
+A = σ MLP(MaxPool( Fcat )) + MLP(AvgPool( Fcat )) , (21) where σ(·) denotes the sigmoid activation function. The importance score is applied to Fcat , and a 1 × 1
+
+convolution is used to reduce the representation dimension: 
+
+Frefined = Conv 1×1(Fcat ⊙ A), (22) where Frefined ∈ RB×D and ⊙ denotes element-wise multi-plication. Finally, the outputs of the two branches are combined to obtain the fused feature: 
+
+F = Fglobal ⊙ Frefined . (23) For source and target samples, the resulting fused features are denoted as Fs and Ft, respectively. 
+
+Algorithm 1 Training process of DKDNet.  
+
+> 1:
+
+Input: Labeled source samples {(xsi , y si )}Ns
+
+> i=1
+
+, unlabeled target samples {xtj }Nt
+
+> j=1
+
+, learning rate lr , and maximum epoch K. 
+
+> 2:
+
+Output: Trained DKDNet.  
+
+> 3:
+
+Initialize the parameters of MRFE, DLFU, classifier C,and discriminator D. 
+
+> 4:
+
+for epoch = 1 to K do  
+
+> 5:
+
+for each source-target mini-batch do  
+
+> 6:
+
+Construct XIQ , XAP , and XACF for source and target samples.  
+
+> 7:
+
+Extract representation-specific features with MRFE.  
+
+> 8:
+
+Fuse the extracted features with DLFU to obtain Fs
+
+and Ft. 
+
+> 9:
+
+Compute the source classification loss Lc. 
+
+> 10:
+
+Compute the domain-adversarial loss Ld. 
+
+> 11:
+
+Update all trainable parameters by optimizing Ltotal 
+
+with Adam.  
+
+> 12:
+
+end for  
+
+> 13:
+
+end for  
+
+> 14:
+
+Return: Trained DKDNet. This fusion strategy retains global complementary informa-tion while adaptively emphasizing informative components, providing a compact feature representation for subsequent classification and domain alignment. 
+
+F. Modulation Classifier and Domain Discriminator 
+
+DKDNet optimizes the fused representation using two ob-jectives: source-domain modulation classification and source-target domain alignment. In our implementation, a modulation classifier C is used for label prediction, and a domain discrim-inator D with a Gradient Reversal Layer (GRL) is used for adversarial domain alignment. JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, JUNE 2026 7
+
+1) Modulation Classifier: The modulation classifier pre-dicts the modulation category from the fused source feature 
+
+Fs. It consists of two fully connected layers, where the first layer is followed by dropout and a LeakyReLU activation. The output dimension is set to C, corresponding to the number of modulation classes. For source samples, the classification loss is defined as 
+
+Lc = − 1
+
+NsNsX
+
+> i=1
+> C
+
+X
+
+> c=1
+
+1[ysi =c] log hc(F si ), (24) where ysi is the label of the i-th source sample, hc(F si ) denotes the predicted probability of class c, and 1[ysi =c] is the indicator function. 
+
+2) Domain Discriminator: The domain discriminator pre-dicts whether a fused feature comes from the source or target domain. It has a similar structure to the modulation classifier but removes the dropout layer and outputs a binary domain prediction. A GRL is inserted before the discriminator. During backpropagation, GRL multiplies the gradients by −λ,encouraging the feature extractor to learn domain-invariant representations. Let Fi be the fused feature of the i-th sample and di ∈ { 0, 1} its domain label, where 1 and 0 denote the source and target domains, respectively. With N = Ns + Nt,the domain-adversarial loss is 
+
+Ld = − 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+di log D(Fi)+ (1 − di) log(1 − D(Fi)) .
+
+(25) The overall training objective is formulated as 
+
+Ltotal = Lc + Ld, (26) where the GRL reverses the gradient from Ld with a coeffi-cient λ when updating the feature extractor. IV. EXPERIMENTS 
+
+A. Experimental Setup 
+
+We evaluate DKDNet on two datasets with complementary purposes. The proposed RML2025 Series is used as the main benchmark, as it provides controlled cross-domain AMC scenarios with progressively intensified channel impairments,                              
+
+> TABLE I DESCRIPTION OF THE RML2025 S ERIES . MDS DENOTES THE MAXIMUM
+> DOPPLER SHIFT IN HZ.
+> Dataset MDS(Hz) Delay (ms) Gains CFO / SRO
+> AWGN ////Ri1 4[0,0.9,1.7] [1,0.8,0.3] /Ri2 4[0,0.9,1.7] [1,0.8,0.3] 50 (std 0.01) Ri3 30 [0,0.05,0.12, 0.2,0.23,0.5, 1.6,2.3,5] [0.8, 0.8,0.8, 0.7,0.6,0.4, 0.4,0.4,0.3] 50 (std 0.01) Ray1 1[0,0.9,1.7] [1,0.8,0.3] /Ray2 3[0,0.9,1.7] [1,0.8,0.3] 50 (std 0.01) Ray3 30 [0,0.05,0.12, 0.2,0.23,0.5, 1.6,2.3,5] [0.8, 0.8,0.8, 0.7,0.6,0.4, 0.4,0.4,0.3] 50 (std 0.01)
+
+including multipath fading, CFO, SRO, and Doppler shift. It is used for prior selection, method comparison, ablation stud-ies, backbone compatibility, UDA compatibility, and sample-efficiency analysis. In addition, the public RML22 benchmark [46] is used as an external dataset to further examine the gen-erality of DKDNet beyond the proposed simulated benchmark. For both datasets, we follow the UDA setting, where labeled source-domain samples and unlabeled target-domain samples are available during training, while target-domain labels are used only for evaluation. Experiments are implemented in PyTorch 2.0.1 and Python 3.8 on a single NVIDIA GeForce RTX 3090 GPU with 24 GB memory. The model is trained for 200 epochs using Adam with a fixed learning rate of 5e-4 and a batch size of 512 for both source and target domains. Each iteration uses synchro-nized sampling, processing one mini-batch from each domain. Convolutional and linear layers are initialized by Kaiming and Glorot initialization, respectively. For regularization, 1D batch normalization follows each convolutional layer, and dropout with a rate of 0.5 is applied after each linear layer. All experiments use five random seeds, and results are reported as mean and standard deviation. For all reported improvements over the corresponding baselines, statistical significance is evaluated using two-sided paired t-tests across the five random seeds. The improvements marked or discussed as performance gains are statistically significant with p < 0.05 .
+
+B. Construction of the RML2025 Series Datasets 
+
+Existing AMC datasets mainly support in-domain evalua-tion or contain limited cross-domain variations. Commonly used RadioML datasets [47] and private simulated datasets are therefore insufficient for systematically evaluating cross-domain AMC methods under controlled and progressively intensified channel impairments. To address this limitation, we construct the RML2025 Series, a set of simulated domains for cross-domain AMC evaluation with structured source-target domain shifts. The considered impairments include noise, multipath fading, carrier frequency offset (CFO), sampling rate offset (SRO), and Doppler shift, which affect the temporal, spectral, and constellation structures of received signals. The RML2025 Series is built upon the widely adopted RadioML codebase 2 and comprises seven subsets, each cor-responding to a distinct channel condition. The sampling rate is set to 200 kHz, with 8 samples per symbol, corresponding to a symbol rate of 25 kSymbols/s. Each dataset contains 11 modulation types, namely 8PSK, AM-DSB, AM-SSB, BPSK, CPFSK, GFSK, PAM4, QAM16, QAM64, QPSK, and WB-FM. The SNR ranges from -20 dB to 18 dB with a step size of 2 dB. For each dataset, each modulation contains 1000 samples at each SNR level, resulting in 220k samples. Each sample consists of 128 complex-valued IQ points. Energy normaliza-tion is applied to remove trivial energy-scale differences. The seven subsets include AWGN, Ri1–Ri3, and Ray1– Ray3. AWGN contains only additive white Gaussian noise and is used as the basic source domain in most experiments. For Rician and Rayleigh channels, three impairment levels with                                                                            
+
+> 2https://github.com/radioML/dataset JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, JUNE 2026 8
+> TABLE II EMPIRICAL COMPARISON OF CANDIDATE SINGLE -AND MULTI -REPRESENTATION SIGNAL PRIORS UNDER THE AWGN →RI1
+> ADAPTATION SETTING . H-SCORE , MMD, ADAPTED TARGET -DOMAIN ACCURACY ,AND UDA GAIN ARE REPORTED AS MEAN ±STD OVER FIVE RANDOM SEEDS . A LL REPS .DENOTES THE COMBINATION OF IQ, AP, DFT, ACF, AND CD. Representation H-score ↑MMD ×10 −3↓Acc. (%) ↑Gain (%) ↑
+> IQ 0.406 ±0.019 4.9 ±0.5 42.84 ±0.87 7.25 ±0.50 AP 0.321 ±0.028 5.7 ±0.3 40.80 ±1.04 12.19 ±1.04
+> DFT 0.299 ±0.026 3.2 ±0.8 36.26 ±0.82 4.75 ±0.44 ACF 0.454 ±0.043 0.9 ±0.4 38.48 ±0.09 0.78 ±0.18 CD 0.062 ±0.003 1.8 ±0.1 26.04 ±0.08 2.97 ±0.22 IQ+AP 0.353 ±0.016 7.2 ±1.5 43.82 ±2.69 9.70 ±3.64 IQ+DFT 0.356 ±0.030 5.3 ±0.9 44.11 ±0.45 10.64 ±0.95 IQ+ACF 0.346 ±0.013 3.0 ±0.2 44.72 ±0.29 8.58 ±0.69 AP+ACF 0.292 ±0.012 4.8 ±0.7 40.26 ±0.92 8.68 ±1.43 IQ+AP+ACF 0.376 ±0.015 3.5 ±0.3 47.58 ±0.92 12.83 ±1.40
+> IQ+DFT+ACF 0.378 ±0.037 5.3 ±0.7 43.77 ±3.16 9.18 ±2.34 IQ+AP+DFT 0.343 ±0.025 5.4 ±0.9 46.99 ±1.89 12.40 ±1.78 IQ+AP+CD 0.377 ±0.039 6.3 ±1.3 43.67 ±1.51 9.28 ±0.95 All reps. 0.437 ±0.022 5.4 ±0.4 45.61 ±1.23 9.03 ±0.94
+
+increasing severity are considered. Ri1/Ray1 mainly include multipath fading and Doppler effects, Ri2/Ray2 further intro-duce CFO and SRO, and Ri3/Ray3 adopt more complex mul-tipath profiles and larger Doppler shifts. This design provides progressively more challenging target domains for evaluating cross-domain generalization. The detailed configurations are summarized in Table I, and the datasets are publicly released on GitHub 3.The impairments are configured as follows. The AWGN subset contains only additive white Gaussian noise without multipath effects. The Rician subsets model propagation with a dominant line-of-sight path and scattered multipath compo-nents, with the K-factor fixed to 4, while the Rayleigh subsets represent non-line-of-sight scattered propagation without a dominant path. Different delay spreads and path-gain profiles are adopted for the Rician and Rayleigh subsets to increase domain diversity. CFO is introduced in Ri2, Ri3, Ray2, and Ray3 to model oscillator mismatch, with a nominal offset of 50 Hz and a random perturbation of standard deviation 0.01 Hz. Given the symbol rate of 25 kSymbols/s, the normalized CFO is 50 /25000 = 0.002 . SRO is applied to the same subsets to model sampling-clock mismatch and is set to 50 Hz relative to the 200 kHz sampling rate, corresponding to 250 ppm. Doppler shift models mobility-induced frequency variation and is specified by the maximum Doppler shift in the fading channel model. 
+
+C. Empirical Justification of Prior Selection 
+
+This subsection provides an empirical justification for the input selection of DKDNet based on the representation anal-ysis in Section III-B. The evaluation is conducted under the AWGN →Ri1 adaptation setting, with AWGN and Ri1 used as the source and target domains, respectively. H-score [48] and MMD [49] are used to measure modulation discrim-inability and source-target discrepancy, while the UDA gain 
+
+> 3https://github.com/FireTracer/RML2025-Series
+
+is computed over the corresponding source-only target accu-racy. For implementation, one-dimensional representations are processed by one branch of MRFE, and CD is processed by a lightweight 2D CNN followed by a linear projection layer. Multi-representation inputs are fused by linear addition to isolate the effect of prior selection from the proposed DLFU. All reps. denotes the combination of IQ, AP, DFT, ACF, and CD. The results are summarized in Table II. The single-representation results show clear differences among the five priors. IQ achieves the best adapted accuracy among single representations, reaching 42 .84% , indicating that raw waveform samples retain rich information for modulation classification. However, its MMD is relatively large, indicating that IQ features are still sensitive to channel variations. AP obtains the largest UDA gain among single representations, i.e., 12 .19% , suggesting that its amplitude–phase structure provides useful cues that can be effectively realigned by UDA. ACF achieves the highest H-score and the smallest MMD among single representations, with an MMD of 0.9 × 10 −3,showing that its correlation-domain structure is both well sep-arated and relatively stable across domains. Nevertheless, its adapted accuracy is only 38 .48% , indicating that such stability is insufficient without detailed waveform-level information. DFT and CD achieve lower adapted accuracies, suggesting that spectral shifts and constellation-geometry distortions may reduce their effectiveness under this cross-domain setting. The multi-representation results further show that com-plementary priors are beneficial, but simply adding more representations is not always effective. IQ+AP+ACF achieves the best adapted accuracy of 47 .58% and the largest UDA gain of 12 .83% , outperforming all single-representation inputs and other tested combinations. This supports the use of IQ, AP, and ACF as the prior-guided inputs of DKDNet: IQ pro-vides detailed waveform information, AP introduces explicit amplitude–phase dynamics, and ACF contributes relatively stable correlation-domain statistics. In contrast, adding DFT or CD does not consistently improve performance. Although the combination of all representations obtains the highest H-score of 0.437 , its adapted accuracy drops to 45 .61% , lower than IQ+AP+ACF. This indicates that stronger class separabil-ity alone does not guarantee better cross-domain adaptation. Domain-sensitive or redundant priors may instead hinder fea-ture alignment. Therefore, IQ, AP, and ACF are selected as a compact and complementary prior set for DKDNet. 
+
+D. Effectiveness of the Proposed DKDNet Framework 
+
+Table III reports the average target-domain accuracy under different source-target configurations. Source Only denotes the model trained only on the labeled source domain and directly tested on the target domain, while DKDNet denotes the proposed UDA framework. For clarity, results are reported over all SNR levels and over the high-SNR range. DKDNet consistently improves over Source Only in all evaluated settings. When AWGN is used as the source do-main, the target domains contain Rician or Rayleigh fading with different impairment levels, leading to relatively large domain shifts. In these cases, DKDNet improves the all-SNR JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, JUNE 2026 9                                              
+
+> TABLE III AVERAGE TARGET -DOMAIN ACCURACY OF UDA EXPERIMENTS UNDER DIFFERENT SOURCE -TARGET CONFIGURATIONS . R ESULTS ARE REPORTED AS MEAN ±STD OVER FIVE RANDOM SEEDS .
+> DsDt
+> Acc. (%) ↑(-20 dB ∼18 dB) Acc. (%) ↑(0 dB ∼18 dB) Source Only DKDNet Source Only DKDNet AWGN Ri1 33.89 ±0.98 48.93 ±0.54 47.40 ±1.83 76.67 ±1.25 Ri2 35.65 ±0.55 44.76 ±2.17 51.75 ±0.92 59.46 ±4.15 Ri3 35.86 ±0.52 44.91 ±2.09 49.37 ±0.95 66.63 ±4.03 Ray1 40.39 ±0.79 49.74 ±2.26 56.94 ±1.64 75.97 ±4.26 Ray2 37.42 ±0.57 46.76 ±3.42 52.85 ±1.04 71.32 ±6.71 Ray3 35.37 ±0.69 43.40 ±2.65 48.77 ±0.99 63.97 ±5.34 Ri1 Ray3 49.00 ±0.32 52.28 ±0.73 70.29 ±0.42 78.72 ±1.21 Ray1 Ri3 49.81 ±0.37 52.10 ±0.39 71.37 ±0.49 78.20 ±0.64
+> Fig. 2. Performance comparison between DKDNet and baseline methods across all SNR levels. AWGN is used as the source domain, and the target domains are: (a) Ri1, (b) Ri2, (c) Ri3, (d) Ray1, (e) Ray2, and (f) Ray3.
+
+accuracy by 8.03–15.04 percentage points and the high-SNR accuracy by 7.71–29.27 percentage points. The improvement is more pronounced in the high-SNR range, where modulation-related structures are less obscured by noise and can be more effectively aligned. When the source domain is also impaired, i.e., Ri1 →Ray3 and Ray1 →Ri3, Source Only already achieves higher target accuracy, leaving less room for adaptation. Even in these milder shifts, DKDNet still improves the all-SNR accuracy by 3.28 and 2.29 percentage points, respectively, and the high-SNR accuracy by 8.43 and 6.83 percentage points. These results show that DKDNet is effective not only for AWGN-source adaptation, but also when the source domain contains fading impairments. Fig. 2 further compares DKDNet with representative UDA methods under six AWGN-source adaptation tasks. The com-pared methods include DAAMR [43], DMRUE [26], and SigDA [23], which are designed for AMC, as well as ADDA [50], a classical UDA method. For fair comparison, the network structure for a single IQ input is kept consis-tent with one branch of MRFE. When the SNR is above approximately −4 dB, DKDNet generally achieves the best performance across the six target domains. For example, in the AWGN →Ri1 task, DKDNet exceeds the strongest base-line by about 14 percentage points at 18 dB. At very low                           
+
+> TABLE IV TARGET -DOMAIN ACCURACY ON THE PUBLIC RML22 BENCHMARK UNDER THE RML22-AWGN →RML22-FULL ADAPTATION SETTING .RESULTS ARE REPORTED AS MEAN ±STD OVER FIVE RANDOM SEEDS .Method Acc. (%) ↑(-20 dB ∼18 dB) Acc. (%) ↑(0 dB ∼18 dB) Source Only 23.91 ±0.41 28.79 ±0.66 DAAMR [43] 38.07 ±1.75 50.42 ±3.26 DMRUE [26] 31.76 ±0.77 42.69 ±1.04 SigDA [23] 32.97 ±2.19 44.47 ±3.35 ADDA [50] 28.62 ±0.86 37.87 ±1.80 DKDNet 42.05 ±3.94 56.52 ±5.71
+> Fig. 3. Confusion matrices of DKDNet under the AWGN →Ri1 adaptation setting at −4,0, and 8dB.
+
+SNR levels, all methods show limited performance because severe noise corruption obscures modulation-discriminative structures. These results indicate that the performance gain of DKDNet comes not only from adversarial domain alignment, but also from the prior-guided multi-representation learning introduced before alignment. In addition to the RML2025 Series, we further evaluate DKDNet on the public RML22 benchmark to examine its generality under another cross-domain AMC setting. Specifi-cally, the RML22-AWGN subset is used as the source domain, while the full RML22 dataset, which contains mixed signal impairments, is used as the target domain. The results are sum-marized in Table IV. DKDNet achieves the best performance on this public benchmark, reaching 42 .05% over all SNR levels and 56 .52% under high-SNR conditions. Compared with Source Only, DKDNet improves the target-domain accuracy by 18 .14 and 27 .73 percentage points, respectively. This indicates that the proposed prior-guided adaptation framework remains effective when the target domain contains mixed channel impairments. Compared with the strongest baseline DAAMR, DKDNet further improves the all-SNR accuracy from 38 .07% to 42 .05% and the high-SNR accuracy from 
+
+50 .42% to 56 .52% . These results further demonstrate the generality and robustness of DKDNet under different cross-domain AMC settings. 
+
+E. Feature-Level and Class-Level Analysis 
+
+We visualize class-level predictions and feature distributions under the AWGN →Ri1 adaptation setting. For each SNR level, the target-domain test set contains 200 samples per class, i.e., 2200 samples in total. The confusion matrices are computed at 
+
+−4, 0, and 8 dB and are row-normalized by the number of true samples in each class. For t-SNE visualization, 2200 target-domain samples at 18 dB are used for class-level analysis, JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, JUNE 2026 10    
+
+> Fig. 4. Class-level t-SNE visualization of target-domain features under the AWGN →Ri1 adaptation setting. Source Only DKDNet (Ours)
+> Fig. 5. Domain-level t-SNE visualization before and after adaptation under the AWGN →Ri1 setting.
+
+and 2200 source-domain samples together with 2200 target-domain samples at 18 dB are used for domain-level analysis. Fig. 3 shows that the diagonal entries become more domi-nant as the SNR increases, indicating improved target-domain class separability when modulation-related structures are less corrupted by noise. At low SNRs, several modulation types are still confused due to severe noise corruption. At higher SNRs, most classes are well recognized, and the remaining errors mainly occur between modulation formats with similar signal structures, such as QAM16/QAM64, 8PSK/QPSK, and AM-DSB/WBFM. This trend is consistent with the SNR-wise results in Fig. 2. Fig. 4 further compares the target-domain feature distributions learned by Source Only, representative UDA methods, and DKDNet. Compared with the baselines, DKDNet produces more compact intra-class clusters and clearer inter-class separation, suggesting that the introduced signal priors help preserve modulation-discriminative struc-tures in the target domain. In addition, Fig. 5 shows stronger overlap between source and target features after adaptation, indicating reduced source-target discrepancy. These visual-izations demonstrate that DKDNet improves target-domain performance by learning features that are both discriminative and better aligned across domains. 
+
+F. Ablation and Controlled Studies 
+
+We conduct ablation and controlled studies under the AWGN →Ri1 adaptation setting to analyze the source of DKDNet’s performance gains. The experiments focus on three            
+
+> TABLE V CONTROLLED STUDY ON THE SOURCE OF DKDN ET ’S PERFORMANCE GAIN UNDER THE AWGN →RI1ADAPTATION SETTING . P1 AND P2 ARE LINEAR PROJECTIONS OF IQ WITH THE SAME DIMENSIONALITY AS AP
+> AND ACF, WITHOUT INTRODUCING ADDITIONAL SIGNAL -DOMAIN PRIORS . R ESULTS ARE REPORTED AS MEAN ±STD OVER FIVE RANDOM SEEDS .
+
+Method FLOPs Params Acc. (%) ↑ MMD ↓
+
+DKDNet 29.66M 237.24K 48.93 ±0.54 0.0005 ±0.0003 
+
+IQ-tiny 9.85M 85.06K 42.84 ±0.87 0.0012 ±0.0003 IQ-medium 98.21M 749.61K 45.24 ±0.41 0.0021 ±0.0005 IQ-large 556.34M 4.35M 45.72 ±0.58 0.0014 ±0.0001 Concatenation 29.66M 237.24K ∗ 47.45 ±1.62 0.0007 ±0.0004 Linear Fusion 29.66M 237.24K ∗ 46.79 ±0.97 0.0012 ±0.0006 IQ+DFT+CD 29.66M 237.24K 41.42 ±1.02 0.0201 ±0.0053 IQ+P1+P2 29.66M 237.24K 33.04 ±2.05 0.0209 ±0.0056 
+
+aspects: the role of domain-stable priors, the effectiveness of the fusion strategy, and the complementarity of the selected representations. All results are reported as mean ±std over five random seeds. 
+
+1) Controlled Study on the Source of Performance Gain: 
+
+We first conduct controlled experiments to examine three possible factors: model capacity, fusion strategy, and prior quality. First, IQ-tiny, IQ-medium, and IQ-large use only IQ inputs with different encoder scales, which evaluates whether increasing the capacity of an IQ-only model can reproduce the gain of DKDNet. Second, Concatenation and Linear Fusion replace DLFU with simpler fusion operations while keeping the selected IQ, AP, and ACF inputs, which assesses the effect of adaptive fusion. Third, AP and ACF are replaced by DFT and CD, or by two projected IQ views denoted as P1 and P2, to examine whether the gain comes from meaningful signal priors rather than merely increasing the number of input branches. IQ+P1+P2 is an information-matched baseline that uses two IQ projections with the same dimensionality as AP and ACF, matching DKDNet’s input size without adding explicit signal-domain priors. The results are summarized in Table V. The asterisk in Table V indicates that the parameter difference from DKDNet is negligible. As shown in Table V, DKDNet achieves the highest target-domain accuracy of 48 .93% and the lowest MMD of 0.0005 ,indicating stronger target-domain recognition performance and a smaller source-target feature discrepancy. The IQ-only base-lines show that model capacity alone cannot explain this improvement: even IQ-large, with 556 .34 M FLOPs and 4.35 Mparameters, achieves only 45 .72% accuracy, which is still lower than DKDNet. The fusion variants further show that effective fusion con-tributes to the final performance. Concatenation and Linear Fusion achieve 47 .45% and 46 .79% , respectively, which are lower than DKDNet but still competitive. This indicates that the selected representations provide useful complementary information, while DLFU further improves their integration through adaptive feature weighting. JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, JUNE 2026 11                                  
+
+> TABLE VI ABLATION STUDY OF FUSION STRATEGIES UNDER THE AWGN →RI1
+> ADAPTATION SETTING . A LL VARIANTS USE THE SAME IQ, AP, AND ACF
+> INPUTS . R ESULTS ARE REPORTED AS MEAN ±STD OVER FIVE RANDOM SEEDS .Fusion DLFU Plus Cat Attention Early Acc. (%) 48.93 ±0.54 46.79 ±0.97 47.45 ±1.62 47.61 ±0.95 40.66 ±2.67 TABLE VII ABLATION STUDY OF SIGNAL REPRESENTATION COMBINATIONS UNDER THE AWGN →RI1ADAPTATION SETTING . R ESULTS ARE REPORTED AS MEAN ±STD OVER FIVE RANDOM SEEDS ACROSS ALL SNR LEVELS .IQ AP ACF Acc. (%)
+> ✓42.84 ±0.87
+> ✓40.80 ±1.04
+> ✓38.48 ±0.09
+> ✓✓44.17 ±3.55
+> ✓✓44.60 ±0.43
+> ✓✓40.88 ±1.10
+> ✓✓✓48.93 ±0.54
+
+The prior-quality controls provide more direct evidence for the role of domain-stable priors. When AP and ACF are replaced by DFT and CD, the accuracy drops to 41 .42% 
+
+and the MMD increases to 0.0201 . The information-matched IQ+P1+P2 baseline further decreases the accuracy to 33 .04% 
+
+with an MMD of 0.0209 , despite matching DKDNet’s input size and branch structure. These results show that simply increasing input dimensionality or adding IQ-derived branches does not improve cross-domain generalization. Overall, DKD-Net’s improvement mainly comes from incorporating stable and complementary signal priors, while the proposed fusion strategy further enhances their effective integration. 
+
+2) Effect of Fusion Strategy: To evaluate DLFU, we com-pare it with several simplified fusion strategies under the AWGN →Ri1 adaptation setting. All variants use the same IQ, AP, and ACF inputs and representation-specific encoders, differing only in the fusion strategy. The compared variants in-clude element-wise addition without adaptive weighting (Plus), feature concatenation with linear projection (Cat), attention-only fusion (Attention), and input-level concatenation before feature extraction (Early). As shown in Table VI, Early fusion performs the worst, achieving only 40 .66% accuracy. This suggests that directly mixing heterogeneous representations may obscure representation-specific structures. Feature-level fusion is more effective, with Plus, Cat, and Attention reaching 
+
+46 .79% , 47 .45% , and 47 .61% , respectively. DLFU achieves the best accuracy of 48 .93% , outperforming the attention-only variant by 1.32 percentage points. These results show that combining global additive fusion with adaptive feature refinement enables more effective integration of complemen-tary signal representations. 
+
+3) Effect of Representation Combination: We further eval-uate the contribution of IQ, AP, and ACF under the AWGN →Ri1 adaptation setting. All variants use the same training strategy and fusion framework, with only the input                                         
+
+> TABLE VIII PERFORMANCE OF DKDN ET WITH DIFFERENT AMC BACKBONES UNDER THE AWGN →RI1ADAPTATION SETTING . F OR EACH BACKBONE , S OURCE
+> ONLY DENOTES TRAINING ONLY ON THE SOURCE DOMAIN ,WHILE
+> ADAPTED DENOTES THE CORRESPONDING DKDN ET -ENHANCED MODEL .RESULTS ARE REPORTED AS MEAN ±STD OVER FIVE RANDOM SEEDS .Backbone Acc. (%) ↑(-20 dB ∼18 dB) Acc. (%) ↑(0 dB ∼18 dB) Source Only Adapted Source Only Adapted CLDNN [51] 25.76 ±0.45 43.56 ±1.40 32.75 ±0.73 66.73 ±2.89 MCLDNN [3] 28.50 ±0.35 47.94 ±0.73 37.44 ±0.80 74.76 ±1.23 VGG [52] 27.64 ±1.35 49.37 ±0.58 35.04 ±2.64 77.35 ±1.18 CNN2 [39] 27.75 ±0.65 47.84 ±1.26 35.64 ±1.16 74.20 ±2.48 LSTM [5] 27.29 ±0.61 49.70 ±0.30 34.94 ±1.35 77.64 ±0.63 DAE [6] 26.06 ±0.94 47.45 ±1.21 32.71 ±1.72 73.82 ±2.42
+
+representation combination changed. Different from Table II, which uses linear addition to isolate prior selection, this ablation uses the complete DKDNet training and fusion frame-work. The results are summarized in Table VII. Among single-representation inputs, IQ achieves the highest accuracy of 42 .84% , confirming the importance of waveform-level information. Adding AP or ACF to IQ further im-proves the accuracy to 44 .17% and 44 .60% , respectively, showing their complementarity to IQ. In contrast, AP+ACF achieves only 40 .88% , indicating that structural cues alone are insufficient without the raw waveform observation. The full IQ+AP+ACF combination obtains the best accuracy of 
+
+48 .93% , outperforming all single- and two-representation vari-ants. These results confirm that IQ, AP, and ACF provide com-plementary priors: IQ preserves waveform-level discrimina-tive information, AP provides amplitude–phase dynamics, and ACF contributes relatively stable correlation-domain statistics. Their joint use offers the best balance among discrimination, complementarity, and domain stability for cross-domain AMC. 
+
+4) Flexibility across AMC Backbones: To examine whether DKDNet depends on a specific feature extractor, we in-tegrate it with six representative AMC backbones, includ-ing CLDNN [51], MCLDNN [3], VGG [52], CNN2 [39], LSTM [5], and DAE [6]. For each backbone, the Source Only model is compared with its DKDNet-enhanced version under the AWGN →Ri1 adaptation setting. As shown in Table VIII, DKDNet consistently improves target-domain accuracy across all tested backbones. Over all SNR levels, the gains range from 17 .80% for CLDNN to 22 .41% for LSTM. Under high-SNR conditions, the improvements become more pronounced, ranging from 33 .98% to 42 .70% . These results indicate that DKDNet is not restricted to a specific feature extractor and can be flexibly integrated with different AMC backbones. Among the tested backbones, LSTM achieves the best adapted per-formance, reaching 49 .70% over all SNR levels and 77 .64% 
+
+under high-SNR conditions, while VGG and MCLDNN also obtain competitive results. This suggests that DKDNet can benefit from stronger backbone designs while maintaining consistent cross-domain improvements. 
+
+5) Compatibility with UDA Methods: To examine whether DKDNet is compatible with different domain adaptation strate-gies, we integrate the proposed prior-guided representation JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, JUNE 2026 12 
+
+TABLE IX PERFORMANCE OF DKDN ET COMBINED WITH DIFFERENT UDA  
+
+> METHODS UNDER THE
+
+AWGN →RI1 ADAPTATION SETTING . T HE ASTERISK (*) DENOTES THE DKDN ET -ENHANCED VARIANT OF EACH 
+
+UDA METHOD . R ESULTS ARE REPORTED AS MEAN ±STD OVER FIVE RANDOM SEEDS .Method Acc. (%) ↑
+
+(-20 dB ∼18 dB) Acc. (%) ↑
+
+(0 dB ∼18 dB) DAAMR [43] 40.42 ±0.61 60.76 ±0.73 DAAMR* 46.52 ±1.35 72.03 ±2.47 DMRUE [26] 36.09 ±0.81 54.30 ±1.42 DMRUE* 44.03 ±0.24 67.48 ±0.55 
+
+ADDA [50] 38.83 ±0.51 60.17 ±0.84 ADDA* 40.01 ±2.62 62.40 ±5.05 SigDA [23] 39.32 ±0.16 61.17 ±0.26 SigDA* 43.92 ±0.16 65.38 ±4.49 
+
+Fig. 6. Evaluation of sample efficiency for DKDNet and the IQ-only baseline under the AWGN →Ri1 adaptation setting across different training-data ratios. 
+
+learning and fusion framework with four representative UDA methods, including DAAMR [43], DMRUE [26], ADDA [50], and SigDA [23]. The enhanced variants are denoted by an asterisk (*), as shown in Table IX. All enhanced variants outperform their original counterparts under the AWGN →Ri1 adaptation setting. For example, DAAMR* improves the all-SNR and high-SNR accuracies by 6.10% and 11 .27% , re-spectively. DMRUE* obtains the largest gain, improving by 
+
+7.94% and 13 .18% under the two evaluation ranges. SigDA* and ADDA* also achieve consistent improvements, although the gain on ADDA is relatively smaller. These results show that DKDNet is not tied to a specific UDA objective, but can provide more transferable features for different domain alignment strategies. 
+
+6) Sample Efficiency under Limited Data: To evaluate the sample efficiency of DKDNet, we compare it with a single-branch IQ-only baseline under the AWGN →Ri1 adaptation setting. For a training-data ratio r, we retain the same fraction 
+
+r of the source-domain labeled training samples and the target-domain unlabeled training samples, while keeping the test set unchanged. The ratios are set to 100%, 50%, 10%, 5%, and 1%. As shown in Fig. 6, DKDNet consistently outperforms the IQ-only baseline across all training-data ratios. Although the accuracy of both methods decreases as fewer training samples are used, DKDNet maintains a clear advantage. The gain increases from 6.09 percentage points at 100% data to 
+
+9.72 percentage points at 1% data. These results indicate that the introduced signal priors improve sample efficiency and help DKDNet retain stronger cross-domain performance when both labeled source data and unlabeled target data are limited. CONCLUSIONS 
+
+This paper investigates the role of signal modulation priors in improving cross-domain generalization for AMC. Different from existing UDA-based methods that mainly rely on data-driven feature alignment, DKDNet integrates prior-guided signal representations with data-driven feature learning. By analyzing representative signal representations, IQ, AP, and ACF are selected as complementary inputs to provide wave-form, amplitude–phase, and correlation-domain information. The proposed MRFE and DLFU further enable unified repre-sentation learning and adaptive feature fusion, while adversar-ial domain alignment improves feature transferability across domains. Extensive experiments demonstrate that DKDNet effectively enhances cross-domain AMC performance, robust-ness, flexibility, and sample efficiency. Despite its effective-ness, DKDNet currently focuses on a limited set of signal representations. In future work, more diverse and task-specific priors will be explored, and the framework will be extended to challenging scenarios such as few-shot AMC to further improve its adaptability and robustness. REFERENCES [1] Z. Zhang, L. Ma, M. Liu, Y. Chen, N. Zhao, and A. Nallanathan, “Robust generative defense against adversarial attacks in intelligent modulation recognition,” IEEE Transactions on Cognitive Communications and Networking , vol. 11, no. 2, pp. 1041–1052, 2025. [2] P. Dong, C. He, S. Gao, F. Zhou, and Q. Wu, “Edge-learning-based col-laborative automatic modulation classification for hierarchical cognitive radio networks,” IEEE Internet of Things Journal , vol. 11, no. 21, pp. 34 443–34 454, 2024. [3] J. Xu, C. Luo, G. Parr, and Y. Luo, “A spatiotemporal multi-channel learning framework for automatic modulation recognition,” IEEE Wire-less Communications Letters , vol. 9, no. 10, pp. 1629–1632, 2020. [4] E. Perenda, S. Rajendran, G. Bovet, S. Pollin, and M. Zheleva, “Learn-ing the unknown: Improving modulation classification performance in unseen scenarios,” in IEEE INFOCOM 2021 - IEEE Conference on Computer Communications , 2021, pp. 1–10. [5] S. Rajendran, W. Meert, D. Giustiniano, V. Lenders, and S. Pollin, “Deep learning models for wireless signal classification with distributed low-cost spectrum sensors,” IEEE Transactions on Cognitive Communica-tions and Networking , vol. 4, no. 3, pp. 433–445, 2018. [6] Z. Ke and H. Vikalo, “Real-time radio technology and modulation classification via an lstm auto-encoder,” IEEE Transactions on Wireless Communications , vol. 21, no. 1, pp. 370–382, 2022. [7] O. Dobre, A. Abdi, Y. Bar-Ness, and W. Su, “Survey of automatic mod-ulation classification techniques: classical approaches and new trends,” 
+
+IET Communications , vol. 1, pp. 137–156, 2007. [8] B. Dulek, “Online hybrid likelihood based modulation classification us-ing multiple sensors,” IEEE Transactions on Wireless Communications ,vol. 16, no. 8, pp. 4984–5000, 2017. [9] J. Zhang, D. Cabric, F. Wang, and Z. Zhong, “Cooperative mod-ulation classification for multipath fading channels via expectation-maximization,” IEEE Transactions on Wireless Communications , vol. 16, no. 10, pp. 6698–6711, 2017. [10] X. Yan, X. Zhong, H.-C. Wu, P. Yang, Q. Wang, and Y. Chen, “Automatic composite-modulation classification using cyclic-paw-print features for cognitive aerospace communications,” IEEE Transactions on Communications , vol. 72, no. 9, pp. 5486–5502, 2024. [11] S. Huang, J. He, Z. Yang, Y. Chen, S. Chang, Y. Zhang, and Z. Feng, “Generalized automatic modulation classification for ofdm systems under unseen synthetic channels,” IEEE Transactions on Wireless Com-munications , vol. 23, no. 9, pp. 11 931–11 941, 2024. JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, JUNE 2026 13 
+
+[12] F. C. B. F. Muller, C. Cardoso, and A. Klautau, “A front end for discriminative learning in automatic modulation classification,” IEEE Communications Letters , vol. 15, no. 4, pp. 443–445, 2011. [13] Y. Kumar, M. Sheoran, G. Jajoo, and S. K. Yadav, “Automatic modula-tion classification based on constellation density using deep learning,” 
+
+IEEE Communications Letters , vol. 24, no. 6, pp. 1275–1278, 2020. [14] Z. Yu, Y. Shi, and W. Su, “M-ary frequency shift keying signal classification based-on discrete fourier transform,” in IEEE Military Communications Conference, 2003. MILCOM 2003. , vol. 2, 2003, pp. 1167–1172 Vol.2. [15] Z. Zhang, H. Li, Y. Li, Z. Chen, S. Wang, and T. Luo, “A hybrid approach for cross-dataset modulation recognition of wireless inter-ference,” IEEE Transactions on Communications , vol. 73, no. 12, pp. 13 677–13 690, 2025. [16] M. W. Aslam, Z. Zhu, and A. K. Nandi, “Automatic modulation classification using combination of genetic programming and knn,” IEEE Transactions on Wireless Communications , vol. 11, no. 8, pp. 2742– 2750, 2012. [17] M. Kulin, T. Kazaz, I. Moerman, and E. De Poorter, “End-to-end learning from spectrum data: A deep learning approach for wireless signal identification in spectrum monitoring applications,” IEEE Access ,vol. 6, pp. 18 484–18 501, 2018. [18] S. Peng, H. Jiang, H. Wang, H. Alwageed, Y. Zhou, M. M. Sebdani, and Y.-D. Yao, “Modulation classification based on signal constellation diagrams and deep learning,” IEEE Transactions on Neural Networks and Learning Systems , vol. 30, no. 3, pp. 718–727, 2019. [19] W. Gardner, “Exploitation of spectral redundancy in cyclostationary signals,” IEEE Signal Processing Magazine , vol. 8, no. 2, pp. 14–36, 1991. [20] T. J. O’Shea, J. Corgan, and T. C. Clancy, “Convolutional radio mod-ulation recognition networks,” in Engineering Applications of Neural Networks: 17th International Conference, EANN 2016, Aberdeen, UK, September 2-5, 2016, Proceedings 17 . Springer, 2016, pp. 213–226. [21] H. Xing, S. Wang, J. Wang, L. Mei, Y. Xu, H. Zhou, H. Xu, and L. Jiao, “Psrnet: Few-shot automatic modulation classification under potential domain differences,” IEEE Transactions on Wireless Communications ,vol. 24, no. 1, pp. 371–384, 2025. [22] A. Goldsmith, Wireless communications . Cambridge university press, 2005. [23] S. Wang, H. Xing, C. Wang, H. Zhou, B. Hou, and L. Jiao, “Sigda: A superimposed domain adaptation framework for automatic modulation classification,” IEEE Transactions on Wireless Communications , vol. 23, no. 10, pp. 13 159–13 172, 2024. [24] M. Du, J. Pan, and D. Bi, “A contrastive learner for automatic modu-lation classification,” IEEE Transactions on Wireless Communications ,vol. 24, no. 4, pp. 3575–3589, 2025. [25] M. Zhang, P. Tang, G. Wei, X. Ni, G. Ding, and H. Wang, “Open set domain adaptation for automatic modulation classification in dynamic communication environments,” IEEE Transactions on Cognitive Com-munications and Networking , vol. 10, no. 3, pp. 852–865, 2024. [26] L. Li, Q. Peng, P. C. Cosman, and L. B. Milstein, “Deep modulation recognition in an unknown environment,” in 2019 53rd Asilomar Con-ference on Signals, Systems, and Computers , 2019, pp. 1045–1048. [27] X. Wang, Y. Zhao, and Z. Huang, “A survey of deep transfer learning in automatic modulation classification,” IEEE Transactions on Cognitive Communications and Networking , vol. 11, no. 3, pp. 1357–1381, 2025. [28] S. S. Haykin, Digital communications . Wiley New York, 1988. [29] Y. Mao, Y.-Y. Dong, T. Sun, X. Rao, and C.-X. Dong, “Attentive siamese networks for automatic modulation classification based on multitiming constellation diagrams,” IEEE Transactions on Neural Networks and Learning Systems , vol. 34, no. 9, pp. 5988–6002, 2023. [30] J. Hou, D. Xu, F. Song, Z. Chen, Q. Xuan, S. Zheng, Y. Lin, and X. Yang, “Multi-view discriminant framework for automatic modulation open set recognition,” IEEE Transactions on Communications , vol. 73, no. 6, pp. 4378–4393, 2025. [31] S. Zheng, X. Zhou, L. Zhang, P. Qi, K. Qiu, J. Zhu, and X. Yang, “Toward next-generation signal intelligence: A hybrid knowledge and data-driven deep learning framework for radio signal classification,” 
+
+IEEE Transactions on Cognitive Communications and Networking ,vol. 9, no. 3, pp. 564–579, 2023. [32] R. Ding, F. Zhou, Q. Wu, C. Dong, Z. Han, and O. A. Dobre, “Data and knowledge dual-driven automatic modulation classification for 6g wire-less communications,” IEEE Transactions on Wireless Communications ,vol. 23, no. 5, pp. 4228–4242, 2024. [33] S. Peng, S. Sun, and Y.-D. Yao, “A survey of modulation classification using deep learning: Signal representation and data preprocessing,” IEEE Transactions on Neural Networks and Learning Systems , vol. 33, no. 12, pp. 7020–7038, 2022. [34] H. Zhang, F. Zhou, H. Du, Q. Wu, and C. Yuen, “Revolution of wireless signal recognition for 6g: Recent advances, challenges and future directions,” IEEE Communications Surveys & Tutorials , vol. 28, pp. 3521–3563, 2026. [35] F. Meng, P. Chen, L. Wu, and X. Wang, “Automatic modulation classification: A deep learning enabled approach,” IEEE Transactions on Vehicular Technology , vol. 67, no. 11, pp. 10 760–10 772, 2018. [36] W. A. Gardner and E. A. Robinson, “Statistical spectral analysis—a nonprobabilistic theory,” 1989. [37] S. Zheng, X. Zhou, L. Zhang, P. Qi, K. Qiu, J. Zhu, and X. Yang, “Toward next-generation signal intelligence: A hybrid knowledge and data-driven deep learning framework for radio signal classification,” 
+
+IEEE Transactions on Cognitive Communications and Networking ,vol. 9, no. 3, pp. 564–579, 2023. [38] Q. Shi and Y. Karasawa, “Automatic modulation identification based on the probability density function of signal phase,” IEEE Transactions on Communications , vol. 60, no. 4, pp. 1033–1044, 2012. [39] X. Liu, D. Yang, and A. E. Gamal, “Deep neural network architectures for modulation classification,” in 2017 51st Asilomar Conference on Signals, Systems, and Computers , 2017, pp. 915–919. [40] S. Chang, S. Huang, R. Zhang, Z. Feng, and L. Liu, “Multitask-learning-based deep neural network for automatic modulation classification,” 
+
+IEEE Internet of Things Journal , vol. 9, no. 3, pp. 2192–2206, 2022. [41] Y. Wang, M. Liu, J. Yang, and G. Gui, “Data-driven deep learning for automatic modulation recognition in cognitive radios,” IEEE Transac-tions on Vehicular Technology , vol. 68, no. 4, pp. 4074–4077, 2019. [42] F. Wang, C. Yang, S. Huang, and H. Wang, “Automatic modulation classification based on joint feature map and convolutional neural network,” IET Radar, Sonar & Navigation , vol. 13, no. 6, pp. 998–1003, 2019. [43] T. Li and Y. Xiao, “Domain adaptation-based automatic modulation recognition,” Scientific Programming , vol. 2021, no. 1, p. 4277061, 2021. [44] K. Bu, Y. He, X. Jing, and J. Han, “Adversarial transfer learning for deep learning based automatic modulation classification,” IEEE Signal Processing Letters , vol. 27, pp. 880–884, 2020. [45] L. Mei, S. Wang, H. Xing, C. Wang, Y. Xu, and H. Zhou, “Imbalanced domain adaptation for automatic modulation classification,” IEEE Wire-less Communications Letters , vol. 13, no. 11, pp. 3172–3176, 2024. [46] V. Sathyanarayanan, P. Gerstoft, and A. E. Gamal, “Rml22: Realistic dataset generation for wireless modulation classification,” IEEE Trans-actions on Wireless Communications , vol. 22, no. 11, pp. 7663–7675, 2023. [47] T. J. O’shea and N. West, “Radio machine learning dataset generation with gnu radio,” in Proceedings of the GNU radio conference , vol. 1, no. 1, 2016. [48] K. Muandet, D. Balduzzi, and B. Sch¨ olkopf, “Domain generalization via invariant feature representation,” in Proceedings of the 30th International Conference on Machine Learning , ser. Proceedings of Machine Learning Research, S. Dasgupta and D. McAllester, Eds., vol. 28, no. 1. Atlanta, Georgia, USA: PMLR, 17–19 Jun 2013, pp. 10–18. [49] A. Gretton, K. M. Borgwardt, M. J. Rasch, B. Sch¨ olkopf, and A. Smola, “A kernel two-sample test,” The journal of machine learning research ,vol. 13, no. 1, pp. 723–773, 2012. [50] E. Tzeng, J. Hoffman, K. Saenko, and T. Darrell, “Adversarial dis-criminative domain adaptation,” in 2017 IEEE Conference on Computer Vision and Pattern Recognition (CVPR) , 2017, pp. 2962–2971. [51] N. E. West and T. O’Shea, “Deep architectures for modulation recog-nition,” in 2017 IEEE International Symposium on Dynamic Spectrum Access Networks (DySPAN) , 2017, pp. 1–6. [52] T. J. O’Shea, T. Roy, and T. C. Clancy, “Over-the-air deep learning based radio signal classification,” IEEE Journal of Selected Topics in Signal Processing , vol. 12, no. 1, pp. 168–179, 2018.

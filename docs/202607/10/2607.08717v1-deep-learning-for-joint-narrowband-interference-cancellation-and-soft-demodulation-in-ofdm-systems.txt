@@ -1,0 +1,1243 @@
+Title: Deep Learning for Joint Narrowband Interference Cancellation and Soft Demodulation in OFDM Systems
+
+URL Source: https://arxiv.org/pdf/2607.08717v1
+
+Published Time: Fri, 10 Jul 2026 01:13:01 GMT
+
+Number of Pages: 17
+
+Markdown Content:
+> 1
+
+# Deep Learning for Joint Narrowband Interference Cancellation and Soft Demodulation in OFDM Systems 
+
+Emmanouil Kavvousanos ∗, Francky Catthoor † and Vassilis Paliouras ∗∗Department of Electrical and Computer Engineering, University of Patras, Greece 
+
+†Department of Electrical and Computer Engineering, National Technical University of Athens, Greece 
+
+Abstract —Narrowband interference (NBI) severely degrades orthogonal frequency-division multiplexing (OFDM) systems by corrupting subcarriers and rendering classical soft demodu-lation ineffective. Conventional compressed-sensing (CS) miti-gation exhibits high sequential latency and leaves structured, non-Gaussian residuals that cause log-likelihood ratio (LLR) unreliability, decoder saturation, and severe error floors when employing classical Gaussian demappers. We resolve this pipeline mismatch using a unified deep learning framework for joint NBI cancellation and robust soft demodulation. First, NBI-CNet em-ploys a physics-informed convolutional architecture to estimate NBI parameters and remove multi-tone interference in a single forward pass. Without requiring prior knowledge of the active interferer count, NBI-CNet reduces computational complexity by up to 60% ( N =2048 , Q =64 ) compared to the state-of-the-art EOMP-IDS algorithm. Second, LLR-CNet acts as a structural whitener by mapping non-Gaussian post-mitigation residuals onto well-calibrated soft metrics. Simulations demonstrate that this joint framework eliminates the error floors inherent to traditional baselines across dense grids. Under severe interference (SIR =−10 dB), the pipeline operates within a 0.2 to 0.5 dB SNR margin of the optimal iterative baseline at a target block error rate (BLER) of 10 −4. Under mild interference (SIR =10 dB) with heavy spectral overlap ( Q=12 ), where classical greedy algorithms erroneously subtract valid data components and corrupt the payload, NBI-CNet avoids signal-peak confusion to deliver a coding gain exceeding 3 dB. Finally, the architecture circumvents the 2×10 −4 error floor triggered by interferer-estimation errors, while its scale-invariant design enables robust generalization across arbitrary FFT sizes without retraining. 
+
+I. I NTRODUCTION 
+
+# THE transition toward fifth-generation (5G), beyond-5G, and sixth-generation (6G) wireless networks features an exponential increase in device density and heterogeneous architectures designed for services like URLLC, mMTC, and eMBB [1]–[3]. This evolution integrates terrestrial cellular net-works with UAVs [4], satellite multibeam systems [5], and in-tegrated sensing and communication [6]. While these multi-tier layouts enhance global connectivity and spectrum utilization, they introduce severe interference challenges. As the RF spec-trum becomes congested, the primary performance bottleneck shifts from a noise-limited to an interference-limited regime [7], necessitating robust detection and mitigation frameworks. This challenge is especially critical in the 6G FR3 upper mid-band (7.125–24.25 GHz), which offers substantial bandwidth but requires strict coexistence with incumbent satellite and defense services [8], [9]. Dense terrestrial base stations can generate severe RFI toward satellite receivers via unintended sidelobe leakage and multipath reflections [9]. Consequently, realizing the full potential of the FR3 spectrum demands multidimensional spectrum management to protect incumbents and mitigate inter-tier and intra-network interference [8], [10]. Within this congested landscape, narrowband interference (NBI) poses an acute threat to wideband communication systems [11], particularly those utilizing orthogonal frequency division multiplexing (OFDM) [12], [13]. This threat natively arises where uncoordinated narrowband transmitters (such as dense IoT networks, legacy broadcasting, or industrial sensors) overlap with this wideband spectrum [14], [15]. This coexis-tence is increasingly prevalent in unlicensed bands, power line communications (PLC), and scenarios like NB-IoT sharing in-band LTE spectrum [16]–[18]. In OFDM architectures, NBI disrupts subcarrier orthogonality. Because uncoordinated transmissions are typically asynchronous to the receiver’s grid, their power inevitably leaks across adjacent subcarriers, degrading data recovery across a wide bandwidth [12], [19]. This degradation is exacerbated when closely spaced tones interact, creating overlapping spectral aliasing that disrupts demodulation and limits classical suppression algorithms [13]. Navigating these environments requires advanced algorithms to identify and suppress interacting tones without relying on strict frequency-domain excision [15], [20]. Furthermore, while multi-tone NBI modeling often treats interference as a static, wide-sense stationary process within a single transmission frame [14], this assumption may fail in practice. Physical-layer systems must account for the in-herently time-varying statistics of the RF environment over extended periods [17], [21]. Empirical measurements demon-strate that fundamental interference parameters (such as the number of active tones, center frequencies, fractional offsets, and instantaneous power levels) fluctuate dynamically from one OFDM symbol to the next due to changing channel conditions and uncoordinated source behavior [20]. Therefore, robust mitigation frameworks cannot rely exclusively on static parameter estimations; they must continuously adapt to this non-stationary behavior to effectively suppress dynamic inter-ference and preserve underlying data [17], [21]. Current NBI mitigation strategies span time-domain pro-cessing, frequency-domain excision, sparse signal recovery [17], [19], [22], and machine learning [7], [14], [21]. Time-domain techniques often compromise between interference arXiv:2607.08717v1 [cs.LG] 9 Jul 2026 2
+
+suppression and signal energy preservation [12], [16]. Con-versely, frequency-domain excision nulls corrupted subcarriers based on energy thresholds, causing unavoidable data loss [14], [20]. To mitigate this, error correction strategies like log-likelihood ratio (LLR) erasure and soft-decision weighting enhance decoder resilience without modifying the transmission waveform [15], [18]. To avoid data loss, compressive sensing (CS) exploits the frequency-domain sparsity of NBI. Algorithms like Orthog-onal Matching Pursuit (OMP) reconstruct and subtract the interference vector without sacrificing spectral efficiency [16], [19]. However, CS recovery algorithms require high compu-tational complexity due to heavy matrix computations and often necessitate dedicated network resources, such as known frequency-domain elements or time-domain interference-free regions [19]. Furthermore, many CS-aided solutions possess a convergence-dependent rigid model structure that cannot cope well with dynamic wireless environments [20]. Furthermore, in mobile environments with simultaneous impulsive noise and NBI, conventional CS constraints introduce prohibitive latency [17]. Advanced variants such as OMP with Iterative Dichotomous Search (OMP-IDS) and Enhanced OMP-IDS (EOMP-IDS) achieve high interference cancellation depth [20], serving as the primary comparative baselines for this work. However, beyond their high computational complexity and iterative nature, a major limitation of these methods is their strict dependency on a prior accurate estimation of the interferer count. Recognizing these constraints, research has pivoted toward deep learning (DL) as a robust alternative capable of approx-imating complex, non-linear interference dynamics directly from raw data [3], [16], [21], [23], [24]. For interference mitigation, convolutional neural networks (CNNs) have been actively deployed to process baseband samples, allowing re-ceivers to accurately locate narrowband interference in real-time with extremely low latency [25]. Furthermore, denoising autoencoders offer a powerful unsupervised approach to sup-press heterogeneous interference by compressing the corrupted input into a latent-space representation and forcing the decoder network to filter out anomalous components [21]. End-to-end DL models are also increasingly replacing conventional physical-layer detectors altogether; for instance, neural non-coherent receivers can now decode signals corrupted by both multi-user and narrowband interference without relying on explicit parameter estimations or manual thresholding [26]. Beyond direct interference suppression, DL has fundamen-tally revolutionized downstream soft demodulation. Neural receivers can approximate optimal log-maximum a-posteriori (log-MAP) LLRs with a fraction of the computational com-plexity required by exact analytical implementations [27], [28]. This capability is particularly vital in correlated noise environments and under severe multi-tone interference, where 1D-CNNs successfully capture local correlation structures to produce highly accurate LLRs without explicitly computing the covariance matrix of the noise [28]. Similarly, long short-term memory (LSTM) architectures have been utilized to classify affected subcarriers and dynamically weight their soft LLRs, significantly outperforming traditional energy detectors by preventing the severe information loss associated with hard erasure techniques [15]. Despite these advancements, a critical gap remains: the interaction between imperfect NBI cancellation and down-stream soft demodulation is fundamentally mismatched. Both classical and DL cancellation algorithms inevitably leave be-hind structured, non-Gaussian residual interference. Classical soft demappers rely on strict additive white Gaussian noise assumptions, failing to capture the local correlation structures and high-amplitude bursts characteristic of non-ideal residuals [27], [28]. Consequently, processing this residual structure through a mismatched Gaussian demapper generates extreme LLR outliers [29]. Within modern forward error correction (FEC) schemes like low-density parity-check (LDPC) codes, these outliers severely disrupt decoding by acting as absorbing states that stall convergence. As demonstrated under multi-tone interference [15], classical receivers feeding uncorrected LLRs directly into the decoder fail to resolve corrupted metrics, creating unavoidable error floors that compromise the entire FEC process. To address all the limitations discussed above, this paper proposes a unified deep-learning framework that jointly per-forms NBI mitigation and robust soft demodulation in OFDM systems. The main contributions are: 1) We propose NBI-CNet, a physics-informed convolu-tional network for parametric NBI estimation and can-cellation. By modeling fractional spectral leakage with-out prior knowledge of the interferer count, it removes multi-tone interference with a near-constant, predictable FLOP count that falls well below the computational cost of EOMP-IDS in high-density environments. 2) We introduce LLR-CNet, a lightweight neural LLR estimator tailored to non-Gaussian residual statistics. Leveraging both the suppressed signal and the estimated interference footprint, it acts as a structural whitener to produce well-calibrated soft information and eliminate severe LLR outliers. 3) We demonstrate that the joint architecture eliminates the error floors inherent to conventional pipelines. It tracks optimal baselines closely under severe interfer-ence, while providing significant BLER gains under mild interference where greedy classical algorithms suffer from signal-peak confusion and erroneously destroy valid payload data. 4) We show that the framework generalizes seamlessly across arbitrary FFT sizes and interference densities without retraining. Operating independently of the in-terferer count, it entirely circumvents the error floors triggered in classical compressed-sensing baselines by imperfect model-order estimation, supporting reliable, highly parallelized deployment. The remainder of this paper is organized as follows. Section II presents the system model. Section III reviews classical compressed-sensing baselines. Section IV introduces NBI-CNet. Section V details residual interference impacts, motivating the LLR-CNet estimator in Section VI. Simulation and complexity analyses are in Sections VII and VIII, followed 3
+
+by the conclusion in Section IX. II. S YSTEM AND INTERFERENCE MODELS 
+
+A. System Model 
+
+We consider a conventional cyclic-prefix orthogonal frequency-division multiplexing (CP-OFDM) system with N
+
+subcarriers. Let X = [ X0, X 1, . . . , X N −1]T ∈ CN ×1 denote the vector of complex-valued data symbols mapped onto the subcarriers during one OFDM symbol interval. The frequency-domain symbol vector X is transformed into the time domain via an inverse discrete Fourier transform (IDFT), yielding 
+
+s[n] = 1
+
+√N 
+
+> N−1
+
+X
+
+> k=0
+
+Xkej2πkn/N , n = 0 , . . . , N − 1. (1) To combat inter-symbol interference (ISI) caused by mul-tipath propagation, a cyclic prefix (CP) of length NCP is appended to the beginning of each OFDM symbol. The transmitted time-domain signal becomes 
+
+sCP [n] = 
+
+(
+
+s[n+N −NCP ], n = 0 , . . . , N CP −1,s[n−NCP ], n = NCP , . . . , N CP +N −1. (2) At the receiver, after CP removal, the received signal is sampled over N samples and transformed back into the frequency domain using a discrete Fourier transform (DFT) 
+
+Yk = 1
+
+√N 
+
+> N−1
+
+X
+
+> n=0
+
+r[n]e−j2πkn/N , k = 0 , . . . , N − 1, (3) where r[n] denotes the received time-domain signal after CP removal. Assuming that the CP length exceeds the maximum channel delay spread, the linear convolution between the transmitted signal and the channel impulse response is converted into a circular convolution. As a result, the frequency-domain received signal at the kth subcarrier can be written as 
+
+Yk = HkXk + Ek + Wk, (4) where Hk is the channel frequency response, Ek denotes the frequency-domain NBI component, and Wk is the complex additive white Gaussian noise (AWGN) at subcarrier k.Combining all subcarriers yields the vectorized model 
+
+Y = HX + E + W, (5) where Y ∈ CN ×1 is the received signal vector, H ∈ CN ×N is a diagonal matrix representing the frequency-domain channel response, E ∈ CN ×1 denotes the aggregate NBI component, and W∼ CN (0, σ 2
+
+> w
+
+IN ) is the AWGN vector, where its entries are independent and identically distributed (i.i.d.) circularly symmetric complex Gaussian random variables with zero mean and variance σ2
+
+> w
+
+. Here, IN is the N ×N identity matrix. The objective of the receiver is to mitigate the impact of NBI prior to data detection, by estimation and cancellation of 
+
+E, and to subsequently produce well-calibrated soft informa-tion that is statistically matched to the residual disturbance, enabling reliable LDPC decoding. 
+
+B. Narrowband Interference Model 
+
+We assume the presence of Q independent narrowband interferers, each occupying a small fraction of the OFDM bandwidth. Typically, NBI is characterized by occupying no more than 5% of the total available bandwidth [20], [30]. The 
+
+qth interferer is modeled in the time domain as a complex exponential 
+
+eq [n] = gq ejθ q exp 
+
+
+
+j 2πf q nN
+
+
+
+, n = 0 , . . . , N −1, (6) where gq is the interference amplitude (with power Pq = g2 
+
+> q
+
+), 
+
+fq ∈ R is the continuous-valued subcarrier frequency index, and θq is a random phase uniformly distributed over [−π, π ).The subcarrier frequency index fq can be decomposed as 
+
+fq = mq + αq , (7) where mq ∈ { 0, . . . , N − 1} is the integer subcarrier index and αq ∈ [− 12 , 12 ) is the fractional frequency offset relative to the subcarrier spacing. When αq = 0, the interference is synchronous with the OFDM grid, whereas αq̸ = 0
+
+corresponds to asynchronous NBI. Applying the DFT, the frequency-domain representation of the qth interferer at the kth subcarrier, Eq,k , can be derived in closed form using the sum of a geometric progression 
+
+Eq,k = 1
+
+√N 
+
+> N−1
+
+X
+
+> n=0
+
+eq [n]e−j2πkn/N 
+
+= gq
+
+√N ejθ q ejπ (fq −k) N −1
+
+> N
+
+sin( π(fq − k)) sin( πN (fq − k)) 
+
+| {z }  
+
+> DN(fq−k)
+
+. (8) In (8), the ratio of the sine functions represents the periodic sinc function, fundamentally known as the Dirichlet kernel, denoted as DN (fq −k). This kernel mathematically governs the spectral envelope and leakage behavior of the interference across the subcarrier grid. If the NBI is strictly synchronous ( αq = 0 ), the Dirichlet kernel evaluates to zero for all subcarriers except at k = mq ,where it limits to a peak amplitude of N . This concentrates all interference energy exclusively onto the single subcarrier 
+
+mq , behaving exactly like a Kronecker delta. However, in the asynchronous case ( αq̸ = 0 ), the continuous nature of the Dirichlet kernel causes spectral leakage; the interference energy spreads across multiple adjacent subcarriers, creating characteristic high-power spectral tails around the central fractional frequency. The aggregate NBI vector affecting the received signal is the linear superposition of all Q interferers 
+
+E =
+
+> Q
+
+X
+
+> q=1
+
+Eq , (9) where Eq = [ Eq, 0, . . . , E q,N −1]T . Due to the highly localized main-lobe and rapidly decaying side-lobes of the underlying Dirichlet kernel, the aggregate interference vector E inherently exhibits a sparse or block-sparse structure in the frequency domain. 4LDPC Encoding 
+
+Symbol Mapping 
+
+OFDM Modulation 
+
+LDPC Decoding 
+
+Symbol Demapping 
+
+NBI Mitigation 
+
+OFDM Demodulation 
+
++
+
+w
+
+e
+
+Transmitter 
+
+Receiver 
+
+Tx Bits 
+
+Rx Bits  
+
+> Fig. 1. Block diagram of the OFDM communication system with NBI mitigation.
+
+C. Problem Formulation and Assumptions 
+
+In this work, we isolate the performance of the NBI param-eter estimation, cancellation, and soft demodulation modules. Evaluating these components independently clarifies their stan-dalone performance limits without the influence of errors from subsequent receiver stages. We assume an AWGN channel for the signal of interest (Hk=1 , ∀k), which mirrors the effective background noise floor of a post-equalization signal in practical deployments. Fading or multipath propagation effects experienced by the NBI sources are inherently absorbed into their received amplitude gq and phase θq parameters, preserving the mathematical generality of the interference model. Regarding the interference profile, we assume a continuous yet dynamically time-varying NBI environment where the active interferer count Q and its constituent parameters vary independently from one OFDM symbol to the next. Rather than a limiting constraint, this symbol-to-symbol variance represents a worst-case scenario designed to stress-test the receiver. While stationary or slow-fading NBI allows conven-tional demappers to track and mitigate residual statistics over wider windows (e.g., a 14-symbol slot), restricting parameter persistence to a single isolated symbol prevents multi-symbol statistical averaging. This setup intentionally exposes the track-ing limitations of classical architectures and evaluates the proposed framework under maximum temporal volatility [29]. III. C LASSIC NBI C ANCELLATION VIA COMPRESSED 
+
+SENSING 
+
+To establish a rigorous mathematical foundation and pro-vide baseline techniques for comparison with our proposed neural architectures, this section briefly reviews state-of-the-art NBI mitigation techniques based on CS. In strict accordance with our system assumptions, these CS algorithms operate independently on isolated OFDM symbols, recovering the interference profile without relying on temporal tracking. To mitigate NBI without sacrificing spectral efficiency (unlike simple frequency-domain excision which completely nulls useful data subcarriers), CS algorithms leverage the inherent structural sparsity of the interference [19], [20], [22]. In the frequency domain, NBI manifests as a few high-energy peaks, meaning the interference vector E ∈ CN ×1 can be represented as a sparse linear combination of atoms from a redundant dictionary. 
+
+A. Sparse Representation and Dictionary Construction 
+
+The frequency-domain NBI vector E ∈ CN ×1 can be modeled as a sparse linear combination of atoms from a redundant sensing matrix, expressed as 
+
+E = Φd , (10) where Φ ∈ CN ×M is the dictionary and d ∈ CM ×1
+
+is the sparse coefficient vector [19]. To directly link this compressed-sensing framework to the physical multi-tone NBI parameters defined in (8), the dictionary Φ is constructed by concatenating candidate narrowband spectral signatures across a dense frequency grid 
+
+Φ = [ ϕ1, ϕ2, . . . , ϕM ]. (11) Each atom ϕi represents the exact frequency-domain leakage profile of a hypothetical single-tone interferer at subcarrier frequency index fi. To precisely mirror the physical signal model, the kth subcarrier element of atom ϕi is defined by the Dirichlet kernel signature 
+
+[ϕi]k = 1
+
+√N ejπ (fi−k) N −1 
+
+> N
+
+DN (fi − k). (12) To account for asynchronous NBI where the continuous interferer frequency fq does not align with the standard DFT grid, the dictionary is oversampled such that M ≫ N [19]. This grid redundancy allows the receiver to minimize grid-mismatch errors, ensuring that the continuous spectral leakage of the true interference signal is closely approximated by the closest discrete atoms in Φ.The corresponding sparse coefficient vector 
+
+d=[ d1, d 2, . . . , d M ]T encapsulates the complex power of the active interferers. If a physical interferer q aligns with the dictionary grid frequency fi, its respective coefficient becomes non-zero and maps to di = gq ejθ q , thereby absorbing the physical amplitude and phase of the source. 5
+
+The estimated NBI vector ˆE can then be reconstructed as a linear combination of the active atoms 
+
+ˆE =
+
+> M
+
+X
+
+> i=1
+
+diϕi. (13) Finally, interference mitigation is performed by subtracting this reconstructed profile from the received frequency-domain signal vector Y, yielding the cleaned signal 
+
+˜Y = Y − ˆE. (14) 
+
+B. The Orthogonal Matching Pursuit Algorithm and Exten-sions 
+
+Given the received signal Y and an estimate bQ of the inter-ferer count, the classical Orthogonal Matching Pursuit (OMP) algorithm [19], [22] recovers the sparse vector d through a greedy iterative process. At each iteration q, the algorithm identifies the dictionary atom ϕi exhibiting the maximum absolute correlation with the current residual R(q−1) 
+
+i(q) = arg max   
+
+> i∈{ 1,...,M }
+
+⟨R(q−1) , ϕi⟩ . (15) The selected index is appended to the active support set 
+
+S(q) = {i(1) , . . . , i (q)}. To guarantee orthogonality, the co-efficients ˆdS(q) are updated via least-squares projection onto the subspace spanned by the current support 
+
+ˆdS(q) = ( ΦH 
+
+> S(q)
+
+ΦS(q) )−1ΦH 
+
+> S(q)
+
+Y. (16) The residual is then updated as 
+
+R(q) = Y − ΦS(q) ˆdS(q) , (17) and the process repeats until bQ components are isolated. To mitigate the discrete grid mismatch problem inherent to standard OMP, the Iterative Dichotomous Search (IDS) exten-sion [20] refines the coarse frequency estimate ˆfcoarse . Treating the continuous correlation function ρ(f ) = |⟨ R, ϕ(f )⟩| as uni-modal, IDS iteratively halves a localized search interval over a fixed number of steps. A semi-closed-form interpolation based on the final correlation values then calculates the continuous-valued frequency without fine-grid computational overhead. Furthermore, in multi-tone scenarios where adjacent spectral leakage peaks overlap, the EOMP framework [20] introduces an iterative decoupling stage. EOMP isolates each interferer 
+
+q ∈ { 1, . . . , bQ} by subtracting all other active estimates from the received observation 
+
+Rref ,q = Y − X 
+
+> j̸=q
+
+ϕi(j) ˆdi(j) . (18) IDS refinement is subsequently applied to this decoupled residual Rref ,q to eliminate multi-interferer bias, repeating the subtraction and refinement steps until convergence. Despite improving cancellation depth, these classical CS frameworks introduce notable algorithmic constraints that im-pact processing efficiency. First, the greedy search in (15) must repeat sequentially across Q discrete steps, blocking parallel hardware execution. Second, the subspace projection in (16) demands a high-precision matrix pseudo-inversion 
+
+(ΦH 
+
+> S(q)
+
+ΦS(q) )−1 that expands in dimensionality at every single iteration q, generating a heavy, non-linear processing overhead. This latency expands further under EOMP-IDS because the subtraction step in (18) embeds these operations inside an outer refinement loop, forcing repetitive on-the-fly atom gen-eration that scales poorly with both the interferer count Q and the OFDM grid size N . Finally, because loop execution relies entirely on the accuracy of the prior model order estimate bQ,any estimation error destabilizes the pipeline: underestimating 
+
+bQ terminates processing prematurely and leaves high-power interferers unmitigated, while overestimating forces (16) and (18) to project background noise onto the active support, actively destroying valid data subcarriers. These predictable latency and model-dependency limitations motivate the single-shot, parallelized neural estimation framework proposed in the next section. IV. N EURAL NETWORK -BASED NBI C ANCELLATION 
+
+To overcome the limitations of the classical iterative algo-rithms discussed in Section III, we propose a parallelized, physics-informed CNN framework. While this DL approach is conceptually inspired by the physical reconstruction logic of traditional sparse recovery, its underlying architecture con-stitutes a fundamental mathematical reformulation that departs from conventional CS theory. Rather than relying on iterative grid-searches and sequential, on-the-fly atom refinement, our framework utilizes a deep neural network to predict continuous parametric states, dynamically synthesizing the localized inter-ference profile. Consequently, beyond the high-level functional and structural connections explicitly detailed in this section, direct theoretical links to classical CS properties cannot be extended to this DL formulation. Furthermore, unlike traditional DL approaches that operate as black-box models attempting to map the corrupted obser-vation directly to a clean signal without explicitly considering the underlying signal physics [21], [31], our architecture is designed as a parametric convolutional estimator coupled with a differentiable analytical reconstruction layer. By evaluating the entire spectrum in a single forward pass, the network explicitly extracts the continuous physical properties of the multitone NBI (gain, fractional frequency offset, and phase) for all subcarriers simultaneously. These predicted parameters are then fed directly into the reconstruction layer to analyti-cally synthesize the exact interference waveform. 
+
+A. NBI-CNet Architecture 
+
+In order to address the spectral leakage caused by NBI in OFDM systems, we introduce NBI-CNet, a deep CNN architecture. Operating as a non-linear parameter estimator, NBI-CNet is designed to deduce the physical characteristics of the complex interference vector E ∈ CN ×1 directly from the frequency-domain observation Y established in (5). The network accepts two inputs: the noisy, NBI-corrupted frequency-domain observation Y ∈ CN ×1, and the scalar thermal noise variance σ2
+
+> w
+
+. To ensure scale-invariance across arbitrary FFT sizes ( N ) and maintain gradient stability, the 6
+
+complex input signal is normalized to a power-invariant rep-resentation 
+
+Yin = Y
+
+√N . (19) To process the complex signal within a real-valued neu-ral network architecture, Yin is decoupled into its real and imaginary components. The initial spatial feature map χ(0) ∈
+
+RN ×2, which is fed into the convolutional feature extractor, is formed by concatenating these components, as 
+
+χ(0) = [ ℜ{ Yin }, ℑ{ Yin }] . (20) Meanwhile, the raw scalar noise variance σ2
+
+> w
+
+, which is physi-cally independent of the FFT size, bypasses the feature extrac-tion stage and is reserved for concatenation in the subsequent state-conditioning dense layers. The architecture of NBI-CNet consists of three main stages (see Fig. 2): 1) Feature Extraction: To capture the spectral leak-age tails, we employ a series of L 1D convolutional (Conv1D) layers. Let χ(l) ∈ RN ×Fl denote the inter-mediate feature map at layer l ∈ { 1, . . . , L }, where Fl
+
+is the number of filters. To mitigate spectral wrap-around effects at the band edges, circular padding is applied to the input feature map χ(l−1) prior to each convolution (see Section IV-C), such that 
+
+χ(l) = ReLU 
+
+
+
+Conv1D 
+
+
+
+CircPad 
+
+
+
+χ(l−1)  
+
+. (21) 2) Noise Conditioning: The final extracted feature map 
+
+χ(L) is concatenated with the noise variance σ2 
+
+> w
+
+across the channel dimension, forming the conditioned state tensor χcond ∈ RN ×(FL+1) . This conditions the dense layers on the current signal-to-noise ratio (SNR), allow-ing the network to dynamically adjust its sparsity and detection thresholds. 3) Physics-Constrained Multi-Head Output: The condi-tioned state χcond is split into three independent branches of pointwise dense layers, each dedicated to predicting a specific physical parameter of the NBI model for all 
+
+N subcarriers simultaneously. To ensure the network outputs remain physically valid, specialized activation functions are applied to the final layer of each head: a) Gain ( ˆg): Yields the predicted amplitude vector 
+
+ˆg=[ˆ g0, . . . , ˆgN −1]T ∈ RN using a ReLU activation to enforce non-negativity. b) Frequency Offset ( ˆα): Yields the predicted frac-tional sub-bin offset vector ˆα=[ˆ α0, . . . , ˆαN −1]T ∈
+
+RN using a scaled hyperbolic tangent activation, 
+
+0.5 tanh( ·), strictly bounding the offsets to the physical limits of [−0.5, 0.5] subcarrier spacings. c) Phase ( ˆθ): To avoid gradient discontinuities caused by phase wrap-around at ±π, the network outputs a 2D Cartesian tensor χθ ∈ RN ×2. This tensor is strictly L2-normalized across its channels to map features onto a unit circle, implicitly providing the phase parameters via [cos( ˆθk), sin( ˆθk)] T for each subcarrier k.
+
+B. Interference Reconstruction 
+
+To bridge the gap between the predicted parameters and final mitigation stage, NBI-CNet implements a parameter-free, fully differentiable reconstruction layer. Leveraging the mathematical duality of the signal model, this layer enables equivalent formulations in either the time or frequency domain. For each subcarrier k ∈ { 0, . . . , N − 1}, the network’s predicted fractional frequency offset ˆαk is used to define the continuous interference frequency as ˆfk = k+ ˆ αk. Because the amplitude head uses a ReLU activation, unoccupied subcarri-ers inherently evaluate to zero, natively enforcing structural sparsity without an explicit active-set threshold. Following (6), the estimated time-domain NBI sequence 
+
+ˆe[n] is synthesized as a linear superposition over all subcarriers 
+
+ˆe[n] =  
+
+> N−1
+
+X
+
+> k=0
+
+ˆgkej ˆθk exp j 2π ˆfknN
+
+!
+
+, n = 0 , . . . , N −1. (22) Alternatively, the frequency-domain NBI vector ˆE can be reconstructed directly in closed form. Leveraging the linear superposition principle from (9), the aggregate interference evaluated at any specific subcarrier bin m is synthesized analytically via (8) as 
+
+ˆEm = 
+
+> N−1
+
+X
+
+> k=0
+
+ˆgk
+
+√N ej ˆθk ejπ ( ˆfk −m) N −1 
+
+> N
+
+DN ( ˆfk − m). (23) To explicitly demonstrate the functional equivalence be-tween this neural reconstruction and the classical CS for-mulation from (10) in Section III, (23) can be recast as a dynamic matrix-vector product. Let us define a complex sparse coefficient vector ˆd ∈ CN ×1, where the kth element encapsu-lates the predicted amplitude and phase of the corresponding subcarrier head, such that ˆdk = ˆ gkej ˆθk .Simultaneously, the predicted fractional offsets ˆα are used to synthesize a dynamic, parameter-dependent dictionary ma-trix ˆΦ ∈ CN ×N , defined as ˆΦ = [ ˆϕ0, . . . , ˆϕN −1]. The mth frequency-domain bin of the kth continuous dictionary atom is evaluated analytically at ˆfk = k + ˆ αk using the Dirichlet kernel as 
+
+[ ˆϕk]m = 1
+
+√N ejπ ( ˆfk −m) N −1 
+
+> N
+
+DN ( ˆfk − m). (24) The aggregate frequency-domain interference is then recon-structed via the linear combination 
+
+ˆE = ˆΦˆd. (25) By dynamically generating a N ×N dictionary mapped directly to the continuous frequency domain, NBI-CNet math-ematically mirrors the physical synthesis of the CS methods discussed in Section III. Finally, the estimated NBI vector is directly subtracted from the received signal, executing the final mitigation step as ˜Y = Y − ˆE. Functionally, this single-shot cancellation represents the highly parallelized equivalent of the terminal classical residual R( bQ) of OMP-IDS. The NBI-CNet architecture is detailed in Fig. 2 and Table I. 7Conv1D +ReLU          
+
+> Input OFDM symbol
+> Yin =χ(0)
+> NK
+> (N+2 P)×2
+> Intermediate Features
+> χ(1)
+> Conv1D +ReLU
+> (N+2 P)×F
+> Intermediate Features
+> χ(2)
+> N×F
+> Feature Extraction Feature Extraction
+> σ2
+> w
+> Noise Conditioning
+> χcond
+> 1×(F+1)
+> ˆgk
+> ˆαk
+> sin( ˆθk)
+> cos( ˆθk)
+> NBI Amplitude
+> Fractional Sub-carrier Frequency Offset
+> NBI Phase
+
+Fig. 2. Model Architecture of NBI-CNet. TABLE I NBI-CN ET ARCHITECTURE AND PARAMETER COUNT Layer In Shape Out Shape Details Params 
+
+Feature Extraction 
+
+Input ( Yin ) [N, 2] [N, 2] Re/Im Stack 0
+
+Circular Pad [N, 2] [N + 6 , 2] P =3 0
+
+Conv1D [N + 6 , 2] [N, 32 ] F =32 , K =7 , ReLU 480 
+
+Circular Pad [N, 32 ] [N + 6 , 32 ] P =3 0
+
+Conv1D [N + 6 , 32 ] [N, 32 ] F =32 , K =7 , ReLU 7,200 
+
+State Conditioning 
+
+Feat. Concat. Conv [ N, 32 ]
+
+σ2 
+
+> w
+
+[N, 1] [N, 33 ] Append Noise Var. 0
+
+Physics-Constrained Multi-Head Output 
+
+Gain (Hidden) [N, 33 ] [N, 64 ] Units=64, ReLU 2,176 
+
+Gain (Out) [N, 64 ] [N, 1] Units=1, ReLU 65 
+
+Freq. (Hidden) [N, 33 ] [N, 64 ] Units=64, ReLU 2,176 
+
+Freq. (Out) [N, 64 ] [N, 1] Units=1, 0.5 tanh 65 
+
+Phase (Hidden) [N, 33 ] [N, 64 ] Units=64, ReLU 2,176 
+
+Phase (Out) [N, 64 ] [N, 2] Units=2, L2 Norm 130 
+
+Total 14 ,468 
+
+C. Circular Padding and Spectral Wrap-Around 
+
+Because asynchronous NBI frequencies are continuous (α̸ =0 ), their power leaks across adjacent subcarriers. When the interference frequency m + α is located near the DC or band edges, the interference naturally wraps around the discrete spectrum boundaries [19]. Standard zero-padding in convolutional layers destroys this physical continuity, introducing artificial boundary artifacts. To preserve the inherent circularity of the OFDM frequency domain, each 1D convolutional layer l applies a circular padding operation prior to the convolution. Let Kl denote the kernel size of the lth convolutional layer, requiring a padding size of P = ( Kl − 1) /2 on both spatial boundaries. Given an input sequence χ(l) ∈ RN ×Fl
+
+with Fl feature channels, the circularly padded sequence 
+
+χ(l) 
+
+> pad
+
+∈ R(N +2 P )×Fl is constructed using modulo indexing. χ0 χ1 χ2 . . . χN −3 χN −2 χN −1χN −1χN −2χN −3 χ0 χ1 χ2
+
+Fig. 3. Circular Padding for improved spectral leakage identification. 
+
+Specifically, the element at spatial index m is defined as 
+
+h
+
+χ(l)
+
+> pad
+
+i
+
+> m
+
+= χ(l)(m−P ) mod N , m = 0 , 1, . . . , N +2 P −1. (26) This operation effectively prepends the last P subcarriers to the beginning of the sequence and appends the first P sub-carriers to the end, ensuring that convolutional filters spanning the band edges correctly observe the wrapped spectral leakage. An illustration of this circular padding mechanism is provided in Fig. 3. 
+
+D. Hybrid Loss Formulation 
+
+The network is trained using a hybrid supervised loss function that balances direct parameter mapping with physical reconstruction accuracy. Because multitone NBI is highly sparse, the loss function is heavily masked to prevent gradient collapse from the vast majority of interference-free subcarriers. Let K = {0, 1, . . . , N − 1} denote the set of all OFDM subcarrier indices. We partition K into two mutually exclusive subsets: the active set M1, containing indices occupied by NBI, and the inactive set M0, containing interference-free indices. Formally, these are defined based on the ground-truth NBI amplitude gk as 
+
+M1 = {k ∈ K | gk > 0} (27) 
+
+M0 = {k ∈ K | gk = 0 }. (28) The total loss Ltotal is a superposition of four components designed to treat these subsets appropriately: 1) Global Gain Loss : Evaluated over the entire spectrum to teach the network peak localization, given by the Mean Squared Error (MSE) 
+
+Lg = 1
+
+N 
+
+> N−1
+
+X
+
+> k=0
+
+(gk − ˆgk)2.
+
+2) Masked Parameter Loss : Frequency offset and phase are only physically meaningful where NBI exists. There-fore, their MSE are computed strictly over the active subset M1
+
+Lα = 1
+
+|M 1|
+
+X
+
+> k∈M 1
+
+(αk − ˆαk)2,
+
+Lθ = 1
+
+|M 1|
+
+X
+
+> k∈M 1
+
+ejθ k − ej ˆθk 2,
+
+where |M| denotes the cardinality of set M.3) Structural Sparsity Penalty : Because true multitone NBI is structurally sparse in the frequency domain, the network must learn to output strict zero-gain values for 8
+
+unoccupied subcarriers. To enforce this and suppress noise-induced false positives, an L1 penalty is applied solely to the inactive subset M0
+
+Lsparse = 1
+
+|M 0|
+
+X
+
+> k∈M 0
+
+|ˆgk|.
+
+4) Physical Reconstruction Loss : While the parameter-specific losses evaluate the network’s outputs on an isolated, per-subcarrier basis, they do not capture the highly coupled physical relationship between amplitude, phase, and frequency offset. To enforce consistency, this metric evaluates the MSE between the true time-domain interference sequence e[n] and the network’s differen-tiable analytical reconstruction ˆe[n] defined in (22), 
+
+Lrecon = 1
+
+N 
+
+> N−1
+
+X
+
+> n=0
+
+|e[n] − ˆe[n]|2 .
+
+By penalizing the synthesized time-domain waveform directly, this term bridges any gaps left by the indepen-dent parameter losses and provides gradients that jointly optimize all network heads. The final objective optimized via gradient descent is 
+
+Ltotal = Lg + Lα + Lθ + λLsparse + Lrecon , (29) where λ acts as a sparsity regularization factor. The proposed objective (29) ensures that the network prioritizes sub-bin accuracy on the active tones while strictly suppressing false-positive NBI estimates across interference-free subcarriers. 
+
+E. Training Procedure and Implementation Details 
+
+The proposed NBI estimator and the simulated communi-cation system were implemented in TensorFlow [32] using the Sionna library [33] for GPU-accelerated physical-layer operations. The computational environment for all training and evaluation routines was powered by an NVIDIA DGX Spark integrating the GB10 Grace Blackwell Superchip [34]. To prevent overfitting and guarantee robust generalization across a continuous parameter space, the training dataset is generated dynamically on-the-fly. Rather than relying on a static, pre-computed dataset, a new mini-batch of OFDM symbols is procedurally synthesized at every training step. This continuous generation of data ensures that the network encounters unique noise and interference realizations during every iteration. The simulated system employs 16-QAM modulation with a 
+
+N =256 subcarrier grid over an AWGN channel. To condition the network across a highly diverse range of spectral envi-ronments, the physical parameters of each batch are drawn from uniform distributions. The ambient SNR varies between 
+
+7 and 15 dB, while the signal-to-interference ratio (SIR) spans an extreme dynamic range from −30 to 10 dB. The number of active multi-tone NBI sources per symbol is randomized as 
+
+Q ∼ U (0 , 8) .To maintain the structural sparsity of the multitone inter-ference model, a minimum NBI distance constraint of dm=2 
+
+subcarriers is strictly enforced during generation. This distance                         
+
+> TABLE II NBI E STIMATOR TRAINING PARAMETERS Parameter Value
+> System & Signal Parameters
+> Modulation 16-QAM FFT Size ( N)256 Channel Model AWGN SNR Range U(7 ,15) dB SIR Range U(−30 ,10) dB NBI Sources ( Q)U(0 ,8)
+> Fractional Offset ( α)U(−0.5,0.5)
+> Minimum NBI Distance ( dm)2
+> Neural Network Hyperparameters
+> Dataset Generation On-the-fly Training steps 120,000 Optimizer Adam Learning Rate ( η)10 −3
+> Batch Size 256 Sparsity Weight ( λ)0.3
+
+dictates that the integer center frequencies ( mq ) of any two active interferers must be separated by at least two discrete subcarrier indices. This constraint prevents independent nar-rowband sources from completely overlapping and collaps-ing into an indistinguishable, continuous wideband cluster. Furthermore, to accurately model asynchronous interference and induce realistic spectral leakage across this grid, the fractional frequency offsets α are drawn independently from 
+
+U(−0.5, 0.5) .NBI-CNet was trained for 120 , 000 steps utilizing the Adam optimizer with a learning rate of η = 10 −3 and a batch size of 256 . The sparsity regularization weight in the hybrid loss function was determined empirically and set to λ = 0 .3. The complete set of simulation and training hyperparameters is summarized in Table II. V. I MPACT OF RESIDUAL INTERFERENCE ON LLR ESTIMATION AND LDPC D ECODING 
+
+In conventional OFDM receivers, soft demodulation is typically performed under the assumption that the post-equalization disturbance consists solely of AWGN. Under this assumption, the LLRs for the coded bits are computed based on a Gaussian likelihood model with a known or estimated variance σ2
+
+> w
+
+. However, when NBI is only partially mitigated, the residual interference ˜E = E − ˆE introduces non-Gaussian distortion that violates this assumption and degrades LLR reliability. Let ˜Yk denote the interference-suppressed signal on the kth subcarrier after cancellation 
+
+˜Yk = HkXk + ˜Ek + Wk, (30) where ˜Ek represents the residual NBI component and Wk ∼CN (0 , σ 2
+
+> w
+
+) denotes AWGN. In the presence of residual inter-ference, the effective disturbance Zk = ˜Ek + Wk is generally neither Gaussian nor independent across subcarriers. Despite this, conventional LLR computation assumes 
+
+p( ˜Yk|Xk) ≈ 1
+
+πσ 2
+
+> w
+
+exp − | ˜Yk − HkXk|2
+
+σ2
+
+> w
+
+!
+
+, (31) 9
+
+which ignores the residual interference term ˜Ek. As a result, the resulting LLRs are mismatched with respect to the true channel statistics. For a bit bk,m associated with symbol Xk, the classical max-log LLR is computed as 
+
+L(bk,m ) ≈ 1
+
+σ2
+
+> w
+
+
+
+min  
+
+> X∈X 0
+> m
+
+| ˜Yk−HkX|2
+
+− min  
+
+> X∈X 1
+> m
+
+| ˜Yk−HkX|2
+
+
+
+, (32) where X 0 
+
+> m
+
+and X 1 
+
+> m
+
+denote the subsets of constellation sym-bols for which the mth bit equals 0 or 1, respectively. The presence of εk biases the Euclidean distance metric, leading to overconfident or misleading LLR values. From a coding perspective, LDPC decoders rely on the consistency and statistical reliability of input LLRs to perform iterative Belief Propagation (BP). Residual NBI introduces structured, non-Gaussian distortions that reduce the mutual information between the transmitted bits and the computed LLRs. Consequently, the decoding process may converge more slowly or stall, resulting in an increased block error rate (BLER) and bit error rate (BER). This degradation is particularly pronounced when the resid-ual interference is localized to a subset of subcarriers, as the affected LLRs act as unreliable messages within the iterative LDPC decoding graph. Therefore, improving NBI cancellation accuracy directly enhances LLR quality and yields substantial gains in channel decoding performance. Moreover, residual NBI can lead to the appearance of an error floor at medium-to-high SNRs. In this regime, thermal noise becomes negligible, but structured interference compo-nents persist, causing certain bits or subcarriers to experience a consistently degraded effective SNR. As a result, the LDPC decoder receives systematically unreliable LLRs that cannot be corrected through iterative processing, preventing the BER and BLER from decreasing exponentially with SNR. 
+
+A. Limitations of Per-Subcarrier Power Estimation 
+
+A theoretical classical solution to avoid these extreme outliers would be to adapt the LLR calculation to the actual noise-plus-interference power at each subcarrier k. By effec-tively replacing the global AWGN variance σ2 
+
+> w
+
+with a per-subcarrier variance σ2 
+
+> Z,k
+
+= σ2 
+
+> w
+
++E[| ˜Ek|2], the demapper could theoretically “de-weight” the confidence of subcarriers heavily corrupted by NBI residuals. However, accurately estimating 
+
+σ2 
+
+> Z,k
+
+in real-time is practically and mathematically non-trivial. Kalyani et al. [29] note that while classical Gaussian-based LLRs are highly vulnerable to non-Gaussian outliers, explic-itly modeling the true contaminated Gaussian distribution is practically infeasible due to the complexity of tracking rapidly time-varying interference parameters. To estimate the residual power σ2˜E,k =E[| ˜Ek|2] at sub-carrier k, the receiver must isolate ˜Ek from the received signal Yk = HkXk + ˜Ek + Wk. Because the transmitted data Xk is a random variable, any real-time estimate of the power at subcarrier k is inherently coupled with the unknown modulation symbol. Furthermore, while one could attempt to average power over multiple OFDM symbols to integrate out the data variance, NBI is often transient or non-stationary. More importantly, the residual ˜Ek is a direct function of the estimation error from the mitigation stage (e.g., the fractional frequency offset error 
+
+∆α), which varies per symbol based on the behavior of the interferer. Thus, σ2˜E,k is not a stationary parameter, but a highly dynamic stochastic variable dependent on the instantaneous estimation error of the NBI canceller. Without a precise, a priori analytical model of the es-timation error distribution produced by the NBI canceller, the receiver cannot differentiate between a naturally noisy subcarrier and one corrupted by structured residual inter-ference. This fundamental intractability motivates the need for a data-driven approach capable of learning the complex statistical footprint of the NBI residuals without requiring explicit variance estimation. VI. D EEP LEARNING -AIDED LLR E STIMATION FOR 
+
+POST -MITIGATION RESIDUAL NBI As detailed in Section IV, the NBI-CNet module param-eterizes and reconstructs the interference vector ˆE to form the interference-suppressed signal ˜Y = Y − ˆE. While this subtraction removes the vast majority of the NBI power, the parametric estimation is inherently imperfect. This leaves behind a residual interference component that is highly struc-tured, spectrally correlated, and profoundly non-Gaussian. Classical demapping algorithms, such as the widely used max-log approximation, operate under the strict assumption that the post-cancellation noise strictly follows a Gaussian dis-tribution characterized by the background variance σ2
+
+> w
+
+. When a classical Gaussian demapper processes the non-Gaussian residual structure of ˜Y, it misinterprets residual interference peaks as high-confidence data symbols, generating extreme LLR outliers. In a BP decoding graph, these outliers act as mathematical absorbing states, locking the LDPC decoder into false convergence and severely degrading the BER and BLER performance of the system. To resolve this challenge, we propose LLR-CNet, alightweight, deep learning-aided LLR estimation network. Instead of relying on rigid Gaussian assumptions, LLR-CNet utilizes both the cleaned signal ˜Y and the estimated interfer-ence landscape ˆE to dynamically recognize residual patterns and map them into well-calibrated, bounded soft information. 
+
+A. LLR-CNet Architecture 
+
+To recover the transmitted bitstream from the mitigated observation, we introduce LLR-CNet. Extending the low-complexity detection methodology originally proposed in [28], LLR-CNet is formulated as an efficient 1D CNN operating directly on the frequency-domain subcarriers. It advances the baseline architecture by integrating the custom circular padding strategy detailed in Section IV-C, ensuring robust spa-tial feature extraction without introducing artificial boundary artifacts at the band edges. While incorporating this structural enhancement to natively handle OFDM spectral wrap-around, LLR-CNet maintains a strict, low-computational footprint, requiring only a single 1D convolutional layer and a pointwise multi-layer perceptron (MLP) head. 10 
+
+The network accepts three distinct inputs: the interference-suppressed subcarrier symbols ˜Y ∈ CN ×1, the reconstructed analytical interference ˆE ∈ CN ×1, and the scalar background thermal noise variance σ2
+
+> w
+
+. Providing ˆE alongside ˜Y is criti-cal; it allows the network to spatially localize areas of heavy cancellation and implicitly scale its detection confidence based on the likelihood of residual estimation errors. To guarantee scale-invariance and gradient stability across arbitrary FFT sizes, the complex input vectors are first power-normalized identically to the NBI-CNet preprocessing stage: 
+
+˜Yin = ˜Y
+
+√N , ˆEin = ˆE
+
+√N . (33) To process the complex-valued arrays using standard real-valued neural network operations, the forward pass is defined through the following sequential stages:  
+
+> •
+
+Input Formulation: The normalized complex vectors 
+
+˜Yin and ˆEin are decoupled into their real and imaginary components and concatenated along the feature dimen-sion. This forms the initial input feature map ψ(0) ∈
+
+RN ×4:
+
+ψ(0) =
+
+h
+
+ℜ{ ˜Yin }, ℑ{ ˜Yin }, ℜ{ ˆEin }, ℑ{ ˆEin }
+
+i
+
+. (34)  
+
+> •
+
+Feature Extraction: Because OFDM subcarriers exhibit circular continuity in the frequency domain, standard zero-padding introduces artificial discontinuities. A cir-cular padding layer prepends and appends P adjacent subcarrier features to the sequence using modulo index-ing. The padded sequence is then processed by a 1D Convolutional layer employing F filters of kernel size 
+
+K with a ReLU activation, producing the intermediate spatial map ψ(1) ∈ RN ×F . This operation allows the network to analyze the localized spectral splatter of residual interference across neighboring subcarriers.  
+
+> •
+
+Noise Conditioning: To allow the network to dynami-cally scale its confidence based on global channel con-ditions, the scalar noise variance σ2 
+
+> w
+
+is broadcast across the subcarrier dimension and concatenated to the convo-lutional feature map, forming the conditioned state tensor 
+
+ψcond ∈ RN ×(F +1) . 
+
+> •
+
+Soft Demodulation Output: To directly satisfy the re-quirements of modern FEC decoders, the network acts as a soft-decision demodulator. The conditioned tensor ψcond 
+
+is processed independently across the subcarrier dimen-sion by a hidden Dense layer using a ReLU activation. A final linear Dense layer projects these features into an output tensor λ ∈ RN ×nb , where nb is the number of bits per QAM symbol. Crucially, as mathematically proven in the subsequent training formulation, by omitting a bounding activation (e.g., sigmoid) and allowing the network to output continuous unconstrained logits, these linear outputs naturally converge to the exact LLRs of the coded bits. The complete architecture of LLR-CNet is illustrated in Fig. 4 and its specific structural hyperparameters are outlined in Table III. Conv1D +ReLU       
+
+> Input Features
+> ψ(0)
+> NK
+> (N+2 P)×2
+> Intermediate Features
+> ψ(1)
+> N×F
+> Feature Extraction
+> σ2
+> w
+> Noise Conditioning
+> ψcond
+> 1×(F+1)
+> λnb−1
+> λ2
+> λ1
+> λ0
+> Soft Demodulation Output
+> Fig. 4. Model Architecture of LLR-CNet. The mathematical stages natively map to the structural blocks, demonstrating the flow from complex decoupling to final LLR generation.
+
+B. Training Procedure and Loss Function 
+
+To accurately learn the non-Gaussian statistics of the resid-ual interference, LLR-CNet is trained in a cascaded config-uration with the preceding NBI mitigation stage (e.g., OMP-IDS, EOMP-IDS, or NBI-CNet). The mitigation module dy-namically processes the noisy dataset to provide the required input features, ˜Y and ˆE. When paired with NBI-CNet, the estimator’s weights are strictly frozen to isolate the LLR map-ping objective and guarantee training stability. The training hyperparameters mirror Table II, though LLR-CNet converges more rapidly, requiring only 60 , 000 steps. The LLR-CNet is trained using the binary cross-entropy (BCE) loss function. This objective function is explicitly chosen because it mathematically aligns with the definition of optimal LLRs. The network outputs raw logits λ, which are passed through a sigmoid activation function during training to yield the predicted probability that the transmitted coded bit c is a ‘1’, defined as 
+
+P (c = 1 |Y ) = σ(λ) = 11 + e−λ . (35) The BCE loss for a single bit is defined as 
+
+LBCE = −c log( σ(λ)) + (1 − c) log(1 − σ(λ)) . (36) It is a well-established property of neural networks that minimizing the expected BCE loss drives the network’s output 
+
+σ(λ) to converge to the true posterior probability P (c = 1 |Y ).Given this convergence, we can invert the sigmoid function to reveal the physical meaning of the raw logit λe−λ = 1 − P (c = 1 |Y )
+
+P (c = 1 |Y ) = P (c = 0 |Y )
+
+P (c = 1 |Y ) . (37) Taking the natural logarithm of both sides yields 
+
+λ = log P (c = 1 |Y )
+
+P (c = 0 |Y ) . (38) This formulation proves that by training the network with BCE loss, the linear logits λ naturally converge to the exact LLRs. Consequently, the network acts as a structural whitener, 11                                                         
+
+> TABLE III LLR-CN ET ARCHITECTURE AND PARAMETER COUNT (nb= 4 )Layer In Shape Out Shape Details Params
+> Input Concat. ˜Y[N, 2]
+> ˆE[N, 2][N, 4]Re/Im Stacking 0Circular Pad [N, 4][N+ 4 ,4]P=2 0Conv1D [N+ 4 ,4][N, 16 ]F=16 ,K=5 , ReLU 336 Concat. Conv [ N, 16 ]
+> σ2
+> w[N, 1][N, 17 ]Append Noise Var. 0Hidden [N, 17 ][N, 16 ]Units=16, ReLU 288 Output [N, 16 ][N, 4]Units=4, Linear 68
+> Total 692
+
+0 50 100 150 200 250 
+
+−50 
+
+0
+
+Subcarrier Index ( k)         
+
+> Power (dB)
+> NBI
+> OMP-IDS
+> EOMP-IDS
+> NBI-CNet
+> Noise Floor
+> Fig. 5. Frequency-domain snapshot of the residual interference power across subcarriers (Q =2 , INR =20 dB). Residual spikes remain above the background noise floor, after NBI mitigation.
+
+learning to suppress overconfident predictions in regions with high residual NBI, thereby providing the LDPC decoder with safe, optimally scaled soft information. VII. S IMULATION RESULTS 
+
+In this section, we evaluate the performance of the proposed NBI-CNet and LLR-CNet architectures. We compare them −20 −10 0 10 20 30 40 
+
+−20 
+
+−10 
+
+0
+
+10 
+
+20 
+
+30 
+
+40 
+
+INR (dB)   
+
+> ICR (dB)
+> OMP-IDS
+> EOMP-IDS
+> NBI-CNet
+> Fig. 6. ICR performance of the different algorithms (Q =8 , SNR =10 dB, LDPC(1024,512), 16-QAM).
+
+against classical CS baselines (OMP-IDS and EOMP-IDS) and the Gaussian Max-Log demapper. For simplicity, we assume each OFDM symbol carries exactly one LDPC codeword, meaning the FFT size ( N ) is directly determined by the codeword length. Additionally, we set dm=4 to prevent the interference tones from clustering extremely close. Unless oth-erwise noted, all other simulation parameters follow Table II. 
+
+A. Interference Cancellation Performance 
+
+To assess the efficacy of the NBI mitigation stage, we adopt the interference cancellation ratio (ICR) metric, CdB , as follows. Let E denote the true, properly normalized frequency-domain NBI vector for a given OFDM symbol, and let ˆE
+
+be the corresponding reconstructed estimate. The per-symbol cancellation depth in decibels (dB) is computed as the ratio of the true interference power to the residual error power and is given by 
+
+CdB = 10 log 10 
+
+∥E∥22
+
+∥E − ˆE∥22
+
+!
+
+. (39) To prevent artificial metric deflation from interference-free symbols, the final ICR is averaged exclusively over the valid subset of symbols where the number of active interferers is strictly positive ( Q > 0). Fig. 5 illustrates a representative frequency-domain snap-shot of the residual interference power across subcarriers for a signal corrupted by asynchronous multi-tone NBI ( Q=2 ,INR =20 dB). Before mitigation, the raw interference exhibits massive power peaks that severely exceed the background noise floor, accompanied by extensive spectral leakage across the entire bandwidth. While standard OMP-IDS achieves a baseline level of cancellation, it struggles to perfectly resolve the fractional frequency offsets, leaving a noticeable residual component. The EOMP-IDS algorithm only marginally im-proves upon this by slightly suppressing the primary interfer-ence peaks through its joint iterative searches. In comparison, although NBI-CNet exhibits similar residual spikes above the noise floor, it achieves slightly deeper interference suppression along the spectral tails. The aggregate cancellation performance evaluated across a wide range of interference-to-noise ratios (INR) is presented in Fig. 6. A critical architectural advantage of the proposed neural network emerges immediately in the low-INR regime (INR <0 dB), where the interference is submerged beneath the signal and noise power. Despite being provided with perfect prior knowledge of the true number of interferers, the greedy classical algorithms (OMP-IDS and EOMP-IDS) are fundamentally unable to distinguish weak NBI from valid OFDM data. Consequently, they aggressively attempt to cancel the signal of interest, resulting in severe negative cancellation depths that actively destroy the received waveform. In con-trast, NBI-CNet leverages its learned sparsity regularizations to intelligently recognize the absence of dominant NBI. It correctly suppresses its parameter predictions, maintaining a safe, flat 0 dB baseline that perfectly preserves the underlying signal integrity without inducing artificial distortion. 12 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 
+
+10 −6
+
+10 −5
+
+10 −4
+
+10 −3
+
+10 −2
+
+10 −1
+
+10 0
+
+SNR (dB)         
+
+> BLER
+> No NBI + Max-Log
+> NBI-CNet + Max-Log
+> NBI-CNet + Max-Log + Erasure ( KE=1 )
+> NBI-CNet + Max-Log + Erasure ( KE=3 )
+> NBI-CNet + Max-Log + Erasure ( KE=5 )
+> NBI-CNet + Max-Log + Erasure ( KE=7 )
+> NBI-CNet + LLR-CNet
+> Fig. 7. BLER vs. SNR performance comparison between LLR-CNet and the LLR erasure method (Q =24 , SIR =−10 dB, LDPC(2048,1024), 16-QAM).
+
+−50 0 50 
+
+0
+
+5
+
+10 
+
+·10 −2
+
+LLR values 
+
+> Probability
+
+(a) 
+
+−10 0 10 
+
+0
+
+5
+
+10 
+
+·10 −2
+
+LLR values 
+
+> Probability
+
+(b)    
+
+> Fig. 8. LLR values post NBI Mitigation. (a) Gaussian-based Max-log, (b) LLR-CNet (Q =8 , SNR =13 dB, SIR =−10 dB, LDPC(1024,512), 16-QAM).
+
+In the extreme high-INR regime (INR > 20 dB), the interference becomes distinctly visible above the noise floor. Here, the computationally exhaustive joint searches of EOMP-IDS allow it to scale linearly to the deepest absolute can-cellation floors. While NBI-CNet slightly deviates from this theoretical optimum at the highest INRs, it maintains a highly competitive suppression that strictly outperforms the standard OMP-IDS baseline. More importantly, this slight deviation from the EOMP-IDS optimum is practically insignificant for FEC systems. Once the interference is suppressed sufficiently below the signal power, the downstream LLR-CNet algorithm is fully capable of whitening the remaining residuals. 
+
+B. Impact on Soft Information and LLR Calibration 
+
+As established in Section VI, the residual interference left behind by the cancellation stage is profoundly non-Gaussian. While optimal classical demappers can theoretically be derived for correlated non-Gaussian noise, doing so requires complex, real-time covariance matrix estimations and inversions that are computationally prohibitive for standard hardware. Con-sequently, widely deployed demappers operating under strict independent AWGN assumptions exhibit severe performance degradation when processing these structured residuals. Fig. 8 explicitly quantifies this phenomenon by comparing the probability distributions of the generated LLRs for a sce-nario with Q=8 interferers at a SIR of −10 dB. When utilizing the Gaussian max-log algorithm (Fig. 8a), the demapper misin-terprets the structured residual interference as high-confidence data, generating massive LLR outliers that frequently exceed 
+
+±60 . These extreme false-confidence values stall the message-passing convergence in an LDPC belief propagation graph. Conversely, the proposed LLR-CNet (Fig. 8b) seamlessly learns the true statistical distribution of the residuals. It acts as a structural whitener, safely compressing the LLR variance and bounding the soft values within a realistic confidence regime of roughly ±15 . This dynamic calibration prevents decoder lock-up and restores the integrity of the soft bits. Fig. 7 evaluates the impact of this LLR calibration on the final BLER against a classical frequency-domain blanking strategy, where KE denotes the erasure window of zeroed sub-carriers around each detected interferer. The classical method exhibits a severe trade-off: narrow windows ( KE ≤3) fail to capture the broader spectral leakage, while wider windows (KE ≥5) indiscriminately puncture too much valid payload data. Both extremes trigger severe high-SNR error floors. In contrast, the joint NBI-CNet and LLR-CNet pipeline struc-turally whitens the residual interference rather than discarding the affected subcarriers entirely. By actively recovering reliable soft information, the neural approach completely eliminates this erasure penalty, yielding a substantial coding gain of approximately 0.8 dB at a BLER of 10 −3 over the best-performing classical erasure window, and achieving a steep waterfall curve that converges within 1.7 dB of the ideal, NBI-free baseline. 
+
+C. End-to-End Channel Decoding Performance 
+
+To evaluate the ultimate impact on the communication link, we analyze the BLER across varying interference severities (SIR = 10 dB and −10 dB) and spectral crowding scenarios (Q = 2 , 8, 12 ), as presented in Fig. 9. The baseline classical pipelines exhibit notable performance degradation. Combining iterative cancellation (OMP-IDS or EOMP-IDS) with Gaussian Max-Log demapping results in se-vere error floors. In crowded environments ( Q=8 and Q=12 ), these methods stall at a BLER near 10 −1 even at high SNRs. Such crowded NBI scenarios are prevalent in Broadband PLC systems [18]. Replacing the Max-Log demapper with LLR-CNet recov-ers LDPC decoder performance. As shown across Fig. 9, this substitution eliminates the 10 −1 error floors and re-stores the exponential BLER decay. Under heavy interfer-ence (SIR =−10 dB), the combined NBI-CNet and LLR-CNet pipeline reaches a target BLER of 10 −4 at SNRs of 8.5 dB (Q=2 ), 9.5 dB ( Q=8 ), and 10 .5 dB ( Q=12 ). Across all tested 
+
+Q conditions at SIR =−10 dB, NBI-CNet operates within a 
+
+0.2 to 0.5 dB SNR margin of the EOMP-IDS + LLR-CNet baseline. This confirms that NBI-CNet achieves comparable 13 5 6 7 8 9 10 11 12 13 14 15 16 
+
+10 −6
+
+10 −5
+
+10 −4
+
+10 −3
+
+10 −2
+
+10 −1
+
+10 0    
+
+> SIR =−10 dB
+> Q= 2
+
+SNR (dB) 
+
+> BLER
+> No NBI + Max-Log
+> OMP-IDS + Max-Log
+> OMP-IDS + LLR-CNet
+> EOMP-IDS + Max-Log
+> EOMP-IDS + LLR-CNet
+> NBI-CNet + Max-Log
+> NBI-CNet + LLR-CNet
+> (a)
+
+5 6 7 8 9 10 11 12 13 14 15 16 
+
+10 −7
+
+10 −6
+
+10 −5
+
+10 −4
+
+10 −3
+
+10 −2
+
+10 −1
+
+10 0    
+
+> SIR =−10 dB
+> Q= 8
+
+SNR (dB) 
+
+> BLER
+> No NBI + Max-Log
+> OMP-IDS + Max-Log
+> OMP-IDS + LLR-CNet
+> EOMP-IDS + Max-Log
+> EOMP-IDS + LLR-CNet
+> NBI-CNet + Max-Log
+> NBI-CNet + LLR-CNet
+> (b)
+
+5 6 7 8 9 10 11 12 13 14 15 16 
+
+10 −7
+
+10 −6
+
+10 −5
+
+10 −4
+
+10 −3
+
+10 −2
+
+10 −1
+
+10 0    
+
+> SIR =−10 dB
+> Q= 12
+
+SNR (dB) 
+
+> BLER
+> No NBI + Max-Log
+> OMP-IDS + Max-Log
+> OMP-IDS + LLR-CNet
+> EOMP-IDS + Max-Log
+> EOMP-IDS + LLR-CNet
+> NBI-CNet + Max-Log
+> NBI-CNet + LLR-CNet
+> (c)
+
+5 6 7 8 9 10 11 12 13 14 15 16 
+
+10 −6
+
+10 −5
+
+10 −4
+
+10 −3
+
+10 −2
+
+10 −1
+
+10 0   
+
+> SIR = 10 dB
+> Q= 2
+
+SNR (dB) 
+
+> BLER
+> No NBI + Max-Log
+> OMP-IDS + Max-Log
+> OMP-IDS + LLR-CNet
+> EOMP-IDS + Max-Log
+> EOMP-IDS + LLR-CNet
+> NBI-CNet + Max-Log
+> NBI-CNet + LLR-CNet
+> (d)
+
+5 6 7 8 9 10 11 12 13 14 15 16 
+
+10 −7
+
+10 −6
+
+10 −5
+
+10 −4
+
+10 −3
+
+10 −2
+
+10 −1
+
+10 0   
+
+> SIR = 10 dB
+> Q= 8
+
+SNR (dB) 
+
+> BLER
+> No NBI + Max-Log
+> OMP-IDS + Max-Log
+> OMP-IDS + LLR-CNet
+> EOMP-IDS + Max-Log
+> EOMP-IDS + LLR-CNet
+> NBI-CNet + Max-Log
+> NBI-CNet + LLR-CNet
+> (e)
+
+5 6 7 8 9 10 11 12 13 14 15 16 
+
+10 −7
+
+10 −6
+
+10 −5
+
+10 −4
+
+10 −3
+
+10 −2
+
+10 −1
+
+10 0   
+
+> SIR = 10 dB
+> Q= 12
+
+SNR (dB) 
+
+> BLER
+> No NBI + Max-Log
+> OMP-IDS + Max-Log
+> OMP-IDS + LLR-CNet
+> EOMP-IDS + Max-Log
+> EOMP-IDS + LLR-CNet
+> NBI-CNet + Max-Log
+> NBI-CNet + LLR-CNet
+> (f)
+
+Fig. 9. BLER vs. SNR for the proposed and baseline CS NBI mitigation algorithms under different interference scenarios (LDPC(1024, 512), 16-QAM). 6 7 8 9 10 11 12 13 14 15 16 
+
+10 −6
+
+10 −5
+
+10 −4
+
+10 −3
+
+10 −2
+
+10 −1
+
+10 0
+
+SNR (dB)      
+
+> BLER
+> No NBI + Max-Log OMP-IDS + Max-Log
+> OMP-IDS + Max-Log (IE) OMP-IDS + LLR-CNet
+> OMP-IDS + LLR-CNet (IE) EOMP-IDS + Max-Log
+> EOMP-IDS + Max-Log (IE) EOMP-IDS + LLR-CNet
+> EOMP-IDS + LLR-CNet (IE) NBI-CNet + Max-Log
+> NBI-CNet + LLR-CNet
+
+Fig. 10. BLER vs. SNR performance comparisons (Q =8 , SIR =−10 dB, LDPC(2048,1024), 16-QAM). The abbreviation IE indicates Imperfect Esti-mation of the number of active NBI sources. 
+
+interference suppression while bypassing the execution latency of sequential searches. Under mild interference (SIR =10 dB), the limitations of iterative CS methods emerge in dense spectrums. Because the interference power is comparable to the useful signal, the greedy algorithms cannot efficiently distinguish true NBI peaks from valid OFDM data subcarriers. Consequently, the iterative search erroneously targets and subtracts valid signal components, actively destroying the effective payload. While CS methods handle sparse interference ( Q=2 ), this algorith-mic confusion causes severe degradation in crowded grids. At Q=8 (Fig. 9e), the CS baselines require over 14 .5 dB SNR to reach a 10 −5 BLER. At Q=12 (Fig. 9f), OMP-IDS and EOMP-IDS exhibit an error floor near 10 −4 at 16 dB. In contrast, NBI-CNet directly resolves overlapping Dirichlet kernels without confusing them for payload data. It bypasses these error floors, reaching 10 −5 BLER at 11 .8 dB ( Q=8 ) and 
+
+14 dB ( Q=12 ). This yields a coding gain of 2 to over 3 dB in congested bands, demonstrating vastly improved scalability. Finally, a major limitation of iterative CS algorithms is their strict dependency on an accurate prior estimation of the interference count ( bQ). Fig. 10 evaluates an Imperfect Estimation (IE) scenario where the estimator has a minor 0.1% probability of misestimating Q by ±1, a condition significantly more optimistic than the practical NBI detection rates reported in literature [20]. Despite this favorable setup, this 0.1% error rate forces both OMP-IDS and EOMP-IDS to exhibit a severe error floor near 2 × 10 −4, even when paired with LLR-CNet. This degradation is fundamentally algorithmic: underestimat-ing Q leaves a high-power interferer completely unmitigated, whereas overestimating forces the subtraction of non-existent tones, injecting artificial interference into the spectrum. In contrast, NBI-CNet eliminates this vulnerability by natively suppressing interference without requiring an explicit prior estimate bQ. Consequently, the neural pipeline circumvents the IE error floor entirely, reaching a BLER of 10 −4 at an SNR of 8 dB and yielding an unbounded relative coding gain in the high-SNR regime. 14 
+
+D. Neural Network Generalization 
+
+A key architectural advantage of the proposed NBI-CNet and LLR-CNet pipelines is their inherent ability to generalize to system configurations not encountered during training, both in terms of spectral dimensions and interference density. Although the networks were trained exclusively on a fixed FFT size of N =256 , the structural choice of 1D convolutional layers combined with the power-invariant input normalization allows them to process arbitrary OFDM symbol lengths. To achieve this dimension-agnostic generalization, a deterministic scaling factor must be applied to the predicted interference gain. As explicitly defined in the closed-form interference model in (8), the frequency-domain amplitude of the NBI scales proportionally with 1/√N . Because the network’s raw amplitude prediction ˆg is implicitly calibrated to the spectral energy density of the training FFT size N , performing infer-ence on a novel grid size N ′ requires compensating for this fundamental analytical dependence. To preserve the correct physical interference power during time-domain reconstruc-tion, the predicted gain must be scaled as 
+
+ˆg′ = ˆ g
+
+r N ′
+
+N . (40) By applying this constant scalar, the neural pipeline success-fully generalizes to an extended LDPC(2048, 1024) codeword mapped over N ′=512 subcarriers, as demonstrated in Fig. 10. Despite operating on double the spectral bandwidth relative to the training dataset, the integrated NBI-CNet and LLR-CNet architecture maintains robust decoding performance. In contrast, the classical max-log approaches continue to exhibit an uncorrectable BLER of 1.0. This robust, length-invariant scaling confirms that the network has fundamentally learned the localized physical properties of the continuous fractional frequency offsets and the underlying spectral leakage, as governed by DN in (8), rather than merely overfitting to a specific discrete subcarrier grid. Beyond spectral dimensions, the neural pipeline demon-strates exceptional generalization regarding interference den-sity. While the models were trained exclusively on environ-ments containing up to a maximum of 8 interferers ( Q∈[0 , 8] ), their fully convolutional nature processes the entire frequency spectrum simultaneously. This wide receptive field allows NBI-CNet to independently identify and isolate multiple NBI sources without relying on a predefined number of sequential loops. Consequently, when evaluated in denser spectral crowd-ing scenarios (e.g., Q=12 , as presented in Fig. 9), NBI-CNet successfully suppresses the elevated interference, without re-quiring retraining. Likewise, LLR-CNet is able to generalize to arbitrary input FFT size and NBI density, continuing to produce well-calibrated soft information. VIII. C OMPUTATIONAL COMPLEXITY 
+
+To benchmark the computational burden of the baseline classical algorithms against the proposed neural network, the complex-valued asymptotic counts provided in existing literature [20] must be translated into real floating-point oper-ations (FLOPs). In standard digital signal processing hardware                                                                    
+
+> TABLE IV REAL FLOP SCOMPARISON OF BASELINE NBI C ANCELLATION
+> ALGORITHMS VS . NBI-CN ET FFT Size ( N)Algorithm Q=2Q=8Q=16 Q=32
+> 256 OMP-IDS 45,032 180,128 360,256 720,512 eOMP-IDS 352,032 1,408,128 2,816,256 5,632,512
+> NBI-CNet 5,097,740 5,152,304 5,225,056 5,370,560
+> 512 OMP-IDS 95,208 380,832 761,664 1,523,328 eOMP-IDS 735,008 2,940,032 5,880,064 11,760,128
+> NBI-CNet 10,177,292 10,231,856 10,304,608 10,450,112
+> 1024 OMP-IDS 200,680 802,720 1,605,440 3,210,880 eOMP-IDS 1,531,680 6,126,720 12,253,440 24,506,880
+> NBI-CNet 20,336,396 20,390,960 20,463,712 20,609,216
+> 2048 OMP-IDS 421,864 1,687,456 3,374,912 6,749,824 eOMP-IDS 3,186,464 12,745,856 25,491,712 50,983,424
+> NBI-CNet 40,654,604 40,709,168 40,781,920 40,927,424
+> TABLE V FLOP C OUNT OF THE LLR-CN ET
+
+FFT Size ( N ) FLOPs 
+
+256 345 ,089 512 690 ,177 1024 1,380 ,353 2048 2,760 ,705 
+
+FLOPs/SC 1,348 
+
+architectures, a single complex addition requires 2 real FLOPs, while a single complex multiplication requires 6 real FLOPs (4 real multiplications and 2 real additions). 
+
+A. Complexity of OMP-IDS and EOMP-IDS 
+
+Based on the operations detailed in Table IV of [20], the total real FLOPs for the OMP-IDS and EOMP-IDS algorithms per OFDM symbol are derived using the number of active nar-rowband interferers ( Q) and the FFT size ( N ). Let K1 denote the number of standard dichotomous search iterations, K2 the joint search iterations, P the number of adjacent evaluation points, and ¯P the average number of joint-search iterations triggered across the spectrum. The parametric computational complexities can be expressed as 
+
+COMP-IDS = Q
+
+h
+
+6 2K1N + N
+
+2 log 2 N ++ 2  2K1(N − 1) + N log 2 N i
+
+(41) 
+
+CEOMP-IDS = Q
+
+h
+
+6 2N (K1 + P K 2)+ ( ¯P + 1) N
+
+2 log 2 N 
+
++ 2  2( N − 1)( K1 + P K 2)+ ( ¯P + 1) N log 2 N i
+
+. (42) By grouping like terms these expressions reduce to 
+
+COMP-IDS = Q
+
+h
+
+5N log 2 N + 16 K1N − 4K1
+
+i
+
+(43) 
+
+CEOMP-IDS = Q
+
+h
+
+5N ( ¯P + 1) log 2 N + 16 N (K1 + P K 2)
+
+− 4( K1 + P K 2)
+
+i
+
+. (44) 15 
+
+Following the hyperparameters evaluated in [20] for optimal cancellation depth ( K1=3 , K2=5 , P =5 , and an average trig-ger rate ¯P =5 ), these expressions simplify to exact polynomial FLOP counts per NBI source 
+
+COMP-IDS = Q 5N log 2 N + 48 N − 12  (45) 
+
+CEOMP-IDS = Q 30 N log 2 N + 448 N − 112 . (46) 
+
+B. Complexity of NBI-CNet 
+
+To derive the comparable FLOPs for the proposed NBI-CNet architecture, we adopt the standard deep learning con-vention where one Multiply-Accumulate (MAC) operation contributes two FLOPs. Based on the network architecture established in Section IV, the total parameter count is distributed across the feature extraction backbone ( Pbb =7 , 680 ), the gain head ( Pg =2 , 241 ), the fractional frequency head ( Pα=2 , 241 ), and the phase head (Pθ =2 , 306 ). In a standard, unconditional execution model, the network evaluates all feature maps and outputs across the entire subcarrier grid ( N ). The total complexity is therefore 
+
+CNBI-CNet-Dense = 2 N (Pbb + Pg + Pα + Pθ )= 2 N (14 , 468) = 28 , 936 N. (47) Unlike the CS algorithms in (45) and (46), the execution of NBI-CNet is completely independent of Q. While this guarantees a fixed FLOP budget independent of interference density, it inherently forces the network to execute redundant computations on interference-free subcarriers. 
+
+C. Sparsity-driven Reduced Complexity 
+
+To optimize execution efficiency without sacrificing the highly parallelized, deterministic latency of a feed-forward architecture, NBI-CNet can employ dynamic conditional rout-ing. Because multi-tone NBI is fundamentally sparse in the frequency domain ( Q≪N ), the detailed extraction of the fractional offset ( ˆα) and phase ( ˆθ) can be computationally bypassed for the vast majority of the spectrum. Under this sparse execution paradigm, only the backbone and the primary gain head must be evaluated across all N
+
+subcarriers to detect the locations of the interferers. This forms the static computational baseline of the network 
+
+Cstatic = 2 N (Pbb + Pg )= 2 N (9 , 921) = 19 , 842 N. (48) Once the interference profile is established, the frequency and phase heads are triggered exclusively at the indices where active NBI is detected ( ˆg> 0). Assuming the network correctly identifies the Q active interferers, the conditional operational cost becomes strictly proportional to the physical interference density 
+
+Cdynamic = 2 Q(Pα + Pθ )= 2 Q(4 , 547) = 9 , 094 Q. (49) The final, optimized FLOP requirement for a single forward pass of NBI-CNet is the sum of the static and dynamic phases 
+
+CNBI-CNet-Sparse = 19 , 842 N + 9 , 094 Q. (50) By leveraging the structural sparsity of the gain mask, the conditional architecture dynamically eliminates 9, 094( N −Q)
+
+redundant floating-point operations per inference. 
+
+D. Complexity of LLR-CNet 
+
+Following the same MAC conversion methodology, we establish the computational complexity of the neural soft demapper. While NBI-CNet utilizes dynamic routing to op-timize its comparatively heavier feature extraction, LLR-CNet requires no such architectural sparsity due to its exceptionally shallow design. As detailed in Table III, the entire estimator is strictly constrained to a parameter count of just PLLR-CNet =692 , dis-tributed across a single 1D convolutional layer and two point-wise linear transformations. Because reliable soft information must be generated for the entire LDPC codeword to prevent downstream decoder failure, LLR-CNet executes uncondition-ally across the entire subcarrier grid ( N ). Consequently, its execution scales strictly linearly with the FFT size. Based on the operations defined in the architecture, the estimator requires an average of 1, 348 FLOPs per subcarrier (as detailed in Table V). The total complexity for a single forward pass is thus given by 
+
+CLLR-CNet ≈ 1, 348 N. (51) Because this complexity is entirely independent of the interference density Q, it maintains the strict, predictable latency profile of the feed-forward pipeline. 
+
+E. Complexity Comparison 
+
+Table IV details the theoretical FLOP formulas across varying FFT sizes ( N ) and sparsity levels ( Q). To clearly illustrate the practical impact of these scaling parameters, Fig. 11 visualizes the computational footprint of the algorithms across an extended sparsity range up to Q=64 for a large grid size ( N =2048 ). While standard OMP-IDS maintains a relatively low compu-tational footprint, the joint dichotomous searches of EOMP-IDS introduce a severe linear scaling penalty. As visualized by the steep slope in Fig. 11, EOMP-IDS demands over 101.9 million FLOPs as the spectral environment becomes heavily congested ( Q=64 ). Crucially, this computational load consists entirely of variable-latency sequential iterations, posing asignificant bottleneck for strict real-time baseband processing. Furthermore, the OMP-IDS and EOMP-IDS FLOP counts omit the overhead of the mandatory model-order ( bQ) selection stage. Prior art employs a separate neural network (NDNet) requiring 6.144 × 10 5 FLOPs, which yields roughly 98% estimation precision under high INR conditions [20]. Because eliminating the resulting baseline error floors entirely demands near-perfect estimation accuracy across all operational regions, a significantly more complex and computationally heavy bQ-detection stage would be required in practice. Conversely, NBI-CNet establishes a static baseline due to its full-grid feature extraction, which is visually evident at 
+
+Q ≈ 0. However, it achieves highly efficient scaling via dynamic conditional routing. As Q increases, the network’s 16 0 10 20 30 40 50 60                                         
+
+> 0
+> 50
+> 100
+> Number of Interferers ( Q)
+> Complexity (MFLOPs)
+> OMP-IDS
+> EOMP-IDS
+> NBI-CNet-Sparse
+> Fig. 11. Computational complexity (FLOPs) scaling versus the number of active interferers ( Q) for N= 2048 . The conditional routing of NBI-CNet provides a nearly flat scaling footprint, bypassing the steep computational scaling penalty of EOMP-IDS in congested bands ( Q > 26 ). TABLE VI TENSOR RT A VERAGE EXECUTION TIME FOR NBI-CN ET AND LLR-CN ET NBI-CNet LLR-CNet FFT Size FP32 FP16 INT8 FP32 FP16 INT8
+> (N)(μs) (μs) (μs) (μs) (μs) (μs)
+> 256 5.12.83.90.70.60.6512 10 .25.17.41.51.11.31024 21 .210 .314 .72.92.22.5
+
+dynamic FLOP overhead grows almost imperceptibly, produc-ing a nearly flat scaling trajectory. As demonstrated by the intersection point in Fig. 11, NBI-CNet becomes strictly more efficient than EOMP-IDS once the spectrum exceeds Q=26 
+
+active interferers. At the maximum evaluated density of Q=64 ,NBI-CNet requires roughly 60% fewer absolute operations than EOMP-IDS (41.2M vs. 101.9M FLOPs). Furthermore, because NBI-CNet operates entirely without prior knowledge of Q, it completely bypasses the complexity and accuracy limitations of a separate estimation stage, while evaluating all active subcarriers simultaneously to guarantee a predictable, parallelized execution profile. Moreover, evaluating computational complexity solely through raw FLOPs fails to capture the practical deployment efficiency of the neural architecture. CS iterative algorithms require high-precision floating-point arithmetic to ensure nu-merical stability during matrix pseudo-inversions. In con-trast, deep learning models are exceptionally resilient to low-precision arithmetic and inherently exploit highly efficient, domain-specific hardware accelerators. State-of-the-art deploy-ment optimizations, such as post-training quantization (PTQ) to FP16 or INT8, seamlessly compress the computational footprint of NBI-CNet. By leveraging specialized parallel units (such as mixed-precision Tensor Cores) the neural estimator achieves massive reductions in effective latency and memory bandwidth, significantly widening its real-world advantage over classical algorithms. 
+
+F. Execution Time 
+
+Table VI details the execution latency per OFDM symbol for both the NBI-CNet and LLR-CNet architectures, evaluated over 1,000 iterations (batch size 4096) on an Nvidia DGX Spark using TensorRT [35]. Across all precision profiles, execution latency scales linearly with N for both networks. Transitioning the heavier NBI-CNet backbone from FP32 to FP16 yields a near-optimal 2× latency reduction (e.g., from 21.2 μs to 10.3 μs at N =1024 ), successfully halving VRAM bandwidth requirements while efficiently saturating the Grace Blackwell Tensor Cores. Similarly, the highly lightweight LLR-CNet architecture exhibits an exceptionally low compu-tational footprint, executing in under 3 μs across all configu-rations, with FP16 providing a proportional latency reduction (decreasing from 2.9 μs to 2.2 μs at N =1024 ). Conversely, applying INT8 PTQ introduces a noticeable performance regression in both models. Because these lightweight 1D convolutional architectures are inherently memory-bound, the computational overhead of the inserted Quantize/Dequantize (Q/DQ) nodes (combined with the data reformatting overhead required to align tensors for 8-bit execution) outweighs the raw speedup of 8-bit arithmetic. Consequently, INT8 laten-cies consistently fall between the FP16 and FP32 baselines, establishing the pure FP16 TensorRT engine as the optimal deployment configuration for the end-to-end joint pipeline. IX. C ONCLUSION 
+
+In this paper, we proposed a joint DL pipeline for the mitigation and soft demodulation of narrowband interference in OFDM systems. We introduced NBI-CNet, a physics-informed convolutional neural network that estimates multi-tone interference parameters in a single, parallelizable forward pass by explicitly modeling Dirichlet kernel spectral leakage. Operating natively without prior knowledge of the active inter-ferer count, its computational footprint scales additively rather than multiplicatively. This enables it to fall strictly below the complexity of EOMP-IDS in high-density scenarios–achieving up to a 60% reduction in absolute operations for large grid sizes ( N =2048 , Q =64 )–while completely eliminating the se-quential latency bottlenecks of iterative CS methods. To address the non-Gaussian residual interference that de-grades downstream LDPC decoders, we developed LLR-CNet, a structural whitener that dynamically recalibrates soft infor-mation and eliminates the error floors produced by classical Gaussian-based demappers. Simulation results confirmed that the joint NBI-CNet and LLR-CNet architecture tracks closely to the optimal baseline under severe interference (SIR =−10 dB). Crucially, under mild interference conditions (SIR =10 dB), the framework pro-vides significant performance gains by avoiding the signal-peak confusion that causes conventional greedy algorithms to erroneously target and destroy valid payload data. Further-more, the architecture entirely circumvents the error floors typically triggered in classical pipelines by minor model-order estimation errors, and generalizes to arbitrary FFT grids without retraining via a closed-form gain rescaling. Hardware benchmarks further confirmed real-time viability, with FP16 17 
+
+TensorRT inference offering the optimal latency-performance trade-off for next-generation physical-layer deployments. REFERENCES [1] F. Qamar, M. H. D. N. Hindia, K. Dimyati, K. A. Noordin, and I. S. Amiri, “Interference management issues for the future 5G network: A review,” Telecommunication Systems , vol. 71, no. 4, pp. 627–643, 2019. [2] M. U. A. Siddiqui, H. Abumarshoud, L. Bariah, S. Muhaidat, M. A. Imran, and L. Mohjazi, “URLLC in Beyond 5G and 6G Networks: An Interference Management Perspective,” IEEE Access , vol. 11, pp. 54 639–54 663, 2023. [3] P. Lohan, B. Kantarci, M. Amine Ferrag, N. Tihanyi, and Y. Shi, “From 5G to 6G Networks: A Survey on AI-Based Jamming and Interference Detection and Mitigation,” IEEE Open Journal of the Communications Society , vol. 5, pp. 3920–3974, 2024. [4] H. Shakhatreh, A. Sawalmeh, K. F. Hayajneh, S. Abdel-Razeq, W. Malkawi, and A. Al-Fuqaha, “A Systematic Review of Interference Mitigation Techniques in Current and Future UAV-Assisted Wireless Networks,” IEEE Open Journal of the Communications Society , vol. 5, pp. 2815–2846, 2024. [5] D. Peng, D. He, Y. Li, and Z. Wang, “Integrating Terrestrial and Satellite Multibeam Systems Toward 6G: Techniques and Challenges for Interference Mitigation,” IEEE Wireless Communications , vol. 29, no. 1, pp. 24–31, 2022. [6] Y. Niu, Z. Wei, L. Wang, H. Wu, and Z. Feng, “Interference Management for Integrated Sensing and Communication Systems: A Survey,” IEEE Internet of Things Journal , vol. 12, no. 7, pp. 8110–8134, 2025. [7] A. Tusha and H. Arslan, “Interference Burden in Wireless Communi-cations: A Comprehensive Survey From PHY Layer Perspective,” IEEE Communications Surveys & Tutorials , vol. 27, no. 4, pp. 2204–2246, 2025. [8] A. Bazzi, R. Bomfin, M. Mezzavilla, S. Rangan, T. Rappaport, and M. Chafii, “Upper Mid-Band Spectrum for 6G: Vision, Opportunity and Challenges,” IEEE Communications Magazine , vol. 64, no. 1, pp. 206– 212, 2026. [9] P. Testolina, E. Beshaj, M. Polese, and T. Melodia, “Spectrum Sharing Across Terrestrial and Non-Terrestrial Services in the FR3 Upper Mid-band,” in 2025 IEEE International Symposium on Dynamic Spectrum Access Networks (DySPAN) , 2025, pp. 1–9. [10] Z. Cui, P. Zhang, and S. Pollin, “6G Wireless Communications in 7– 24 GHz Band: Opportunities, Techniques, and Challenges,” in 2025 IEEE International Symposium on Dynamic Spectrum Access Networks (DySPAN) , 2025, pp. 1–8. [11] A. Giorgetti, M. Chiani, and M. Win, “The effect of narrowband interfer-ence on wideband wireless communication systems,” IEEE Transactions on Communications , vol. 53, no. 12, pp. 2139–2149, 2005. [12] A. Batra and J. R. Zeidler, “Narrowband interference mitigation in OFDM systems,” in MILCOM 2008 - 2008 IEEE Military Communica-tions Conference , 2008, pp. 1–7. [13] C. Zhang, X. Hu, Y. Liu, and S. Wang, “Multiple Interacting Narrowband Interferences Suppression Algorithm for OFDM Systems,” IEEE Access ,vol. 8, pp. 62 310–62 321, 2020. [14] M. Aygur, S. Kandeepan, A. Giorgetti, A. Al-Hourani, E. Arbon, and M. Bowyer, “Narrowband Interference Mitigation Techniques: A Survey,” IEEE Communications Surveys & Tutorials , pp. 1–1, 2025. [15] B. Husain, H. Mohamed, L. Haering, and A. Czylwik, “Deep Learning-Based Multi-Tone Interference Suppression for Short Polar Codes,” in 
+
+2021 IEEE 93rd Vehicular Technology Conference (VTC2021-Spring) ,2021, pp. 1–5. [16] S. Liu, L. Xiao, Z. Han, and Y. Tang, “Eliminating NB-IoT Interference to LTE System: A Sparse Machine Learning-Based Approach,” IEEE Internet of Things Journal , vol. 6, no. 4, pp. 6919–6932, 2019. [17] W. Gao and X. Kuai, “Joint Impulsive Noise and Narrowband Inter-ference Mitigation in Time-Varying OFDM Communications,” IEEE Communications Letters , vol. 29, no. 8, pp. 1799–1803, 2025. [18] L. Mart´ ınez Marrero, L. Sadamori, S. Dominiak, U. Dersch, and J. T. G´ omez, “Improving Soft Decoding by Spectral Leakage Reduction in Presence of Narrow Band Interference in PLC,” IEEE Access , vol. 7, pp. 79 491–79 502, 2019. [19] K.-H. Kim, “NBI Spectral Leakage Mitigation Based on Compressed Sensing in OFDM Systems,” IEEE Transactions on Broadcasting ,vol. 62, no. 2, pp. 409–416, 2016. [20] Y. Hu, S. Huang, L. Zhao, and M. Jiang, “Narrowband Interference Cancellation for OFDM Based on Deep Learning and Compressed Sensing,” IEEE Transactions on Signal Processing , vol. 73, pp. 1612– 1625, 2025. [21] T. Oyedare, V. K. Shah, D. J. Jakubisin, and J. H. Reed, “Interference Suppression Using Deep Learning: Current Approaches and Open Chal-lenges,” IEEE Access , vol. 10, pp. 66 238–66 266, 2022. [22] J. A. Tropp and A. C. Gilbert, “Signal Recovery From Random Measurements Via Orthogonal Matching Pursuit,” IEEE Transactions on Information Theory , vol. 53, no. 12, pp. 4655–4666, 2007. [23] T. O’Shea and J. Hoydis, “An Introduction to Deep Learning for the Physical Layer,” IEEE Transactions on Cognitive Communications and Networking , vol. 3, no. 4, pp. 563–575, 2017. [24] H. He, S. Jin, C.-K. Wen, F. Gao, G. Y. Li, and Z. Xu, “Model-Driven Deep Learning for Physical Layer Communications,” IEEE Wireless Communications , vol. 26, no. 5, pp. 77–83, 2019. [25] C. P. Robinson, D. Uvaydov, S. D’Oro, and T. Melodia, “Narrowband Interference Detection via Deep Learning,” in ICC 2023 - IEEE Inter-national Conference on Communications , 2023, pp. 6379–6384. [26] S. Sharma, K. Deka, and M. Mandloi, “Deep Learning Noncoherent UWB Receiver Design,” IEEE Sensors Letters , vol. 5, no. 6, pp. 1–4, 2021. [27] O. Shental and J. Hoydis, “”Machine LLRning”: Learning to Softly Demodulate,” in 2019 IEEE Globecom Workshops (GC Wkshps) , 2019, pp. 1–7. [28] E. Kavvousanos and V. Paliouras, “Design and Implementation of a Low-Complexity Neural Detector for Correlated Noise,” in 2025 IEEE Workshop on Signal Processing Systems (SiPS) , 2025, pp. 1–5. [29] S. Kalyani and K. Giridhar, “Interference Mitigation in Turbo-Coded OFDM Systems Using Robust LLRs,” in 2008 IEEE International Conference on Communications , 2008, pp. 646–651. [30] S. Liu, Research on the Key Technologies in Narrowband Interference and Impulsive Noise Mitigation and Cancellation , ser. Springer Theses. Singapore: Springer, 2021. [31] J. Rock, M. Toth, E. Messner, P. Meissner, and F. Pernkopf, “Complex Signal Denoising and Interference Mitigation for Automotive Radar Using Convolutional Neural Networks,” in 2019 22th International Conference on Information Fusion (FUSION) , 2019, pp. 1–8. [32] M. Abadi, P. Barham, J. Chen, Z. Chen, A. Davis, J. Dean, M. Devin, S. Ghemawat, G. Irving, M. Isard, M. Kudlur, J. Levenberg, R. Monga, S. Moore, D. G. Murray, B. Steiner, P. Tucker, V. Vasudevan, P. Warden, M. Wicke, Y. Yu, and X. Zheng, “Tensorflow: Asystem for large-scale machine learning,” 2016. [Online]. Available: https://arxiv.org/abs/1605.08695 [33] J. Hoydis, S. Cammerer, F. Ait Aoudia, M. Nimier-David, L. Maggi, G. Marcus, A. Vem, and A. Keller, “Sionna,” 2022, https://nvlabs.github.io/sionna/. [34] A. Skende, G. Rosseel, and N. Pinckney, “17.1 NVIDIA GB10: SoC Built for AI Acceleration,” in 2026 IEEE International Solid-State Circuits Conference (ISSCC) , vol. 69, 2026, pp. 298–300. [35] Y. Zhou, Z. Guo, Z. Dong, and K. Yang, “TensorRT Implementations of Model Quantization on Edge SoC,” in 2023 IEEE 16th International Symposium on Embedded Multicore/Many-core Systems-on-Chip (MC-SoC) , 2023, pp. 486–493.

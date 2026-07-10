@@ -1,0 +1,628 @@
+Title: GenAI-Enhanced Digital Twins for Predictive Interference Management in Ultra-Dense Networks
+
+URL Source: https://arxiv.org/pdf/2607.08141v1
+
+Published Time: Fri, 10 Jul 2026 00:30:11 GMT
+
+Number of Pages: 6
+
+Markdown Content:
+# GenAI-Enhanced Digital Twins for Predictive Interference Management in Ultra-Dense Networks 
+
+Afan Ali, Ali Arshad Nasir and Daniel Benevides da Costa 
+
+Research Center for Communication Systems and Sensing (IRC-CSS) Department of Electrical Engineering King Fahd University of Petroleum and Minerals (KFUPM) Dhahran, 31261, Saudi Arabia 
+
+{afan.ali@kfupm.edu.sa, anasir@kfupm.edu.sa, danielbcosta@ieee.org }
+
+Abstract —Ultra-dense indoor next-generation networks suffer severe interference from mobility-induced blockages and local-ized multi-user hotspots that conventional digital twins (DTs) can-not anticipate. We propose a generative AI (GenAI)-enhanced DT framework employing a conditional generative adversarial net-work (cGAN) with a spatio-temporal generator and PatchGAN discriminator for proactive rare-event channel synthesis. A worst-case zero-forcing (WC-ZF) beamformer driven by Monte Carlo synthetic trajectories realizes distributionally robust precoding, with control-channel overhead bounded to ≈2.1 kB per 10 ms slot. Sionna-based simulations confirm a 5–8 dB median signal-to-interference-plus-noise-ratio (SINR) gain, 60–70% packet-loss reduction, and 60–85% closure of the perfect channel state information (CSI) oracle gap within a 2.8–4.1 ms inference overhead. 
+
+Index Terms —Digital twin, generative AI, conditional GAN, proactive interference management, beamforming optimization. 
+
+I. I NTRODUCTION 
+
+Next-generation indoor wireless networks must deliver terabit-per-second (Tbps) throughputs, sub-millisecond la-tency, and massive device connectivity for immersive applica-tions such as extended reality (XR), holographic telepresence, and industrial Internet of Things (IoT) [1]. Operating in millimeter-wave (mmWave) and terahertz (THz) frequency bands makes these targets achievable in principle, however, high path loss, acute blockage sensitivity, and beam mis-alignment compounded by dense small-cell deployments give rise to highly dynamic interference patterns [2]. Traditional interference management responds reactively to instantaneous channel state information (CSI), consistently yielding packet-loss rates exceeding 10–15% under changing conditions [3]. Digital twins (DTs) have emerged as a vehicle for proactive, AI-driven network management by maintaining a continuously synchronized virtual replica of the physical environment on which AI/ML inference can be performed offline [4], [5]. DTs, augmented with generative AI (GenAI), achieve markedly better channel-modeling accuracy, accelerate deep reinforce-ment learning (DRL) convergence and cut decision-making 
+
+We acknowledge the support provided by King Fahd University of Petroleum and Minerals (KFUPM), Dhahran 31261, Saudi Arabia, through the Interdisciplinary Research Center for Communication Systems and Sensing (IRC-CSS). 
+
+latency by up to 50% [6], [7]. Despite these advances, existing DT frameworks largely remain reactive, i.e., they cannot synthesize unseen scenarios such as crowd-induced blockages or extreme interference hotspots that are statistically rare but operationally critical [8], [9]. Embedding the generative model inside the DT, rather than deploying it on the physical network directly, provides three concrete advantages, i.e, the DT provides a site-specific, ray-traced propagation sandbox that conditions the GenAI on physically consistent channel distributions, accumulates rare-event radio frequency (RF) traces in the virtual domain without additional pilot overhead, and enables safe offline fine-tuning of both the DT calibration and the GenAI parameters through a closed feedback loop. These properties make the DT an architecturally essential component rather than an optional convenience, and they collectively motivate the framework proposed in this work. 
+
+A. Contributions 
+
+This paper proposes a GenAI-enhanced DT framework treating the DT and the generative model as a single tightly coupled system. Although GenAI-based DTs have begun to appear in the literature [10]–[12], none of the existing works, to the best of our knowledge, simultaneously addresses proac-tive interference management with an explicitly described generative architecture, a closed-form worst-case beamformer derived from synthetic trajectories, and a quantified synchro-nization overhead. The specific contributions are as follows:  
+
+> •
+
+Rather than treating the channel model as a separate module, we embed a geometry-based stochastic channel model with explicit material parameters for concrete, glass, and wood at 73 GHz, directly into the DT via Sionna ray tracing. This integration means that the GenAI module is always conditioned on physically consistent channel distributions.  
+
+> •
+
+We designed a GenAI module, which is built around a conditional generative adversarial network (cGAN), inside a DT feedback loop. To the best of our knowledge, no prior work employs closed-loop generative architec-ture for mmWave interference prediction. It synthesizes a distribution of physically plausible future interference maps, including rare blockage and hotspot events which arXiv:2607.08141v1 [eess.SP] 9 Jul 2026 (a) 0.0    
+
+> 2.5
+> 5.0
+> 7.5
+> 10.0
+> 12.5
+> 15.0
+> 17.5
+> 20.0
+> X(m)
+> 0
+> 2
+> 4
+> 6
+> 8
+> 10
+> 12
+> 14
+> Y (m)
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> 2.5
+> 3.0
+> 3.5
+> 4.0
+> Z (m)
+> Legend
+> AP 1 (Zone 1, 16x16 UPA)
+> AP 2 (Zone 2, 16x16 UPA)
+> AP 3 (Zone 3, 16x16 UPA)
+> UE (smartphone)
+> IoT sensor
+> Motion detector (MD)
+> LoS ray (serving)
+> NLoS (reflected)
+> Inter-cell interference
+> Blockage event
+> Interference hotspot
+> Glass partition
+> Interference
+> Hotspot
+> Glass Partition
+> AP 1
+> (Zone 1)
+> AP 2
+> (Zone 2) AP 3
+> (Zone 3)
+> UE 1
+> UE 2
+> UE 3
+> UE 4
+> UE 5
+> UE 6
+> IoT
+> IoT
+> IoT
+> MD
+> MD
+> MD
+> MD
+> LoS
+> NLoS
+> Inter-cell
+> Interference
+> Blocker
+> (v=1 m/s)
+
+(b) 
+
+Fig. 1: System model; (a) dense indoor smart-campus deploy-ment; (b) simulated illustration for ray-tracing. are never observed by the physical network, at zero additional pilot cost. 
+
+• The cGAN-predicted channel trajectories feed directly into a closed-form worst-case zero-forcing (WC-ZF) beamformer derived analytically from M Monte-Carlo samples, bypassing convex relaxation and semidefinite programming entirely, which, to the best of our knowl-edge, is the first direct coupling of a generative channel predictor to a robust beamforming decision within a DT control loop, transforming synthetic channel realizations into deployable beamforming vectors in a single forward pass. The remainder of the paper is organized as follows: Section II presents the system model. Section III details the proposed framework. Section IV evaluates performance, and Section V concludes with future directions. II. S YSTEM MODEL 
+
+A. Network and Channel Model 
+
+We consider a dense indoor next-generation network com-prising three small-cell access points (APs), A, modeled after a smart-campus environment. As illustrated in Fig.1a, building inside smart-campus environment consists of multi-ple interconnected rooms and open workspace areas, where each AP is strategically deployed to provide coverage across spatially separated zones. To better visualize the propagation challenges within a smart campus, Fig. 1b presents a simulated view of the building, highlighting the presence of realistic physical obstacles, such as, concrete walls, wooden furniture, and glass partitions, along with the placement of three APs that must collectively manage severe multi-path scattering, blockage, and inter-zone interference. Collectively, the three APs serve K heterogeneous user equipments (UEs), including smartphones, IoT sensors, and motion detectors, across the dynamic open workspace [13]. Each AP carries Nt transmit antennas arranged in a 8 × 8 uniform planar array (UPA), and each UE is equipped with a single receive antenna. A central DT controller coordinates all APs via a dedicated control plane with a fixed synchronization period, ∆tsync = 10 ms, enabling CoMP precoding across all zones. UEs move under a random waypoint mobility model with vmax = 1 .0 m/s, reflecting realistic pedestrian dynamics within the campus environment. The channel between AP b and UE k can be modeled using the Sionna ray-tracing engine [14], as a superposition of Lk,b 
+
+multipath components, which can be defined as 
+
+hk,b =
+
+s
+
+Nt
+
+Lk,b Lk,b 
+
+X
+
+l=1 
+
+αk,b,l a(φk,b,l , θ k,b,l ) , (1) where hk,b ∈ CNt×1, the scaling pNt/L k,b normalizes energy such that E[∥hk,b ∥2] = Nt under the assumption 
+
+E[|αk,b,l |2] = 1, i.e., unit mean path gain per multipath component, αk,b,l =
+
+q
+
+P L −1
+
+k,b,l ejψ k,b,l is the complex path gain with ray-traced path loss P L k,b,l and random phase 
+
+ψk,b,l ∼ U [0 , 2π). The angles φTk,b,l and θTk,b,l are the ray-traced azimuth and elevation angles of departure, and the UPA steering vector aT (φ, θ ) ∈ CNt×1 has (nH , n V )-th element, which can be represented as 
+
+[aT ]nH ,n V = 1
+
+√Nt
+
+e j 2πd λ (nH sin φ cos θ+nV sin θ), (2) with nH ∈ { 0, . . . , N H −1}, nV ∈ { 0, . . . , N V −1}, NH =
+
+NV = 8 such that Nt = NH × NV = 64 , half-wavelength spacing d = λ/ 2, and normalization ∥aT ∥2 = 1 .
+
+B. Signal Model 
+
+Each UE k is served by AP a(k) ∈ { 1, . . . , A }, selected via maximum received signal strength indicator (RSSI), par-titioning all K UEs into disjoint zone sets {K b}Ab=1 , where S
+
+b Kb = {1, . . . , K } and Kb ∩ K b′ = ∅, ∀ b̸ = b′. The transmitted signal by AP b is given by 
+
+xb = X
+
+j∈K b
+
+pPb,j wb,j sb,j , (3) where sb,j is the unit-power data symbol, wb,j ∈ CNt×1 is the beamforming vector with ∥wb,j ∥2 = 1 , and Pb,j is the allocated power. The received signal at UE k can be written as 
+
+yk =
+
+q
+
+Pa(k),k hHk,a (k)wa(k),k sa(k),k 
+
+| {z }
+
+desired signal 
+
++
+
+AX
+
+b=1 
+
+j∈K b
+
+(b,j )̸=( a(k),k )
+
+pPb,j hHk,b wb,j sb,j 
+
+| {z }
+
+interference 
+
++nk, (4) where nk ∼ CN (0 , σ 2) is additive white gaussian noise (AWGN). Compared to prior works that treat intra- and inter-cell interference separately [13], we unify both into a single in-terference term, which allows a compact worst-case signal-to-interference-plus-noise-ratio (SINR) formulation. Specifically, the instantaneous SINR at UE k can be represented as SINR k = Pa(k),k hHk,a (k)wa(k),k 
+
+2
+
+Ik + σ2 , (5) where the unified interference term Ik can be defined as 
+
+Ik =
+
+> A
+
+X
+
+> b=1
+> j∈K b
+> (b,j )̸=( a(k),k )
+
+Pb,j hHk,b wb,j 
+
+> 2
+
+. (6) Under imperfect CSI, only ˆhk,b is available rather than the true channel hk,b . This introduces a residual leakage term, that can be written as 
+
+Ierr  
+
+> k
+
+= (hk,a (k) − ˆhk,a (k))H wa(k),k 
+
+> 2
+
+, (7) 
+
+Ierr  
+
+> k
+
+inflates Ik and degrades SINR during rapid channel transitions. Substituting (7) into (5), the effective SINR under imperfect CSI can be defined as SINR k = Pa(k),k ˆhHk,a (k)wa(k),k 
+
+> 2
+
+Ik + Ierr  
+
+> k
+
++ σ2 , (8) which explicitly shows the SINR degradation due to CSI imperfection, a relationship not captured in conventional DT beamforming formulations. 
+
+C. Problem Formulation 
+
+Three fundamental challenges arise in this setting: (C1) fu-ture CSI is unavailable at the ∆tsync = 10 ms decision instant; 
+
+(C2) rare blockage events can collapse SINR k below a per-UE minimum SINR threshold γmin  
+
+> k
+
+within a single slot; and 
+
+(C3) imperfect CSI inflates Ierr  
+
+> k
+
+during rapid transitions. To address all three simultaneously, we propose jointly optimizing the {wb,k } and {Pb,k } across all K UEs and A APs to maximize the sum spectral efficiency, represented as 
+
+max   
+
+> {wb,k },{Pb,k }
+> K
+
+X
+
+> k=1
+
+log 2(1 + SINR k) (9) s.t. ∥wb,k ∥2 ≤ 1, ∀ k, b, 
+
+SINR k ≥ γmin  
+
+> k
+
+, ∀ k, 
+
+X
+
+> j∈K b
+
+Pb,j ≤ Pmax , ∀ b, 
+
+over M cGAN-generated synthetic channel trajectories span-ning a T -slot horizon. The novelty lies in replacing the unknown true channel hk,b with a set of generative realizations 
+
+{˜h(m) 
+
+> k,b
+
+}Mm=1 drawn from the cGAN posterior, transforming (9) into the distributionally robust program, represented as 
+
+{w⋆b,k , P ⋆b,k } =arg max   
+
+> {wb,k },{Pb,k }
+
+min  
+
+> m∈{ 1,...,M }
+> K
+
+X
+
+> k=1
+
+log 2
+
+
+
+1 + SINR (m)
+
+> k
+
+
+
+, (10) where w⋆b,k ∈ CN ×1 is the optimal beamforming vector at BS b for user k, P ⋆b,k is the corresponding optimal transmit power, and SINR (m) 
+
+> k
+
+is the SINR of user k evaluated on the m-th synthetic channel realization ˜h(m) 
+
+> k,b
+
+. The inner minimization over m enforces worst-case robustness across the cGAN poste-rior, subject to the constraints in (9). This worst-case selection directly resolves (C1) by acting on predicted channels before Digital        
+
+> Twin
+> Core
+> Physical Layer
+> CSI · RSSI · UE Position · Beam Index
+> DT Sync Interface
+> Δt= 10 ms · 52 kB/slot uplink
+> GenAI Module
+> cGAN · M=20 CIRs · T=5 slots
+> Predictive Optimizer
+> Worst-case BF · CoMP update
+> Feedback & Retraining
+> SINR · 100-slot / 1000-slot retrain
+> ①
+> ②
+> ③
+> ④
+> ⑤
+> RF Measurements
+> DT State Update Synthetic CIRs
+> BF Vectors
+> Adapted Policy
+> cGAN Retrain
+
+Fig. 2: Closed-loop proposed architecture. they are observed, (C2) by guaranteeing SINR (m) 
+
+> k
+
+≥ γmin 
+
+> k
+
+across all M synthetic trajectories, and (C3) by replacing the imperfect estimate ˆhk,a (k) with cGAN-conditioned samples 
+
+{˜h(m) 
+
+> k,b
+
+}Mm=1 that encode the ray-traced multipath geometry, thereby suppressing the residual leakage Ierr  
+
+> k
+
+in (7). III. P ROPOSED GEN AI-E NHANCED DIGITAL TWIN 
+
+FRAMEWORK 
+
+A. Overall Architecture 
+
+The proposed framework operates as a closed loop of five interconnected modules, as illustrated in Fig. 2. The physical layer continuously collects RF measurements via pilot signals, including CSI matrices, RSSI, beam indices, UE positions, and traffic loads. The DT synchronization interface fires every 
+
+∆tsync = 10 ms, packaging three data types per event: (i) com-pressed CSI of dimension K × Nt quantized at B = 4 bits per complex component, (ii) RSSI and beam-index vectors of length K with bRSSI = 8 bits per scalar, and (iii) UE position updates of size 3×K with bpos = 16 bits per coordinate, where 
+
+K = 30 UEs and Nt = 64 transmit antennas. The resulting uplink payload per slot can be computed as 
+
+Ω = K · Nt · B · 2 + K · bRSSI + K · 3 · bpos 
+
+8= 30 ×64 ×8 + 30 ×8 + 30 ×48 8 ≈ 2.1 kB/slot , (11) which, combined with ≈0.5 kB/slot downlink beamforming updates, fits within the standard control-channel budget with-out consuming the 10 ms loop period. Upon DT state refresh, the GenAI module synthesizes M
+
+plausible future channel impulse response (CIR) matrices over a T -slot horizon, which are passed to the predictive interfer-ence optimizer to derive proactive beamforming vectors. A feedback loop periodically retrains the cGAN using measured SINR and packet-loss data, where lightweight online updates every 100 slots and full offline refinement every 1000 slots. At each slot t, the DT executes a four-step cycle: (1) ingest synchronized physical-layer state; (2) generate M synthetic CIR trajectories; (3) solve the WC-ZF beamforming problem; and (4) push per-AP beamforming matrices, {W⋆b }Ab=1 =[w⋆b, 1, . . . , w⋆b,K b ] ∈ CNt×Kb , to all A APs via the downlink synchronization channel, achieving CoMP precoding across all three deployment zones. Here W⋆b simply stacks all per-UE vectors for AP b into a single matrix for transmission via the downlink synchronization channel. 
+
+B. GenAI Module 
+
+The GenAI module is built around a cGAN, where agenerator G and discriminator D are trained adversarially. Unlike a standard GAN, the cGAN conditions both G and 
+
+D on a shared context vector, ensuring synthetic outputs remain physically consistent with the observed propagation environment. 
+
+1) Generator Architecture: The generator G fuses two inputs: (i) a latent noise vector z ∼ N (0, I128 ) for stochastic diversity, and (ii) a conditioning vector c ∈ Rdc aggregating three sources: 
+
+(a) Channel embedding: The last τ = 10 complex CIR matrices of size K×Nt are encoded by a three-layer 2-D con-volutional neural network (CNN) with filters {64 , 128 , 256 }
+
+and kernel size 3×3, yielding a 256-dimensional embedding 
+
+e ∈ R256 that captures short-term channel variation patterns including Doppler shifts and incipient blockage signatures. 
+
+(b) Per-UE RF scalars: The RSSI and active beam index are appended for every UE, contributing 2K scalar RF mea-surements that capture instantaneous link quality and beam-alignment context, respectively. 
+
+(c) Rare-event flag: A binary scalar f ∈ { 0, 1} indicates blockage or interference hotspot (f = 1) versus normal operation ( f = 0 ), biasing G toward worst-case scenarios during critical periods. Concatenating these components gives the conditioning vector c = [ e; r; f ] ∈ Rdc , where r ∈ R2K is a vector stacking the RSSI and active beam index of each of the K UEs, and dc is the total dimension of the conditioning vector c, given by 
+
+dc = 256 + 2 K + 1 = 317 , K = 30 . (12) 
+
+2) Fusion and Up-sampling: The fused vector [z; c] ∈
+
+Rdz +dc is projected through a 512-unit FC–ReLU layer, then up-sampled via three transposed-convolution blocks with filters {256 , 128 , 64 }, stride 2, batch normalization, and ReLU activations. A final tanh layer maps outputs to [−1, +1] ,rescaled to physical channel amplitudes, yielding a synthetic CIR tensor of shape K×Nt×2 (real and imaginary parts), with 
+
+Nt = 64 .
+
+3) Discriminator Architecture: D follows the PatchGAN design [15], adapted to CIR tensors by treating patches along the K × Nt (30 × 64 ) dimensions as local antenna-user sub-arrays, enforcing spatial coherence across neighboring antenna elements and users. It comprises three strided-convolution layers with filters {64 , 128 , 256 }, stride 2, and LeakyReLU (slope 0.2) activations to ensure stable gradient flow during adversarial training. A final 1×1 convolution produces a per-patch validity score map of shape ⌈K/ 23⌉×⌈ Nt/23⌉, whose mean is passed to the WGAN-GP objective. 
+
+4) Training with WGAN-GP: Training solves the minimax objective [16], formulated as 
+
+min  
+
+> G
+
+max  
+
+> D
+
+L(D, G ) = Ex∼pdata 
+
+D(x|c)
+
+− Ez∼pz
+
+D(G(z|c)|c)
+
+− λGP E˜x
+
+h ∥∇ ˜xD(˜ x|c)∥2 − 12i
+
+,
+
+(13) where λGP is the gradient penalty coefficient enforcing the Lipschitz constraint on D, and ˜x = ϵx + (1 − ϵ)G(z|c),
+
+ϵ ∼ U[0 , 1] , is a convex interpolation between real and generated samples. WGAN-GP approximates the Wasserstein-1 distance [16], providing meaningful gradients even under disjoint support, beneficial for rare-event channel samples in our dataset. The connection to (9) is two-stage: G first learns to generate ˜h(m) 
+
+> k,b
+
+≈ hk,b , which are then substituted into (10) to solve the distributionally robust sum-rate maximization, where the quality of G governs the tightness of the approximation. Both G and D are trained with Adam (learning rate = 2 ×10 −4,
+
+β1 = 0 .5, β2 = 0 .999 ), with D updated five times per generator step to ensure an accurate Wasserstein distance estimate [16]. 
+
+C. Worst-Case Proactive Beamforming 1) Interference Trajectory Prediction: The cGAN generator produces M synthetic CIR trajectory sets over a T -slot horizon as  ˜H(m)
+
+> t+1
+
+, . . . , ˜H(m)
+
+> t+T
+> Mm=1
+
+, (14) where ˜H(m) 
+
+> τ
+
+∈ CK×Nt is the stacked multi-user channel matrix at future slot τ under trajectory m, with rows ˜h(m) 
+
+> k,b
+
+∈
+
+C1×Nt . The per-AP sub-matrix for AP b can be obtained by row-selection, defined as 
+
+˜H(m) 
+
+> b,τ
+
+= Φb ˜H(m) 
+
+> τ
+
+∈ C|K b|× Nt , (15) where Φb ∈ { 0, 1}|K b|× K is a binary row-selection matrix that extracts the rows of ˜H(m) 
+
+> τ
+
+corresponding to UEs in Kb,satisfying ΦbΦTb = I|K b|. These per-AP sub-matrices are then passed to the WC-ZF beamformer for minimax optimization over all M trajectories and T prediction slots. 
+
+2) Worst-Case Beamforming Selection: The proactive beamforming vector w⋆k for UE k served by AP a(k) is selected via a minimax criterion over M synthetic trajectories and T prediction slots can be illustrated as 
+
+w⋆k = arg min  
+
+> w
+
+max    
+
+> m∈{ 1,...,M }
+> τ∈{ 1,...,T }
+
+h
+
+− SINR k
+
+
+
+w; ˜H(m) 
+
+> a(k),τ
+
+,
+
+ ˜H(m) 
+
+> b,τ b̸=a(k)
+
+i 
+
+, (16) subject to ∥w⋆k∥2 = 1 . The SINR evaluation in (16) accounts for both intra- and inter-cell interference from all A APs as defined in (5). The minimax selection ensures that the achieved post-beamforming SINR at UE k satisfies γmin  
+
+> k
+
+under every synthetic trajectory and prediction slot, which can be written as SINR k(w⋆k) ≥ γmin  
+
+> k
+
+, ∀ m, τ, (17) −20 −10 0 10 20 30 
+
+> 0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1
+> SINR (dB)
+> CDF
+> Baseline
+> Non-generative AI DT (LSTM)
+> Proposed (GenAI)
+> Oracle
+
+(a) CDF of post-beamforming SINR during rare events. 0 5 10 15 20 25 30 35 
+
+> 0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1
+> Packet Loss Rate (%)
+> CDF
+> Baseline
+> Non-generative AI DT (LSTM)
+> Proposed (GenAI)
+> Oracle
+
+(b) CDF of packet-loss rate per session. 2 4 6 8 10 12       
+
+> 0
+> 5
+> 10
+> 15
+> 20
+> 25
+> ≈8 dB
+> ≈5.6 dB
+> Kb≈10 ≪Nt= 64
+> Number of Small-Cell APs ( A)
+> Post-Beamforming SINR (dB)
+> Baseline — med.
+> Baseline — 10%
+> LSTM DT — med.
+> LSTM DT — 10%
+> Proposed — med.
+> Proposed — 10%
+> Oracle — med.
+> Oracle — 10%
+
+(c) Post-beamforming SINR vs. number of APs. 
+
+Fig. 3: Performance comparison of the proposed cGAN-DT framework against benchmarks. This ensures robustness against the most adverse trajectory without convex relaxation or semidefinite programming. The final SINR is obtained by substituting w⋆k into (5), and when cGAN predictions are accurate, residual interference in (6) remains near zero even after a blockage event. IV. S IMULATION SETUP AND RESULTS 
+
+A. Simulation Setup 
+
+Simulations use the Sionna ray-tracing library [14] in a 20 ×15 ×3 m indoor office with concrete walls, with 0.2 m thickness, glass partitions, wooden furniture, and metallic cabinets, with material parameters in Table I. Three 8 × 8
+
+UPA APs at 73 GHz serve K = 30 single-antenna UEs (≈10 per zone) under CoMP WC-ZF beamforming. The SBR tracer models LoS, reflections (up to 5 bounces), diffraction, and diffuse scattering. Two rare-event classes are injected: 
+
+(i) mobility blockages causing abrupt LoS-to-NLoS transitions (p < 0.05 per slot, yielding on average one blockage event per 200 ms of simulation); and (ii) interference hotspots of 8–12 UEs within a 4 m radius (10–15% of traces). A 50 000-step dataset is generated, each sample containing τ = 10 historical CIRs, future CIRs, SINR maps, and rare-event labels. Four schemes are benchmarked: (1) Baseline : reactive DT with no prediction, which applies ZF beamforming based on the most recently synchronized CSI, representing conventional interference management without any proactive capability; 
+
+(2) LSTM DT : two-layer LSTM (hidden size 256, Adam, learning rate = 2 ×10 −4, 800 epochs); (3) Proposed (GenAI) :WC-ZF driven by M = 20 cGAN trajectories; (4) Oracle : per-fect future CSI upper bound, which assumes exact knowledge of all T = 5 future channel matrices and applies the same WC-ZF beamformer, thereby isolating the performance loss due to channel prediction error alone. Both the LSTM and cGAN are trained on the same 50 000-step Sionna dataset to ensure a fair comparison. Scalability is assessed by varying deployed APs from 2 to 12 with K = 30 UEs distributed uniformly. 
+
+B. Results and Discussion 1) Post-Beamforming SINR under Rare Events: Fig. 3a shows the cumulative distribution function (CDF) of post-TABLE I: Simulation Parameters 
+
+Parameter Value 
+
+Carrier freq. / Bandwidth 73 GHz / 400 MHz (3GPP NR FR2) AP array / UE antenna 8 × 8 UPA ( λ/ 2) / Single Transmit power / Noise fig. 23 dBm / 9 dB Concrete ( εr , σ) 5.31, 0.33 S/m Glass ( εr , σ) 6.27, 0.043 S/m Wood ( εr , σ) 1.99, 0.014 S/m Ray-tracing / Max. reflections SBR (Sionna) / 5 APs A / UEs |K b| 3 (one/zone) / ≈10 
+
+Simulation steps / Mobility 1 000 / RWP, vmax = 1 m/s cGAN dim. dz / Batch/Epochs 128 / 64 / 500 
+
+λGP 10 MC traj. M / Horizon T 20 / 5 slots (50 ms) Sync. ∆tsync / Payload 10 ms / 2.1 kB/slot LSTM hidden size / Epochs 256 / 800 
+
+beamforming SINR during rare interference events. The pro-posed GenAI-DT achieves a median SINR gain of 5–8 dB over the baseline; the CDF rightward shift confirms a substantial reduction in low-SINR outages. The LSTM DT improves by 2–4 dB over the baseline but falls 5–8 dB short of the proposed method, confirming that distributional synthesis rather than point prediction determines rare-event robustness. In the low-SINR tail, the proposed method closes 60–70% of the oracle gap. 
+
+2) Packet-Loss Rate under Rare Events: Fig. 3b shows the GenAI-DT achieves a median packet-loss reduction of 60–70% over the baseline. The probability of packet-loss exceeding 5% drops from 20% (baseline) to 15% (LSTM DT) and further to 7% (proposed), closing 75–85% of the oracle gap. 
+
+3) Impact of Network Density: Fig. 3c shows post-beamforming SINR as the number of APs grows from 2 to 12, while maintaining the zero-forcing feasibility condition 
+
+Kb ≈ 10 ≪ Nt = 64 throughout. The conventional baseline degrades most severely, where its median falls from 17.8 to 8.3 dB and at 10%-outage, it falls from 11.2 to 2.6 dB. The LSTM DT provides modest relief where its median falls from 19.2 to 9.6 dB. The proposed GenAI-DT remains most robust, i.e., median falls from 22.1 to 16.3 dB, and with 10%-outage, 15.8 to 10.2 dB, reflecting the WC-ZF beamformer ability to 0 100 200 300 400 500 600 700     
+
+> −5
+> 0
+> 5
+> 10
+> 15
+> 20
+> TcGAN rec ∼40 ms
+> Tbase rec ∼140 ms
+> Time (ms)
+> Post-Beamforming SINR (dB)
+> Baseline
+> Non-generative AI DT (LSTM)
+> Proposed (GenAI)
+> Oracle
+> Blockage onset
+
+Fig. 4: Post-beamforming SINR time trace around a sudden blockage event at t = 250 ms. hedge against multiple simultaneous interference sources. 
+
+4) SINR Recovery After Blockage Events: Fig. 4 traces post-beamforming SINR around a blockage injected at t = 250 
+
+ms. The baseline requires T base rec ≈ 140 ms to recover, as it must first detect degradation before recomputing beamforming vectors, while the LSTM DT reduces this to ∼90 ms but remains reactive. The proposed GenAI-DT commits a worst-case-robust beamforming vector proactively, limiting the in-stantaneous SINR drop to 8 dB and recovering to within 1 dB of the pre-blockage level in T cGAN rec ≈ 40 ms, a 3.5× reduction in recovery latency over the baseline. 
+
+C. Inference Latency and Complexity 
+
+All inference times are measured on a cloud GPU (PyTorch 2.0), representative of a cloud-based DT controller. The pro-posed GenAI-DT pipeline comprises a cGAN forward pass (≈1.5–2.2 ms), M Monte Carlo WC-ZF evaluations ( ≈1.1–
+
+1.7 ms), and power normalization ( < 0.2 ms), totaling 2.8–
+
+4.1 ms, within 41% of the 10 ms control-loop budget. The remaining margin accommodates DT synchronization, uplink payload processing ( ≈2.1 kB/slot), and feedback aggregation. Note that this refers to the control-loop latency, distinct from the sub-millisecond air-interface frame duration. Offline cGAN training is ≈2.3× more expensive than LSTM due to adversarial updates, but is performed once and fine-tuned periodically via the feedback loop. V. C ONCLUSION 
+
+This paper presented a GenAI-enhanced DT framework for proactive interference management in dense indoor THz networks, where the DT and cGAN form a tightly coupled system. Sionna-based simulations confirmed median SINR gains of 5–8 dB, packet-loss reductions of 60–70%, and 60–85% oracle gap closure within a 2.1–4.8 ms inference overhead, validating that generative synthesis with worst-case robust beamforming effectively handles rare interference events that reactive approaches miss. Future work will explore interference-aware scheduling and federated multi-AP coordi-nation. REFERENCES [1] Q. Xue et al. , “A survey of beam management for mmWave and THz communications towards 6G,” IEEE Commun. Surveys Tuts. , vol. 26, no. 3, pp. 1520–1559, 2024. [2] J. Kokkoniemi, S. Shahabuddin, P. Ghasemzadeh, and J. F. O’Hara, “Dynamic THz backhaul for 6G local area networks: Architecture, analysis, challenges and future directions,” IEEE Wireless Commun. ,vol. 32, no. 6, pp. 27–34, Dec. 2025. [3] P. Lohan, B. Kantarci, M. A. Ferrag, N. Tihanyi, and Y. Shi, “From 5G to 6G networks: A survey on AI-based jamming and interference detection and mitigation,” IEEE Open J. Commun. Soc. , vol. 5, pp. 3920–3974, 2024. [4] J. Deng, L. Yue, H. Yang, and G. Liu, “A digital twin network approach for 6G wireless network autonomy,” in Proc. IEEE ICC Workshops ,Rome, Italy, 2023, pp. 415–420. [5] M. Becattini, G. Fontani, L. Paroli, and A. Iera, “Digital twin networks for sustainable in-network computing in future 6G networks,” in Proc. IEEE PIMRC , Valencia, Spain, 2024, pp. 1–6. [6] Z. Tao, W. Xu, Y. Huang, X. Wang, and X. You, “Wireless network digital twin for 6G: Generative AI as a key enabler,” IEEE Wireless Commun. , vol. 31, no. 4, pp. 24–31, Aug. 2024. [7] W. Guan, P. Li, H. Zhang, and Y. Wu, “Integrating generative AI with network digital twin for 6G: An edge–cloud collaborative approach,” 
+
+IEEE Commun. Mag. , vol. 63, no. 11, pp. 181–187, Nov. 2025. [8] H. Chai, H. Wang, T. Li, and Z. Wang, “Generative AI-driven digital twin for mobile networks,” IEEE Netw. , vol. 38, no. 5, pp. 84–92, Sep. 2024. [9] A. Al-Tahmeesschi et al. , “Enhancing open RAN digital twin through power consumption measurement,” in Proc. IEEE PIMRC , Istanbul, Turkey, Sep. 2025, pp. 1–6. [10] Y. Yang et al. , “Large generative model-enabled digital twin for 6G networks,” IEEE Netw. , vol. 39, no. 1, pp. 84–90, Feb. 2025. [11] O. T. Basaran et al. , “Gen-TWIN: Generative-AI-enabled digital twin for open radio access networks,” in Proc. IEEE INFOCOM Workshops ,London, U.K., 2025, pp. 1–7. [12] Y. Yang et al. , “Digital twin-based reinforcement learning for beam selection in cell-free networks,” in Proc. IEEE PIMRC , Istanbul, Turkey, Sep. 2025, pp. 1–6. [13] R. Morabito, B. Pandey, P. Daubaris, Y. R. Wanigarathna, and S. Tarkoma, “A generative AI-enhanced digital twin framework for heterogeneous networks and smart environments,” in Proc. IEEE IN-FOCOM Workshops , London, U.K., 2025, pp. 1–7. [14] J. Hoydis, S. Cammerer, F. A”it Aoudia, A. Vem, N. Binder, G. Marcus, and A. Keller, “Sionna: An open-source library for next-generation physical layer research,” arXiv preprint arXiv:2203.11854, 2022. [15] P. Isola, J.-Y. Zhu, T. Zhou, and A. A. Efros, “Image-to-image translation with conditional adversarial networks,” in Proc. IEEE CVPR , 2017, pp. 1125–1134. [16] I. Gulrajani, F. Ahmed, M. Arjovsky, V. Dumoulin, and A. C. Courville, “Improved training of Wasserstein GANs,” in Proc. NeurIPS , 2017, pp. 5767–5777.

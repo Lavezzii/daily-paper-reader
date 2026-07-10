@@ -1,0 +1,1212 @@
+Title: ATS-ToDMA: Adaptive Token Selection and Token-Domain Multiple Access for Cross-Modal Semantic Communications
+
+URL Source: https://arxiv.org/pdf/2607.03520v1
+
+Published Time: Tue, 07 Jul 2026 01:14:10 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+> 1
+
+# ATS-ToDMA: Adaptive Token Selection and Token-Domain Multiple Access for Cross-Modal Semantic Communications 
+
+Sachin Kadam and Dong In Kim , Life Fellow, IEEE 
+
+Abstract —Adaptive token processing has emerged as a promis-ing approach for improving the efficiency of semantic com-munication systems. However, existing semantic communication frameworks largely overlook token-level multiple access and the impact of semantic interference among simultaneously transmit-ted semantic tokens. In this paper, we propose Adaptive Token Selection and Token-Domain Multiple Access (ATS-ToDMA), a novel cross-modal semantic communication framework that jointly performs semantic token selection, interference-aware scheduling, and semantic-aware power allocation. The proposed framework introduces a Semantic Signal-to-Interference-plus-Noise Ratio (SSINR) metric that captures the combined effects of channel impairments and semantic interference arising from token similarity. A transformer-based scheduler is developed to allocate selected semantic tokens across token-domain transmis-sion slots while mitigating both intra-modal and cross-modal semantic interference. To characterize the behavior of the pro-posed system, analytical bounds on semantic interference and feasible token occupancy are derived, together with a closed-form approximation for semantic-aware power allocation. Simulation results demonstrate significant gains in semantic throughput and semantic decoding accuracy while reducing aggregate semantic interference and transmit power compared with OMA, Semantic NOMA, Random-TS, and Greedy ATS benchmarks. 
+
+Index Terms —Semantic communication, LSTM, adaptive to-ken selection, multiple access, interference modeling. 
+
+I. I NTRODUCTION 
+
+The rapid proliferation of data-intensive and intelligence-driven applications, such as immersive communications, au-tonomous systems, and edge intelligence, is fundamentally reshaping the design objectives of wireless networks. Con-ventional communication systems, grounded in Shannon’s information theory, are primarily designed to ensure reli-able bit-level transmission by minimizing distortion between transmitted and reconstructed signals [1]. However, in many emerging applications, the ultimate goal is not perfect data reconstruction but successful task execution. This mismatch leads to inefficient utilization of communication and computa-tion resources, as large amounts of task-irrelevant information are unnecessarily transmitted. To address this limitation, semantic communication (Sem-Com) has recently emerged as a paradigm shift, aiming to transmit only task-relevant information required for inference or decision-making at the receiver [2]–[5]. By optimizing task-oriented performance metrics rather than symbol-level 
+
+S. Kadam is with the Department of Electronics and Communication Engineering, Motilal Nehru National Institute of Technology, Prayagraj, UP, 211004, India, (e-mail: sachink@mnnit.ac.in) and D. I. Kim is with the De-partment of Electrical and Computer Engineering, Sungkyunkwan University (SKKU), Suwon 16419, Republic of Korea (e-mail: dongin@skku.edu). 
+
+accuracy, SemCom enables significant reductions in communi-cation overhead while preserving or even enhancing end-task performance. In particular, deep learning-based approaches, including joint source-channel coding (JSCC), have demon-strated promising results for semantic transmission of multi-media data across noisy wireless channels [6]–[8]. Recent advances in foundation models and deep repre-sentation learning, including transformers for language and vision, have further enabled compact semantic representations across heterogeneous modalities such as text, images, and speech [9]–[12]. These models map raw inputs into structured semantic token representations, where each token encodes localized semantic information. Although such representations significantly reduce redundancy, transmitting all tokens re-mains inefficient, particularly under multi-user and bandwidth-limited wireless conditions. To further improve efficiency, adaptive token selection (ATS) techniques have been introduced to retain only the most informative subset of tokens [13]–[15]. Specifically, ATS selects a subset K ⊆ { 1, . . . , N } such that |K| ≪ N , while preserving task-relevant semantic content. However, existing ATS methods are primarily designed for computational ef-ficiency and do not explicitly account for wireless resource constraints or multi-user interactions. More critically, multi-user SemCom introduces a funda-mentally new form of interference, termed semantic interfer-ence. Unlike conventional electromagnetic interference caused by signal superposition, semantic interference arises from similarity among transmitted semantic tokens. In particular, tokens with high cosine similarity [16], may introduce ambi-guity during decoding, leading to degraded task performance even under favorable channel conditions. This effect becomes more severe in multi-user cross-modal systems, where het-erogeneous tasks and modalities coexist. Existing multiple access and scheduling strategies, including orthogonal and non-orthogonal schemes, are not designed to exploit semantic structure, resulting in suboptimal resource utilization [17]. Despite recent advances in semantic communication, three fundamental challenges remain unresolved: (i) identifying and transmitting only semantically valuable tokens in multi-user environments, (ii) mitigating semantic interference arising from similar semantic representations, and (iii) jointly opti-mizing semantic scheduling and wireless resource allocation across heterogeneous modalities. Motivated by these challenges, this paper proposes a unified adaptive token selection and token-domain multiple access (ATS-ToDMA) framework for multi-user cross-modal Sem-Com system. The key idea is to treat semantic tokens as 
+
+> arXiv:2607.03520v1 [cs.IT] 3 Jul 2026 2
+
+the fundamental transmission units and jointly optimize to-ken selection and scheduling over shared wireless resources. To capture complex semantic dependencies, we develop a transformer-based scheduler based on self-attention mecha-nisms [18]. In addition, we introduce a semantic interference model that captures both intra-modal and cross-modal interactions among tokens, and we characterize its impact on system perfor-mance using a semantic signal-to-interference-plus-noise ratio (SSINR) metric. Based on this model, we derive analytical interference bounds and formulate a semantic throughput max-imization problem under reliability and resource constraints. The main contributions of this paper are summarized as follows:  
+
+> •
+
+Unified ATS-ToDMA Framework: We propose a novel Adaptive Token Selection and Token-Domain Multiple Access (ATS-ToDMA) framework for multi-user cross-modal SemCom system. Unlike existing SemCom sys-tems that operate at the signal or feature level, the proposed framework explicitly treats semantic tokens as the fundamental transmission units, enabling fine-grained control over semantic information flow and wireless re-source allocation.  
+
+> •
+
+Transformer-Based Semantic Scheduling: We design a transformer-based scheduler that captures higher-order semantic dependencies across users and modalities via self-attention mechanisms. This enables joint optimiza-tion of token importance and scheduling decisions, signif-icantly improving resource utilization compared to greedy or heuristic allocation strategies.  
+
+> •
+
+Semantic Interference Modeling and SSINR Analysis: 
+
+We introduce a rigorous semantic interference model based on pairwise semantic similarity, capturing both intra-modal and cross-modal interactions among tokens. Based on this model, we define a semantic signal-to-interference-plus-noise ratio (SSINR) metric that quanti-fies the impact of semantic overlap on task performance.  
+
+> •
+
+Theoretical Performance Characterization: We derive closed-form interference bounds and characterize token allocation constraints under SSINR-based reliability re-quirements. These results provide fundamental insights into the interplay between semantic similarity, interfer-ence, and resource allocation in multi-user SemCom systems.  
+
+> •
+
+Semantic Throughput Optimization: We formulate a joint optimization problem that maximizes semantic throughput under power, scheduling, and reliability con-straints. The problem jointly optimizes adaptive token se-lection and wireless resource allocation, and we propose an alternating optimization framework to efficiently solve the resulting non-convex problem.  
+
+> •
+
+Complexity and Efficiency Analysis: We analyze the computational complexity of LSTM- and transformer-based semantic encoders and demonstrate that the pro-posed ATS mechanism significantly reduces redundant token processing, leading to lower FLOPs, latency, and communication overhead while preserving semantic fi-delity.  
+
+> •
+
+Approximate Closed-Form Power Allocation: We de-rive an approximate closed-form semantic-aware power                       
+
+> TABLE I: Limitations of existing approaches compared to the pro-posed ATS-ToDMA framework.
+> Method Key Limitation
+> JSCC-based SemCom [6], [7] No token-level representation; lacks multi-user and scheduling capability. Knowledge-driven semantic systems [19]– [22] Depend heavily on prior knowl-edge; not scalable to heteroge-neous cross-modal data. Transformer /LSTM models [23], [24] Designed for representation learning, not communication or resource allocation. Token pruning /ATS methods [25], [26] Single-user focus; ignore wire-less constraints and inter-user in-terference. Semantic token selection works [27]–[31] Do not model semantic interfer-ence or multi-user scheduling. OMA /NOMA sys-tems [17] Operate at signal level; ignore semantic structure and token re-lationships. Semantic NOMA sys-tems [32] Though operate at semantic level for multi-user communications; but ignore semantic interference and token relationships.
+> Proposed ATS-ToDMA Jointly models token selection, semantic interference, and multi-user scheduling in aunified framework.
+
+allocation strategy, where the transmit power assigned to each token admits an analytically tractable expression that jointly captures channel noise, semantic interference, and token reliability. The proposed formulation provides both low-complexity implementation and interpretable insights into semantic power adaptation under varying channel conditions. To the best of our knowledge, ATS-ToDMA is among the first semantic communication architectures to explicitly model se-mantic interference as a schedulable and controllable resource-management quantity. Overall, the proposed framework provides a unified theo-retical and algorithmic foundation for scalable, interference-aware, and resource-efficient SemCom in next-generation wireless networks. The limitations of existing state-of-the-art approaches compared to the proposed ATS-ToDMA frame-work are provided in Table I. 
+
+Paper Organization: The remainder of this paper is orga-nized as follows. Section II reviews related work. Section III presents the system model and problem formulation. Section IV develops the proposed ATS-ToDMA framework. Section V provides theoretical analysis and complexity results. Section VI presents simulation results. Finally, Section VII concludes the paper and outlines future research directions. II. R ELATED WORK 
+
+Semantic communication has recently emerged as a promis-ing paradigm for next-generation wireless systems, aiming to transmit task-relevant information instead of raw data. Early works in task-oriented communication demonstrated that optimizing end-task performance, rather than bit-level accuracy, can significantly improve communication efficiency 3
+
+under bandwidth and channel constraints. In particular, deep learning-based joint source-channel coding (JSCC) approaches have shown strong performance in multimedia transmission by directly mapping source data into channel inputs, enabling robust semantic delivery over wireless links [6], [7]. More recently, fundamental theoretical frameworks for Sem-Com have been developed, including semantic entropy, se-mantic rate-distortion theory, and goal-oriented communica-tion principles [2]–[5]. These works formalize the shift from symbol-level fidelity to semantic-level task fidelity, motivating new design principles and performance metrics tailored to downstream task success rather than reconstruction accuracy. Building upon these foundations, recent studies have ex-tended SemCom to multi-user and resource-constrained wire-less systems. For instance, joint communication and computa-tion optimization has been investigated in probabilistic Sem-Com frameworks, highlighting the importance of semantic-aware resource allocation [33]. Additionally, recent works have studied robustness against channel impairments and semantic distortion, emphasizing the need for interference-aware seman-tic system design [8]. However, these approaches largely rely on conventional signal-level abstractions and do not explicitly model semantic-level interactions in multi-user environments. SemCom has gained significant attention in recent years. Prior works such as [19]–[22] have explored knowledge-driven SemCom systems, where contextual and domain knowledge is leveraged to enhance transmission efficiency and task perfor-mance. In parallel, deep sequence modeling architectures have demonstrated strong representation capabilities. Transformers have shown excellent performance in capturing long-range dependencies through self-attention mechanisms [23], while recurrent architectures such as LSTM remain widely used for efficient temporal modeling in sequential data processing [24]. To further improve efficiency, adaptive token selection (ATS) and token pruning techniques have been widely studied to reduce computational complexity while preserving task-relevant information [25], [26]. These methods selectively retain informative tokens based on attention or importance scores. In semantic and edge intelligence applications, several stud-ies [27]–[31] highlight the importance of token-level selection mechanisms for improving communication efficiency, reduc-ing redundancy, and enabling scalable semantic transmission over wireless networks. Multiple access techniques have also been explored in Sem-Com systems. Classical orthogonal multiple access (OMA) and non-orthogonal multiple access (NOMA) schemes have been adapted to improve spectral efficiency in semantic trans-mission scenarios [17]. Nevertheless, these methods fail to ex-ploit semantic relationships among transmitted tokens, which can lead to performance degradation in multi-user cross-modal settings. In particular, they do not account for semantic inter-ference arising from similarity in semantic representations. More recently, transformer-based architectures have been investigated for scheduling and resource allocation due to their ability to capture long-range dependencies and complex interactions. However, their application in SemCom remains limited, particularly in multi-user cross-modal scenarios. Semantic Encoder   
+
+> (LSTM / Transformer)
+> Adaptive Token
+> Selection Channel Semantic Decoder
+> Task Output
+> Source
+> Data
+> Fig. 1: SemCom architecture with adaptive token selection.
+
+In contrast to existing works, this paper proposes a unified ATS-ToDMA framework for multi-user cross-modal SemCom system. The proposed framework jointly integrates adaptive token selection, semantic-aware scheduling, and wireless re-source allocation. By introducing a transformer-based sched-uler and explicitly modeling semantic interference, the pro-posed approach enables efficient token-level multiple access while accounting for both intra-modal and cross-modal seman-tic dependencies, thereby providing a comprehensive solution for next-generation SemCom systems. The comparison in Table II highlights several important observations. First, existing SemCom frameworks, including JSCC-based and knowledge-driven approaches, primarily fo-cus on improving end-task performance but do not incorporate token-level transmission or multi-user resource coordination. Second, while adaptive token selection and pruning methods improve computational efficiency, they are largely designed for isolated single-user settings and do not consider wireless resource constraints or inter-user interference. Third, classical multiple access schemes such as OMA and NOMA extend connectivity to multi-user scenarios but operate at the signal level and fail to exploit semantic structure, thereby overlooking semantic relationships among transmitted representations. More importantly, none of the existing approaches jointly address token selection, multi-user scheduling, and semantic interference modeling within a unified framework. In contrast, the proposed ATS-ToDMA framework integrates all three components by treating semantic tokens as the fundamental transmission units and explicitly modeling their interdepen-dencies through a transformer-based scheduler. This enables joint optimization of token importance, resource allocation, and semantic interference mitigation, which is essential for achieving reliable and efficient cross-modal SemCom in multi-user environments. Although substantial progress has been made in semantic communication, token pruning, and multi-user access tech-niques, jointly optimizing semantic token selection, semantic interference management, and wireless resource allocation remains largely unexplored. The difficulty arises because to-ken importance, semantic similarity, and channel conditions are strongly coupled, making conventional resource-allocation techniques unsuitable for semantic communication systems. III. S YSTEM MODEL AND PROBLEM FORMULATION 
+
+In this section, first, we provide a brief overview of the proposed system model and later in Section III-B, we present our problem formulation. 
+
+A. System Model 
+
+The overall operation of the proposed SemCom architecture with adaptive token selection system, shown in Fig. 1, is described as follows. First, the source generates the input data denoted by x, which represents the raw information to be transmitted. This input is then processed by a semantic encoder 4
+
+TABLE II: Comparison of existing methods with the proposed ATS-ToDMA framework including capability and performance characteristics. 
+
+Method SemCom ATS Multi-U Sem. Int. Token Sch. Gain 
+
+JSCC-based [6], [7] ✓ × × × × Low Knowledge-driven [19]–[22] ✓ × × × × Medium Transformer Models [23] × × × × × N/A LSTM Models [24] × × × × × N/A Token Pruning [25], [26] × ✓ × × × Low-Med Semantic Token Works [27]–[31] ✓ ✓ × × × Medium OMA/NOMA [17] ✓ × ✓ × × Medium Semantic NOMA [32] ✓ × ✓ × × Medium 
+
+Proposed ATS-ToDMA ✓ ✓ ✓ ✓ ✓ High 
+
+that extracts meaningful and task-relevant features from the data. The encoding process is expressed as z = f (x), where 
+
+f (·) denotes the encoding function and z represents the latent semantic representation of the input. Following feature extraction, an adaptive token selection (ATS) mechanism is employed to improve transmission effi-ciency (see Algorithm 1). Specifically, the ATS module selects a subset of the most informative tokens from the full set of encoded tokens. Let N denote the total number of tokens and 
+
+K ⊂ N represent the selected subset. This selection process ensures that only the most significant tokens, with respect to the underlying task, are retained for transmission, thereby reducing redundancy and communication overhead. 
+
+Algorithm 1 Adaptive Token Selection (ATS) 
+
+1: Input tokens T = {t1, ..., t N }
+
+2: Compute importance scores si = q(ti)
+
+3: for each token ti do 
+
+4: if si > τ ATS then 
+
+5: Retain ti
+
+6: end if 
+
+7: end for 
+
+8: Output selected tokens K
+
+The selected tokens are then transmitted over the com-munication channel, which may introduce noise or distortion depending on channel conditions. Despite these impairments, the system is designed to preserve the most critical semantic information through the selective transmission process. At the receiver side, a decoder processes the received tokens to re-construct the task-relevant information. The decoder leverages the semantic structure embedded in the transmitted tokens to recover an accurate representation of the original input or its relevant features. This end-to-end process enables efficient and robust communication by focusing on semantic fidelity rather than exact signal reconstruction. Next, this ATS mechanism is used in a multi-user cross-modal SemCom system as shown in Fig. 2. In the considered SemCom framework, each input is mapped to a sequence of semantic tokens through a modality-specific semantic encoder (e.g., LLM [34], ViT [35], or audio). One of the main components in every token is an embedding vector ei ∈ Rd,where d denotes the embedding dimension. Without loss of generality, embeddings are normalized such that ∥ei∥ = 1 ,which simplifies similarity analysis and stabilizes training. 
+
+1) Token Generation and Adaptive Selection: Let us con-sider U users and each user u generates modality-specific User 1 
+
+> (Text/ Image/ Speech)
+> User 2
+> (Text/ Image/ Speech)
+> User U
+> (Text/ Image/ Speech)
+> Semantic Encoder
+> (LLM/ ViT/ Audio)
+> Semantic
+> Encoder
+> (LLM/ ViT/ Audio)
+> Semantic
+> Encoder
+> (LLM/ ViT/ Audio)
+> ATS
+> (Token Filtering)
+> ATS
+> (Token Filtering)
+> ATS
+> (Token Filtering)
+> Transformer Scheduler
+> (Interference-aware slot assignment)
+> Semantic Decoder
+> ToDMA
+> Slots
+> Task Output
+> Noise
+
+Fig. 2: Architecture of the proposed ATS-ToDMA framework for multi-user cross-modal SemComs. 
+
+semantic tokens through a semantic encoder. For modality 
+
+m ∈ { text, image, speech }, the token set is given by: 
+
+T (m) 
+
+> u
+
+= {t(u,m )1 , . . . , t (u,m )
+
+> K(m)
+> u
+
+}. (1) Since not all tokens contribute equally to semantic under-standing, transmitting all tokens leads to inefficiency and un-necessary interference. To address this, we adopt an Adaptive Token Selection (ATS) mechanism (see Fig. 1) that filters tokens based on their semantic importance: 
+
+t(u,m ) 
+
+> i
+
+∈ T (m) 
+
+> u
+
+if s(u,m ) 
+
+> i
+
+> τ ATS , (2) where s(u,m ) 
+
+> i
+
+denotes the importance score and τATS is a threshold. This step reduces redundancy and ensures that only semantically meaningful tokens are forwarded for transmis-sion. 
+
+2) Transformer-Based Semantic Scheduling: Conventional greedy scheduling schemes allocate resources based solely on local importance, ignoring global semantic dependencies across users and modalities. This often leads to suboptimal decisions under interference constraints. To overcome this limitation, we propose a transformer-based scheduler that jointly models token importance and semantic relationships. Each token is represented as: xi = [ ei, s i], where ei is the embedding and si is the importance score. The transformer encoder produces contextualized representations: 
+
+Z = Transformer (X). (3) 5
+
+The self-attention mechanism enables each token to capture dependencies with all other tokens: Attention (Q, K, V) = softmax 
+
+ QK ⊤
+
+√d
+
+
+
+V. (4) Based on these representations, the scheduler predicts the probability of assigning token i to slot k:
+
+pik = Pr( token i → slot k). (5) This formulation enables globally optimized scheduling deci-sions that account for semantic interactions. At deployment, strict constraint satisfaction is required. Tokens are first as-signed via: slot (i) = arg max  
+
+> k
+
+pik , (6) followed by pruning to enforce slot capacity constraints and interference thresholds (see Section IV-2). 
+
+3) Joint Multi-Modal Semantic Decoder: At the receiver, tokens from different modalities may arrive within the same slot. To exploit complementary information, we propose a joint multi-modal decoder. 
+
+a) Intra-Modal Refinement: Each modality m ∈{text, image, speech } is first refined independently: 
+
+˜Zm = Attention (Zm, Zm, Zm). (7) 
+
+b) Cross-Modal Interaction: Cross-attention enables in-formation exchange across modalities, improving semantic reconstruction under ambiguity. 
+
+c) Fusion: The final representation aggregates all modal-ities: 
+
+Zjoint = Concat (Zjoint  
+
+> T
+
+, Zjoint  
+
+> I
+
+, Zjoint  
+
+> S
+
+). (8) 
+
+4) Channel-aware Semantic Decoding: To enhance robust-ness under dynamic wireless channels, we incorporate channel state information (CSI) and signal-to-noise ratio (SNR) into the semantic decoding process. In contrast to conventional semantic decoders that operate solely in the representation space, the proposed framework introduces a channel-aware modulation mechanism that adaptively adjusts token-level se-mantic importance according to instantaneous channel condi-tions. Specifically, CSI and SNR are embedded into a learnable gating function that modulates token representations prior to cross-modal fusion. This enables the decoder to suppress semantically unreliable tokens under poor channel conditions while preserving informative semantic features when channel quality is high, thereby improving overall semantic reliability. Let:  
+
+> •
+
+hi: CSI feature for token stream i 
+
+> •
+
+γi: instantaneous SNR estimate  
+
+> •
+
+Zi: token representation We construct a channel-aware embedding gate: 
+
+gi = σ (Whhi + Wγ γi) , (9) where:  
+
+> •
+
+Wh and Wγ are learnable parameter matrices that project CSI features and instantaneous SNR estimates into the semantic gating space.  
+
+> •
+
+σ(·) is the sigmoid function  
+
+> •
+
+gi ∈ (0 , 1) d acts as a semantic reliability mask 
+
+TABLE III: Major Notations Used in the ATS-ToDMA Framework                                                   
+
+> Symbol Description
+> uUser index.
+> tiSemantic token corresponding to the i-th semantic unit.
+> eiEmbedding vector associated with token ti.
+> dEmbedding dimension.
+> siSemantic importance score of token ti.
+> xiBinary token selection variable.
+> PiTransmit power allocated to token ti.
+> γiInstantaneous SNR associated with token ti.
+> giChannel-aware semantic protection factor for token ti.
+> ξij Semantic similarity between tokens tiand tj.
+> δMaximum admissible semantic similarity.
+> γSemantic similarity threshold used in ATS.
+> αij Semantic interference coefficient between tokens iand j.
+> αintra Average intra-modal semantic interference coefficient.
+> αcross Average cross-modal semantic interference coefficient.
+> Iij Pairwise semantic interference between tokens iand j.
+> Itotal Aggregate semantic interference within a ToDMA slot.
+> ˆIkExpected semantic interference in slot kduring scheduler optimization.
+> N0Thermal noise power.
+> SSINR iSemantic Signal-to-Interference-plus-Noise Ratio of token i.
+> ΓMinimum target SSINR threshold.
+> MNumber of simultaneously scheduled tokens within aToDMA slot.
+> Mmax Maximum feasible token occupancy satisfying the SSINR constraint.
+> RsSemantic throughput.
+
+˜Zi = gi ⊙ Zi, (10) This means bad channel has suppressed semantic features and good channel has preserved semantic content. Next, we integrate CSI/SNR into attention as follows: Attention = softmax 
+
+ QK ⊤
+
+√d + βAch 
+
+
+
+V (11) where: 
+
+Ach = f (CSI , SNR ) (12) 
+
+B. Problem Formulation 
+
+When the tokens are used for transmission, they can in-terfere in two situations: The first situation is if they are semantically similar, and the second situation is if they occupy the same ToDMA slot. 
+
+1) Semantic Similarity: To define the semantic similarity, we need to first explore the cosine similarity. Let ξij be the cosine similarity between tokens ti and tj and it is defined as 
+
+ξij = ⟨ti, t j ⟩∥ti∥∥ tj ∥ . (13) We consider a token pair (ti, t j ) is semantically similar if 
+
+ξij > γ . Let 
+
+1ij =
+
+(
+
+1, ξij > γ, 
+
+0, otherwise . (14) The total semantically similar token pairs are 
+
+Iss = X 
+
+> i∈T(m)
+> u
+
+X   
+
+> j∈T(m)
+> u, j ̸=i
+
+1ij . (15) Next, when multiple tokens are transmitted within the same ToDMA slot, interference arises not only from waveform 6
+
+overlap but also from semantic ambiguity. Let ρij = PiPj 
+
+> Pref
+
+.We model the pairwise semantic interference as follows: 
+
+Iij = αij ρij ξ2 
+
+> ij
+
+1ij , (16) where 
+
+αij =
+
+(
+
+αintra , same modality 
+
+αcross , different modality (17) and Pi denote the transmission power assigned to the token 
+
+i and reference interference power Pref .1 The squared sim-ilarity term emphasizes highly correlated token pairs while suppressing weak semantic interactions, analogous to the role of power in conventional SINR expressions. The inclusion of the semantic distortion coefficient αij enables a unified interpretation of semantic interference in the signal domain. The power term ρij captures the joint contribution of the interacting token pair to semantic interference. Since ρij 
+
+has units of power, the semantic coupling coefficient αij is dimensionless. Consequently, the semantic interference term 
+
+Iij retains the physical units of power while preserving the pairwise nature of semantic interactions. In particular, distinguishing between intra-modal and cross-modal coefficients allows the model to capture the reduced effective distortion induced by cross-modal interactions, i.e., 
+
+αcross < α intra .2 This leads to less conservative interference bounds and improved slot utilization. The values of αintra and αcross are obtained through the calibration procedure described in Section III-B4. For a given semantic decoder, intra-modal and cross-modal token pairs are evaluated separately over a validation set. The average semantic distortion is computed as 
+
+αintra = E[αij | mi = mj ] (18) and 
+
+αcross = E[αij | mi̸ = mj ]. (19) The aggregate interference in a slot containing M tokens is therefore 
+
+Itotal = X
+
+> i̸=j
+
+Iij = X
+
+> i̸=j
+
+αij ρij ξ2 
+
+> ij
+
+1ij . (20) 
+
+2) Cross-Modal Similarity Metric: In cross-modal Sem-Com, tokens originate from different modalities, namely text (T), image (I), and speech (S). Let the corresponding token embeddings be defined as: 
+
+τi ∈ Rd, ϕj ∈ Rd, ψk ∈ Rd (21) The expected cross-modal similarity is defined as: 
+
+¯scross = E[ξ(τi, ϕ j )] = E[ξ(τi, ψ k)] = E[ξ(ϕj , ψ k)] (22)    
+
+> 1Unlike electromagnetic interference, semantic interference does not orig-inate from waveform superposition. Instead, it reflects ambiguity introduced by semantically similar representations during downstream task inference.
+> 2The assumption αcross < α intra is motivated by the complementary na-ture of heterogeneous modalities. Tokens originating from the same modality often share similar feature spaces and semantic structures, resulting in higher decoding ambiguity when semantic overlap occurs. In contrast, cross-modal tokens provide diverse contextual cues that can aid semantic disambiguation during fusion. Therefore, cross-modal interactions generally induce lower effective semantic distortion compared with intra-modal interactions.
+
+Consider a ToDMA slot containing KT , KI , and KS tokens from text, image, and speech modalities, respectively. The total semantic interference is: 
+
+Is =
+
+> KT
+
+X
+
+> i̸=j
+
+ξ(τi, τ j ) + 
+
+> KI
+
+X
+
+> i̸=j
+
+ξ(ϕi, ϕ j ) + 
+
+> KS
+
+X
+
+> i̸=j
+
+ξ(ψi, ψ j )
+
+| {z }
+
+> intra-modal interference
+
++
+
+> KT
+
+X
+
+> i=1
+> KI
+
+X
+
+> j=1
+
+ξ(τi, ϕ j ) + 
+
+> KT
+
+X
+
+> i=1
+> KS
+
+X
+
+> k=1
+
+ξ(τi, ψ j ) + 
+
+> KI
+
+X
+
+> i=1
+> KS
+
+X
+
+> k=1
+
+ξ(ϕi, ψ j )
+
+| {z }
+
+> cross-modal interference
+
+(23) 
+
+3) Semantic Reliability Constraint: To ensure reliable se-mantic decoding, we introduce a basic semantic SINR metric: SSINR (i) = Pi
+
+P  
+
+> j̸=i
+
+αij ρij ξ2 
+
+> ij
+
++ N0
+
+(24) To ensure consistency between semantic interference and physical-layer noise, we introduce a semantic-to-signal dis-tortion mapping. Specifically, semantic similarity between tokens is interpreted as a source of decoding ambiguity, which manifests as an effective distortion in the received signal. This is captured using a scaling factor αij , which maps semantic similarity into an equivalent interference power. Furthermore, to distinguish between intra-modal and cross-modal effects, we define modality-dependent coefficients such that αcross < α intra , reflecting the reduced ambiguity induced by cross-modal interactions. 
+
+4) Calibration of Semantic Interference Coefficients: The semantic distortion coefficient αij provides a mapping be-tween semantic ambiguity and an equivalent physical-layer interference representation. Specifically, αij quantifies how semantic overlap between two tokens degrades end-task per-formance. To obtain a measurable value of αij , we employ an offline calibration procedure. Consider a reference semantic decoder operating under nominal channel conditions. Let A0
+
+denote the task accuracy achieved when token ti is decoded without semantic interference. Next, an interfering token tj
+
+with similarity ξij is introduced, and the resulting task accu-racy becomes Aij . The semantic distortion induced by token overlap is defined as Dij = A0 − Aij .To relate semantic distortion to an equivalent interference power, we normalize this degradation with respect to the accuracy loss caused by a known physical interference level 
+
+Pref :
+
+αij = Dij 
+
+Dref 
+
+, (25) where Dref denotes the accuracy degradation observed under the reference interference power Pref . Consequently, αij acts as a semantic-to-physical conversion factor, enabling semantic interference and thermal noise to be represented in a common SSINR framework. 
+
+5) Semantic Protection: To account for the fact that each token experiences its own instantaneous channel quality, from (12) the channel-aware protection term is defined as 
+
+Ach (i, j ) = 
+
+q
+
+log(1 + γi) log(1 + γj ) exp( −∥ hi − hj ∥2),
+
+(26) 7
+
+where γi and γj denote the SNRs associated with tokens i
+
+and j, respectively. This gives a 3-layer semantic protection mechanism: 1) Semantic layer: Semantic similarity ξij 
+
+2) Modality layer: Semantic distortion coefficients αintra 
+
+and αcross 
+
+3) Channel layer: The combination of CSI and SNR gating. So, our SSINR becomes channel-aware semantic SINR: SSINR i = Pi∥gi∥2
+
+P  
+
+> j̸=i
+
+αij ρij ξ2 
+
+> ij
+
+∥gj ∥2 + N0
+
+(27) Unlike conventional wireless interference, semantic interfer-ence originates from ambiguity in the representation space. The calibration procedure described in Section III-B4 maps this ambiguity into an equivalent interference power through the coefficient αij . Consequently, both semantic interference and thermal noise contribute to task degradation and can be jointly represented within the SSINR expression. This interpretation allows semantic reliability analysis using tools analogous to conventional SINR-based communication theory. 
+
+6) Semantic Throughput: Let T be the total token set across modalities, i.e.: 
+
+T = Ttext ∪ T image ∪ T speech . (28) The semantic throughput is defined as 
+
+Rs = |T | 
+
+Tslots 
+
+. (29) Let xi ∈ { 0, 1} denote token selection and pik denote slot assignment probabilities. Then P 
+
+> k
+
+pik = xi, ∀i and P 
+
+> i
+
+xi =
+
+Rs.
+
+7) Optimization Problem: We jointly optimize token se-lection, slot assignment, and power allocation to maximize semantic throughput under semantic interference and channel constraints. Semantic throughput is selected as the optimiza-tion objective because it jointly captures semantic importance, scheduling decisions, and transmission reliability through the SSINR metric. Consequently, maximizing semantic throughput encourages efficient utilization of both semantic and wireless resources. 
+
+max  
+
+> {xi,p ik ,P i}
+
+P 
+
+> i
+
+xi
+
+Tslots 
+
+(30a) s.t. X
+
+> k
+
+pik = xi, ∀i, (30b) 
+
+X
+
+> i
+
+pik ≤ Mmax , ∀k, (30c) 
+
+E[Is] ≤ η, (30d) 
+
+Itotal ≤ Imax , (30e) SSINR i ≥ Γ, ∀i, (30f) 
+
+xi ∈ { 0, 1}, 0 ≤ pik ≤ 1. (30g) Constraint (30b) guarantees consistency between token selec-tion and slot assignment by ensuring that a token is assigned to a slot only if it is selected for transmission. Constraint (30c) limits the number of simultaneously transmitted tokens per slot to avoid excessive semantic congestion. Constraint (30d) restricts the expected semantic interference arising from cross-modal interactions, whereas (30e) imposes a hard upper bound on the instantaneous aggregate interference within each ToDMA slot. Constraint (30f) ensures reliable semantic decod-ing by maintaining the SSINR of each transmitted token above the target threshold Γ. Finally, (30g) specifies the binary nature of token selection decisions and the probabilistic relaxation of slot assignment variables. This formulation unifies semantic-level token selection, transformer-based scheduling, and channel-aware power allo-cation into a single optimization framework, enabling holistic control of semantic throughput and reliability. Due to combinatorial and non-convex constraints, the prob-lem is solved using a hybrid approach combining learning-based scheduling with analytical constraint enforcement. IV. P ROPOSED ATS-T ODMA F RAMEWORK FOR 
+
+SEMANTIC COMMUNICATIONS 
+
+We propose the Adaptive Token Selection and Token-Domain Multiple Access (ATS-ToDMA) framework to maxi-mize semantic throughput while upper-bounding the semantic and cross-modal interferences and also ensuring a reliable semantic decoding. 
+
+1) Expected Semantic Interference with Modality-Aware Distortion: To account for the different impact of intra-modal and cross-modal semantic interactions, we introduce modality-dependent semantic distortion coefficients αintra and αcross ,where typically αcross < α intra .Assuming average intra-modal similarity ¯sintra and cross-modal similarity ¯scross , the expected semantic interference can be expressed as: 
+
+E[Is] = ( KT KI + KT KS + KI KS )αcross ¯scross +
+
+ KT (KT − 1) 2 + KI (KI − 1) 2 + KS (KS − 1) 2
+
+
+
+αintra ¯sintra 
+
+(31) To satisfy an interference constraint E[Is] ≤ η, we obtain the following bound: 
+
+E[Is] = αintra ¯sintra 
+
+2
+
+X
+
+> m∈{ T,I,S }
+
+Km(Km − 1) + αcross ¯scross (KT KI + KT KS + KI KS ) ≤ η (32) This expression provides a closed-form guideline for allocating tokens per modality within each slot. 
+
+Theorem 1. Assume that the pairwise semantic similarity satisfies γ ≤ ξij ≤ δ for all token pairs, and that the semantic distortion coefficients satisfy 0 ≤ αij ≤ αmax . Then, for M
+
+tokens transmitted in the same slot with equal power allocation 
+
+P , the total semantic interference is upper bounded as 
+
+Itotal ≤ Imax = αmax P δ 2M (M − 1) . (33) 
+
+Proof. The proof is given in Appendix A. Theorem 1 shows that aggregate semantic interference in-creases approximately quadratically with token occupancy. Consequently, excessive slot loading can significantly de-grade semantic reliability, motivating interference-aware token scheduling in ATS-ToDMA. 8
+
+Theorem 2. Assume that γ ≤ ξij ≤ δ and 0 ≤ αij ≤ αmax 
+
+for all token pairs, and that the semantic SINR satisfies SSINR i ≥ Γ for all i. Then, the number of tokens transmitted in a slot with equal power allocation P is upper bounded by 
+
+Mmax = 1 + P ∥gi∥2 − ΓN0
+
+ΓP α max δ2d . (34) 
+
+Proof. The proof is given in Appendix B. Theorem 2 establishes a direct relationship between channel quality, semantic interference, and feasible token occupancy. Users experiencing favorable channel conditions can support a larger number of simultaneously scheduled semantic tokens, whereas poor channel conditions require more conservative slot allocations to maintain the target SSINR level. 
+
+Remark 1. The bound in Theorem 2 explicitly depends on the channel-aware semantic protection factor ∥gi∥2, which is a function of the token-specific CSI and SNR. Consequently, users experiencing favorable channel conditions admit larger feasible token occupancies, whereas users under poor channel conditions require more conservative slot allocations to satisfy the SSINR requirement. Therefore, the proposed ATS-ToDMA framework naturally adapts token scheduling and power allo-cation according to heterogeneous wireless conditions. 2) Constraint-Aware Scheduling Mechanism: While the transformer-based scheduler captures global semantic relation-ships, it does not inherently guarantee satisfaction of the an-alytical interference and reliability constraints derived earlier. To address this limitation, we integrate a hybrid constraint-aware scheduling mechanism that operates during both training and inference. 
+
+a) Training Phase (Soft Constraint Enforcement): We define the expected number of tokens assigned to slot k as: 
+
+ˆMk = X
+
+> i
+
+pik , (35) and the expected semantic interference in slot k as: 
+
+ˆIk =
+
+> M
+
+X 
+
+> j̸=iM
+
+X
+
+> i=1
+
+pik pjk αij ρij ξ2 
+
+> ij
+
+1ij . (36) It is important to distinguish the aggregate semantic interfer-ence defined in (20) from the expected interference introduced here. Specifically, Itotal represents the actual interference observed after slot assignments are fixed, whereas ˆIk denotes the expected interference during training under probabilistic slot assignments generated by the transformer scheduler. The latter provides a differentiable surrogate that enables gradient-based optimization while approximating the deployment-stage interference behavior. The scheduler is trained using a constraint-aware objective: 
+
+L = Ltask + λ1
+
+X
+
+> k
+
+max(0 , ˆMk − Mmax )+ λ2
+
+X
+
+> k
+
+max(0 , ˆIk − Imax )+ λ3 max(0 , E[Is] − η), (37) where λ1, λ 2, and λ3 are penalty coefficients. 
+
+b) Inference Phase (Hard Constraint Enforcement): 
+
+After obtaining the slot assignment via slot (i) = arg max  
+
+> k
+
+pik , (38) a post-processing step is applied to strictly enforce the system constraints:  
+
+> •
+
+Slot Capacity Constraint: If the number of tokens in a slot exceeds Mmax , tokens with the lowest importance scores are removed.  
+
+> •
+
+Interference Constraint: Let Ic be the highest pairwise interference, i.e., 
+
+Ic = arg max 
+
+> i
+
+X 
+
+> j̸=i
+
+αij ρij ξ2 
+
+> ij
+
+= arg max 
+
+> i
+
+X 
+
+> j̸=i
+
+Iij . (39)  
+
+> •
+
+If the total interference exceeds Imax , tokens contributing 
+
+Ic are iteratively removed until the constraint is satisfied. This hybrid design ensures that the scheduler remains differ-entiable and learnable during training while guaranteeing strict adherence to interference and reliability constraints during deployment. V. A NALYSIS 
+
+A. Closed-Form Channel-Aware Power Allocation 
+
+Tokens carrying higher semantic importance should receive preferential protection against channel impairments. Therefore, power allocation must balance two competing objectives: preserving highly informative semantic content and exploiting favorable channel conditions to improve resource efficiency. This motivates the proposed semantic-aware power control formulation. We optimize power allocation to balance semantic importance and channel quality: 
+
+min  
+
+> {Pi}
+
+Itotal =
+
+> M
+
+X
+
+> i̸=j
+
+αij ρij ξ2 
+
+> ij
+
+. (40a) s.t. SSINR i ≥ Γ. (40b) Here, the optimization minimizes the deployment-stage ag-gregate interference Itotal defined in (20), rather than the expected training-stage interference ˆIk in (36). The optimal power allocation problem formulated above is inherently non-convex due to the coupled interference terms across tokens. While iterative optimization methods can be applied, they incur significant computational overhead and are unsuitable for real-time semantic communication systems. To address this limitation, we derive a low-complexity closed-form approxi-mation that provides key insights into the interaction between semantic similarity, interference, and channel quality. From (27), recall the channel-aware semantic SINR (SS-INR) as: SSINR i = Pi∥gi∥2
+
+P  
+
+> j̸=i
+
+αij ρij ξ2 
+
+> ij
+
+∥gj ∥2 + N0
+
+≥ Γ. (41) To simplify notation, we define the effective coupling coef-ficient: 
+
+wij ≜ αij ξ2 
+
+> ij
+
+∥gj ∥2, (42) which captures three key factors:  
+
+> •
+
+semantic similarity ( ξij ), 9 
+
+> •
+
+modality-dependent interference ( αij ),  
+
+> •
+
+channel reliability ( ∥gj ∥2). Using this definition, the SSINR constraint can be rewritten as: 
+
+Pi∥gi∥2 ≥ Γ
+
+X 
+
+> j̸=i
+
+wij ρij + N0
+
+ . (43) This expression highlights the fundamental coupling be-tween power allocation and semantic interference. Directly solving the coupled inequalities is computationally expensive. So, in Theorem 3 we obtain a tractable closed-form solution by approximating the interference contribution using a first-order expansion. This closed-form expression provides an interpretable structure for power allocation:  
+
+> •
+
+The first term represents the baseline power required to combat noise.  
+
+> •
+
+The second term captures additional power needed to overcome semantic interference. This approximation achieves a favorable trade-off between performance and computational efficiency. 
+
+Theorem 3 (Approximate Closed-Form Power Allocation) .
+
+The transmit power allocated to token i admits the following approximate closed-form expression: 
+
+Pi ≈ ΓN0
+
+∥gi∥2
+
+1 + X 
+
+> j̸=i
+
+Γ αij ξ2 
+
+> ij
+
+∥gj ∥2
+
+∥gi∥2
+
+ . (44) 
+
+Proof. The proof is given in Appendix C. Theorem 3 reveals that optimal transmit power depends not only on channel quality but also on the semantic coupling among co-scheduled tokens. Tokens experiencing stronger semantic interference require additional protection, whereas semantically isolated tokens can be transmitted using lower power. This observation highlights the importance of jointly considering semantic and physical-layer characteristics during resource allocation. 
+
+Remark 2. Theorem 3 indicates that semantically isolated to-kens can operate at lower power levels without compromising reliability, thereby improving energy efficiency. 
+
+The derived expression reveals several important design principles:  
+
+> •
+
+Channel Awareness: Tokens with better channel condi-tions ( ∥gi∥ large) require less transmit power.  
+
+> •
+
+Semantic Interference: High semantic similarity ( ξij )increases interference, thereby increasing power require-ments.  
+
+> •
+
+Cross-Modal Advantage: Lower cross-modal interfer-ence coefficients ( αcross ) enable more efficient resource sharing across modalities. These insights validate the importance of jointly modeling semantic, system, and channel effects. 
+
+B. Design Insights 
+
+The analytical results developed in Theorems 1–3 provide several important insights into semantic communication sys-tem design. First, semantic interference grows rapidly with token occupancy, indicating that blindly increasing slot uti-lization may degrade semantic reliability. Second, feasible token occupancy depends jointly on channel quality and semantic similarity, highlighting the importance of channel-aware semantic scheduling. Third, power allocation deci-sions should account for both wireless channel conditions and semantic interference levels. Consequently, semantic and physical-layer resource management cannot be optimized in-dependently. These observations motivate the integrated ATS-ToDMA framework proposed in this work. 
+
+C. Computational Complexity Analysis 1) LSTM Encoder: The computational complexity of the LSTM encoder is given by 
+
+CLSTM = O(N d 2) (45) where N is the sequence length and d is the hidden dimen-sion. The sequential nature limits parallelization and increases latency. 
+
+2) Transformer Encoder: The transformer encoder has complexity 
+
+CTransformer = O(N 2d) (46) due to the self-attention mechanism. While highly paralleliz-able, it incurs high computation and memory cost. 
+
+3) Transformer Scheduler: The transformer scheduler has complexity 
+
+CScheduler = O(K2d). (47) 
+
+4) Adaptive Token Selection: ATS selects K ≪ N impor-tant tokens based on importance score si:
+
+ti ∈ K if si > τ ATS (48) The resulting complexity becomes 
+
+CATS = O(K2d) (49) The overall computational complexity of ATS-ToDMA can be expressed as 
+
+O(Kd ) + O(K2d) + O(K),
+
+where the three terms correspond to adaptive token selection, transformer-based scheduling, and semantic-aware power al-location, respectively. VI. S IMULATION RESULTS 
+
+This section evaluates the performance of the proposed ATS-ToDMA framework and validates the analytical results established in Theorems 1–3. Unless otherwise stated, a cross-modal semantic communication network comprising U = 10 
+
+users is considered, where each user transmits text, image, and speech tokens. Semantic embeddings are represented in a 128-dimensional feature space and the semantic similarity between token pairs is computed using cosine similarity. The semantic interference coefficients are calibrated according to Section III-C, with average intra-modal and cross-modal values of 
+
+αintra = 0 .8 and αcross = 0 .4, respectively. The thermal noise power is normalized to N0 = 1 . All results are averaged over 1000 independent Monte Carlo realizations. 10 
+
+A. Simulation Setup 
+
+We consider a multi-user semantic communication system supporting text, image, and speech modalities. The cosine-similarity statistics are selected to match those observed in representative BERT-, ViT-, and Wav2Vec-based embedding spaces reported in recent semantic communication literature. The wireless channel is modeled as a Rayleigh fading channel with additive white Gaussian noise (AWGN). Unless otherwise specified, the ATS similarity threshold is set to γ = 0 .5, the semantic coupling parameter is δ = 0 .9, and the target SSINR threshold is Γ = 2 .The proposed ATS-ToDMA framework is compared against the following benchmark schemes:  
+
+> •
+
+OMA : Conventional orthogonal multiple access.  
+
+> •
+
+Semantic NOMA : Non-orthogonal semantic communi-cation without token-aware scheduling.  
+
+> •
+
+Random-TS : Random token selection and scheduling.  
+
+> •
+
+Greedy ATS : Token selection based solely on semantic importance.  
+
+> •
+
+Equal-Power Allocation : Uniform transmit power with-out semantic-aware optimization. The objective of the simulation study is twofold: (i) to quantify the performance gains achieved by ATS-ToDMA, and (ii) to validate the practical usefulness of the analytical bounds and approximations developed in Theorems 1–3. Performance is evaluated using the following metrics: Semantic Through-put ( Rs), Semantic Decoding Accuracy, Aggregate Semantic Interference, SSINR, and Average Transmit Power. 
+
+B. Semantic Throughput Performance 
+
+Fig. 3(a) illustrates the semantic throughput achieved by different multiple-access strategies as the number of users increases. 
+
+Rs =
+
+> N
+
+X
+
+> i=1
+
+xisi log 2 (1 + SSINR i) . (50) As expected, OMA exhibits the lowest throughput due to strict orthogonal resource allocation. Semantic NOMA im-proves resource utilization through non-orthogonal transmis-sions, whereas Random-TS and Greedy ATS benefit from token-level scheduling. However, these approaches do not explicitly account for semantic interference. In contrast, ATS-ToDMA jointly optimizes token selec-tion, semantic interference management, and channel-aware resource allocation. Consequently, it consistently achieves the highest semantic throughput across all network loads. The performance gap becomes increasingly pronounced as the number of users grows, demonstrating the scalability of the proposed framework under dense semantic communication scenarios. 
+
+C. Semantic Reliability Performance 
+
+Fig. 3(b) compares the semantic decoding accuracy achieved by different schemes over a wide range of average SNR values. ATS-ToDMA achieves superior semantic reliability because Adaptive Token Selection removes low-value tokens while the proposed semantic-interference-aware scheduler suppresses Number of Users          
+
+> 510 15 20 25 30 35 40 45 50
+> Semantic Throughput (bits/s/Hz)
+> 0
+> 5
+> 10
+> 15
+> 20
+> 25
+> 30
+> 35
+> OMA
+> Semantic NOMA
+> Random-TS
+> Greedy ATS
+> Proposed ATS-ToDMA
+
+(a) Average SNR (dB)            
+
+> 0246810 12 14 16 18 20
+> Semantic Decoding Accuracy (%)
+> 55
+> 60
+> 65
+> 70
+> 75
+> 80
+> 85
+> 90
+> 95
+> 100
+> OMA
+> Semantic NOMA
+> Random-TS
+> Greedy ATS
+> Proposed ATS-ToDMA
+
+(b) 
+
+Fig. 3: (a) Semantic throughput versus number of users. The pro-posed ATS-ToDMA framework consistently achieves the highest semantic throughput by jointly optimizing token selection, semantic interference management, and channel-aware resource allocation. (b) Validation of Theorem 2: theoretical and simulated maximum feasible token occupancy as a function of the target SSINR threshold. Semantic Similarity Threshold /        
+
+> 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9
+> Semantic Throughput (bits/s/Hz)
+> 15
+> 20
+> 25
+> 30
+> 35
+> 40
+> 45
+> 50
+> OMA
+> Semantic NOMA
+> Random-TS
+> Greedy ATS
+> ATS-ToDMA
+
+Fig. 4: Semantic throughput versus semantic similarity threshold. An intermediate threshold provides the best tradeoff between semantic information preservation and interference suppression. 
+
+harmful semantic interactions. Consequently, the proposed framework maintains higher decoding accuracy throughout the entire SNR range. The gain is particularly noticeable in the low-to-moderate SNR regime, where semantic interference management plays a dominant role in semantic reconstruction quality. 
+
+D. Impact of Semantic Similarity Threshold 
+
+Fig. 4 investigates the influence of the semantic similarity threshold used by the Adaptive Token Selection mechanism. A small threshold admits a large number of tokens, increasing semantic redundancy and semantic interference. Conversely, an excessively large threshold removes potentially useful se-mantic information. Therefore, an appropriate threshold must balance semantic richness and interference suppression. The results show that ATS-ToDMA achieves its highest semantic throughput within an intermediate operating region, validating the effectiveness of the proposed token selection strategy. 
+
+E. Validation of Theorem 1 
+
+Theorem 1 establishes an analytical upper bound on the aggregate semantic interference experienced within a ToDMA slot. Fig. 5(a) compares the simulated aggregate semantic interference with the derived analytical upper bound as the 11 Tokens per ToDMA Slot (M)          
+
+> 246810 12 14 16 18 20
+> Aggregate Semantic Interference
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 120
+> 140
+> Simulation
+> Theorem 1 Bound
+
+(a) !           
+
+> 12345678910
+> Maximum Feasible Occupancy
+> 0.8
+> 0.9
+> 1
+> 1.1
+> 1.2
+> 1.3
+> 1.4
+> 1.5
+> 1.6
+> 1.7 Theory
+> Simulation
+
+(b) 
+
+Fig. 5: (a) Validation of Theorem 1: aggregate semantic interference obtained from simulation and the analytical upper bound versus the number of tokens scheduled within a ToDMA slot. (b) Validation of Theorem 2: theoretical and simulated maximum feasible token occupancy as a function of the target SSINR threshold. 
+
+number of simultaneously scheduled tokens increases. As expected, semantic interference grows with token occupancy because additional semantic interactions are introduced among co-scheduled tokens. Importantly, the measured interference remains consistently below the theoretical bound for all oc-cupancy levels. Although conservative, the bound accurately captures the growth trend of semantic interference and there-fore provides a practical design guideline for ATS-ToDMA slot dimensioning. 
+
+F. Validation of Theorem 2 
+
+Theorem 2 derives a bound on the maximum feasible token occupancy that guarantees a target SSINR requirement. Fig. 5(b) compares the theoretical occupancy limit with the maximum number of tokens that can be simultaneously sched-uled while satisfying the SSINR constraint. As the target SSINR threshold increases, fewer semantic tokens can coexist within the same ToDMA slot because stronger reliability guar-antees must be maintained. The analytical prediction closely matches the simulation results across the entire operating range, confirming the validity of the derived occupancy bound. These results demonstrate that Theorem 2 serves as an effec-tive design tool for occupancy-aware semantic scheduling and resource allocation. 
+
+G. Validation of Theorem 3 
+
+Theorem 3 provides a closed-form approximation for semantic-aware power allocation in the presence of semantic interference. Fig. 6(a) evaluates the proposed approximation against the optimal numerical solution obtained by solving the power allocation problem using successive convex approxima-tion (SCA). The average relative error is computed as 
+
+ϵ = 1
+
+M
+
+> M
+
+X
+
+> i=1
+
+|P approx  
+
+> i
+
+− P opt  
+
+> i
+
+|
+
+P opt 
+
+> i
+
+. (51) The approximation error remains low under weak and mod-erate semantic coupling conditions, which correspond to the intended operating regime of ATS-ToDMA. As semantic cou-pling increases, the approximation gradually deviates from the optimal numerical solution due to stronger interactions among co-scheduled tokens. Nevertheless, the proposed closed-form Semantic Coupling Strength          
+
+> 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1
+> Relative Error (%)
+> 0
+> 10
+> 20
+> 30
+> 40
+> 50
+> 60
+> 70
+> 80
+> 90
+> 100
+
+(a) SNR (dB)            
+
+> 0246810 12 14 16 18 20
+> Average Power
+> 0
+> 0.5
+> 1
+> 1.5
+> 2
+> 2.5
+> 3
+> 3.5
+> Equal Power
+> Optimal
+> Approximation
+
+(b) 
+
+Fig. 6: (a) Validation of Theorem 3: relative error between the proposed closed-form power allocation and the optimal numerical solution versus semantic coupling strength. (b) Validation of Theo-rem 3: average transmit power achieved by equal-power allocation, optimal semantic-aware allocation, and the proposed closed-form approximation. TABLE IV: Performance Summary of ATS-ToDMA Compared with Greedy ATS 
+
+Metric Greedy ATS ATS-ToDMA Improvement Semantic Through-put (bits/s/Hz) 26.4 34.7 +31.4% Semantic Accuracy (%) 89.2 96.8 +8.5% Aggregate Seman-tic Interference 72.3 51.4 -28.9% Average SSINR 6.8 9.7 +42.6% Average Transmit Power (W) 1.00 0.79 -21.0% 
+
+solution maintains high accuracy and closely tracks the op-timal power allocation while avoiding iterative optimization. These results validate the effectiveness of Theorem 3 and demonstrate its practical utility for low-complexity semantic communication systems. Table IV summarizes the overall performance gains achieved by ATS-ToDMA relative to the strongest benchmark, namely Greedy ATS. The proposed framework simultaneously improves semantic throughput and decoding reliability while reducing both semantic interference and transmit power re-quirements. These gains demonstrate the benefit of jointly op-timizing token selection, semantic scheduling, and semantic-aware power allocation. 
+
+H. Discussion 
+
+The results presented in Figs. 3–6 provide both system-level and analytical validation of the proposed ATS-ToDMA frame-work. Figs. 3 and 4 demonstrate substantial improvements in semantic throughput and decoding reliability compared with existing approaches. Furthermore, Figs. 5 and 6 confirm that the analytical developments accurately characterize the behavior of the system. In particular, Theorem 1 provides a useful upper bound on semantic interference, Theorem 2 accurately predicts feasible token occupancy under SSINR constraints, and Theorem 3 achieves near-optimal power allocation with significantly re-duced complexity. Collectively, these results validate the effec-tiveness of jointly modeling adaptive token selection, semantic interference, channel awareness, and power allocation in cross-modal semantic communication systems. An important observation from Figs. 3–6 is that the gains of ATS-ToDMA become increasingly significant as network 12 
+
+density grows. This behavior arises because semantic inter-ference increases nonlinearly with token occupancy, making interference-aware scheduling more beneficial in crowded se-mantic communication environments. The results suggest that semantic interference should be treated as a first-class resource management variable, analogous to signal interference in con-ventional wireless systems. Furthermore, the close agreement between analytical predictions and simulation results confirms that the proposed theoretical framework provides reliable design guidelines for cross-modal semantic communication systems. 
+
+I. Limitations 
+
+The current study adopts a model-driven representation of semantic similarity and semantic interference. Although the proposed framework captures the fundamental interac-tions among semantic tokens, future investigations using real foundation-model embeddings and large-scale multimodal datasets are required to further validate the proposed SSINR formulation in practical semantic communication systems. VII. C ONCLUSIONS AND FUTURE WORK 
+
+This paper proposed ATS-ToDMA, a novel Adaptive To-ken Selection and Token-Domain Multiple Access framework for cross-modal semantic communication systems. By treat-ing semantic tokens as the fundamental resource units, the proposed framework jointly performs semantic token selec-tion, semantic-interference-aware scheduling, and semantic-aware power allocation. A Semantic Signal-to-Interference-plus-Noise Ratio (SSINR) metric was introduced to char-acterize the combined impact of channel impairments and semantic interference arising from token similarity. Theoretical analysis established: (i) a semantic interference upper bound, (ii) an occupancy feasibility bound, and (iii) a low-complexity semantic-aware power allocation strategy. Simulation results demonstrated that ATS-ToDMA con-sistently outperforms conventional OMA, Semantic NOMA, Random-TS, and Greedy ATS strategies in terms of semantic throughput and semantic decoding accuracy. Furthermore, the close agreement between theoretical predictions and simula-tion results validated the effectiveness of the proposed ana-lytical framework and confirmed its usefulness as a practical design tool for semantic communication systems. Future work will focus on implementing ATS-ToDMA using real semantic encoders and large-scale multimodal datasets, in-cluding transformer-based language, vision, and speech mod-els. Another promising direction is the integration of ATS-ToDMA with foundation-model-assisted semantic communi-cation architectures and edge intelligence platforms. In addi-tion, extending the framework to dynamic network environ-ments with user mobility, semantic traffic heterogeneity, and distributed semantic scheduling remains an important research challenge for future 6G semantic communication networks. APPENDIX APROOF OF THEOREM 1Since ξij ≤ δ, we have ξ2 
+
+> ij
+
+≤ δ2, and by assumption αij ≤
+
+αmax . Substituting into the interference expression yields 
+
+Iij = αij ρij ξ2 
+
+> ij
+
+1ij ≤ αmax ρij δ2. (52) Summing over all unordered token pairs, we obtain 
+
+Itotal ≤ αmax δ2
+
+> M
+
+X 
+
+> j̸=iM
+
+X
+
+> i=1
+
+ρij . (53) Under equal power allocation, i.e., Pi = Pref = P , this simplifies to 
+
+Itotal ≤ αmax P δ 2M (M − 1) , (54) which completes the proof. APPENDIX BPROOF OF THEOREM 2Since ξ2 
+
+> ij
+
+≤ δ2 and αij ≤ αmax , we have 
+
+Ii =
+
+> M
+
+X 
+
+> j̸=i
+
+αij P ξ 2 
+
+> ij
+
+≤ αmax δ2P (M − 1) . (55) Next, using SSINR i expression from (27) and imposing SSINR i ≥ Γ, we obtain 
+
+P ∥gi∥2
+
+P (M − 1) αmax δ2d + N0
+
+≥ SSINR i ≥ Γ, (56) which leads to 
+
+M ≤ 1 + P ∥gi∥2 − ΓN0
+
+ΓP α max δ2d . (57) This result provides a practical design guideline for limiting the number of tokens per slot in terms of a closed-form bound: 
+
+Mmax = 1 + P ∥gi∥2 − ΓN0
+
+ΓP α max δ2d (58) APPENDIX CPROOF OF THEOREM 3Consider the vector of transmit powers 
+
+P = [ P1, . . . , P M ]⊤. (59) Define the interference coupling matrix F as 
+
+Fij =
+
+
+
+Γwij 
+
+∥gi∥2 , j̸ = i, 
+
+0, j = i, 
+
+(60) and define the noise vector 
+
+ui = ΓN0
+
+∥gi∥2 . (61) The SSINR feasibility constraints can then be compactly written as 
+
+P ≥ FP + u. (62) Rearranging terms gives 
+
+(I − F)P ≥ u. (63) Provided that the spectral radius satisfies r(F) < 1, the matrix 
+
+(I − F) is invertible, and the minimal feasible solution is 
+
+P⋆ = ( I − F)−1u. (64) 13 
+
+To avoid the computational complexity of matrix inversion, we employ the first-order Neumann approximation 
+
+(I − F)−1 =
+
+> ∞
+
+X
+
+> k=0
+
+Fk ≈ I + F, (65) which is accurate when the interference coupling is sufficiently weak. Substituting this approximation yields 
+
+P⋆ ≈ (I + F)u = u + Fu . (66) Taking the i-th component gives 
+
+Pi ≈ ui + X 
+
+> j̸=i
+
+Fij uj . (67) Finally, substituting the definitions of Fij and uj produces 
+
+Pi ≈ ΓN0
+
+∥gi∥2
+
+1 + X 
+
+> j̸=i
+
+Γ αij ξ2 
+
+> ij
+
+∥gj ∥2
+
+∥gi∥2
+
+ , (68) which completes the proof. REFERENCES [1] C. E. Shannon, “A mathematical theory of communication,” Bell System Technical Journal , vol. 27, pp. 379–423, 1948. [2] H. Xie, Z. Qin, G. Y. Li, and B.-H. Juang, “Deep learning enabled semantic communication systems,” IEEE transactions on signal pro-cessing , vol. 69, pp. 2663–2675, 2021. [3] E. C. Strinati, S. Barbarossa, J. L. Gonzalez-Jimenez, D. Ktenas, N. Cassiau, L. Maret, and C. Dehos, “6G: The next frontier: From holographic messaging to artificial intelligence using subterahertz and visible light communication,” IEEE Vehicular Technology Magazine ,vol. 14, no. 3, pp. 42–50, 2019. [4] G. Xin, P. Fan, and K. B. Letaief, “Semantic communication: A survey of its theoretical development,” Entropy , vol. 26, no. 2, p. 102, 2024. [5] C. Chaccour, W. Saad, M. Debbah, Z. Han, and H. V. Poor, “Less data, more knowledge: Building next-generation semantic communication networks,” IEEE Communications Surveys & Tutorials , vol. 27, no. 1, pp. 37–76, 2024. [6] E. Bourtsoulatze, D. Burth Kurka, and D. G¨ und¨ uz, “Deep Joint Source-Channel Coding for Wireless Image Transmission,” IEEE Transactions on Cognitive Communications and Networking , vol. 5, no. 3, pp. 567– 579, 2019. [7] D. B. Kurka and D. G¨ und¨ uz, “DeepJSCC-f: Deep Joint Source-Channel Coding of Images With Feedback,” IEEE Journal on Selected Areas in Information Theory , vol. 1, no. 1, pp. 178–193, 2020. [8] X. Peng, Z. Qin, X. Tao, J. Lu, and K. B. Letaief, “A robust image semantic communication system with multi-scale vision transformer,” 
+
+IEEE Journal on Selected Areas in Communications , vol. 43, no. 4, pp. 1278–1291, 2025. [9] J. Devlin, M.-W. Chang, K. Lee, and K. Toutanova, “BERT: Pre-training of deep bidirectional transformers for language understanding,” in Pro-ceedings of the 2019 conference of the North American chapter of the association for computational linguistics: human language technologies, volume 1 (long and short papers) , 2019, pp. 4171–4186. [10] T. Brown, B. Mann, N. Ryder, M. Subbiah, J. D. Kaplan, P. Dhariwal, A. Neelakantan, P. Shyam, G. Sastry, A. Askell et al. , “Language mod-els are few-shot learners,” Advances in neural information processing systems , vol. 33, pp. 1877–1901, 2020. [11] A. Dosovitskiy, L. Beyer, A. Kolesnikov, D. Weissenborn, X. Zhai, T. Unterthiner, M. Dehghani, M. Minderer, G. Heigold, S. Gelly et al. ,“An image is worth 16x16 words: Transformers for image recognition at scale,” arXiv preprint arXiv:2010.11929 , 2020. [12] A. Radford, J. W. Kim, C. Hallacy, A. Ramesh, G. Goh, S. Agarwal, G. Sastry, A. Askell, P. Mishkin, J. Clark et al. , “Learning transferable visual models from natural language supervision,” in International conference on machine learning . PmLR, 2021, pp. 8748–8763. [13] Y. Rao, W. Zhao, B. Liu, J. Lu, J. Zhou, and C.-J. Hsieh, “Dynam-icvit: Efficient vision transformers with dynamic token sparsification,” 
+
+Advances in neural information processing systems , vol. 34, pp. 13 937– 13 949, 2021. [14] M. S. Ryoo, A. Piergiovanni, A. Arnab, M. Dehghani, and A. Angelova, “Tokenlearner: What can 8 learned tokens do for images and videos?” 
+
+arXiv preprint arXiv:2106.11297 , 2021. [15] Y. Xu, Z. Zhang, M. Zhang, K. Sheng, K. Li, W. Dong, L. Zhang, C. Xu, and X. Sun, “Evo-ViT: Slow-fast token evolution for dynamic vision transformer,” in Proceedings of the AAAI conference on artificial intelligence , vol. 36, no. 3, 2022, pp. 2964–2972. [16] A. R. Lahitani, A. E. Permanasari, and N. A. Setiawan, “Cosine similarity to determine similarity measure: Study case in online essay assessment,” in 2016 4th International conference on cyber and IT service management . IEEE, 2016, pp. 1–6. [17] Z. Ding, X. Lei, G. K. Karagiannidis, R. Schober, J. Yuan, and V. K. Bhargava, “A survey on non-orthogonal multiple access for 5G networks: Research challenges and future trends,” IEEE Journal on Selected Areas in Communications , vol. 35, no. 10, pp. 2181–2195, 2017. [18] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, Ł. Kaiser, and I. Polosukhin, “Attention is all you need,” Advances in neural information processing systems , vol. 30, 2017. [19] S. Kadam and D. I. Kim, “IoT-Enabled Traffic Management System Using Vehicle Count Prediction in a Semantic Communication Frame-work,” IEEE Internet of Things Journal , vol. 12, no. 17, pp. 36 258– 36 273, 2025. [20] ——, “Knowledge-aware semantic communication system design,” in 
+
+ICC 2023-IEEE International Conference on Communications . IEEE, 2023, pp. 6102–6107. [21] ——, “Knowledge-aware semantic communication system design and data allocation,” IEEE Transactions on Vehicular Technology , vol. 73, no. 4, pp. 5755–5769, 2023. [22] ——, “Semantic communication-empowered vehicle count prediction for traffic management,” in 2024 IEEE Wireless Communications and Networking Conference (WCNC) . IEEE, 2024, pp. 1–6. [23] A. Dosovitskiy, L. Beyer, A. Kolesnikov, D. Weissenborn, X. Zhai, T. Unterthiner, M. Dehghani, M. Minderer, G. Heigold, S. Gelly et al. ,“An image is worth 16x16 words: Transformers for image recognition at scale,” arXiv preprint arXiv:2010.11929 , 2020. [24] S. Hochreiter and J. Schmidhuber, “Long short-term memory,” Neural computation , vol. 9, no. 8, pp. 1735–1780, 1997. [25] A. Devoto, J. Pomponi, S. Petruzzi, P. Di Lorenzo, and S. Scardapane, “Adaptive semantic token selection for ai-native goal-oriented commu-nications,” in 2024 IEEE Globecom Workshops (GC Wkshps) . IEEE, 2024, pp. 1–6. [26] P. Nawrot, J. Chorowski, A. Lancucki, and E. M. Ponti, “Efficient trans-formers with dynamic token pooling,” in Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , 2023, pp. 6403–6417. [27] W. Yang, H. Du, Z. Q. Liew, W. Y. B. Lim, Z. Xiong, D. Niyato, X. Chi, X. Shen, and C. Miao, “Semantic communications for future internet: Fundamentals, applications, and challenges,” IEEE Communications Surveys & Tutorials , vol. 25, no. 1, pp. 213–250, 2022. [28] H. Xie and Z. Qin, “A lite distributed semantic communication system for internet of things,” IEEE Journal on Selected Areas in Communica-tions , vol. 39, no. 1, pp. 142–153, 2020. [29] W. Yang, Z. Q. Liew, W. Y. B. Lim, Z. Xiong, D. Niyato, X. Chi, X. Cao, and K. B. Letaief, “Semantic communication meets edge intelligence,” 
+
+IEEE wireless communications , vol. 29, no. 5, pp. 28–35, 2022. [30] H. Zhou, Y. Deng, X. Liu, N. Pappas, and A. Nallanathan, “Goal-oriented semantic communications for 6g networks,” IEEE Internet of Things Magazine , vol. 7, no. 5, pp. 104–110, 2024. [31] X. Ye, Y. Gan, Y. Ge, X.-P. Zhang, and Y. Tang, “Atp-llava: Adaptive token pruning for large vision language models,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition ,2025, pp. 24 972–24 982. [32] W. Li, H. Liang, C. Dong, X. Xu, P. Zhang, and K. Liu, “Non-orthogonal multiple access enhanced multi-user semantic communication,” IEEE Transactions on Cognitive Communications and Networking , vol. 9, no. 6, pp. 1438–1453, 2023. [33] Z. Zhao, Z. Yang, M. Chen, Z. Zhang, and H. V. Poor, “A joint communication and computation design for probabilistic semantic com-munications,” Entropy , vol. 26, no. 5, p. 394, 2024. [34] Y. Yao, J. Duan, K. Xu, Y. Cai, Z. Sun, and Y. Zhang, “A survey on large language model (LLM) security and privacy: The good, the bad, and the ugly,” High-Confidence Computing , vol. 4, no. 2, p. 100211, 2024. [35] L. Yuan, Y. Chen, T. Wang, W. Yu, Y. Shi, Z.-H. Jiang, F. E. Tay, J. Feng, and S. Yan, “Tokens-to-token ViT: Training vision transformers from scratch on imagenet,” in Proceedings of the IEEE/CVF international conference on computer vision , 2021, pp. 558–567.
