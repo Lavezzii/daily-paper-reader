@@ -1,0 +1,1270 @@
+Title: Self-Evolving In-Context Learning for Direct Pilot-to-Beamformer Design in MU-MISO Systems
+
+URL Source: https://arxiv.org/pdf/2607.11970v1
+
+Published Time: Wed, 15 Jul 2026 11:55:17 GMT
+
+Number of Pages: 14
+
+Markdown Content:
+# Self-Evolving In-Context Learning for Direct Pilot-to-Beamformer Design in MU-MISO Systems 
+
+Yubo Zhang, and Xiaodong Wang 
+
+Abstract —We develop an enhanced in-context learning (ICL) framework to improve the performance of pilot-based beam-forming in multi-user multiple-input single-output (MU-MISO) systems. The proposed scheme integrates the ICL-Transformer backbone with the pilot encoder-decoder network (EDN) and the beamformer EDN. A crucial feature of our ICL network is that it can handle multiple channel models without retraining, enabled by the construction of model-specific context datasets. To improve convergence and robustness, we introduce three key innovations: (a) a curriculum learning (CL) strategy that smoothly transitions from supervised LMMSE-labeled imitation to unsupervised sum-rate maximization, (b) a self-evolving mech-anism that dynamically expands and refines the context datasets for all channel models during CL-based training, and (c) a mismatch-aware extension that incorporates several mismatches into the general ICL framework and bypasses explicit channel calibrations. Ablation studies validate the effectiveness of the in-context architecture and enhanced training strategies. Simulation results over diverse communication environments show that the proposed scheme is able to rapidly adapt to both seen and unseen channel models without gradient-based parameter updates, and can mitigate the mismatch issues via intelligent context con-structions. Furthermore, our scheme consistently outperforms the existing beamforming schemes under pilot-based settings, including the WMMSE benchmark and the recent Transformer-based methods. 
+
+Index Terms —In-context learning, pilot-based beamform-ing, self-evolving, curriculum learning, multi-model adaptation, mismatch-aware design 
+
+I. I NTRODUCTION 
+
+Next-generation wireless systems are expected to oper-ate with larger antenna arrays, denser user populations, and more diverse propagation environments, creating an urgent need for scalable, generalizable and low-latency physical-layer signal processing [1]. Classical iterative methods such as the weighted minimum mean squared error (WMMSE) algo-rithm [2] and the branch-reduce-and-bound (BRB) method [3] can attain near-optimal solutions, but their computational cost is often prohibitive in large-scale systems. At the other extreme, low-complexity linear schemes such as maximum-ratio transmission (MRT) [4] and linear MMSE (LMMSE) beamforming [1] provide fast solutions at the cost of sub-stantial performance degradation. To bridge this complexity-performance gap, deep learning (DL) approaches, especially Transformer-based models, have recently been investigated to enable high-quality beamforming with improved scalability and real-time adaptability. 
+
+Y. Zhang and X. Wang are with the Department of Electrical Engineering, Columbia University, New York, NY 10027. 
+
+A. Pilot-based Beamforming Learning 
+
+Deep learning for beamforming and precoding in multi-user systems has undergone rapid development in recent years. Early works mainly relied on lightweight architectures such as fully-connected neural networks (FCNNs) [5]–[8] and convo-lutional neural networks (CNNs) [9]–[11] to learn compact channel representations or to directly predict beamformers. More recently, graph neural networks (GNNs) [12], [13] have been introduced to improve scalability by exploiting the interaction structures among users and antennas, while Transformer-based schemes [14]–[16] further enhance the ex-pressive power by capturing long-range global dependencies in large-scale optimization problems. In parallel, several studies have begun to explore wireless foundation models [17], [18] toward broader multi-task and multi-scenario adaptability. Despite these advances, most learning-based beamforming methods still assume perfect CSI at the base station (BS), whereas practical systems provide only noisy, limited-length pilot signals. In particular, when the pilot length is smaller than the number of users, the full channel cannot be exactly recov-ered even in the noiseless case [19], [20]. This information bot-tleneck limits the conventional two-stage pipeline of channel estimation followed by beamforming [21], [22]: channel esti-mation minimizes reconstruction error rather than the ultimate sum-rate objective, and its errors propagate to the subsequent beamforming stage. These limitations motivate direct pilot-to-beamformer learning , which generates beamformers directly from pilot observations without explicitly reconstructing the full channel [9], [23]. This approach is particularly well suited to sparse mmWave and sub-THz channels, where angular spar-sity enables compressed pilots to retain beamforming-relevant information [21], [24]. Accordingly, encoder-decoder network (EDN) architectures can extract task-relevant features from the pilots and map them directly to beamforming solutions, an approach whose effectiveness has been demonstrated in recent studies [6], [19], [25]. 
+
+B. In-Context Learning 
+
+In-context learning (ICL) has emerged as a promising paradigm for multi-scenario adaptation without parameter up-dates [26], [27]. Originally popularized by large language models, ICL enables a model to infer the underlying task from a few input demonstrations and adapt through forward infer-ence alone [28]. Theoretical studies have further shown that self-attention can implicitly emulate gradient-based adaptation, providing a principled interpretation of this capability [29], [30]. arXiv:2607.11970v1 [cs.LG] 13 Jul 2026 2
+
+In wireless communications, ICL has been applied primarily to receiver-side detection and estimation, where pilot-based demonstrations enable real-time adaptation without retrain-ing [31], [32]. Recent results further establish Transformer-based ICL as an optimal in-context estimator for certain wireless estimation problems [33]. Of particular relevance to our work, [34] extends ICL to transmitter-side beamforming using demonstration pairs for task adaptation. Nevertheless, it assumes perfect CSI and requires a large corpus of pre-computed WMMSE labels, limiting its practicality for large-scale high-frequency systems. 
+
+C. Curriculum Learning and Self-Evolving Mechanism 
+
+Our training framework combines curriculum learning (CL) with a self-evolving mechanism. CL gradually increases the learning difficulty [35], [36], facilitating a stable optimiza-tion and reducing the risk of poor early-stage convergence. This is particularly beneficial for beamforming, whose non-convex sum-rate objective becomes increasingly difficult under heavier user loads and larger system scales. Recent stud-ies [16], [37] have also demonstrated that CL can improve the scalability and generalization of learning-based beamforming methods. Complementing CL, the self-evolving strategy progressively augments a small seed dataset with high-quality model-generated samples. This idea is related to self-training and pseudo-labeling [38], [39], where carefully designed qual-ity control prevents unreliable predictions from degrading training [40]. Similar iterative learning from filtered model generations has also shown promise for large language mod-els [41]. In our ICL framework, this mechanism reduces the reliance on expensive pre-computed beamforming labels while continuously enriching the context distribution. More importantly, the resulting context dataset provides increasingly diverse and informative demonstrations, thereby improving the model’s generalization and adaptation capabilities. 
+
+D. Contributions and Outline 
+
+Despite recent progress, existing pilot-based beamforming methods remain limited in several respects. Conventional pilot-to-beamformer schemes typically employ conventional neural networks tailored to fixed channel models, resulting in limited scalability and cross-scenario generalization [9], [19], [23], [24]. Transformer-based schemes improve scalability, but gen-erally remain scenario-specific [14], [15]; extending them to heterogeneous channel environments often requires additional modules [17], architectural modifications, or costly retraining and fine-tuning [16]. Moreover, the most relevant ICL-based beamforming method, ICWLM [34], assumes perfect CSI and requires a large corpus of pre-computed WMMSE labels, lim-iting its applicability to practical pilot-based high-frequency systems. To tackle these issues, we propose a self-evolving ICL framework with context bootstrapping for direct pilot-to-beamformer design in MU-MISO systems, enabling scalable multi-model adaptation from limited-length pilots with sub-stantially fewer pre-computed labels. Our main contributions are summarized as follows.  
+
+> •
+
+ICL-Transformer architecture: We develop an en-hanced ICL framework that directly generates beam-formers from noisy, length-limited pilot signals without explicit channel estimation. The proposed architecture integrates pilot EDN and beamformer EDN with an ICL Transformer backbone, allowing the Transformer to reason based on the pilot-beamformer demonstration pairs in a low-dimensional feature space.  
+
+> •
+
+Curriculum self-evolving training with context boot-strapping: We design a CL-based training scheme that gradually transitions from supervised imitation of inex-pensive LMMSE labels to unsupervised sum-rate max-imization. This strategy prevents the early-stage poor convergence to local optima and enables the model to improve beyond the initial solutions without requiring near-optimal labels. To improve the training effect, a self-evolving strategy that dynamically expands and refines the context datasets is adopted, where model-generated solutions are selectively admitted into the datasets. This mechanism reduces the dependence on pre-computed la-bels while providing increasingly diverse and informative demonstrations for ICL.  
+
+> •
+
+Multi-model adaptation via context datasets: A single shared ICL network can adapt to multiple channel models through model-specific context datasets, without adding additional modules or updating network parameters. We further extend its adaptation space to model-mismatch settings by incorporating several mismatches into the proposed ICL framework and bypassing explicit channel calibrations.  
+
+> •
+
+Performance evaluations: Ablation studies justify the effectiveness of the the proposed ICL-Transformer ar-chitecture and enhanced training strategies. Extensive simulations demonstrate that the proposed scheme rapidly adapts to both seen and unseen channel models without gradient-based parameter updates, while effectively miti-gating model mismatches through context construction. Furthermore, our scheme consistently outperforms the existing beamforming schemes under pilot-based settings, including WMMSE benchmark and recent Transformer-based methods. II. B ACKGROUND 
+
+A. Downlink Beamforming 
+
+Consider a TDD MU-MISO downlink system, where a base station (BS) equipped with N transmit antennas serves K
+
+single-antenna users. The downlink channel from the BS to user k is denoted by hk ∈ CN ×1, and the aggregated channel matrix is H = [ h1, . . . , hK ] ∈ CN ×K . Assume that the BS applies a linear beamformer W = [ w1, . . . , wK ] ∈ CN ×K to transmit user symbols a = [ a1, . . . , a K ]T , where E[∥ak∥2] = 1 for all k. Then the transmitted signal is given by 
+
+x =
+
+> K
+
+X
+
+> i=1
+
+wiai = W a . (1) 3
+
+Accordingly, the received signal at user k is 
+
+rk = hHk wkak + X
+
+> i̸=k
+
+hHk wiai + zk, (2) where zk ∼ CN (0 , σ 2
+
+> k
+
+) denotes the additive noise at user k.Hence the achievable sum-rate is 
+
+Rsum (H, W ) = 
+
+> K
+
+X
+
+> k=1
+
+log 2 1 + |hHk wk|2
+
+P 
+
+> i̸=k
+
+|hHk wi|2 + σ2
+
+> k
+
+!
+
+. (3) Given the channel state information (CSI) H, the optimal beamformer is then formulated as 
+
+W ∗(H) = arg max   
+
+> ∥W∥2
+> F⩽P
+
+Rsum (H, W ), (4) where P is the maximum transmit power budget at the BS. Typically, the optimal beamformer in (4) is hard to compute. In contrast, the suboptimal LMMSE beamformer W m(H) = [wm 
+
+> 1
+
+, . . . , wm 
+
+> K
+
+] is much easier to obtain, given by 
+
+wm 
+
+> k
+
+=
+
+r PK · (IN + PKi=1 PK hihHi )−1hk
+
+∥(IN + PKi=1 PK hihHi )−1hk∥2
+
+, k ∈ [K].
+
+(5) In practice, the CSI is not available at the BS. Instead, the BS only has access to the received uplink pilot signal. Specifically, let Ψ ∈ CK×Lp denote the pilot matrix, where 
+
+Lp is the pilot length. The received pilot signal at the BS is given by 
+
+Y = HΨ + N ∈ CN ×Lp , (6) where N ∈ CN ×Lp denotes the additive white Gaussian noise with i.i.d. entries nij ∼ CN (0 , σ 2 
+
+> B
+
+). Since pilot transmission consumes valuable time-frequency resources, the pilot length is usually limited, especially in large-scale high-frequency systems. Therefore, communication systems typically operate in the underdetermined regime such that Lp < K , where the channel matrix cannot be uniquely recovered even in the noiseless case, since any perturbation ∆H satisfying 
+
+∆H · Ψ = 0 is unobservable from the pilot signal. Several learning-based approaches to beamforming opti-mization [14]–[16] have been proposed to approximate the optimal beamformer in (4), assuming that perfect CSI is available at the BS. When only the pilot signal is available, existing learning-based methods [42], [43] typically follow a two-stage process: first an estimate ˆH of the channel matrix is obtained based on the pilot signal Y , and then the beamformer is formed using the estimated CSI ˆH. Moreover, recent works [9], [23] advocate direct pilot-to-beamformer 
+
+learning, where the received pilot signal is mapped directly to the beamformer without explicit channel estimation. Such an approach can potentially avoid error propagation from the imperfect CSI recovery and use the short pilot signal more efficiently. 
+
+B. In-Context Learning 
+
+We briefly review the traditional in-context learning (ICL) mechanism and its implementation based on Transformer models. When a single model is expected to operate across 
+
+multiple tasks or scenarios , a central challenge lies in the rapid adaptation to the specific scenario without explicit supervision or retraining. ICL addresses this challenge by presenting a few input-output samples as part of the model input, which serve as the context and allow the model to infer the task/scenario information directly from the input sequence, rather than relying on specific architectural branches or explicit metadata. Specifically, denote by S the set of all scenarios. For each scenario s ∈ S , an ℓ-shot input sequence to the neural network model Mθ is formed as 
+
+Zℓs = [( z1, f (z1)) , (z2, f (z2)) , . . . , (zℓ, f (zℓ)) , zℓ+1 ], (7) where Cs = [( zj , f (zj ))] ℓj=1 denotes the input-output samples, referred to as the context , zℓ+1 denotes the query input , and 
+
+f (·) denotes the objective function. The model then generates the query output Mθ (Zℓs ) to predict the ground truth f (zℓ+1 ).During training, the model acquires its ICL capability by minimizing the following expected loss over all scenarios s ∈S and over all input-output pairs: 
+
+min 
+
+> θ
+
+X
+
+> s∈S
+
+EZℓs
+
+
+
+L Mθ (Zℓs ), f (zℓ+1 )
+
+, (8) where L(·, ·) is a properly chosen loss function, such as the mean squared error (MSE) for regression tasks. Transformer architectures are particularly suitable for ICL frameworks [29], [30]. This is because ICL naturally organizes the input data as a context-query token sequence, where each token represents either an input or an output sample. Owing to its strong sequence-modeling capability, Transformer can effectively process such a context-query sequence and serves as a query-output predictor. In the context of wireless commu-nication applications, recent works [31], [32] show that ICL Transformers are well suited for receiver-side functionalities, such as symbol detection. Furthermore, [34] demonstrates the potential of ICL Transformers for transmitter-side optimiza-tion, based on perfect CSI and a large labeled dataset. III. P ILOT -BASED BEAMFORMING 
+
+A. Problem Statement 
+
+We aim to train a single neural network that handles direct pilot-to-beamformer learning across multiple channel models. Let S denote the set of all channel models, where each s ∈ S 
+
+corresponds to a channel distribution ps, i.e., H ∼ ps. As discussed in Sec. II-A, for a given channel model s ∈ S , a 
+
+CSI-based beamforming optimization scheme learns a map-ping W (H) that approaches the optimal mapping W ∗(H) in (4), for H ∼ ps. On the other hand, to have a single network for multiple channel models, the ICL can be employed [34]. In particular, for each channel model s ∈ S , a context dataset 
+
+Vs composed of samples (H, W ∗(H)) can be precomputed, where H ∼ ps, and W ∗(H) is the corresponding near-optimal WMMSE beamformer. The network input includes a context set Cs consisting of ℓ samples from Vs, and a new channel H ∼ ps, and the expected output is the corresponding beamformer W ∗(H). However, such an approach requires computing a large number of near-optimal beamformer labels, 4
+
+which is computationally expensive, and becomes infeasible for large-scale MIMO systems. 
+
+Remark 1. Meta-learning [44] is an alternative approach to achieve the fast adaptation to multiple channel models. How-ever, meta-learning requires inner-loop and outer-loop gradient updates for task adaptations, while ICL keeps parameters of the pretrained model fixed and performs gradient-free adapta-tions via context. Hence the ICL approach is selected in this work owing to a more lightweight online adaptation. In this paper, our goal is to learn a direct mapping from the pilot signal to the beamformer across different channel models. Note that such a pilot-based beamforming cannot be formulated similar to (4) with H simply replaced by Y , since unlike (3), there is no explicit expression for the sum rate based on the pilot signal Y .Nevertheless, a straightforward way is to simply modify the above ICL approach as follows: for each channel model 
+
+s ∈ S , we draw channel samples H ∼ ps, and form the corresponding pilot signal Y according to (6) and compute the WMMSE beamformer W ∗(H). The context dataset Vs is then composed of samples (Y , W ∗(H)) . However, such an approach suffers from the same prohibitively high complexity for precomputing the context datasets for large-scale systems. To that end, we propose an enhanced ICL scheme based on the curriculum learning (CL) paradigm, in which the model first learns from low-complexity LMMSE labels to obtain a stable initialization, and then gradually shifts toward unsupervised sum-rate maximization on query samples. In particular, the context datasets Vs, s ∈ S , are not precomputed, but expanded and refined during the training stage. Moreover, during training only LMMSE beamformers are computed and no WMMSE beamformer is needed. Specifically, during training, for each channel model s ∈S, we dynamically update a context dataset Vs consisting of triplets (H, Y , ˆW ). For a channel sample H ∼ ps, the pilot signal Y is generated according to (6), and the beamformer solution ˆW is either an LMMSE beamformer computed by (5), or a model-generated beamformer. In particular, initially, we set 
+
+V(0) = [
+
+> s∈S
+
+V(0)  
+
+> s
+
+, V(0)  
+
+> s
+
+= (Hj , Yj , W m 
+
+> j
+
+) M0
+
+> j=1
+
+, (9) where Yj and W m 
+
+> j
+
+are the corresponding pilot signal and LMMSE beamformer based on the channel sample Hj ∼ ps.Following the ICL formulation in (7) and (8), the context is formed by randomly selecting ℓ pilot-beamformer demonstra-tion pairs from Vs:
+
+Cs = [( Yj , ˆWj )] ℓj=1 . (10) Given a new query input Y , the context-query sequence is written as Zℓs = [Cs, Y ]. Then the context-conditioned pilot-to-beamformer mapping can be represented by a neural network Mθ :
+
+W = Mθ (Zℓs ). (11) Then the ultimate objective is to maximize the expected sum-rate over all channel models: 
+
+max 
+
+> θ
+
+X
+
+> s∈S
+
+E H∼ps,NY =HΨ+N
+
+> Cs∈V s(θ)
+
+Rsum 
+
+ H, Mθ (Zℓs ) . (12) Note that the context dataset Vs depends on the network parameters θ and therefore is dynamically updated during training, as will be detailed in Sec. IV. Starting from these initial datasets, we adopt a CL-based training scheme that combines a supervised MSE loss with an unsupervised sum-rate loss as the objective. At the same time, starting from V(0)  
+
+> s
+
+,each context dataset Vs is expanded and updated to improve its quality. Consequently, the training procedure produces both a trained ICL model and a context dataset Vs for each channel model s ∈ S .
+
+During inference , given the received pilot signal Y and its underlying channel model s, a context Cs is sampled from the dataset Vs, and the beamformer solution is generated by a single forward pass W = Mθ∗ (Zℓs ), where Zℓs = [ Cs, Y ],and Mθ∗ is the trained model. 
+
+Remark 2. Our proposed enhanced ICL scheme differs from existing ICL-based schemes [32]–[34]: In those prior works, the demonstration pairs and the query pair are typically assumed to follow the same deterministic input-output rule, and the context dataset is precomputed and fixed during both training and inference. 
+
+B. Overall Network Architecture 
+
+We design a network architecture tailored to the ICL beam-former learning problem described in Sec. III-A, as illustrated in Fig. 1. To effectively capture the features of context samples, a pretrained pilot encoder network and a pretrained beamformer encoder network are adopted to compress the pilot signals and beamformers into the same-size low-dimensional tokens, respectively. This also reduces the subsequent com-putation costs and enables efficient context-query processing. The resulting compressed token sequence is then fed into a Transformer backbone, and finally the beamformer solution is generated by a beamformer decoder network. 
+
+C. EDN Pretraining 
+
+We use a convolutional encoder network with attention pooling to compress the pilot signal, aiming to exploit its struc-tural correlations induced by sparse channels and adaptively aggregates the informative features into a compact token. On the other hand, a simple MLP network is adopted to compress the beamformer label since it is a dense optimization outputs with no clear local structures. 
+
+1) Pilot EDN: We first describe the pilot EDN architecture. Given the received pilot signal Y ∈ CN ×Lp , we stack its real and imaginary parts to obtain y = vec ([ ℜ(Y ); ℑ(Y )]) ∈
+
+R2N L p . As shown in Fig. 1, the pilot encoder Ep : R2N L p →
+
+Rd maps y to a compact pilot token z ∈ Rd. The encoder net-work consists of two 1D convolutional modules, an attention-pooling module, and a two-layer MLP module, where each MLP layer includes a fully-connected (FC) component, a 5
+
+Fig. 1: The network architecture of the proposed ICL beamforming framework. GELU activation component, and a LayerNorm component. To pretrain the pilot encoder, we employ another three-layer MLP network as an auxiliary channel decoder Dc : Rd → R2KN ,which reconstructs the real-valued channel vector h from the pilot token z. Note that this auxiliary decoder is used only during pretraining to encourage the pilot encoder to extract channel-informative latent features from compressed pilot sig-nals, instead of performing explicit CSI reconstructions. We then pretrain the pilot EDN using the multi-scenario labeled datasets in (9), which allow the encoder networks to learn shared token representations across different channel models. Denote the trainable parameters of the pilot encoder and the auxiliary channel decoder as ϕp and ψc, respectively. The pilot EDN is trained by minimizing the following channel reconstruction loss 
+
+min 
+
+> ϕp,ψc
+
+X
+
+> s∈S
+
+E(H,Y )∈V (0) 
+
+> s
+
+h − D c
+
+ Ep(y) 22, (13) where h = vec ([ ℜ(H); ℑ(H)]) ∈ R2N K and y =
+
+vec ([ ℜ(Y ); ℑ(Y )]) ∈ R2N L p . After convergence, the trained channel decoder D∗ 
+
+> c
+
+is discarded while the trained pilot encoder E∗ 
+
+> p
+
+is frozen and used for pilot-token construction in the subsequent training stages. 
+
+2) Beamformer EDN: We now describe the beamformer EDN architecture. Given a beamformer matrix W ∈ CN ×K ,we stack its real and imaginary parts to obtain w =
+
+vec ([ ℜ(W ); ℑ(W )]) ∈ R2N L p . As shown in Fig. 1, the beamformer encoder Eb : R2N K → Rd compresses w into a beamformer token, i.e., c = Eb(w) ∈ Rd. Both encoder 
+
+Eb and decoder Db are implemented as three-layer MLP networks. The beamformer decoder Db : Rd → R2N K 
+
+then maps a compressed beamformer token back to the real-valued beamformer vector. The reconstructed vector is first normalized to satisfy the transmit power constraint ∥w∥2 = P
+
+and then reshaped into a complex beamformer matrix W .The pretraining of beamformer EDN is similar to that of pilot EDN. Denote the trainable parameters of the beamformer encoder and beamformer decoder as ϕb and ψb, respectively. The beamformer EDN is pretrained by minimizing the recon-struction loss 
+
+min 
+
+> ϕb,ψb
+
+X
+
+> s∈S
+
+EW m∈V (0) 
+
+> s
+
+wm − D b
+
+ Eb(wm) 2, (14) where wm = vec ([ ℜ(W m); ℑ(W m)]) . After convergence, both the trained beamformer encoder ˜Eb and the trained beamformer decoder ˜Db are retained as the initializations for the subsequent training stages. IV. E NHANCED ICL FOR MULTI -M ODEL PILOT -BASED 
+
+BEAMFORMING 
+
+Building on the pretrained EDNs, we now present the en-hanced ICL framework by first detailing the ICL Transformer architecture and then presenting our proposed curriculum self-evolving training scheme. 
+
+A. ICL Transformer Network 
+
+For each pilot-beamformer sample (Yj , ˆWj ) in the context dataset, the pilot encoder (pretrained and frozen) and beam-former encoder (remain trainable) produce the compressed tokens as follows 
+
+zj = E∗ 
+
+> p
+
+(Yj ) ∈ Rd, ˆcj = Eb( ˆWj ) ∈ Rd. (15) Given a query input Yℓ+1 , its pilot token is denoted by zℓ+1 =
+
+E∗ 
+
+> p
+
+(Yℓ+1 ). The ICL token sequence is then constructed as 
+
+Zℓ = [( z1, ˆc1), (z2, ˆc2), . . . , (zℓ, ˆcℓ), zℓ+1 ] ∈ Rd×Lseq , (16) 6
+
+where {(zj , ˆcj )}ℓj=1 are the context tokens and zℓ+1 is the query input token. The sequence length is Lseq ≜ 2ℓ + 1 .A Transformer network with T layers is employed to process the token sequence Zℓ in (16). First, each token is projected to a higher-dimensional embedding space: 
+
+X(0) = Win Zℓ + bin 1TLseq ∈ Rα×Lseq , (17) where the dimension α > d , 1Lseq is an all-one vector, Win ∈
+
+Rα×d and bin ∈ Rα are learnable parameters. Starting from 
+
+X(0) , the hidden states are updated for t = 1 , . . . , T as 
+
+¯X(t−1) = LayerNorm  X(t−1) , (18) 
+
+Z(t) = X(t−1) + MHSA (t)  ¯X(t−1) , (19) 
+
+¯Z(t) = LayerNorm  Z(t), (20) 
+
+X(t) = Z(t) + MLP (t)  ¯Z(t). (21) We next specify the multi-head self-attention module in (19) at the tth layer. For the eth attention head, the query, key, and value matrices are computed as 
+
+Q(t) 
+
+> e
+
+= ( ¯X(t−1) )T RQ, (t) 
+
+> e
+
+,
+
+K(t) 
+
+> e
+
+= ( ¯X(t−1) )T RK, (t) 
+
+> e
+
+,
+
+V (t) 
+
+> e
+
+= ( ¯X(t−1) )T RV, (t) 
+
+> e
+
+, (22) where RQ, (t) 
+
+> e
+
+, RK, (t) 
+
+> e
+
+, RV, (t) 
+
+> e
+
+∈ Rα×De denote the learnable weight matrices, De = D/E denotes the head dimension, and 
+
+E denotes the number of attention heads. The attention output of the eth head is computed as 
+
+A(t) 
+
+> e
+
+= softmax Q(t) 
+
+> e
+
+(K(t) 
+
+> e
+
+)T
+
+√De
+
+!
+
+V (t) 
+
+> e
+
+∈ RLseq ×De . (23) The multi-head attention output is obtained by concatenating all heads and projecting the result back to the embedding dimension: 
+
+MHSA( ¯X(t−1) ) = R(t) 
+
+> proj
+
+[A(t)1 , . . . , A(t) 
+
+> E
+
+]T , (24) where R(t) 
+
+> proj
+
+∈ Rα×D is the learnable output projection matrix. After the final Transformer layer, the hidden state is vector-ized and mapped to the predicted query beamformer token: 
+
+x(T ) = vec (X(T )) ∈ RαL seq ,
+
+c = Wo · x(T ) + bo ∈ Rd, (25) where Wo ∈ Rd×αL seq and bo ∈ Rd are learnable parameters. The predicted token c is then decoded into a real-valued beamformer vector: 
+
+w = Db(c) ∈ R2N K . (26) Finally, w is first normalized by w = √P ·w 
+
+> ∥w∥
+
+, and then reshaped into a complex beamformer matrix: 
+
+W = vec −1(w[1 : N K ]) + j · vec −1(w[N K + 1 : 2 N K ]) .
+
+(27) Importantly, the Transformer blocks do not share parameters across layers. We first collect the learnable parameters in the 
+
+tth Transformer layer as 
+
+θt =
+
+n
+
+{RQ, (t) 
+
+> e
+
+, RK, (t) 
+
+> e
+
+, RV, (t) 
+
+> e
+
+}Ee=1 , R(t)
+
+> proj
+
+,
+
+β(t)MLP , β(t)LN ,1, β(t)LN ,2
+
+o
+
+,
+
+(28) where β(t)MLP denotes the parameters of the MLP network in (21), β(t)LN ,1 and β(t)LN ,2 denote the learnable affine parameters of the two LayerNorm modules in (18) and (20). The complete set of learnable parameters in the ICL Transformer is then given by 
+
+θ =
+
+n
+
+Win , bin , Wo, bo
+
+o
+
+∪
+
+> T
+
+[
+
+> t=1
+
+θt. (29) For the beamformer encoder and decoder networks, the learnable parameters are given as follows 
+
+ϕb =
+
+> 3
+
+[
+
+> i=1
+
+n
+
+ξ(i)
+
+> FC
+
+o
+
+, ψb =
+
+> 3
+
+[
+
+> i=1
+
+n
+
+ζ(i)
+
+> FC
+
+o
+
+, (30) where ξ(i) 
+
+> FC
+
+denotes the parameters of the ith linear layer of the beamformer encoder, and ζ(i) 
+
+> FC
+
+denotes the parameters of the 
+
+ith linear layer of the beamformer decoder. 
+
+B. Curriculum Learning with Context Bootstrapping 
+
+As discussed in Sec. III-A, curriculum learning (CL) plays a central role in the proposed enhanced ICL framework. It addresses two challenges in ICL beamforming: highly non-convex optimization and efficient construction of informative context datasets. First, CL provides a smooth transition from supervised imitation to unsupervised sum-rate maximization. This transition anchors the model in a well-initialized region in the early stage and mitigates poor convergence to local optima in the sum-rate maximization. Second, the self-evolving con-text dataset reduces the need for a large precomputed labeled dataset. Instead of relying on fixed beamformer labels, the context dataset is adaptively expanded and refined during train-ing. As high-quality model-generated samples are gradually incorporated, the context distribution becomes broader and more informative, enabling the ICL model to condition on more diverse demonstrations and generalize better across the problem family. Based on the architecture in Fig. 1, the complete training procedure consists of three stages: EDN pretraining, super-vised warm-start, and CL with evolving context. The EDN pretraining has been introduced in Sec. III-C. In the following, with the pretrained pilot encoder fixed, we focus on the joint training of the ICL Transformer and the beamformer EDN through the latter two stages. 
+
+1) Supervised Warm-Start: The supervised warm-start 
+
+training stage jointly trains the ICL Transformer, the beam-former encoder and decoder, by using the LMMSE-labeled context dataset V(0) in (9). This stage provides a stable initial-ization before introducing the non-convex sum-rate objective. Each training batch contains the same number of samples from all channel models s ∈ S . For each training sample from model s, we randomly select ℓ pilot-beamformer pairs from V(0)  
+
+> s
+
+to form the context Cs = [( Yj , W m 
+
+> j
+
+)] ℓj=1 , and select another (Yℓ+1 , W m
+
+> ℓ+1
+
+) ∈ V (0)  
+
+> s
+
+as the query pair 1. Following (15) and (16), the corresponding compressed token sequence 
+
+> 1The query pair should be excluded from the context pairs for all training samples to prevent data-leakage. 7
+
+is constructed as Zℓs . The token sequence is then processed by the ICL Transformer, and the predicted beamformer token is decoded by the beamformer decoder: 
+
+c = Tb(Zℓs ), w = Db(c), (31) where Tb denotes the ICL Transformer with learnable param-eters θ in (29), and the corresponding reshaped and power-normalized beamformer matrix is denoted by W (Yℓ+1 , Cs).After randomly initializing Tb and initializing (Eb, Db) by the pretrained models ( ˜Eb, ˜Db) obtained in Sec. III-C2, the following supervised training across all channel models is performed: 
+
+min 
+
+> θ,ϕb,ψb
+
+X
+
+> s∈S
+
+E{(Yj ,W m 
+
+> j)}ℓ+1
+> j=1 ∈V (0)
+> s
+
+W (Yℓ+1 , Cs) − W m 
+
+> ℓ+1
+> 2
+> F
+
+.
+
+(32) By imitating the LMMSE beamformers, a reliable initialization for the subsequent CL-based training is provided. 
+
+2) CL with Context Bootstrapping: After the supervised warm-start, the learning model gradually transitions to the sum-rate maximization. Let Vs denote the evolving con-text dataset under channel model s, initialized as V(0)  
+
+> s
+
+and bootstrapped during training. Now consider each element 
+
+(H, Y , ˆW ) ∈ Vs. Initially, ˆW is the LMMSE solution 
+
+W m(H) in V(0)  
+
+> s
+
+; later in the dataset Vs during bootstrapping, it may also be an accepted model-generated beamformer solution. For notational clarity, define the model output under a query input Y and a context Cs ∈ V s as follows 
+
+W (Y , Cs) = Db
+
+ Tb
+
+ Zℓs (Cs, Y ) . (33) We define the supervised imitation loss as follows: 
+
+Lsup (Y , ˆW , Cs) = W (Y , Cs) − ˆW 2 
+
+> F
+
+, (34) and define the sum-rate loss as: 
+
+Lrate (H, Y , Cs) = −Rsum (H, W (Y , Cs)) . (35) At a certain epoch, let ru ∈ [0 , 1] denote the proportion of unsupervised samples within one training batch, which 
+
+increases in a stepwise manner and ends up with ru = 1 
+
+during CL-based training. The training objective under channel model s can then be written in the following expected loss form: 
+
+min 
+
+> θ,ϕb,ψb
+
+h
+
+(1 − ru) E(H,Y , ˆW )∈V s
+
+> Cs∈V s
+
+h
+
+Lsup (Y , ˆW , Cs)
+
+i
+
++ γ · ru
+
+
+
+ηd E(H,Y , ˆW )∈V s
+
+> Cs∈V s
+
+Lrate (H, Y , Cs)
+
++ (1 − ηd) E H∼ps,NY =HΨ+N
+
+> Cs∈V s
+
+Lrate (H, Y , Cs) i 
+
+,
+
+(36) where γ is a scaling factor that balances the supervised and sum-rate losses. To strike a balance between exploitation, i.e., refining existing samples in the dataset, and exploration, i.e., improving on newly generated samples, the unsupervised samples are further divided into those drawn from Vs, which corresponds to the second term in (36), and those generated from the simulator, which corresponds to the third term in (36). 
+
+ηd ∈ [0 , 1] controls the ratio between these two components. During CL-based training, the model continuously generates candidate beamformer solutions for newly sampled pilot sig-nals. Specifically, under channel model s, we consider a fresh sample ( ˜H, ˜Y , ˜W m) generated by the simulator, where ˜W m
+
+is the LMMSE beamformer of ˜H, together with a randomly selected context Cs from Vs. The model produces ˜W ( ˜Y , Cs)
+
+based on (33), with achieved sum rate 
+
+˜R = Rsum ( ˜H, ˜W ( ˜Y , Cs)) . (37) The candidate sample is admitted into the evolving context dataset only if it outperforms a prescribed fraction of the LMMSE performance on the same channel: 
+
+˜R ⩾ α · Rsum ( ˜H, ˜W m), (38) where α increases from αs to αe during training. This instance-wise admission rule prevents low-quality model-generated solutions from polluting the context dataset. The threshold is intentionally relaxed in the early stage to en-courage context diversity and becomes progressively stricter to improve the quality of retained demonstrations. Once ac-cepted, the sample ( ˜H, ˜Y , ˜W ( ˜Y , Cs)) is added to Vs, and the generated beamformer ˜W ( ˜Y , Cs) is used in the later context constructions. In addition to adding qualified new samples , each context dataset also keeps revisiting and refining its existing samples to improve the context quality. Specifically, given a sampled triplet (H, Y , ˆW ) ∈ V s, if the model generates a beamformer solution W (Y , Cs) during training, such that 
+
+Rsum (H, W (Y , Cs)) > R sum (H, ˆW ), (39) 
+
+(H, Y , ˆW ) will be replaced by (H, Y , W (Y , Cs)) in Vs.To conclude, unlike prior ICL beamforming scheme [34] that requires a large-scale WMMSE-labeled dataset for context construction, the enhanced ICL scheme only requires precom-puting a small seed dataset with inexpensive LMMSE labels, which is enabled by the context bootstrapping mechanism during CL-based training. V. E XTENSION TO MODEL -MISMATCH SETTINGS 
+
+The previous sections consider an aligned setting, where the pilot signal and the beamforming objective are associated with the same channel realization. We now extend the proposed ICL framework to more practical model-mismatch settings, in which the received pilot signal is generated from a channel state or propagation condition that is not fully aligned with the target channel used for beamformer evaluation. We first introduce several representative sources of mismatch, and then develop a mismatch-aware ICL scheme that incorporates these mismatches into the general framework. 
+
+A. Model Mismatches 1) Uplink-Downlink Mismatch: In FDD systems, the uplink and downlink channels share similar topology-related param-eters, but operate at different carrier frequencies [45]. There-fore, frequency-dependent parameters may differ between the 8
+
+Algorithm 1 Enhanced ICL Pilot-based Beamforming Scheme under Multiple Channel Models.  
+
+> 1:
+
+Parameters : epoch number of EDN pretraining stage E0, epoch number of warm-start stage E1, epoch number of CL stage E2,sample ratios (ru, η d), scaling factor γ, context length ℓ 
+
+> 2:
+
+Training:  
+
+> 3:
+
+EDN pretraining:  
+
+> 4:
+
+Build V(0) = S 
+
+> s∈S
+
+V(0)  
+
+> s
+
+with LMMSE labels  
+
+> 5:
+
+for epoch e = 1 , . . . , E 0 do  
+
+> 6:
+
+Construct a training batch containing the samples from all channel models  
+
+> 7:
+
+Train (Ep, Dc) on V(0) via (13)  
+
+> 8:
+
+Train (Eb, Db) on V(0) via (14)  
+
+> 9:
+
+end for  
+
+> 10:
+
+Discard D∗ 
+
+> c
+
+, freeze E∗ 
+
+> p
+
+, retain ˜Eb and ˜Db 
+
+> 11:
+
+Supervised warm-start:  
+
+> 12:
+
+for epoch e = 1 , . . . , E 1 do  
+
+> 13:
+
+Construct a training batch containing the samples from all channel models  
+
+> 14:
+
+Draw ℓ context pairs and a query pair from V(0)  
+
+> s
+
+,compress them via E∗ 
+
+> p
+
+and Eb 
+
+> 15:
+
+Construct the input token sequence Zℓs 
+
+> 16:
+
+Perform the supervised training based on (32)  
+
+> 17:
+
+end for  
+
+> 18:
+
+CL with context bootstrapping:  
+
+> 19:
+
+Initialize Vs = V(0)  
+
+> s
+
+for all models s ∈ S  
+
+> 20:
+
+for epoch e = E1 + 1 , . . . , E 1 + E2 do  
+
+> 21:
+
+Update ru according to the curriculum  
+
+> 22:
+
+Construct a training batch containing the samples from all channel models  
+
+> 23:
+
+Based on (ru, η d), select samples from Vs and generate fresh samples from the simulator  
+
+> 24:
+
+Perform the CL-based training using (36)  
+
+> 25:
+
+Add each fresh sample into Vs if it satisfies (38)  
+
+> 26:
+
+Update each existing sample in Vs if it satisfies (39)  
+
+> 27:
+
+end for  
+
+> 28:
+
+Obtain the trained ICL model (E∗ 
+
+> p
+
+, E∗ 
+
+> b
+
+, T ∗ 
+
+> b
+
+, D∗ 
+
+> b
+
+) and the bootstrapped datasets {V s}s∈S for all channel models  
+
+> 29:
+
+Inference:  
+
+> 30:
+
+Receive the new pilot signal Y 
+
+> 31:
+
+Given channel model s, randomly sample Cs from Vs 
+
+> 32:
+
+Construct token sequence Zℓs and generate the solution 
+
+uplink and downlink. Accordingly, we model them as two correlated sparse geometric channels: 
+
+hul  
+
+> k
+
+=
+
+r NL
+
+> L
+
+X
+
+> p=1
+
+αul 
+
+> k,p
+
+aful (ϕk,p ),
+
+hdl  
+
+> k
+
+=
+
+r NL
+
+> L
+
+X
+
+> p=1
+
+αdl 
+
+> k,p
+
+afdl (ϕk,p ), (40) where ful and fdl denote the uplink and downlink carrier frequencies, respectively, and the steering vector is given by 
+
+af (ϕ) = 1
+
+√N
+
+h
+
+1, e j2πf d 0 sin ϕ/c , . . . , e j2πf d 0(N −1) sin ϕ/c iT
+
+,
+
+(41) where f is the carrier frequency, c is the speed of light, and 
+
+d0 is the antenna spacing. The path gains in (40) are typically modeled as the following correlated perturbation model [ ?]: 
+
+αdl  
+
+> k,ℓ
+
+= ρud αul  
+
+> k,ℓ
+
++
+
+q
+
+1 − ρ2ud ϵud 
+
+> k,ℓ
+
+, (42) where ρud ∈ [0 , 1] controls the uplink-downlink correlation, and ϵud  
+
+> k,ℓ
+
+∼ CN (0 , 1) is an independent perturbation. In this setting, the pilot signal ¯Y is computed by (6) based on the uplink channel Hul = [ hul  
+
+> 1
+
+, . . . , hul  
+
+> K
+
+].
+
+2) Channel-Aging Mismatch: We next consider the channel-aging mismatch. If the processing delay from pi-lot reception to beamformer generation exceeds the channel coherence time, the received pilot signal is generated from an outdated channel, whereas the beamformer is applied to an updated channel. Specifically, let ¯hk and hk denote the outdated and updated channels of user k, respectively. Since the path topology and angular support usually vary slowly over a short delay, we keep the same AoDs and model the temporal variation through Doppler-induced path-gain evolution: 
+
+¯hk =
+
+r NL
+
+> L
+
+X
+
+> ℓ=1
+
+αk,ℓ a(ϕk,ℓ ),
+
+hk =
+
+r NL
+
+> L
+
+X
+
+> ℓ=1
+
+
+
+ρα k,ℓ ej2πν k,ℓ ∆ + p1 − ρ2ξk,ℓ 
+
+
+
+a(ϕk,ℓ ),
+
+(43) where αk,ℓ ∼ CN (0 , 1) , νk,ℓ is the Doppler shift, ∆ is the processing delay of the BS, and ξk,ℓ ∼ CN (0 , 1) captures residual fading uncertainty. In this setting, the pilot signal 
+
+¯Y is computed by (6) based on the outdated CSI ¯H =[¯h1, . . . , ¯hK ].
+
+3) Pilot-Contamination Mismatch: We further consider the mismatch induced by pilot contamination [46]. When pilot resources are limited, users in neighboring cells may adopt non-orthogonal pilot sequences. As a result, the pilot signal received at the target BS is contaminated by inter-cell interfer-ence. Specifically, let Ht denote the target-cell channel, and let 
+
+Hc 
+
+> i
+
+denote the contaminating channel from the ith neighboring cell, where i ∈ B c and Bc is the set of interfering cells. Then the pilot signal can be modeled as 
+
+¯Y = HtΨ + X
+
+> i∈B c
+
+√ηiHc 
+
+> i
+
+Φi + N , (44) where Ψ is the pilot matrix used by the target users, Φi is the pilot matrix used by the ith cell, and ηi controls the relative contamination strength. 
+
+B. Mismatch-Aware ICL Scheme 
+
+We now propose a mismatch-aware ICL scheme to handle the mismatch cases introduced in Sec. V-A. Consider a set of channel models S without mismatches. For each s ∈ S , let 
+
+s(UD ), s(CA ), and s(PC ) denote the observed models s induced by uplink-downlink mismatch, channel-aging mismatch, and pilot contamination mismatch, respectively. Taking the uplink-downlink mismatch as an example, the initial context dataset is constructed as 
+
+V(0)  
+
+> s, UD
+
+= (Hj , ¯Yj , W m 
+
+> j
+
+) M0 
+
+> j=1
+
+, (45) where Hj ∼ ps is the target channel, ¯Yj is the pilot signal generated under the mismatched model s(UD ), and W m 
+
+> j
+
+is the LMMSE beamformer computed from Hj .9
+
+Let I = {UD , CA , PC } denote the set of mismatch types. For each s ∈ S and each i ∈ I , denote by qs,i the distribution of the mismatched pilot signal ¯Y . Then the ultimate objective is to maximize the expected sum rate over all channel models 
+
+s ∈ S and all mismatch types i ∈ I :
+
+max 
+
+> θ
+
+X
+
+> s∈S ,i∈I
+
+EH∼ps, ¯Y ∼qs,i 
+
+> Cs,i ∈V s,i (θ)
+
+Rsum 
+
+ H, Mθ (Zℓs,i ) , (46) where Cs,i = [( ¯Yj , ˆWj )] ℓj=1 is sampled from the current context dataset Vs,i , Zℓs,i = [ Cs,i , ¯Y ] is the input sequence, and Mθ is the learnable neural network. The other training strategies are similar to those described in Sec. IV. Equivalently, the no-mismatch ICL scheme learns to adapt to the channel models in S, whereas the mismatch-aware ICL scheme extends the adaptation space to S × I . By embed-ding the observation-target mismatch into the construction of demonstration pairs, the proposed scheme avoids explicit inter-mediate channel calibration and enables end-to-end mismatch-aware beamforming. VI. P ERFORMANCE EVALUATION 
+
+A. Experiment Setup 1) Network Parameters: We consider a MU-MISO down-link system where an N -antenna BS serves K single-antenna users under the total transmit power P and common noise variance σ21 = · · · = σ2 
+
+> K
+
+= σ2. Unless otherwise specified, we set K = N = 32 , P = 1 , SNR = 1 
+
+> σ2
+
+, the pilot length 
+
+Lp = 20 , the number of demonstration pairs ℓ = 5 , and input sequence length Lseq = 2 ℓ + 1 = 11 .The parameters of Algorithm 1 are set as follows. The three training stages, namely EDN pretraining, supervised warm-start, and CL with context bootstrapping, are run for E0 =100 , E1 = 50 , and E2 = 700 epochs, respectively. The initial LMMSE-labeled context dataset contains M0 = 1024 samples per channel model, and the final bootstrapped context dataset contains M = 5 × 10 4 samples per channel model. In (36), the scaling factor is set to γ = 0 .1, the unsupervised ratio ru
+
+is smoothly increased from 0 to 1 with step size 0.1, and the ratio ηd is set to 0.3. The training batch size is Bt = 256 ,and the test set size is Bi = 800 , containing samples from all 
+
+|S| = 8 channel models. During training, the channel SNR is sampled from the set Kt = [5 , 10 , 15 , 20] dB. The learning rate is initialized as η = 10 −3 and decayed to η = 10 −4 following a cosine decay schedule. The admission thresholds in (38) are set to αs = 0 .3 and αe = 0 .7 2.Moreover, Table. 1 summarizes the parameter sizes of the main components in the ICL network shown in Fig. 1. The pilot encoder maps the pilot signal from dimension 
+
+2N L p = 1280 to d = 64 , using convolutional kernel size 3
+
+and hidden dimension Dh = 256 . The beamformer encoder maps the beamformer from dimension 2N K = 2048 to 
+
+d = 64 with hidden dimension Dh = 256 , while beamformer decoder maps the beamformer from dimension d = 64 to 
+
+2N K = 2048 with hidden dimension Dh = 256 . The ICL     
+
+> 2Note that the RHS in (38) is computed based on perfect CSI, but the LHS assumes that CSI is unavailable. Hence it is reasonable to set αs< α e<1.
+
+Table 1: Parameter sizes of the main components in the ICL network.                           
+
+> Name Notations Size
+> Pilot encoder Ep344576
+> Beamformer encoder Eb606720
+> Beamformer decoder Db606720
+> Input embedding Win ,bin 8320
+> Weight matrices per block {RQe,RKe,RVe}Ee=1 ,Rproj 263808
+> MLP per block βMLP 131712
+> LayerNorm per block βLN ,1, β LN ,2512
+> Output projection Wo,bo90176
+
+Table 2: Multiple Channel Model Configurations 
+
+ID Name Clusters ( Lc) Rays ( Lr ) Spread ( σϕ)S1 Dense Urban 3 5 10 ◦
+
+S2 LoS-Dominant 1 10 3◦
+
+S3 Rich Scatter 6 3 5◦
+
+S4 Suburban 2 8 15 ◦
+
+S5 Indoor Office 5 2 20 ◦
+
+S6 Near-LoS 1 15 2◦
+
+S7 Moderate Urban 4 4 8◦
+
+S8 Rayleigh / / /
+
+Transformer first embeds each token from d = 64 to α = 128 ,processes the sequence through T = 6 Transformer blocks, and finally projects the vectorized hidden state from dimension 
+
+αL seq = 1408 to d = 64 . Each Transformer block contains two LayerNorm modules, an MHSA module with E = 8 
+
+attention heads and head dimension De = 64 , and an MLP module with layer sizes 128 × 256 , 256 × 256 , and 256 × 128 .Overall, the ICL-based neural network contains approximately 
+
+4.03 × 10 6 parameters. 
+
+2) Multiple Sparse Channel Models: We consider multiple cluster-based sparse channel models. Each channel model is specified by the triplet (Lc, L r , σ ϕ), where Lc denotes the number of scattering clusters, Lr denotes the number of rays per cluster, and σϕ denotes the intra-cluster angular spread. For each user k, the channel is generated as 
+
+hk =
+
+r NLcLrLcX
+
+> c=1
+> Lr
+
+X
+
+> r=1
+
+αk,c,r a(ϕk,c,r ),
+
+where αk,c,r ∼ CN (0 , 1) . For a half-wavelength-spaced ULA, the steering vector is 
+
+a(ϕ) = 1
+
+√N
+
+h
+
+1, e jπ sin ϕ, . . . , e jπ (N −1) sin ϕiT
+
+.
+
+The ray angle is generated by 
+
+ϕk,c,r = ¯ϕk,c + ∆ ϕk,c,r , k ∈ [K], c ∈ [Lc], r ∈ [Lr ], (47) where ¯ϕk,c ∼ Uniform (−π/ 2, π/ 2) and ∆ϕk,c,r ∼ N (0 , σ 2
+
+> ϕ
+
+).Therefore, different channel models are represented by differ-ent triplets (Lc, L r , σ ϕ), and the corresponding configurations are listed in Table 2. 
+
+B. Ablation Study 
+
+We now present ablation studies on several key designs of the proposed enhanced ICL-based beamforming scheme, in-cluding the in-context architecture, curriculum learning (CL), 10 
+
+and the context dataset bootstrapping. The following two non-learning baselines are used throughout simulations:  
+
+> •
+
+WMMSE-LS : the BS first obtains the LS channel esti-mate from the received pilot signal, and then applies the iterative WMMSE algorithm in [2] based on the estimated channel.  
+
+> •
+
+LMMSE-LS : the BS first obtains the LS channel estimate from the received pilot signal, and then computes the LMMSE beamformer by (5) based on the estimated channel. For ease of the result presentation, all ICL-based schemes in this subsection are trained over the multiple channel models listed in Table 2, while the testing results are reported only on the selected “Dense Urban” channel model. We first evaluate the effect of the context length ℓ on the proposed ICL beamforming scheme. Fig. 2 plots the average testing sum rate versus ℓ. It can be observed that the proposed scheme significantly outperforms both WMMSE-LS and LMMSE-LS baselines once demonstration context is provided. As ℓ increases from 0 to a moderate value, the sum rate improves rapidly and then becomes nearly saturated around ℓ = 6 to 12 , indicating that a small number of demonstration pairs already provides effective anchors for query beamforming inference. When ℓ further increases, the performance slightly decreases, possibly because redundant or less relevant demonstrations dilute the attention to the most informative context samples. Based on this result, we set ℓ = 5 for the subsequent simulations, which achieves near-peak performance with a small context length. More importantly, the severe performance degradation at ℓ = 0 ,where the model only observes the query pilot token without any demonstration pair, confirms the necessity of context in-formation and justifies the effectiveness of the ICL mechanism for pilot-based beamforming. 
+
+Fig. 2: Performance under different context lengths ℓ.We then demonstrate the performance of the proposed CL scheme by comparing it with the following learning-based variants: (a) an unsupervised baseline , which trains the model solely with the sum-rate objective and removes the supervised warm-start stage in Sec. IV-B1; (b) a supervised baseline , which trains the model only by imitating LMMSE beamformers and removes the CL stage in Sec. IV-B2; and (c) hard-switch CL baseline , which rapidly changes ru = 0 to 
+
+ru = 1 in (36), while the proposed scheme gradually increases 
+
+ru from 0 to 1 with step size 0.1. All schemes are evaluated over SNR ∈ { 5, 10 , 15 , 20 } dB. Fig. 3 plots the average testing sum rate versus SNR. It is seen that the proposed CL scheme consistently outperforms all three learning-based variants, as well as the WMMSE-LS and LMMSE-LS baselines. The poor performance of the unsupervised baseline shows that directly optimizing the sum-rate objective from scratch is ineffective, confirming the necessity of supervised warm-start. In contrast, the supervised baseline is limited by LMMSE-label imita-tion and cannot achieve further task-oriented improvement. Although hard-switch CL improves over these two extremes, its clear gap from the proposed scheme shows that a smooth transition from label imitation to sum-rate maximization is crucial for stable and effective training. 
+
+Fig. 3: Comparison between the proposed CL scheme and other training methods. Finally, we examine the effectiveness of the proposed 
+
+context bootstrapping mechanism, a core component of the enhanced ICL scheme. Two variants are considered for com-parison: (a) a No bootstrapping baseline , which uses the same CL strategy but keeps each context dataset fixed as the initial LMMSE-labeled seed dataset throughout training; and (b) a 
+
+No update baseline , which admits newly generated samples into the context dataset but does not refine existing samples. All schemes are evaluated over SNR ∈ { 5, 10 , 15 , 20 } dB. Fig. 4 plots the average testing sum rate versus SNR. The “No bootstrapping” baseline lags behind the proposed scheme, indicating that the initial LMMSE-labeled dataset alone cannot provide sufficiently informative contexts. The “No update” baseline improves over “No bootstrapping” baseline by ex-panding the context dataset, but its remaining gap to the proposed scheme shows that updating existing samples is also important. Therefore, the proposed bootstrapping mechanism benefits from both admitting high-quality fresh samples and continuously refining existing context samples. 
+
+C. Overall Performance 
+
+The overall performance of the proposed enhanced ICL beamforming scheme is now evaluated. We first examine its 
+
+convergence performance across multiple channel models. For each channel model, a fixed testing set is generated 11 
+
+Fig. 4: Comparison between the proposed context-bootstrapping scheme and other ICL schemes. before training and used throughout the entire training pro-cess, thereby enabling a consistent on-the-fly evaluation of the model performance. Fig. 5 reports the test sum rate curves for eight representative channel models in Table 2. As observed, the proposed scheme exhibits stable convergence behavior across all considered channel models and eventually outperforms both WMMSE-LS and LMMSE-LS baselines, demonstrating its excellent multi-model adaptability. Although a temporary degradation occurs when the training stage switches, the sum rate increases rapidly and then gradually improves as the context dataset is refined during training. Among all channel models, the relative performance gains in the “LoS-dominant” and “Near-LoS” channel models are smaller, mainly because that a dominated propagation compo-nent can increase the spatial correlation among user channels and reduce their separability, making interference suppression and pilot-to-beamformer learning more challenging. Never-theless, the proposed scheme still achieves competitive or superior performance in these challenging scenarios, showing its robustness across heterogeneous channel environments. We then show that the proposed ICL scheme is capable to perform a fast online adaptation to an unseen channel model, i.e., s′ /∈ S and the corresponding channel distribution H ∼
+
+ps′ is unknown. Instead of fine-tuning the trained ICL model, the BS constructs a small channel-specific context dataset at inference time: it collects pilot signals {Y ′ 
+
+> j
+
+}M0
+
+> j=1
+
+, obtains LS channel estimates H′ 
+
+> j
+
+= Y ′ 
+
+> j
+
+Ψ†, and computes the correspond-ing LMMSE beamformers W ′m 
+
+> j
+
+(H′ 
+
+> j
+
+). The resulting context dataset is then given by Vs′ = {(H′ 
+
+> j
+
+, Y ′ 
+
+> j
+
+, W ′m 
+
+> j
+
+)}M0
+
+> j=1
+
+. Condi-tioned on Vs′ , the trained ICL model generates beamforming solutions for new channel model without online backpropaga-tion or parameter updates. Specifically, Table 3 reports the test sum-rate performance under three additional channel models, beyond the eight basic channel models summarized in Table 2. For each model, we consider two experimental settings. In the Seen setting, the target channel model is included in the training model set S; in the Unseen setting, it is excluded from S. It shows that the proposed ICL scheme retains strong performance even when the target channel model is unseen during training. In all three models, the Unseen setting Table 3: Testing sum-rate performance when channel models are seen or unseen during training.                 
+
+> Channel model Unseen Seen LMMSE-LS WMMSE-LS Highway 26.586 29.244 15.589 20.880 Dense Indoor 27.624 30.382 17.420 20.069 Rural LoS 25.871 28.435 10.490 25.477
+
+outperforms both LMMSE-LS and WMMSE-LS. Compared with the corresponding Seen setting, the sum-rate degradation remains moderate, despite the complete exclusion of the target channel distribution from offline training. This confirms the adaptation capability of the proposed ICL mechanism to previously unseen channel models. Next, we evaluate the proposed scheme under the presence of model mismatches. The ICL network is trained over all channel models in Table 2 and three mismatch types intro-duced in Sec. V, while the testing results are reported on the “Dense Urban” channel model with each type of mismatch. Three ICL schemes are provided for comparison: (a) the proposed mismatch-aware ICL scheme, where pilot signals are generated from the mismatched channels but beamform-ers are evaluated on the original channels; (b) no-mismatch benchmark that serves as an upper bound, where pilot signal and the beamformer evaluation are both associated with the original channels; and (c) the mismatch-unaware ICL scheme, where pilot signals and the beamformer evaluation are both associated with the mismatched channels. Fig. 6 plots the average testing sum rate versus SNR under different mismatch types and ICL schemes. It shows that all mismatch-unaware ICL baselines suffer significant performance degradations, due to deviated solutions in the context. In contrast, the proposed mismatch-aware ICL schemes substantially improve the sum rate and remain close to the common upper bound (no-mismatch benchmark). This demonstrates that the pro-posed ICL scheme can effectively absorb the corresponding mismatches into the context constructions, without explicit channel calibration operations. We finally compare the proposed scheme with existing learning-based beamforming schemes. In addition to the WMMSE-LS and LMMSE-LS baselines introduced above, the following methods are considered:  
+
+> •
+
+ICWLM : a Transformer-based supervised ICL model for multi-task physical-layer optimization, originally using CSI-beamformer demonstration pairs [34];  
+
+> •
+
+SALLO-M : a semi-amortized L2O-based Transformer optimizer for beamforming based on perfect CSI [16];  
+
+> •
+
+SA-EDN : a semi-amortized encoder-decoder network for beamforming based on estimated CSI [6];  
+
+> •
+
+DCF-DNN : an end-to-end learning framework that maps received pilots to distributed feedback and subsequently to beamformer [9];  
+
+> •
+
+CAP-DNN : an end-to-end learning framework with channel-adaptive pilot generation and direct beamformer prediction [19];  
+
+> •
+
+PLFP-Net : a WMMSE-guided framework that jointly learns pilot transmission, limited feedback, and beam-forming [21]. 12 
+
+Fig. 5: On-the-fly testing performance of the enhanced ICL beamforming scheme under multiple channel models. 
+
+Fig. 6: Performance of the mismatch-aware ICL schemes under different mismatch types. “UD”, “CA” and “PC” repre-sent the uplink-downlink mismatch, channel-aging mismatch, and pilot-contamination mismatch, respectively. “Aware” and “Unaware” represent the corresponding mismatch-aware and mismatch-unaware ICL schemes. For a fair comparison, all methods are evaluated under the same system dimensions N = K = 32 , transmit SNR = 20 dB, power constraint P = 1 , while pilot length Lp is increased from 5 to 25 with step size 5. No mismatches are considered in this experiment. Note that perfect CSI is not available — whenever CSI is required by a baseline, it is replaced by the LS estimate ˆH = Y Ψ†, obtained from available pilot signal Y . Accordingly, for the “SALLO-M” baseline, the auxiliary variable and beamformer are initialized by ˆH
+
+and its LMMSE beamformer W m( ˆH), respectively. The “SA-EDN” baseline likewise uses ˆH as its input. For “ICWLM” baseline, we maintain its supervised training procedure and replace each CSI H by the corresponding pilot signal Y in the demonstration pairs, as introduced in Sec. III-A, to adapt to the pilot-based setting. For “DCF-DNN” and “PLFP-Net” baselines, their native pilot-feedback-beamformer pipelines are retained under the same pilot settings. The “CAP-DNN” baseline preserves its channel-adaptive pilot design, but the re-quired CSI is restricted to the LS estimate ˆH. Importantly, our proposed scheme and “ICWLM” baseline are able to be trained over the same set of channel models listed in Table 2 and tested on the “Dense Urban” channel model, while the remaining baselines lack the multi-model adaptability and hence are trained and tested only on the “Dense Urban” channel model. All learning-based methods use the same testing channel samples. Fig. 7 plots the average testing sum rate versus the pilot length Lp. It is seen that all schemes benefit from increasing Lp, and the proposed scheme consistently achieves the highest sum rate over the other schemes. It also shows that all Transformer-based schemes outperform the other DNN-based schemes, suggesting a superior learning capability of the Transformer model. Among those Transformer-based schemes, the advantage of the proposed scheme over “SALLO-M” and “ICWLM” baselines indicates that both the in-context structure and enhanced training strategies contribute to the final performance. 
+
+Fig. 7: Comparison between the proposed scheme and base-lines under varying pilot lengths Lp.13 
+
+VII. C ONCLUSION 
+
+We proposed a self-evolving ICL framework for direct pilot-to-beamformer design in MU-MISO systems. By integrating pilot and beamformer EDNs with a shared ICL Transformer, the proposed framework directly generates beamformers from noisy, limited-length pilots without explicit channel estima-tion. Its CL-based training strategy together with the self-evolving context bootstrapping mechanism improve the con-vergence behavior and substantially reduce the reliance on near-optimal labeled data. Through intelligent model-specific context constructions, a single shared network can adapt to diverse channel models and mismatches, without parameter updates or explicit channel calibrations. Extensive simulations demonstrate high-quality adaptations to both seen and unseen channel models, robust performance under model mismatches, and consistent gains over existing pilot-based beamforming methods. Future work will extend the proposed framework to broader physical-layer optimization tasks, and evaluate its performance using measurement-based channels and over-the-air experiments. REFERENCES [1] E. Bj¨ ornson, M. Bengtsson, and B. Ottersten, “Optimal multiuser trans-mit beamforming: A difficult problem with a simple solution structure,” 
+
+IEEE Signal Processing Magazine , vol. 31, no. 4, pp. 142–148, Jul. 2014. [2] Q. Shi, M. Razaviyayn, Z.-Q. Luo, and C. He, “An iteratively weighted MMSE approach to distributed sum-utility maximization for a MIMO interfering broadcast channel,” IEEE Transactions on Signal Processing ,vol. 59, no. 9, pp. 4331–4340, Sep. 2011. [3] E. Bj¨ ornson, E. A. Jorswieck, M. Debbah, and B. Ottersten, “Optimal resource allocation in coordinated multi-cell systems,” Foundations and Trends in Communications and Information Theory , vol. 9, no. 2–3, pp. 113–381, 2013. [4] A. Lozano, A. M. Tulino, and S. Verd´ u, “Optimum power allocation for parallel gaussian channels with arbitrary input distributions,” IEEE Transactions on Information Theory , vol. 52, no. 7, pp. 3033–3051, Jul. 2006. [5] W. Xia, G. Zheng, Y. Zhu, J. Zhang, J. Wang, and A. P. Petropulu, “A deep learning framework for optimization of MISO downlink beam-forming,” IEEE Transactions on Communications , vol. 68, no. 3, pp. 1866–1880, Mar. 2020. [6] Y. Zhang, J. Johnston, and X. Wang, “Semi-amortized encoder-decoder network for beamforming over sparse large-scale MIMO channels,” 
+
+IEEE Open Journal of the Communications Society , vol. 7, pp. 3451– 3467, 2026. [7] ——, “An encoder-decoder network for beamforming over sparse large-scale mimo channels,” arXiv preprint arXiv:2510.02355 , 2025. [8] Y. Zhang, H. ZivariFard, and X. Wang, “Power and rate allocations for positive-rate covert communications in block-fading channels,” arXiv preprint arXiv:2508.13555 , 2025. [9] F. Sohrabi, K. M. Attiah, and W. Yu, “Deep learning for distributed channel feedback and multiuser precoding in FDD massive MIMO,” 
+
+IEEE Transactions on Wireless Communications , vol. 20, no. 7, pp. 4044–4057, Jul. 2021. [10] Y. Zhang, L. Venturino, and X. Wang, “Direct and ambient backscatter communications with a dual-function radar transmitter,” arXiv preprint arXiv:2604.15502 , 2026. [11] Y. Zhang, Y. Pan, C. Gong, B. Liu, and Z. Xu, “Channel estimation and signal detection for nlos ultraviolet scattering communication with space division multiple access,” IEEE Transactions on Communications ,vol. 72, no. 10, pp. 6427–6441, 2024. [12] J. Kim, H. Lee, S.-H. Hong, and S.-H. Park, “A bipartite graph neural network approach for scalable beamforming optimization,” IEEE Transactions on Wireless Communications , vol. 22, no. 1, pp. 333–347, 2022. [13] Y. Li, Y. Lu, B. Ai, O. A. Dobre, Z. Ding, and D. Niyato, “GNN-based beamforming for sum-rate maximization in MU-MISO networks,” IEEE Transactions on Wireless Communications , vol. 23, no. 8, pp. 9251– 9264, Aug. 2024. [14] Y. Duan, J. Guo, and C. Yang, “Learning precoding in multi-user multi-antenna systems: Transformer or graph transformer?” IEEE Transactions on Wireless Communications , vol. 25, pp. 6284–6300, 2025. [15] Y. Zhang, S. Li, D. Li, J. Zhu, and Q. Guan, “Transformer-based predictive beamforming for integrated sensing and communication in vehicular networks,” IEEE Internet of Things Journal , vol. 11, no. 11, pp. 20 690–20 705, 2024. [16] Y. Zhang, X.-Y. Liu, and X. Wang, “A semi-amortized lifted learning-to-optimize masked (SALLO-M) transformer model for scalable and generalizable beamforming,” arXiv preprint arXiv:2510.13077 , 2025. [17] W. Wen, S. Gao, H. Zhang, X. Cheng, and L. Yang, “WiFo-E: A scalable wireless foundation model for end-to-end FDD precoding in communication networks,” arXiv preprint arXiv:2601.09186 , 2026. [18] Z. Xu, T. Zheng, and L. Dai, “LLM-empowered near-field communica-tions for low-altitude economy,” IEEE Transactions on Communications ,2025. [19] J. Park, F. Sohrabi, A. Ghosh, and J. G. Andrews, “End-to-end deep learning for TDD MIMO systems in the 6G upper midbands,” IEEE Transactions on Wireless Communications , 2024. [20] Y. Zhang, C. Gong, and Z. Xu, “Bi-directional ultra-violet communica-tion with self-interference,” Optics Express , vol. 30, no. 21, pp. 38 534– 38 549, 2022. [21] J. Jang, H. Lee, I.-M. Kim, and I. Lee, “Deep learning for multi-user MIMO systems: Joint design of pilot, limited feedback, and precoding,” 
+
+IEEE Transactions on Communications , vol. 70, no. 11, pp. 7279–7293, Nov. 2022. [22] Y. Ding, Y. Zhang, H. Yu, C. Gong, H. Sun, and Z. Xu, “266 nm ultraviolet communication under unknown interference using uvc micro-led,” Optics Express , vol. 31, no. 10, pp. 16 406–16 422, 2023. [23] K. M. Attiah, F. Sohrabi, and W. Yu, “Deep learning for channel sensing and hybrid precoding in TDD massive MIMO OFDM systems,” IEEE Transactions on Wireless Communications , vol. 21, pp. 10 839–10 853, Dec. 2022. [24] X. Li and A. Alkhateeb, “Deep learning for direct hybrid precoding in millimeter wave massive MIMO systems,” in Proceedings of the 53rd Asilomar Conference on Signals, Systems, and Computers , Nov. 2019. [25] Y. Pan, F. Long, Y. Zhang, S. Yu, J. Chen, C. Gong, and Z. Xu, “Beacon-based time synchronization protocol design for layered ultraviolet com-munication network,” IEEE Transactions on Communications , 2025. [26] Q. Dong et al. , “A survey on in-context learning,” arXiv preprint arXiv:2301.00234 , 2022. [27] Y. Pan, Y. Zhang, F. Long, P. Li, H. Shi, J. Shi, H. Xiao, C. Gong, and Z. Xu, “Beacon-enabled tdma ultraviolet communication network design and realization,” in 2024 14th International Symposium on Com-munication Systems, Networks and Digital Signal Processing (CSNDSP) .IEEE, 2024, pp. 35–40. [28] N. Wies, Y. Levine, and A. Shashua, “The learnability of in-context learning,” in Advances in Neural Information Processing Systems ,vol. 36, 2023, pp. 36 637–36 651. [29] S. Garg, D. Tsipras, P. S. Liang, and G. Valiant, “What can transformers learn in-context? a case study of simple function classes,” in Advances in Neural Information Processing Systems , 2022. [30] J. von Oswald, E. Niklasson, E. Randazzo, J. Sacramento, A. Mord-vintsev, A. Zhmoginov, and M. Vladymyrov, “Transformers learn in-context by gradient descent,” in Proceedings of the 40th International Conference on Machine Learning , ser. Proceedings of Machine Learning Research, vol. 202, 2023, pp. 35 151–35 174. [31] M. Zecchin, K. Yu, and O. Simeone, “Cell-free multi-user MIMO equalization via in-context learning,” in Proceedings of the IEEE 25th International Workshop on Signal Processing Advances in Wireless Communications (SPAWC) , Lucca, Italy, 2024. [32] M. Zecchin and O. Simeone, “In-context learning for gradient-free receiver adaptation: Principles, applications, and theory,” arXiv preprint arXiv:2506.15176 , 2025. [33] V. T. Kunde et al. , “Transformers are provably optimal in-context estimators for wireless communications,” in Proceedings of the 28th International Conference on Artificial Intelligence and Statistics , ser. Proceedings of Machine Learning Research, vol. 258, 2025, pp. 1531– 1539. [34] Y. Wen, X. Chen, M. Zhang, Z. Yang, C. Huang, and Z. Zhang, “ICWLM: A multi-task wireless large model via in-context learning,” 
+
+IEEE Transactions on Communications , vol. 74, pp. 3646–3658, 2026. 14 
+
+[35] Y. Bengio, J. Louradour, R. Collobert, and J. Weston, “Curriculum learning,” in Proceedings of the 26th International Conference on Machine Learning , 2009, pp. 41–48. [36] P. Soviany, R. T. Ionescu, P. Rota, and N. Sebe, “Curriculum learning: A survey,” International Journal of Computer Vision , 2022. [37] J. Johnston, X.-Y. Liu, S. Wu, and X. Wang, “A curriculum learning approach to optimization with application to downlink beamforming,” 
+
+IEEE Transactions on Signal Processing , 2023. [38] D.-H. Lee, “Pseudo-label: The simple and efficient semi-supervised learning method for deep neural networks,” in Workshop on Challenges in Representation Learning, ICML , vol. 3, 2013, p. 896. [39] M.-R. Amini, L. Pauletto, L. Hadjadj et al. , “Self-training: A survey,” 
+
+Neurocomputing , 2025. [40] Q. Xie, M.-T. Luong, E. Hovy, and Q. V. Le, “Self-training with noisy student improves ImageNet classification,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition ,2020, pp. 10 684–10 695. [41] Z. Chen, Y. Deng, H. Yuan, K. Ji, and Q. Gu, “Self-play fine-tuning converts weak language models to strong language models (SPIN),” in 
+
+Proceedings of the 41st International Conference on Machine Learning ,ser. Proceedings of Machine Learning Research, vol. 235, 2024, pp. 6621–6642. [42] W. Ma, C. Qi, Z. Zhang, and J. Cheng, “Sparse channel estimation and hybrid precoding using deep learning for millimeter wave massive MIMO,” IEEE Transactions on Communications , vol. 68, no. 5, pp. 2838–2850, 2020. [43] A. M. Elbir, K. V. Mishra, M. R. B. Shankar, and B. Ottersten, “A family of deep learning architectures for channel estimation and hybrid beamforming in multi-carrier mm-wave massive MIMO,” IEEE Transactions on Cognitive Communications and Networking , vol. 8, no. 2, pp. 642–656, Jun. 2022. [44] C. Finn, P. Abbeel, and S. Levine, “Model-agnostic meta-learning for fast adaptation of deep networks,” in Proceedings of the 34th International Conference on Machine Learning , ser. Proceedings of Machine Learning Research, vol. 70, 2017, pp. 1126–1135. [45] Z. Zhong, L. Fan, and S. Ge, “FDD massive MIMO uplink and downlink channel reciprocity properties: Full or partial reciprocity?” in 2020 IEEE Global Communications Conference (GLOBECOM) , 2020, pp. 1–5. [46] T. L. Marzetta, “Noncooperative cellular wireless with unlimited num-bers of base station antennas,” IEEE Transactions on Wireless Commu-nications , vol. 9, no. 11, pp. 3590–3600, 2010.

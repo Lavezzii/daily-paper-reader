@@ -1,0 +1,754 @@
+Title: FM-Receiver: A Foundation Model Enabled Unified Inner and Outer Neural Receiver Towards AI-Native Wireless Communications
+
+URL Source: https://arxiv.org/pdf/2607.12555v1
+
+Published Time: Wed, 15 Jul 2026 11:57:02 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+> 1
+
+# FM-Receiver: A Foundation Model Enabled Unified Inner and Outer Neural Receiver Towards AI-Native Wireless Communications 
+
+Tianyue Zheng, Chao Jiang, and Linglong Dai, Fellow, IEEE 
+
+Abstract —With the development of artificial intelligence (AI) techniques, neural receivers, which apply AI to improve wireless receivers have been developed. However, most existing neural receivers apply deep learning only to the outer receiver while retaining conventional channel decoding for the inner receiver, which prevents joint optimization and makes it difficult to build efficient and unified AI-native receivers. To address this issue, we propose a foundation model (FM)-enabled unified neural receiver, FM-Receiver, that integrates the outer and inner receivers into a single AI-native framework, by leveraging the strong repre-sentation capability of FMs. Specifically, we introduce a grouped error correction code Transformer that performs symbol-level channel decoding, enabling seamless integration of the inner and outer receiver. Building on this, we illustrate the proposed FM-Receiver, that directly takes the received signals as input of FM and outputs the recovered transmitted bits. In addition, a three-stage configuration-adaptive pre-training strategy is designed to improve the generalization ability to diverse system configura-tions and scenarios. Extensive simulations show that the proposed FM-Receiver achieves better performance than baselines across different system configurations. It also demonstrates strong zero-shot generalization to unseen frequency bands and scenarios. 
+
+Index Terms —Neural receiver, foundation model, channel de-coding, joint optimization 
+
+I. I NTRODUCTION 
+
+Artificial intelligence (AI) is increasingly regarded as a transformative technology for wireless communications. It offers significant potential to enhance performance and in-telligence, and gives rise to the emerging paradigm of AI radio access network (AI-RAN) [1], [2]. In the prevailing modular transceiver architecture, AI techniques have been applied to various individual physical-layer tasks, such as beam management, positioning, channel state information (CSI) feedback, and channel decoding [3], [4]. By effectively capturing complex relationships in wireless channels, these data-driven methods have consistently outperformed conven-tional model-based approaches. Recognizing these advantages, the 3rd Generation Partnership Project (3GPP) has actively promoted the integration of AI into 5G and 5G-Advanced standardization [5]. Studies in Release 18 and Release 19 have shown performance gains from AI-based CSI compression, beam management, and positioning [6]. 
+
+This work was funded in part by the National Science Fund for Distin-guished Young Scholars (Grant No. 62325106), and in part by the National Key R&D Program of China (No. 2023YFB811503). All the authors are with the Department of Electronic Engineering, Ts-inghua University, Beijing 100084, China, and also with the State Key Laboratory of Space Network and Communications, Tsinghua University, Bei-jing 100084, China (e-mails: {zhengty22, jiangc24 }@mails.tsinghua.edu.cn, 
+
+{daill }@tsinghua.edu.cn). 
+
+With the development of 6G, the evolution from AI-assisted air interface to a more AI-native air interface is expected [7], which is defined as the seamless, intrinsic integration of AI technologies into the network architecture and operations. Among the key enablers of this vision, the neural receiver stands out as a promising approach. Unlike the traditional modular signal processing blocks, the neural receivers employ a neural network capable of jointly performing multiple blocks of receiver (e.g. channel estimation, equalization, etc.) [8], [9]. 
+
+A. Prior Works 
+
+Various neural network architectures have been explored to implement neural receivers, with CNN-based and Transformer-based designs being the two prominent approaches. Among CNN-based methods, a representative work is DeepRx [10], which proposed a fully convolutional neural network capable of jointly performing channel estimation, equalization, and demapping over an entire OFDM resource grid to directly generate log-likelihood ratios (LLRs) as the input of chan-nel decoder. Furthermore, NVIDIA extended the CNN-based framework from single-user to multi-user MIMO scenarios in [11] based on Sionna platform, which integrates graph neural networks (GNNs) to effectively mitigate inter-user interference while supports a flexible number of users. To validate this idea, NVIDIA further implements CNN-based methods in real world 5G NR systems [12], demonstrating their practicality and performance advantages under realistic 5G NR conditions. More recently, Transformer architectures have been ex-plored to enhance neural receivers by exploiting the distin-guished feature of self-attention to capture long-range de-pendencies across time and frequency. A Transformer-based neural receiver by Softband in [13], which demonstrates strong performance in different use cases, highlighting the benefits of attention-based global modeling for practical wireless re-ceivers. To reduce the complexity of standard self-attention in Transformer, [14] introduced an axial self-attention mech-anism that factorizes attention operations along the temporal and spectral axes, substantially reducing computational cost while maintaining comparable performance. Moreover, [15] proposed dual attention Transformer-based neural receiver to enhance modeling capacity by incorporating specialized atten-tion mechanisms tailored to wireless channel characteristics. Beyond the aforementioned architectural designs, numerous studies have further enhanced neural receiver performance from different perspectives. To mitigate the difficulty of acquir-arXiv:2607.12555v1 [cs.IT] 14 Jul 2026 2
+
+ing large-scale scenario-specific channel data, [16] proposed a conditional diffusion model-based framework that gener-ates high-fidelity synthetic channel samples, thereby enabling effective data augmentation and improving neural receiver performance. The authors in [17] developed a framework that jointly optimizes asymmetric modulation constellations and a neural receiver, allowing reliable pilotless communications through implicit channel estimation directly from data sym-bols. Besides, to address performance degradation caused by channel distribution shifts during operation, [18] proposed a zero-overhead continual learning framework that redesigns de-modulation reference signals (DMRS) to simultaneously sup-port signal detection and online model adaptation. Moreover, [19] introduced a quantization-aware training methodology that enables neural receivers efficiently deploy on resource-constrained hardware. However, despite the advancements mentioned above, most neural receivers apply neural networks only to the outer re-ceiver (i.e., channel estimation, equalization, and demapping), while retaining conventional channel decoding in the inner re-ceiver. For example, the method proposed by NVIDIA in [11] applied neural network to outer reciever, while employing belief propagation (BP) for channel decoding. On the other hand, although channel decoding can also be realized by diverse deep-learning based methods [4], [20], these methods usually assume perfect LLRs with AWGN channel, neglecting the imperfect LLRs produced by the outer receiver. This separate design between the inner and outer receivers fails to achieve joint optimization of the receiver, resulting in performance degradation especially in challenging scenarios. It also hinders the development of unified and efficient AI-native receiver architectures with reliable performance. 
+
+B. Our Contributions 
+
+In this paper, we propose an FM-enabled unified neural receiver, FM-Receiver, to resolve the performance degradation, by leveraging the powerful representation learning capabilities of foundation models (FMs) 1. It integrates the outer and inner receiver into a single AI-native framework. Through joint optimization of the entire receiver with diverse pretrained datasets, the proposed architecture delivers improved perfor-mance across different scenarios and system configurations. Our contributions are summarized as follows.  
+
+> •
+
+Firstly, we propose an FM-enabled unified neural receiver architecture, namely FM-Receiver, that directly takes the received signals as input of FM and outputs the recovered transmitted bits. Unlike existing approaches that apply neural networks only to the outer receiver while retaining conventional BP decoding for the inner receiver, or focus only on AI-based channel decoding, our method unifies the outer and inner receivers using stacked Transformer blocks, and jointly optimizes the entire receiver.  
+
+> •
+
+A key design of the proposed FM-Receiver is grouped error correction Transformer (G-ECCT), which achieves           
+
+> 1Simulation codes will be provided to reproduce the results in this paper after publication: http://oa.ee.tsinghua.edu.cn/dailinglong/publications/ publications.html.
+
+symbol level channel decoding instead of bit level chan-nel decoding. Specifically, conventional AI-based channel decoders operate at the bit level, where each token corresponds to a single bit. It creates a mismatch with the outer receiver, whose minimum processing unit is a modulated symbol consisting of multiple bits. The mismatch not only hinders the seamless unification of the inner and outer receiver, but also leads to high computational complexity. In contrast, the proposed G-ECCT groups the m bits of a modulated symbol into a single token. Thus, it can facilitate better integration of the outer and inner receiver while reducing computational complexity by a factor of m2. To achieve the idea, group-based mask generation scheme, and specialized pre- and post-processing process are introduced.  
+
+> •
+
+Moreover, we design a three-stage configuration-adaptive pre-training strategy to ensure the generalization capa-bility of the proposed FM-Receiver in practical deploy-ments. Specifically, the outer receiver should adapt for different channel models, frequency bands, users number and velocities, while the inner receiver requires simulta-neous support of varying code lengths, code rates, and bits per symbol, which imposes higher demands on the generalization capability of FM-Receiver. Thus, we pre-train the model on large-scale datasets encompassing diverse scenarios, frequency bands, and modulation and coding schemes (MCSs). The three pretraining stages focus on the outer, inner, and joint inner-outer receiver optimization, respectively. This enables FM-Receiver to effectively adapt to a wide range of system configurations.  
+
+> •
+
+Finally, we conduct extensive simulations to validate the performance of the proposed FM-Receiver. The proposed method can achieve performance improvements across a wide range of system configurations, including varying numbers of users, MCSs, and numbers of subcarriers. For example, for two-user CDL-A scenario, the proposed FM-Receiver achieves over 1.5 dB performance gain than existing methods for different MCSs and Eb/ n0. Fur-thermore, it demonstrates strong zero-shot generalization capability under unseen scenarios and frequency bands. In addition, we analyze the scalability of the proposed method with respect to both pre-training dataset size and model scale, as well as its computational complexity and inference time. 
+
+C. Organization and Notation 1) Organization: The rest of the paper is organized as follows. Section II presents the system model, including the structure of the transmitter, the conventional receiver, and the neural receiver. Section III introduces the proposed G-ECCT. In Section IV, we integrate G-ECCT with the outer receiver to develop the FM-enabled uified neural receiver. Section V provides extensive simulation results to demonstrate the performance and generalization capability of the proposed FM-Receiver. Finally, Section VI concludes the paper. 
+
+2) Notation: Bold lowercase letters denote vectors and bold uppercase letters denote matrices. For a vector a and a matrix A, aH and AH denote the conjugate transpose. 3
+
+∥a∥2 denotes the ℓ2-norm of a vector and ∥A∥F denotes the Frobenius norm of a matrix. R and C denote the sets of real and complex numbers, respectively. CN (μ, Σ) denotes the complex multivariate Gaussian distribution with mean μ and covariance matrix Σ. The operator ⊙ denotes the element-wise (Hadamard) product. The functions sign (·) and bin (·) represent the element-wise sign function and the mapping from signs to binary values {0, 1}, respectively. I denotes the identity matrix and σ2 denotes the noise variance. II. S YSTEM MODEL 
+
+We consider a MU-MIMO system on the physical uplink shared channel (PUSCH), in which NT users are simultane-ously transmitted on the same physical resources to a base station (BS) equipped with NR receive antennas 2. Uniform linear arrays (ULAs) with half-wavelength spacing between antenna elements are employed. An orthogonal frequency division multiplexing (OFDM) scheme is adopted, where each slot consists of NF subcarriers and NS consecutive symbols, resulting in V = NF NS time-frequency resource elements (REs) in a resource grid (RG) of size NF ×NS . The considered communication system is illustrated in Fig. 1. In this section, we sequentially present the structure of the transmitter and traditional receiver. Then basis of neural receiver is discussed. 
+
+A. Transmitter Architecture 
+
+As shown in Fig. 1, a random sequence of uniformly distributed information bits is generated at the transmitter. These bits are then encoded with a low-density parity check (LDPC) encoder, which adds redundancy to the input bitstream for robustness against channel errors. The resulting encoded bits are converted into complex-valued baseband symbols, and distributed over the available resource elements allocated for data transmission. Specifically, we denote the encoded bits transmitted by the nT-th user on the [nS , n F ]-th resource element as bnS ,n F ,n T ∈ { 0, 1}m. bnS ,n F ,n T is mapped to a complex symbol xnS ,n F ,n T ∈ C typically using a 2m
+
+quadrature amplitude modulation (QAM) with Gray labeling. Next, demodulation reference signal (DMRS) insertion pro-cess is performed. To be specific, except for the resource elements carrying data symbols, a subset of resource elements is reserved for DMRS. DMRS symbols, serving as known pilots for channel estimation, are inserted at pre-defined posi-tions in each slot. In the considered system, DMRS is placed at OFDM symbols 2 and 11 [21], with each transmission data stream assigned a dedicated DMRS port. Therfore, the baseband modulated symbols for the resource grid (RG) of size NF × NS can be written as 
+
+XnT =
+
+
+
+x1,1,n T · · · x1,N S ,n T
+
+... . . . ...
+
+xNF ,1,n T · · · xNF ,N S ,n T
+
+ . (1) Then MIMO precodig can be applied if a user is equipped with more than one transmit antennas.   
+
+> 2Without loss of generality, we assume that each user is equivalent to one data stream. For multi-antenna users transmitting multiple data streams, we treat each stream as a virtual user. This enables the proposed neural receiver to support multiple data streams per user by processing each stream independently. Thus, throughout the remainder of this paper, the number of users NTis equivalent to the number of data streams.
+
+Afterwards, the data of nT-th user is turned into an OFDM waveform by feeding XnT into an inverse fast Fourier trans-form (IFFT). Finally, the inter-symbol interference is mitigated by adding a cyclic prefix (CP) to the start of each OFDM symbol, and the waveform is transmitted by the channel. 
+
+B. Traditional Receiver Architecture 
+
+After propagating through the channel, the BS antenna array simultaneously receives the transmitted symbols from NT
+
+users. We assume OFDM with a sufficiently long CP duration is employed. Hence, after removing the CP and applying FFT to each individual OFDM symbol, the received signal 
+
+ynF ,n S ∈ CNR of the [nS , n F ]-th RE can be expressed as 
+
+ynF ,n S = HnF ,n S xnF ,n S + nnF ,n S , (2) where xnF ,n S = [xnF ,n S ,1, . . . , x nF ,n S ,N T ]⊤ ∈ CNT de-notes the vector of transmitted baseband symbols, HnF ,n S ∈
+
+CNR×NT is the channel matrix, and wnF ,n S ∼ CN (0 , σ 2INR )
+
+represents the complex-valued additive white Gaussian noise (AWGN) with noise power σ2. For multi-antenna user, 
+
+HnF ,n S denotes the effective channel matrix, involving both the precoding matrix at the transmitter and the physical chan-nel matrix. The objective of the receiver is to reconstruct the bits transmitted by the individual users from ynF ,n S which is corrupted by the noise and inter-user interference. The detailed process is summarized as follows. Firstly, the reciever performs channel estimation using the received DMRS. Specifically, employing a least squares(LS) estimator, the channel on the RE [nF , n S ] carrying pilot symbols of user nT is calculated as 
+
+ˆhnF ,n S ,n T = xp∗   
+
+> nF,n S,n T
+
+ynF ,n S
+
+|xpnF ,n S ,n T |2 , (3) where xpnF ,n S ,n T ∈ C denotes transmitted DMRS. Then linear interpolation is used to provide channel estimates for RE carrying the data symbols. This will result in the entire channel estimate ˆHnF ,n S . Other channel estimation methods, such as linear minimum mean square error (LMMSE), can also be applied to obtain ˆHnF ,n S .The next step is equalization which estimates the frequency domain signal using the estimated channel. More precisely, an LMMSE equalizer is typically utilized in the receiver, which results in the equalizer output 
+
+ˆxnF ,n S =
+
+ ˆHHnF ,n S
+
+ˆHnF ,n S + ˆ σ2
+
+> n
+
+I
+
+−1 ˆHHnF ,n S ynF ,n S , (4) where ˆσ2 
+
+> n
+
+is the estimated noise power and I is the identity matrix. The equalized symbols are next fed to the demapper, projecting the symbols to their corresponding constellation points. In this case, the bit-level LLRs of the m bits bnS ,n F ,n T
+
+corresponding to xnS ,n F ,n T is obtained as 
+
+LLR (bnS ,n F ,n T [i]) = log 
+
+ P (bnS ,n F ,n T [i] = 0 |ˆxnS ,n F ,n T )
+
+P (bnS ,n F ,n T [i] = 1 |ˆxnS ,n F ,n T )
+
+
+
+,
+
+(5) where bnS ,n F ,n T [i] denotes the i-th bit in bnS ,n F ,n T , while 
+
+P (·| ˆxnS ,n F ,n T ) is the conditional probability given the ob-served symbol ˆxnS ,n F ,n T .Finally, the LLRs are passed to the channel decoder to recover the transmitted bit sequence s.4Source            
+
+> Data
+> Channel
+> Encoding Modulation DMRS
+> Insertion
+> OFDM
+> Modulation
+> Add
+> Cyclic Prefix
+> …
+> Transmitter 1
+> Source
+> Data
+> Channel
+> Encoding Modulation DMRS
+> Insertion
+> OFDM
+> Modulation
+> Add
+> Cyclic Prefix
+> Transmitter 2
+> Source
+> Data
+> Channel
+> Encoding Modulation DMRS
+> Insertion
+> OFDM
+> Modulation
+> Add
+> Cyclic Prefix
+> Transmitter 𝑁 T
+> …
+> Channel
+> Remove
+> Cyclic Prefix
+> … OFDM
+> Demodulation
+> Channel
+> Estimation Equalization Demodulation Channel
+> Decoding
+> Received
+> Data
+> Traditional Receiver
+> Existing Neural Receiver
+> Remove
+> Cyclic Prefix
+> … OFDM
+> Demodulation
+> Received
+> Data
+> Remove
+> Cyclic Prefix
+> … OFDM
+> Demodulation
+> Channel
+> Decoding
+> Received
+> Data
+> Neural Receiver
+> Neural Receiver
+> Proposed FM -Receiver
+
+Fig. 1: System model with traditional reciever, existing neural receiver, and proposed unified neural receiver. 
+
+C. Neural Receiver 
+
+[10] first proposed the concept of neural receiver, which aims to directly operate on the received resource grid after FFT, and generate the LLRs for decoding process. In other words, it effectively replaces the conventional modules of channel estimation, equalization, and demapping. Unlike tra-ditional receivers, where each functional block is optimized independently, the neural receiver is trained in an end-to-end fashion. Specifically, the network is optimized by minimizing the binary cross-entropy (BCE) [22] loss between the soft outputs (i.e. LLRs) produced by the neural receiver and the ground-truth encoded bits. Through this joint optimization, the neural receiver can achieve significant performance gains over conventional receivers. However, current neural receivers typically stop at LLR generation, leaving channel decoding to traditional algorithms such as BP. To address this limitation, we propose a uni-fied neural receiver, FM-Receiver, that incorporates decoding within the neural architecture. This design involves the entire receiver by taking the resource grid as input and directly re-covering the transmitted bits. It is promising to further enhance the performance of neural receivers and contribute to AI-native physical layer implementations. To realize the proposed FM-Receiver, we first develop a G-ECCT for decoding, which will be introduced in Section III. Building on this component, the overall architecture of FM-Receiver is presented in Section IV. III. P ROPOSED GROUPED ERROR CORRECTION CODE 
+
+TRANSFORMER (G-ECCT) To achieve a unified receiver architecture, we aim to imple-ment the channel decoding component using a Transformer-based structure as well, enabling joint optimization with the outer receiver (channel estimation, equalization, and demap-ping). Although [4] has proposed an efficient Transformer-based decoder, this design has several limitations. Specifically, the decoder in [4] performs bit-level channel decoding, where each token corresponds to a single bit. This creates a mismatch with the symbol-level received signals processed by the outer receiver, making seamless unification of the neural receivers challenging. Furthermore, the computational complexity of Transformer grows significantly as codeword length increases. To address these issues, we propose a symbol-level decoder that supports multiple modulation schemes, where each token represents one modulated symbol (comprising m bits). This design aligns directly with the received symbol-level signals. To provide a clear illustration to our proposed G-ECCT, this section first reviews the bit-level channel decoder presented in [4] and then introduces the proposed symbol-level decoder. 
+
+A. Review of Error Correction Code Transformer (ECCT) 
+
+Forward error correction (FEC) is a fundamental technique in communication systems to reduce the bit error rate (BER) over noisy channels. We consider a binary linear block code defined by a generator matrix G ∈ Rk×n and a parity-check matrix H ∈ R(n−k)×n satisfying GH T = 0 over the binary field. A message vector s ∈ { 0, 1}k is encoded into a codeword b ∈ { 0, 1}n via b = s · G, which satisfies Hb = 0.At the receiver, the decoder takes the LLRs of the received signals as input and aims to recover a soft approximation ˆb
+
+of the transmitted codeword b. An illustration of this channel decoding framework is presented in Fig. 1. 
+
+1) Pre- and post- processing: ECCT adopts pre-processing and post-processing of [23] to avoid overfitting and achieve MMSE decoding. In the pre-processing stage, the received LLRs, denoted as l ∈ Rn, are first transformed into a vector of a dimensionality 2n − k suitable for feature extraction. Specifically, the absolute values of the LLRs and the syndrome information are concatenated as follows: 
+
+˜l = |l|, s (l), (6) where [·, ·] denotes vector concatenation, |l| represents the element-wise absolute value of the LLR vector, and s(l) = 
+
+H·bin (sign (l)) ∈ { 0, 1}n−k is the binary syndrome computed from the hard decisions of the LLRs. Obtaining ˜l, positional reliability encoding is performed, which projects ˜l to a high d
+
+dimensional embedding Xin . Then Xin is utilized as the input of the Transformer. [4] models the channel decoding problem as l = (1 −2b)·z,where z is the random multiplicative noise. The Transformer-based decoder is trained to predict the noise vector, and recover the transmitted codeword from the noise vector. Thus, in the post-processing stage, the output of the Transformer 
+
+Xout ∈ R(2 n−k)×d is projected to ˆz ∈ Rn. This prediction is then combined with the input LLR vector l to recover the estimated codeword. Specifically, the final hard-decision output is obtained as 
+
+ˆx = bin  sign (l ⊙ ˆz), (7) where ⊙ denotes element-wise multiplication, sign (·) is the element-wise sign function, and bin (·) maps the signs back to 5
+
+Algorithm 1 Mask Construction Pseudo Code of ECCT  
+
+> 1:
+
+function g(H) 
+
+> 2:
+
+l, n ← H.shape  
+
+> 3:
+
+k ← n − l 
+
+> 4:
+
+mask ← eye (2 n − k) 
+
+> 5:
+
+for i = 0 to n − k − 1 do  
+
+> 6:
+
+idx ← where (H[i] == 1)  
+
+> 7:
+
+for j ∈ idx do  
+
+> 8:
+
+mask [n + i, j ] ← mask [j, n + i] ← 1 
+
+> 9:
+
+for k ∈ idx do  
+
+> 10:
+
+mask [j, k ] ← mask [k, j ] ← 1 
+
+> 11:
+
+end for  
+
+> 12:
+
+end for  
+
+> 13:
+
+end for  
+
+> 14:
+
+return −∞ (−mask ) 
+
+> 15:
+
+end function 
+
+binary values {0, 1}.
+
+2) Code-aware self attention based Transformer: Obtaining 
+
+Xin , ECCT leverages the self-attention mechanism of the Transformer to analyze the received bits and detect the errors. Furthermore, in order to improve the performance of decod-ing, ECCT integrates code structure as fundamental domain knowledge into attention mechanisms. To be specific, since not every bit is necessarily related to all the others, employing full attention, where each token attends to all other tokens, is sub-optimal. Therefore, a mask g(H) : {0, 1}(n−k)×k →{−∞ , 0}(2 n−k)×(2 n−k) is introduced according to H and applied to the self-attention mechanism to indicate the relation-ships among the bits. The construction algorithm of the mask is summarized in Algorithm 1. The mask is initialized as the identity matrix. For each row i of the parity-check matrix H,we unmask all pairwise positions corresponding to the ones in that row, as these bits are directly connected through the parity-check equation. Additionally, we unmask the connections between these bit positions and the corresponding syndrome bit at position n + i, since they jointly define the parity-check constraints. Thus, the code-aware self attention mechanism can be written as Attn (WO , WK , WV ) = 
+
+Softmax 
+
+ (XW O )( XW K )T + g(H)
+
+√dk
+
+
+
+· (XW V ), (8) where WO , WK , WV are learnable matrices. For enhanced clarity, a (10, 6) LDPC code is taken as an example to provide a visual depiction of parity check matrix 
+
+H ∈ { 0, 1}4×10 and the generated mask g(H) in Fig. 2. Here, the matrix H is defined as 
+
+H =
+
+
+
+1 0 0 0 1 1 1 0 0 00 1 0 0 1 0 0 1 0 00 0 1 0 0 1 0 0 1 00 0 0 1 1 1 0 0 0 1
+
+ . (9) Finally, the output of the Transformer can be written as Xout .
+
+B. Grouped Error Correction Code Transformer 
+
+As shown previously, ECCT operates as a bit-level decoder by embedding the LLR of each bit as a token. To better accommodate symbol-level received signals and enable a uni-fied receiver architecture, this section introduces the proposed G-ECCT, transforming bit-level decoding into symbol-level decoding. Specifically, as detailed in Section II, the receiver obtains modulated symbols, each consisting of m bits. Corre-spondingly, each token output by the outer receiver carries the LLRs of m bits. Accordingly, the core idea of G-ECCT is to treat the LLRs of every m bits as a group, project them into one token, and perform decoding at the symbol level, enabling seamless integration of the outer and inner receiver. Implementing G-ECCT presents two key challenges. First, since users may adopt different modulation schemes, the number of bits per symbol ( m) varies. Thus, G-ECCT needs to flexibly support different values of m. Second, the mask used in ECCT to involve domain knowledge cannot be directly applied. Consequently, a dedicated masking mechanism must be designed for G-ECCT to effectively capture the relation-ships among tokens. In the following, we elaborate on how the proposed G-ECCT addresses the aforementioned challenges. 
+
+1) Pre- and post- processing: To support symbol-level de-coding and flexible adaptation to different modulation orders, we design dedicated pre- and post-processing modules for G-ECCT. Let lg ∈ Rn1×m denote the LLR vector output by the outer receiver, where each row corresponds to the m LLRs of one modulated symbol and n1 is the number of symbols. Then, we also group every m bits of s to form the grouped syndrome sg ∈ { 0, 1}n2×m, where n2 = ( n − k)/m . Next, we concatenate the LLRs and the corresponding syndrome: 
+
+˜lg = [ |lg |, sg ] ∈ Rn0×m, (10) where n0 = n1 + n2.To enable a unified input format for different modulation schemes (i.e., varying m), we introduce a maximum mod-ulation order mmax . We pad ˜lg with zeros in the feature dimension to obtain the final input tensor of shape n0 ×mmax .This padding ensures that the network can process inputs with a fixed feature dimension regardless of the actual m used in the modulation scheme. After passing through the Transformer-based decoder, the network outputs the predicted noise vector z ∈ Rn1×mmax . In the post-processing stage, we first extract the relevant portion according to the actual modulation order m to obtain the grouped noise zg ∈ Rn1×m. In this case, we recover the estimated codeword ˆx using the same procedure as in ECCT. This pre- and post-processing design allows G-ECCT to efficiently handle symbol-level inputs while maintaining com-patibility with various modulation schemes and seamless in-tegration with the outer receiver. 
+
+2) Group-based mask generation: To incorporate the code structure into G-ECCT, we design a dedicated attention mask tailored for symbol-level grouped decoding. The overall pro-cedure is presented in Algorithm 2. Specifically, we first construct the bit-level self-attention mask for the original ECCT decoder using the parity check matrix H (as detailed 6  
+
+> (a) (b) (c)
+
+Fig. 2: Illustration with LDPC ( n = 10 , k = 6 ): (a) parity check matrix H; (b) mask generated in ECCT; (c) mask generated in proposed G-ECCT. White squares represent 1 and black squares represent 0. 
+
+Algorithm 2 Mask Construction Pseudo Code of G-ECCT  
+
+> 1:
+
+function gg (H, m ) 
+
+> 2:
+
+Compute mask according to Algorithm 1  
+
+> 3:
+
+l, n ← H.shape, k ← n − l 
+
+> 4:
+
+n0 ← ⌈ 2n − k/m ⌉ 
+
+> 5:
+
+mask g ← 0n0×n0 
+
+> 6:
+
+for i = 0 to n0 − 1 do  
+
+> 7:
+
+for j = i to n0 − 1 do  
+
+> 8:
+
+connected ← False  
+
+> 9:
+
+for p = i · m to (i + 1) · m − 1 do  
+
+> 10:
+
+for q = j · m to (j + 1) · m − 1 do  
+
+> 11:
+
+if mask [p, q ] = 1 then  
+
+> 12:
+
+connected ← True  
+
+> 13:
+
+break  
+
+> 14:
+
+end if  
+
+> 15:
+
+end for  
+
+> 16:
+
+if connected then break end if  
+
+> 17:
+
+end for  
+
+> 18:
+
+if connected then  
+
+> 19:
+
+mask g [i, j ] ← 1, mask g [j, i ] ← 1 
+
+> 20:
+
+end if  
+
+> 21:
+
+end for  
+
+> 22:
+
+end for  
+
+> 23:
+
+return −∞ (−mask g ) 
+
+> 24:
+
+end function 
+
+in Algorithm 1). Then, after grouping the bits into tokens of size m, we generate the grouped mask mask g . For any two groups i and j, if there exists at least one pair of bits where one belongs to group i and the other to group j that are connected in the bit-level mask, we set mask g [i, j ] = 1 (and symmetrically mask g [j, i ] = 1 ). This grouped mask mask g ef-fectively preserves the essential structural relationships among symbols while enabling efficient symbol-level processing in the Transformer architecture. It is worth noting that when the number of subcarriers of RG varies, the input length n0 of G-ECCT also changes accordingly. Thanks to the Transformer’s inherent ability to handle variable-length sequences, no extra design is required. We can simply feed inputs with different code lengths and their corresponding masks into the model for joint training. After developing G-ECCT, we integrate G-ECCT with the outer receiver and present the FM-enabled unified neural receiver in the following section. IV. P ROPOSED FM-E NABLED UNIFIED NEURAL RECEIVER 
+
+This section presents the proposed FM-enabled unified inner and outer neural receiver, FM-Receiver. The method aims to implement the entire receiver using neural networks while supporting flexible adaptation to varying system configura-tions, including different numbers of users, frequency bands, numbers of sub-carriers, and MCSs. We first introduce the overall framework of FM-Receiver. Then, in Section IV-B, we detail the network architecture and explain how it achieves unified neural receivers. Finally, we describe the pre-training strategy designed to enable the receiver to effectively handle diverse user and numbers, frequency bands, and MCSs, etc.. 
+
+A. Overall Framework 
+
+The framework of the proposed FM-enabled unified neural receiver is illustrated in Fig. 3. The receiver takes the received signal Y as input and directly outputs the estimated trans-mitted bits, encompassing channel estimation, equalization, demodulation, and channel decoding within a unified neural architecture. As shown in the figure, the received signal Y ∈
+
+CNF ×NS ×NR first undergoes LS channel estimation to obtain the channel coefficient estimate ˆH ∈ CNT×NF ×NS ×NR . Both 
+
+Y and ˆH are then fed into the network. It should be noted that while it is not strictly necessary to provide the raw channel estimate as input, it facilitates the learning process by offering a bootstrap for subsequent channel estimation and equalization tasks, which would otherwise require multiple neural layers to approximate [10]. After appropriate pre-processing and embedding that align with the input format of the foundation model backbone, the concatenated features are processed by foundation model. In the backbone, both the outer receiver and G-ECCT are 7
+
+implemented by stacked Transformer blocks. Specifically, full-attention Transformer blocks perform frequency-domain sig-nal processing to suppress noise and multi-user interference, producing LLRs. Subsequently, G-ECCT employs masked-attention Transformer blocks to learn the multiplicative noise from these LLRs. Finally, post-processing modules recover the transmitted bits from the refined soft information. This unified architecture enables joint optimization across all receiver mod-ules while maintaining high flexibility and strong performance. 
+
+B. Network Structure 
+
+This subsection describes the network structure of the proposed FM-enabled unified neural receiver. The network takes the complex-valued received post-FFT signal Y, a three-dimensional tensor of shape NF × NS × NR, as input. Then, the LS channel estimator, detailed in Section II-B, produces the channel estimate HnT for each user, which also has the shape NF × NS × NR.
+
+Preprocessing & Embedding Module . These two complex valued tensors are jointly processed by the preprocessing & embedding module. The module first converts Y and HnT into real-valued tensors by concatenating the real and imaginary parts along the feature dimension. The resulting tensors are then concatenated along the same dimension, producing an initial input tensor Xinit of shape NF × NS × 4NR for the 
+
+nT-th user. Then Xinit is normalized and passed through the embdedding module. This module applies a stack of convolutional layers interleaved with ReLU activations to extract hierarchical time-frequency features, followed by a final projection layer that maps the features to the model dimension ds. The output is rearranged into a tensor of shape 
+
+NF NS × ds. Then position embeddings are added to provide sequential information, obtaining the prepared input Xpre to the FM backbone. 
+
+FM backbone . The FM backbone consists of a total of 
+
+N = N1 + N2 Transformer blocks stacked sequentially. The first N1 blocks employ full self-attention and are dedicated to frequency-domain signal processing in the outer receiver. These blocks progressively extract and integrate features to suppress noise and multi-user interference while generating LLRs. The subsequent N2 blocks utilize masked self-attention to realize symbol-level decoding through G-ECCT, as de-scribed in Section III-B. Each of the first N1 Transformer blocks follows the standard architecture with two sub-layers: a multi-head self-attention module and a position-wise feed-forward multi-Layer per-ceptron (MLP) network. Let XI(l)FM denote the input to the 
+
+l-th block ( l = 1 , . . . , N 1). By definition, the input to the first block is the embedded feature tensor Xpre , while subse-quent blocks receive the output of the preceding block, i.e., 
+
+XI(l)FM = XO(l−1) FM . Layer normalization (LN) is first applied independently across the feature dimension for each token and each sample in the batch: 
+
+Xln1( l)FM = LayerNorm (XI(l)FM ). (11) The normalized features are then processed by the multi-head self-attention module with a residual connection: 
+
+Xatt( l)FM = ATT (Xln1( l)FM ) + Xln1( l)FM , (12) where ATT (·) denotes multi-head self-attention, which can be written as Attn (WO , WK , WV ) = 
+
+Softmax 
+
+ (XW O )( XW K )T
+
+√dk
+
+
+
+· (XW V ). (13) A second layer normalization is subsequently applied: 
+
+Xln2( l)FM = LayerNorm (Xatt( l)FM ). (14) The normalized features are passed through the MLP module with another residual connection: 
+
+XO(l)FM = MLP (Xln2( l)FM ) + Xln2( l)FM , (15) where MLP (·) denotes the position-wise feed-forward net-work. The output XO(l)FM of the l-th block serves as the input to the (l + 1) -th block. After successively processing through all N1 full-attention Transformer blocks, a lightweight read-out module is applied to XO(N1)FM to produce the LLRs of the resource elements. Specifically, a linear projection layer maps the feature dimen-sion ds to mmax , the maximum number of bits supported per modulated symbol. This yields an LLR tensor of shape 
+
+NF NS × mmax containing soft information for up to mmax 
+
+bits at every resource element: 
+
+ˆlg = MLP (XO(N1)FM ). (16) To accommodate different modulation schemes with varying 
+
+m, the network always projects to the maximum dimension 
+
+mmax . For any given modulation order, only the first m LLR values are retained while the remaining entries are discarded. This unified projection strategy enables the outer receiver to flexibly support a wide range of modulation schemes without requiring structural modifications. Obtaining the grouped LLRs ˆlg from the outer receiver, symbol-level decoding is performed by G-ECCT, which consists of the remaining N2 masked-attention Transformer blocks. Following the procedure described in Section III, the syndrome is first computed. The LLRs and syndrome are then preprocessed (refer to Eq. (10)) and projected into the backbone feature dimension ds, yielding the input feature map XI(N1+1) FM to the (N1 + 1) -th Transformer block. The subsequent N2 blocks share the same architecture as the preceding full-attention blocks, with the only difference being that multi-head self-attention is replaced by masked self-attention (Eq. (8)) to exploit the code structure. The blocks are stacked sequentially, and the output of the final block is denoted XO(N )FM .
+
+Postprocessing Module . Finally, the postprocessing module recovers the estimated transmitted codeword from XO(N )FM .Specifically, a linear projection layer is first applied to XO(N )FM 
+
+to predict the noise vector ˆzg . The predicted noise is then used, together with the received LLRs, to reconstruct the estimated codeword ˆx following the recovery procedure defined in Eq. (7). The resulting hard decisions of ˆx constitute the final output of the FM-enabled unified neural receiver. Furthermore, we also introduce a read-out CE module. This auxiliary read-out layer takes the final state representation 8Received     
+
+> Data
+> LS Channel
+> Estimator
+> Preprocessing
+> &
+> Embedding
+> Module
+> Foundation Model Backbone
+> Layer Norm
+> Multi -head Attention
+> Layer Norm
+> MLP
+> Transformer Block ×𝑁 1
+> Layer Norm
+> Multi -head Attention
+> Layer Norm
+> MLP  Postprocessing
+> Module
+> Readout
+> CE
+> Transformer Block ×𝑁 2
+> Loss
+> Transmit
+> Bits
+> Training
+> Loss
+> Readout LLRs
+
+Fig. 3: Overall framework of proposed unified neural receiver. 
+
+XO(N1)FM as input and produces a refined channel estimate ˆHnT
+
+for each user. The module is implemented as a lightweight MLP that processes independently at each resource element: 
+
+ˆHnT = MLP (XO(N1)FM ). (17) The read-out CE module generates more accurate channel estimates by leveraging the rich features already extracted by the FM backbone. Besides, when supervised by an additional mean-squared-error (MSE) loss term between the predicted and ground-truth channels, it is observed to significantly improve training convergence and overall performance stabil-ity [12]. This auxiliary supervision will be illustrated later in Section. IV-C. 
+
+C. Pre-Training 
+
+Leveraging the strong generalization capability of FMs, we pretrain the proposed FM-enabled unified neural receiver across multiple heterogeneous datasets that cover diverse sce-narios and system configurations. The objective is to enable the model to adapt to varying numbers of subcarriers, frequency bands, channel models, user numbers and velocities, as well as different modulation and coding schemes, while allowing direct application to unseen scenarios and configurations. The pre-training procedure consists of three stages, which are described in detail below. 
+
+Stage 1: Pretrain of outer receiver. First, we pretrain the outer receiver portion of the network (i.e., the first N1 full-attention Transformer blocks together with preprocessing & embedding module, the readout LLRs module, and readout CE module). The objective is to learn robust frequency-domain processing that effectively mitigates multi-user interference and channel fading effects. For each training mini-batch, the number of active users nT (where 1 ≤ nT ≤ NT) is randomly sampled. Each UE transmits randomly generated payload bits that are independently encoded and modulated. In stage 1, the network takes the received post-FFT signal 
+
+Y as input. After processing through the N1 full-attention blocks, the readout LLR module produces LLR estimates ˆlg ,while the readout CE module outputs refined channel estimates 
+
+ˆHnT . The training loss consists of two terms. The first is the BCE loss between the predicted LLRs and the ground-truth bit labels: 
+
+LBCE = − 1
+
+B
+
+> B
+
+X
+
+> b=1
+> Nb
+
+X
+
+> i=1
+
+h
+
+bb,i log σ(ˆlb,i )+(1 −bb,i ) log  1−σ(ˆlb,i )i
+
+,
+
+(18) where B is the batch size, Nb is the total number of bits in the b-th sample, bb,i ∈ { 0, 1} denotes the ground-truth bit, and σ(·) is the sigmoid function. The second term is the MSE loss on the channel estimates, which supervises the readout CE module: 
+
+LMSE = 1
+
+B
+
+> B
+
+X
+
+> b=1
+
+ˆHb − Hb 
+
+> 2
+> F
+
+, (19) where Hb is the ground-truth channel realization for the 
+
+b-th sample. This auxiliary supervision helps the network not only yield accurate channel estimates but also improve training convergence without increasing inference complexity. The total training loss is then given by 
+
+L1 = LBCE + γLMSE , (20) where the hyperparameter γ > 0 controls the relative contri-bution of the channel estimation loss. 
+
+Stage 2: Pretrain of G-ECCT. In Stage 2, we pre-train the G-ECCT portion (i.e., N2 masked-attention Transformer blocks, and postprocessing module) while keeping the pa-rameters of the outer receiver fixed. Importantly, instead of using the LLRs produced by the Stage 1 outer receiver (which still contain errors and bias), we generate clean LLRs directly from an AWGN channel. This design enables G-ECCT to converge rapidly and avoids overfitting to the imperfect LLR distribution of the outer receiver. The decoders trained on AWGN channels have demonstrated basic generalization ability on fading channels without retraining [24], [25]. The training objective follows the multiplicative noise pre-diction framework in [4]. Let lg denote the grouped LLR vec-tor of a codeword. We aim to predict the binary multiplicative noise ˜z = bin( lg ⊙ (1 − 2b)) . The loss for a single grouped codeword is defined as the binary cross-entropy: 
+
+Lde = − 1
+
+B
+
+> B
+
+X
+
+> b=1
+> Nb
+
+X
+
+> i=1
+
+˜zb,i log σ ˆzb,i 
+
++(1 − ˜zb,i ) log  1−σ(ˆ zb,i ),
+
+(21) 9
+
+where ˆzb,i is the i-th element of the b-th sample. The estimated codeword is recovered as (7). After Stage 2, G-ECCT acquires the capability to correct multiplicative noise under clean LLR conditions, providing a solid initialization for the subsequent joint training stage. 
+
+Stage 3: Joint training of the unified neural reciever. 
+
+In Stage 3, we jointly fine-tune the entire FM-enabled unified neural receiver. All parameters are updated end-to-end using diverse datasets. This joint optimization allows the outer receiver and G-ECCT to adapt to each other, further improving overall performance. The training loss is the weighted sum of the three loss terms introduced in the previous stages: 
+
+L3 = LMSE + λ1LBCE + λ2Lde , (22) where λ1 and λ2 control the relative importance of the different terms. V. S IMULATION RESULTS 
+
+This section presents comprehensive simulation results to evaluate the performance of the proposed FM-enabled unified neural receiver. We first describe the datasets used for training and evaluation, followed by the detailed simulation setups, including network architecture, pre-training configurations, baseline methods, and performance metrics. We then assess the proposed FM-Receiver under different MCSs and varying numbers of users, ect.. The zero-shot generalization capability to unseen scenarios and system configurations, as well as the scaling behavior with increasing model size, are further investigated. Finally, we analyze the computational complexity and inference efficiency of the proposed method. 
+
+A. Datasets 
+
+In this subsection, we illustrate the datasets we have con-structed to train and evaluate the neural receiver. For our experiments, we focus on the PUSCH scenario described in Section II, and utilize the Sionna [26] link-level simulator to model the PUSCH link compliant with the 3GPP standards. A total of 15 datasets are simulated, among which the first 12 datasets are used for pre-training (indexed from D1 to D12) and the last three datasets are used for evaluation (indexed from T1 to T3). The detailed simulation configurations of each dataset are shown in Table I. To fully pretrain the FM and leverage its capacity to handle diverse scenarios and configurations, we employ 12 different datasets. These datasets cover a wide range of scenarios and user speed, and involve three different frequency bands and three subcarrier numbers. Moreover, each dataset supports varying numbers of users and MCS configurations. Specif-ically, the number of users is randomly selected from 1 to 4. For each user, the modulation scheme is randomly chosen from QPSK, 16-QAM, and 64-QAM, while the LDPC code rate is randomly selected from the set {679/1024, 553/1024, 517/1024 }. The three datasets T1-T3 are designed to compre-hensively evaluate the proposed model. T1 employs scenarios similar to the training data to assess the model’s multi-dataset learning capability as well as its robustness to variations in MCS, user number, and subcarrier number. In contrast, T2 and T3 focus on evaluating the model’s zero-shot generalization to entirely new frequency bands and channel models. Besides, for each dataset, the base station is equipped with 16 antennas, while each user is equipped with a single-antenna receiver. The antenna spacing is half-wavelength at the center frequency, and the subcarrier spacing is 15 kHz. 
+
+B. Simulation Setups 1) Network and Pre-training Settings: To examine the effect of model scale on performance, we evaluate models with different sizes, ranging from 2.84M to 86.66M parameters. The detailed configurations of these models are summarized in Table II. For models of different sizes, we fix the number of Transformer blocks as N1 = N2 = 6 .All training and inference of the proposed model are con-ducted on four NVIDIA GeForce RTX 4090 24GB GPUs. The training hyperparameters differ across the three stages, with the detailed settings summarized in Table III. During training, scenarios, MCSs, and the number of users are randomly sampled (as described in Section IV-C) to form each mini-batch. In Stages 1 and 3, the Eb/ n0 is uniformly sampled from the range [-4.0, 8.0] dB. In Stage 2, a range of [2.0, 8.0] dB is adopted, and a cosine learning rate decay scheduler is employed with an initial learning rate of 0.001. 
+
+2) Baselines: To comprehensively evaluate the proposed FM-enabled unified neural receiver, we compare it with both conventional and learning-based receivers as baselines. 
+
+Conventional baselines . We consider two traditional re-ceiver pipelines that employ BP decoding. The first baseline uses LS channel estimation followed by LMMSE equalization (denoted as “LS+LMMSE+BP” in the simulation results). The second baseline replaces LS estimation with LMMSE chan-nel estimation while retaining LMMSE equalization (denoted as “LMMSE+LMMSE+BP” in the simulation results). Both pipelines serve as strong classical references with relatively low computational complexity. 
+
+Learning-based Baselines . For learning-based methods, existing methods mainly consider two neural architectures: CNN-based [10], [11] and Transformer-based [13], [27]. For the CNN-based baseline, we adopt the convolutional neural network architecture proposed in [11] (denoted as “CNN+BP” in the simulation results). This architecture leverages convo-lutional layers to exploit the time-frequency correlation of the wireless channel and employs a graph neural network (GNN) to effectively handle multi-user interference. We also imple-ment conventional BP decoding. For the Transformer-based baseline, we employ the same outer receiver architecture (i.e., the first N1 full-attention blocks) as in our proposed method, to ensure a fair comparison with our proposed method. But we substitute the G-ECCT component with standard BP decoding (denoted as “Transformer+BP” in the simulation results). This design allows us to conveniently evaluate the performance gain brought by unifing the outer receiver and channel decoding, while maintaining architectural consistency. 
+
+3) Performance Metrics: We primarily adopt bit error rate (BER) as the main performance metric throughout this section to evaluate the reliability of different receiver architectures. All results are averaged over multiple independent channel realizations to ensure statistical reliability. 10 
+
+TABLE I: Configurations of the Constructed Datasets. 
+
+Dataset Channel Model fc (GHz) NF Delay Spread (ns) User Speed (km/h) 
+
+D1 CDL-A 3.5 12 35 [0, 30] D2 CDL-A 4.9 4 20 [0, 30] D3 CDL-A 7.0 4 25 [0, 30] D4 CDL-C 3.5 12 180 [5, 70] D5 CDL-C 4.9 8 220 [5, 70] D6 CDL-C 7.0 4 280 [5, 70] D7 CDL-D 3.5 4 8 [0, 120] D8 CDL-D 4.9 4 12 [0, 120] D9 CDL-D 7.0 12 20 [0, 120] D10 CDL-E 3.5 4 75 [3, 90] D11 CDL-E 4.9 8 50 [3, 90] D12 CDL-E 7.0 12 80 [3, 90] T1 CDL-A 3.5 8 20 [0, 30] T2 CDL-A 28.0 4 35 [0, 30] T3 CDL-B 4.9 4 60 [0, 60] -4 -3 -2 -1 0 1 2 3 410 -6 
+
+> 10 -5
+> 10 -4
+> 10 -3
+> 10 -2
+> 10 -1
+> Proposed FM-Receiver Transformer+BP[13] CNN+BP[11] LMMSE+LMMSE+BP LS+LMMSE+BP
+> Proposed
+
+(a) -4 -2 0 2 4 610 -3  
+
+> 10 -2
+> 10 -1
+> Proposed FM-Receiver Transformer+BP[13] CNN+BP[11] LMMSE+LMMSE+BP LS+LMMSE+BP
+
+(b) -4 -2 0 2 4 610 -2  
+
+> 10 -1
+> Proposed FM-Receiver Transformer+BP[13] CNN+BP[11] LMMSE+LMMSE+BP LS+LMMSE+BP
+
+(c) 
+
+Fig. 4: Performance of different users: (a) single user; (b) 2 users; (c) 4 users. 
+
+TABLE II: Network parameters of the proposed model with different sizes. 
+
+Model Feature Dimension ds
+
+Head Number Parameters 
+
+little 128 8 2.84M small 256 8 10.16M base 512 8 38.98M large 768 8 86.66M 
+
+TABLE III: Training configurations for the three pre-training stages. 
+
+Parameter Stage 1 Stage 2 Stage 3 
+
+Optimizer AdamW (weight decay = 0.0001) Learning rate 1.0 × 10 −4 1.0 × 10 −3 5.0 × 10 −5
+
+Batch size 256 256 128 Training steps 200k 5000k 500k 
+
+C. Performance Evaluation 1) Performance under System Configurations: We first evaluate the performance of the proposed FM-enabled unified neural receiver under various system configurations using the T1 dataset. Fig. 4 presents the BER performance of different receivers under varying numbers of users. In these experiments, we fix the model size to the base configuration and adopt QPSK modulation with a code rate of 679/1024. The number of active data streams is set to 1, 2, and 4 in Fig. 4(a), (b), and (c), respectively. As shown in the figure, the proposed method consistently achieves the best performance across all user configurations. In relatively simple single-user case (Fig. 4(a)), where existing methods already deliver strong performance, the pro-posed method achieves only marginal gains over the base-lines: 0.3 dB at BER = 10 −5 performance gain compared to the “LMMSE+LMMSE+BP” method and 0.8-1 dB over the Transformer-based baseline. As the number of users grows, the performance advantage of the proposed receiver over the baselines becomes increasingly significant. In the more challenging 4-user scenario (Fig. 5(c)), the proposed method demonstrates a substantial advantage, maintaining a gap of over 2 dB across the entire Eb/ n0 range. This trend indicates that the proposed FM-enabled unified neural receiver can more effectively suppress inter-user interference and combat noise in challenging multi-user scenarios. By jointly optimizing the 11 
+
+outer receiver and the G-ECCT through end-to-end training, the proposed architecture is able to exploit the strong feature learning capability of FMs efficiently in challenging scenarios. Fig. 5 shows the BER performance of receivers under differ-ent MCSs. In this set of experiments, we fix the model size to the base configuration and set the number of data streams to 2. As shown in Fig. 5, the proposed method consistently achieves the best performance across all tested MCSs. In particular, it outperforms all baseline methods, including both conventional receivers and learning-based methods. This demonstrates the effectiveness of the proposed unified architecture that jointly optimizes the outer receiver and G-ECCT. Compared with Transformer-based baseline, the performance gains of the pro-posed method primarily stem from two aspects. First, the G-ECCT module, which employs masked-attention Transformer blocks for symbol-level decoding, provides performance ben-efits over conventional BP decoding. Second, the end-to-end joint optimization of the outer receiver and G-ECCT enables better coordination between channel estimation/equalization and channel decoding, further enhancing overall reliability. As shown in Fig. 5(a), under QPSK modulation, the pro-posed method achieves a substantial gain compared with the best traditional baseline (LMMSE-LMMSE-BP) and Transformer-based baseline (over 3 dB at BER = 10 −2). In contrast, as the modulation order increases to 16-QAM and 64-QAM (Fig. 5(b) and (c)), the performance gap between the proposed FM-Receiver and existing methods becomes relatively smaller. This is primarily because, as the code length increases, the performance of BP decoding approaches optimal, thereby diminishing the relative advantage of G-ECCT over it. Nevertheless, even under the more challenging 64-QAM cases, the proposed receiver maintains a clear margin over baselines (over 1.5 dB), due to the advantage of joint optimization. These results confirm that the proposed unified neural receiver not only delivers superior performance but also exhibits strong robustness across a wide range of modulation schemes. 
+
+2) Zero-shot Generalization Ability: To evaluate the gener-alization capability of the proposed FM-enabled unified neural receiver, we first conduct cross-frequency band experiments using the T2 dataset. The model is trained on data from 3.5 GHz, 4.9 GHz, and 7.0 GHz, and directly tested on a new frequency band at 28 GHz without any fine-tuning. In these experiments, we use the base model size with 2 users, QPSK modulation, and code rate 679/1024. As shown in Fig. 6, the proposed method maintains strong performance in the unseen 28 GHz frequency band and consistently outperforms all baselines across the entire Eb/ n0 range. Furthermore, the performance gap between the proposed method and other learning-based baselines becomes even larger compared to the in-band results in Fig. 5(a). For instance, the performance gain of the proposed method over the “Transformer+BP” baseline is approximately 1 dB larger in the 28 GHz band than that observed in the original frequency band (Fig. 5(a)). A similar trend can also be observed when compared with the CNN-based baseline. These results suggest that the proposed FM-Receiver exhibits strong generalization capability when deployed in unseen frequency bands. Fig. 7 further evaluates the zero-shot generalization capa-bility of the proposed FM-Receiver when tested on an unseen channel model. As shown in the figure, both the “Trans-former+BP” and “CNN+BP” baselines exhibit noticeable per-formance degradation. This degradation can be attributed to two main factors. First, performing only the task of the outer receiver is relatively simple, neural networks tend to overfit the training distribution. Second, these conventional neural receivers have fewer parameters than the proposed architec-ture, resulting in weaker generalization ability. Consequently, their performance falls below that of the conventional LMMSE channel estimation with LMMSE equalization baseline, and at high Eb/ n0, even approaches the performance of the sim-pler “LS+LMMSE” receiver. In contrast, the proposed FM-enabled unified neural receiver maintains strong performance under the unseen channel model and consistently outperforms the “LMMSE+LMMSE+BP” baseline by approximately 1dB across the entire Eb/ n0 range. This result demonstrates that, benefiting from large model capacity and extensive pre-training across diverse scenarios, the proposed method pos-sesses superior generalization ability. It can effectively adapt to new channel models without any retraining, highlighting the advantage of the proposed unified FM-Receiver over conventional neural receiver designs.  
+
+> TABLE IV:
+
+The performance of proposed method evaluated across different model sizes.                 
+
+> Dataset Little Small Base Large
+> T1 1.94 e−21.60 e−29.24 e−38.77e −3
+> T2 2.11 e−21.40 e−21.04e −21.06 e−2
+> T3 1.29 e−36.44 e−44.60 e−42.38e −4
+
+3) Scaling Ability: Scaling analysis is essential for foun-dation models, as it reveals how model capacity and pre-training data scale jointly influence both in-distribution learn-ing performance and zero-shot generalization. In this work, we investigate the scaling behavior of the proposed FM-enabled unified neural receiver by evaluating four model sizes (Little, Small, Base, and Large) and models with different pre-training datasets with different characteristics. As shown in Table IV, increasing the model size generally leads to performance improvements across most datasets. The best results are highlighted in bold , while the second-best results are underlined. We set user number as two, Eb/ n0
+
+as 0 dB, and MCS as QPSK with code rate = 679 / 1024. On the T1 and T3 datasets, the “Large” model size achieves the best results. This improvement can be attributed to the enhanced representation capacity of larger models, which en-ables them to capture more complex spatial-frequency patterns and interference/noise structures in the received signals. On the T2 datasets, the “Base” and “Large” model size achieve comparable performance. This observation suggests that, once the model reaches a certain capacity, its generalization perfor-mance becomes constrained by the scale and diversity of the pre-training data, potentially leading to overfitting on specific dataset distributions. To further investigate the impact of pre-training data scale 12 -4 -2 0 2 4 610 -3 
+
+> 10 -2
+> 10 -1
+> Proposed FM-Receiver Transformer+BP[13] CNN+BP[11] LMMSE+LMMSE+BP LS+LMMSE+BP
+
+(a) -4 -2 0 2 4 610 -2  
+
+> 10 -1
+> Proposed FM-Receiver Transformer+BP[13] CNN+BP[11] LMMSE+LMMSE+BP LS+LMMSE+BP
+
+(b) -4 -2 0 2 4 610 -1  
+
+> Proposed FM-Receiver Transformer+BP[13] CNN+BP[11] LMMSE+LMMSE+BP LS+LMMSE+BP
+
+(c) 
+
+Fig. 5: Performance of different MCSs: (a) QPSK modulation, code rate = 679 / 1024; (b) 16-QAM modulation, code rate = 553 / 1024; (c) 64-QAM modulation, code rate = 517 / 1024. -4 -2 0 2 4 610 -3 
+
+> 10 -2
+> 10 -1
+> Proposed FM-Receiver Transformer+BP[13] CNN+BP[11] LMMSE+LMMSE+BP LS+LMMSE+BP
+
+Fig. 6: Generalization capability to a new frequency band. -4 -2 0 2 4 610 -6 
+
+> 10 -5
+> 10 -4
+> 10 -3
+> 10 -2
+> 10 -1
+> Proposed FM-Receiver Transformer+BP[13] CNN+BP[11] LMMSE+LMMSE+BP LS+LMMSE+BP
+
+Fig. 7: Generalization capability to a new channel model. 
+
+TABLE V: The performance of proposed method evaluated across different pretrained datasets. 
+
+Dataset D2,D5,D8,D11 D4-D9 D1-D12 
+
+T1 1.19 e−2 2.38 e−2 9.24e −3
+
+T2 2.71 e−2 3.25 e−2 1.04e −2
+
+T3 1.05 e−3 4.94 e−4 4.60e −4
+
+and diversity on model generalization, we evaluate the pro-posed receiver when trained on different combinations of pre-training datasets while keeping the model size fixed at the base configuration. All models are tested under the same setting with 2 users at Eb/ n0 = 0 dB using QPSK modulation with a code rate of 679/1024. The results are summarized in Table V. The best results are highlighted in bold , while the second-best results are underlined. When trained on the largest and most diverse dataset combination (D1-D12), the model achieves the best performance on three tasks. Notably, on the more challenging T2 dataset (28 GHz), increasing the pre-training data diversity brings particularly large gains, reducing the BER from 2.71 e−2 (D2,D5,D8,D11) and 3.25 e−2 (D4-D9) to 1.04 e−2 (D1-D12). This demonstrates that broader coverage of channel models and frequency bands during pre-training enhances the model’s ability to generalize to unseen system configurations. Although the D4-D9 dataset combination contains a larger number of datasets, it underperforms the more diverse D2,D5,D8,D11 combination on both the T1 and T2 test sets. This suggests that simply increasing data volume is insufficient; the diversity and distribution of the pre-training data also play a critical role in achieving robust zero-shot generalization. Overall, these results indicate that both the scale and diversity of pre-training datasets are essential for improving the generalization capability of the proposed FM-based receiver. 
+
+D. Computational Costs 
+
+To evaluate the computational efficiency of the proposed receiver, we measure the parameter number and inference time per batch on a single NVIDIA RTX 4090 GPU. The experi-ments are conducted with 2 users at Eb/ n0 = 0 dB using QPSK modulation (code rate 679/1024) on the T3 dataset, with a batch size of 8. The detailed computational costs, including the number of parameters and inference latency, are summarized in Table VI. As shown in the table, the proposed method has the largest number of parameters (38.98M) among all compared methods. However, it achieves the lowest inference time of only 5.511 ms per batch, which is faster than all other baselines. In particular, it is more than 2x faster than the “Transformer+BP” baseline (12.758 ms) and nearly 9x faster than the “LMMSE+LMMSE+BP” receiver (49.980 ms). 13 
+
+TABLE VI: Computational costs including the number of parameters, and inference time per batch of different models (batch size = 8). 
+
+Model LS+LMMSE+BP LMMSE+LMMSE+BP CNN+BP Transformer+BP Proposed 
+
+Parameters (M) / / 1.11 19.90 38.98 Inference time (ms) 11.304 49.980 10.549 12.758 5.511 
+
+This result can be attributed to the high inference latency of conventional BP decoding, which requires a large number of iterations, especially under low Eb/ n0 conditions. In contrast, the proposed G-ECCT module performs symbol-level decod-ing in a single forward pass through the masked-attention Transformer blocks, thereby avoiding the iterative overhead of traditional BP decoding. Although the proposed model contains more parameters, its feed-forward architecture makes it suitable for practical deployment where both performance and real-time processing are required. VI. C ONCLUSIONS 
+
+In this paper, we propose an FM-enabled unified neural receiver architecture, namely FM-Receiver, that integrates the outer and inner receivers, achieving the entire receiver. Specifically, the proposed G-ECCT resolves the mismatch between the inner and outer receiver by achieving symbol-level decoding. Besides, the three-stage configuration-adaptive pre-training strategy enables joint optimization and general-ization to diverse system configurations. Extensive simula-tions demonstrate that the proposed receiver achieves superior performance across different system configurations. It also exhibits strong zero-shot generalization capability to unseen frequency bands and channel models, while reducing inference latency compared with traditional iterative decoding methods. These results indicate that the proposed unified architecture represents a step toward realizing AI-native receivers. It provides a promising direction for building more efficient and intelligent physical-layer processing in future wireless systems. Future research may explore more computationally efficient Transformer architectures [14], as well as model com-pression and quantization techniques [19] to further reduce the computational overhead and facilitate real-time deployment on computational resource-constrained hardware. REFERENCES [1] K. B. Letaief, W. Chen, Y. Shi, J. Zhang, and Y.-J. A. Zhang, “The roadmap to 6G: AI empowered wireless networks,” IEEE Commun. Mag. , vol. 57, no. 8, pp. 84–90, Aug. 2019. [2] P. P. Ray, N. Kumar, and M. Guizani, “A vision on 6G-enabled NIB: Requirements, technologies, deployments, and prospects,” IEEE Wireless Commun. , vol. 28, no. 4, pp. 120–127, May 2021. [3] J. Guo, C.-K. Wen, S. Jin, and G. Y. Li, “Overview of deep learning-based CSI feedback in massive MIMO systems,” IEEE Trans. Commun. ,vol. 70, no. 12, pp. 8017–8045, Dec. 2022. [4] Y. Choukroun and L. Wolf, “Error correction code transformer,” Ad-vances in Neural Information Processing Systems , vol. 35, pp. 38 695– 38 705, 2022. [5] 3GPP, “Study on artificial intelligence (AI)/machine learning (ML) for NR air interface,” TR 38.843, V18.0.0, 2024. [6] M. K. Shehzad, L. Rose, M. M. Butt, I. Z. Kov´ acs, M. Assaad, and M. Guizani, “Artificial intelligence for 6G networks: Technology advancement and standardization,” IEEE Veh. Tech. Mag. , vol. 17, no. 3, pp. 16–25, May 2022. [7] M. Shafi, E. G. Larsson, X. Lin, D. Panaitopol, S. Parkvall, F. Ronteix-Jacquet, and A. Toskala, “Industrial viewpoints on RAN technologies for 6G,” arXiv preprint arXiv:2508.08225 , 2025. [8] X. Zhou, L. Liang, J. Zhang, C.-K. Wen, and S. Jin, “Next-generation AI-native wireless communications: MCMC-based receiver architectures for unified processing,” IEEE Wireless Commun. , pp. 1–8, 2026. [9] Y. Yang, S. Yan, W. Zhou, B. Mefgouda, R. Li, Z. Zhang, and M. Debbah, “Diffusion models for wireless transceivers: From pilot-efficient channel estimation to AI-native 6G receivers,” arXiv preprint arXiv:2510.24495 , 2025. [10] M. Honkala, D. Korpi, and J. M. J. Huttunen, “DeepRx: fully convolu-tional deep learning receiver,” IEEE Trans. Wireless Commun. , vol. 20, no. 6, pp. 3925–3940, Jun. 2021. [11] S. Cammerer, F. A. Aoudia, J. Hoydis, A. Oeldemann, A. Roessler, T. Mayer, and A. Keller, “A neural receiver for 5G NR multi-user MIMO,” in Proc. IEEE Global Commun. Conf. (IEEE GLOBECOM’23) Workshop , Kuala Lumpur, Malaysia, Dec. 2023, pp. 329–334. [12] R. Wiesmayr, S. Cammerer, F. A. Aoudia, J. Hoydis, J. Zakrzewski, and A. Keller, “Design of a standard-compliant real-time neural receiver for 5G NR,” arXiv preprint arXiv:2409.02912 , 2024. [13] Y. Kawai and R. Koodli, “A unified transformer architecture for low-latency and scalable wireless signal processing,” arXiv preprint arXiv:2508.17960 , 2025. [14] S. S. Yellapragada, A. K. Kocharlakota, M. Costa, E. Ollila, and S. A. Vorobyov, “Computationally efficient neural receivers via axial self-attention,” arXiv preprint arXiv:2510.12941 , 2025. [15] E. Karakoca, H. C ¸ evik, ˙ Ibrahim H¨ okelek, and A. G¨ orc ¸in, “Novel deep neural OFDM receiver architectures for LLR estimation,” arXiv preprint arXiv:2503.20500 , 2025. [16] X. Zhou, L. Liang, X. Li, J. Zhang, P. Jiang, X. Li, and S. Jin, “Conditional diffusion model-enabled scenario-specific neural receivers for superimposed pilot schemes,” arXiv preprint arXiv:2511.01173 ,2025. [17] C. K. Lo, F. Carpi, J. Cho, and C. J. Zhang, “AI/ML-based asymmetric modulation constellations and pilotless communications,” in Proc. 2025 IEEE 101th Veh. Technol. Conf. (IEEE VTC’25 Spring) , Oslo, Norway, Jun. 2025, pp. 1–5. [18] M. Obeed and M. Jian, “Learning during detection: Continual learning for neural OFDM receivers via DMRS,” arXiv preprint arXiv:2602.20361 , 2026. [19] S. S. Yellapragada, E. Ollila, and M. Costa, “Efficient quantization-aware neural receivers: Beyond post-training quantization,” in Proc. 2026 IEEE Int. Conf. Acoust., Speech Signal Process. (IEEE ICASSP’26) ,Barcelona, Spain, May 2026, pp. 21 611–21 615. [20] E. Nachmani and L. Wolf, “Hyper-graph-network decoders for block codes,” in Proc. Adv. Neural Inf. Process. Syst. (NIPS) , 2019. [21] E. Dahlmana, S. Parkvall, , and J. Skold, “5G NR: the next generation wireless access technology,” Academic Press , 2020. [22] K. P. Srinath and J. Hoydis, “Bit-metric decoding rate in multi-user mimo systems: Theory,” IEEE Trans. Wireless Commun. , vol. 22, no. 11, pp. 7961–7974, Mar. 2023. [23] A. Bennatan, Y. Choukroun, and P. Kisilev, “Deep learning for decoding of linear codes - a syndrome-based approach,” in Proc. 2018 IEEE Int. Symp. Inf. Theory (IEEE ISIT’18) , Jun. 2018, pp. 1595–1599. [24] S. P. Tera, R. Chinthaginjala, F. Al-Turjman, and S. Ahmad, “Deep learning assisted LDPC decoding for 5G IoT networks in fading envi-ronments,” Sci. Rep. , vol. 15, p. 37469, Oct. 2025. [25] Y. Yan, J. Zhu, T. Zheng, Z. Xu, C. Jiang, and L. Dai, “Unified error correction code transformer with low complexity,” IEEE Internet Things J. , vol. 13, no. 8, pp. 15 989–16 000, Apr. 2026. [26] J. Hoydis, S. Cammerer, F. A. Aoudia, A. Vem, N. Binder, G. Marcus, and A. Keller, “Sionna: An open-source library for next-generation physical layer research,” arXiv preprint arXiv:2203.11854 , 2022. [27] S. S. Y. abd Atchutaram K. Kocharlakota, M. Costa, E. Ollila, and S. A. Vorobyov, “Computationally efficient neural receivers via axial self-attention,” arXiv preprint arXiv:2510.12941 , 2025.

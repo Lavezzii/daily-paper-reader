@@ -1,0 +1,323 @@
+Title: A Comparative Analysis of Ising Formulations for Neuromorphic Maximum-Likelihood Channel Decoding
+
+URL Source: https://arxiv.org/pdf/2607.12862v1
+
+Published Time: Wed, 15 Jul 2026 11:58:14 GMT
+
+Number of Pages: 6
+
+Markdown Content:
+# A Comparative Analysis of Ising Formulations for Neuromorphic Maximum-Likelihood Channel Decoding 
+
+George N. Katsaros, Morgan Sabine and Konstantinos Nikitopoulos 
+
+6G Innovation Centre University of Surrey, UK 
+
+Abstract —Neuromorphic computing has so far been driven predominantly by machine-learning workloads, yet its underlying properties also make it particularly well suited to combinatorial optimization problems expressed in Ising or QUBO form. While neuromorphic Ising solvers have been demonstrated, how agiven problem should be formulated to best suit neuromorphic dynamics has received far less attention. Maximum-likelihood (ML) channel decoding can be expressed as an Ising/QUBO problem, and two distinct formulations already exist in the quantum-annealing literature: a squared-penalty formulation that uses few spins but produces dense intra-check couplings, and a chain-product formulation that improves locality at the cost of additional auxiliary spins. Both place the ML codeword at the ground state under sufficient constraint enforcement, but they have not been compared under the constraints that neuromorphic hardware imposes. This work provides the first systematic side-by-side comparison of QUBO/Ising formulations of ML decoding for linear codes. We show that the two formulations impose fun-damentally different tradeoffs in neuron count, synaptic density, locality, and convergence behavior. The preferred formulation is inseparable from the choice of solver, and the two must be considered jointly. Finally, we show that ground-state correctness alone is an insufficient design criterion, and that signal processing tasks should ideally be co-formulated with their neuromorphic hardware models if neuromorphic computing is to extend into the receiver pipeline. 
+
+I. I NTRODUCTION 
+
+Forward-error correction (FEC), particularly channel de-coding, remains one of the most computationally demand-ing operations in the receiver chain [1]. While maximum-likelihood (ML) decoding is optimal, its direct realization entails an exhaustive codeword search and therefore becomes impractical as the code length increases. Consequently, prac-tical receivers rely on iterative message-passing algorithms, such as belief propagation (BP). However, these decoders on conventional digital hardware are typically memory-bound and power-hungry [2]. Their repeated message exchanges demand substantial memory access and interconnect bandwidth, chal-lenging energy-constrained receivers. To overcome such computational and architectural bot-tlenecks, a recent growing body of research has explored the use of physical solvers for combinatorial optimization. Taking inspiration from how physical systems evolve toward states of minimal energy, these hardware substrates leverage their intrinsic dynamics to minimize an objective function. Most of these solvers are natively described using quadratic unconstrained binary optimization (QUBO) or equivalent Ising models. In a QUBO formulation, the objective is expressed as a quadratic function of binary variables, whereas equivalently the Ising form maps the same problem onto spin variables interacting via local fields and pairwise couplings. The broad class of physical solvers encompasses quantum and proba-bilistic annealers [3], oscillator-based Ising machines [4], as well as neuromorphic systems [5], [6]. Among these, neuro-morphic architectures appear particularly promising. Unlike many emerging physical computing substrates, neuromorphic architectures do not rely on breakthroughs in materials science for practical realization, as they can be implemented using established CMOS technologies. Thus, they provide a readily available and highly scalable hardware foundation that has shown significant promise for ultra-low-power and massively parallel computation [7]. Despite rapid hardware advances in neuromorphic comput-ing platforms, these developments have not yet been matched by an equally mature set of algorithmic frameworks, especially for problems beyond the scope of machine-learning [8]. This gap suggests that the next major challenge is not simply to build larger neuromorphic platforms or more efficient neuron circuits, but to determine how specific algorithms can be reformulated to exploit neuromorphic principles in a mean-ingful way. This is particularly true for channel decoding, where multiple Ising/QUBO mappings exist in the quantum-annealing literature [9], [10] but have never been compared under the constraints neuromorphic hardware imposes. As we discuss later in detail, although ML decoding of a binary linear code can be expressed as the minimization of a channel-dependent objective under parity-check constraints, making this problem compatible with an Ising/QUBO Hamil-tonian requires these constraints to be incorporated into the objective through a chosen penalty construction. Therefore, multiple Ising/QUBO mappings can encode the same un-derlying ML decoding problem. They differ, however, not only in how reliably the ML codeword is represented as the ground state (i.e., the lowest-energy state) of the resulting Hamiltonian, but also in the hardware and solver requirements they impose, and these differences become visible only when the mappings are compared directly. arXiv:2607.12862v1 [cs.ET] 14 Jul 2026 In this work, we present the first systematic side-by-side comparison of QUBO/Ising formulations of ML decoding, originally introduced for quantum-based solvers, when the target implementation platform is neuromorphic. We treat the mathematical formulation as a key design variable and ask: given the ML decoding problem, how does the chosen map-ping reshape the physical energy landscape, and what are the implications for the solver attempting to navigate it? We exam-ine and compare two representative approaches (A) a squared-penalty construction that is highly spin-economical but induces dense inter-neuron couplings [9], and (B) a chain-product construction that is connectivity-economical but expands the search space by introducing auxiliary spin chains [10]. Specifically, we show that ground-state correctness alone is an insufficient criterion for assessing the practical viability of an Ising/QUBO formulation on neuromorphic hardware. A formulation must also be evaluated in terms of the tradeoffs it creates between neuron count, synaptic density, locality, land-scape navigability, and compatibility with the solver dynamics. In particular, our results show that minimizing the number of neurons is not necessarily the most hardware-efficient choice, since it can shift the cost to denser coupling graphs and increased routing complexity. Conversely, formulations that reduce coupling density and improve locality may do so by introducing auxiliary neurons, thereby increasing the size of the search space. Moreover, while stronger parity-constraint enforcement enables the ML codeword to become the lowest-energy state, fewer nearby states lead the solver toward it, shrinking the ML basin of attraction significantly. Lastly, we highlight that for the channel coding, the neural coupling topology can be fixed per code-rate and be computed offline while only the self-biases update per received block. This elim-inates the runtime preprocessing overhead that a conventional host would otherwise incur. Together, these observations shift the focus from whether ML decoding can be mapped to an Ising Hamiltonian to how such mappings should be designed with respect to the target hardware. In doing so, they provide practical guidelines for neuromorphic hardware designers and a concrete starting point for the co-design of neuromorphic FEC accelerators. II. S YSTEM MODEL 
+
+Consider a binary linear code of length n that is defined by a parity-check matrix H ∈ Fm×n 
+
+> 2
+
+such that a valid codeword x ∈ Fn×12 satisfies Hx ≡ 0 (mod 2) . Each bit is BPSK modulated to a transmitted symbol through the transformation 1 − 2xi ∈ { 1, −1}. After transmission over an AWGN channel with noise variance σ2, the received symbol is yi = (1 − 2xi) + ni, where ni ∼ N (0 , σ 2). In maximum-likelihood (ML) decoding, the codeword that maximizes the probability P (y|x) is sought. Taking the logarithm of the factorized Gaussian likelihood and exploiting the x2 
+
+> i
+
+= xi
+
+property reduces the squared Euclidean distance to a linear form, yielding the constrained optimization 
+
+ˆx = arg min 
+
+> x
+> n
+
+X
+
+> i=1
+
+Li xi s.t. Hx ≡ 0 (mod 2) , (1) where Li = 2 yi/σ 2 is the log-likelihood ratio (LLR) for the 
+
+ith bit. Crucially, the channel contribution is entirely linear in x. Consequently, the circuit topology remains fixed across codeblocks, and, as we discuss in Section VI-A, only the diagonal entries need to be updated for each received block. Each row c of H defines a parity check over the variable set 
+
+N (c) = {j : [ H]cj = 1 }, with check degree dc = |N (c)|, such that a valid codeword satisfies P  
+
+> j∈N (c)
+
+xj ≡ 0 (mod 2) , thus imposing an explicit constraint on the ML decoding problem. Therefore, to obtain an unconstrained formulation amenable to Ising hardware, the parity constraint must be incorporated into the Ising Hamiltonian as a penalty. The next section presents two such penalty constructions. III. I SING FORMULATIONS FOR CHANNEL DECODING 
+
+Both formulations start from the ML objective (1) and produce the standard Ising Hamiltonian 
+
+H(s) = −X
+
+> i<j
+
+Jij sisj − X
+
+> i
+
+hi si, (2) where the ith spin si ∈ {− 1, +1 } has a pairwise coupling 
+
+Jij to the jth spin, and a local bias hi. However, the two formulations differ fundamentally in how they treat the parity-check constraint, leading to distinct spin counts, coupling densities, and energy landscape characteristics. 
+
+A. Squared-Penalty Formulation 
+
+Because check c requires P  
+
+> j∈N (c)
+
+xj to be even, there exists a non-negative integer kc ∈ { 0, 1, . . . , ⌊dc/2⌋} such that the constraint is equivalent to P  
+
+> j∈N (c)
+
+xj = 2 kc. To penalize any deviation from this equality, the following penalty term is introduced: 
+
+Pc =
+
+ X 
+
+> j∈N (c)
+
+xj − 2kc
+
+2
+
+. (3) Since QUBO form requires all variables to be binary, kc
+
+is encoded as Bc = ⌈log 2(⌊dc/2⌋ + 1) ⌉ auxiliary bits 
+
+ac = (ac, 0, a c, 1, · · · , a c,B c−1) ∈ F1×Bc 
+
+> 2
+
+such that kc =
+
+PBc−1 
+
+> l=0
+
+2lac,l . Expanding (3) produces only linear and pair-wise terms (since x2 
+
+> j
+
+= xj and a2 
+
+> c,l
+
+= ac,l ). Concatenating all n code bits and all auxiliary bits into a single vector 
+
+z = [ x, a1, a2, . . . , am]T ∈ FN ×12 where N = n + Pmc=1 Bc,the unconstrained objective Hamiltonian becomes 
+
+HA =
+
+> n
+
+X
+
+> i=1
+
+Li xi + λ
+
+> m
+
+X
+
+> c=1
+
+Pc = zTQ z , (4) where Q is a real symmetric N×N matrix and λ > 0 controls the penalty strength. The QUBO can then be mapped to the Ising form (2) via the substitution xi = (1 − si)/2, which yields couplings Jij = −Qij /4 and local biases hi = −qi/2−
+
+> 14
+
+P  
+
+> j̸=i
+
+Qij , where qi = Qii .B. Chain-Product Formulation 
+
+Approach B constructs the Ising Hamiltonian directly in the spin domain. Using the mapping sj = ( −1) xj , the parity-check condition for check c is represented by the spin product 
+
+Y 
+
+> j∈N (c)
+
+sj = ( −1) P   
+
+> j∈N (c)xj
+
+, (5) which evaluates to 1 when the number of participating bits is even, and −1 otherwise. Thus, a natural penalty is 
+
+Pc = λ
+
+2
+
+1 − Y 
+
+> j∈N (c)
+
+sj
+
+ , (6) which equals zero for a satisfied check and λ for a violated check. However, this formulation results in a dc-body interac-tion, whereas a standard Ising Hamiltonian permits only linear and pairwise terms. To reduce the multi-body product, product-accumulator spins pc,l ∈ {− 1, 1} can be introduced, where 
+
+pc, 1 ≜ sc, 1, pc,l = pc,l −1 · sc,l , l = 2 , 3, . . . , d c, (7) recursively, such that the terminal product spin pc,d c is the chain product pc,d c = Q  
+
+> j∈N (c)
+
+sj . Therefore, the parity contribution to the Ising Hamiltonian can be written as the linear term 
+
+HP = λP
+
+2 m −
+
+> m
+
+X
+
+> c=1
+
+pc,d c
+
+!
+
+. (8) While this term rewards terminal product spins equal to 
+
++1 , the Ising machine does not automatically enforce the relations in (7). Without additional constraints, the product spins may decouple from the code-bit spins, allowing the terminal variables pc,d c to minimize (8) without correctly representing the parity of the corresponding check. To enforce each relation in (7), a penalty is introduced using an additional auxiliary spin ac,l ∈ {− 1, 1}. A four-spin penalty function HC (pc,l , p c,l −1, s c,l , a c,l ) is constructed such that when the relation pc,l = pc,l −1 · sc,l is satisfied, there exists an assignment of ac,l yielding HC = 0 , and a penalty 
+
+HC > 0 when the relation is violated. One such construction, given in [10], is 
+
+HC = 12
+
+ pc,l pc,l −1 + pc,l −1 sc,l + pc,l sc,l 
+
+
+
++  ac,l + 12
+
+  2ac,l − pc,l − pc,l −1 − sc,l 
+
+. (9) The complete Hamiltonian is therefore 
+
+HB = − 12
+
+> n
+
+X
+
+> i=1
+
+Lisi + λP
+
+2 m −
+
+> m
+
+X
+
+> c=1
+
+pc,d c
+
+!
+
++ λCmX
+
+> c=1
+> dc
+
+X
+
+> l=2
+
+HC (pc,l , p c,l −1, s c,l , a c,l ) ,
+
+(10) where λP and λC control the enforcement strength of the parity-check and chain link, respectively. Since all terms in (10) are linear or pairwise, the formulation is already in standard Ising form. Finally, it’s worth mentioning here that other higher-order (HUBO) constructions exist that retain the              
+
+> Fig. 1. Exact landscape statistics for the (2 ,4) -regular code ( M= 3 ,n= 6 ), comparing Approach A ( NA= 12 spins, blue) and Approach B ( NB= 24
+> spins, red) as a function of the constraint-enforcement parameter λ, averaged over 100 channel realisations at Eb/N 0=2dB. Left: mean number of single-flip local minima. Top right: fraction of initial states from which greedy single-flip descent reaches the ML codeword. Bottom right: probability that the global energy minimum coincides with the ML codeword.
+
+dc-body parity term but they fall outside the standard 2-local Ising form assumed by current neuromorphic and annealer hardware, and are therefore beyond the scope of this work. IV. E NERGY LANDSCAPE ANALYSIS 
+
+In this section, we analyze the energy landscapes induced by the two Ising formulations, assessing their exactness and the convergence challenges that practical solvers encounter due to the constraint-enforcement parameter λ. Fig. 1 shows the exact energy landscape statistics for a small (2 , 4) -regular code with parity-check matrix H ∈ F3×62 , chosen to keep exhaustive enumeration feasible. This yields NA = 12 and NB = 24 total spins for approaches A and B, respectively, corresponding to 
+
+2NA = 4096 and 2NB ≈ 1.68 × 10 7 possible configurations. For both approaches, we enumerate all spin configurations for each value of λ and compute their Ising energy. Results are averaged over 100 channel realizations at an SNR of 2 dB. The ML reference is obtained independently via an exhaustive search over all valid codewords. Fig. 1 (bottom-right) shows the probability that the global minimum matches the ML codeword as a function of λ. For weak constraint enforcement, parity-violating configurations can have lower energy than the ML codeword because a favorable channel outweighs the penalty. As λ increases, these invalid configurations are increasingly penalized, and the probability that the global minimum and ML are equal approaches one. However, stronger constraint enforcement also fragments the energy landscape. Fig. 1 (left) shows that the number of local minima grows with λ for both formulations, with approach B exhibiting substantially more local minima than approach A across all λ values, attributed to its larger spin space. In both cases, the majority of additional minima ( > 70% ) do not correspond to valid configurations. The penalty terms introduce couplings that reshape the local energy surface, so a parity-violating configuration, while not Fig. 2. BER vs. Eb/N 0 for the (3 , 6) -regular LDPC code ( 48 × 96 ). Left: greedy single-spin-flip descent with cold start (random initialisation) and hard-decision warm start for both Approach A ( λ = 3 ) and Approach B ( λP = 8 ,   
+
+> λC= 1 .5). Right: simulated annealing with 3000 annealing steps, selecting the lowest-energy outcome. The hard-decision and BP baselines are common to both panels.
+
+globally favorable, may still be stable with respect to every single-spin flip. The practical consequence is visible in the basin of attrac-tion of the ML solution. For each possible initial configuration, we run greedy single-spin-flip descent until a local minimum is reached. Fig. 1 (top-right) shows that while increasing λ
+
+improves global exactness, it sharply reduces the fraction of initial states from which local descent converges to the ML solution. In other words, although the correct solution becomes the deepest point in the energy landscape, its basin of attraction occupies a progressively smaller fraction of the state space. Fine-tuning λ should therefore be jointly optimized with the choice of parity-check matrix, Ising formulation, and solver strategy. In addition, as we discuss in Section V, this observation motivates solver initialization from channel-consistent configurations, such as the hard-decision estimate, together with stochastic search mechanisms that can escape shallow local minima. From a neuromorphic standpoint, the depth of these spurious minima sets a lower bound on the perturbation amplitude a spiking solver must inject, recasting 
+
+λ as a joint formulation–noise design parameter. V. S OLVER STRATEGIES 
+
+In this section, we evaluate the performance of deterministic and stochastic Ising-based solvers against the channel hard-decision baseline and a standard sum-product belief propaga-tion (flooding schedule, 50 iterations) using a (3 , 6) -regular LDPC code with parity-check matrix H ∈ F48 ×96 2 . The hard-decision decoder uses only the signs of the channel log-likelihoods, whereas the Ising decoders minimize an energy function that includes the same channel term, alongside a parity-check penalty. The two Ising-based approaches are presented in Section III, and the decoded word is obtained solely from the code-spin variables. 
+
+A. Greedy Descent 
+
+The deterministic solver uses single-spin greedy descent, similar in operation to the neuromorphic greedy-descent QUBO solver utilized for MU-MIMO detection [5], [6]. It is evaluated under both cold- and warm-start initialization. In the cold-start case, the solver begins from a random spin configuration. In the warm-start case, the code spins are initialized to the channel hard decision, while the auxiliary spins are initialized according to the corresponding codeword. This has the advantage of starting the search in a physically meaningful region of the energy landscape. Specifically, in approach A, the auxiliary register for check 
+
+c encodes the integer kc appearing in the squared penalty. Setting Sc as the hard-decision check sum, we set kc = Sc/2
+
+when Sc is even. When Sc is odd, the two nearest inte-gers ⌊Sc/2⌋ and ⌈Sc/2⌉ are both equally valid, providing a natural multi-start extension. For approach B, the product accumulator spins are initialized by evaluating the running parity product pc,l = pc,l −1sl. Additionally, the auxiliary spin ac,l is initialized such that HC = 0 . These auxiliary initializations are local per-check computations that scale as 
+
+O(dc) and require no global linear solve or matrix inversion. This is a practical advantage of Ising-based LDPC decoding since the channel LLRs provide a natural initial code-word estimate, and the auxiliary variables can be filled in locally. However, a consistent warm start is not a guarantee of greedy improvement. As we discuss below, in Approach B, the same chain consistency that removes artificial auxiliary energy can also make the hard-decision state a local minimum for single-spin descent. Fig. 2 (left) shows the resulting BER curves. Cold-started greedy descent performs poorly for both formulations. Ran-dom initial spin configurations almost always converge to an invalid local minimum. Hard-decision warm starting signifi-cantly improves the picture, but the gains relative to the hard-decision remain marginal. For Approach A, a hard-decision bit flip can reduce the squared parity residuals of its incident checks, so warm-started greedy descent can improve slightly on the hard decision baseline when the parity gain exceeds the channel cost. The situation is worse for the greedy descent when utilizing Approach B. The reason is structural. At initial-isation, every chain and link constraint is exactly satisfied, so the only penalty contribution comes from the parity term λP
+
+at checks where the hard decision violates parity. To correct such a check, at least one of its code spins must be flipped. However, each code spin si participates in dv checks, and flipping it violates the chain constraint pm = pm−1 si in every one of those checks. The resulting energy increase is of order 
+
+λC dv , because the accumulator spins pm now disagree with the flipped code spin. The solver therefore rejects the flip, and the hard-decision state remains a local minimum. Reducing 
+
+λC to lower this barrier is not viable since the parity term reads the final accumulator spin pc,d c , which only represents the true check parity when the chain is intact. Weakening the chain enforcement in turn corrupts the very mechanism that should guide the solver toward valid codewords. Convergence in Approach B therefore requires accepting an initially uphill code-spin flip followed by a cascade of accumulator repairs, a trajectory that greedy descent cannot initiate. 
+
+B. Stochastic Solvers 
+
+To show the effect of stochastic search in overcoming the abovementioned energy barriers, we run simulated an-nealing (SA) from the same hard-decision-consistent warm state. We use the classical SA implementation from D-Wave’s 
+
+dwave-neal package that can act as a lower-bound of typical neuromorphic Ising solvers. The solver receives the Ising Hamiltonian (J, h) for each formulation and is initialized from the same hard-decision warm start used in the greedy experiments. The experiments follow the default geometric inverse-temperature schedule. Each decoding instance runs 20 
+
+independent annealing trajectories of 3000 steps each, with the lowest-energy outcome selected as the decoded word. The penalty weights were selected via a coarse grid search at 4 dB SNR minimizing BER, yielding λ = 3 for approach A and 
+
+(λP , λ C ) = (8 , 1.5) for approach B. Fig. 2 (right) shows that a stochastic search substantially improves performance for both formulations, closing much of the gap to BP for approach A and recovering meaningful coding gain for approach B, which was entirely trapped at the hard-decision under greedy descent. These results motivate the employment and design of neuro-morphic Ising solvers, which can natively exhibit the stochastic dynamics that SA emulates algorithmically. Spiking neural networks can naturally support Metropolis-like exploration through random perturbations of the membrane potential that cause neurons to fire or remain silent independently of their deterministic input, producing spontaneous state transitions equivalent to uphill spin flips. Gradually reducing the noise amplitude implements a cooling schedule analogous to SA, allowing the network to transition from broad exploration to convergence. Additional mechanisms explored in the literature involve perturbing the neuron refractory periods in which after firing, a neuron is temporarily unable to fire again, and thus forcing exploration of new regions of the state space [11]. It is important to mention here that the present results establish that the formulations’ energy landscapes are navigable by the class of stochastic dynamics neuromorphic solvers natively provide. While a direct neuromorphic implementation is left for future work, recent work has shown that neuromorphic solvers can achieve performance comparable to SA on sparse Ising graphs [12], which is precisely the regime that channel-coding Ising formulations inhabit owing to the sparse structure of the parity-check matrix (see Section VI and Table I). VI. S PARSITY AND COMPLEXITY TRADEOFFS 
+
+Fig. 3 visualize the coupling graphs induced by the two formulations and quantify the structural tradeoffs summarised in Table I. Approach A is the more economical formulation in terms of raw spin count: each parity check requires only 
+
+Bc = ⌈log 2(⌊dc/2⌋ + 1) ⌉ auxiliary spins, giving a total of 
+
+N = n + mB c spins. This makes it attractive whenever the                               
+
+> TABLE I STRUCTURAL COMPARISON OF THE TWO ISING FORMULATIONS FOR A REGULAR (dv, d c)CODE WITH nCODE BITS AND M=nd v/d cCHECKS .
+> Approach A Approach B
+> Aux. spins/check ⌈log 2(⌊dc/2⌋+1) ⌉2( dc−1)
+> Total spins Nn+M B cn+ 2 M(dc−1)
+> Max. connectivity (dc−1 + Bc)dv3dv
+
+solver imposes a strict spin budget. The compactness, however, is obtained by expanding the squared parity penalty, which produces dense intra-check couplings. Code-bit connectivity reaches (dc−1 + Bc)dv . Approach A can therefore become difficult to embed/route on hardware with limited fan-out, even though it uses fewer spins. Approach B makes the opposite tradeoff. The chain-product construction replaces each high-degree parity product with a sequence of local product constraints, requiring 2( dc−1) 
+
+auxiliary spins per check and hence N = n + 2 m(dc−1) total spins. In return, the resulting coupling graph is substantially sparser. Each code-bit spin acquires at most 3dv couplings, independent of dc, and every auxiliary spin interacts with only a constant number of chain neighbors and a single code-bit spin. This bounded-connectivity structure is well matched to hardware platforms where local connectivity, wiring, or embedding overhead is the dominant bottleneck, including quantum annealers with sparse native connectivity and neu-romorphic substrates with limited cross-core bandwidth. The price is an enlarged search space and auxiliary-chain degrees of freedom that must be kept consistent with the code-bit spins, which can affect solver behavior as discussed in Sec. V, and an increase in physical area and power since each spin is typically realized by a dedicated processing element (e.g., a neuron). In practice, however, contemporary neuro-morphic platforms already scale comfortably beyond the spin counts implied by either formulation. A single Intel Loihi 2 chip supports up to ∼ 10 6 neurons and 1.2 × 10 8 synapses across 128 neuro-cores, with ∼ 8 × 10 3 neurons available within a single locally-dense core [13], while system-level deployments such as Intel Hala Point reach 1.15 ×10 9 neurons and 1.28 ×10 11 synapses [14]. For a IEEE 802.11n (648 , 324) 
+
+code, Approach B requires n+2 m(dc−1) ≈ 4.5×10 3 neurons, leaving comfortable headroom for hundreds of independent decoder instances per chip. Fig. 4 evaluates the scaling argument. Right is the absolute number of non-zero couplings, which grows with both n
+
+and dc and is consistently larger for Approach A. Left, the normalized by the number of admissible spin pairs. Along the n-axis, density decreases for both formulations because the denominator grows quadratically while couplings induced by a sparse parity-check matrix grow only linearly. Along the dc-axis, however, the two formulations move in opposite 
+
+directions. Approach A adds O(d2 
+
+> c
+
+) couplings on an essen-tially fixed spin count, so density rises with dc. Approach B adds only O(dc) chain couplings but O(dc) auxiliary spins, resulting in a drop of the edge density with dc.Together, these observations indicate that the formulation choice tracks the neuromorphic hardware class. Approach A is more suitable for platforms with locally dense fabrics, such as crossbar-based designs [15], where the dense intra-check couplings or even all-to-all weighted graphs can be represented within a local array. By contrast, on distributed many-core spiking systems where each coupling contributes to routing and communication cost, Approach B’s bounded-connectivity chain structure is preferable. 
+
+Fig. 3. Ising coupling matrices generated by the two parity-check formulations for two code sizes and their corresponding edge densities d. Top: Approach A, bottom: Approach B. Left: H ∈ { 0, 1}8×16 ; right: H ∈ { 0, 1}48 ×96 .The red lines separate the original code-bit spins from the auxiliary spins. 
+
+Fig. 4. Coupling-graph sparsity of the two formulations as a function of codeword length. Left: edge density of the Ising coupling graph. Right: absolute number of nonzero couplings 
+
+A. Programming Overhead 
+
+A practical advantage common to both formulations is that the coupling topology is fixed by the parity-check matrix H
+
+and by the chosen penalty weights. The received channel observations enter only through the LLRs, which modify the local fields in the Ising formulation or equivalently the diagonal terms in the QUBO representation. Therefore, for a fixed code, the off-diagonal couplings can be calculated offline and reused across received codeblocks, leaving only one scalar field per code-bit spin to be updated at runtime. This is an important distinction from existing Ising formulations of MIMO detection, where the coupling matrix itself depends on the channel realisation and must be partially reprogrammed at the channel coherence rate, incurring runtime preprocessing overhead on a conventional computing host [5]. VII. C ONCLUSION 
+
+This work compared two Ising formulations of ML channel decoding. Although both formulations can place the ML code-word at the ground state under sufficient constraint enforce-ment, our results show that ground-state correctness alone is not a sufficient criterion. Stronger penalties improve exactness, but also increase the number of local minima and shrink the basin of attraction of the ML solution. The two formula-tions impose different hardware tradeoffs. The squared-penalty formulation minimizes spin count but induces dense intra-check couplings, making it more attractive when dense local fan-in is available. The chain-product formulation increases the number of auxiliary spins but produces a sparse, locally structured graph, making it better suited to distributed spiking platforms where routing and communication costs dominate. These results show that Ising mappings for channel decoding must be evaluated jointly with the solver dynamics and the intended hardware architecture, providing a basis for the co-design of neuromorphic FEC accelerators. REFERENCES [1] M. Mansour, N. Shanbhag, M. Mansour, and N. Shanbhag, “A 640-mb/s 2048-bit programmable LDPC decoder chip,” vol. 41, no. 3, pp. 684–698. [2] W. Guan and L. Liang, “Check-belief propagation decoding of LDPC codes,” vol. 71, no. 12, pp. 6849–6858. [3] M. W. Johnson et al. , “Quantum annealing with manufactured spins,” 
+
+Nature , vol. 473, pp. 194–198, 2011. [4] T. Wang and J. Roychowdhury, “Oim: Oscillator-based ising machines for solving combinatorial optimisation problems,” in Unconventional Computation and Natural Computation: 18th International Conference, UCNC 2019, Tokyo, Japan, June 3–7, 2019, Proceedings . Berlin, Heidelberg: Springer-Verlag, 2019, p. 232–256. [5] G. N. Katsaros, J. C. D. L. Ducoing, and K. Nikitopoulos, “Neuromimo: Employing the neuromorphic computing principles to achieve power-efficient mu-mimo detection,” in Proceedings of the 23rd ACM Workshop on Hot Topics in Networks , ser. HotNets ’24, 2024, p. 368–375. [6] G. N. Katsaros, J. C. D. L. Ducoing, and K. Nikitopoulos, “Towards neuromorphic processing for next-generation mu-mimo detection,” in 
+
+2024 IEEE 25th International Workshop on Signal Processing Advances in Wireless Communications (SPAWC) , 2024, pp. 581–585. [7] S. Furber, “Large-scale neuromorphic computing systems,” Journal of Neural Eng. , vol. 13, no. 5, p. 051001. [8] J. Aimone et al. , “A review of non-cognitive applications for neuromor-phic computing,” Neuromorphic Computing and Engineering , vol. 2, 09 2022. [9] S. Kasi and K. Jamieson, “Towards quantum belief propagation for LDPC decoding in wireless networks,” in Proceedings of the 26th Annual International Conference on Mobile Computing and Networking .ACM, pp. 1–14. [10] N. Ide, T. Asayama, M. Ohzeki, and H. Ueno, “Maximum likelihood channel decoding with quantum annealing machine.” [11] Z. Jonke, S. Habenschuss, and W. Maass, “Solving constraint satisfaction problems with networks of spiking neurons,” Frontiers in Neuroscience ,vol. 10, 03 2016. [12] K. Henke, E. Pelofske, G. T. Kenyon, and G. Hahn, “Comparing quantum annealing and spiking neuromorphic computing for sampling binary sparse coding qubo problems,” npj Unconventional Computing ,vol. 2, 2024. [13] G. Orchard et al. , “Efficient neuromorphic signal processing with Loihi 2,” in 2021 IEEE Workshop on Signal Processing Systems (SiPS) , 2021, pp. 254–259. [14] Intel Corporation, “Intel builds world’s largest neuromorphic system to enable more sustainable AI,” https://newsroom.intel.com/. [15] M. Jiang, K. Shan, C. He, and C. Li, “Efficient combinatorial opti-mization by quantum-inspired parallel annealing in analogue memristor crossbar,” Nature Communications , vol. 14, 09 2023.
