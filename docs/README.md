@@ -6,41 +6,41 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-15
-- 运行时间：2026-07-15 21:18:19 UTC
+- 最新运行日期：2026-07-16
+- 运行时间：2026-07-16 21:23:27 UTC
 - 运行状态：成功
-- 本次总论文数：7
-- 精读区：4
-- 速读区：3
+- 本次总论文数：6
+- 精读区：0
+- 速读区：6
 
 ### 今日简报（AI）
-今日精读4篇速读3篇，重点聚焦AI原生无线通信与多用户协作波束赋形。最值得关注的是《FM-Receiver》（9.0分）提出的统一内外接收器架构，以及《Self-Evolving In-Context Learning》（8.0分）实现的直接导频到波束赋形设计。建议优先阅读这两篇，了解如何利用大模型和自进化学习突破传统通信系统的性能瓶颈。
-- 详情：[/202607/15/README](/202607/15/README)
+今天速读了6篇论文，涵盖6G上行链路轻量框架、KAN与MLP对比等方向。  
+重点关注6G上行链路与卫星辅助语义通信框架（LiTCom、VAE驱动的多任务方案）的性能评估。  
+建议从中选一篇深入精读，关注其实际性能与场景适配性。
+- 详情：[/202607/16/README](/202607/16/README)
 
 ### 精读区论文标签
-1. [FM-Receiver: A Foundation Model Enabled Unified Inner and Outer Neural Receiver Towards AI-Native Wireless Communications](/202607/15/2607.12555v1-fm-receiver-a-foundation-model-enabled-unified-inner-and-outer-neural-receiver-towards-ai-native-wireless-communications)  
-   标签：评分：9.0/10、query:channel-nn
-   evidence：基于基础模型的统一神经接收机用于无线通信
-2. [Self-Evolving In-Context Learning for Direct Pilot-to-Beamformer Design in MU-MISO Systems](/202607/15/2607.11970v1-self-evolving-in-context-learning-for-direct-pilot-to-beamformer-design-in-mu-miso-systems)  
-   标签：评分：8.0/10、query:channel-nn
-   evidence：基于上下文学习Transformer的导频到波束成形器设计
-3. [Learning-Based Beamforming for Energy Efficiency of Continuous Aperture Array Systems](/202607/15/2607.12321v1-learning-based-beamforming-for-energy-efficiency-of-continuous-aperture-array-systems)  
-   标签：评分：8.0/10、query:channel-nn
-   evidence：级联图神经网络与隐式神经表示的波束成形方法
-4. [A Comparative Analysis of Ising Formulations for Neuromorphic Maximum-Likelihood Channel Decoding](/202607/15/2607.12862v1-a-comparative-analysis-of-ising-formulations-for-neuromorphic-maximum-likelihood-channel-decoding)  
-   标签：评分：8.0/10、query:channel-nn
-   evidence：使用Ising公式的神经形态信道解码
+- 本次无精读推荐。
 
 ### 速读区论文标签
-1. [Positional Attention-based Graph Neural Network for Learning Permutation Non-equivariant Wireless Policies](/202607/15/2607.12744v1-positional-attention-based-graph-neural-network-for-learning-permutation-non-equivariant-wireless-policies)  
+1. [LiTCom: A Lightweight Transmitter and Inference-Capable Receiver Framework for 6G Uplink](/202607/16/2607.13114v1-litcom-a-lightweight-transmitter-and-inference-capable-receiver-framework-for-6g-uplink)  
    标签：评分：7.0/10、query:channel-nn
-   evidence：新颖的位置注意力图神经网络用于学习包含信道估计和预编码的无线策略
-2. [GNet: A scalable and flexible Gaussian process network with nonparametric neurons](/202607/15/2607.10735v1-gnet-a-scalable-and-flexible-gaussian-process-network-with-nonparametric-neurons)  
+   evidence：GenAI接收机从失真信号推理语义内容，类似神经均衡
+2. [Is the Statistical Advantage Worth the Cost? An Empirical Comparison of KANs and MLPs for Structured Data Classification](/202607/16/2607.13413v1-is-the-statistical-advantage-worth-the-cost-an-empirical-comparison-of-kans-and-mlps-for-structured-data-classification)  
+   标签：评分：7.0/10、query:channel-nn
+   evidence：KAN与MLP的实证比较
+3. [A VAE-Driven Multi-Task Satellite-Aided Semantic Communication Framework for 6G-Enabled Connected Autonomous Vehicles](/202607/16/2607.13494v1-a-vae-driven-multi-task-satellite-aided-semantic-communication-framework-for-6g-enabled-connected-autonomous-vehicles)  
+   标签：评分：7.0/10、query:channel-nn
+   evidence：VAE驱动的多任务卫星辅助语义通信框架
+4. [Proactive URLLC Adaptation for Connected Vehicles Through ML-Based Channel Prediction](/202607/16/2607.13692v1-proactive-urllc-adaptation-for-connected-vehicles-through-ml-based-channel-prediction)  
+   标签：评分：7.0/10、query:channel-nn
+   evidence：基于机器学习的信道预测用于URLLC
+5. [Fused Constrained Policy Reuse Optimization for Wireless Resource Allocation](/202607/16/2607.09498v1-fused-constrained-policy-reuse-optimization-for-wireless-resource-allocation)  
    标签：评分：6.0/10、query:channel-nn
-   evidence：提出GNet，一种新颖的带非参数神经元的高斯过程网络
-3. [From Wireless SNNs to SN P Systems: A Low-Energy Rule-Based Conversion](/202607/15/2607.11428v1-from-wireless-snns-to-sn-p-systems-a-low-energy-rule-based-conversion)  
+   evidence：基于深度强化学习的无线资源分配与约束复用
+6. [GNet: A scalable and flexible Gaussian process network with nonparametric neurons](/202607/16/2607.10735v2-gnet-a-scalable-and-flexible-gaussian-process-network-with-nonparametric-neurons)  
    标签：评分：6.0/10、query:channel-nn
-   evidence：无线脉冲神经网络转换为SN P系统以实现低能耗推理
+   evidence：具有非参数神经元的新型高斯过程网络
 
 
 <div class="dpr-home-promo-card">

@@ -1,0 +1,390 @@
+Title: A VAE-Driven Multi-Task Satellite-Aided Semantic Communication Framework for 6G-Enabled Connected Autonomous Vehicles
+
+URL Source: https://arxiv.org/pdf/2607.13494v1
+
+Published Time: Thu, 16 Jul 2026 00:37:33 GMT
+
+Number of Pages: 6
+
+Markdown Content:
+# A VAE-Driven Multi-Task Satellite-Aided Semantic Communication Framework for 6G-Enabled Connected Autonomous Vehicles 
+
+S. M. Abtahiul Alam 1, Niloy Das 1, Apurba Adhikary 1, Yu Qiao 2, Zhu Han 3, and Choong Seon Hong 4
+
+> 1
+
+Department of Information and Communication Engineering, Noakhali Science and Technology University, Bangladesh 
+
+> 2
+
+Department of Artificial Intelligence, Kyung Hee University, Yongin-si 17104, Republic of Korea 
+
+> 3
+
+Department of Electrical and Computer Engineering, University of Houston, Houston, TX 77004-4005, USA 
+
+> 4
+
+Department of Computer Science and Engineering, Kyung Hee University, Yongin-si 17104, Republic of Korea 
+
+> E-mail: abtahi1116@student.nstu.edu.bd, dasnil684@gmail.com, apurba@nstu.edu.bd, qiaoyu@khu.ac.kr, zhan2@uh.edu, cshong@khu.ac.kr
+
+Abstract —The development of smart transportation systems and the introduction of 6G wireless communication technolo-gies have significantly changed vehicle network topologies. Fu-ture connected autonomous vehicle (CAV) networks require bandwidth-efficient, reliable, and low-latency communication for safety-critical applications such as traffic sign recognition and decision-making. Conventional communication systems transmit raw data regardless of task relevance, which is inefficient in resource-constrained satellite channels where uplink bandwidth is scarce and propagation losses are large. Semantic commu-nication addresses this limitation by transmitting task-relevant information instead of full signal representations. It extracts and conveys essential semantic features and leverages deep learning to optimize task performance at the receiver. Therefore, we present a Variational Autoencoder (VAE)-based multi-task semantic com-munication framework for satellite-assisted autonomous driving. Unlike deterministic autoencoder-based methods, the proposed model uses probabilistic latent representations for more robust and efficient encoding. The learned features are transmitted over noisy wireless channels to perform traffic sign reconstruction and classification. The framework is trained end-to-end to jointly optimize both tasks. Results show that the proposed approach achieves significant bandwidth reduction of up to 87.23% to 98.17% while maintaining stable performance across varying signal-to-noise ratio conditions. 
+
+Index Terms —Semantic communication, variational autoen-coder, satellite-assisted communication, connected autonomous vehicles, 6G wireless networks, image reconstruction, Rayleigh fading, signal-to-noise ratio, structural similarity index. 
+
+I. I NTRODUCTION 
+
+Autonomous vehicles in rural or disaster areas increasingly depend on satellite communication to share vital data. When a sender vehicle detects a traffic sign, it must transmit not just the image but actionable semantic information for the receiver vehicle to identify the sign in real time. This procedure is difficult because of the limited bandwidth of satellites, prop-agation losses, and channel problems like fading and noise. Conventional methods that separate compression, modulation, and inference are inefficient, as they transmit pixel-level data without addressing the receiver’s needs. In semantic commu-nication, one learns compact representations that maintain the information related to the tasks. The foundational work on joint source and channel coding (JSCC) demonstrated that end-to-end training of transmission and reception implicitly takes into account channel effects. Most of the research efforts have been dedicated to single-task problems, e.g., reconstruction and classification [1], [2], [4], [5]. Few studies exist on joint task learning, and those that do typically use mean squared error (MSE) for reconstruction [3]. While MSE is convenient, it has limitations in percep-tual quality. Decoders minimizing pixel-wise squared error often produce blurred outputs, averaging over plausible re-constructions instead of choosing a definitive option. This is particularly problematic for traffic sign images, where pre-cise geometry is crucial for distinguishing similar categories. Blurred boundaries between characters or shapes reduce both the image quality and the discriminative signal necessary for effective classification, as both the decoder and classifier rely on the same latent vector. This work proposes a VAE-based multi-task semantic com-munication framework for satellite-assisted vehicular net-works, in which MSE-only reconstruction is replaced by a composite perceptual loss combining MSE, structural simi-larity (SSIM), and image-gradient terms. A two-branch de-coder with a residual refinement sub-network recovers detail suppressed by the communication bottleneck, and a determin-istic inference strategy, substituting the posterior mean for a stochastic sample at test time, stabilizes reconstruction quality without sacrificing the benefits of probabilistic training. The main contributions are as follows:  
+
+> •
+
+We propose a satellite-assisted semantic communication framework for connected autonomous vehicles that en-hances efficiency and robustness by using task-oriented feature encoding instead of raw pixel-level transmission.  
+
+> •
+
+We employ a probabilistic latent representation with a dimension-scaled Kullback-Leibler (KL) weight to en-hance robustness under high noise levels in satellite chan-nels and to prevent posterior collapse at small codeword dimensions.  
+
+> •
+
+We introduce a unified multi-task framework that jointly optimizes reconstruction and classification, incorporating a two-branch decoder with a residual refinement sub-network that recovers fine-grained edge detail suppressed by the communication bottleneck.  
+
+> •
+
+We test our approach against conventional methods on different traffic sign datasets under different channel conditions, including shadowed and clear-sky satellite propagation. The rest of the paper is organized as follows: II reviews related works in semantic communication and deep learning-based communication systems. III presents the system model. IV describes the proposed methodology. IV-G details the experimental setup. V presents the results and analysis, and finally, VI concludes the paper. arXiv:2607.13494v1 [cs.LG] 15 Jul 2026 II. R ELATED WORK 
+
+Deep joint source–channel coding (DeepJSCC) [1] replaces the conventional separation of source and channel coding with end-to-end learning over noisy channels, enabling grace-ful degradation under channel impairments. Extensions have explored feedback mechanisms and advanced architectures such as transformers and diffusion-based receivers, although their high computational cost and latency limit deployment in real-time or resource-constrained scenarios, where lightweight convolutional models remain more practical. Moreover, most prior work focuses on terrestrial or Additive White Gaussian Noise (AWGN) channels, while satellite-specific challenges such as large path loss, Doppler shifts in LEO systems, and two-hop relay geometry remain underexplored, motivat-ing this study. Recent task-oriented semantic communication methods [3] demonstrate shared latent spaces for joint recon-struction and classification, but reliance on pixel-wise losses obscures the contribution of latent modeling versus architec-tural design; in contrast, this work introduces a composite perceptual loss and a matched deterministic baseline to isolate the effects of loss design and stochastic latent representations. Furthermore, while MSE-based objectives often yield overly smooth reconstructions, perceptual and structural metrics such as SSIM [7] and feature-based losses [6], together with gradient-based constraints [8], better preserve visual fidelity, motivating our composite loss formulation. III. S YSTEM MODEL AND PROBLEM FORMULATION 
+
+A. Transmission Scenario 
+
+We consider a satellite-assisted vehicular communication scenario where a sender autonomous vehicle captures a traffic sign image and transmits a compressed semantic codeword to a satellite relay, which forwards it to a receiver vehicle. The end-to-end uplink–downlink path is modeled as a single equivalent flat-fading AWGN channel using the standard two-hop abstraction in satellite systems [3], valid under decode-or amplify-and-forward relaying with an equivalent received signal-to-noise ratio (SNR) denoted as γ. Although satel-lite links often exhibit strong line-of-sight conditions, we adopt Rayleigh fading as a conservative worst-case model to account for urban blockage, foliage shadowing, and low-elevation passes, ensuring robust performance evaluation. The transmitter maps an image x ∈ [0 , 1] H×W with class label 
+
+c ∈ Y = {0, . . . , C − 1} to a latent codeword z ∈ Rd,which is transmitted over the channel. The received signal 
+
+y ∈ Rd is then used to jointly reconstruct the image ˆx and predict the label ˆc. A single fading coefficient h is assumed constant across all d dimensions within one transmission interval, corresponding to a narrowband channel. 
+
+B. Problem Formulation 
+
+Let fϕ : RH×W → Rd denote the encoder with parameters 
+
+ϕ, and let gθ : Rd → RH×W and qψ : Rd → RC denote the reconstruction and classification networks at the receiver, respectively. The system is trained in an end-to-end manner by solving the following constrained optimization problem: 
+
+min  
+
+> ϕ, θ, ψ
+
+Ex,c, y
+
+h
+
+α Lcls (qψ (y), c ) + β Lrec (gθ (y), x)+ γ Lkl (fϕ(x)) 
+
+i
+
+,
+
+(1) s.t. E∥z∥22
+
+ ≤ P, (1a) 
+
+d ≤ dmax , (1b) 
+
+ˆx = gθ (y) ∈ [0 , 1] H×W , (1c) 
+
+y = h ˜z + n, h ∼ Rayleigh , n ∼ N (0, σ 2
+
+> n
+
+I), (1d) where z = fϕ(x) denotes the encoded latent representa-tion and ˜z is its power-normalized version. Constraint (1a) enforces a transmit power budget P , while (1b) limits the codeword dimension to dmax based on available bandwidth. Constraint (1c) ensures valid pixel reconstruction, and (1d) defines the satellite channel model, where σ2 
+
+> n
+
+= 1 /(2 γlin ).The objective jointly optimizes classification accuracy, re-construction fidelity, and latent regularization, enabling ro-bust end-to-end semantic communication over noisy wireless channels. The regularization term Lkl (·) is included only in the probabilistic VAE formulation and is omitted for the deterministic baseline. In practice, the power constraint in (1a) is enforced by normalizing z to unit RMS amplitude before transmission, as detailed in the methodology Section IV. IV. P ROPOSED FRAMEWORK 
+
+A. Encoder Architecture 
+
+The encoder fϕ comprises three strided convolutional blocks that progressively reduce the spatial resolution, as shown in Fig. 2. Each block processes an input spatial map and produces a downsampled output. The convolution blocks are denoted as C (k, s, p ), where k is the kernel size, s is the stride, and p is the padding. The resulting feature volume is flattened into a vector h ∈ R8192 , which is then passed through two separate fully connected layers to yield the posterior mean and log-variance: 
+
+μ = Wμh + bμ, log σ2 = Wv h + bv , (2) each producing a d-dimensional vector. These two branches correspond to fully connected dense layers, specifically FC( μ)and FC( σ) layers, as shown in Fig. 2. 
+
+B. Reparameterization and Channel Model 
+
+During training, the latent vector is drawn via the reparam-eterization trick [9]: 
+
+z = μ + ε ⊙ σ, ε ∼ N (0, I), (3) where σ = exp  0.5 log σ2. At inference, we substitute 
+
+z = μ for deterministic evaluation, eliminating stochastic reconstruction variance and consistently improving perceptual quality on the test set. Before transmission, z is normalized by its root-mean-square amplitude to decouple signal power from input scale: 
+
+˜z = z
+
+vuut 1
+
+d
+
+> d
+
+X
+
+> i=1
+
+z2
+
+> i
+
+. (4) Fig. 1: VAE-based multi-task satellite-aided semantic communication framework for 6G autonomous vehicles, featuring a refinement branch for better reconstruction and a parallel classifier for traffic sign recognition in noisy channels. 
+
+> Fig. 2: Proposed encoder–decoder architecture of VAE with latent sampling and a refinement branch.
+
+The channel introduces Rayleigh fading and AWGN: 
+
+y = h ˜z + n, (5) where the fading coefficient is drawn element-wise as 
+
+h =
+
+r h2 
+
+> R
+
++ h2
+
+> I
+
+2 , hR, h I ∼ N (0 , 1) , (6) and the noise is n ∼ N (0, σ 2
+
+> n
+
+I) with standard deviation 
+
+σn = 1
+
+√2 γlin 
+
+, γlin = 10 γdB /10 . (7) No channel state information is assumed at the transmitter; both the decoder and classifier learn to operate within the faded, noisy signal space defined by the training channel distribution. The received signal y is rescaled by the original RMS power before being passed to the decoder and classifier. 
+
+C. Decoder with Refinement Branch 
+
+The decoder transforms the vector y into image space through a fully connected projection and four transposed convolutional blocks, following the encoder’s downsampling hierarchy. The first three blocks enhance spatial resolution while decreasing channel depth, while the fourth block keeps a 64 × 64 resolution and has a refinement branch. Transposed convolution is defined as CT (k, s, p ) with kernel size k, stride 
+
+s, and padding p, followed by a ReLU activation. In the final stage, a base map xbase ∈ R64 ×64 is generated using a 3 × 3
+
+convolution (from 32 to 1 channel), alongside a three-layer refinement sub-network. 
+
+xdetail ∈ Conv 1→32 3×3 → ReLU →
+
+Conv 32 →32 3×3 → ReLU → Conv 32 →13×3
+
+(8) and the two branches are fused as: 
+
+ˆx = σ(xbase + 0 .5 xdetail ) , (9) where σ(·) is the sigmoid function. 
+
+D. Classifier Design 
+
+We use a classifier qψ to map the received signal y to class logits using two fully-connected layers with dropout ( p =0.25 ), forming a compact nonlinear decision head: 
+
+Rd → 256 → 128 → C. (10) Algorithm 1 Satellite-Assisted Semantic Transmission and Inference 
+
+Require: Trained encoder fϕ, decoder gθ , classifier qψ ; test image x; channel SNR test 
+
+Ensure: Reconstructed image ˆx; predicted label ˆc 
+
+> 1:
+
+(μ, log σ2) ← fϕ(x) {Encode at sender vehicle } 
+
+> 2:
+
+˜z ← μ /
+
+q 1
+
+> d
+
+P 
+
+> i
+
+μ2 
+
+> i
+
+{Power normalise; use mean (no sampling) } 
+
+> 3:
+
+/* Uplink: sender vehicle → satellite */  
+
+> 4:
+
+h↑ ∼ Rayleigh(1) ; n↑ ∼ N (0, σ 2
+
+> n
+
+I) 
+
+> 5:
+
+r ← h↑ ˜z + n↑ {Received signal at satellite } 
+
+> 6:
+
+/* Downlink: satellite → receiver vehicles */  
+
+> 7:
+
+h↓ ∼ Rayleigh(1) ; n↓ ∼ N (0, σ 2
+
+> n
+
+I) 
+
+> 8:
+
+y ← h↓ r + n↓ {Received signal at receiver vehicle } 
+
+> 9:
+
+ˆx ← gθ (y) {Reconstruct image } 
+
+> 10:
+
+ˆc ← arg max qψ (y) {Classify traffic sign } 
+
+> 11:
+
+return ˆx, ˆc
+
+E. Composite Reconstruction Loss 
+
+To improve perceptual fidelity beyond pixel-wise supervi-sion, we design a composite reconstruction loss combining intensity, structural, and edge-aware objectives: 
+
+Lrec = 0 .4 L1 +0 .1 LMSE +0 .3 (1 −SSIM)+0 .2 Ledge . (11) Where L1 preserves sharpness, MSE stabilizes optimization, SSIM [7] enforces structural similarity, and the edge loss pre-serves boundary information critical for traffic sign semantics. Algorithm 1 summarizes the inference procedure at deploy-ment, explicitly showing the two-hop satellite relay channel through which the semantic codeword passes before recon-struction and classification at the receiver vehicle. 
+
+F. Training Objective 
+
+The classification loss is defined using cross-entropy with label smoothing: 
+
+Lcls = −
+
+> C−1
+
+X
+
+> c=0
+
+˜yc log ˆ pc. (12) The latent regularization term is given by the KL divergence: 
+
+LKL = 1
+
+d − 12
+
+> d
+
+X
+
+> i=1
+
+(1 + log σ2 
+
+> i
+
+− μ2 
+
+> i
+
+− σ2 
+
+> i
+
+)
+
+!
+
+, (13) with adaptive scaling: 
+
+γ(d) = γ0 · 16 
+
+d , γ0 = 0 .01 . (14) The overall optimization objective is: 
+
+Ltotal = α Lcls + β Lrec + γ(d) LKL , α = 0 .8, β = 1 .8.
+
+(15)                                                
+
+> TABLE I: Dataset and Training Configuration
+> Parameter Chinese Dataset German Dataset
+> Training samples 2964 12270 Validation samples 524 2630 Test samples 1756 10110 Image resolution 64 ×64 64 ×64
+> Batch size 32 32 Training epochs 100 100 Optimizer AdamW AdamW Learning rate 5×10 −45×10 −4
+> Weight decay 1×10 −41×10 −4
+> Selected classes 30 35 TABLE II: Evaluation Metrics
+> Metric Definition
+> Accuracy Classification correctness, Acc =Ncorrect
+> Ntotal
+> SSIM Perceptual reconstruction quality Bandwidth Ratio Compression efficiency, RB=Lz
+> Lx
+> SNR (dB) Channel quality indicator, SNR dB = 10 log 10
+> Ps
+> Pn
+> 
+
+G. Simulation Setup 1) Dataset: We evaluate the proposed framework on two benchmark traffic sign datasets: the Chinese Traffic Sign dataset [10] and the German Traffic Sign Recognition Bench-mark (GTSRB) [11]. Both datasets consist of grayscale images resized to 64 ×64 pixels and cover multiple fine-grained traffic sign categories. To ensure sufficient class representation and training stability, we retain only categories with a minimum number of samples per class. After filtering, 30 classes are selected from the Chinese dataset and 35 classes from GTSRB based on their sample frequency. The dataset splits and training configurations are summarized in Table I. 
+
+2) Baselines: We compare the proposed method against two representative baselines: 1) Convolutional Autoencoder (AE): A deterministic se-mantic communication model that employs the same encoder–decoder architecture as the proposed method but excludes stochastic latent sampling and KL regular-ization. The training objective includes reconstruction and classification losses only. 2) Quadrature Amplitude Modulation (QAM): A conven-tional digital communication system in which images are quantized and transmitted using 16-QAM modula-tion over a Rayleigh fading channel. At the receiver, a linear equalizer is applied, followed by an RBF-kernel SVM classifier, representing a classical separated source-channel coding approach. 
+
+3) Evaluation Metrics: We evaluate performance using accuracy, SSIM, bandwidth efficiency, and robustness under varying SNR conditions, as summarized in Table II. V. R ESULTS AND DISCUSSION 
+
+A. Classification Accuracy vs. SNR 
+
+Table III shows the classification accuracy for both the German and Chinese datasets at different SNR levels. Across all noise conditions, the proposed 4 ×VAE consistently outper-forms the AE baseline in all noise conditions, and the perfor-(a) (b)                                                                                                       
+
+> (c) (d)
+> (e) (f)
+> (g) (h)
+> Fig. 3: Visual comparison of traffic sign reconstruction performance: (a) Chinese original, (b) German original, (c) Chinese reconstructed using VAE, (d) German reconstructed using VAE, (e) Chinese reconstructed using AE, (f) German reconstructed using AE, (g) Chinese reconstructed using QAM, and (h) German reconstructed using QAM. TABLE III: Classification Accuracy (%) at Each Test SNR Level
+> SNR (dB) Dataset System Code −10 010 20 30
+> Chinese
+> VAE (proposed) 16 16.23 55.64 68.74 69.99 71.47 32 24.49 64.18 74.54 73.86 73.41 64 33.20 67.08 73.58 75.00 74.43 128 46.81 73.75 77.90 78.47 77.56
+> AE (baseline) 16 18.85 55.24 70.22 72.38 72.32 32 22.44 62.07 72.55 74.66 75.06 64 30.13 64.35 72.38 73.41 73.92 128 39.81 69.31 75.28 76.94 75.40 QAM-16 + SVM –2.28 17.37 30.81 32.40 32.86
+> German
+> VAE (proposed) 16 22.72 77.42 95.32 96.04 96.13 32 34.61 86.78 95.79 96.53 96.09 64 52.62 92.05 96.26 96.52 96.39 128 74.22 95.46 96.56 96.58 96.68
+> AE (baseline) 16 20.01 76.77 92.35 93.35 93.15 32 27.81 87.06 93.27 93.38 93.43 64 35.49 93.16 95.15 95.40 95.36 128 49.32 94.24 96.36 96.48 96.58 QAM-16 + SVM –3.03 15.66 27.03 25.49 25.03 Bold denotes best result per dataset and SNR level.
+
+mance gap increases in the low-SNR regimes. In the German dataset, the proposed method achieves an accuracy ranging from 74.22% to 96.68% across SNR values from -10 dB to 30 dB. Similar trends are observed for the Chinese dataset, where the proposed method achieves accuracies ranging from 46.81% to 77.56% over SNR values between -10 dB and 30 dB. The proposed method, VAE, maintains more robustness under severe channel noise. At moderate and high SNR levels (10-30 dB), both AE and VAE approaches converge; however, the proposed VAE still achieves marginal gains, indicating improved latent robustness and better feature preservation under channel perturbations. The classical QAM baseline suffers from severe degradation, confirming the advantage of learned joint source-channel representations. 
+
+B. Reconstruction Quality (SSIM) vs. SNR 
+
+Table IV shows SSIM results that reflect the perceptual quality of the reconstruction of transmitted images. The proposed VAE outperforms with higher SSIM values for all SNRs and datasets. The SSIM is 87.2% in the German dataset and 68.8% at 30dB in the Chinese dataset. Compared to AE and QAM, the VAE preserves structural details more effectively, especially under low SNR conditions where AE and QAM performance drops noticeably. This demonstrates that the stochastic latent representation of VAE leads to better TABLE IV: Structural Similarity at Each Test SNR Level 
+
+SNR (dB) Dataset System Code −10 0 10 20 30 
+
+Chinese 
+
+VAE (proposed) 16 0.319 0.451 0.508 0.516 0.516 32 0.333 0.506 0.569 0.576 0.578 64 0.366 0.568 0.630 0.638 0.638 128 0.404 0.630 0.681 0.687 0.688 
+
+AE (baseline) 16 0.103 0.166 0.192 0.196 0.197 32 0.112 0.207 0.246 0.250 0.250 64 0.134 0.273 0.316 0.321 0.322 128 0.170 0.351 0.404 0.410 0.411 QAM-16 + SVM – 0.152 0.262 0.363 0.382 0.384 
+
+German 
+
+VAE (proposed) 16 0.379 0.604 0.688 0.699 0.702 32 0.416 0.669 0.756 0.766 0.767 64 0.426 0.733 0.814 0.823 0.824 128 0.474 0.799 0.865 0.872 0.872 
+
+AE (baseline) 16 0.379 0.534 0.599 0.612 0.612 32 0.369 0.582 0.653 0.662 0.664 64 0.380 0.634 0.706 0.714 0.715 128 0.402 0.6836 0.754 0.762 0.763 QAM-16 + SVM – 0.119 0.227 0.406 0.488 0.502 Bold denotes best result per dataset and SNR level. TABLE V: Bandwidth Analysis: Compressed Latent Payload vs. Raw Image (64 ×64 ×1 = 4096 bytes) 
+
+Scheme Bytes KBytes Savings 
+
+Raw image (reference) 4096 4.000 —VAE / AE, Code = 16 75 0.073 98.17% VAE / AE, Code = 32 139 0.136 96.61% VAE / AE, Code = 64 267 0.261 93.48% VAE / AE, Code = 128 523 0.511 87.23% 
+
+robustness against channel noise, thereby providing better perceptual consistency for reconstructed images. 
+
+C. Bandwidth Analysis 
+
+Table V highlights that both AE and VAE can achieve a significant bandwidth reduction, with a maximum of 98.17% saving compared to raw image transmission. But efficiency in compression does not guarantee reliable performance. The proposed VAE is consistently more robust to keep semantic and structural information in the noisy channel conditions, even with similar compression ratios. On the other hand, the AE suffers a significant degradation in reconstruction quality and classification accuracy. This emphasizes that bandwidth efficiency alone is not enough, and that a strong latent representation of the VAE is essential to reliable performance in a noisy channel environment. 
+
+D. Qualitative Reconstruction 
+
+Fig. 3 shows behaviors beyond what SSIM scores can capture. At 10 dB and above, VAE outputs maintain stroke contours, numeric annotations, and boundary geometry for clear sign identification. In contrast, the AE, despite having the same architecture, produces softer reconstructions, flattening interior details and blurring boundaries. QAM-16 reconstruc-tions are severely degraded, primarily showing only coarse outlines due to channel noise. This issue worsens at 0 dB and −10 dB, with VAE reconstructions maintaining structural coherence while AE outputs fall into low-contrast patches and QAM-16 results become nearly unrecognizable. The differ-ence arises from VAE’s probabilistic latent structure, allowing for better adaptation to noise compared to the deterministic AE and non-adaptive QAM-16. VI. C ONCLUSION 
+
+In this paper, we present a multi-task semantic communica-tion framework utilizing a VAE with a composite perceptual reconstruction loss. By combining L1, MSE, SSIM, and image-gradient terms, our method improves reconstruction fidelity and classification robustness over the AE baseline and QAM transmission pipeline. The decoder refinement branch enhances perceptual quality, while a deterministic inference reduces variability during testing. We utilize a scaled KL-weighting mechanism to tackle the issue of posterior col-lapse, which helps us maintain stable training across different compression rates. Experimental results show that our VAE performs better than both the autoencoder baseline and the QAM-16 scheme, especially in low SNR conditions. We have successfully achieved a balance between classification accu-racy, reconstruction quality, and bandwidth efficiency. Our results demonstrate that probabilistic semantic encoding is a feasible and effective strategy for bandwidth-limited satellite-assisted vehicular networks, opening a principled path towards intelligent, task-aware communication in next-generation au-tonomous driving infrastructure. REFERENCES [1] Bourtsoulatze, E., Kurka, D. & G¨ und¨ uz, D. Deep joint source-channel coding for wireless image transmission. IEEE Transactions On Cogni-tive Communications And Networking . 5, 567-579 (2019) [2] Xie, H. & Qin, Z. A lite distributed semantic communication system for Internet of Things. IEEE Journal On Selected Areas In Communications .
+
+39 , 142-153 (2020) [3] Eldeeb, E., Shehab, M. & Alves, H. A multi-task oriented semantic communication framework for autonomous vehicles. IEEE Wireless Communications Letters . 13 , 3469-3473 (2024) [4] Raha, A., Adhikary, A., Dam, S., Park, S. & Hong, C. A Goal-Oriented Semantic Communication Framework for Connected and Autonomous Vehicular Network: A Deep Auto-Encoder Approach. pp. 1017-1019 (2022) [5] Raha, A., Munir, M., Adhikary, A., Qiao, Y., Park, S. & Hong, C. An artificial intelligent-driven semantic communication framework for con-nected autonomous vehicular network. 2023 International Conference On Information Networking (ICOIN) . pp. 352-357 (2023) [6] Johnson, J., Alahi, A. & Fei-Fei, L. Perceptual losses for real-time style transfer and super-resolution. European Conference On Computer Vision . pp. 694-711 (2016) [7] Wang, Z., Bovik, A., Sheikh, H. & Simoncelli, E. Image quality assess-ment: from error visibility to structural similarity. IEEE Transactions On Image Processing . 13 , 600-612 (2004) [8] Ledig, C., Theis, L., Husz´ ar, F., Caballero, J., Cunningham, A., Acosta, A., Aitken, A., Tejani, A., Totz, J., Wang, Z. & Others Photo-realistic single image super-resolution using a generative adversarial network. 
+
+Proceedings Of The IEEE Conference On Computer Vision And Pattern Recognition . pp. 4681-4690 (2017) [9] Kingma, D. & Welling, M. Auto-encoding variational bayes. ArXiv Preprint ArXiv:1312.6114 . (2013) [10] Yang, Y., Luo, H., Xu, H. & Wu, F. Towards real-time traffic sign detec-tion and classification. IEEE Transactions On Intelligent Transportation Systems . 17 , 2022-2031 (2015) [11] Stallkamp, J., Schlipsing, M., Salmen, J. & Igel, C. The German traffic sign recognition benchmark: a multi-class classification competition. 
+
+The 2011 International Joint Conference On Neural Networks . pp. 1453-1460 (2011)
