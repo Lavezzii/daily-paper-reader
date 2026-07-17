@@ -6,41 +6,43 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-16
-- 运行时间：2026-07-16 21:23:27 UTC
+- 最新运行日期：2026-07-17
+- 运行时间：2026-07-17 20:03:40 UTC
 - 运行状态：成功
-- 本次总论文数：6
-- 精读区：0
+- 本次总论文数：7
+- 精读区：1
 - 速读区：6
 
 ### 今日简报（AI）
-今天速读了6篇论文，涵盖6G上行链路轻量框架、KAN与MLP对比等方向。  
-重点关注6G上行链路与卫星辅助语义通信框架（LiTCom、VAE驱动的多任务方案）的性能评估。  
-建议从中选一篇深入精读，关注其实际性能与场景适配性。
-- 详情：[/202607/16/README](/202607/16/README)
+今日推荐7篇论文，精读高分LEO卫星信道估计，速读涵盖多用户MIMO波束赋形与图结构学习。
+重点推荐《On-board AI-based Channel Estimation for LEO NTNs》（9.0/10），研究星载AI信道估计；同时关注站点特定学习的低开销多用户MIMO波束赋形（7.0/10）。
+建议优先精读LEO信道估计论文，再拓展阅读多用户MIMO与交替约束图学习，把握无线通信与AI结合前沿。
+- 详情：[/202607/17/README](/202607/17/README)
 
 ### 精读区论文标签
-- 本次无精读推荐。
+1. [On-board AI-based Channel Estimation for LEO NTNs](/202607/17/2607.15127v1-on-board-ai-based-channel-estimation-for-leo-ntns)  
+   标签：评分：9.0/10、query:channel-nn
+   evidence：轻量级卷积神经网络用于低轨卫星信道估计
 
 ### 速读区论文标签
-1. [LiTCom: A Lightweight Transmitter and Inference-Capable Receiver Framework for 6G Uplink](/202607/16/2607.13114v1-litcom-a-lightweight-transmitter-and-inference-capable-receiver-framework-for-6g-uplink)  
+1. [Site-Specific Learning for Low-Overhead Multi-User MIMO Beamforming](/202607/17/2607.10746v1-site-specific-learning-for-low-overhead-multi-user-mimo-beamforming)  
    标签：评分：7.0/10、query:channel-nn
-   evidence：GenAI接收机从失真信号推理语义内容，类似神经均衡
-2. [Is the Statistical Advantage Worth the Cost? An Empirical Comparison of KANs and MLPs for Structured Data Classification](/202607/16/2607.13413v1-is-the-statistical-advantage-worth-the-cost-an-empirical-comparison-of-kans-and-mlps-for-structured-data-classification)  
+   evidence：深度学习用于多用户MIMO波束赋形
+2. [Structure-Feature Aligned Graph Learning via Alternating Constrained Optimization](/202607/17/2607.11577v1-structure-feature-aligned-graph-learning-via-alternating-constrained-optimization)  
    标签：评分：7.0/10、query:channel-nn
-   evidence：KAN与MLP的实证比较
-3. [A VAE-Driven Multi-Task Satellite-Aided Semantic Communication Framework for 6G-Enabled Connected Autonomous Vehicles](/202607/16/2607.13494v1-a-vae-driven-multi-task-satellite-aided-semantic-communication-framework-for-6g-enabled-connected-autonomous-vehicles)  
-   标签：评分：7.0/10、query:channel-nn
-   evidence：VAE驱动的多任务卫星辅助语义通信框架
-4. [Proactive URLLC Adaptation for Connected Vehicles Through ML-Based Channel Prediction](/202607/16/2607.13692v1-proactive-urllc-adaptation-for-connected-vehicles-through-ml-based-channel-prediction)  
-   标签：评分：7.0/10、query:channel-nn
-   evidence：基于机器学习的信道预测用于URLLC
-5. [Fused Constrained Policy Reuse Optimization for Wireless Resource Allocation](/202607/16/2607.09498v1-fused-constrained-policy-reuse-optimization-for-wireless-resource-allocation)  
+   evidence：新颖的图神经网络架构与门控机制
+3. [Optimization and Deep Learning based Resource Allocation for UAV-Aided Wireless Communication with Rotatable Antenna Array](/202607/17/2607.08420v1-optimization-and-deep-learning-based-resource-allocation-for-uav-aided-wireless-communication-with-rotatable-antenna-array)  
    标签：评分：6.0/10、query:channel-nn
-   evidence：基于深度强化学习的无线资源分配与约束复用
-6. [GNet: A scalable and flexible Gaussian process network with nonparametric neurons](/202607/16/2607.10735v2-gnet-a-scalable-and-flexible-gaussian-process-network-with-nonparametric-neurons)  
+   evidence：深度学习用于无人机无线通信资源分配
+4. [Quasi-Belief Propagation and Neural-Network Check Node Processing for BCH Codes](/202607/17/2607.14589v1-quasi-belief-propagation-and-neural-network-check-node-processing-for-bch-codes)  
    标签：评分：6.0/10、query:channel-nn
-   evidence：具有非参数神经元的新型高斯过程网络
+   evidence：神经网络用于BCH译码的校验节点处理
+5. [Learning-Driven Channel Representation for Wireless Localization: From Channel Observations to Location Inference](/202607/17/2607.14938v1-learning-driven-channel-representation-for-wireless-localization-from-channel-observations-to-location-inference)  
+   标签：评分：6.0/10、query:channel-nn
+   evidence：学习驱动的信道表示用于定位
+6. [CFM-Bench: A Unified Multi-Domain, Multi-Task Benchmark for Channel Foundation Models](/202607/17/2607.14975v1-cfm-bench-a-unified-multi-domain-multi-task-benchmark-for-channel-foundation-models)  
+   标签：评分：6.0/10、query:channel-nn
+   evidence：信道基础模型基准测试
 
 
 <div class="dpr-home-promo-card">

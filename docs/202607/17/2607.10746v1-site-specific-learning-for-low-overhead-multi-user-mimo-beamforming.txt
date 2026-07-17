@@ -1,0 +1,1223 @@
+Title: Site-Specific Learning for Low-Overhead Multi-User MIMO Beamforming
+
+URL Source: https://arxiv.org/pdf/2607.10746v1
+
+Published Time: Tue, 14 Jul 2026 01:13:28 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+> 1
+
+# Site-Specific Learning for Low-Overhead Multi-User MIMO Beamforming 
+
+Cheng-Jie Zhao, Zhaolin Wang, Member, IEEE , Zongyao Zhao, Member, IEEE , and Yuanwei Liu, Fellow, IEEE 
+
+Abstract —A low-overhead site-specific multi-user multiple-input multiple-output (MU-MIMO) beamforming framework is proposed. Conventional limited-feedback MU-MIMO relies on channel state information reference signal (CSI-RS) transmission and user feedback before grouping and beamforming, which requires substantial online overhead when the antenna dimension and candidate-user pool are large. To reduce this burden, the proposed framework exploits site-specific information (SSI), which captures local radio propagation features. By learning the mapping from low-overhead beam-domain observations to effective transmit spatial subspaces of users, the BS can infer inter-user separability before high-resolution CSI acquisition and construct a compact group-level CSI acquisition subspace for the selected users. This site-specific design can be implemented within the standard limited-feedback procedure using synchronization signal block (SSB)-based reference signal received power (RSRP) fingerprints for subspace inference and CSI-RS feedback for low-dimensional CSI refinement. Extensive numerical results demon-strate that the proposed framework can identify compatible user groups before CSI-RS acquisition, preserve most scheduled-user channel energy in a compact group subspace, and achieve higher effective rates than conventional systems with significantly lower overhead and user-side processing burden. 
+
+Index Terms —Limited feedback systems, MU-MIMO, site-specific learning. 
+
+I. I NTRODUCTION 
+
+# MULTI-USER multiple-input multiple-output (MU-MIMO) is a fundamental physical-layer technique for improving the spectral efficiency of modern cellular net-works [1], [2]. By exploiting the spatial degrees of freedom provided by large antenna arrays, a base station (BS) can transmit multiple data streams over the same time-frequency resource and support dense downlink traffic without requiring proportional growth in bandwidth or time resources. The achievable multiplexing gain depends not only on the number of transmitted streams, but also on the spatial separability of the users served on the same resource block. When their channels are sufficiently distinguishable at the BS array, spatial beamforming can suppress inter-user interference (IUI) and convert the available spatial degrees of freedom into rate gain. When the scheduled users are strongly coupled, the effective channel matrix becomes poorly conditioned and additional streams may provide limited spectral-efficiency improvement. This observation leads to two coupled tasks in MU-MIMO sys-tems: user scheduling and user multiplexing. User scheduling determines which users should share the same time-frequency resource, while user multiplexing designs the beamforming vectors that separate the scheduled users and suppress IUI. The user-multiplexing task has been extensively studied                    
+
+> The authors are with the Department of Electrical and Computer Engineering, The University of Hong Kong, Hong Kong (e-mail: chengjie zhao@connect.hku.hk, zhaolin.wang@hku.hk, zongyao@hku.hk, yuanwei@hku.hk).
+
+through MU-MIMO transmission optimization. Depending on the system model, the BS jointly designs beamforming matri-ces, transmit powers, antenna positions, or other controllable variables to improve sum-rate, energy efficiency, or other quality-of-service satisfaction [3]–[5]. These studies show how additional transmit-side degrees of freedom can be exploited in a configured MU link and have led to widely used tools such as weighted minimum mean square error (MMSE) optimization and successive convex approximation. Their starting point is a specified transmission configuration, so they focus on extracting performance after the users and resources have already entered the design problem. They do not resolve the complementary scheduling task of identifying which users have sufficiently separable spatial channels for joint MU transmission. User selection and grouping methods address this schedul-ing task more directly. Semi-orthogonal user selection (SUS), for example, greedily selects users from instantaneous channel state information (CSI) and is asymptotically optimal for zero-forcing (ZF) beamforming when the candidate pool is large [6]. Beyond SUS, CSI-domain MU scheduling and linear beamforming studies commonly use channel correlation, projected channel gain, or effective SINR to avoid pairing users that would create strong IUI after beamforming [7], [8]. This line of work makes clear that spatial separability is a key part of MU-MIMO operation. The limitation is that the compatibility metric itself is computed from instantaneous CSI of the candidate users. Since such CSI must first be obtained through reference signal (RS) transmission and subsequent es-timation/feedback, CSI-domain grouping requires acquisition resources to be spent before the BS can decide which users are suitable for MU transmission. This becomes costly when the candidate-user pool is large and time-frequency and hardware resources are limited. Existing work has therefore developed several ways to reduce or structure the CSI acquisition burden. One route is statistical or covariance-based MU-MIMO. Joint spatial divi-sion and multiplexing (JSDM) groups users according to long-term covariance eigenspaces and reduces the dimension of subsequent MU processing [9]. Related subspace analysis also shows that beamforming designs often admit compact low-dimensional representations [10]. These approaches demon-strate that long-term spatial subspace information can reduce the dimension of MU-MIMO acquisition and beamforming. However, they usually assume that the relevant covariance matrices or group eigenspaces are already known from long-term estimation. This leaves open how a BS should obtain use-ful group-level subspace information from the low-overhead measurements available before dedicated CSI acquisition. Another route is limited-feedback CSI acquisition. Limited arXiv:2607.10746v1 [eess.SP] 12 Jul 2026 2
+
+feedback requires users measure downlink RSs, compress the observed CSI, and report it to the BS [11], [12]. In fifth-generation (5G) new radio (NR) systems, CSI reporting is supported by several codebook families, such as Type-I, Type-II, and port-selection codebooks, which provide differ-ent tradeoffs between feedback overhead and beamforming accuracy [13]–[15]. Among them, the Type-II codebook is one of the most expressive options, representing the channel with selected beam indices and complex coefficients and thereby improving beamforming accuracy in rich multipath channels [16]. Nevertheless, the gain in feedback resolution comes with additional CSI-RS measurement, codebook search, and reporting burden. As antenna arrays and candidate-user pools grow, this burden scales with both the CSI-RS dimension and the number of users to be screened, making CSI acqui-sition and feedback a major bottleneck in limited-feedback MU-MIMO. Site-specific learning provides a solution to address the overhead bottleneck in limited-feedback systems by exploiting 
+
+site-specific information (SSI) , i.e., the propagation regularities induced by a fixed deployment [17]. In a fixed site, the surrounding geometry, dominant scatterers, blockage patterns, and BS deployment vary slowly compared with instantaneous fading, making the propagation distribution learnable from site-specific data. Along this direction, generative site-specific beamforming has been developed to synthesize environment-conditioned beams from learned deployment-specific channel distributions [18]. A site-specific Type-II feedback framework was proposed in [19], where synchronization signal block (SSB)-based reference signal received power (RSRP) finger-prints are used to infer a user’s dominant transmit subspace before dedicated CSI-RS transmission. Cross-site pretraining and target-site calibration were further studied in SiFo [20] to improve the scalability of site-specific CSI feedback across different deployments. Related studies also support this princi-ple through site-specific probing for fast beam alignment [21], RSRP-adaptive codebook design [22], and deep-learning-assisted beam selection [23]. Taken together, these studies show that RSRP fingerprints and other beam-domain mea-surements can serve as low-overhead observations of SSI before high-resolution CSI feedback, thereby reducing online sensing, search, and feedback overhead. However, they mainly target beam alignment, codebook selection, or single-link CSI acquisition rather than MU-level site-specific beamforming. Moving from single-link CSI acquisition to MU-MIMO beamforming changes the role of SSI. In single-user feedback, SSI mainly helps determine how to acquire one user’s CSI with fewer online resources. In MU transmission, SSI must provide additional guidance before detailed CSI is available, including which users are suitable for spatial multiplexing and how the limited CSI-RS resources should be shared by the scheduled group. This is more challenging because users with individually strong channels may still suffer severe IUI when their spatial signatures overlap, while independently acquiring each scheduled user’s CSI would largely offset the overhead reduction enabled by site-specific learning. Therefore, MU-oriented SSI must be converted into group-aware information that supports both compatibility inference and shared CSI acquisition. In this paper, we implement this idea by extending the RSRP-based predictor developed in the single-user site-specific limited feedback framework [19] to infer per-user dominant spatial support from low-overhead SSB measure-ments, and then use the inferred support to select compatible users, construct a compact group CSI-RS acquisition space, and then perform corresponding MU beamforming. The main contributions are summarized as follows.  
+
+> •
+
+We develop a site-specific MU-MIMO feedback frame-work with three stages: 1) SSB-based initial access, 2) CSI-RS-based CSI refinement, and 3) low-dimensional regularized ZF (RZF) MU beamforming. By exploiting the SSB-stage RSRP fingerprints for MU grouping and group-specific CSI-RS design, the framework reduces CSI acquisition and feedback overhead while preserving MU transmission performance, thereby improving the final effective rate.  
+
+> •
+
+We propose pre-CSI MU compatibility inference and group selection from RSRP-predicted dominant sub-spaces. The method evaluates user compatibility before CSI-RS acquisition and forms a scheduled group through a low-complexity greedy rule. We further relate the result-ing compatibility metric to CSI-domain channel coupling, providing a theoretical basis for the proposed grouping method.  
+
+> •
+
+We design a low-dimensional group CSI acquisition ap-proach for the selected users. The proposed construction compresses the scheduled users’ predicted subspaces into a compact group-shared CSI-RS subspace, preserving user channel energy, improving effective-channel condi-tioning for RZF beamforming, and reducing the complex-ity of MU beamforming matrix computation.  
+
+> •
+
+Extensive experiments on DeepMIMO scenarios validate the proposed framework from compatibility inference to MU transmission. The results show that the proposed method can identify compatible user groups before CSI-RS acquisition, preserve most scheduled-user channel en-ergy, and achieve higher effective rates than conventional limited-feedback baselines. The remainder of this paper is organized as follows. Section II introduces the system model and formulates the optimization problem. Section III reviews the conventional limited-feedback pipeline and introduces the proposed site-specific MU-MIMO framework. Section IV develops pre-CSI MU compatibility inference and greedy group selection. Section V presents the group CSI-RS subspace construction, effective-channel feedback, and low-dimensional RZF beam-forming. Section VI reports numerical results on DeepMIMO scenarios. Section VII concludes the paper. 
+
+Notation: Scalars, vectors, matrices, and sets are denoted by italic letters, boldface lowercase letters, boldface uppercase letters, and calligraphic letters, respectively; |A| denotes the cardinality of A. (·)T and (·)H denote the transpose and Her-mitian transpose. ∥x∥, ∥X∥F , and ∥X∥2 denote the Euclidean norm, Frobenius norm, and spectral norm, respectively. tr( ·)
+
+is the trace operator, In the n × n identity matrix, and E[·]
+
+the expectation operator. [N ] ≜ {1, . . . , N } denotes the index 3
+
+set of the first N positive integers. CN (μ, Σ) denotes the circularly symmetric complex Gaussian distribution with mean 
+
+μ and covariance Σ.II. S YSTEM MODEL AND PROBLEM FORMULATION 
+
+We consider a single-cell downlink MU-MIMO system, where a BS equipped with Nt fully digital transmit antennas serves a candidate pool Kfull of single-antenna users. The downlink channel is assumed to be block fading, i.e., ap-proximately constant within each coherence interval. Hence, one CSI acquisition period is carried out in each coherence interval. In this paper, Kfull is assumed to be determined by higher-layer mechanisms such as connection management and long-term scheduling, which is outside the scope of this work. During each coherence interval, the BS selects a group of 
+
+K users, which are in subset K ⊆ K full , for simultaneous spatial multiplexing, and assigns each scheduled user k ∈ K 
+
+a dedicated beamforming vector wk ∈ CNt×1.
+
+A. Channel and Signal Model 
+
+Following the geometric scattering representation [24], the downlink channel vector of user k, denoted by hk ∈ CNt , can be modeled as a superposition of L dominant paths: 
+
+hk =
+
+> L
+
+X
+
+> l=1
+
+αk,l a(ϕk,l ), (1) where αk,l ∼ CN (0 , σ 2
+
+> k,l
+
+) is the complex gain of the l-th path and a(ϕk,l ) ∈ CNt is the transmit steering vector at the angle of departure ϕk,l . A uniform linear array (ULA) is assumed in this paper with inter-element spacing d and wavelength λ.Hence, the steering vector takes the form 
+
+a(ϕk,l ) = a(uk,l ) = 1
+
+√Nt
+
+1, e j2πu k,l , . . . , e j2π(Nt−1) uk,l 
+
+T ,
+
+(2) where uk,l ≜ (d/λ ) sin( ϕk,l ) is the normalized spatial fre-quency. By assuming that L path gains {αk,l }l∈[L] are in-dependent zero-mean complex Gaussian, hk is zero-mean complex Gaussian with channel covariance Σk ≜ E[hkhHk ] of rank L ≪ Nt [9]. We capture this low-rank structure through the following subspace model. 
+
+Assumption 1 (Low-Rank Channel Model ). The channel of user k lies in a Q-dimensional subspace with Q ≪ Nt, i.e., 
+
+hk = Ukgk, where Uk ∈ CNt×Q has orthonormal columns and gk ∼ CN (0, Rk) with tr( Rk) = βk being the power of channel hk.Under Assumption 1 , the channel covariance factorizes as 
+
+Σk = UkRkUHk , (3) which is of rank Q with all energy confined to the subspace 
+
+Uk = span( Uk).
+
+Remark 1 ( Geometric instantiation ). The geometric scatter-ing model (1) instantiates Assumption 1 . Compactly, col-lecting Ak = [a(uk, 1), . . . , a(uk,L )] ∈ CNt×L and α =[αk, 1, . . . , α k,L ] ∈ CL yields hk = Akαk. Therefore, the covariance matrix is given by Σk = AkDkAHk , where 
+
+Dk = diag( σ2
+
+> k, 1
+
+, . . . , σ 2
+
+> k,L
+
+). Since Σk has rank at most L, the subspace dimension satisfies Q ≤ L. In particular, when the L
+
+normalized spatial frequencies {uk,l } are well-separated [9], [25], we have AHk Ak ≈ IL [24] and Σk has full rank 
+
+L, so the Q = L instance of Assumption 1 applies with 
+
+span( Ak) = Uk and Rk ≈ Dk.For any low-dimensional subspace V ⊆ CNt with basis V ∈
+
+CNt×dV , representing hk within V retains only its projected component. The retained channel energy is measured by the 
+
+CSI-capture efficiency [19], [20]: 
+
+ηk(V) = ∥PV hk∥2
+
+∥hk∥2 ∈ [0 , 1] , (4) where PV ≜ V(VH V)−1VH denotes the orthogonal projec-tor onto V. Under Assumption 1 , the channel hk lies in the Q-dimensional dominant subspace Uk. Therefore, projection onto 
+
+Uk is lossless, i.e., ηk(Uk) = 1 with PUk = UkUHk , whereas any subspace that misses part of Uk discards the corresponding channel component. The BS transmits a single data stream to each scheduled user. At each channel use, the data symbol for user k is denoted by sk ∼ CN (0 , P t/K ), with symbols independently generated across users and channel uses and with equal per-stream power Pt/K . Stacking the beamforming vectors into the beamforming matrix W = [ w1, . . . , wK ] ∈ CNt×K and the symbols into the symbol vector s = [ s1, . . . , s K ]T ∈ CK×1,the transmitted signal is given by x = Ws . The received signal at user k is then represented as 
+
+yk = hHk wksk + X 
+
+> j∈K , j ̸=k
+
+hHk wj sj + nk, (5) where nk ∼ CN (0 , σ 2
+
+> n
+
+) is additive white Gaussian noise independent of the data symbols. The signal-to-interference-plus-noise ratio (SINR) at user k is given by 
+
+SINR k(W) = (Pt/K ) |hHk wk|2
+
+σ2 
+
+> n
+
++ ( Pt/K ) P  
+
+> j∈K , j ̸=k
+
+|hHk wj |2 . (6) The corresponding achievable rate is 
+
+Rk(W) = log 2(1 + SINR k(W)) . (7) 
+
+B. Problem Formulation 
+
+Within a single coherence interval, the BS aims to maximize the total achievable rate by jointly selecting a compatible user group K and designing the corresponding beamforming matrix 
+
+W. The sum-rate maximization problem can be formulated as follows: 
+
+max  
+
+> K,W
+
+X
+
+> k∈K
+
+Rk(W), s.t. ∥wk∥ = 1 , K ⊆ K full , |K| = K. (8) Solving (8) directly is intrinsically intractable for two main reasons. First, the objective depends on the instantaneous downlink CSI of all users in the candidate pool, i.e., 
+
+{hk}k∈K full . Without the CSI, the BS cannot evaluate the user rates, compare the spatial separability of different user groups, and finally compute the corresponding beamforming matrix. Second, even if instantaneous CSI were available, the joint optimization over user grouping and beamforming remains computationally challenging. Concretely, the group-selection is combinatorial, since the BS must choose a subset from 
+
+Kfull , and the beamforming design for sum-rate maximization is generally non-convex due to the IUI. In practical 5G NR systems, the difficulty of instantaneous 4
+
+CSI acquisition is addressed through limited-feedback CSI reporting. Then, the original problem in (8) is turned into a sequential CSI acquisition, feedback, grouping, and beam-forming joint design problem. The next section reviews this limited-feedback pipeline and introduces how the SSI can be incorporated to reduce the CSI acquisition burden. III. L IMITED FEEDBACK PIPELINE AND PROPOSED 
+
+SITE -S PECIFIC FRAMEWORK 
+
+This section reviews the conventional NR limited-feedback pipeline and introduces the proposed site-specific framework, contrasting how each addresses the CSI dependency identified in problem (8). 
+
+A. Conventional Limited Feedback Pipeline 
+
+In practical NR systems, MU-MIMO transmission is not realized by directly solving problem (8) over all possible user groups and beamforming matrices. Instead, it follows a limited-feedback pipeline that first obtains beam-level mea-surements for initial access, then refines the downlink CSI through CSI-RS transmission and user feedback, and finally selects compatible users for joint beamforming. Specifically, we abstract and separate the conventional pipeline into the following three stages. 
+
+Stage 1 (SSB-based Initial Access): The procedure starts with SSB beam sweeping, where the BS transmits a predefined set of synchronization beams B = [ b1, . . . , bB ] ∈ CNt×B ,which are typically discrete Fourier transform (DFT) beams, and each user measures the RSRP of these beams for initial access and coarse directional acquisition. For the i-th SSB beam, the received signal at the k-th user is 
+
+ySSB  
+
+> k,i
+
+= pPSSB hHk bi sSSB + nSSB  
+
+> k,i
+
+, (9) where PSSB is the SSB transmit power, sSSB ∈ CLs×1 collects the Ls SSB symbols, and nSSB  
+
+> k,i
+
+∼ CN (0, σ 2
+
+> n
+
+ILs )1. Since SSB is a cell-wide broadcast, all users measure from the same downlink transmission and no IUI arises. For each SSB beam, the user averages the received signal power over the corresponding SSB symbols and obtains the RSRP as 
+
+RSRP k,i ≜ 1
+
+Ls
+
+ySSB 
+
+> k,i
+> 2
+
+. (10) Following [18], the dB-domain RSRP can be modeled as 
+
+rk,i = 10 log 10 (RSRP k,i ) = r0 
+
+> k,i
+
++ nk,i , (11) where r0 
+
+> k,i
+
+is the noise-free RSRP and nk,i is the Gaussian perturbation capturing thermal noise and shadowing variabil-ity. Detailed expressions for r0 
+
+> k,i
+
+and nk,i can refer to Eq. (7), Eq. (8a), and Eq. (8b) in [18]. Collecting the B measurements over all SSB beams gives the beam-domain RSRP fingerprint 
+
+rk = [ rk, 1, . . . , r k,B ]T ∈ RB×1 for user k. This fingerprint provides coarse beam-level information and mainly supports initial access and beam management. We assume only the index and RSRP of the strongest beam is reported in the conventional pipeline. 
+
+Stage 2 (CSI-RS-based CSI Refinement): By definition, the RSRP fingerprint measured with SSB beams does not 
+
+> 1SSB symbols occupy specific time-frequency resource elements in 5G NR. For analytical compactness they are aggregated into a vector and their time-frequency indices are not separately tracked.
+
+directly provide the phase-coherent channel direction required to construct high-resolution downlink beamforming vectors. To support data transmission, NR systems therefore proceed to a CSI refinement stage using CSI-RS [14]–[16], [19]. Type-II feedback is considered in this paper. Detailed analysis regarding Type-I, Type-II, and port selection feedback schemes is provided in [19]. The CSI refinement stage with Type-II feedback consists of three steps. (i) The BS transmits non-precoded CSI-RSs over Lc ≥ Nt pilot channel uses, with per-use transmit vector drawn from the Nt-port pilot matrix SCSI ∈ CNt×Lc satisfying 
+
+SCSI SH 
+
+> CSI
+
+= INt . The aggregate received signal at user k is 
+
+yCSI  
+
+> k
+
+= pPCSI SH
+
+> CSI
+
+hk + nCSI  
+
+> k
+
+∈ CLc×1, (12) where PCSI is the CSI-RS transmit power and nCSI  
+
+> k
+
+∼CN (0, σ 2
+
+> n
+
+ILc ). Similar to SSB, the non-precoded CSI-RS is transmitted to all candidate users in Kfull simultaneously, all candidates measure from the same downlink transmission and no IUI arises. (ii) Each candidate user estimates the downlink channel hk from (12) via standard channel estimators, e.g., least-squares (LS). Perfect channel estimation is assumed here to isolate the effect of codebook compression and feedback. 
+
+(iii) Instead of feeding back the full channel vector, the user selects Q dominant columns from the oversampled DFT code-book D ∈ CNt×OD Nt with oversampling rate OD [14], [15] to approximately span the dominant Q-dimensional subspace 
+
+Uk in Assumption 1 . The beam index set selected by user k
+
+is denoted by 
+
+Sk = arg max   
+
+> S⊆ [ODNt],|S| =Q
+
+DH 
+
+> S
+
+hk
+
+> 2
+
+, (13) where DS ∈ CNt×Q collects the columns of D indexed by S ⊆ [OD Nt]. The user then computes the combining coefficients via LS projection onto the selected subspace: 
+
+αk = D†Sk hk ∈ CQ. (14) Subsequently, (Sk, ˆαk) are reported back to the BS [14], [15], with which the BS reconstructs ˆhk = DSk ˆαk.
+
+Stage 3 (Full-Dimensional MU Beamforming): After receiving the CSI reports, in the single-user case, the BS directly applies maximum ratio transmission (MRT), setting 
+
+wsingle  
+
+> k
+
+= ˆhk/∥ˆhk∥ to maximize the received signal-to-noise ratio (SNR). In the multi-user case, however, simultaneous transmission to multiple users introduces IUI, whose severity depends on how well the channels of the co-scheduled users are separated. The BS must therefore first assess inter-user separability among candidates before committing to a group and a beamforming matrix. Concretely, it compares the recon-structed channel directions and selects a compatible group, for example using SUS [6]. Given the selected group K and its reconstructed CSI, the BS computes a full-dimensional beamforming matrix W for joint downlink transmission. In this paper, RZF [26] is used as the reference full-dimensional beamforming method, so the user-specific beamforming vec-tors {wk} are obtained from the RZF solution. 
+
+B. Problem Reformulation for Limited Feedback 
+
+The limited-feedback pipeline adopted in NR systems re-solves the instantaneous CSI dependency in problem (8) through sequential CSI-RS transmission and corresponding 5
+
+feedback, while practical user grouping and linear beam-forming replace the joint non-convex optimization. Under this pipeline, the overhead incurred by CSI acquisition and feedback critically affects the eventually achieved effective rate, since the time-frequency resources occupied by CSI-RS transmission and feedback cannot be used for data de-livery. Concretely, the online overhead per coherence interval, measured in channel uses, consists of the SSB-based beam-management overhead TSSB averaged over its update period and the CSI-RS transmission and feedback overhead TCSI -RS .It can be represented as 
+
+To = ζBM TSSB + TCSI -RS , (15) where ζBM ∈ [0 , 1] is a beam-management update-rate factor that accounts for the fact that SSB-based beam management and CSI-RS-based CSI acquisition are updated on differ-ent timescales 2. Therefore, within the NR limited-feedback pipeline, supposing that one coherence interval contains Tc
+
+channel uses, problem (8) is reformulated as the following overhead-aware effective-rate maximization problem: 
+
+max  
+
+> K,W
+
+
+
+1 − To
+
+Tc
+
+ X
+
+> k∈K
+
+Rk(W), (16a) 
+
+s.t. ∥wk∥ = 1 , K ⊆ K full , |K| = K. (16b) For the conventional Type-II pipeline, the SSB stage sends 
+
+B SSB beams and requires each candidate user reports the index and RSRP of its strongest SSB beam. The CSI-RS stage transmits Nt pilot dimensions to all candidate users and collects Q index and coefficient pairs from these users. Therefore, the online overhead of the conventional pipeline is given by 
+
+T Conv  
+
+> o
+
+= ζBM (B + 2 |K full |) + Nt + 2 Q|K full |. (17) 
+
+C. Proposed Site-Specific Framework 
+
+The limitations of the conventional pipeline arise mainly from two aspects. Firstly, the discovery of Type-II subspace imposes heavy processing burden on the user. Second, equa-tion (17) reveals that the CSI-RS overhead scales with the number of BS antennas Nt and the size of the candidate pool |K full |, which would be prohibitive with growing Nt and 
+
+|K full | for larger beamforming gain and more user diversity. These drawbacks motivate the proposed framework that ex-ploits the SSI to reduce the users’ computational burden and the online overhead of CSI acquisition and feedback. 
+
+1) Single-User Case (Prior Work [19]): The single-user site-specific Type-II framework in [19] mainly keeps the limited-feedback structure reviewed above, but changes how the dominant Type-II subspace is obtained. In [19], the dominant-subspace discovery is moved before CSI-RS trans-mission. More specifically, the BS jointly learns a site-specific SSB probing codebook Bθ and subspace predictor Ψθ : rk 7 →
+
+bUk, with which the SSB RSRP fingerprint is mapped to a pre-dicted basis for the dominant subspace Uk in Assumption 1 ,  
+
+> 2SSB-based beam management and CSI-RS-based CSI acquisition are configured on different timescales in NR systems. SSB-RSRP mainly reflects beam-domain power associated with large-scale geometry, path loss, and blockage, which varies more slowly than the phase-coherent CSI needed for beamforming. Therefore, RSRP fingerprints can be updated less frequently and reused across multiple CSI-RS acquisition intervals [14]–[16]. Subspace Predictor
+> ...
+> ...
+> Stage I
+> Stage II
+> Pre -CSI User Grouping & Group Subspace Acquisition
+> ... ˆˆij
+> → 
+> Compatibility
+> Estimation
+> Grouped
+> Users
+> Aggregation &
+> Compression Group Subspace
+> Stage III
+> Serving User Group
+> BS -side
+> Timeline
+> Environment -side
+> Fig. 1. Illustration for the proposed MU beamforming framework.
+
+i.e., span( bUk) ≈ Uk. The BS then sends CSI-RS within 
+
+span( bUk), and the user estimates only the low-dimensional effective CSI inside this predicted subspace. Therefore, the main online burden is shifted from full-dimensional user-side search and feedback to BS-side subspace inference. This prior design shows that RSRP fingerprints can be mapped to dominant transmit subspaces before dedicated CSI-RS transmission. In this paper, we use the same learned codebook Bθ and mapping Ψθ as the basic subspace predictor and move the focus from single-link CSI acquisition to multi-user grouping, group CSI acquisition, and MU beamforming. 
+
+2) Multi-User Case: Although only a subset of users are selected to serve, all users in the candidate pool must feed back their compressed CSI in the conventional pipeline. The proposed framework addresses this bottleneck by exploiting SSI at the BS to screen compatibility and group users before CSI acquisition. Concretely, the proposed site-specific MU beamforming framework consists of the following three stages. 
+
+Stage 1 (SSB-based Initial Access): This stage is identical to the conventional pipeline to establish initial access and collect RSRP fingerprints {rk}k∈K full for all candidate users using learned codebook Bθ . This stage requires T Pro SSB =
+
+B + B|K full | for collecting RSRP from all SSB beams. 
+
+Stage 2 (CSI-RS-based CSI Refinement): Based on the collected RSRP fingerprints, the BS applies the predictor Ψθ to obtain { bUk}k∈K full , evaluates the spatial separability among candidate users, and selects a compatible group K ⊆ K full 
+
+without instantaneous CSI. Then, given the selected group, the BS constructs a shared group acquisition subspace VK,M ∈
+
+CNt×M , where M ≪ Nt is the acquisition dimension con-figured by the BS, and transmits group-specific CSI-RS over this subspace. Let SCSI  
+
+> K
+
+∈ CM ×LK denote the group CSI-RS pilot matrix, where LK ≥ M and SCSI  
+
+> K
+
+(SCSI  
+
+> K
+
+)H = IM . The received signal at user k is given by 
+
+yCSI  
+
+> k, K
+
+= pPCSI (SCSI  
+
+> K
+
+)H VH 
+
+> K,M
+
+hk + nCSI  
+
+> k, K
+
+∈ CLK×1, (18) where nCSI  
+
+> k, K
+
+∼ CN (0, σ 2
+
+> n
+
+ILK ). Each selected user then esti-mates and feeds back the M -dimensional effective channel from (18). With the minimum pilot length LK = M , the corresponding overhead in this stage is T Pro CSI -RS = M + M K .Detailed analysis regarding pre-CSI MU compatibility infer-ence and dimension-constrained group CSI acquisition will be developed in Sections IV and V. 6
+
+Stage 3 (Low-Dimensional MU Beamforming): With the effective channel feedback, the BS applies the same RZF rule as in the conventional pipeline, but over the low-dimensional effective channel in the group subspace. The reduced-domain RZF beamforming matrix is then mapped back to the antenna domain through VK,M , yielding the final MU beamforming matrix W for downlink transmission. In this way, the overhead of the proposed framework is given by 
+
+T Pro  
+
+> o
+
+= ζBM (B + B|K full |) + M + M K. (19) The proposed framework thus reduces overhead on two axes simultaneously: the pilot dimension shrinks from Nt to M ≪
+
+Nt, and the number of reporting users shrinks from |K full | to 
+
+K ≪ |K full |. Fig. 1 gives an illustration for the proposed MU downlink transmission framework. IV. P RE -CSI MU C OMPATIBILITY INFERENCE AND 
+
+GROUP SELECTION 
+
+Following the proposed framework, this section develops the pre-CSI grouping part for the Stage 2 before CSI-RS transmission. Reusing the single-user predictor Ψθ developed in Section VI of [19] to obtain each bUk = Ψ θ (rk) from the RSRP fingerprint, the BS quantifies cross-user separability from the mutual overlap of the predicted subspaces and selects the group on this pre-CSI surrogate. 
+
+A. Pairwise Compatibility 
+
+For a pair of candidate users, their compatibility for MU transmission is mainly determined by their spatial separability ,i.e., whether their channels can be separated by a linear MU beamforming matrix with limited residual IUI [6], [9]. For beamforming methods such as RZF, two users are favorable for co-scheduling when their channel directions are sufficiently separated. Otherwise, interference suppression requires large power loss or noise enhancement. Conventional CSI-based schedulers therefore evaluate pairwise separability from the instantaneous normalized channel overlap using CSI: 
+
+γCSI  
+
+> ij
+
+≜ |hHi hj |2
+
+∥hi∥2∥hj ∥2 . (20) A small γCSI  
+
+> ij
+
+hence indicates better spatial separability. In the proposed pre-CSI framework, γCSI  
+
+> ij
+
+is unavailable. Under Assumption 1 , however, each channel hk = Ukgk
+
+consists of a slowly varying transmit subspace Uk and fast-fading coefficients gk. The latter are unknown before CSI-RS transmission, whereas the former can be approximated by the RSRP-predicted subspace. This motivates using the mutual overlap between the users’ transmit subspaces as a fading-independent surrogate for pairwise separability. For any two user subspaces, we define the normalized subspace overlap as 
+
+γij ≜ 1
+
+Q UHi Uj 
+
+> 2
+> F
+
+= 1
+
+Q tr( PUi PUj ) ∈ [0 , 1] , (21) where PUk denotes the orthogonal projector onto Uk intro-duced in Section II. The next two propositions show how the subspace overlap relates to the expected and worst-case channel overlap, respectively. 
+
+Proposition 1 (Subspace overlap and expected channel over-lap ). Under Assumption 1, the expected channel overlap satisfies 
+
+E|hHi hj |2 = tr  Ri UHi Uj Rj UHj Ui
+
+. (22) If the subspace coefficients are isotropic, i.e., Rk =(βk/Q )IQ, we have 
+
+E|hHi hj |2 = βiβj Q−1γij . (23) Correspondingly, the normalized CSI overlap satisfies 
+
+EγCSI 
+
+> ij
+
+ = 1
+
+Q2 UHi Uj 
+
+> 2
+> F
+
+= 1
+
+Q γij . (24) 
+
+Proof: Substituting hk = Ukgk into E[|hHi hj |2] reduces the problem to averaging over the independent subspace coef-ficients gi and gj . Conditioning on gi, the expectation over gj
+
+replaces gj gHj by Rj . The remaining term is a quadratic form in gi; taking its expectation and using E[gigHi ] = Ri gives the trace expression in (22). If Rk = ( βk/Q )IQ, then (22) becomes βiβj 
+
+> Q2
+
+∥UHi Uj ∥2 
+
+> F
+
+= βiβj Q−1γij , which proves (23). For the normalized CSI overlap, ∥hk∥ = ∥gk∥ because 
+
+Uk has orthonormal columns. Under the isotropic model, the normalized direction satisfies E[gkgHk /∥gk∥2] = Q−1IQ.Applying the same argument to these normalized directions yields (24). 
+
+Proposition 1 shows that the expected channel overlap is governed by the relative geometry of the two transmit sub-spaces, with its exact value further weighted by the coefficient covariances Ri and Rj . The isotropic model removes these mode-dependent weights by spreading the power uniformly over the Q modes of each subspace, and thus yields the clean relation E[γCSI  
+
+> ij
+
+] = Q−1γij in (24). This assumption is idealized, since practical channels generally have unequal mode powers, and exact numerical agreement between γij 
+
+and γCSI  
+
+> ij
+
+should not be expected in all channel realizations. Nevertheless, the general expression (22) still shows that the common subspace geometry is the structural source of channel coupling, while the unknown mode powers only reweight the shared directions. Since these powers and the instantaneous fading coefficients are unavailable before CSI acquisition, the normalized subspace overlap γij still provides a power-agnostic geometric reference for assessing potential inter-user coupling. Its practical role is therefore to preserve the compatibility ordering rather than to predict the exact CSI-domain overlap value, which is verified empirically in the first part of Section VI-A. 
+
+Proposition 2 (Subspace overlap and worst-case channel overlap ). Under Assumption 1 , the worst-case channel over-lap over all channel realizations is given by 
+
+sup  
+
+> gi,gj̸=0
+
+|hHi hj |2
+
+∥hi∥2∥hj ∥2 = UHi Uj 
+
+> 22
+
+= PUi PUj 
+
+> 22
+
+= ρij ,
+
+(25) where the supremum is attained when gi and gj are aligned to the dominant singular vectors of UHi Uj .
+
+Proof: By applying the Cauchy–Schwarz inequality, we obtain 
+
+|hHi hj | = |gHi UHi Uj gj | ≤ ∥ UHi Uj ∥2 ∥gi∥∥ gj ∥, (26) 7
+
+where equality holds when gi and gj align with the dominant left and right singular vectors of UHi Uj , respectively. Squar-ing both sides of (26). and exploiting ∥hk∥ = ∥gk∥ gives the first equality in (25). The projector form follows from 
+
+PiPj = Ui(UHi Uj )UHj , whose nonzero singular values are those of UHi Uj .
+
+Proposition 2 complements Proposition 1 by characteriz-ing the strongest possible channel alignment within two user subspaces. If {σij,q }Qq=1 are the singular values of UHi Uj , the average and strongest subspace overlaps are represented by 
+
+ρij = max  
+
+> q
+
+σ2 
+
+> ij,q
+
+, γij = 1
+
+Q
+
+> Q
+
+X
+
+> q=1
+
+σ2 
+
+> ij,q
+
+. (27) Thus, γij measures the average overlap across the shared principal modes, whereas ρij measures the largest shared mode and captures the worst-case IUI risk. Since γij ≤ ρij ≤ Qγ ij ,reducing γij also limits the possible growth of the strongest overlap when Q is fixed, although it is less conservative than directly minimizing ρij . We therefore adopt γij as the main compatibility metric in this paper. However, these quantities still depend on the ground-truth subspaces Uk, which are also unavailable before CSI acqui-sition. The BS therefore substitutes the RSRP-predicted or-thonormal basis bUk and evaluates the corresponding predicted compatibility proxies :
+
+bγij = 1
+
+Q bUHi bUj 
+
+> 2
+> F
+
+, bρij = bUHi bUj
+
+> 22
+
+. (28) The following proposition bounds their deviations from the true subspace-overlap quantities. 
+
+Proposition 3 (Compatibility proxy accuracy ). Define the per-user subspace alignment quality 
+
+ξk ≜ 1
+
+Q bUHk Uk 
+
+> 2
+> F
+
+∈ [0 , 1] . (29) Then the predicted compatibility proxies satisfy 
+
+bγij − γij ≤ √2 p 1 − ξi + p1 − ξj
+
+, (30a) 
+
+pbρij − √ρij ≤ pQ(1 − ξi) + 
+
+q
+
+Q(1 − ξj ). (30b) 
+
+Proof: Let bPk = bUk bUHk . From (21) and (28), bγij −γij is the normalized trace difference between bPi bPj and PUi PUj .To separate the two users’ subspace-prediction errors, we add and subtract PUi
+
+bPj inside the trace. The triangle inequality and |tr( AB )| ≤ ∥ A∥F ∥B∥F then give 
+
+bγij −γij ≤ 1
+
+Q
+
+ ∥ bPi −PUi ∥F ∥ bPj ∥F +∥PUi ∥F ∥ bPj −PUj ∥F
+
+.
+
+(31) Moreover, since ∥PUk ∥F = ∥ bPk∥F = √Q, we have 
+
+∥ bPk − PUk ∥2 
+
+> F
+
+= tr  ( bPk − PUk )2 = 2 Q − 2tr( bPkPUk )= 2 Q − 2∥ bUHk Uk∥2 
+
+> F
+
+= 2 Q(1 − ξk).
+
+Together with (31), this gives 
+
+bγij − γij ≤ 1
+
+Q
+
+ p 2Q(1 − ξi)pQ + pQ
+
+q
+
+2Q(1 − ξj )
+
+= √2 p 1 − ξi + p1 − ξj
+
+, (32) which proves (30a). For ρij , since √ρij = ∥PUi PUj ∥2 and 
+
+pbρij = ∥ bPi bPj ∥2, the reverse triangle inequality leads to 
+
+pbρij − √ρij ≤ ∥ bPi bPj − PUi PUj ∥2
+
+≤ ∥ bPi − PUi ∥2 + ∥ bPj − PUj ∥2. (33) For the principal angles {θk,q }Qq=1 between bUk and Uk, we have 
+
+∥ bPk − PUk ∥22 = max  
+
+> q
+
+sin 2 θk,q ≤
+
+> Q
+
+X
+
+> q=1
+
+sin 2 θk,q = Q(1 − ξk),
+
+(34) which proves (30b). 
+
+Proposition 3 quantifies how subspace-prediction error propagates to the pairwise compatibility proxies. The bounds decrease monotonically with ξk and vanish as ξk → 1,indicating that prediction errors cannot grow arbitrarily into compatibility errors. Since these are worst-case bounds and may be conservative, their practical tightness is evaluated empirically through the pair-level results in Section VI-A. Note that ξk is only an analysis and validation metric for evaluating prediction accuracy and is not required by the online scheduler. 
+
+B. Greedy Group Selection 
+
+The preceding subsection provides pairwise pre-CSI com-patibility proxies for all candidate users in Kfull . To form a MU group, these pairwise quantities must be converted into a group-level selection criterion. For linear MU beamforming, a single strongly coupled user pair can dominate residual IUI and degrade the conditioning of the effective MU channel, even when the other pairs in the group are well separated [6]. We therefore characterize a candidate group by its largest pairwise overlap. For any group G ⊆ K full , define the true and predicted group overlaps as 
+
+Γ( G) ≜ max  
+
+> i<j, i,j ∈G
+
+γij , bΓ( G) ≜ max  
+
+> i<j, i,j ∈G
+
+bγij . (35) Since scheduling uses bΓ( G) while the desired compatibility criterion is Γ( G), the next step is to verify that the pairwise prediction accuracy remains controlled after the max aggre-gation. The following proposition gives this group-level error bound. 
+
+Proposition 4 (Group overlap accuracy ). If ξmin ≜
+
+min k∈G ξk and |G| ≥ 2, then we have 
+
+Γ( G) − bΓ( G) ≤ 2p2(1 − ξmin ). (36) 
+
+Proof: By Proposition 3 , every pair (i, j ) in G satisfies 
+
+bγij − γij ≤ √2 p 1 − ξi + p1 − ξj
+
+ ≤ 2p2(1 − ξmin ).
+
+(37) Thus, γij ≤ bγij + 2 p2(1 − ξmin ) and bγij ≤ γij +2p2(1 − ξmin ) hold for all pairs in G. Taking the maximum over all pairs in both inequalities gives (36). 
+
+Proposition 4 extends this bounded-error relation from pairwise overlap to the group-level bottleneck metric. When the per-user subspace predictions are reliable, the predicted group bottleneck remains close to the true subspace bottleneck, while the practical selection behavior is evaluated in the second part of Section VI-A. The scheduler therefore seeks a size-K group that minimizes bΓ( G):
+
+K = arg min  
+
+> G⊆K full ,|G| =K
+
+bΓ( G). (38) 8
+
+Solving (38) exactly requires checking  |K full |
+
+> K
+
+ candidate groups, which is combinatorial and becomes prohibitive for a large candidate pool. We therefore adopt a low-complexity greedy rule inspired by SUS [6], but move the selection metric from the instantaneous CSI domain to the predicted subspace domain. We refer to this rule as pre-CSI subspace-SUS . Since the overlap metric measures separability but not link strength, the online scheduler first selects the user with the largest estimated large-scale channel power: 
+
+k1 = arg max 
+
+> k∈K full
+
+bβk, K = {k1}, (39) where bβk is estimated from the SSB RSRP fingerprint rk3. The BS then adds the user whose largest predicted overlap with the current group is the smallest, i.e., it iteratively performs: 
+
+k⋆ = arg min 
+
+> k∈K full \K
+
+max  
+
+> j∈K
+
+bγkj , (40) until |K| = K. Equivalently, minimizing the maximum predicted overlap is the same as maximizing the minimum separation among the selected predicted subspaces, since bγij 
+
+decreases monotonically with the normalized chordal distance between users i and j. The update in (40) therefore implements a farthest-first traversal in the predicted subspace domain, con-sistent with classical greedy selection methods [27]. Combined with the overlap-based compatibility surrogate, it turns the pre-CSI grouping problem into a sequential selection procedure: the BS only updates the worst predicted overlap between each remaining candidate and the current group. With precomputed pairwise overlaps, the proposed pre-CSI subspace-SUS re-duces the search complexity from combinatorial in |K full | to 
+
+O(K|K full |).V. L OW -D IMENSIONAL GROUP CSI A CQUISITION AND 
+
+BEAMFORMING 
+
+This section develops the group CSI acquisition part of 
+
+Stage 2 . Given the selected group K and its predicted sub-spaces { bUk}k∈K , the BS constructs a compact group CSI-RS subspace VK,M with basis VK,M ∈ CNt×M , over which the selected users feed back low-dimensional effective channels for subsequent RZF beamforming. We then analyze how this subspace preserves channel energy and effective-channel separability. 
+
+A. Group-Specific CSI-RS Subspace Design 
+
+For the selected group K, reducing the overall union-subspace dimension requires the BS to identify a compact set of CSI-RS probing directions that preserves the dominant group-energy components of the scheduled users, rather than probing the full concatenation of all predicted subspaces. A natural compression criterion is to maximize the total captured channel energy: 
+
+max 
+
+> V∈CNt×M
+
+X
+
+> k∈K
+
+E∥VH hk∥2 s.t. VH V = IM . (41) Problem (41) is intractable before CSI acquisition because it depends on unavailable channel statistics. The following        
+
+> 3The channel power βk=tr( Rk)is estimated from the SSB RSRP fingerprint rk. As a standardized power measurement, RSRP reflects the large-scale received power and is routinely used for large-scale gain and pathloss estimation [15], [16].
+
+proposition gives a tractable characterization of its solution under the isotropic coefficient model. 
+
+Proposition 5 (Capture optimality of group CSI-RS subspace ).
+
+Under Assumption 1 with isotropic Rk = ( βk/Q )IQ, the expected captured energy of user k over any M -dimensional subspace with orthonormal basis V satisfies 
+
+E∥VH hk∥2 = βk
+
+Q VH Uk 
+
+> 2
+> F
+
+. (42) Let R⋆ 
+
+> K
+
+= P 
+
+> k∈K
+
+ω⋆kUkUHk denote the group spatial covari-ance, i.e., the power-weighted sum of the scheduled users’ transmit-subspace projectors with ω⋆k = βk/ P 
+
+> ℓ∈K
+
+βℓ. Then the optimizer of (41) is given by 
+
+V⋆ 
+
+> K,M
+
+= TopEig M (R⋆
+
+> K
+
+), (43) where TopEig M (·) denotes an orthonormal basis of the dom-inant M -dimensional eigenspace of a Hermitian matrix. 
+
+Proof: Assumption 1 and the isotropic model leads to 
+
+E∥VH hk∥2 = E∥VH Ukgk∥2 = tr  VH UkRkUHk V
+
+= βk
+
+Q VH Uk 
+
+> 2
+> F
+
+, (44) establishing (42). Summing over users yields 
+
+X
+
+> k∈K
+
+E∥VH hk∥2 =
+
+P 
+
+> ℓ∈K
+
+βℓ
+
+Q tr  VH R⋆
+
+> K
+
+V. (45) By the Ky Fan maximum principle [28], the Stiefel maximizer of tr( VH AV ) subject to VH V = IM consists of the top-M
+
+eigenvectors of A and is unique when A has a spectral gap at position M .
+
+Proposition 5 motivates an implementable surrogate for problem (41) by replacing the unavailable Uk and βk with the RSRP-predicted bUk and bβk. With ωk = bβk/ P 
+
+> ℓ∈K
+
+bβℓ, the predicted capture problem becomes 
+
+max  
+
+> VHV=IM
+
+X
+
+> k∈K
+
+ωk VH bUk 
+
+> 2
+> F
+
+. (46) By defining the corresponding predicted group spatial covari-ance 
+
+bRK = X
+
+> k∈K
+
+ωk bUk bUHk , (47) the solution of problem (46) is the dominant M -dimensional eigenspace of bRK, i.e., 
+
+VK,M = TopEig M
+
+  bRK
+
+ ∈ CNt×M , (48) whose columns form an orthonormal CSI-RS acquisition basis. 
+
+VK,M = span( VK,M ) is the resulting group-level acquisition subspace, which preserves the dominant weighted spatial com-ponents of the scheduled group. Following the Stage 2 CSI-RS transmission model in (18), each selected user estimates and feeds back the low-dimensional effective channel 
+
+ehk = VH 
+
+> K,M
+
+hk ∈ CM , (49) which contains the coordinates of the channel component captured by VK,M . Equivalently, the above equation can be read as 
+
+VK,M ehk = VK,M VH 
+
+> K,M
+
+hk = PVK,M hk, (50) where PVK,M is the orthogonal projector onto the group ac-9
+
+quisition subspace. The BS then collects all effective channels into 
+
+eHK =
+
+ehHk1
+
+...
+
+ehHkK
+
+ ∈ CK×M . (51) 
+
+B. Low-Dimensional RZF Beamforming and Conditioning 
+
+After the BS obtains the effective MU channel eHK, it com-putes the MU beamforming matrix from the M -dimensional effective channel induced by the group acquisition subspace 
+
+VK,M . Following the standard RZF form [26], the reduced-domain beamforming matrix is 
+
+fWRZF = eHH
+
+> K
+
+ eHK eHH 
+
+> K
+
++ Kσ 2
+
+> n
+
+Pt
+
+IK
+
+−1
+
+∈ CM ×K . (52) The antenna-domain beamforming vector for user k is ob-tained by mapping the k-th reduced-domain beamforming vector back through the group acquisition basis with unit-norm normalization: 
+
+wk = VK,M ewk
+
+∥VK,M ewk∥ = VK,M ewk
+
+∥ ewk∥ , (53) where ewk = [ fWRZF ]:,k and the second equality follows from the orthonormality of VK,M .
+
+Remark 2 ( RZF beamforming within the group subspace ). The reduced-domain RZF in (52) is equivalent to applying RZF to the antenna-domain channel restricted to VK,M . In other words, for any reduced-domain beamforming vector ewj , the coupling from user j’s stream to user i is 
+
+hHi VK,M ewj =  VH 
+
+> K,M
+
+hi
+
+H ewj = ehHi ewj . (54) Thus, the desired signal and IUI are governed by the effective channels once the beamforming vectors are restricted to the group subspace. Computing RZF from eHK therefore preserves the MU input-output relation within the acquired subspace while reducing the matrix computation from dimension Nt
+
+to M .After the RZF beamforming matrix is established, the remaining issue is whether the acquired effective MU channel is sufficiently well conditioned for interference suppression. This depends on two factors: the group subspace must retain enough channel energy for each scheduled user, and the resulting effective channel directions must remain separated. The first factor is quantified by the individual channel capture efficiency, which is defined by 
+
+χk = ∥PVK,M hk∥2
+
+∥hk∥2 = ∥VH 
+
+> K,M
+
+hk∥2
+
+∥hk∥2 ∈ [0 , 1] , (55) where PVK,M = VK,M VH 
+
+> K,M
+
+denotes the orthogonal projec-tor onto the group subspace. It measures the fraction of the channel energy of user k retained by VK,M and is evaluated in the first part of Section VI-B. Given that the captured channel gains are accounted for by χk, the second factor is the directional separability of the effective channels. Let zk = ehk/∥ehk∥ and stack {zHk }k∈K into 
+
+ZK ∈ CK×M . The normalized Gram matrix for the effective channel matrix is given by 
+
+eG = ZKZH 
+
+> K
+
+, (56) whose diagonal entries are one and off-diagonal entries are the normalized overlaps among effective channels. Hence, a near-identity eG indicates that the users remain well separated after projection, whereas large off-diagonal entries imply stronger inter-user coupling after CSI acquisition. We summarize this separability by the condition number of eG, i.e., 
+
+κ( eG) = λmax ( eG)
+
+λmin ( eG) . (57) A value close to one indicates nearly orthogonal effective channels, while a large value indicates an ill-conditioned effective MU channel. Its connection to RZF follows from the decomposition 
+
+eHK eHH 
+
+> K
+
+= DK eGD K, (58) where DK = diag( ∥ehk1 ∥, . . . , ∥ehkK ∥) contains the captured effective-channel magnitudes. The matrix inverted by RZF in (52) is therefore DK eGD K + αRZF IK , with αRZF =
+
+Kσ 2
+
+> n
+
+/P t. Hence, after the per-user captured gains are ac-counted for by χk, eG determines the directional conditioning of the RZF. In the equal-gain case, the RZF eigenmode gains scale as (c2λi( eG) + αRZF )−1, so a small λmin ( eG),or equivalently a large κ( eG), indicates stronger noise and CSI-error amplification. This conditioning metric is evaluated empirically in the second part of Section VI-B. The following theorem further explains when the projection onto the group subspace preserves effective-channel separability. 
+
+Theorem 1 (Projected-channel overlap bound ). Let Gfull  
+
+> K
+
+de-note the normalized Gram matrix of the full-dimensional chan-nels, whose (i, j )-th entry is [Gfull  
+
+> K
+
+]ij = hHi hj /(∥hi∥∥ hj ∥).Suppose that: 1) Capture: χk ≥ 1 − δ for all k ∈ K , and 2) Full-dimensional separability: |[Gfull  
+
+> K
+
+]ij | ≤ ϵ for all i̸ =
+
+j, i, j ∈ K .Then the off-diagonal entries of the effective Gram matrix satisfy 
+
+|[ eG]ij | ≤ ϵ + δ
+
+1 − δ ≜ ˜δ, (59) 
+
+Proof: Let P be any orthogonal projector and define 
+
+P⊥ = I − P as the projector onto its orthogonal complement. Then each channel can be decomposed into the retained component Ph k and the residual component P⊥hk. Since these two components lie in orthogonal subspaces, expanding 
+
+hHi hj gives 
+
+hHi hj = ( Ph i)H (Ph j ) + ( P⊥hi)H (P⊥hj ). (60) For the proposed group acquisition subspace, taking P =
+
+PVK,M , the effective-channel inner product equals the inner product between the retained channel components: 
+
+ehHi ehj = ( Ph i)H (Ph j ). (61) Combining (60) and (61), and then applying the triangle inequality and Cauchy–Schwarz inequality, yields 
+
+|ehHi ehj | ≤ | hHi hj | + ∥P⊥hi∥∥ P⊥hj ∥. (62) The separability condition gives |hHi hj | ≤ ϵ∥hi∥∥ hj ∥. The capture condition gives ∥P⊥hk∥2 = (1 − χk)∥hk∥2 ≤10 
+
+δ∥hk∥2. Substituting these two bounds into (62) gives 
+
+|ehHi ehj | ≤ (ϵ + δ)∥hi∥∥ hj ∥. (63) Moreover, ∥ehk∥ = ∥Ph k∥ = √χk∥hk∥ ≥ √1 − δ∥hk∥.Thus, ∥ehi∥∥ ehj ∥ ≥ (1 − δ)∥hi∥∥ hj ∥. Normalizing (63) by 
+
+∥ehi∥∥ ehj ∥ yields (59). 
+
+Theorem 1 gives a sufficient condition under which projec-tion onto the group acquisition subspace preserves pairwise effective-channel separation. It does not provide a global performance guarantee, but explains the mechanism behind the proposed low-dimensional beamforming: when the selected users have low full-dimensional channel coupling and the group subspace retains most of their channel energy, the pro-jected effective channels remain well separated. Consequently, the impact of restricting beamforming to VK,M is governed by two quantities: the residual full-dimensional channel coupling after grouping and the channel energy discarded by group-subspace acquisition. This establishes the theoretical link from pre-CSI grouping and dimension-constrained CSI acquisition to stable low-dimensional RZF, which is later reflected in the conditioning CDFs and effective-rate results. 
+
+C. Online Computational Complexity 
+
+In the conventional Type-II limited feedback pipeline, the BS first computes all pairwise normalized channel in-ner products over the candidate pool Kfull , which costs 
+
+O(|K full |2Nt) [6]. Once these pairwise compatibility scores are available, greedy SUS selection requires O(K|K full |) oper-ations to form a size-K group. The resulting full-dimensional RZF beamforming matrix then requires O(K2Nt + K3)
+
+operations for the dense matrix products and the K × K
+
+regularized inverse [26], [29]. At the user side, LS channel estimation from the Nt-port CSI-RS costs O(NtLc), while orthogonal matching pursuit (OMP)-based Type-II feedback generation costs O(OD QN 2 
+
+> t
+
++ NtQ2 + Q3) per user [14], [15], [30]. Therefore, the computational costs of BS-side and user-side processing are dominated by O(|K full |2Nt) and 
+
+O((1 + QO D )N 2 
+
+> t
+
+), respectively, when K ≪ |K full |, Lc = Nt,and Q ≪ Nt.In the proposed framework, the BS first applies the learned predictor Ψθ to all RSRP fingerprints collected from Kfull .Following the single-user site-specific Type-II design [19], 
+
+Ψθ is a three-layer MLP with hidden width W , so the prediction cost is O(|K full |(BW + 2 W 2 + 2 NtQW )) . The BS then computes the predicted pairwise subspace overlaps with complexity O(|K full |2Q2) and applies the greedy se-lection rule in (40) with O(K|K full |) operations. After the group is selected, constructing the group subspace requires a partial singular value decomposition (SVD) of an Nt ×
+
+KQ weighted concatenation, with cost O(NtKQM ) [29]. The low-dimensional RZF beamforming matrix then costs 
+
+O(K2M + K3), followed by the O(NtKM ) basis mapping to the antenna domain. At the user side, only an LS estimate of the M -dimensional effective channel is required, with complexity O(M L K), which becomes O(M 2) for LK = M .Therefore, the proposed BS-side processing mainly scales as 
+
+O(|K full |(BW + W 2 + NtQW ) + |K full |2Q2 + NtKQM ),while the user-side processing scales as O(M 2).Compared with the conventional pipeline, the reduction                           
+
+> TABLE I SIMULATION PARAMETERS
+> Parameter Value Carrier frequency 3.5 GHz Bandwidth 10 MHz BS antennas Nt64 Antenna spacing dλ/2 SSB codebook size B16 User subspace dimension Q4Number of candidate users |K full |40 Beam-management update-rate factor ζBM 0.05 Coherence block channel uses Tc1000 Transmit power Pt40 dBm Noise power spectrum density −170 dBm/Hz MLP depth D/ width W3 / 256
+
+is twofold. At the BS, the dominant candidate-pool com-patibility term is reduced from scaling with Nt to scaling with the predicted subspace dimension Q. At the user side, the O((1 + QO D )N 2 
+
+> t
+
+) Type-II beam search is avoided and replaced by O(M 2) effective-channel estimation. Hence, the main online processing is shifted from resource-limited users to the BS, where the added site-specific prediction and sub-space construction are controlled by Q, M ≪ Nt.VI. N UMERICAL RESULTS 
+
+In this section, numerical results are provided to ver-ify the proposed site-specific MU-MIMO framework from pre-CSI compatibility prediction to group-subspace acqui-sition and low-dimensional beamforming. The simulations are based on the DeepMIMO dataset [31]. We mainly adopt four 3.5-GHz scenarios: asu_campus_3p5 (out-door campus, rich multipath), boston5g_3p5 (complex city, high diversity), city_0_newyork_3p5 (dense urban), and city_2_chicago_3p5 (regular grid, lower angular spread). Key simulation parameters are summarized in Table I. The probing codebook Bθ and subspace predictor Ψθ are trained following [19]. Each simulation is evaluated over 500 Monte Carlo experiments with a candidate pool of |K full | =40 users drawn uniformly at random. The online pre-CSI subspace-SUS scheduler uses the deterministic initialization in (39). For numerical averaging, each grouping method is also repeated from 50 randomly chosen initial users in each pool to average out seed-dependent group composition. Hence, all reported metrics are averaged over the resulting 500 ×50 = 25 ,000 groups per method. The beam-management update-rate factor is set to ζBM = 0 .05 , which means that one SSB-based RSRP fingerprint is reused over roughly 20 CSI-RS acquisition intervals. This reflects the timescale separation in NR: SSB-based beam management typically uses a period on the order of 20 ms, whereas CSI-RS for CSI acquisition is configured on the order of 1 ms [15], [16]. 
+
+A. Evaluation of Pre-CSI Compatibility Prediction 
+
+We first evaluate the pre-CSI compatibility analysis in Section IV, from pairwise overlap prediction to bottleneck-based group selection. 11 0 0.5 1                     
+
+> b.ij
+> 00.2 0.4 0.6 0.8 1
+> .CSI
+> ij
+> (a) ASU, ρs= 0 .74 00.5 1
+> b.ij
+> 00.2 0.4 0.6 0.8 1
+> .CSI
+> ij (b) Boston, ρs= 0 .78 00.5 1
+> b.ij
+> 00.2 0.4 0.6 0.8 1
+> .CSI
+> ij
+> (c) New York, ρs= 0 .64 00.5 1
+> b.ij
+> 00.2 0.4 0.6 0.8 1
+> .CSI
+> ij (d) Chicago, ρs= 0 .87
+> Fig. 2. Pair-level relation between the predicted subspace overlap bγij and the true CSI-domain channel overlap γCSI
+> ij across four DeepMIMO scenarios. The red curves denote rolling median values over sorted predicted-overlap samples.
+
+1) Pair-Level Prediction: At the pair level, we evaluate whether the predicted overlap bγij in (28) can correctly rank user-pair compatibility. Here, bγij measures the overlap be-tween two RSRP-predicted transmit subspaces, whereas γCSI 
+
+> ij
+
+in (20) measures the instantaneous normalized channel overlap from true CSI. The subspace-based proxy is not required to match the instantaneous channel overlap in value. Preserving the compatibility order is sufficient for the subsequent greedy grouping. For each candidate pool, all  40 2
+
+ = 780 user pairs are scored by these two metrics, as shown in Fig. 2. The Spearman rank correlation ρs reported in each subcap-tion measures whether bγij and γCSI  
+
+> ij
+
+give consistent ordering of user pairs. It is positive in all scenarios, ranging from 
+
+0.64 in New York to 0.87 in Chicago. The rolling median curves in Fig. 2 also increase with bγij , indicating that pairs predicted to have larger subspace overlap tend to exhibit larger instantaneous channel overlap. The scatter is wider in dense urban scenarios, especially New York, because richer angular overlap and small-scale fading weaken the pointwise relation. These results support using bγij as a pre-CSI pairwise compatibility metric, which is further tested at the group level next. 
+
+2) Group-Level Selection: We next test whether the bottle-neck metric in (35) and the greedy rule in (40) form spatially separated MU groups, as suggested by Proposition 4 . We compare the proposed pre-CSI subspace-SUS with random grouping, SUS with Type-II feedback, and SUS with full CSI. Each approach forms a size-K group, and the resulting worst-pair overlap ΓCSI (K) = max i<j ∈K γCSI  
+
+> ij
+
+and average overlap 
+
+¯γCSI (K) are evaluated using the true CSI. The two metrics reflect the bottleneck and average inter-user spatial coupling,    
+
+> TABLE II CSI-DOMAIN CHANNEL OVERLAP EVALUATION AFTER GROUPING WITH WORST -PAIR OVERLAP ΓCSI /AVERAGE OVERLAP ¯γCSI
+
+Scenario Random Proposed Type-II Full-CSI ASU 0.317 /0.090 0.051 /0.014 0.037 /0.010 0 .007 /0.002 
+
+Boston 0.775 /0.367 0.174 /0.032 0.023 /0.005 0 .019 /0.004 
+
+New York 0.164 /0.035 0.009 /0.002 0.010 /0.002 0 .000 /0.000 
+
+Chicago 0.627 /0.229 0.022 /0.005 0.007 /0.002 0 .002 /0.000 
+
+respectively. Lower values indicate groups that are easier to separate by MU beamforming. K is set to 4 in this experiment. Table II shows that compared with the random selection, the proposed grouping consistently brings a substantial reduction of the true worst-pair overlap, by about 4–30 × across the four scenarios. The full-CSI SUS reference gives the best overlap as it uses perfect CSI, although a lower overlap does not necessarily imply the maximum sum-rate because SUS does not directly optimize channel strength or the final RZF rate. The Type-II baseline lies between the proposed method and this reference because it uses compressed post-CSI feedback for grouping. The proposed method remains close to Type-II grouping in most scenarios while using only pre-CSI subspace information, with the largest gap appearing in Boston, where richer scattering makes pre-CSI prediction more difficult. These results confirm that the pair- and group-level pre-CSI predictions are sufficiently reliable for forming a compatible scheduled group, which is the input to the subsequent group-specific CSI acquisition and MU beamforming stages. 
+
+B. Evaluation of Group-Subspace Capture and Conditioning 
+
+After group selection, the acquisition subspace in (48) should preserve the channel energy targeted by Proposition 5, while the acquired effective channels should remain well conditioned for RZF beamforming. We evaluate these two aspects separately. 
+
+1) Channel Capture: To validate the preservation for users’ channel energy, the capture efficiency χk is computed accord-ing to (55). Fig. 3 reports the average capture efficiency ¯χ
+
+over the scheduled users as a function of the group-subspace dimension M , for K ∈ { 2, 4, 8} in the four scenarios. The curves in Fig. 3 show a consistent trend across all scenarios: ¯χ increases rapidly as M grows and then gradually saturates. At M = 3 K, the average capture efficiency is close to or above 0.9 in all cases. The gain from further increasing 
+
+M to 4K is small, indicating that the SVD-based group subspace has already retained most of the dominant channel energy. Thus, M = 3 K serves as a robust rate-preserving operating point for group-subspace acquisition, while a smaller 
+
+M may still be preferable when online overhead dominates. The scenario dependence is mainly visible at smaller M :Boston is easier to capture, whereas ASU, New York, and Chicago require a larger group subspace depending on K.
+
+2) Effective-Channel Conditioning: High capture efficiency alone does not guarantee reliable MU beamforming, because the projected user channels must also remain sufficiently separated as characterized by Theorem 1 . We therefore eval-uate log 10 κ( eG), where eG is the normalized effective Gram 12 2 4 8 12 16 24 32     
+
+> Group-Subspace Dimension M
+> 0.4 0.5 0.6 0.7 0.8 0.9 1
+> Average Capture E /ciency  7@
+> K= 2
+> K= 4
+> K= 8
+
+(a) ASU 2 4 8 12 16 24 32   
+
+> Group-Subspace Dimension M
+> 0.4 0.5 0.6 0.7 0.8 0.9 1
+> Average Capture E /ciency  7@
+
+(b) Boston 2 4 8 12 16 24 32  
+
+> Group-Subspace Dimension M
+> 0.4 0.5 0.6 0.7 0.8 0.9 1
+> Average Capture E /ciency  7@
+
+(c) New York 2 4 8 12 16 24 32   
+
+> Group-Subspace Dimension M
+> 0.4 0.5 0.6 0.7 0.8 0.9 1
+> Average Capture E /ciency  7@
+
+(d) Chicago Fig. 3. Average capture efficiency ¯χ versus group-subspace dimension M
+
+for K ∈ { 2, 4, 8}, shown per scenario. Stars highlight M = 3 K.0 1 2 3 4 5  
+
+> log 10 5(eG)
+> 00.2 0.4 0.6 0.8 1
+> CDF
+> Random Proposed Full-CSI SUS Ideal subspace
+
+(a) ASU 0 1 2 3 4 5   
+
+> log 10 5(eG)
+> 00.2 0.4 0.6 0.8 1
+> CDF
+
+(b) Boston 0 1 2 3 4 5  
+
+> log 10 5(eG)
+> 00.2 0.4 0.6 0.8 1
+> CDF
+
+(c) New York 0 1 2 3 4 5   
+
+> log 10 5(eG)
+> 00.2 0.4 0.6 0.8 1
+> CDF
+
+(d) Chicago Fig. 4. CDF of the effective-channel conditioning metric log 10 κ( eG).
+
+matrix defined in (56). The experiment uses K = 4 and 
+
+M = 3 K and compares random grouping, the proposed pre-CSI grouping, full-CSI SUS, and the ideal-subspace reference. “Ideal Subspace” denotes a reference that keeps the proposed pre-CSI selected group but constructs the acquisition and beamforming subspace from the true dominant user subspaces rather than the RSRP-predicted ones. It is used only to separate subspace-prediction loss from the subsequent low-dimensional processing. Fig. 4 shows that random grouping has a pronounced right-tail, especially in Boston and Chicago, indicating that some scheduled groups lead to nearly dependent effective channels after projection. In contrast, the proposed method yields cumulative distribution function (CDF) curves concen-trated near the left side of the axis and closely follows the full-CSI SUS and ideal-subspace references in all scenarios. 0 500 1000 1500 2000         
+
+> Coherence Block Length Tc
+> 0510 15
+> Re, (bps/Hz)
+> Proposed, M= 2 K
+> Proposed, M= 3 K
+> Union, M=KQ
+> Type-II
+
+(a) ASU 0 500 1000 1500 2000   
+
+> Coherence Block Length Tc
+> 0510 15
+> Re, (bps/Hz)
+
+(b) Boston 0 500 1000 1500 2000  
+
+> Coherence Block Length Tc
+> 0510 15 20
+> Re, (bps/Hz)
+
+(c) New York 0 500 1000 1500 2000   
+
+> Coherence Block Length Tc
+> 0510 15
+> Re, (bps/Hz)
+
+(d) Chicago Fig. 5. Effective-rate comparison versus coherence block length Tc.TABLE III COMPARISON OF ACHIEVABLE MU SUM -RATE 
+
+Scheme ASU Boston NewYork Chicago Full-CSI SUS 22.23 20.44 25.48 24.38 Post-Group CSI 23.24 17.74 27.06 24.24 Union Subspace 23.03 17.73 26.73 23.18 
+
+Proposed, M = 3 K 22.46 17.67 26.41 22.35 Proposed, M = 2 K 20.11 17.23 24.64 20.32 
+
+Type-II 19.38 16.73 25.60 22.84 
+
+This confirms that the proposed grouping and group-subspace construction not only retain most of the channel energy, but also preserve a well-conditioned effective channel geometry for low-dimensional RZF beamforming. 
+
+C. Evaluation of Effective Rate 
+
+Finally, we evaluate whether compatibility inference, group acquisition, and low-dimensional RZF translate into the overhead-aware objective in (16b). K = 8 is set for this evaluation. The achievable MU sum-rate Rsum is first reported to isolate the rate loss without overhead. We then evaluate the final effective rate Reff as a function of the coherence block length Tc, which directly reflects the tradeoff between CSI acquisition overhead and data transmission. Table III separates the raw-rate impact of grouping, sub-space prediction, and dimension compression. “Full-CSI SUS” uses perfect CSI for grouping and full-dimensional RZF, but it is not a strict upper bound because SUS favors channel orthogonality rather than directly maximizing the final RZF sum-rate; hence “Post-Group CSI” can slightly exceed it in ASU and New York. “Post-Group CSI” isolates the grouping effect by using the proposed pre-CSI group with perfect post-group CSI, while “Union Subspace” further includes the loss from replacing full antenna-domain CSI by the predicted user-subspace union. The proposed method with M = 3 K stays within 1 bps/Hz of “Union Subspace” in all scenarios, showing that the compact group subspace is largely rate-preserving. 13 
+
+The M = 2 K setting incurs a larger raw-rate loss but reduces CSI-RS and feedback dimensions, making it more suitable for overhead-limited regimes. Fig. 5 evaluates the rate-overhead tradeoff versus coherence block length. The proposed framework consistently outper-forms Type-II feedback, confirming the benefit of reducing both CSI-RS and feedback dimensions. For short and moderate 
+
+Tc, M = 2 K often gives the highest Reff because its lower overhead compensates for the raw-rate loss in Table III. As Tc
+
+increases, the rate-preserving setting M = 3 K catches up with or exceeds M = 2 K in several scenarios. The union-subspace reference has competitive raw rate but is less effective due to its KQ -dimensional acquisition overhead. Thus, M = 2 K
+
+is preferable in overhead-limited regimes, while M = 3 K
+
+provides a more rate-preserving operating point. VII. C ONCLUSION 
+
+This paper developed a site-specific MU-MIMO beamform-ing framework that exploits SSB-stage RSRP fingerprints to reduce the CSI acquisition and feedback burden of limited-feedback MU transmission. The BS first infers user subspaces from RSRP fingerprints, selects a compatible group through pre-CSI subspace-overlap metrics, and then constructs a com-pact group CSI-RS subspace for effective-channel feedback and low-dimensional RZF beamforming. Theoretical analy-sis links predicted subspace overlap to CSI-domain channel coupling, establishes the projection-energy optimality of the group-subspace construction, and relates channel capture to effective-channel conditioning. Numerical results on Deep-MIMO scenarios verify this design chain and show that the proposed low-overhead acquisition achieves higher effective rates than Type-II feedback in short and moderate coherence blocks while substantially reducing user-side processing. Future work may extend the proposed framework to rank-adaptive multi-antenna users. Another important direction is online adaptation of the scheduled group size and acquisition dimension according to coherence length, traffic load, and prediction uncertainty. Extending the site-specific acquisition principle to multi-cell interference-aware coordination is also a promising direction. REFERENCES [1] E. G. Larsson, O. Edfors, F. Tufvesson, and T. L. Marzetta, “Massive MIMO for next generation wireless systems,” IEEE Commun. Mag. ,vol. 52, no. 2, pp. 186–195, Feb. 2014. [2] R. W. Heath, N. Gonz´ alez-Prelcic, S. Rangan, W. Roh, and A. M. Sayeed, “An overview of signal processing techniques for millimeter wave MIMO systems,” IEEE J. Sel. Topics Signal Process. , vol. 10, no. 3, pp. 436–453, Feb. 2016. [3] S. S. Christensen, R. Agarwal, E. De Carvalho, and J. M. Cioffi, “Weighted sum-rate maximization using weighted MMSE for MIMO-BC beamforming design,” IEEE Trans. Wireless Commun. , vol. 7, no. 12, pp. 4792–4799, Dec. 2008. [4] X. Sun, N. Yang, S. Yan, Z. Ding, D. W. K. Ng, C. Shen, and Z. Zhong, “Joint beamforming and power allocation in downlink NOMA multiuser MIMO networks,” IEEE Trans. Wireless Commun. , vol. 17, no. 8, pp. 5367–5381, Aug. 2018. [5] C. Zhao, Y. Gong, and T. Le-Ngoc, “Joint positioning, beamforming, and power allocation in full-duplex mimo with position-reconfigurable antenna arrays,” IEEE Trans. Wireless Commun. , vol. 25, pp. 18 750– 18 763, Jun. 2026. [6] T. Yoo and A. Goldsmith, “On the optimality of multiantenna broad-cast scheduling using zero-forcing beamforming,” IEEE J. Sel. Areas Commun. , vol. 24, no. 3, pp. 528–541, Feb. 2006. [7] Q. H. Spencer, A. L. Swindlehurst, and M. Haardt, “Zero-forcing meth-ods for downlink spatial multiplexing in multiuser MIMO channels,” 
+
+IEEE Trans. Signal Process. , vol. 52, no. 2, pp. 461–471, Feb. 2004. [8] S. Wagner, R. Couillet, M. Debbah, and D. T. M. Slock, “Large system analysis of linear precoding in correlated MISO broadcast channels under limited feedback,” IEEE Trans. Inf. Theory , vol. 58, no. 7, pp. 4509–4537, Jul. 2012. [9] A. Adhikary, J. Nam, J.-Y. Ahn, and G. Caire, “Joint spatial division and multiplexing—the large-scale array regime,” IEEE Trans. Inf. Theory ,vol. 59, no. 10, pp. 6441–6463, Oct. 2013. [10] X. Zhao and Q. Shi, “A universal low-dimensional subspace structure in beamforming design: Theory and applications,” IEEE Trans. Signal Process. , vol. 73, pp. 1775–1791, Apr. 2025. [11] D. J. Love, R. W. Heath, V. K. N. Lau, D. Gesbert, B. D. Rao, and M. Andrews, “An overview of limited feedback in wireless commu-nication systems,” IEEE J. Sel. Areas Commun. , vol. 26, no. 8, pp. 1341–1365, Oct. 2008. [12] N. Jindal, “MIMO broadcast channels with finite-rate feedback,” IEEE Trans. Inf. Theory , vol. 52, no. 11, pp. 5045–5060, Nov. 2006. [13] 3GPP, “NR; physical channels and modulation,” 3rd Generation Part-nership Project (3GPP), Technical Specification TS 38.211, 2018. [14] ——, “NR; physical layer procedures for data,” 3rd Generation Partner-ship Project (3GPP), Technical Specification TS 38.214, 2018. [15] ——, “NR; physical layer measurements,” 3rd Generation Partnership Project (3GPP), Technical Specification TS 38.215, 2018. [16] M. Giordani, M. Polese, A. Roy, D. Castor, and M. Zorzi, “A tutorial on beam management for 3GPP NR at mmWave frequencies,” IEEE Commun. Surv. Tutorials , vol. 21, no. 1, pp. 173–196, Sep 2019. [17] Y. Zeng and X. Xu, “Toward environment-aware 6G communications via channel knowledge map,” IEEE Wireless Commun. , vol. 28, no. 3, pp. 84–91, Mar 2021. [18] C.-J. Zhao, Z. Wang, and Y. Liu, “Generative site-specific beam-forming via information-maximizing codebook,” arXiv preprint arXiv:2602.12552 , 2026. [19] C.-J. Zhao, Z. Wang, Z. Zhao, and Y. Liu, “Bridging standardized codebook and site-specific beamforming: A unified limited-feedback framework,” arXiv preprint arXiv:2604.14524 , 2026. [20] ——, “SiFo: Wireless foundation model for low-overhead site-specific CSI feedback,” arXiv preprint arXiv:2605.16141 , 2026. [21] Y. Heng, J. Mo, and J. G. Andrews, “Learning site-specific probing beams for fast mmWave beam alignment,” IEEE Trans. Wireless Com-mun. , vol. 21, no. 8, pp. 5785–5800, Jan. 2022. [22] X. Ning, S. Zhang, Y. Xue, X. Zheng, Q. Shi, and T.-H. Chang, “Learning beams adaptive to the environment: An RSRP-based code-book design,” in Proc. IEEE Int. Workshop Signal Process. Adv. Wireless Commun. (SPAWC) , 2023, pp. 521–525. [23] A. Alkhateeb, S. Alex, P. Varkey, Y. Li, Q. Qu, and D. Tujkovic, “Deep learning coordinated beamforming for highly-mobile millimeter wave systems,” IEEE Access , vol. 6, pp. 37 328–37 348, 2018. [24] O. E. Ayach, S. Rajagopal, S. Abu-Surra, Z. Pi, and R. W. Heath, “Spatially sparse precoding in millimeter wave MIMO systems,” IEEE Trans. Wireless Commun. , vol. 13, no. 3, pp. 1499–1513, Mar. 2014. [25] 3GPP, “Study on channel model for frequencies from 0.5 to 100 GHz,” 3rd Generation Partnership Project (3GPP), Technical Report TR 38.901, 2022. [26] C. B. Peel, B. M. Hochwald, and A. L. Swindlehurst, “A vector-perturbation technique for near-capacity multiantenna multiuser communication—Part I: Channel inversion and regularization,” IEEE Trans. Commun. , vol. 53, no. 1, pp. 195–202, Jan. 2005. [27] T. F. Gonzalez, “Clustering to minimize the maximum intercluster distance,” Theor. Comput. Sci. , vol. 38, pp. 293–306, 1985. [28] R. A. Horn and C. R. Johnson, Matrix Analysis , 2nd ed. Cambridge, U.K.: Cambridge University Press, 2012. [29] G. H. Golub and C. F. Van Loan, Matrix Computations , 4th ed. Baltimore, MD, USA: Johns Hopkins University Press, 2013. [30] J. A. Tropp and A. C. Gilbert, “Signal recovery from random mea-surements via orthogonal matching pursuit,” IEEE Trans. Inf. Theory ,vol. 53, no. 12, pp. 4655–4666, Dec. 2007. [31] A. Alkhateeb, “DeepMIMO: A generic deep learning dataset for mil-limeter wave and massive MIMO applications,” in Proc. Inf. Theory Appl. Workshop (ITA) , San Diego, CA, Feb. 2019, pp. 1–8.
