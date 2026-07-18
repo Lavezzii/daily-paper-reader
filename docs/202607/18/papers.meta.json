@@ -1,0 +1,24 @@
+{
+  "label": "2026-07-18",
+  "date": "2026-07-18",
+  "generated_at": "2026-07-18T21:03:30",
+  "count": 1,
+  "papers": [
+    {
+      "paper_id": "202607/18/2607.15217v1-neuronsoup-evolving-asynchronous-shared-neuron-temporal-graphs-without-backpropagation",
+      "section": "quick",
+      "title_en": "NeuronSoup: Evolving Asynchronous, Shared-Neuron Temporal Graphs without Backpropagation",
+      "authors": "Subodh Kalia",
+      "date": "2026-07-16",
+      "pdf": "https://arxiv.org/pdf/2607.15217v1",
+      "score": "7.0",
+      "evidence": "无反向传播的新颖神经网络架构",
+      "tldr": "传统深度学习依赖可微计算图和同步逐层处理，存在计算深度固定、缺乏横向交互等局限。NeuronSoup 提出异步延迟信号传播与共享神经元池的时序图架构，通过遗传算法进化拓扑、权重和延迟。在 MNIST 10类分类上达85.9%准确率，仅115KB模型，204条路径、266个隐藏神经元（156个共享）。该工作展示了无需反向传播的进化神经网络在资源高效和自适应计算上的潜力，突破了深度学习基本限制。",
+      "tags": "query:channel-nn",
+      "abstract_en": "We present NeuronSoup, a neural computation architecture that replaces synchronous layer-by-layer processing with asynchronous, delay-mediated signal propagation through a pool of shared neurons. Each path in the network routes a continuous-valued signal from one input neuron to one output neuron through a variable number of intermediate hidden neurons. Hidden neurons are physically shared across paths: when two paths pass through the same neuron, the second arrival encounters the accumulated state left by the first, producing constructive or destructive interference that depends on signal polarity and arrival timing. The entire architecture -- topology, weights, delays, and connectivity -- is co-evolved by a genetic algorithm operating on a flat real-valued genome of 14,602 genes. On 10-class MNIST digit classification using frozen ResNet18 features as input, the system evolves a network of 204 active paths through 266 hidden neurons (156 shared across multiple paths, with one neuron participating in 11 distinct paths) and achieves 85.9\\% test accuracy after 10,000 generations. The trained model occupies 115 KB. We argue that this architecture addresses fundamental limitations of current deep learning: it requires no differentiable computation graph, adapts its computation depth per-sample, and discovers lateral interactions between processing pathways that current architectures must engineer explicitly. We discuss why genetic algorithms are the correct optimization tool for this problem class, why CMA-ES fails at this scale, and how the architecture generalizes to arbitrary domains by substituting the encoder and output structure.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

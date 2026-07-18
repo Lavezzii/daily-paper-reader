@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-07-18 <!--dpr-date:20260718-->
+    * 速读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202607/18/2607.15217v1-neuronsoup-evolving-asynchronous-shared-neuron-temporal-graphs-without-backpropagation" data-sidebar-item="{&quot;title&quot;: &quot;NeuronSoup: Evolving Asynchronous, Shared-Neuron Temporal Graphs without Backpropagation&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2607.15217v1-neuronsoup-evolving-asynchronous-shared-neuron-temporal-graphs-without-backpropagation&quot;, &quot;score&quot;: &quot;7.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;channel-nn&quot;}], &quot;evidence&quot;: &quot;无反向传播的新颖神经网络架构&quot;}">NeuronSoup: Evolving Asynchronous, Shared-Neuron Temporal Graphs without Backpropagation</a>
   * 2026-07-17 <!--dpr-date:20260717-->
     * 精读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202607/17/2607.15127v1-on-board-ai-based-channel-estimation-for-leo-ntns" data-sidebar-item="{&quot;title&quot;: &quot;On-board AI-based Channel Estimation for LEO NTNs&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2607.15127v1-on-board-ai-based-channel-estimation-for-leo-ntns&quot;, &quot;score&quot;: &quot;9.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;channel-nn&quot;}], &quot;evidence&quot;: &quot;轻量级卷积神经网络用于低轨卫星信道估计&quot;}">On-board AI-based Channel Estimation for LEO NTNs</a>
