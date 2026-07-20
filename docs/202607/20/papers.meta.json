@@ -1,0 +1,69 @@
+{
+  "label": "2026-07-20",
+  "date": "2026-07-20",
+  "generated_at": "2026-07-20T21:01:56",
+  "count": 4,
+  "papers": [
+    {
+      "paper_id": "202607/20/2607.15441v1-low-complexity-neural-network-digital-predistortion-of-wideband-power-amplifiers-through-feature-selection",
+      "section": "quick",
+      "title_en": "Low Complexity Neural Network Digital Predistortion of Wideband Power Amplifiers through Feature Selection",
+      "authors": "Cel Thys, Rodney Martinez Alonso, Ali H Alsarraf, Dominique Schreurs, Sofie Pollin",
+      "date": "2026-07-16",
+      "pdf": "https://arxiv.org/pdf/2607.15441v1",
+      "score": "7.0",
+      "evidence": "通过特征选择的低复杂度神经网络数字预失真，高效通信NN设计",
+      "tldr": "宽带功率放大器数字预失真（DPD）算法因通信带宽增加和功放非线性而日益复杂。神经网络（NN）方法虽线性化性能优异，但计算成本高于多项式模型。本文提出基于特征选择的低复杂度NN DPD架构，通过LASSO和MRMR算法离线构建紧凑输入表示。在实测FR3功放数据集上，该方法在保持线性化性能的同时将计算复杂度降低30%。",
+      "tags": "query:channel-nn",
+      "abstract_en": "Due to the continuous increase in communication bandwidth and the use of highly efficient yet nonlinear power amplifiers, Digital Predistortion (DPD) algorithms are becoming increasingly complex. In particular, neural network (NN) based DPD approaches using Phase-Normalized NN architectures often incur substantially higher computational costs than widely deployed polynomial-based methods, such as the Memory Polynomial (MP) and Generalized Memory Polynomial (GMP) models. To bridge this gap between research performance and practical implementation, we propose a low-complexity Feature Selection NN DPD architecture. The proposed method employs an offline feature-engineering pipeline based on the Least Absolute Shrinkage and Selection Operator (LASSO) and the Minimum Redundancy Maximum Relevance (MRMR) algorithm to construct a compact and informative input representation. Using measured wideband FR3 power amplifier datasets that are publicly released with this work, we demonstrate up to 30% reduction in computational complexity while maintaining comparable linearization performance.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/20/2607.15560v1-evolutionary-algorithm-guided-llms-for-physics-informed-neural-network-design",
+      "section": "quick",
+      "title_en": "Evolutionary Algorithm-Guided LLMs for Physics-Informed Neural Network Design",
+      "authors": "Xu Yang, Mingyang Yu, Jing Xu, Keqian Li",
+      "date": "2026-07-17",
+      "pdf": "https://arxiv.org/pdf/2607.15560v1",
+      "score": "7.0",
+      "evidence": "使用进化算法和LLM设计PINN的方法，可迁移至通信系统",
+      "tldr": "物理信息神经网络(PINN)对架构、激活函数等多个设计选择高度敏感，但大型语言模型(LLM)独立推荐无法累积训练经验。本文提出闭环进化算法，引导LLM跨代生成可执行PINN配置，利用训练结果指导后续搜索。在1D多尺度波动方程上，10代进化训练60个PINN，最佳配置出现在最后一代，MSE相对初始种群降低95.38%。该方法可行且有效，同时揭示低解误差可与高PDE残差共存的现象。",
+      "tags": "query:channel-nn",
+      "abstract_en": "Physics-informed neural networks (PINNs) are unusually sensitive to interacting choices of architecture, activation, loss weighting, collocation, optimization, and constraint enforcement. Large language models (LLMs) can propose these choices, but independent recommendations do not accumulate experience from previously trained PINNs. We propose a closed-loop evolutionary algorithm that guides an LLM to generate complete, executable PINN configurations across generations, using measured training outcomes to determine subsequent search decisions. The algorithm maintains an evaluated population and lineage, applies parent-conditioned mutation and crossover, preserves elite and diverse solutions, rejects effective duplicates, and converts parent-relative successes and failures into the next-generation context supplied to the LLM. Every proposed configuration is executed directly under an exact optimizer-step budget. On a one-dimensional multiscale wave equation, two independent ten-generation runs trained 60 PINNs for 600,000 optimizer steps. In both runs, the best configuration appeared in the final generation, with best mean-squared error reduced by 2.97\\% and 95.38\\% relative to the initial population. The stronger run validated residual connections and increased depth on separate branches, combined them in a later generation, and then refined width and collocation density. It also revealed that low solution error can coexist with a high PDE residual. These results demonstrate the feasibility of evolutionary-algorithm-guided LLMs for PINN design on a controlled PDE while motivating broader, physics-aware evaluation.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/20/2607.11746v1-hifi-llp-high-fidelity-low-cost-latency-predictors-with-confidence-for-robust-hw-nas",
+      "section": "quick",
+      "title_en": "HiFi-LLP: High-Fidelity, Low-Cost Latency Predictors with Confidence for Robust HW-NAS",
+      "authors": "Shambhavi Balamuthu Sampath, Behzad Shomali, Nael Fasfous, Moritz Thoma, Judeson Anthony Fernando, Lukas Frickenstein, Pierpaolo Mori, Manoj Rohit Vemparala, Alexander Frickenstein, Walter Stechele",
+      "date": "2026-07-13",
+      "pdf": "https://arxiv.org/pdf/2607.11746v1",
+      "score": "6.0",
+      "evidence": "用于高效硬件感知神经架构搜索的低成本延迟预测器方法",
+      "tldr": "针对硬件感知神经架构搜索中延迟测量耗时长的问题，提出HiFi-LLP高保真低成本延迟预测器，基于图注意力网络并引入置信度指标。在六个设备上Spearman相关系数达0.996，优于先前方法高达9个百分点。结合混合NAS框架，将低置信度预测交由真实硬件测量，实现8.6倍加速并保持竞争性Pareto前沿。",
+      "tags": "query:channel-nn",
+      "abstract_en": "With deep neural networks (DNNs) increasingly deployed on edge devices, hardware (HW)-aware optimization techniques--such as HW-aware compression and HW-aware neural architecture search (HW-NAS)--have become essential. These methods rely on real feedback from the target hardware to tailor DNN architectures for efficient deployment. While the search can be parallelized, latency measurements via hardware-in-the-loop (HIL) remain a bottleneck due to their sequential nature. Recent approaches use latency predictors to replace costly HIL feedback, but challenges persist: (1) platform-specific predictors often require tens of thousands of samples, and (2) inaccurate predictions can mislead the NAS process. To address this, we introduce HiFi-LLP, a high-fidelity, low-cost latency predictor based on graph attention networks, augmented with a confidence metric. HiFi-LLP outperforms prior platform-specific predictors by up to 9 percentage points (p.p.) in the 10% accuracy bound and achieves a Spearman's rank correlation of up to 0.996 across six devices in the LatBench dataset. We further propose a hybrid NAS framework that routes low-confidence predictions to HIL, achieving up to 8.6$\\times$ speedup compared to typical NAS while maintaining a competitive Pareto front.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/20/2607.15751v1-trainable-spline-representations-for-physics-informed-learning",
+      "section": "quick",
+      "title_en": "Trainable Spline Representations for Physics-Informed Learning",
+      "authors": "Giovanni Canali, Nicola Demo, Gianluigi Rozza",
+      "date": "2026-07-17",
+      "pdf": "https://arxiv.org/pdf/2607.15751v1",
+      "score": "6.0",
+      "evidence": "物理信息样条用于PDE学习，可作为通信信道建模中PINN的变体",
+      "tldr": "该工作提出基于张量积B样条的PI-Splines架构，以可训练控制系数直接参数化微分方程解场，替代神经网络。该方法保留残差训练范式，具备紧支撑、显式光滑度控制、解析导数及边界条件强施加能力。在多个基准上，PI-Splines在结构化表示、局部性和参数效率方面表现稳定且具有竞争力，成为物理信息学习的有力替代方案。",
+      "tags": "query:channel-nn",
+      "abstract_en": "This work introduces Physics-Informed Splines (PI-Splines), a structured spline-based architecture for physics-informed learning. Instead of representing the solution of a differential equation with a neural network, PI-Splines directly parametrize the unknown field through a tensor-product B-spline expansion with trainable control coefficients. This formulation preserves the residual-based training paradigm of Physics-Informed Neural Networks while providing compact support, explicit smoothness control, analytical derivatives, and a direct geometric interpretation of the trainable parameters. When compatible with the spline representation, boundary conditions can be imposed strongly by fixing suitable boundary control coefficients. The proposed method is evaluated on several benchmark problems of increasing difficulty and compared with standard physics-informed frameworks under matched governing equations, collocation sets, loss terms, and optimization procedures, so as to isolate the effect of the approximation architecture. Numerical experiments show that PI-Splines provide a competitive and stable alternative to neural physics-informed architectures, particularly in settings where structured representations, locality, and parameter efficiency are desirable.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

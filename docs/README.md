@@ -6,26 +6,35 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-19
-- 运行时间：2026-07-19 20:48:58 UTC
+- 最新运行日期：2026-07-20
+- 运行时间：2026-07-20 21:01:47 UTC
 - 运行状态：成功
-- 本次总论文数：1
+- 本次总论文数：4
 - 精读区：0
-- 速读区：1
+- 速读区：4
 
 ### 今日简报（AI）
-今日阅读1篇关于约束KAN网络的积分微分方程发现研究。  
-论文提出用约束KAN网络发现积分微分方程中的记忆和非局部核。  
-建议关注该方法在物理建模中的应用潜力。
-- 详情：[/202607/19/README](/202607/19/README)
+1) 今日速读4篇论文，聚焦低复杂度数字预失真与AI辅助物理信息网络设计。
+2) 值得关注：基于特征选择降低宽带功放数字预失真复杂度的方法，以及演化算法引导大语言模型优化物理信息神经网络。
+3) 建议后续可深入探索特征选择在DSP硬件中的实际部署，并尝试将演化算法与LLM结合应用于其他科学计算领域。
+- 详情：[/202607/20/README](/202607/20/README)
 
 ### 精读区论文标签
 - 本次无精读推荐。
 
 ### 速读区论文标签
-1. [Neural Discovery of Memory and Nonlocal Kernels in Integro-Differential Equations with Constrained Kolmogorov--Arnold Networks](/202607/19/2607.11110v1-neural-discovery-of-memory-and-nonlocal-kernels-in-integro-differential-equations-with-constrained-kolmogorov--arnold-networks)  
+1. [Low Complexity Neural Network Digital Predistortion of Wideband Power Amplifiers through Feature Selection](/202607/20/2607.15441v1-low-complexity-neural-network-digital-predistortion-of-wideband-power-amplifiers-through-feature-selection)  
+   标签：评分：7.0/10、query:channel-nn
+   evidence：通过特征选择的低复杂度神经网络数字预失真，高效通信NN设计
+2. [Evolutionary Algorithm-Guided LLMs for Physics-Informed Neural Network Design](/202607/20/2607.15560v1-evolutionary-algorithm-guided-llms-for-physics-informed-neural-network-design)  
+   标签：评分：7.0/10、query:channel-nn
+   evidence：使用进化算法和LLM设计PINN的方法，可迁移至通信系统
+3. [HiFi-LLP: High-Fidelity, Low-Cost Latency Predictors with Confidence for Robust HW-NAS](/202607/20/2607.11746v1-hifi-llp-high-fidelity-low-cost-latency-predictors-with-confidence-for-robust-hw-nas)  
    标签：评分：6.0/10、query:channel-nn
-   evidence：使用受约束的Kolmogorov-Arnold网络（KAN）进行核发现，可迁移至通信领域
+   evidence：用于高效硬件感知神经架构搜索的低成本延迟预测器方法
+4. [Trainable Spline Representations for Physics-Informed Learning](/202607/20/2607.15751v1-trainable-spline-representations-for-physics-informed-learning)  
+   标签：评分：6.0/10、query:channel-nn
+   evidence：物理信息样条用于PDE学习，可作为通信信道建模中PINN的变体
 
 
 <div class="dpr-home-promo-card">
