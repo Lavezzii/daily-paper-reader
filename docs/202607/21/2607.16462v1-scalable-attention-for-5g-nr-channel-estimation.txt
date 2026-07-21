@@ -1,0 +1,513 @@
+Title: Scalable Attention for 5G NR Channel Estimation
+
+URL Source: https://arxiv.org/pdf/2607.16462v1
+
+Published Time: Tue, 21 Jul 2026 00:11:21 GMT
+
+Number of Pages: 6
+
+Markdown Content:
+# Scalable Attention for 5G NR Channel Estimation 
+
+Mahdi Abdollahpour § Marco Bertuletti ∗ Yichao Zhang ∗ Yawei Li ¶
+
+Luca Benini §∗ Alessandro Vanelli-Coralli §∗ 
+
+> §
+
+DEI, University of Bologna ∗IIS, ETH Z¨ urich ¶ EEE, Nanyang Technological University 
+
+> §
+
+{mahdi.abdollahpour,luca.benini,alessandro.vanelli }@unibo.it, ∗{mbertuletti,yiczhang,lbenini,avanelli }@iis.ee.ethz.ch  
+
+> ¶
+
+li.yawei.ai@gmail.com 
+
+Abstract —Attention-based neural estimators achieve strong channel-estimation accuracy, but the computational cost of global attention over the time-frequency resource grid grows quadratically with the number of subcarriers, and these estimators are typically tied to a single resource allocation. This paper proposes Channel Estimation Attention (CHEA), a low-complexity channel estimator for 5G New Radio (5G NR) multi-user multiple-input multiple-output (MU-MIMO). CHEA replaces global attention with a multi-resolution windowed design: a high-resolution encoder preserves local pilot detail, a low-resolution encoder captures wider frequency-domain context, and a local cross-attention decoder transfers this coarse context back to the high-resolution pilot tokens. A per-Physical Resource Block (PRB) upsampling module then reconstructs the channel over the full slot. Because every attention operation is confined to a fixed-size window and reconstruction is performed per PRB, the cost of CHEA scales linearly with the number of subcarriers, and a single trained model supports different PRB allocations without retraining. On a standard-compliant Physical Uplink Shared Channel (PUSCH), CHEA achieves the lowest Mean Squared Error (MSE) among conventional and state-of-the-art neural estimators, while requiring 2.8 × to 22.0 × lower operations than existing attention-based estimators. 
+
+Index Terms —5G NR, PUSCH, MU-MIMO, neural channel estimation, transformer, windowed attention 
+
+I. Introduction 
+
+Artificial Intelligence (AI)-based physical-layer processing is reshaping how 5th Generation (5G) New Radio (NR) receivers acquire channel state information. Learned channel estimators now routinely surpass the classical Least Squares (LS) and Linear Minimum Mean Squared Error (LMMSE) baselines that have long served Orthogonal Frequency Division Multiplexing (OFDM) systems [1]–[4]. Sustaining these gains in a deployed uplink receiver, however, is constrained less by accuracy than by two practical requirements: the estimator must fit the tight latency, memory, and compute budget of the Next Generation Node B (gNB), and it must operate across the many different Physical Uplink Shared Channel (PUSCH) resource allocations that users are scheduled with [4]. In PUSCH, the receiver estimates the Multiple-Input, Multiple-Output (MIMO) channel from Demodulation Refer-ence Signals (DMRSs) placed sparsely over the time-frequency resource grid, and the quality of this estimate directly affects MIMO detection, residual interference after equalization, and link-level reliability. Classical estimators remain attractive because of their simplicity and interpretability. The LS es-timator divides the received pilots by the known DMRSs and interpolates over the remaining resource elements, but it ignores channel correlation and is sensitive to noise. The LMMSE estimator improves accuracy using second-order channel statistics and the noise variance, yet it requires reliable covariance information and matrix operations whose cost grows with the cube of the resource-grid size [5]. These limitations motivate learning-based estimators that infer the full channel response by exploiting the time-frequency structure of the observed pilots [6]. Among data-driven estimators, convolutional networks ex-ploit local time-frequency patterns to denoise and interpolate the pilot-domain channel, while attention-based models capture the non-local correlations that purely local operations cannot represent. Transformer-style estimators such as HA02 [7], Channelformer [8], and the vision-transformer-based CEViT [9] report accuracy well beyond classical interpolation, and lightweight convolutional designs such as InterpolateNet [10] pursue the same goal at lower cost. Two obstacles limit these estimators in practice. First, global attention has a computational cost that grows quadratically with the number of subcarriers; for wideband PUSCH allocations this quickly becomes prohibitive on a resource-constrained receiver. Second, most neural estimators are trained for a single, fixed bandwidth, so a separate model must be retrained and stored for every Physical Resource Block (PRB) allocation, which is at odds with the flexibility a scheduler actually requires. An estimator that is both scalable in bandwidth and reusable across allocations is therefore still missing. In this paper, we propose Channel estimation Attention (CHEA), a scalable attention-based channel estimator for MIMO PUSCH reception that addresses both problems. Instead of attending over the full resource grid, CHEA processes the pilot-domain channel in fixed-size frequency windows: a high-resolution encoder preserves fine local pilot structure, a low-resolution encoder captures wider frequency-domain context, and a local cross-attention decoder transfers the coarse context back to the high-resolution pilot tokens. A per-PRB upsampling layer then reconstructs the full-slot channel. Because every attention operation is confined to a fixed-size window and the reconstruction is performed per PRB, the complexity of CHEA scales linearly with the number of subcarriers, and a single trained model supports a wide range of PRB allocations without bandwidth-specific retraining. Simulation results on a standard-compliant 5G NR PUSCH chain show that CHEA arXiv:2607.16462v1 [eess.SP] 17 Jul 2026 attains the lowest Mean Squared Error (MSE) among the evaluated classical, convolutional, and state-of-the-art (SoA) attention-based estimators, while its Multiply&Accumulate (MAC) count scales linearly with the number of subcarriers and its parameter count stays fixed at about 36 K across all allocations. For the 264-subcarrier allocation, this corresponds to ≈1.7 M MACs, which is 2.8× to 22 .0× fewer MACs and 5.9×
+
+to 38 .6× fewer parameters than the attention-based methods. Our implementation will be available in our repository at [11]. The main contributions of this work are summarized as:  
+
+> •
+
+We propose CHEA, a scalable attention-based channel estimator for 5G NR MIMO PUSCH whose complexity scales linearly with the number of subcarriers.  
+
+> •
+
+We design a multi-resolution windowed attention archi-tecture, coupled with a local high-/low-resolution cross-attention decoder, that captures both local pilot detail and wider frequency-domain context without global attention.  
+
+> •
+
+We benchmark CHEA against LS, LMMSE, Interpo-lateNet, HA02, Channelformer, and CEViT in terms of both MSE and computational complexity. 
+
+II. System Model 
+
+We consider a 5G NR MU-MIMO PUSCH uplink in which 
+
+𝑁 𝑇 𝑋 single-layer User Equipments (UEs) are co-scheduled on the same time-frequency resources and jointly received by a gNB with 𝑁 𝑅 receive antennas. As each UE sends a single layer, the index 𝑛 𝑇 𝑋 ∈ { 1, . . . , 𝑁 𝑇 𝑋 } identifies both a layer and its UE. Each slot occupies a time-frequency resource grid 
+
+RG = {1, . . . , 𝐹 } × { 1, . . . , 𝑆 }, where 𝐹 is the number of subcarriers and 𝑆 the number of OFDM symbols. A resource element is indexed by ( 𝑓 , 𝑠 ) ∈ RG , with 𝑓 the subcarrier index and 𝑠 the OFDM-symbol index. The frequency axis is partitioned into PRBs of 𝑁 PRB SC = 12 subcarriers each, so that 
+
+𝐹 = 12 𝑁 PRB for 𝑁 PRB allocated PRBs. Let x 𝑓 ,𝑠 ∈ C𝑁 𝑇 𝑋 stack the symbols transmitted by the 𝑁 𝑇 𝑋 
+
+UEs at resource element ( 𝑓 , 𝑠 ), and let y 𝑓 ,𝑠 ∈ C𝑁 𝑅 be the received vector after FFT processing. The received vector superimposes the contributions of all co-scheduled UEs, 
+
+y 𝑓 ,𝑠 = H 𝑓 ,𝑠 x 𝑓 ,𝑠 + n 𝑓 ,𝑠 , (1) where the 𝑛 𝑇 𝑋 -th column of H 𝑓 ,𝑠 ∈ C𝑁 𝑅 × 𝑁 𝑇 𝑋 is the channel from UE 𝑛 𝑇 𝑋 to the 𝑁 𝑅 receive antennas, and 
+
+n 𝑓 ,𝑠 ∼ CN ( 0, 𝑁 0I𝑁 𝑅 ) is additive complex Gaussian noise with variance 𝑁 0.Channel estimation relies on DMRSs placed sparsely over the grid. The DMRS resource elements of UE 𝑛 𝑇 𝑋 form the set 
+
+P𝑛 𝑇 𝑋 = {( 𝑓 , 𝑠 ) ∈ RG : ( 𝑓 , 𝑠 ) carries DMRS for UE 𝑛 𝑇 𝑋 },
+
+and the complete pilot set is P = Ð𝑁 𝑇 𝑋   
+
+> 𝑛 𝑇 𝑋 =1
+
+P𝑛 𝑇 𝑋 . In the considered PUSCH configuration, DMRSs occupy two OFDM symbols given by the pilot-symbol set S𝑝 = {2, 11 }, and UEs sharing the same pilot resource elements are separated by a frequency-domain Code-Division Multiplexing (CDM) group of size 2 . The estimation task is to recover the full-grid channel 
+
+{H 𝑓 ,𝑠 }( 𝑓 ,𝑠 ) ∈ D of all UEs from the pilot observations on P,where D ⊂ RG denotes the data-carrying resource elements. For learning-based processing, the channel of each link 
+
+ℓ = (𝑛 𝑅 , 𝑛 𝑇 𝑋 ) is represented by stacking its real and imaginary parts along the innermost dimension 
+
+HR 
+
+> ℓ
+
+∈ R𝐹 ×𝑆 ×2. (2) Estimation accuracy is reported as the MSE over all links and data-carrying resource elements, MSE = 1
+
+|D| 𝑁 𝑅 𝑁 𝑇 𝑋 ∑︁ ( 𝑓 ,𝑠 ) ∈ D 
+
+ˆH 𝑓 ,𝑠 − H 𝑓 ,𝑠 2 
+
+> 𝐹
+
+. (3) 
+
+A. Baseline Channel Estimators 
+
+We compare CHEA against conventional estimators and against SoA neural channel estimators. 
+
+1) LS Estimation: At the pilot locations, the LS estimator computes the channel coefficient by dividing the received pilot observation by the known transmitted DMRS symbol. The LS estimate for link (𝑛 𝑅 , 𝑛 𝑇 𝑋 ) is ˆℎLS   
+
+> 𝑓 ,𝑠,𝑛 𝑅 ,𝑛 𝑇 𝑋
+
+= 𝑝 ∗ 
+
+> 𝑓 ,𝑠,𝑛 𝑇 𝑋
+
+𝑦 𝑓 ,𝑠,𝑛 𝑅 
+
+| 𝑝 𝑓 ,𝑠,𝑛 𝑇 𝑋 |2 , ( 𝑓 , 𝑠 ) ∈ P 𝑛 𝑇 𝑋 , (4) where 𝑝 𝑓 ,𝑠,𝑛 𝑇 𝑋 is the known DMRS symbol. When CDM groups are used, the pilot estimates belonging to the same orthogonal group are averaged. Then the estimates (4) can be interpolated to the full grid as ˆ HLS  
+
+> ℓ
+
+∈ C𝐹 ×𝑆 .
+
+2) LMMSE Estimation: The LMMSE estimator improves the pilot-domain estimate by exploiting channel correlation and noise variance. Let ˆhLS  
+
+> P
+
+denote the vectorized LS pilot estimate for a given antenna-layer link, and let h denote the vectorized full-grid channel. The LMMSE estimate is ˆhLMMSE = Rhh P
+
+ RhP hP + Re
+
+ −1 ˆhLS  
+
+> P
+
+, (5) where Rhh P is the cross-covariance between the full channel and pilot-domain channel, RhP hP is the pilot-domain channel covariance, and Re is the covariance of the LS estimation error. In Sionna [12], the LMMSE interpolation baseline applies covariance-aware filtering over the resource grid, using the configured frequency, time, and spatial covariance matrices [12]. Although this estimator is a strong model-based baseline, its complexity and memory footprint increase with cube of the grid size, and its performance depends on the accuracy of the assumed covariance model. Sionna implementation uses 10 6 Urban Microcell (UMi) channel samples to estimate the covariance matrices. 
+
+3) Neural Methods: Beyond conventional model-based estimators, we compare CHEA with several learning-based estimators, including SoA attention-based methods:  
+
+> •
+
+InterpolateNet : a lightweight convolutional residual net-work that refines interpolated pilot-domain estimates. It has low parameter count and relies mostly on local convolutional structure [10].  
+
+> •
+
+HA02 : it uses transformer-style processing to improve the use of pilot observations [7].  
+
+> •
+
+CEViT : vision-transformer-based channel estimators that use patch embedding and attention to capture time-frequency channel correlations [9]. To have a fair com-parison of the methods, the extra Signal-to-Noise Ratio (SNR), Doppler, and delay spread tokens are ignored. • Channelformer : an encoder-decoder architecture using multi-head attention as an input pre-processor followed by a residual convolutional decoder [8]. These baselines provide a comparison between purely model-based estimators, convolutional neural estimators, and global attention-based estimators. 
+
+III. Channel Estimation Attention (CHEA) 
+
+This section introduces CHEA, the proposed Channel Estimation Attention transformer. As illustrated in Fig. 1, the model consists of a high-resolution encoder, a low-resolution encoder, and a cross-attention decoder, followed by a per-PRB upsampling block. It estimates the full MIMO channel over a PUSCH resource grid from pilot-domain observations while maintaining linear complexity in the number of subcarriers. The two encoders and the decoder use the same transformer building blocks but do not share weights ; each module has its own independent parameters. The architecture of a transformer block is shown in Fig. 2.  
+
+> Fig. 1. Channel estimation block diagram.
+
+A. Input Representation 
+
+CHEA is applied independently to each antenna-layer link, so the link dimension is merged with the batch dimension during training and inference. For each link, the input is the LS estimate interpolated only in the frequency axis with its real and imaginary parts stacked along the innermost dimension, 
+
+X𝑝 ∈ R𝐹 × | S 𝑝 | × 2. (6) 
+
+B. Multi-Resolution Windowing 
+
+CHEA processes the pilot tensor with two parallel branches that use the same tokenization but operate at different frequency resolutions:  
+
+> •
+
+a high-resolution branch that preserves local pilot detail over short windows;  
+
+> •
+
+a low-resolution branch that captures wider frequency context after average pooling. The two branches are later combined by the cross-attention decoder. We next describe the common tokenization, the low-resolution pooling, and the window partitioning. 
+
+a) Tokenization: Tokenization is a reshape only; no convolution or dense layer is applied at this stage. Each PRB spans 𝑃 = 12 subcarriers and carries, for a given link, |S 𝑝 |
+
+pilot OFDM symbols with real and imaginary parts. Each PRB is split into 2|S 𝑝 | tokens, one per (pilot-symbol, real/imaginary) pair, and each token is the length-𝑃 vector collecting the 𝑃 = 12 subcarrier values of that pair. Stacking the 𝐹 /𝑃 PRBs and merging the antenna-layer links into the batch dimension gives the tokenized tensor 
+
+Xtok ∈ R𝐵 × 𝐹 𝑃 ×2| S 𝑝 | × 𝑃 , (7) where 𝐵 is the batch size after link merging.  
+
+> Fig. 2. CHEA transformer block diagram.
+
+b) Low-resolution pooling: The low-resolution branch averages every 𝜌 = 4 neighboring PRB tokens along the frequency axis, so that each low-resolution patch summarizes 
+
+𝜌 adjacent PRBs while remaining a length-𝑃 vector, similar to the average-pooled anchors in [13]. This reduces the number of frequency patches from 𝐹 /𝑃 to 𝐹 /( 𝜌𝑃 ), retaining wideband context at a lower token density. 
+
+c) Window partitioning: Each branch groups its patches into fixed-size frequency windows. The high-resolution branch uses windows of 𝑁 ℎ = 6 PRBs, while the low-resolution branch uses windows of 𝑁 𝑙 = 24 PRBs, with subcarrier lengths 
+
+𝑊 ℎ = 𝑁 ℎ 𝑃 = 72 , 𝑊 𝑙 = 𝑁 𝑙 𝑃 = 288 . (8) The number of windows in each branch is 
+
+𝑁 𝑤,ℎ =
+
+ 𝐹 𝑊 ℎ
+
+
+
+, 𝑁 𝑤,𝑙 =
+
+ 𝐹 𝑊 𝑙 
+
+
+
+. (9) Since each PRB patch contributes 2|S 𝑝 | tokens, a high-resolution window holds 
+
+𝑇 ℎ = 𝑁 ℎ · 2|S 𝑝 | = 24 (10) tokens, and a low-resolution window, after pooling by 𝜌 , holds 
+
+𝑇 𝑙 = 𝑁 𝑙 
+
+𝜌 · 2|S 𝑝 | = 24 (11) tokens. Folding the windows of each sample into the batch dimension yields the branch inputs 
+
+Uℎ ∈ R𝐵𝑁 𝑤,ℎ ×𝑇 ℎ ×𝑃 , U𝑙 ∈ R𝐵𝑁 𝑤,𝑙 ×𝑇 𝑙 ×𝑃 . (12) Both branches therefore process a fixed sequence length, independent of 𝐹 . When 𝐹 is not an exact multiple of a window size, the final window simply contains fewer valid tokens, and CHEA processes only the available tokens in that window. 
+
+C. High-Resolution Encoder 
+
+Each token of Uℎ is linearly embedded into a 𝑑 -dimensional space and augmented with a positional encoding, 
+
+Z(0) 
+
+> ℎ
+
+= UℎWin  
+
+> ℎ
+
++ bin  
+
+> ℎ
+
++ Eℎ ∈ R𝐵𝑁 𝑤,ℎ ×𝑇 ℎ ×𝑑 , (13) where Win  
+
+> ℎ
+
+∈ R𝑃 ×𝑑 and bin  
+
+> ℎ
+
+∈ R𝑑 are the patch-embedding weight and bias. The learnable positional encoding Eℎ ∈
+
+R1×𝑇 ℎ ×𝑑 is shared by all windows and broadcast over the window–batch dimension. The embedded tokens pass through a single pre-normalization transformer block, consisting of a self-attention sublayer followed by a feed-forward sublayer, each with a residual connection, ˆZℎ = Z(0) 
+
+> ℎ
+
++ MHA 
+
+
+
+LN 
+
+
+
+Z(0)
+
+> ℎ
+
+ 
+
+, (14) 
+
+Zℎ = ˆZℎ + FFN 
+
+
+
+LN 
+
+ ˆZℎ
+
+ 
+
+, (15) where LN (·) denotes layer normalization and ˆZℎ is the intermediate output after the attention sublayer. The two sublayers act on a generic token sequence Z, which in (14) – (15) is the layer-normalized input of each sublayer. Multi-head attention uses 𝑁 head heads with per-head dimension 
+
+𝑑 𝑎 = 𝑑 /𝑁 head . For the 𝑎 -th head, 
+
+Q𝑎 = ZW 𝑄 𝑎 , K𝑎 = ZW 𝐾 𝑎 , V𝑎 = ZW 𝑉 𝑎 , (16) with W𝑄 𝑎 , W𝐾 𝑎 , W𝑉 𝑎 ∈ R𝑑 ×𝑑 𝑎 . The attention-weight matrix and the head output are 
+
+A𝑎 = softmax 
+
+ Q𝑎 KT
+
+> 𝑎
+
+√𝑑 𝑎 
+
+
+
+, O𝑎 = A𝑎 V𝑎 , (17) where A𝑎 ∈ R𝐵𝑁 𝑤,ℎ ×𝑇 ℎ ×𝑇 ℎ has a fixed size 𝑇 ℎ ×𝑇 ℎ, independent of 𝐹 , and O𝑎 ∈ R𝐵𝑁 𝑤,ℎ ×𝑇 ℎ ×𝑑 𝑎 . The heads are concatenated and projected back to dimension 𝑑 ,MHA (Z) = Concat  O1, . . . , O𝑁 head 
+
+ W𝑂 ∈ R𝐵𝑁 𝑤,ℎ ×𝑇 ℎ ×𝑑 ,
+
+(18) with W𝑂 ∈ R𝑑 ×𝑑 . The feed-forward network is applied independently to each token, FFN (Z) = 𝜙 (ZW 1 + b1) W2 + b2, (19) where W1 ∈ R𝑑 ×𝑑 ff , W2 ∈ R𝑑 ff ×𝑑 , 𝑑 ff is the hidden dimension, and 𝜙 (·) is the GELU activation. Both sublayers preserve the token-sequence shape 𝐵𝑁 𝑤,ℎ × 𝑇 ℎ × 𝑑 .Finally, the per-window token sequences are merged back along the frequency axis to form the high-resolution memory, 
+
+Mℎ = reshape (Zℎ) ∈ R𝐵 × 𝑁 𝑤,ℎ 𝑇 ℎ ×𝑑 . (20) 
+
+D. Low-Resolution Encoder 
+
+The low-resolution branch operates on the pooled windowed tokens U𝑙 . The tokens are projected to the same embedding dimension 𝑑 ,
+
+Z(0) 
+
+> 𝑙
+
+= U𝑙 Win  
+
+> 𝑙
+
++ bin  
+
+> 𝑙
+
++ E𝑙 ∈ R𝐵𝑁 𝑤,𝑙 ×𝑇 𝑙 ×𝑑 , (21) where Win  
+
+> 𝑙
+
+∈ R𝑃 ×𝑑 and bin  
+
+> 𝑙
+
+∈ R𝑑 are the patch-embedding weight and bias, and E𝑙 ∈ R1×𝑇 𝑙 ×𝑑 is a learnable positional encoding. The low-resolution encoder uses the same pre-normalization transformer structure as the high-resolution encoder, with its own independent weights, ˆZ𝑙 = Z(0) 
+
+> 𝑙
+
++ MHA 
+
+
+
+LN 
+
+
+
+Z(0)
+
+> 𝑙
+
+ 
+
+, (22) 
+
+Z𝑙 = ˆZ𝑙 + FFN 
+
+
+
+LN 
+
+ ˆZ𝑙 
+
+ 
+
+. (23) The low-resolution memory is then formed by reshaping Z𝑙 ,
+
+M𝑙 ∈ R𝐵 × 𝑁 𝑤,𝑙 𝑇 𝑙 ×𝑑 . (24) 
+
+E. Cross-Attention Decoder 
+
+The decoder transfers the wideband context captured by the low-resolution branch back to the high-resolution pilot tokens through local cross-attention. Rather than letting every high-resolution token attend to every low-resolution token, CHEA re-stricts attention to fixed-size groups. Each low-resolution patch summarizes 𝜌 neighboring PRBs, so the decoder pairs that patch with the 𝜌 corresponding high-resolution PRB patches to form one group. The number of groups equals the number of low-resolution patches, 𝑁 𝑔 = ⌈𝐹 /( 𝜌𝑃 )⌉ = ⌈𝑁 PRB /𝜌 ⌉.Within a group, the high-resolution patches provide the query tokens and the single low-resolution patch provides the key/value tokens. Since each PRB patch contributes 2|S 𝑝 |
+
+tokens, the query and key/value lengths per group are 
+
+𝑇 𝑞 = 𝜌 · 2|S 𝑝 | = 16 , 𝑇 𝑘 = 2|S 𝑝 | = 4. (25) Collecting the grouped tokens from the high- and low-resolution memories Mℎ and M𝑙 yields 
+
+Gℎ ∈ R𝐵𝑁 𝑔 ×𝑇 𝑞 ×𝑑 , G𝑙 ∈ R𝐵𝑁 𝑔 ×𝑇 𝑘 ×𝑑 . (26) The grouped high-resolution tokens are mapped by an input projection and augmented with a learnable positional encoding, ˜Gℎ = GℎWin  
+
+> 𝑞
+
++ bin  
+
+> 𝑞
+
++ E𝑞 , (27) where Win  
+
+> 𝑞
+
+∈ R𝑑 ×𝑑 and bin  
+
+> 𝑞
+
+∈ R𝑑 are the query projection weight and bias, and E𝑞 ∈ R1×𝑇 𝑞 ×𝑑 is a positional encoding shared across all groups and broadcast over the group–batch dimension. The decoder applies a single pre-normalization block with three sublayers, each wrapped in a residual connec-tion: self-attention over the projected high-resolution tokens, cross-attention from these tokens to the low-resolution tokens, and a feed-forward network, 
+
+D(1) = ˜Gℎ + MHA self 
+
+ LN ( ˜Gℎ) , (28) 
+
+D(2) = D(1) + MHA cross 
+
+
+
+LN (D(1) ), G𝑙 
+
+
+
+, (29) 
+
+D(3) = D(2) + FFN 
+
+
+
+LN (D(2) )
+
+
+
+, (30) where D(1) and D(2) are the intermediate outputs after the self-attention and cross-attention sublayers, and D(3) is the block output. The self-attention MHA self (·) and the feed-forward network FFN (·) follow the same definitions as in the high-resolution encoder (Section III-C ), with their own parameters. In the cross-attention sublayer MHA cross (·) , for the 𝑎 -th head, with queries from LN (D(1) ) and keys/values from G𝑙 ,
+
+Q𝑎 = LN (D(1) )W𝑄 𝑎 , K𝑎 = G𝑙 W𝐾 𝑎 , V𝑎 = G𝑙 W𝑉 𝑎 , (31) with W𝑄 𝑎 , W𝐾 𝑎 , W𝑉 𝑎 ∈ R𝑑 ×𝑑 𝑎 and 𝑑 𝑎 = 𝑑 /𝑁 head . The cross-attention-weight matrix and the head output are 
+
+A𝑎 = softmax 
+
+ Q𝑎 KT
+
+> 𝑎
+
+√𝑑 𝑎 
+
+
+
+, O𝑎 = A𝑎 V𝑎 , (32) where A𝑎 ∈ R𝐵𝑁 𝑔 ×𝑇 𝑞 ×𝑇 𝑘 has a fixed size 𝑇 𝑞 × 𝑇 𝑘 = 16 × 4 , and 
+
+O𝑎 ∈ R𝐵𝑁 𝑔 ×𝑇 𝑞 ×𝑑 𝑎 . The heads are concatenated and projected back to dimension 𝑑 , giving MHA cross ∈ R𝐵𝑁 𝑔 ×𝑇 𝑞 ×𝑑 .The decoder output D(3) and the memory Mℎ are each projected to the patch dimension 𝑃 by Wout , Wskip ∈ R𝑑 ×𝑃 
+
+and reshaped to the common high-resolution patch layout, then ˜Uℎ = D(3) Wout + MℎWskip ∈ R𝐵 × 𝐹 𝑃 ×2| S 𝑝 | × 𝑃 . (33) The refined tokens ˜Uℎ are then de-tokenized (reshaped) into the pilot-domain channel tensor ˜X𝑝 ∈ R𝐹 × | S 𝑝 | × 2. (34) 
+
+F. Per-PRB Upsampling 
+
+The refined pilot tensor ˜X𝑝 ∈ R𝐹 × | S 𝑝 | × 2 is defined only on the |S 𝑝 | pilot symbols. A single shared linear layer reconstructs the full slot PRB by PRB. Slicing ˜X𝑝 along frequency gives, for each PRB 𝑟 , a feature vector u𝑟 ∈ R48 collecting its 𝑃 × |S 𝑝 | × 2entries, which is mapped to all 𝑆 symbols by ˆu𝑟 = Wup u𝑟 + bup ∈ R336 , Wup ∈ R336 ×48 , (35) where 336 = 𝑃 × 𝑆 × 2 for 𝑃 = 12 and 𝑆 = 14 . Reshaping each ˆu𝑟 to R𝑃 ×𝑆 ×2 and stacking the 𝐹 /𝑃 PRBs along frequency yields the full-slot estimate of link ℓ,ˆHℓ ∈ R𝐹 ×𝑆 ×2, (36) which estimates the target HR 
+
+> ℓ
+
+of (2). 
+
+G. Stacked CHEA Stages 
+
+The default CHEA architecture stacks two pilot-domain refinement stages. Let X(𝑖 ) 
+
+> 𝑝
+
+denote the pilot-domain tensor at the input of the 𝑖 th stage. Each stage applies its transformation and updates the pilot-domain representation 
+
+X(𝑖 +1) 
+
+> 𝑝
+
+= X(𝑖 ) 
+
+> 𝑝
+
++ 𝛼 𝑖 
+
+
+
+F𝜃 𝑖 
+
+
+
+X(𝑖 )
+
+> 𝑝
+
+
+
+− X(𝑖 )
+
+> 𝑝
+
+
+
+, (37) where F𝜃 𝑖 (·) is the transformation implemented by the 𝑖 th CHEA stage and 𝛼 𝑖 is a trainable scalar that weights its residual correction. The output of the final stage is passed to the per-PRB upsampling layer in (35) , which reconstructs the full-slot channel estimate. 
+
+H. Training CHEA 
+
+The model is trained to match the estimate ˆHℓ of (36) to the target HR 
+
+> ℓ
+
+of (2) by the Huber loss 
+
+LH = 12|D| 𝑁 𝑅 𝑁 𝑇 𝑋 ∑︁ ℓ∑︁ ( 𝑓 ,𝑠 ) ∈ D 
+
+> 2
+
+∑︁ 
+
+> 𝑐 =1
+
+ℎ𝛿 
+
+ [ ˆHℓ − HR 
+
+> ℓ
+
+] 𝑓 ,𝑠,𝑐 
+
+, (38) where 𝑐 indexes the real/imaginary parts and ℎ𝛿 (𝑒 ) = 12 𝑒 2 for 
+
+|𝑒 | ≤ 𝛿 and 𝛿 (| 𝑒 | − 12 𝛿 ) otherwise.                                  
+
+> TABLE I
+> Comparison of MACs and parameters.
+> Models MACs Params
+> HA02 68 𝐹 2+312 𝐹 20 𝐹 2+28 𝐹 +55 Channelformer 344 𝐹 2+52 ,296 𝐹 18 𝐹 2+28 𝐹 +22381 CEViT 28 𝐹 2+68 ,700 𝐹 45 𝐹 +203730 InterpolationNet 61 ,776 𝐹 56 𝐹 +5,410 CHEA 6,496 𝐹 36 K CHEA-XL 65 ,984 𝐹 274 K
+
+I. Complexity and Scalability 
+
+CHEA consists of Matrix Multiplications (MatMuls), GELU activation, and bias operations. For the default two-stage CHEA stack with 𝑑 = 16 , 𝑑 ff = 2 × 𝑑 , 𝑁 ℎ = 6, 𝑁 𝑙 = 24 , 𝜌 = 4 , and 
+
+|S 𝑝 | = 2 , CHEA requires 6496 𝐹 MACs with approximately 36 K trainable parameters. Larger variants can be obtained by increasing 𝑑 , or 𝑑 ff . We make CHEA-XL by setting 𝑑 = 64 ,and keeping other parameters the same as CHEA. The computational complexity per link and parameter count of the neural estimators evaluated in this paper are summarized in Table I. Attention-based methods, HA02, Channelformer, and CEViT include terms that scale quadratically with the number of subcarriers 𝐹 , mainly due to global attention operations or bandwidth-dependent dense mappings. In contrast, all CHEA variants scale linearly with 𝐹 because the attention operations are confined to fixed-size local windows and the final reconstruction is performed per PRB. The convolution-based model, InterpolationNet, also has linear complexity. However, its MAC coefficient is considerably larger than that of CHEA. In particular, InterpolationNet requires approximately 9.5× more MACs than CHEA for any value of 𝐹 .
+
+IV. Simulation Results 
+
+All models are implemented in Python/TensorFlow, and evaluated on two bandwidths: 10 PRBs ( 𝐹 = 120 subcarriers) and 22 PRBs ( 𝐹 = 264 subcarriers). 
+
+A. Simulation Setup 
+
+The end-to-end uplink transmission is simulated with a standard-compliant 5G NR PUSCH chain using Sionna [12]. The transmitter side consists of two single-layer uplink streams. Each stream is mapped to one dual-polarized antenna element, resulting in two transmitted layers. The base station is equipped with two dual-polarized antenna elements, corresponding to four receive antenna elements. This gives the 4 × 2 MIMO configuration used throughout the evaluation. The carrier frequency is set to 2 GHz and the modulation and coding configuration follows MCS index 14, i.e., 16-QAM. Training samples are generated from the 3rd Generation Partnership Project (3GPP) UMi channel model. Each training sample corresponds to an independent random drop, which randomizes the user positions, propagation geometry, angles of arrival and departure, path delays, and path powers. The user speed is sampled in the interval [0, 34 ] m/s. The test set is generated from the 3GPP Tapped Delay Line (TDL)-A channel model. The delay spread is randomly selected between 10 ns and 300 ns, and the Doppler shift is uniformly chosen between 0 Hz and 325 Hz. Fig. 3. MSE performance with a)10 and b)22 PRBs. 
+
+B. Training Procedure 
+
+All neural channel estimators are trained with the Adam optimizer and the same staged learning-rate schedule on an SNR range of [0, 25 ]dB. The first training phase uses 50 Kiterations with learning rate 10 −3, the second phase uses 100 Kiterations with learning rate 10 −4, and the final phase uses 200 Kiterations with learning rate 10 −5. The Huber loss defined in (38) is used with 𝛿 = 1 for training. For InterpolateNet, HA02, Channelformer, and CEViT, separate models are trained for each evaluated bandwidth. Hence, each of these baselines has one model for the 10-PRB case and another model for the 22-PRB case. In contrast, CHEA is trained once with a random number of allocated PRBs drawn from 1 to 24. 
+
+C. MSE Performance 
+
+Fig. 3a, and 3b show the MSE performance on the TDL-A test channel for the 10-PRB and 22-PRB bandwidths, respectively. The same general trends are observed in both cases. The LS estimator has the highest MSE over the full SNR range because it relies only on pilot-domain division and interpolation. The LMMSE estimator substantially improves over LS by exploiting covariance information. However, its performance saturates at high SNR and exhibits a mild upturn. The neural baselines reduce the error floor compared with LS and LMMSE, but their high-SNR performance depends strongly on the architecture. InterpolationNet and Channelformer im-prove the low-to-medium SNR region, while HA02 shows a visible high-SNR floor. CEViT achieves a lower high-SNR MSE than these baselines. In both bandwidths, CHEA and CHEA-XL provide the best overall MSE performance.The CHEA model already achieves the lowest or near-lowest MSE over most of the SNR range, while CHEA-XL further reduces the high-SNR error floor. The proposed architecture remains effective as the bandwidth increases. CHEA improves channel-estimation accuracy while also simplifying deployment across different PUSCH alloca-tions. Together with the complexity results in Table I, these results demonstrate that CHEA provides a favorable accuracy– complexity trade-off: it achieves strong MSE performance while preserving linear scaling with the number of subcarriers. 
+
+V. Conclusion 
+
+This paper proposed CHEA, a scalable attention-based channel estimator for 5G NR MIMO PUSCH. CHEA replaces global attention over the full resource grid with a multi-resolution windowed design, where a cross-attention decoder transfers the low-resolution context to high-resolution tokens. By restricting attention to fixed-size windows and performing the final reconstruction on a per-PRB basis, the proposed architecture scales linearly with the number of subcarriers and supports different PRB allocations using a single trained model. Simulation results on 3GPP TDL-A channels show that CHEA achieves lower MSE than conventional estimators and state-of-the-art neural channel estimation baselines, while maintaining significantly lower complexity. These results demonstrate that multi-resolution local attention provides an effective, scalable, and flexible solution for practical neural channel estimation in 5G NR uplink systems. Future work will include a detailed component-wise ablation study, an analysis of the learned attention patterns, and an end-to-end link-level evaluation. 
+
+References
