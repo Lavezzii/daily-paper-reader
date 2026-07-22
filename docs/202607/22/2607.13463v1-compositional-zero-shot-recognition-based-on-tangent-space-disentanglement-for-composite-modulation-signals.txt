@@ -1,0 +1,694 @@
+Title: Compositional Zero-Shot Recognition based on Tangent Space Disentanglement for Composite Modulation Signals
+
+URL Source: https://arxiv.org/pdf/2607.13463v1
+
+Published Time: Thu, 16 Jul 2026 00:50:07 GMT
+
+Number of Pages: 17
+
+Markdown Content:
+> JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 1
+
+# Compositional Zero-Shot Recognition based on Tangent Space Disentanglement for Composite Modulation Signals 
+
+Yurui Zhao, Xiang Wang, Zhitao Huang, Baoguo Li 
+
+Abstract —Automatic composite modulation recognition (ACMR) is critical for integrated sensing and communication (ISAC) systems, while conventional approaches face significant challenges due to the semantic coupling between inner-layer and outer-layer modulations in composite modulation (CM), degraded performance under joint hardware and channel imperfections, and limited capability to handle unknown modulation schemes. To this end, we design a disentangled semantic space and propose zero-shot learning framework. Within this framework, a logarithmic projection first linearizes the multiplicative coupling between modulation layers and a learnable geometric transformation is used for layer-wise semantic features. We instantiate the framework as the Tangent Space Disentanglement Network (TSDN). TSDN integrates logarithmic mapping, a spatial transformer network for learning the geometric transformation, and a multi-objective loss function that balances discrimination with cross-domain generalization. Comprehensive experiments demonstrate that TSDN achieves over 93% zero-shot recognition accuracy, outperforms unified-semantic and multi-task baselines by significant margins, and maintains robust performance under combined channel fading and hardware imperfections down to 4 dB SNR. 
+
+Index Terms —Integrating communication and sensing (ISAC), signal processing, automatic composite modulation recognition (ACMR), automatic modulation recognition, zero-shot learning 
+
+I. I NTRODUCTION 
+
+# INTEGRATED Sensing and Communication (ISAC) unifies sensing and communication on a shared platform, improv-ing spectrum and infrastructure utilization [1]–[4]. It enables autonomous driving, WiFi sensing, vehicle-to-everything [5], high-precision indoor localization, and is foundational for 6G unmanned aerial vehicles (UAVs) and the low-altitude economy. The primary challenge in ISAC lies in designing a versatile waveform capable of reconciling the inherently conflicting requirements of sensing and communication. Com-posite modulation (CM) has emerged as a promising solution to this challenge [6]–[8]. Unlike conventional approaches, CM achieves an intrinsic fusion of an inner communication layer and an outer sensing layer into an inseparable waveform, offering high degrees of freedom to optimize the sensing-communication trade-off, as presented in Fig. 1. For instance, 16QAM-2FSK prioritizes 
+
+The authors are with College of Electronic Science and Technology, National University of Defense Technology, Changsha 410073, China. Corresponding author: Xiang Wang (E-mail: xwang@nudt.edu.cn) Research is supported by the National Natural Science Foundation of China, Grant No.62271494. Manuscript received April 20, 2024. 
+
+high data rates, while BPSK-LFM favors accurate sensing. By adaptively selecting modulation schemes according to channel conditions and task priorities, CM empowers cognitive ISAC systems to enhance resource efficiency and robustness. It is important to distinguish CM from compound modulation, which refers to the linear summation of independent signal sources, a topic on which substantial advances have been reported [9], [10]. In contrast, CM performs waveform-level fusion where components are coupled at the generation stage. As a result, the constituent modulations do not exist as independent temporal entities and require specialized feature representations distinct from those developed for compound signals. However, the performance of cognitive ISAC systems de-pends critically on automatic composite modulation recog-nition (ACMR). Due to the adaptive nature of transmission strategies, the modulation parameters of intercepted wave-forms change dynamically with tasks and channel conditions, making ACMR a core determinant of overall system perfor-mance. On the communication side, accurate identification is a prerequisite for correct demodulation. Any misidentification inevitably causes severe bit-error-rate (BER) degradation and synchronization failure, ultimately compromising communica-tion reliability. On the sensing side, this identification enables the receiver to dynamically reconfigure its matched filters or super-resolution algorithms according to the identified radar component. This capability directly enhances range-Doppler resolution and reduces the false-alarm rate, thereby preserving sensing fidelity. Beyond cooperative ISAC systems, ACMR is equally indispensable in non-cooperative scenarios such as spectrum monitoring, electronic intelligence (ELINT), and electronic warfare, where the modulation parameters of in-tercepted waveforms are entirely unknown a priori. In such contexts, ACMR constitutes the indispensable first step in converting raw observations into actionable signal intelligence. Consequently, robust ACMR is not merely a classification task but a foundational capability that underpins closed-loop re-source management and interference-aware processing across the full operational range of advanced ISAC networks. As a specialized category within the broader framework of automatic modulation recognition (AMR), ACMR inherits the fundamental principles of signal classification while introduc-ing unique challenges associated with multi-layered modula-tion. Early studies in AMR primarily adopted maximum like-lihood estimation (MLE), framing modulation classification as a multiple-hypothesis testing problem [11]. As limitations of arXiv:2607.13463v1 [eess.SP] 15 Jul 2026 JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 2 
+
+> Fig. 1. Schematic of the ISAC system showing the role of composite modulation (CM) in enabling sensing and communication, with applications in vehicle-to-everything, indoor localization, and low-altitude economy.
+
+MLE became evident, research shifted toward feature-based methods, typically involving preprocessing, feature extraction, and classification [12]. The rapid advancement of deep learn-ing (DL) has significantly propelled the development of the AMR field. O’Shea first demonstrated CNN-based classifica-tion using raw IQ data [13], while subsequent works examined network depth, kernel size, and architectural variations such as residual, inception, and CLDNN models [14]–[17]. To capture temporal dependencies, researchers introduced recurrent mod-els, including long short-term memory (LSTM) and denoising autoencoders, which achieved strong performance under noisy conditions [18], [19]. Hybrid models have further combined CNNs and LSTMs, enabling effective spatial-temporal feature learning [20]–[22]. In contrast, research on ACMR remains relatively limited, with existing efforts primarily focusing on hand-crafted feature approaches or DL-based approaches. For hand-crafted feature approaches, phase-locked loop-based (PLL-based) demodu-lation with empirical phase cumulative distribution function (CDF) features [23] and cyclic-paw-point (CPP) features de-rived from cyclic spectra [24], [25] have been proposed, typically classified using support vector machine (SVM) or random forest. More recent work leverages DL to improve robustness, such as lightweight neural networks with CPP features [26], ResNet applied to frequency-domain graphs [27], and multi-dimensional time-frequency representations [28]. Transfer learning has also been adopted to address few-shot recognition scenarios [29]. Despite these advances, ACMR research faces two funda-mental challenges. (1) Existing methods perform reasonably well on low-order composite modulations such as BPSK-FM, but struggle to scale to high-order modulations such as 128QAM-8FSK. (2) Most approaches are designed for predefined modulation combinations and lack generalization to unseen CM schemes. This limitation restricts their ap-plicability in practical cognitive ISAC systems that require adaptability and robustness. To address these challenges, this paper proposes a novel zero-shot recognition framework for CM signals. The core of the framework is a disentangled semantic space constructed through tangent space disentanglement, where the multiplica-tive coupling between modulation layers is first linearized via logarithmic projection and then decomposed into layer-wise semantic features by a learnable geometric transformation. We instantiate this framework as the tangent space disen-tanglement network (TSDN). The network integrates loga-rithmic mapping, a spatial transformer network for learning the geometric transformation, and a multi-objective loss that balances discrimination with cross-domain generalization. The main contributions of this work are as follows.  
+
+> •
+
+We design a disentangled semantic space by mapping CM signal waveforms into a tangent space. This mapping converts the inherent multiplicative coupling between modulation layers into an additive form. The linearized representation allows a principled separation of the com-posite modulation through linear operations, providing a systematic basis for feature disentanglement.  
+
+> •
+
+We propose a zero-shot CM recognition framework built upon a disentangled semantic space. To disentangle inner-layer and outer-layer modulations, the framework assigns a dedicated learnable transformation module to each layer and employs a multi-task learning mechanism to extract discriminative semantic features from the tangent space. As a result, the framework generalizes well to previously unseen CM schemes and offers enhanced scalability for practical ISAC systems.  
+
+> •
+
+We instantiate the framework as the TSDN. TSDN in-tegrates logarithmic mapping to project signals into the tangent space, a spatial transformer network to learn the geometric transformation for layer-wise decoupling, and a multi-objective loss function that jointly optimizes mod-ulation discrimination and cross-domain generalization. The architecture adopts lightweight design principles, resolving the critical trade-off between model complexity JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 3 
+
+> Fig. 2. Structure of an ISAC emitter with CM modulator contains two-layer modulations, containing the inner-layer modulation (green) and the outer-layer modulation (blue).
+
+and recognition performance in practical communication systems. The remainder of this paper is organized as follows. Section II presents the CM signal model and formally defines the zero-shot ACMR task. Section III introduces the proposed disentangled semantic space and describes the overall zero-shot recognition framework built upon it. Section IV details the TSDN architecture. Section V reports experimental results and analysis that validate the feasibility and advantages of the method. Finally, Section VI concludes the paper. II. M ATHEMATICAL MODEL 
+
+A. Composite Modulation Primer 
+
+For concreteness, we consider a two-layer CM scheme similar to that in [30], where the signal is formed by an inner and an outer modulation layer. The inner-layer modulation is primarily used for communication, whereas the outer-layer modulation is designed for sensing. Fig. 2 illustrates the signal generation flow, and Fig. 3 compares the time-domain waveforms and time-frequency spectrograms of pure inner-layer, pure outer-layer, and CM signals. For the inner layer, CM systems commonly adopt digital amplitude-phase modulation, expressed as 
+
+sin (t) = A
+
+> Nin −1
+
+X
+
+> n=0
+
+h(t − nT in ) · an · exp ( jϕ n)= ( aI,n + ja Q,n ) · h(t − nT in )
+
+, (1) where A is the amplitude scaling factor, Tin the symbol dura-tion, Nin the number of symbols, an and ϕn the amplitude and phase for the n-th symbol determined by modulation order M
+
+(ϕn ∈ { 0, 2π/M, . . . , 2π}, an from a discrete constellation), so aI,n , a Q,n ∈ [±A, ±3A, . . . , ±(2 √M − 1) A]. hin (t) is a shaping filter, 
+
+hin (t) = sin ( πt/T h)
+
+πt/T h
+
+· cos ( απt/T h)1 − (2 αt/T h)2 , (2) where α and Th are the roll-off factor and cut-off time, respectively. The outer-layer modulation employs frequency-modulated waveforms, whose instantaneous phase varies according to a modulation function φ(t) that encodes either digital informa-tion or analog sensing parameters, written as 
+
+sout (t) = g(t) · exp ( j2πf ct + jφ (t)) , (3) where fc is the carrier frequency. g(t) denotes the envelope function, taking the form of rect( t/T p) for pulsed waveforms and unity otherwise. φ(t) is the phase modulation function that fully characterizes the specific scheme adopted. For instance, in M-ary frequency shift keying (MFSK), data symbols bn are mapped onto discrete frequency offsets, yielding 
+
+φMFSK (t) = 2 πf sep Nout X
+
+> n=1
+
+bn h(t − nT out ), (4) where fsep is the frequency separation between adjacent tones, 
+
+Tout is the symbol duration, and Nout is the number of outer-layer symbols. In linear frequency modulation (LFM), also known as chirp, the phase varies quadratically in time to produce a continuous sweep across bandwidth B over pulse duration Tp, expressed as 
+
+φLFM (t) = πkt 2, (5) with chirp rate k = B/T p and gLFM (t) = rect( t/T p).The resulting time–bandwidth product Tp · B enables high range resolution via pulse compression without demanding excessive peak power, making LFM particularly attractive for radar and joint sensing systems. Minimum shift keying (MSK) and Gaussian-filtered MSK (GMSK) extend this idea into the digital domain by imposing a continuous-phase constraint. The phase function integrates the symbol-weighted pulse train rather than switching abruptly between frequencies, i.e., 
+
+φMSK (t) = π
+
+2Tout 
+
+Z t
+
+> 0
+
+X
+
+> n
+
+bn h(τ − nT out ) dτ, (6) and GMSK further smooths φMSK (t) through a Gaussian pre-modulation filter to suppress spectral sidelobes. The CM signal is synthesized by multiplying the inner-layer complex baseband signal with the outer-layer signal, and thus admits a compact unified form, expressed as 
+
+sCM (t) = sin (t) · sout (t). (7) Assuming N is the number of sampling points, the CM signal can be represented as sCM = [ sCM (1) , s CM (2) , . . . , s CM (N )] ,
+
+sin = [sin (1) , s in (2) , . . . , s in (N )] , and sout =[sout (1) , s out (2) , . . . , s out (N )] . According to Eq. (7), it can be inferred that the CM signals can be expressed as the product of the inner-layer modulation and the outer-layer modulation, given by 
+
+sCM = sin ⊙ sout , (8) where ⊙ denotes the element-wise product operation. JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 4
+
+(a) BPSK (b) LFM (c) BPSK-LFM 
+
+(d) BPSK (e) LFM (f) BPSK-LFM  
+
+> Fig. 3. Time-domain waveforms (top row) and time-frequency spectrograms (bottom row) of CM signals illustrate how the inner-layer symbols ride on the outer-layer chirp structure. (a),(d) Pure inner-layer modulation (BPSK). (b),(d) Pure outer-layer modulation (LFM). (c),(f) Composite modulation (BPSK-LFM).
+
+B. Imperfection Factors 
+
+In practice, the received signal deviates from the ideal CM waveform due to transmitter hardware non-idealities, multipath fading, and additive noise. We therefore adopt a three-stage observation model, expressed as 
+
+
+
+srx (n) = [ h ∗ sUIM ]( n)
+
+| {z }
+
+> (I) fading
+
++ w(n)
+
+| {z } 
+
+> (II) noise
+
+sUIM (n) = sCM (n) · ∆s(n)
+
+| {z }
+
+> (III) hardware UIM
+
+, (9) where ∗ denotes convolution, h(n) is the channel response, 
+
+w(n) ∼ CN (0 , σ 2
+
+> w
+
+) is additive white Gaussian noise (AWGN), 
+
+sCM (n) is the ideal CM signal, and ∆s(n) aggregates all transmitter-side unintentional modulations (UIM). 
+
+1) Hardware Imperfection: Although an exact closed-form expression for aggregate hardware non-idealities is generally intractable, the dominant effects can be decomposed into unintentional modulations of amplitude, frequency, and phase [31]. Consequently, the hardware-impaired signal admits the compact factorization, written as 
+
+sUIM (n) = sCM (n) ·  1 + ∆ An
+
+ ej∆ωnn ej∆φn
+
+| {z }
+
+∆s(n)
+
+, (10) where ∆An, ∆ωn, and ∆φn denote the amplitude, frequency, and phase UIM components, respectively. Thus all transmitter imperfections collapse into a multiplicative distortion ∆s(n)
+
+acting pointwise on sCM (n).Three primary sources contribute to ∆s(n). First, IQ im-balance arising from imperfect matching between I and Q branches introduces amplitude mismatch α and phase error 
+
+ϕ,
+
+sIQ (n) =(1 + α) xreal (n) cos(2 πf cn + ϕ)
+
+− j x imag (n) sin(2 πf cn) , (11) affecting ∆An and ∆φn in (10). Second, high-frequency oscil-lators (HFO) exhibit random phase fluctuations, i.e., oscillator phase noise, which manifest as an undesired multiplicative term on the signal. Under the widely-used sinusoidal model [32], Bessel expansion generates sidebands at ±fos around the carrier. To first order, the oscillator-distorted signal is 
+
+sos (n) ≈ x(n) + j λ
+
+> 2
+
+x(n)ej2πf os n − x(n)e−j2πf os n, (12) where λ ≪ 1 is the modulation index and fos the offset frequency, contributing to ∆ωn and ∆φn in (10). Third, power amplifier (PA) nonlinearity operating near saturation primarily manifests as amplitude-to-amplitude distortion, i.e., AM-AM, and can be modeled via Taylor series [33]: 
+
+sPA (n) = 
+
+> ∞
+
+X
+
+> i=1
+
+gi[x(n)] i, (13) where higher-order terms ( i ≥ 2) affect ∆An.
+
+2) Channel Effect: The hardware-impaired signal prop-agates through a frequency-selective channel, yielding the tapped-delay-line model with L paths, 
+
+sMP (n) = 
+
+> L
+
+X
+
+> l=1
+
+al sUIM (n − nl). (14) where al and nl are the path gain and the delay of the l-th path, respectively, with l = 1 , 2, . . . , L .JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 5
+
+Substituting the hardware imperfection and the channel effect into (9) yields the complete observation model 
+
+srx (n) = 
+
+> L
+
+X
+
+> l=1
+
+al
+
+sCM (n − nl) · ∆s(n − nl) + w(n), (15) which serves as input to identification algorithms. 
+
+C. Zero-shot ACMR 
+
+ACMR aims to identify the modulation scheme from a received signal, expressed as 
+
+F : srx −→ yCM , (16) where yCM denotes the CM label which decomposes naturally into an inner-layer and an outer-layer type, 
+
+yCM = ( yin , y out ) ∈ Y in × Y out , (17) where Yin and Yout are the sets of candidate inner-layer and outer-layer modulation types. The total number of possible CM classes grows as |Y in | · |Y out |, which quickly becomes prohibitive for exhaustive training. This gives rise to a zero-shot ACMR problem. Formally, let DKN = {(srx , y ) | y ∈ Y KN } denote the training set and DUN = {(srx , y ) | y ∈ Y UN } the test set, where YKN ∩ Y UN = ∅ and both are subsets of Yin × Y out .The zero-shot ACMR task then seeks a mapping 
+
+FZS : srx −→ (yin , y out ), (yin , y out ) ∈ Y UN , (18) that leverages only the semantic relationships between known and unknown classes. This problem is fundamentally distinct from conventional combinatorial generalization. In tasks such as multi-label classification or compositional vision, the constituent attributes can typically be observed independently. For example, color and shape are recognized separately and then combined into a prediction. In CM, however, the inner and outer layers are not independently observable in the waveform domain. As revealed in Fig. 3, the two layers interact through pointwise multiplication, producing a single entangled waveform from from which neither yin nor yout can be directly read off. Consequently, zero-shot ACMR is a waveform-level zero-shot learning problem where the raw observation fuses both sources into an inseparable mixture. III. Z ERO -SHOT LEARNING FRAMEWORK BASED ON 
+
+DISENTANGLED SEMANTIC SPACE 
+
+A straightforward baseline, illustrated in Fig. 4(a), treats each CM type as an atomic class and performs standard zero-shot classification in a global semantic space. Let the received signal be embedded via a feature extractor R(·) and matched against prototypes of the target CM labels, written as 
+
+ˆyCM = arg max 
+
+> yCM ∈Y UN
+
+R(srx ), φ(yCM ) , (19) where φ(y) denotes the prototype embedding of label yCM .
+
+·, · denotes the inner product, which measures the simi-larity between the received signal feature and a candidate label prototype. This formulation ignores the compositional 
+
+(a) 
+
+(b)  
+
+> Fig. 4. Comparison of zero-shot learning frameworks. (a) Traditional unified semantic space: each CM type as an independent class. (b) Proposed disen-tangled semantic space: each CM type as a disentanglement multi-task.
+
+structure yCM = (yin , y out ) and therefore offers limited extrapolation to unseen combinations of inner-layer and outer-layer modulations. To overcome this limitation, we propose a disentangled semantic space in which the inner-layer and outer-layer mod-ulations are represented, matched, and classified indepen-dently. The core insight is that the multiplicative coupling 
+
+sCM (t) = sin (t) · sout (t), although nonlinear in the waveform domain, becomes additive after a logarithmic projection onto the tangent space of the signal manifold. Once linearized, the two modulation components can be separated by a learnable geometric transformation, after which each is independently matched against its own layer-wise prototypes. This design yields a three-stage framework, illustrated in Fig. 4(b): (i) Tangent-space mapping : project the received signal onto a tangent space where the multiplicative coupling becomes additive (Section III-A). (ii) Learnable geometric dis-entanglement : separate the additively combined components via an input-dependent affine transformation whose parameters are predicted from the observed signal (Section III-B). (iii) Compositional semantic matching : classify each disentangled component independently against layer-wise semantic proto-types and compose the final CM label (Section III-C). 
+
+A. Tangent-Space Mapping 
+
+The main obstacle to component separation is the nonlinear multiplicative coupling sCM (t) = sin (t) · sout (t). Rather than addressing this coupling directly, we exploit the logarithmic homomorphism log : ( R+, ×) → (R, +) to transform products into sums. To accommodate the additive noise and channel effects in the full received model (15), we first isolate the additive perturbations into a composite distortion factor, 
+
+η(n) ≜
+
+> L
+
+X
+
+> l=1
+
+al
+
+sCM (n − nl) · ∆s(n − nl) + w(n)
+
+sCM (n) · ∆s(n) , (20) JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 6
+
+which yields the compact factorization srx (n) = sCM (n) ·
+
+∆s(n) · η(n). Applying the element-wise logarithmic map 
+
+T (·) = log( ·) produces the linearized scalar decomposition: 
+
+x(n) = xCM (n) + x∆(n) + ˜ n(n), (21) where x(n) = T (srx (n)) , xCM (n) = T (sCM (n)) , x∆(n) = 
+
+T (∆ s(n)) , and ˜n(n) = T (η(n)) . Collecting N samples into column vectors gives the additive representation, 
+
+x = xCM + x∆ + ˜ n. (22) This linearization admits a precise geometric interpretation. The space of strictly positive-valued waveforms forms a Lie group under element-wise multiplication, with the all-ones vector as the identity element. The operator T (·) corresponds to the inverse exponential map at this identity [34], projecting signals from the curved multiplicative manifold onto its flat tangent space. While the projection does not automatically re-solve the blind source separation problem, it globally converts the nonlinear group operation into standard vector addition, providing a rigorous geometric foundation for the subsequent parametric separation. 
+
+B. Learnable Geometric Disentanglement 
+
+In the tangent space, the signal components are additively superimposed as in (22). The remaining objective is to isolate the CM component xCM from the nuisance terms x∆ and 
+
+˜n. Although this recovery is inherently ill-posed without explicit prior constraints, we show that the hypothesis class of input-dependent affine transformations possesses sufficient expressive capacity to encapsulate the exact solution. 
+
+Proposition 1 (Affine Disentanglement Sufficiency) . For any composite tangent-space representation x = xCM + x∆ +˜n, there exists an input-dependent affine transformation that perfectly isolates xCM :
+
+x 1 Θ(x) = cθ xCM , (23) 
+
+where Θ(x) ∈ C2×N is the sample-specific parameter matrix and cθ > 0 is a scalar scaling constant. Proof. Partition Θ(x) = 
+
+Ab
+
+
+
+with A ∈ C1×N and b ∈
+
+C1×N , so that (23) reduces to xA + b. Setting A∗ = cθ I
+
+and b∗ = −cθ (x∆ + ˜ n) and substituting x = xCM + x∆ + ˜ n
+
+yields: 
+
+xA ∗ +b∗ = cθ (xCM +x∆ + ˜ n)−cθ (x∆ + ˜ n) = cθ xCM , (24) which establishes the assertion. Proposition 1 is an existence result: it guarantees that the affine model class is rich enough to contain the ideal disentangling operator, but does not provide a closed-form solution, since the oracle parameters depend on the unobserv-able components x∆ and ˜n. We therefore cast the parameter generation as a learnable task, i.e., 
+
+Θ(x) = TΦ(x), (25) where TΦ is a parametric mapping optimized end-to-end from data. Rather than hand-crafting separation filters, the network learns to predict input-dependent affine parameters that ap-proximate the ideal disentangling transform, leveraging the implicit regularization of the neural architecture. The specific architectural realization of TΦ is deferred to Section IV. 
+
+C. Compositional Semantic Matching 
+
+The tangent-space mapping and geometric disentanglement established above produce layer-wise feature representations from the entangled waveform. We now construct the semantic space against which these features are matched, completing the framework. Given the tangent-space representation x, the feature extractor RΦ applies the learned disentangling trans-form and produces two layer-wise feature vectors, expressed as Fin Fout 
+
+ = RΦ(x), (26) where Fin , Fout ∈ Rd encode the characteristics of the inner and outer modulation components, respectively. Let Yin and Yout denote the candidate inner-layer and outer-layer modulation types, with the full CM label space 
+
+YCM ⊆ Y in × Y out partitioned into seen classes YsCM and unseen classes YuCM = YCM \ Y sCM . Unlike the unified semantic space (19) that assigns a single prototype to each composite label, we construct a disentangled semantic space comprising two independent learnable prototype sets. Each inner-layer type yin ∈ Y in is associated with a trainable proto-type ψin (yin ) ∈ Rd, while each outer-layer type yout ∈ Y out 
+
+is ψout (yout ) ∈ Rd. Classification is performed independently for each layer via nearest-prototype matching, expressed as 
+
+
+
+ˆyin = arg max 
+
+> yin ∈Y in
+
+Fin , ψ in (yin )
+
+ˆyout = arg max 
+
+> yout ∈Y out
+
+Fout , ψ out (yout ) . (27) The final prediction is the composite label ˆyCM = (ˆ yin , ˆyout ).This disentangled semantic space provides two essential properties for zero-shot generalization. (1) Compositionality: since each layer’s prediction depends solely on its own pro-totype set, any combination (yin , y out ) whose individual con-stituents have appeared in the training set can be recognized at test time without dedicated training samples. (2) Scalability: incorporating a new modulation type into either layer requires only registering its prototype, with no retraining over the expanded label space. Both properties stem directly from the factored structure of the semantic space and the preceding disentanglement, which together convert the waveform-level zero-shot problem identified in Section II-C into two standard single-layer recognition tasks. IV. M ETHOD FOR ZERO -SHOT ACMR 
+
+A. Overview 
+
+We propose the practical network TSDN with a symmetric dual-branch architecture (Fig. 5), containing one branch for inner-layer modulation recognition and the other one for outer-layer modulation. In each branch, the input s is logarithmically mapped to tangent space, then processed by an STN to adaptively decompose linear components. A one-dimensional convolutional neural network (1D-CNN) backbone extracts JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 7 
+
+> Fig. 5. Architecture of the proposed TSDN for zero-shot automatic composite modulation recognition based on tangent space disentanglement.
+
+features, followed by a classification layer for modulation pre-diction. This dual-branch design disentangles the two layers, enhancing zero-shot recognition accuracy and robustness. 
+
+B. Spatial Transformer Network 
+
+In TSDN, the STN is employed to learn the linear align-ment parameters for geometric disentanglement [35]. Unlike the idealized construction in Proposition 1, the STN learns the transformation matrices Θin and Θout directly from the input data via end-to-end training, using only class labels as supervision. Formally, 
+
+( xin = Tin (x) = [ x 1] Θin 
+
+xout = Tout (x) = [ x 1] Θout 
+
+. (28) The STN module, adapted to temporal signal processing, offers low computational overhead and seamless integration with convolutional backbones. By actively aligning the input signals prior to feature extraction, it facilitates more discriminative learning for both inner-layer and outer-layer modulations. 
+
+C. Feature Extractor 
+
+The two sequences generated by the STN transformation correspond to the inner-layer and outer-layer modulated sig-nals, respectively. They are directly input into a standalone 1D-CNN. As the backbone feature extraction module, the 1D-CNN effectively captures local temporal dependencies with low computational overhead. Furthermore, its hierarchical structure allows for the extraction of semantically meaningful features across multiple temporal scales. The proposed backbone employs a symmetric dual-branch architecture to independently process the decomposed input signals xin and xout in parallel. Each branch consists of identical feature extraction modules comprising cascaded 1D convolutional layers followed by linear projection layers. Specifically, the input signal xin ∈ RN ×D is fed into the first branch, while xout ∈ RN ×D is processed through the second branch, where N represents the temporal sequence length and 
+
+D = 2 denotes the input feature dimension. The feature extraction process for each branch can be formulated as 
+
+ Fin = Eθin (xin ) = Linear(GAP(Conv1D( xin ))) 
+
+Fout = Eθout (xout ) = Linear(GAP(Conv1D( xout ))) ,
+
+(29) where fθin (·) and fθout (·) represent feature extractors with parameters θin and θout . Conv1D (·) denotes the cascaded convolutional operations. GAP (·) is the global average pooling operation, and Linear (·) represents the linear transformation. This process produces high-level feature embeddings Fin ∈
+
+Rd, Fout ∈ Rd, where d is the output feature dimension. Subsequently, individual classification heads map these fea-ture representations to their corresponding label spaces 
+
+ zin = softmax( Win Fin + bin )
+
+zout = softmax( Wout Fout + bout ) , (30) where Win ∈ RCin ×d, Wout ∈ RCout ×d are the projection matrices, bin ∈ RCin , bout ∈ RCout are the bias vectors, and 
+
+Cin and Cout are the number of inner-layer and outer-layer modulation classes. zin and zout are the probability vectors for the inner-layer and outer-layer modulation schemes. ˆyin =arg max( zin ) and ˆyout = arg max( zout ) are the predicted labels for the inner-layer and outer-layer modulation types. This symmetric design ensures consistent feature extraction across both signal components while maintaining computa-tional efficiency and enabling independent optimization of each branch during training. JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 8
+
+D. Loss Function 
+
+To optimize TSDN, we design a composite loss function that integrates three components, jointly ensuring robust clas-sification, compact feature embedding, and effective subspace disentanglement: 
+
+L = λ1L1 + λ2L2 + λ3L3, (31) where L1, L2, and L3 denote cross-entropy loss, center loss, and difference loss, respectively. The weights λ1, λ2, and λ3
+
+are hyperparameters that balance the contributions of their corresponding loss terms. The first component, denoted as L1, is the cross-entropy loss. This function measures the discrepancy between the predicted probability distributions of the two branches, which correspond to the inner-layer and outer-layer modulation types, and their respective ground-truth labels [36]. Since we lever-age a multi-label strategy for the inner-layer and outer-layer modulation, we have 
+
+L1 = −
+
+> |Y in |
+
+X
+
+> i=1
+
+zi 
+
+> in
+
+log(ˆ zi
+
+> in
+
+) −
+
+> |Y out |
+
+X
+
+> i=1
+
+zi 
+
+> out
+
+log(ˆ zi
+
+> out
+
+), (32) where |Y in | and |Y out | are respectively the total number of inner-layer and outer-layer modulation classes. This term enforces discriminative capability at the classification level. The second loss term L2 is the center loss in order to jointly enforce intra-class compactness in both the inner-layer and outer-layer feature spaces. The center loss for each branch is defined as the mean squared Euclidean distance between features and their corresponding centers. Let F(i) 
+
+> in
+
+∈ Rd and 
+
+F(i) 
+
+> out
+
+∈ Rd denote the inner and outer features of the i-th sample in a mini-batch of size m, with corresponding labels 
+
+y(i) 
+
+> in
+
+and y(i) 
+
+> out
+
+, and the center loss L2 can be expressed as 
+
+L2 = 12
+
+> m
+
+X
+
+> i=1
+
+F(i) 
+
+> in
+
+− cy(i) 
+
+> in
+> in
+> 22
+
++ 12
+
+> m
+
+X
+
+> i=1
+
+F(i) 
+
+> out
+
+− cy(i)
+
+> out
+> out
+> 22
+
+, (33) where cin ∈ Cin ∈ R|Y in |× d and cout ∈ Cout ∈ R|Y out |× d are learnable class centers. Following [37], the class centers are not updated via back-propagation but with an explicit mini-batch moving average. For each branch, the centers are independently updated as 
+
+cin  
+
+> j
+
+← cin  
+
+> j
+
+− lr 2 ·
+
+Pmi=1 δ(y(i) 
+
+> in
+
+= j) cin  
+
+> j
+
+− F(i)
+
+> in
+
+
+
+1 + Pmi=1 δ(y(i) 
+
+> in
+
+= j) , (34) and analogously for cout  
+
+> j
+
+, where δ(·) is the indicator function and lr 2 is the center learning rate. During training, the center vectors are detached from the computational graph, so that gradients from L2 guide only the feature extractors. The third component L3 promotes feature disentanglement across branches by penalizing their cross-correlation. Drawing inspiration from domain separation networks [38], this loss term enforces orthogonality constraints between the feature subspaces of the inner-layer and outer-layer representations. 
+
+L3 = FTin Fout  
+
+> 2F
+
+, (35) where Fin and Fout are the feature matrices from the two branches, and ∥ · ∥ F denotes the Frobenius norm. By minimiz-ing L3, the network explicitly separates the two subspaces, thereby improving feature disentanglement and overall recog-nition performance. V. S IMULATION RESULTS AND ANALYSIS 
+
+A. Design of Experiments 
+
+To thoroughly validate the effectiveness of the proposed TSDN, five targeted experiments were designed. Experiment 1 focuses on visualizing the learned feature representations, thereby highlighting the strengths of the tangent space disen-tanglement framework. Experiments 2 and 3 present ablation studies examining both the overall framework and individual components. Experiment 4 analyzes the model’s robustness in zero-shot settings through performance evaluation with dif-ferent unknown targets, specifically addressing discrimination tasks under high-order modulation schemes and performance across held-out modulation types. Finally, Experiment 5 eval-uates the algorithm under realistic impairments, including AWGN, multipath effects, and hardware imperfections. 
+
+B. Dataset 
+
+Although several open-source AMR datasets have been released recently [39]–[42], they are designed for either single modulation recognition or compound modulation with prede-fined categories, and do not support the controllable evalua-tion of compositional zero-shot generalization. We therefore construct a customized dataset that faithfully follows the CM signal model in Section II and allows systematic holdout of any inner–outer combination. All signals are generated at baseband with a sampling rate of 200 MHz. For inner-layer communication modulations, the symbol rate is 10 Msps; for outer-layer sensing modulations, 2FSK, 4FSK, 8FSK, and MSK use 2 Msps with 5 MHz frequency spacing, while LFM occupies 50 MHz bandwidth. Each CM type contains 5,000 independent samples of 512 points each. The inner-layer set Yin ={BPSK, QPSK, 8PSK, 16QAM, 32QAM, NONE } and the outer-layer set Yout = {LFM, 2FSK, 4FSK, 8FSK, MSK, NONE } jointly define |Y CM | = 25 CM types where YCM = Yin × Y out , together with |Y SM | = 10 
+
+single modulation (SM) types, as shown in Table I. 
+
+C. Training Protocol 
+
+The models were trained with a custom three-stage multi-stage strategy that progressively enhances classification perfor-mance, feature compactness, and branch complementarity. In Stage 1, training used the sum of two cross-entropy losses L1
+
+to establish basic classification capabilities for the two tasks. Upon triggering early stopping monitored on validation loss with a patience of 20, the process automatically advanced to Stage 2, which additionally incorporated center losses to promote intra-class compactness L2. In Stage 3, a difference loss L3 was further added to reduce feature redundancy JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 9              
+
+> TABLE I CM DATASET CONFIGURATION . E ACH CELL CORRESPONDS TO ONE COMPOSITE MODULATION TYPE FORMED BY THE INNER -LAYER (ROW )AND OUTER -LAYER (COLUMN )SCHEME ,YIELDING A TOTAL OF |Y in | × |Y out |= 25 CM CLASSES AND |Y SM |= 10 SM CLASSES .
+
+Inner \Outer LFM 2FSK 4FSK 8FSK MSK NONE 
+
+BPSK BPSK-LFM BPSK-2FSK BPSK-4FSK BPSK-8FSK BPSK-MSK BPSK QPSK QPSK-LFM QPSK-2FSK QPSK-4FSK QPSK-8FSK QPSK-MSK QPSK 8PSK 8PSK-LFM 8PSK-2FSK 8PSK-4FSK 8PSK-8FSK 8PSK-MSK 8PSK 16QAM 16QAM-LFM 16QAM-2FSK 16QAM-4FSK 16QAM-8FSK 16QAM-MSK 16QAM 32QAM 32QAM-LFM 32QAM-2FSK 32QAM-4FSK 32QAM-8FSK 32QAM-MSK 32QAM NONE LFM 2FSK 4FSK 8FSK MSK \
+
+(a) CNN1 (b) CNN2 (c) Resnet (d) DenseNet 
+
+(e) GRU (f) BiGRU (g) ICAMC (h) Proposed  
+
+> Fig. 6. Visualization of semantic features for known signals. The plot includes 25 composite modulation signals and 10 single modulation signals.
+
+between the two branches while preserving discriminative power. All loss components were combined into a single total loss for unified backward propagation across stages. The loss weights were fixed at λ1 = 1 for the first center loss, 
+
+λ2 = 0.002 for the second center loss, and λd = 0.001 
+
+for the difference loss. Training ran for a maximum of 200 epochs with an initial learning rate of 10 −3 and a cosine annealing scheduler. The dataset was randomly partitioned into training, validation, and test sets in an 8:1:1 ratio. Experiments employed a batch size of 128 and a hidden feature dimension of 64. The best model, selected according to validation performance, was saved via checkpoints and loaded for final evaluation to ensure stable and reproducible test results. All implementations were performed in PyTorch 2.5.0 under Python 3.10.0 on Windows 10, using an AMD 16-core CPU at 4.0 GHz and an NVIDIA RTX 4090 GPU. 
+
+D. Experiment 1: Rationality of the Proposed Tangent Space Disentanglement 
+
+This experiment evaluates the quality of the learned seman-tic representations produced by the proposed tangent space disentanglement framework. Since the effectiveness of the compositional zero-shot pipeline in Section III hinges on whether disentangled features form well-structured, layer-wise separable clusters, we visualize the semantic space under a fully supervised setting to isolate feature quality from zero-shot generalization effects. We adopt a closed-set classification scenario covering all 25 CM and 10 SM types defined in Table I. No additive noise is applied in this experiment to focus on the intrinsic sepa-rability of the learned representations. The proposed method is compared against several representative deep learning baselines, containing CNN1 [13], CNN2 [43], MCNet [44], ICAMC [15], ResNet [45], DenseNet [45], GRU [46] and BiGRU [47]. All models are trained under identical conditions with the same optimizer, learning rate schedule, and number of epochs to ensure a fair comparison. JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 10  
+
+> Fig. 7. Scatter plot comparing model performance on known and unknown targets. The x-axis represents performance on known targets, while the y-axis represents performance on unknown targets.
+
+To provide an intuitive assessment of the learned repre-sentations, we project the high-dimensional feature vectors onto a two-dimensional plane using t-distributed stochastic neighbor embedding (t-SNE) [48]. Fig. 6 presents the resulting embeddings for the proposed method and three representative baselines. Several qualitative observations emerge from the visualization. First, the proposed method produces visibly tighter intra-class clusters: samples belonging to the same type are densely concentrated, indicating that the tangent space projection and disentanglement module extract consistent, modulation-specific features. Second, the inter-class separation is substantially wider: distinct CM types form well-separated regions in the embedding space, with minimal overlap between clusters. Third, a notable structural pattern is observed: CM types sharing the same inner-layer modulation (e.g., BPSK-LFM, BPSK-2FSK, BPSK-4FSK, BPSK-8FSK, BPSK-MSK) tend to form sub-clusters within a broader region, reflecting the semantic space follows the physics rule. 
+
+E. Experiment 2: Ablation Study on the Proposed Framework 
+
+This experiment systematically validates three design choices underlying the proposed method: the disentangled semantic space versus traditional semantic space, the dual-branch disentanglement strategy versus alternative multi-task architectures, and the lightweight convolutional backbone ver-sus deeper network architectures. We adopt the one-CM-held-out protocol with BPSK-LFM as the unseen class, i.e., 
+
+YuCM = {(BPSK , LFM )}, and report results under a noise-free setting to isolate the contribution of each design component. 
+
+1) Disentangled Semantic Space vs. Unified Semantic Space: A central claim of this work is that the conventional ZSL paradigm, which maps all classes into a single unified semantic space [49], [50], is ill-suited for CM recognition due to the waveform-level entanglement between modulation layers. To evaluate this claim, we compare the proposed disentangled semantic space against a representative unified-prototype baseline built on a frozen large language model (LLM). Specifically, the baseline employs OPT-6.7B [49] as a text encoder to map natural-language descriptions of each CM type into semantic prototype vectors. Fig. 7 presents the results. The unified-prototype base-line exhibits a sharp degradation in known-class accuracy compared to its supervised counterpart, and nearly fails to recognize the unseen BPSK-LFM combination. We attribute this phenomenon to a semantic gap. The LLM-generated prototypes encode high-level textual semantics that do not correspond to the low-level signal features distinguishing one CM type from another. In contrast, the proposed disentangled semantic space constructs layer-wise prototypes directly in the learned feature domain, inheriting the geometric structure re-vealed in Experiment 1. This eliminates the alignment gap and enables both accurate known-class recognition and effective zero-shot transfer. 
+
+2) Dual-Branch Disentanglement vs. Alternative Multi-Task Architectures: Having established the advantage of the dis-entangled semantic space, we now investigate how the dis-entanglement should be implemented. Since the composite label (yin , y out ) involves two classification tasks, this can naturally be formulated as a multi-task learning problem. We compare the proposed dual-branch architecture against two mainstream alternatives: (1) Factorized classifier [51]: a single shared backbone feeds into one unified classifier head that outputs a joint logit matrix, implicitly modeling inter-task dependencies through weight factorization. (2) Dual-head classifier [52]: a single shared backbone feeds into two independent classifier heads, each producing logits for one modulation layer. The proposed method differs from both by employing two independent feature branches, each dedicated to one modulation layer, followed by layer-specific classifiers. This design is motivated by the physical observation that the inner-layer (amplitude-phase modulation) and outer-layer (frequency modulation) occupy fundamentally different signal characteristics, as established in Section II. Table II reports the accuracy and macro F1-score for both known and unseen modulation types, evaluated at the inner-layer, outer-layer, and composite CM levels. Both the factor-ized and dual-head classifiers achieve competitive performance on known classes, confirming that the multi-task formulation is well-posed. However, they exhibit substantial degradation on the unseen BPSK-LFM type, particularly at the outer-layer level. We attribute this to the shared backbone: when a single feature extractor must simultaneously represent both modulation layers, the learned features form a compromise that captures the dominant patterns of known combinations but fails to generalize to the specific inner–outer pairing absent from training. The proposed dual-branch architecture avoids this bottleneck by learning specialized representations for each layer, yielding superior zero-shot performance while maintaining known-class accuracy. 
+
+3) Backbone Architecture Comparison: The final ablation dimension concerns the choice of neural network backbone. The proposed method employs a lightweight convolutional architecture optimized for the tangent-space representation. To justify this choice, we compare against several widely-used backbones in the AMR literature, as presented in Fig. 8. Table III reports the zero-shot recognition accuracy along-side two complexity metrics, i.e. parameter count (Params) and floating-point operations (FLOPs). While several deeper JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 11 
+
+TABLE II EXPERIMENTAL RESULTS OF DIFFERENT METHODS ON KNOWN AND UNKNOWN DATASETS . A CCURACY AND F1-SCORE (F1) ARE REPORTED FOR EACH LABEL . T HE BEST RESULTS ARE HIGHLIGHTED IN BOLD .
+
+Dataset Method Inner-Layer Outer-Layer CM 
+
+Accuracy F1-score Accuracy F1-score Accuracy F1-score Known  
+
+> Factorized Classifier
+
+0.9913 ± 0.0056 0.9916 ± 0.0054 0.9965 ± 0.0029 0.9963 ± 0.0030 0.9878 ± 0.0082 0.9873 ± 0.0085  
+
+> Dual-head Classifier
+
+0.9909 ± 0.0037 0.9912 ± 0.0035 0.9974 ± 0.0017 0.9973 ± 0.0018 0.9885 ± 0.0037 0.9880 ± 0.0037 
+
+Ours 0.9933 ±0.0026 0.9935 ± 0.0025 0.9991 ± 0.0004 0.9991 ± 0.0004 0.9924 ± 0.0024 0.9922 ± 0.0024 Unknown  
+
+> Factorized Classifier
+
+0.1507 ± 0.6473 0.2077 ± 0.8916 1.0000 ± 0.0000 1.0000 ± 0.0000 0.1507 ± 0.6473 0.2077 ± 0.8916  
+
+> Dual-head Classifier
+
+0.0149 ± 0.0494 0.0289 ± 0.0950 1.0000 ± 0.0000 1.0000 ± 0.0000 0.0149 ± 0.0494 0.0289 ± 0.0950 
+
+Ours 1.0000 ±1.0000 1.0000 ±1.0000 1.0000 ±1.0000 1.0000 ±1.0000 1.0000 ±1.0000 1.0000 ±1.0000 
+
+(a) 
+
+(b) 
+
+Fig. 8. Comparison of different neural network architectures. (a) Performance for known accuracy. (b) Performance for unknown accuracy. 
+
+architectures achieve comparable known-class accuracy, their zero-shot performance is markedly lower, suggesting that over-parameterized backbones tend to overfit to the specific training combinations at the expense of generalization. 
+
+TABLE III COMPARISON OF MODEL COMPLEXITY . L OWER VALUES INDICATE LIGHTER MODELS .Model Params FLOPs Ours 167K 77.4M CNN1 465K 12.9M CNN2 1.03M 163.5M MCNet 1.01M 22.5M ICAMC 1.51M 118.8M ResNet 1.64M 1.38G DenseNet 2.01M 1.76G GRU 399K 155.6M BiGRU 301K 105.3M 
+
+F. Experiment 3: Ablation Study of TSDN Component 
+
+The proposed framework comprises three architectural mod-ules, namely the backbone network, the logarithmic mapping, and the spatial transformer network STN, as well as three loss components L1, L2, and L3. This experiment evaluates the contribution of each component through a systematic ablation study. We adopt the one-CM-held-out protocol with BPSK-LFM as the unseen class at SNR = 8 dB. All results are averaged over three random seeds; both accuracy and macro F1-score are reported for known and unknown classes. The complete ablation results are presented in Table IV. Among the architectural modules, the logarithmic mapping is the most critical: removing it drops the unknown accuracy from 93.52% to 83.51% with a standard deviation of 31.35%, validating the theoretical role of tangent-space projection in Section III. Removing the STN causes a moderate drop at 91.84%, and jointly removing both w/o Log and STN yields accuracy comparable to removing Log alone at 82.36%, con-firming that Log is the dominant factor while the STN provides complementary disentanglement refinement as analyzed in Section III. Among the loss components, L3 is crucial: its removal produces the largest single-component degradation, while further removing L2 yields no significant additional drop, indicating that L3 carries the primary regularization effect on the semantic space. Across all ablations, the full model achieves the highest unknown accuracy of 93.52% with the lowest variance at 3.10%, confirming that every component JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 12                                                                                                                                     
+
+> TABLE IV ABLATION STUDY OF TSDN COMPONENT . BPSK-LFM IS HELD OUT AS THE UNSEEN CLASS AT SNR = 8 DB. A LL METRICS ARE REPORTED AS MEAN ±
+> STD ACROSS THREE RANDOM SEEDS WITH A 95% CONFIDENCE INTERVAL .Variant Modules Loss Known Unknown Backbone Log STN L1L2L3Accuracy Macro-F1 Accuracy F1-score w/o Log ✓–✓✓✓✓0.9562 ±0.0518 0.9543 ±0.0530 0.8351 ±0.3135 0.9066 ±0.1933
+> w/o STN ✓✓–✓✓✓0.9293 ±0.0062 0.9266 ±0.0067 0.9184 ±0.0582 0.9574 ±0.0318
+> w/o Log, STN ✓––✓✓✓0.9318 ±0.0174 0.9291 ±0.0184 0.8236 ±0.0993 0.9029 ±0.0605
+> w/o L3✓✓✓✓✓–0.9472 ±0.0435 0.9451 ±0.0447 0.7790 ±0.3859 0.8703 ±0.2336
+> w/o L2,L3✓✓✓✓––0.9468 ±0.0447 0.9448 ±0.0460 0.7964 ±0.3314 0.8827 ±0.1992
+> Ours ✓✓✓✓✓✓0.9354 ±0.0035 0.9335 ±0.0038 0.9352 ±0.0310 0.9665 ±0.0166
+
+(a) 
+
+(b)  
+
+> Fig. 9. Model performance across high-order modulations with varying unknown items. Dataset 1: BPSK-LFM, Dataset 2: 8PSK-2FSK, and Dataset 3: 128QAM-8FSK.
+
+contributes synergistically to compositional generalization. 
+
+G. Experiment 4: Generalization across Modulation Type 1) Discrimination under High-Order Modulation Schemes: 
+
+The preceding experiments were conducted on a moderate-scale dataset ( 5 × 5 = 25 CM types). This experiment extends the evaluation to a more challenging scenario by introducing high-order QAM schemes and Gaussian-filtered frequency shift keying (GFSK), which produce extremely dense constel-lation diagrams and spectrally overlapping features that are difficult to distinguish from conventional FSK variants. Table V presents the expanded design space, where the inner-layer set grows from 5 to 7 types by adding 64QAM and 128QAM, and the outer-layer set grows from 5 to 6 types by adding GFSK, yielding 42 CM types in total. Three evaluation datasets are constructed by holding out a progressively more challenging CM type as unseen:  
+
+> •
+
+Dataset 1 (D1): BPSK-LFM held out. Both constituent modulations are low-order and well-separated in the feature space, representing the easiest zero-shot scenario.  
+
+> •
+
+Dataset 2 (D2): 8PSK-2FSK held out. The 8PSK is moderately complex, testing whether the disentangled semantic space can generalize across increasing constel-lation density.  
+
+> •
+
+Dataset 3 (D3): 128QAM-8FSK held out. Both the ultra-high-order 128QAM and 8FSK pose significant discrimination challenges, representing the hardest zero-shot scenario. Fig. 9 reports the unknown-class recognition accuracy as a function of the number of convolutional layers in the backbone, evaluated on each dataset at SNR = 8 dB. A consistent trend is observed across all three datasets: a single convolutional layer is insufficient when the dataset contains high-order or spectrally dense modulation types, yielding a pronounced accuracy drop particularly for D3. Increasing the network depth progressively improves performance, with the accuracy curve saturating at three to four layers. This suggests a hierarchical feature learning process: shallow layers capture low-level spectral patterns shared across modulation types, while deeper layers extract the fine-grained distinc-tions necessary to discriminate high-order constellations and closely spaced frequency schemes. The full model with an appropriately deep backbone successfully maintains high zero-shot accuracy even on D3, confirming the scalability of the proposed framework to challenging modulation sets. 
+
+2) Performance Analysis across Held-out Modulation Types: The zero-shot accuracy is expected to vary depending on which CM type is held out as unseen, since different combinations impose different levels of difficulty on the dis-entanglement and classification modules. This sub-experiment conducts a systematic per-CM-type analysis to identify the failure modes and their underlying causes. Fig. 10 presents box plots of the known-class and unknown-class accuracy distributions, where each box aggregates results over all possible held-out CM types for a given backbone depth from 1 to 5. Two observations stand out. First, the JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 13                
+
+> TABLE V EXTENDED CM DATASET WITH HIGH -ORDER MODULATION SCHEMES . I NNER -LAYER SET Yin ={BPSK, QPSK, 8PSK, 16QAM, 32QAM, 64QAM, 128QAM },OUTER -LAYER SET Yout ={LFM, 2FSK, 4FSK, 8FSK, MSK, GFSK },YIELDING 7×6 = 42 CM TYPES .
+
+Inner \Outer LFM 2FSK 4FSK 8FSK MSK GFSK NONE 
+
+BPSK Dataset 1 BPSK-2FSK BPSK-4FSK BPSK-8FSK BPSK-MSK BPSK-GFSK BPSK QPSK QPSK-LFM QPSK-2FSK QPSK-4FSK QPSK-8FSK QPSK-MSK QPSK-GFSK QPSK 8PSK 8PSK-LFM Dataset 2 8PSK-4FSK 8PSK-8FSK 8PSK-MSK 8PSK-GFSK 8PSK 16QAM 16QAM-LFM 16QAM-2FSK 16QAM-4FSK 16QAM-8FSK 16QAM-MSK 16QAM-GFSK 16QAM 32QAM 32QAM-LFM 32QAM-2FSK 32QAM-4FSK 32QAM-8FSK 32QAM-MSK 32QAM-GFSK 32QAM 64QAM 64QAM-LFM 64QAM-2FSK 64QAM-4FSK 64QAM-8FSK 64QAM-MSK 64QAM-GFSK 64QAM 128QAM 128QAM-LFM 128QAM-2FSK 128QAM-4FSK Dataset 3 128QAM-MSK 128QAM-GFSK 128QAM NONE LFM 2FSK 4FSK 8FSK MSK GFSK \
+
+Dataset 1 (low complexity), Dataset 2 (medium complexity), Dataset 3 (high complexity).  
+
+> Fig. 10. Distribution of known-class and unknown-class accuracy across all held-out CM types, evaluated at different backbone depths (1-5 convolutional layers). Each box aggregates results over all possible unseen CM combina-tions.
+
+known-class accuracy remains consistently high across all depths, confirming that the framework does not sacrifice in-distribution performance for zero-shot capability. Second, the unknown-class accuracy exhibits considerable spread at shal-low depths, with the interquartile range narrowing substantially as the backbone deepens. This indicates that shallow networks produce feature representations that are sensitive to which specific combination is held out, some combinations are easy to generalize to while others are not, whereas deeper networks learn more robust and transferable semantic features. At four or more layers, the distribution stabilizes, suggesting that the network has extracted sufficient hierarchical features for reliable compositional generalization. To pinpoint the source of recognition failures, Fig. 11 presents a heatmap of the average accuracy for each layer-wise branch and their fusion, evaluated at a backbone depth of three layers. Each row corresponds to one CM type be-ing held out as unseen. The heatmap reveals three distinct failure modes, where the unknown accuracy drops markedly below the dataset average: For QPSK-LFM and QPSK-MSK, the accuracy drop is concentrated in the inner-layer branch (Branch 1), indicating that the inner-layer disentanglement fails specifically when QPSK is paired with these outer-layer schemes. For 32QAM-MSK, the accuracy drop is concentrated in the outer-layer branch (Branch 2), indicating that the outer-layer disentanglement fails for the MSK component in this combination. These observations suggest that the difficulty of disentanglement depends on the interaction between the two layers: a given inner-layer type may be easily separated from the outer layer in most combinations but becomes problematic when paired with specific outer-layer schemes that produce similar spectral features to other known outer types. Fig. 12 presents the confusion matrices for the two branches in the three problematic cases, providing further insight into the error patterns. For QPSK-LFM held out as unseen, the inner-layer confusion matrix shows that a fraction of known-class 8PSK samples are misclassified as QPSK during training. This feature overlap propagates to the zero-shot setting: 88.8% of QPSK samples are misclassified as 8PSK by Branch 1. The same pattern is even more severe when QPSK-MSK is held out, where 98.6% of QPSK is misclassified as 8PSK. The key difference between these two cases lies in the outer layer: LFM and MSK exhibit lower spectral similarity to the other known MFSK compared to the inner-layer distinction between QPSK and 8PSK. When the outer layer using MSK is harder to disentangle, the residual coupling between layers exacerbates the QPSK-8PSK confusion in Branch 1. This confirms that the quality of outer-layer disentanglement directly affects inner-layer recognition accuracy, consistent with the multiplicative coupling model in Section II. For 32QAM-MSK held out as unseen, the outer-layer confusion matrix reveals a different failure mode: during known-class recognition, a small fraction of MSK samples are confused with NONE. This minor known-class overlap amplifies dramatically in the zero-shot setting, where 66.9% of MSK samples are misclassified as NONE by Branch 2. This finding highlights a critical insight: even a negligible feature ambiguity in the known classes can cascade into severe zero-shot misclassification, underscoring the importance of learning well-separated semantic prototypes for every known modulation type. 
+
+H. Experiment 5: Robustness under Imperfect Factors 1) Robustness to AWGN: We first evaluate performance under additive white Gaussian noise to establish a noise-sensitivity baseline. The SNR is varied from 0 dB to 16 dB in steps of 2 dB, using the one-CM-held-out protocol with BPSK-LFM as the unseen class. JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 14 
+
+(a) Branch 1 (b) Branch 2 (c) Composite  
+
+> Fig. 11. Per-branch accuracy heatmap at backbone depth = 3. Each row corresponds to one CM type held out as unseen. Columns show the accuracy of Branch 1 (inner-layer), Branch 2 (outer-layer), and Composite (CM) prediction. Cells with notably low accuracy indicate challenging disentanglement scenarios.
+
+(a) QPSK-LFM: Branch 1-Known (b) QPSK-MSK: Branch 1-Known (c) 32QAM-MSK: Branch 2-Known 
+
+(d) QPSK-LFM: Branch 1-Unknown (e) QPSK-MSK: Branch 1-Unknown (f) 32QAM-MSK: Branch 2-Unknown  
+
+> Fig. 12. Confusion matrices for the three most challenging held-out cases. (a)(d) Branch 1 when QPSK-LFM is unseen: QPSK-8PSK confusion. (b)(e) Branch 1 when QPSK-MSK is unseen: severe QPSK-8PSK confusion. (c)(f) Branch 2 when 32QAM-MSK is unseen: MSK-NONE confusion.
+
+Fig. 13 presents the known-class and unknown-class accu-racy as a function of SNR for backbone depths of one and two convolutional layers. Two trends are evident. First, the known-class accuracy is largely insensitive to the backbone depth, remaining above 90% even at 0 dB for both configura-tions. Second, the unknown-class accuracy exhibits a strong dependence on depth: the two-layer backbone outperforms the single-layer counterpart by approximately 23 percentage points across the entire SNR range. This gap confirms that deeper networks extract semantic features that are more invari-ant to additive perturbations, which is particularly beneficial for generalizing to unseen combinations. At high SNR ≥ 8
+
+dB, both configurations converge, indicating that the primary benefit of additional depth lies in noise resilience rather than inherent representational capacity. 
+
+2) Robustness under Combined Impairments: We now eval-uate performance under the full impairment model of (15), which integrates additive white Gaussian noise w(n), mul-tipath fading with one multipath component characterized by coefficients a2 and τ2 with a1 = 1 and τ1 = 0 , PA nonlinearity 
+
+sPA (n) = g1x(n) + g2[x(n)] 2 with g1 = 1 and gi = 0 for 
+
+i ≥ 3, oscillator phase noise with parameters λ and fos , and IQ imbalance with parameters α and ϕ. Three severity levels, namely clear , mild , and severe , are defined, with all parameter values listed in Table VI. The SNR is fixed at 12 dB. Fig. 14 shows the known-class and unknown-class accuracy at each severity level. Under mild impairment, the known-class accuracy is slightly lower than under severe impair-JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 15                                           
+
+> Fig. 13. Known-class and unknown-class accuracy versus SNR under pure AWGN, comparing single-layer and two-layer convolutional backbones. BPSK-LFM is held out as the unseen class. TABLE VI PARAMETER SETTINGS FOR THE COMBINED IMPAIRMENT EVALUATION .Level Multipath PA HFO IQ
+> a2τ2g1g2λfos αϕ
+> Clear 00100000Mild 0.03 410.02 0.05 0.02 0.03 5Severe 0.05 810.03 0.10 0.05 0.05 10
+
+ment, but the unknown-class accuracy is higher under mild impairment than under severe impairment. This opposite trend arises from the interaction between impairment strength and feature learning. Under mild impairment, the signal quality is high enough for the network to extract fine-grained features that discriminate known classes. However, these features are affected by subtle distortion patterns in the training data and do not transfer well to unseen combinations. Under severe im-pairment, the dominant distortion masks these subtle patterns, forcing the network to rely on coarser but more robust features. These features generalize better across known classes but have reduced discriminative power for unseen ones. This observa-tion reveals a fundamental trade-off in robust ACMR. Features optimized for known-class accuracy under mild degradation may not support zero-shot generalization, highlighting the need for explicit regularization toward compositional semantic structure. VI. C ONCLUSION AND DISCUSSION 
+
+This paper tackled the zero-shot ACMR problem in ISAC systems, where the combinatorial growth of inner-outer layer modulation pairs renders exhaustive supervised training im-practical and existing methods fail to recognize unseen com-binations. To overcome this bottleneck, we first identified that the multiplicative waveform-level coupling between the two modulation layers can be globally linearized via a logarithmic projection onto the tangent space of the signal manifold. This inspired the design of a disentangled semantic space that factorizes the joint modulation label space into two indepen-dent layer-wise prototype sets. Building on this geometric insight, we established a principled zero-shot framework, which comprises tangent-space mapping, learnable geometric  
+
+> Fig. 14. Known-class and unknown-class accuracy under combined channel and hardware impairments at three severity levels (clear, mild, severe). SNR = 12 dB.
+
+disentanglement, and compositional semantic matching. Then, we proved that input-dependent affine transformations are structurally sufficient to recover the individual modulation components from the additive tangent-space representation. This theoretical framework was then instantiated as TSDN, which realizes the disentangling transform through a spatial transformer network and balances discrimination with cross-domain generalization via a multi-objective loss. Extensive experiments confirmed that the proposed ap-proach successfully generalizes to entirely unseen modulation combinations by leveraging the learned layer-wise seman-tic representations, substantially outperforming both unified-semantic and multi-task baselines while maintaining robust performance under realistic channel fading and hardware im-pairments. More broadly, this work demonstrates that exploit-ing the intrinsic algebraic structure of composite waveforms opens a viable path toward recognition systems that scale gracefully with the expanding modulation landscape of next-generation wireless networks, without requiring retraining for every new combination. Despite the promising results demonstrated by our proposed methodology, four critical challenges remain. These challenges merit careful consideration and suggest avenues for future research. 1) Robustness Analysis and Future Research Avenues: 
+
+In imperfect environments, especially when the SNR drops below 4 dB, the framework exhibits noticeable performance degradation. Increasing network depth can enhance the extraction of semantic features and slow this degradation. However, it does not provide a principled mechanism for extracting semantic invariants from heav-ily distorted signals. A fundamental solution calls for a shift toward physics-empowered machine learning [53], [54]. Embedding deterministic physical laws directly into the neural pipeline imposes strong structural constraints on the learning process, such as wave propagation in-variants or explicit hardware distortion models. These physics-driven constraints act as a powerful regularizer, shrinking the feasible parameter space and guiding the feature extractor to preserve semantic integrity, thereby maintaining robustness even under extreme impairments. JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 16 
+
+2) Limited Scope of Unknown Modulation Recognition: 
+
+Our current framework assumes unknown CM signals are novel combinations of known individual modulation schemes. While this enables effective recognition within the defined parameter space, it limits applicability when either layer uses entirely unknown modulation schemes. A comprehensive knowledge database with an intelligent reasoning framework [55], [56] can address this limita-tion, incorporating a hierarchical modulation taxonomy and using machine learning based inference to identify and classify unseen modulation schemes. 3) Imbalanced Recognition Performance Across Modu-lation Combinations: Our analysis reveals non-uniform recognition performance across different CM signal com-binations. This imbalance is due to training dataset bias, where some modulation schemes are more prevalent, causing feature extractors to perform better on well-represented combinations and worse on underrepresented pairings. To address this, we recommend cost-sensitive learning frameworks that account for class distribution disparities, making misclassification penalties inversely proportional to class frequency [57]. 4) Computational Complexity and Real-Time Implemen-tation Considerations: The sequential nature of inner-layer and outer-layer modulation recognition, along with feature extraction complexity, may cause processing la-tencies that exceed acceptable thresholds for time-critical applications. Since the proposed method already uses a lightweight structure, future work should optimize com-putational efficiency via model pruning [58], quantization [59], and parallel processing [60]. REFERENCES [1] N. C. Luong, X. Lu, D. T. Hoang, D. Niyato, and D. I. Kim, “Radio resource management in joint radar and communication: A comprehen-sive survey,” IEEE Communications Surveys & Tutorials , vol. 23, no. 2, pp. 780–814, 2021. [2] A. Liu, Z. Huang, M. Li, Y. Wan, W. Li, T. X. Han, C. Liu, R. Du, D. K. P. Tan, J. Lu et al. , “A survey on fundamental limits of integrated sensing and communication,” IEEE Communications Surveys & Tutorials , vol. 24, no. 2, pp. 994–1034, 2022. [3] L. Zheng, M. Lops, Y. C. Eldar, and X. Wang, “Radar and communi-cation coexistence: An overview: A review of recent methods,” IEEE Signal Processing Magazine , vol. 36, no. 5, pp. 85–99, 2019. [4] W. Zhou, R. Zhang, G. Chen, and W. Wu, “Integrated sensing and communication waveform design: A survey,” IEEE Open Journal of the Communications Society , vol. 3, pp. 1930–1949, 2022. [5] J. Lei, Y. Li, Z. Wang, Q. Lin, Y.-F. Liu, and Y.-C. Wu, “A unified distributed algorithm for hybrid near-far field activity detection in cell-free massive mimo,” arXiv preprint arXiv:2509.15162 , 2025. [6] A. R. Chiriyath, S. Ragi, H. D. Mittelmann, and D. W. Bliss, “Novel radar waveform optimization for a cooperative radar-communications system,” IEEE Transactions on Aerospace and Electronic Systems ,vol. 55, no. 3, pp. 1160–1173, 2019. [7] J. A. Zhang, F. Liu, C. Masouros, R. W. Heath, Z. Feng, L. Zheng, and A. Petropulu, “An overview of signal processing techniques for joint communication and radar sensing,” IEEE Journal of Selected Topics in Signal Processing , vol. 15, no. 6, pp. 1295–1315, 2021. [8] B. Huang, S. Ahmed, and M.-S. Alouini, “Design of frequency index modulated waveforms for integrated sar and communication on high-altitude platforms (haps),” IEEE Transactions on Communications , 2025. [9] Z. Pan, S. Wang, M. Zhu, and Y. Li, “Automatic waveform recognition of overlapping lpi radar signals based on multi-instance multi-label learning,” IEEE Signal Processing Letters , vol. 27, pp. 1275–1279, 2020. [10] W. Si, C. Wan, and Z. Deng, “Intra-pulse modulation recognition of dual-component radar signals based on deep convolutional neural network,” 
+
+IEEE Communications Letters , vol. 25, no. 10, pp. 3305–3309, 2021. [11] C.-Y. Huan and A. Polydoros, “Likelihood methods for mpsk modulation classification,” IEEE Transactions on Communications , vol. 43, no. 2/3/4, pp. 1493–1504, 1995. [12] M. Bkassiny, Y. Li, and S. K. Jayaweera, “A survey on machine-learning techniques in cognitive radios,” IEEE Communications Surveys & Tutorials , vol. 15, no. 3, pp. 1136–1159, 2012. [13] T. J. O’Shea, J. Corgan, and T. C. Clancy, “Convolutional radio mod-ulation recognition networks,” in Engineering Applications of Neural Networks: 17th International Conference, EANN 2016, Aberdeen, UK, September 2-5, 2016, Proceedings 17 . Springer, 2016, pp. 213–226. [14] N. E. West and T. O’shea, “Deep architectures for modulation recog-nition,” in 2017 IEEE international symposium on dynamic spectrum access networks (DySPAN) . IEEE, 2017, pp. 1–6. [15] A. P. Hermawan, R. R. Ginanjar, D.-S. Kim, and J.-M. Lee, “Cnn-based automatic modulation classification for beyond 5g communications,” 
+
+IEEE Communications Letters , vol. 24, no. 5, pp. 1038–1041, 2020. [16] Y. Liu and Y. Liu, “Modulation recognition with pre-denoising convolu-tional neural network,” Electronics Letters , vol. 56, no. 5, pp. 255–257, 2020. [17] J. Lei, Y. Li, L.-Y. Yung, Y. Leng, Q. Lin, and Y.-C. Wu, “Understanding complex-valued transformer for modulation recognition,” IEEE Wireless Communications Letters , vol. 13, no. 12, pp. 3523–3527, 2024. [18] S. Rajendran, W. Meert, D. Giustiniano, V. Lenders, and S. Pollin, “Deep learning models for wireless signal classification with distributed low-cost spectrum sensors,” IEEE Transactions on Cognitive Communica-tions and Networking , vol. 4, no. 3, pp. 433–445, 2018. [19] Z. Ke and H. Vikalo, “Real-time radio technology and modulation classification via an lstm auto-encoder,” IEEE Transactions on Wireless Communications , vol. 21, no. 1, pp. 370–382, 2021. [20] Z. Zhang, H. Luo, C. Wang, C. Gan, and Y. Xiang, “Automatic modulation classification using cnn-lstm based dual-stream structure,” 
+
+IEEE Transactions on Vehicular Technology , vol. 69, no. 11, pp. 13 521– 13 531, 2020. [21] N. Wang, Y. Liu, L. Ma, Y. Yang, and H. Wang, “Multidimensional cnn-lstm network for automatic modulation classification,” Electronics ,vol. 10, no. 14, p. 1649, 2021. [22] T. N. Sainath, O. Vinyals, A. Senior, and H. Sak, “Convolutional, long short-term memory, fully connected deep neural networks,” in 
+
+2015 IEEE international conference on acoustics, speech and signal processing (ICASSP) . Ieee, 2015, pp. 4580–4584. [23] W. Lijun, H. Yu, Z. Pan, G. Hongfang, and S. Lei, “Modulation recognition of composite modulation signal based on two-fold digital receiver and goodness of fit test,” in 2021 IEEE International Conference on Electronic Technology, Communication and Information (ICETCI) .IEEE, 2021, pp. 433–437. [24] X. Yan, X. Zhong, H.-C. Wu, P. Yang, Q. Wang, and Y. Chen, “Automatic composite-modulation classification using cyclic-paw-print features for cognitive aerospace communications,” IEEE Transactions on Communications , vol. 72, no. 9, pp. 5486–5502, 2024. [25] X. Yan, Y. Chen, X. Zhong, H.-C. Wu, and Q. Wang, “Efficient auto-matic composite-modulation classifier using cyclic-paw-print features,” 
+
+IEEE Communications Letters , vol. 28, no. 3, pp. 652–656, 2024. [26] X. Yan, P. Yang, X. Zhong, Q. Wang, H.-C. Wu, and L. He, “Auto-matic composite-modulation classification using ultra lightweight deep-learning network based on cyclic-paw-print,” IEEE Transactions on Cognitive Communications and Networking , vol. 10, no. 3, pp. 866– 879, 2024. [27] L. Wang, Y. Han, H. Ge, Y. Zhao, and L. Shen, “Modulation recognition of composite signal based on resnet and frequency domain graph,” in 
+
+Journal of Physics: Conference Series , vol. 2025, no. 1. IOP Publishing, 2021, p. 012029. [28] S. Wang, H. Li, X. Zhang, H. Jiang, and L. Shen, “Blind recognition algorithm of multi-carrier composite modulation signal based on multi-dimensional time-frequency superimposed spectrum,” Sensors , vol. 25, no. 13, p. 4007, 2025. [29] F. Li, Z. Yang, B. Huang, and Y. Chen, “Composite radar modulation identification by transfer learning,” in 2021 International Conference on Microwave and Millimeter Wave Technology (ICMMT) . IEEE, 2021, pp. 1–3. [30] C. C. for Space Data Systems (CCSDS et al. , “Radio frequency and modulation systems-part 1 earth stations and space craft,” Recommended standard CCSDS 401.0-B , 2009. JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 17 
+
+[31] Y. Zhao, X. Wang, and Z. Huang, “Concentrate on hardware imperfec-tion via aligning reconstructed states,” IEEE Communications Letters ,vol. 26, no. 12, pp. 2934–2938, 2022. [32] Y.-w. Kim and D.-c. Park, “Prediction of performance loss due to phase noise in digital satellite communication system,” in IST Mobile & Wireless Telecommunications conf. Citeseer, 2002, pp. 575–578. [33] M.-W. Liu and J. F. Doherty, “Specific emitter identification using nonlinear device estimation,” in 2008 IEEE Sarnoff Symposium . IEEE, 2008, pp. 1–5. [34] P.-A. Absil, R. Mahony, and R. Sepulchre, Optimization Algorithms on Matrix Manifolds . Princeton University Press, 2008. [35] M. Jaderberg, K. Simonyan, A. Zisserman, and k. kavukcuoglu, “Spatial transformer networks,” in Advances in Neural Information Processing Systems , C. Cortes, N. Lawrence, D. Lee, M. Sugiyama, and R. Garnett, Eds., vol. 28. Curran Associates, Inc., 2015. [36] A. Mao, M. Mohri, and Y. Zhong, “Cross-entropy loss functions: Theoretical analysis and applications,” in International conference on Machine learning . pmlr, 2023, pp. 23 803–23 828. [37] Y. Wen, K. Zhang, Z. Li, and Y. Qiao, “A discriminative feature learning approach for deep face recognition,” in ECCV , 2016. [38] K. Bousmalis, G. Trigeorgis, N. Silberman, D. Krishnan, and D. Erhan, “Domain separation networks,” in Advances in Neural Information Processing Systems , D. Lee, M. Sugiyama, U. Luxburg, I. Guyon, and R. Garnett, Eds., vol. 29. Curran Associates, Inc., 2016. [39] Y. Zhang, B. Zang, H. Ji, L. Li, S. Li, and L. Chen, “Cognitive radio for satellite tt & c system: A general dataset using software-defined radio,” 
+
+Scientific Data , 2026. [40] K. Tekbıyık, C. Kec ¸eci, A. Ekti, A. G¨ orc ¸in, and G. Kurt, “Hisarmod: A new challenging modulated signals dataset,” IEEE Dataport , 2019. [41] T. J. O’Shea, T. Roy, and T. C. Clancy, “Over-the-air deep learning based radio signal classification,” IEEE Journal of Selected Topics in Signal Processing , vol. 12, no. 1, pp. 168–179, 2018. [42] Z. Huang, A. Pemasiri, S. Denman, C. Fookes, and T. Martin, “Multi-stage learning for radar pulse activity segmentation,” in ICASSP 2024-2024 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) . IEEE, 2024, pp. 7340–7344. [43] K. Tekbıyık, A. R. Ekti, A. G¨ orc ¸in, G. K. Kurt, and C. Kec ¸eci, “Robust and fast automatic modulation classification with cnn under multipath fading channels,” in 2020 IEEE 91st Vehicular Technology Conference (VTC2020-Spring) . IEEE, 2020, pp. 1–6. [44] T. Huynh-The, C.-H. Hua, Q.-V. Pham, and D.-S. Kim, “Mcnet: An efficient cnn architecture for robust automatic modulation classification,” 
+
+IEEE Communications Letters , vol. 24, no. 4, pp. 811–815, 2020. [45] X. Liu, D. Yang, and A. El Gamal, “Deep neural network architectures for modulation classification,” in 2017 51st Asilomar Conference on Signals, Systems, and Computers . IEEE, 2017, pp. 915–919. [46] D. Hong, Z. Zhang, and X. Xu, “Automatic modulation classification using recurrent neural networks,” in 2017 3rd IEEE international conference on computer and communications (ICCC) . IEEE, 2017, pp. 695–700. [47] S. Chang, R. Zhang, K. Ji, S. Huang, and Z. Feng, “A hierarchical classification head based convolutional gated deep neural network for automatic modulation classification,” IEEE Transactions on Wireless Communications , vol. 21, no. 10, pp. 8713–8728, 2022. [48] L. Van der Maaten and G. Hinton, “Visualizing data using t-sne.” Journal of machine learning research , vol. 9, no. 11, 2008. [49] Y. Zhao, X. Wang, S. Cao, and Z. Huang, “Zero-shot automatic modulation recognition using a large vision-language model,” IEEE Transactions on Communications , vol. 73, pp. 15 765–15 782, 2025. [Online]. Available: https://api.semanticscholar.org/CorpusID: 281447064 [50] Y. Dong, X. Jiang, H. Zhou, Y. Lin, and Q. Shi, “Sr2cnn: Zero-shot learning for signal recognition,” IEEE Transactions on Signal Processing , vol. 69, pp. 2316–2329, 2021. [51] Y. Yang and T. M. Hospedales, “Deep multi-task representation learning: A tensor factorisation approach,” in ICLR , 2017. [52] A. Kendall, Y. Gal, and R. Cipolla, “Multi-task learning using uncer-tainty to weigh losses for scene geometry and semantics,” in Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR) , 2018, pp. 7482–7491. [53] E. Zhu, H. Sun, and M. Ji, “Physics-informed generalizable wireless channel modeling with segmentation and deep learning: Fundamen-tals, methodologies, and challenges,” IEEE Wireless Communications ,vol. 31, no. 6, pp. 170–177, 2024. [54] M. A. Mousa, L. Bauer, Z. Yang, U. Singh, A. Deka, and Z. Ja-cob, “Physics-integrated inference for signal recovery in non-gaussian regimes,” arXiv preprint arXiv:2601.18074 , 2026. [55] T. Kojima, S. S. Gu, M. Reid, Y. Matsuo, and Y. Iwasawa, “Large lan-guage models are zero-shot reasoners,” Advances in neural information processing systems , vol. 35, pp. 22 199–22 213, 2022. [56] G.-S. Xie, L. Liu, F. Zhu, F. Zhao, Z. Zhang, Y. Yao, J. Qin, and L. Shao, “Region graph embedding network for zero-shot learning,” in European conference on computer vision . Springer, 2020, pp. 562–580. [57] F. Thabtah, S. Hammoud, F. Kamalov, and A. Gonsalves, “Data imbal-ance in classification: Experimental evaluation,” Information Sciences ,vol. 513, pp. 429–441, 2020. [58] T. Lin, S. U. Stich, L. Barba, D. Dmitriev, and M. Jaggi, “Dynamic model pruning with feedback,” arXiv preprint arXiv:2006.07253 , 2020. [59] A. Kuzmin, M. Nagel, M. Van Baalen, A. Behboodi, and T. Blankevoort, “Pruning vs quantization: Which is better?” Advances in neural infor-mation processing systems , vol. 36, pp. 62 414–62 427, 2023. [60] A. J. Bernstein, “Analysis of programs for parallel processing,” IEEE transactions on electronic computers , no. 5, pp. 757–763, 1966.
