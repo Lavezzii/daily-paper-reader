@@ -1,0 +1,69 @@
+{
+  "label": "2026-07-23",
+  "date": "2026-07-23",
+  "generated_at": "2026-07-23T21:29:12",
+  "count": 4,
+  "papers": [
+    {
+      "paper_id": "202607/23/2607.18640v1-semantic-aware-data-aided-channel-estimation-with-large-language-models-for-mimo-systems",
+      "section": "deep",
+      "title_en": "Semantic-Aware Data-Aided Channel Estimation with Large Language Models for MIMO Systems",
+      "authors": "Sojeong Park, Jaehyun Choi, Hyun Jong Yang",
+      "date": "2026-07-21",
+      "pdf": "https://arxiv.org/pdf/2607.18640v1",
+      "score": "8.0",
+      "evidence": "利用大语言模型进行语义感知的MIMO信道估计，实现可靠符号选择",
+      "tldr": "传统数据辅助信道估计仅依赖物理层统计选择可靠符号，易受误符号影响。本文提出面向MIMO的语义感知框架，利用微调大语言模型（LLM）进行符号选择与纠错：第一层基于语义验证筛选可靠解码符号，第二层通过物理层交叉验证确认LLM纠错符号。理论证明纠错符号比正确解码符号带来更大期望误差减少。仿真表明，所提方案在归一化均方误差和误码率上显著优于传统方案，接近理想估计器性能，展示了语义信息在信道估计中的巨大潜力。",
+      "tags": "query:channel-nn",
+      "abstract_en": "Data-aided channel estimation enhances spectral efficiency by reusing detected symbols as virtual pilots. In this process, selecting only reliable symbols is crucial to prevent misdetected symbols from corrupting the channel estimate. However, conventional methods rely exclusively on physical-layer statistics. Beyond physical-layer information, transmitted payloads possess inherent semantic structures that can be exploited to resolve detection errors. In this paper, we propose a novel semantic-aware channel estimation framework for multiple-input multiple-output (MIMO) systems that utilizes a fine-tuned large language model (LLM) to perform reliable symbol selection and correction based on semantic information. The framework employs a two-layer mechanism: one layer selects reliable decoded symbols through semantic verification, while the other selects accurately LLM-corrected symbols by cross-validating them against the received signal using physical-layer information. We prove that corrected symbols yield a strictly larger expected reduction in estimation error than initially correctly decoded symbols. Extensive simulations demonstrate that the proposed framework significantly outperforms conventional data-aided schemes in both normalized mean squared error and bit error rate, closely approaching the performance of an oracle estimator.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/23/2607.20202v1-jepa-cfm-a-joint-embedding-predictive-architecture-based-channel-foundation-model-for-robust-fluid-antenna-systems",
+      "section": "deep",
+      "title_en": "JEPA-CFM: A Joint Embedding Predictive Architecture-based Channel Foundation Model for Robust Fluid Antenna Systems",
+      "authors": "Yuan Gao, Yiming Liu, Jun Jiang, Jianbo Du, Shunqing Zhang, Xiaoli Chu, Kai-Kit Wong",
+      "date": "2026-07-22",
+      "pdf": "https://arxiv.org/pdf/2607.20202v1",
+      "score": "8.0",
+      "evidence": "用于流体天线系统的JEPA信道基础模型新型架构",
+      "tldr": "流体天线系统(FAS)面临信道信息获取难、外推和定位精度低的问题，主要源于有限孔径内强空间相关性和观测数据稀疏。本文提出基于联合嵌入预测架构的信道基础模型JEPA-CFM，通过预测紧凑特征空间中的抽象结构，结合掩码重建损失、潜在预测损失和切片各向同性高斯正则化，避免表征坍塌并提升鲁棒性。预训练后冻结编码器，附加轻量任务头实现信道外推和无线定位。在DeepMIMO城市场景中，JEPA-CFM显著优于传统掩码自编码器基线，为6G FAS提供了鲁棒解决方案。",
+      "tags": "query:channel-nn",
+      "abstract_en": "Fluid antenna systems (FAS) have emerged as a promising technology for sixth-generation (6G) wireless networks. By allowing antenna elements to move freely within a compact region, FAS can exploit rich spatial diversity without additional hardware. However, acquiring real-time channel state information (CSI), extrapolating channel values to unmeasured antenna ports, and determining accurate user positions remain major obstacles. These challenges stem mainly from strong spatial correlations within the limited aperture and the scarcity of observable data. To overcome these limitations, this paper introduces joint embedding predictive architecture (JEPA)-based channel foundation model (CFM) specifically designed for FAS. The model adopts JEPA to learn versatile representations by extracting high-level latent embeddings of masked or unobserved channel segments. Unlike conventional approaches that attempt pixel-by-pixel reconstruction of raw CSI coefficients, JEPA-CFM focuses on predicting abstract structures in a compact feature space. The pre-training objective combines three complementary loss terms: the standard masked autoencoder reconstruction loss, the JEPA latent prediction loss, and a sliced isotropic Gaussian regularization (SIGReg) term. Together, these components prevent representation collapse and significantly enhance robustness under severe spatial correlation and highly sparse observations. After pre-training, the encoder is frozen, and lightweight task-specific heads are attached: a decoder for channel extrapolation and a global average pooling layer followed by a multi-layer perceptron regression head for wireless positioning. Extensive simulations in the realistic DeepMIMO urban scenario demonstrate that JEPA-CFM substantially outperforms the conventional masked autoencoder baseline in channel extrapolation and wireless positioning.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/23/2607.20378v1-pg-kinn-a-physics-informed-petrov-galerkin-kolmogorov-arnold-network-for-solving-forward-and-inverse-pdes",
+      "section": "deep",
+      "title_en": "PG-KINN: A Physics-Informed Petrov-Galerkin Kolmogorov-Arnold Network for Solving Forward and Inverse PDEs",
+      "authors": "Amirhossein Sadr, Nima Soltani, Vahideh Moghtadaiee, Aida Pakniyat, Dara Rahmati, Saeid Gorgin",
+      "date": "2026-07-22",
+      "pdf": "https://arxiv.org/pdf/2607.20378v1",
+      "score": "8.0",
+      "evidence": "用于偏微分方程的物理信息Kolmogorov-Arnold网络，可应用于通信信道建模",
+      "tldr": "物理信息驱动PDE求解的主流方法是MLP，但其谱偏差和密集参数化限制了准确性与可解释性。KAN通过可学习样条激活缓解了这些问题，但不同PDE损失形式存在局限：强形式需高阶导数且权重难调，能量形式限于自伴算子且在反问题中退化为平凡解，边界积分需已知基本解。本文提出的PG-KINN采用Petrov-Galerkin框架，以KAN作为试验空间、紧支撑分段多项式作为测试空间，并通过Gauss-Legendre积分实现弱形式残差最小化。该方法降低了微分阶数，适用于一般非自伴、非线性和反问题，在裂纹奇异性、应力集中、Neo-Hookean超弹性、异质介质参数识别及复杂几何等基准测试中一致优于MLP和现有KAN方法。该工作确立了KAN试验空间与多项式测试空间的Petrov-Galerkin耦合作为AI计算力学稳健准确的路线。",
+      "tags": "query:channel-nn",
+      "abstract_en": "Physics-informed learning of partial differential equations (PDEs) has been dominated by multilayer perceptrons (MLPs), whose spectral bias and dense parameterization limit both accuracy and interpretability. Kolmogorov Arnold Networks (KANs) mitigate these limitations because their learnable spline activations are structurally aligned with the piecewise-polynomial bases of classical discretizations. However, the way a PDE is cast into a loss functional is as decisive as the choice of approximator: strong-form residual minimization requires high-order derivatives and heavily weighted losses, the energy (Bubnov-Galerkin) form is restricted to self-adjoint operators and, as we show, collapses to a trivial solution for parameter-identification problems, and boundary integral forms require a known fundamental solution. We propose PG-KINN, a physics-informed KAN built on a Petrov-Galerkin formulation in which the trial space is a KAN and the test space is an independent, compactly supported, piecewise-polynomial space evaluated with Gauss-Legendre quadrature. Integration by parts lowers the differentiation order while retaining applicability to general non-self-adjoint, nonlinear, and inverse problems; the localized test functions turn the global residual into a set of element-wise weak residuals with favorable conditioning. On a suite of benchmarks spanning crack singularities, stress concentration, Neo-Hookean hyperelasticity, inverse parameter identification in heterogeneous media, and complex geometries, PG-KINN consistently outperforms legacy MLP baselines and state-of-the-art KAN-based strong/energy/inverse formulations (PIKAN). These results position the Petrov-Galerkin coupling of KAN trial spaces and polynomial test spaces as a robust and accurate route for AI-based computational mechanics.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/23/2607.16455v1-compact-convolutional-neural-networks-for-ai-based-drone-detection-system",
+      "section": "quick",
+      "title_en": "Compact convolutional neural networks for AI-based drone detection system",
+      "authors": "Gábor Farkas, Gábor Fazekas, Karakai Patrik, András Németh, Gábor Farkas",
+      "date": "2026-07-17",
+      "pdf": "https://arxiv.org/pdf/2607.16455v1",
+      "score": "6.0",
+      "evidence": "用于无人机射频信号检测的高效CNN设计",
+      "tldr": "针对第一人称视角无人机在复杂电磁环境中的检测需求，本研究提出基于软件定义无线电的轻量级卷积神经网络检测系统。将射频信号转换为时域光栅图像作为输入，设计多种紧凑模型架构。在约4万张标注图像上测试，并集成到GNU Radio进行实时评估。结果表明，紧凑模型在低计算开销下达到高检测精度，相比频域方法减少了预处理成本。",
+      "tags": "query:channel-nn",
+      "abstract_en": "The increasing use of first-person-view drones in modern conflicts has created a demand for compact and reliable detection systems capable of operating in complex electromagnetic environments. These drones continuously transmit video signals through onboard video transmitters, generating radio-frequency emissions that can be exploited for early detection. This study investigates the use of lightweight convolutional neural networks for automated detection of drone signals captured by a software-defined radio-based electronic warfare framework. Samples are converted into rasterized time-domain images, providing a computationally efficient input representation suitable for embedded systems. Several custom model architectures were designed and benchmarked in terms of accuracy, model size, and inference performance using a dataset containing approximately 40,000 labeled images. In addition to offline testing, the models were integrated into a GNU Radio signal processing chain for real-time evaluation. The results show that compact models can achieve high detection accuracy while maintaining low computational requirements, making them suitable for embedded radio-frequency monitoring applications. Compared with existing spectrogram-based RF detection methods, the proposed approach eliminates frequency-domain preprocessing and achieves comparable accuracy with significantly reduced computational cost.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

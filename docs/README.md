@@ -6,38 +6,34 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-22
-- 运行时间：2026-07-22 21:37:15 UTC
+- 最新运行日期：2026-07-23
+- 运行时间：2026-07-23 21:29:05 UTC
 - 运行状态：成功
-- 本次总论文数：6
-- 精读区：1
-- 速读区：5
+- 本次总论文数：4
+- 精读区：3
+- 速读区：1
 
 ### 今日简报（AI）
-今日精读9分神作：MIMO中继化身深层物理神经网络，功放成激活函数；速读涵盖零样本识别、语义通信与MIMO形式化验证。最值得深挖的是将放大器非线性建模为激活函数，实现物理层与神经网络的深度融合。建议关注如何将硬件特性嵌入AI设计，提升通信系统能效。
-- 详情：[/202607/22/README](/202607/22/README)
+1) 今日精读两篇高分通信论文，速读一篇AI无人机检测论文，共处理文献4篇。  
+2) 最值得关注：大语言模型用于MIMO信道估计、联合嵌入预测架构用于流体天线系统。  
+3) 建议优先阅读这两篇8分论文的模型设计与仿真结果，掌握前沿通信技术思路。
+- 详情：[/202607/23/README](/202607/23/README)
 
 ### 精读区论文标签
-1. [Multi-layer MIMO Relay as Deep Physical Neural Networks: Power Amplifiers as Activation Functions](/202607/22/2607.18354v1-multi-layer-mimo-relay-as-deep-physical-neural-networks-power-amplifiers-as-activation-functions)  
-   标签：评分：9.0/10、query:channel-nn
-   evidence：新颖的物理神经网络架构，使用MIMO中继和功率放大器作为激活函数
+1. [Semantic-Aware Data-Aided Channel Estimation with Large Language Models for MIMO Systems](/202607/23/2607.18640v1-semantic-aware-data-aided-channel-estimation-with-large-language-models-for-mimo-systems)  
+   标签：评分：8.0/10、query:channel-nn
+   evidence：利用大语言模型进行语义感知的MIMO信道估计，实现可靠符号选择
+2. [JEPA-CFM: A Joint Embedding Predictive Architecture-based Channel Foundation Model for Robust Fluid Antenna Systems](/202607/23/2607.20202v1-jepa-cfm-a-joint-embedding-predictive-architecture-based-channel-foundation-model-for-robust-fluid-antenna-systems)  
+   标签：评分：8.0/10、query:channel-nn
+   evidence：用于流体天线系统的JEPA信道基础模型新型架构
+3. [PG-KINN: A Physics-Informed Petrov-Galerkin Kolmogorov-Arnold Network for Solving Forward and Inverse PDEs](/202607/23/2607.20378v1-pg-kinn-a-physics-informed-petrov-galerkin-kolmogorov-arnold-network-for-solving-forward-and-inverse-pdes)  
+   标签：评分：8.0/10、query:channel-nn
+   evidence：用于偏微分方程的物理信息Kolmogorov-Arnold网络，可应用于通信信道建模
 
 ### 速读区论文标签
-1. [Compositional Zero-Shot Recognition based on Tangent Space Disentanglement for Composite Modulation Signals](/202607/22/2607.13463v1-compositional-zero-shot-recognition-based-on-tangent-space-disentanglement-for-composite-modulation-signals)  
-   标签：评分：7.0/10、query:channel-nn
-   evidence：深度学习应用于ISAC系统组合调制信号识别
-2. [A VAE-Driven Multi-Task Satellite-Aided Semantic Communication Framework for 6G-Enabled Connected Autonomous Vehicles](/202607/22/2607.13494v2-a-vae-driven-multi-task-satellite-aided-semantic-communication-framework-for-6g-enabled-connected-autonomous-vehicles)  
-   标签：评分：7.0/10、query:channel-nn
-   evidence：提出基于变分自编码器的多任务语义通信框架用于卫星辅助车联网
-3. [Formal Verification for Deep Learning-based Power Control in Massive MIMO](/202607/22/2607.14500v1-formal-verification-for-deep-learning-based-power-control-in-massive-mimo)  
+1. [Compact convolutional neural networks for AI-based drone detection system](/202607/23/2607.16455v1-compact-convolutional-neural-networks-for-ai-based-drone-detection-system)  
    标签：评分：6.0/10、query:channel-nn
-   evidence：深度学习功率控制的正式验证应用于大规模MIMO
-4. [A new strategy for physics-informed neural networks based on hierarchical collocation point refinement](/202607/22/2607.14665v1-a-new-strategy-for-physics-informed-neural-networks-based-on-hierarchical-collocation-point-refinement)  
-   标签：评分：6.0/10、query:channel-nn
-   evidence：使用分层配点细化的新PINN训练策略；与通信高效PINN相关
-5. [Task-Oriented Communication with Hybrid-Precision Models](/202607/22/2607.16766v1-task-oriented-communication-with-hybrid-precision-models)  
-   标签：评分：6.0/10、query:channel-nn
-   evidence：混合精度模型用于边缘推理通信
+   evidence：用于无人机射频信号检测的高效CNN设计
 
 
 <div class="dpr-home-promo-card">

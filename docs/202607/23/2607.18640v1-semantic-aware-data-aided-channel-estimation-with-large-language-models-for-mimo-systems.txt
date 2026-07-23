@@ -1,0 +1,1033 @@
+Title: Semantic-Aware Data-Aided Channel Estimation with Large Language Models for MIMO Systems
+
+URL Source: https://arxiv.org/pdf/2607.18640v1
+
+Published Time: Wed, 22 Jul 2026 00:24:28 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+> 1
+
+# Semantic-Aware Data-Aided Channel Estimation with Large Language Models for MIMO Systems 
+
+Sojeong Park, Graduate Student Member, IEEE , Jaehyun Choi, and Hyun Jong Yang, Senior Member, IEEE 
+
+Abstract —Data-aided channel estimation enhances spectral efficiency by reusing detected symbols as virtual pilots. In this process, selecting only reliable symbols is crucial to prevent mis-detected symbols from corrupting the channel estimate. However, conventional methods rely exclusively on physical-layer statistics. Beyond physical-layer information, transmitted payloads possess inherent semantic structures that can be exploited to resolve detection errors. In this paper, we propose a novel semantic-aware channel estimation framework for multiple-input multiple-output (MIMO) systems that utilizes a fine-tuned large language model (LLM) to perform reliable symbol selection and correction based on semantic information. The framework employs a two-layer mechanism: one layer selects reliable decoded symbols through semantic verification, while the other selects accurately LLM-corrected symbols by cross-validating them against the received signal using physical-layer information. We prove that corrected symbols yield a strictly larger expected reduction in estimation error than initially correctly decoded symbols. Extensive simulations demonstrate that the proposed framework significantly outperforms conventional data-aided schemes in both normalized mean squared error and bit error rate, closely approaching the performance of an oracle estimator. 
+
+Index Terms —Semantic communication, data-aided channel estimation, channel estimation, pilot, large language model. 
+
+I. I NTRODUCTION 
+
+# LARGE language models (LLMs) are now central to a wide range of AI services, including conversational assistants, coding copilots, and agentic AI applications [2]– [5]. Since LLM inference often exceeds the capacity of edge devices, these services predominantly run on remote servers, with recent work envisioning device-edge-cloud architectures for next-generation networks [6], [7]. In such distributed ar-chitectures, natural language text, such as user prompts, model responses, and inter-agent messages, must be continuously exchanged over wireless networks. Unlike conventional data, this natural language carries rich statistical and contextual structure that conveys semantic meaning beyond the bit level. Such properties align with the research direction of semantic communication, which aims to design wireless systems based on semantic meaning rather than raw bit fidelity [8]–[10]. Various approaches have been proposed for semantic com-munication [11]–[20]. A common approach is the design of 
+
+An earlier version of this paper was presented at the IEEE International Conference on Acoustics, Speech, and Signal Processing (ICASSP), 2026 [1]. Sojeong Park is with the Department of Electrical Engineering, Pohang University of Science and Technology (POSTECH), Republic of Korea (e-mail: sojeong@postech.ac.kr). Jaehyun Choi is with the Department of Electrical and Computer Engineering, Seoul National University, Republic of Korea (email: jhchoi0226@snu.ac.kr). Hyun Jong Yang is with the De-partment of Electrical and Computer Engineering and Institute of New Media and Communications, Seoul National University, Republic of Korea (email: hjyang@snu.ac.kr). ( Corresponding author: Hyun Jong Yang )
+
+deep learning-based source encoders that compress raw inputs into compact representations preserving semantic information, with representative examples spanning text [11], images [12], speech [13], and video [14]. More recent studies use gener-ative models and LLMs as semantic decoders to reconstruct semantically consistent content from compressed or channel-corrupted representations, using priors learned from the source distribution [15]–[17]. Related work has also applied LLMs to channel decoding, using the contextual structure of text payloads to support error correction [18], [19]. These schemes either embed language model priors directly within the channel decoder [18] or apply post-decoding semantic reconstruction with channel-level verification [19]. Channel estimation has also been studied within semantic communication systems. For example, [20] jointly designs a deep learning-based channel estimator and a reinforcement learning-based pilot allocation strategy in a semantic communication framework. However, that approach refines the channel estimate using pilot signals alone without leveraging the semantic information of the payload. More broadly, the use of payload semantics as direct evidence within the channel estimation stage has remained largely unexplored. Beyond semantic communication, LLMs have also been applied to a variety of wireless physical-layer tasks. These include channel prediction [21], beam prediction [22], channel state information (CSI) feedback [23], multi-task physical-layer processing [24], [25], and network-level optimiza-tion [26], [27]. One line of work repurposes an LLM as a sequence model for numerical channel data. For example, [21] fine-tunes a pretrained LLM to forecast future CSI from historical channel sequences. Along the same direction, [22] converts past beam indices and angles of departure into text-like tokens for mmWave beam prediction. Similarly, [23] treats each per-subcarrier CSI vector as a token to reconstruct the compressed CSI. Other studies extend this idea to multiple tasks at once, adapting a single LLM backbone to several channel-associated tasks within a unified framework [24], [25]. Another line of work instead leverages the language and reasoning abilities of LLMs to assist network-level decision making. In this category, LLMs are used to handle tasks such as power allocation, resource allocation, and protocol understanding by interpreting task descriptions provided in natural language [26], [27]. Despite these advances, these approaches rely only on physical-layer information and leave the structure of the transmitted data unexploited. Channel estimation accuracy fundamentally limits the re-liability of multiple-input multiple-output (MIMO) systems, motivating extensive research beyond conventional pilot-based arXiv:2607.18640v1 [eess.SP] 21 Jul 2026 2
+
+estimation. One direction applies deep learning to improve estimation accuracy directly from received signals. For ex-ample, [28] treats the time–frequency channel response as an image and applies super-resolution and denoising networks, and [29] further analyzes such estimators, showing that a ReLU network asymptotically approaches the minimum mean-square error estimator. Data-aided channel estimation offers a complementary approach that reuses the decoded data as additional references, reducing pilot overhead [30], [31]. How-ever, erroneous detected symbols admitted as virtual pilots degrade the channel estimate. Consequently, subsequent work focuses on selecting only the reliable subset [32]–[35]. These approaches implement reliability-based selection in different ways. For instance, [30] iteratively refines the channel estimate by combining preamble, pilot, and soft-decoded data symbols in a turbo loop, and [31] feeds detected data to the estimator within a joint estimation and detection architecture. [32] treats high-reliability data symbols from an iterative detection and decoding scheme as virtual pilots, while [33] exploits the subspace spanned by all received symbols to improve a Gaussian-mixture-model estimator. Recent work has also considered learning-based selection criteria. Reference [34] models reliable symbol selection as a Markov decision process and applies reinforcement learning, while [35] uses a classi-fier trained on denoised received signals to identify reliably detected symbols. In all such methods, however, the selection criterion is derived exclusively from physical-layer statistics. As a result, these methods can only retain the symbols that the detector already decoded correctly, with no mechanism to recover the misdetected ones. To address these limitations, we propose a novel semantic-aware channel estimation framework that actively integrates the semantic information of the text payload utilizing an LLM. At the receiver, channel impairments manifest as typographical errors in the decoded text. These errors can be identified using the surrounding context, enabling the recovery of the corrupted characters. Based on this property, we use an LLM to verify and correct the decoded text. Consequently, this approach shifts the data-aided estimation paradigm from simply selecting reliable physical-layer detections to actively recovering misdetected symbols. The overall procedure of the proposed framework is or-ganized into consecutive steps. First, the base station (BS) obtains an initially decoded text using a conventional pilot-based channel estimate. To address the typographical errors within this text, a fine-tuned LLM deployed at the BS gener-ates a corrected sequence.The LLM operates at the token level, which often results in length mismatches between the original and corrected texts. To resolve this issue, a Needleman-Wunsch (NW) sequence alignment module [36] is applied to establish a strict character-level correspondence. Based on this aligned text, the system constructs a semantic pilot 
+
+through a two-layer selection process. Specifically, Layer 1 identifies reliable decoded symbols by selecting characters that remain unchanged after the LLM correction. Layer 2 then selects accurately LLM-corrected symbols by validating the modifications against the received signal using physical-layer information. Ultimately, the symbols selected from both layers are utilized as additional pilots, combining with the original pilots to refine the channel estimate. Building upon our preliminary conference publication [1] that proposed LLM-based symbol verification for single-input single-output systems, this paper generalizes the framework to MIMO environments. Furthermore, we introduce funda-mental methodological advancements not addressed in the prior work, including active LLM-driven error recovery and sequence alignment. The main contributions of this paper are summarized as follows:  
+
+> •
+
+LLM-assisted framework with correction. Unlike con-ventional methods that only select reliable detections, our framework exploits LLM-based text correction to actively recover misdetected symbols, introducing payload seman-tics as a new source of side information.  
+
+> •
+
+Two-layer selection mechanism. To prevent LLM hallu-cinations from degrading the channel estimate, we intro-duce a two-layer selection mechanism. This framework integrates semantic verification in Layer 1 with physical-layer cross-validation in Layer 2, ensuring that only accurately corrected symbols are employed as additional pilots.  
+
+> •
+
+Sequence alignment for token-level length mismatch. 
+
+We incorporate a NW alignment module to resolve length discrepancies between the initially decoded and LLM-corrected texts. This guarantees a strict character-level correspondence necessary for accurate symbol-level se-lection.  
+
+> •
+
+Theoretical analysis of semantic pilot effectiveness. 
+
+We provide a rigorous mathematical analysis to establish the fundamental advantage of the proposed approach. Specifically, we prove that an LLM-corrected symbol yields a strictly greater expected reduction in estimation error than an initially correctly decoded symbol. The remainder of this paper is organized as follows. Sec-tion II introduces the system model and details the pipeline for semantic-aware channel estimation. Section III presents the proposed framework, including the LLM-based text correction module, the NW alignment procedure, and the two-layer symbol selection mechanism. Section IV provides a theoretical analysis of the semantic pilot to demonstrate the effectiveness of the corrected symbols. Section V details the simulation setup, Section VI reports the simulation results and ablation studies, and Section VII concludes the paper. II. S YSTEM MODEL 
+
+We consider an uplink MIMO system in which a user equip-ment (UE) equipped with Nt transmit antennas communicates with a BS equipped with Nr receive antennas. As illustrated in Fig. 1, the UE transmits a text payload to the BS through a physical channel. At the BS, a pilot-based initial channel estimate is obtained from a known pilot sequence and used to detect the received signal. Due to imperfect channel estimation and additive noise, the initially decoded text typically contains typographical errors. To address these errors, the BS applies an LLM to produce a corrected version of the decoded text. By leveraging the LLM-corrected text, the proposed method 3“I have a question around it.” 
+
+UE 
+
+> Transmi �ed Text Physical Channel
+
+BS  
+
+> Pilot-based Channel Es �ma �on
+> Re fi ned Channel
+> Data-Aided Channel Es �ma �on
+> “I hatd a questyoo awound it.”
+> “I have a question about it.”
+> Decoded Text: Corrected Text: Fine-Tuned LLM
+> Pilot Selec �on with LLM
+> “I have a question abou-t it.” Selected Pilot:
+> ■: Seman �c Pilot
+
+Fig. 1: System model of the proposed semantic-aware data-aided channel estimation with an LLM. identifies reliable symbols in decoded sequence and selects accurately corrected symbols from the LLM output. These symbols, referred to as the semantic pilot, are used together with the original pilot to refine the initial channel estimate via data-aided channel estimation. 
+
+A. Transmission Model 
+
+The UE transmits a text payload to the BS, represented as a character sequence 
+
+t =
+
+h
+
+t(1) , t (2) , . . . , t (M )i
+
+, (1) where t(i) denotes the i-th character and M is the length of the text. Each character t(i) is encoded into a bit sequence via source coding, and the resulting bits are mapped to modulation symbols drawn from the constellation X . The symbol stream is demultiplexed across the Nt transmit antennas, forming the data symbol block Xd ∈ X Nt×Ld , where Ld is the number of data time slots. A pilot block Xp ∈ X Nt×Lp of length Lp
+
+is placed before the data block, giving the overall transmitted signal X = [ Xp, Xd] ∈ X Nt×(Lp+Ld).The corresponding received signal at the BS is written as 
+
+Y = HX + N, (2) where H ∈ CNr×Nt is the MIMO channel matrix between the UE and the BS, and N ∼ CN (0, σ 2I) is additive white Gaussian noise (AWGN). Splitting Y into pilot and data parts gives Y = [ Yp, Yd], where Yp = HX p + Np and 
+
+Yd = HX d + Nd denote the received pilot and data blocks, respectively. 
+
+B. Initial Channel Estimation and Detection 
+
+Using the pilot block (Xp, Yp), the BS obtains an initial channel estimate via the linear minimum mean square error (LMMSE) estimator. The channel estimate is given by 
+
+ˆHp = YpXH
+
+> p
+
+ XpXH 
+
+> p
+
++ σ2INt
+
+−1 . (3) The estimate ˆHp is subsequently used to detect the data symbols using maximum-a-posteriori-probability (MAP) de-tection. Let x1, . . . , xK denote the K = |X | Nt possible per-slot symbol vectors. Under equal priors and Gaussian noise, 
+
+ˆx[n] = arg min  
+
+> k∈{ 1,...,K }
+
+y[n] − ˆHpxk
+
+> 2
+
+, n = 1 , . . . , L d,
+
+(4) where y[n] is the n-th column of Yd. The collection of all de-tected symbol vectors is denoted by ˆXd = [ˆ x[1] , . . . , ˆx[Ld]] ∈X Nt×Ld . The detected symbols are demodulated and source-decoded into the initially decoded text sequence 
+
+ˆt =
+
+hˆt(1) , ˆt(2) , . . . , ˆt(M )i
+
+. (5) In this text sequence ˆt, physical-layer errors typically appear as typographical errors. 
+
+C. LLM-Based Semantic Pilot Selection 
+
+The BS feeds the initially decoded text ˆt into an LLM deployed on the BS, which returns a corrected text sequence 
+
+ˆtLLM =
+
+hˆt(1) LLM , ˆt(2) LLM , . . . , ˆt(M ′)LLM 
+
+i
+
+, (6) where M ′ may differ from M due to tokenization artifacts of the LLM. To resolve this length mismatch and obtain a character-level correspondence between ˆt and ˆtLLM , an alignment function A is applied 
+
+¯t, ¯tLLM = A ˆt, ˆtLLM 
+
+ , (7) which returns two aligned sequences of equal length ¯M
+
+¯t =
+
+h¯t(1) , ¯t(2) , . . . , ¯t( ¯M )i
+
+, (8) 
+
+¯tLLM =
+
+h¯t(1) LLM , ¯t(2) LLM , . . . , ¯t( ¯M )LLM 
+
+i
+
+, (9) where each ¯t(i) and ¯t(i)LLM is either a character or the gap symbol “ −” inserted to compensate for insertions or deletions between ˆt and ˆtLLM . For example, the decoded substring “awound ” corrected by the LLM to “ about ” is aligned as “awound ” and “ abou-t ”, so that matched positions can be compared character by character. Based on the aligned pairs, a semantic pilot selection function S identifies two types of reliable symbols: reliable decoded symbols and reliable LLM-corrected symbols. The selected symbols are written as 
+
+Xs = S(¯ t, ¯tLLM , Y, Xp) . (10) We refer to Xs as the semantic pilot. The detailed design of 
+
+A and S is presented in Section III. 4Stage 1: Pilot-Based Ini �al Es �ma �on Stage 2: LLM-Based Correc �on Stage 3: Seman �c Pilot Selec �on Stage 4: Data-Aided Channel Es �ma �on    
+
+> MAP Detec �on Text Decoding
+> Text Correc �on NW Alignment
+> Layer 1 Seman �c Veri fi ca �on
+> Layer 2 Physical Layer Cross-Valida �on
+> Data-Aided Channel Es �ma �on with Seman �c Pilot Re fi ned Channel Es �mate
+> Pilot-Based LMMSE Channel Es �ma �on
+> Fine-Tuned LLM
+
+Fig. 2: Overall block diagram of the proposed semantic-aware data-aided channel estimation framework. 
+
+D. Data-Aided Channel Estimation 
+
+By combining the semantic pilot Xs and its corresponding received signal Ys with the original pilot block, we refine the channel estimate using the LMMSE estimator as follows 
+
+ˆHLLM =  YpXH 
+
+> p
+
++ YsXH
+
+> s
+
+   XpXH 
+
+> p
+
++ XsXH 
+
+> s
+
++ σ2INt
+
+−1 .
+
+(11) The resulting refined channel estimate ˆHLLM serves as the final output of the proposed framework. III. P ROPOSED FRAMEWORK 
+
+This section presents the detailed design of the proposed framework. The framework consists of three stages: LLM-based text correction of the initially decoded text, sequence alignment to resolve the length mismatch between the decoded and corrected texts, and semantic pilot selection. An overview of the overall pipeline is illustrated in Fig. 2. The remainder of this section describes each stage in detail. 
+
+A. LLM-Based Text Correction 
+
+To mitigate textual corruptions in the initially decoded sequence ˆt, the BS employs an LLM optimized to correct corrupted text. The LLM uses contextual dependencies to identify and correct typographical errors caused by imperfect channel estimation and noise. We adopt the open-weight Qwen3-8B model [37] as the base model, adapting it to this specific error-correction task through the fine-tuning procedure described below. 
+
+1) Prompt Design: The LLM is provided with a task-specific prompt that instructs it to return a corrected version of the decoded text under a substitution-only constraint. As shown in Fig. 3, the prompt supplies the decoded text together with its length, where the placeholder {M} is replaced by the length of ˆt and {Decoded Text } by ˆt.
+
+Prompt Template 
+
+System message: 
+
+You are correcting text corrupted by channel noise. Each character is a printable ASCII character. Noise may substitute characters with incorrect ones. 
+
+User prompt: 
+
+Correct this noise-corrupted text. Substitution only, no insertion or deletion. Output must be exactly {M} characters. Input: {Decoded Text} 
+
+Fig. 3: Prompt template used for LLM-based text correction. 
+
+2) LLM Fine-Tuning: To tailor the LLM for correcting channel-induced typographical errors, we fine-tune it on a training corpus generated from the end-to-end transmission pipeline in Section II. Each training sample pairs a source text with its corresponding decoded output from the pipeline. The corrupted text is utilized as the LLM input, with the original source text serving as the ground-truth target. Generating these samples across multiple signal-to-noise ratio (SNR) levels exposes the LLM to varying error rates and ensures robust performance under various operating conditions. Let u = [ u1, u 2, . . . , u |u|] denote the input token sequence constructed by inserting a corrupted text into the prompt template, and let v = [ v1, v 2, . . . , v |v|] denote the target token sequence, i.e., the tokenized uncorrupted source text. The fine-tuning loss is defined as the token-level cross-entropy applied only to the target tokens, given by 
+
+L = − 1
+
+|v|
+
+> |v|
+
+X
+
+> j=1
+
+log pθ (vj | u, v 1: j−1) , (12) where pθ (·) is the conditional distribution predicted by the LLM and v1: j−1 = [v1, . . . , v j−1] denotes the previously generated target tokens. The trainable parameters θ correspond to the low-rank adapters introduced by LoRA [38], while the remaining pre-trained weights are frozen in quantized form following QLoRA [39]. By excluding the prompt tokens u
+
+from the loss calculation, we ensure the model focuses on generating the corrected text rather than repeating the prompt. 
+
+B. Sequence Alignment via Needleman–Wunsch Algorithm 
+
+This subsection describes the alignment function A intro-duced in Section II-C. LLMs operate on tokens rather than individual characters. Since tokens typically represent entire words, the corrections of LLMs manifest as word-based mod-ifications. These modifications induce a length discrepancy between ˆtLLM and ˆt. In the symbol domain, this mismatch introduces further errors instead of rectifying the initial errors. Therefore, aligning the two sequences is essential to maintain the corrective benefits of the LLM. 5
+
+To achieve this alignment, we adopt the NW algorithm [36], a dynamic programming method that synchronizes the two sequences by inserting gaps to account for any added or removed characters. This process establishes a character-wise mapping that ensures corresponding characters are correctly paired despite the differences in sequence length. The al-gorithm identifies the optimal alignment by maximizing an alignment score, which rewards character matches while pe-nalizing mismatches and gap insertions. Specifically, we utilize an affine gap penalty model that penalizes starting a new gap more strictly than extending a gap. This configuration encourages the algorithm to group gaps together rather than creating multiple separate gaps. This design targets word-level corrections, since replacing a single word can modify multiple consecutive characters. The NW algorithm with affine gap penalty maintains three score matrices. For each position (i, j ), the match/mismatch matrix D, the vertical gap matrix P, and the horizontal gap matrix Q are updated as 
+
+Di,j = si,j + max  Di−1,j −1, P i−1,j −1, Q i−1,j −1
+
+, (13) 
+
+Pi,j = max  Di−1,j + go, P i−1,j + ge
+
+, (14) 
+
+Qi,j = max  Di,j −1 + go, Q i,j −1 + ge
+
+, (15) where si,j is the score for aligning the i-th decoded character with the j-th corrected character, defined as 
+
+si,j =
+
+(
+
+smatch if ˆt(i) = ˆ t(j)LLM ,smis otherwise , (16) with smatch and smis denoting the match reward and mismatch penalty, respectively. The parameters go and ge denote the gap open penalty and gap extend penalty, respectively. The optimal score at position (i, j ) is given by 
+
+Fi,j = max  Di,j , P i,j , Q i,j 
+
+. (17) Intuitively, Di,j represents a diagonal move that aligns ˆt(i)
+
+with ˆt(j)LLM , Pi,j represents a vertical move that inserts a gap in the corrected sequence, and Qi,j represents a horizontal move that inserts a gap in the decoded sequence. After filling the score matrices, the algorithm traces back from the bottom-right corner of the table to reconstruct the optimal alignment. As an example, Fig. 4 illustrates the alignment of the decoded substring “ awound ” and the LLM-corrected sub-string “about ”. Despite the length mismatch, the algo-rithm produces equal-length aligned sequences “ awound ” and “abou-t ” by inserting a gap, maximizing the number of cor-rectly matched character positions. This character-by-character alignment ensures that the subsequent symbol selection step processes correctly matched pairs. 
+
+C. Semantic Pilot Selection 
+
+Given the aligned sequences ¯t and ¯tLLM , the next step is to construct the semantic pilot by selecting reliable symbols from the data block. This subsection describes the selection function 
+
+S defined in Section II-C. The selection is performed through a two-layer mechanism, as illustrated in Fig. 5. Layer 1 identifies : +2 : -1 : -2 : -0.5 
+
+## a b o u t                        
+
+> -2 -2.5 -3 -3.5 -4 20-0.5 -1 -1.5 01-1 -1.5 -2 -0.5 -1 310.5 -1 -1.5 153-1.5 -2 0.5 340-2 -2.5 -3 -3.5 -4
+
+## awoun    
+
+> -2 -2.5 02.5 2-4.5
+
+## d
+
+> Decoded Corrected
+
+## o u n dwao u - tba
+
+> Alignment Result
+
+Fig. 4: An example of the NW algorithm between the decoded substring ‘awound’ and the LLM-corrected substring ‘about’. reliable decoded symbols by examining the semantic agree-ment between the decoded and corrected texts. Layer 2 further exploits LLM corrections to obtain new reference symbols that are unavailable from physical-layer processing alone. Before incorporating LLM-based corrections into the semantic pilot, the proposed method cross-validates each correction using a physical-layer likelihood-ratio test to ensure consistency with the observed channel output. The overall procedure is summarized in Algorithm 1, and an example of the resulting decision classes is illustrated in Fig. 6. 
+
+1) Layer 1 – Semantic Verification: For each character po-sition i in the aligned sequences ¯t and ¯tLLM , the decoded and corrected characters are compared. Since the LLM is trained to correct errors, retaining a character without modification indicates that the character is consistent with its context and has been correctly decoded. Such positions are classified as 
+
+Verified when 
+
+¯t(i) = ¯ t(i)LLM , (18) where the corresponding MAP-detected symbols are subse-quently included in the semantic pilot. Let IV denote the set of all verified positions. The verified symbols and their corresponding received signals are collected as 
+
+XV = {ˆx[n] : n ∈ N i, i ∈ I V} , (19) 
+
+YV = {y[n] : n ∈ N i, i ∈ I V} , (20) where Ni denotes the set of symbol slots associated with position i. These verified symbols, together with the original pilot, are used to compute an intermediate refined channel estimate via the LMMSE estimator as 
+
+ˆHV =  YpXH 
+
+> p
+
++ YVXH
+
+> V
+
+   XpXH 
+
+> p
+
++ XVXH 
+
+> V
+
++ σ2INt
+
+−1 .
+
+(21) This intermediate estimate is used for physical-layer cross-validation. 6Layer 1: Seman �c Veri fi ca �on     
+
+> Character:
+> Layer 2: Physical Layer Cross-Valida �on
+> per with
+> Veri fi ed Corrected Rejected
+> Yes No Yes No
+> Seman �c Pilot
+
+Fig. 5: Flowchart of the proposed two-layer semantic pilot selection mechanism. 
+
+Algorithm 1 Semantic Pilot Selection 
+
+Input: ¯t, ¯tLLM , Xp, Y
+
+Layer 1: Semantic Verification  
+
+> 1:
+
+IV ← { i : ¯ t(i) = ¯ t(i)LLM } 
+
+> 2:
+
+Collect (XV, YV) at positions IV using ˆXd 
+
+> 3:
+
+ˆHV ← LMMSE([ Xp, XV], [Yp, YV]) 
+
+Layer 2: Physical-Layer Cross-Validation  
+
+> 4:
+
+SC ← ∅  
+
+> 5:
+
+for i with ¯t(i)̸ = ¯ t(i)LLM do  
+
+> 6:
+
+for n ∈ N i and a ∈ { 1, . . . , N t} with [ˆ xLLM [n]] a̸ =[ˆ x[n]] a do  
+
+> 7:
+
+Compute d(n,a )ratio via (22)  
+
+> 8:
+
+if d(n,a )ratio < τ d then  
+
+> 9:
+
+SC ← S C ∪ { (n, a )} 
+
+> 10:
+
+end if  
+
+> 11:
+
+end for  
+
+> 12:
+
+end for  
+
+> 13:
+
+xC[n] ← (24), ∀n with ∃ a s.t. (n, a ) ∈ S C 
+
+> 14:
+
+XC ← { xC[n]}, YC ← { y[n]}
+
+Output: Xs ← [XV, XC]
+
+2) Layer 2 – Physical-Layer Cross-Validation: Although LLM modifications can recover transmitted symbols where the MAP detector fails, inaccurate corrections degrade the channel estimation accuracy. Consequently, the system must carefully filter these candidates before use. By cross-validating each corrected symbol against the received signal, the framework ensures reliability. Only the symbols that pass the cross-validation are classified as Corrected and included in the semantic pilot. For a symbol slot n associated with position i, the vector 
+
+ˆxLLM [n] is obtained by re-modulating the LLM-corrected character ¯t(i)LLM . To evaluate this correction, a candidate vec-tor ˜x(n,a ) is constructed by replacing the a-th entry of the MAP-detected vector ˆx[n] with the corresponding entry from 
+
+ˆxLLM [n]. The cross-validation is applied only to entries where the two vectors differ, i.e., [ˆ xLLM [n]] a̸ = [ˆ x[n]] a. Unchanged entries are excluded from this process, as they provide no additional information for channel refinement. For each such entry, we define the residual ratio as 
+
+d(n,a )ratio =
+
+y[n] − ˆHV ˜x(n,a ) 2
+
+y[n] − ˆHV ˆx[n] 2 . (22) The residual ratio d(n,a )ratio quantifies the relative fit of the LLM-corrected symbol to the observed signal y[n] compared to the MAP-detected baseline. This metric serves as a criterion for assessing the validity of each correction, providing a basis for selecting reliable symbols for the semantic pilot set. Each symbol-antenna pair is independently classified as 
+
+(n, a ) ∈
+
+(
+
+SC if [ˆ xLLM [n]] a̸ = [ˆ x[n]] a and d(n,a )ratio < τ d,
+
+SR otherwise ,
+
+(23) where SC and SR denote the sets of accepted and rejected symbol-antenna pairs, respectively. For each symbol slot n that contains at least one accepted entry, a reference vector xC[n]
+
+is constructed by combining the accepted LLM-corrected symbols and the MAP-detected symbols within the same slot. The a-th entry of xC[n] is given by 
+
+[xC[n]] a =
+
+(
+
+[ˆ xLLM [n]] a if (n, a ) ∈ S C,
+
+[ˆ x[n]] a otherwise . (24) The corrected symbols and their corresponding received sig-nals are then collected as 
+
+XC = {xC[n] : ∃ a s.t. (n, a ) ∈ S C} , (25) 
+
+YC = {y[n] : ∃ a s.t. (n, a ) ∈ S C} . (26) The final semantic pilot is then constructed as Xs = [ XV, XC]
+
+with the corresponding received signal Ys = [ YV, YC]. The refined channel estimate ˆHLLM is then obtained from (11) using Xs and Ys.IV. T HEORETICAL ANALYSIS OF THE SEMANTIC PILOT 
+
+In this section, we show that a corrected symbol, initially misdecoded, contributes a strictly larger expected reduction in channel estimation error than a symbol that the MAP detector decodes correctly. This analysis demonstrates the effectiveness of the corrected symbols in Layer 2. 
+
+A. Setup 
+
+Let ˆHp denote the pilot-only estimate and E = ˆHp − H its error. Under the orthogonal pilot XpXH 
+
+> p
+
+= LpINt , substitut-ing Yp = HX p + Np into (3) yields 
+
+E = − σ2
+
+Lp + σ2 H + 1
+
+Lp + σ2 NpXH 
+
+> p
+
+. (27) Since H and Np are independent, the rows of E are i.i.d. zero-mean Gaussian with per-row covariance 
+
+Cp = α INt , (28) 7q u e s t y o o aq u e s t i o n aq u e s t i o n a                              
+
+> Ver Ver Ver Ver Ver Cor Ver Cor Ver Ver
+> woundiboutitbou-ti
+> Rej Ver Ver Gap Rej Ver Ver
+> t.t
+> Ver
+> ..
+> Ver
+
+✔✔✔✔✔✔✔✔✔✔✘✔✔✘✘✔✔✔✔
+
+> III
+> Ver
+
+✔ Ver ✔
+
+> hhh
+> Ver
+
+✔
+
+> aaa
+> Ver
+
+✔
+
+> tvv
+> Cor
+
+✔
+
+> dee
+> Cor
+
+✔ Ver ✔
+
+> aaa
+> Ver
+
+✔ Ver ✔            
+
+> Decoded Text : Corrected Text : NW Algorithm : Decision Class : Pilot Selec �on :
+> Ver : Veri fi ed Pilot Cor : Corrected Pilot Gap : NW Gap Rej : Rejected
+
+Fig. 6: An example of the semantic pilot construction, demonstrating sequence alignment and the resulting decision classes for a sample sentence. where α = σ2/(Lp + σ2). A direct consequence of (27), established in Appendix B, is that the pilot-only estimate ˆHp
+
+and its error E are statistically independent. To measure how the pilot-only channel error interacts with a given data x, we define the realized error alignment as 
+
+R(x; E) = ∥Ex ∥2. (29) The vector Ex represents the discrepancy between the noise-free received signal Hx and its estimate ˆHpx derived from the pilot-only channel. Consequently, R(x; E) quantifies the signal distortion induced by the estimation error along the direction of x.We refer to a correctly decoded symbol as xD and to an initially misdecoded but corrected symbol as xC, and assume both reference types equal the true transmitted symbol. ∆( x)
+
+denotes the expected reduction in ∥ ˆHnew − H∥2 
+
+> F
+
+when x is used as an additional pilot, where ˆHnew is the resulting refined channel estimate. 
+
+B. Per-Symbol Error Reduction 
+
+Lemma 1. For a reference x equal to the true transmitted symbol with ∥x∥2 = Nt,
+
+∆( x) = a ER(x; E) x − b, (30) 
+
+where 
+
+a = 2( Lp + σ2) + Nt
+
+(Lp + σ2 + Nt)2 , b = σ2 Nr Nt
+
+(Lp + σ2 + Nt)2 . (31) 
+
+In particular, ∆( x) is a strictly increasing affine function of 
+
+E[R(x; E) | x].Proof: See Appendix A. Lemma 1 quantifies the improvement of the refined estimate relative to the pilot-only estimate, showing that this im-provement grows monotonically with R(x; E). Intuitively, an additional reference corrects the estimation error only along its own direction. Consequently, a larger error along that direction yields a greater achievable reduction. Since the coefficients 
+
+(a, b ) depend only on ∥x∥2 = Nt, they are common to both reference types, so the entire difference between xD and xC
+
+is determined by their respective values of E[R(x; E)] .
+
+C. Selection Bias of the Initial Detector 
+
+We next show that the two reference types differ precisely in E[R(x; E)] .
+
+Proposition 1. Let xD be a correctly decoded reference and 
+
+xC a corrected reference. The error alignment of a corrected reference is, in expectation, strictly larger than that of a correctly decoded one, 
+
+ER(xD; E) < ER(xC; E). (32) 
+
+Proof: See Appendix B. The advantage in Proposition 1 stems from a selection effect, not from any intrinsic difference between the symbols. Before any detection, R(x; E) follows the same distribution for every transmitted symbol. Therefore, the difference arises solely from how each reference is selected. When the error alignment R(x; E) is large, the channel estimate is heavily distorted along the direction of x, pushing the detector toward a wrong decision. A symbol thus becomes less likely to be de-coded correctly as its R(x; E) grows. As a result, the correctly decoded references xD generally correspond to small error alignments, whereas the initially misdecoded but subsequently corrected references xC arise from large error alignments. The two conditional expectations therefore separate as in (32), which Appendix B formalizes through a correlation inequality. 
+
+D. Main Result 
+
+Theorem 1. The expected NMSE reduction contributed by a single corrected reference exceeds that contributed by a single correctly decoded reference, i.e., 
+
+E[∆( xC)] > E[∆( xD)] . (33) 
+
+Proof: By Lemma 1, ∆( x) is strictly increasing in 
+
+E[R(x; E) | x], and by Proposition 1, E[R(xD; E)] <
+
+E[R(xC; E)] . Combining the two yields the result. Theorem 1 formalizes the fundamental advantage of the semantic pilot. Although both reference types contribute to channel refinement, their impacts differ significantly. A cor-rectly decoded symbol aligns with directions where the ini-tial estimation error is already minimal, resulting in only incremental gains. In contrast, a corrected symbol aligns with directions of substantial estimation error, yielding amore pronounced improvement in estimation accuracy. The proposed framework further improves channel estimation by using corrected symbols. V. S IMULATION SETUP 
+
+We consider a 2 × 2 MIMO system with QPSK modulation, resulting in K = 16 candidate symbol vectors per time 8
+
+slot. The channel H ∈ CNr×Nt is modeled as a frequency-flat Rayleigh fading channel with i.i.d. entries drawn from 
+
+CN (0 , 1) , constant within each transmission frame. The pilot sequence is a Zadoff-Chu sequence of length Lp = 16 . Each character is encoded using 8-bit ASCII. The text corpus is drawn from the Europarl dataset [40], with non-overlapping splits for LLM fine-tuning, validation, and testing. 
+
+A. LLM Configuration 
+
+The base model is Qwen3-8B [37], an 8-billion-parameter open-weight LLM. The model is fine-tuned via QLoRA [39] with 4-bit NormalFloat (NF4) quantization, reducing the model size from 16.4 GB to approximately 4.1 GB while keep-ing only 0.5% of the total parameters trainable through low-rank adapters. The fine-tuning configuration is summarized in Table I, and the hardware specifications are listed in Table II. TABLE I: LLM fine-tuning configuration.                
+
+> Parameter Value Base model Qwen3-8B Quantization NF4 LoRA rank 16 LoRA scaling 32 Trainable parameters ∼42M (0.5%) Training samples 20,000 Validation samples 2,000 Epochs 3Effective batch size 32 Learning rate 2×10 −4
+> LR scheduler Cosine with warmup Decoding Greedy
+
+TABLE II: Hardware specifications.     
+
+> Item Specification GPU NVIDIA GeForce RTX 3090 (24 GB) CPU AMD Ryzen 7 5800X (8-core) System RAM 128 GB DDR4
+
+B. Framework Parameters 
+
+The NW alignment scoring parameters are set to smatch =+2 , smis = −1, go = −2, and ge = −0.5. The d-ratio threshold for Layer 2 cross-validation is set to τd = 2 .
+
+C. Compared Methods 
+
+The following methods are compared in the simulations.  
+
+> •
+
+Pilot Only : This baseline uses the initial channel estimate 
+
+ˆHp from (3) directly for MAP detection without any data-aided refinement.  
+
+> •
+
+Semi-DA RL [34] : This scheme utilizes a reinforcement learning-based data-aided channel estimator. To ensure a fair comparison, the candidate pool for symbol selection includes the entire data block.  
+
+> •
+
+LLM All Corrected : All symbols corrected by the LLM serve as reference symbols for data-aided estimation without applying any alignment or verification.  
+
+> •
+
+Layer 1 w/o NW [1] : This refers to our preliminary work, which applies only Layer 1 semantic verification without the NW alignment module or Layer 2 physical-layer cross-validation.  
+
+> •
+
+Layer 1 w/ NW : This baseline combines Layer 1 se-mantic verification with the NW alignment module while excluding Layer 2 cross-validation.  
+
+> •
+
+MAP Oracle : This benchmark uses only the correctly decoded MAP symbols by assuming perfect knowledge of the decoding results.  
+
+> •
+
+Perfect CSI : The actual channel matrix H is used for detection.  
+
+> •
+
+Proposed : This represents the complete proposed frame-work, integrating NW alignment, Layer 1 semantic verifi-cation, and Layer 2 physical-layer cross-validation using a fine-tuned LLM. 
+
+D. Evaluation Metrics 
+
+We evaluate the proposed framework with two sets of metrics. 
+
+1) Channel estimation and detection performance:  
+
+> •
+
+NMSE : Normalized mean square error of the channel estimate, defined as ∥ ˆH − H∥2 
+
+> F
+
+/∥H∥2 
+
+> F
+
+. 
+
+> •
+
+BER : Bit error rate after MAP detection with the respec-tive channel estimate. 
+
+2) Semantic pilot selection quality:  
+
+> •
+
+Selection Ratio : The proportion of data symbols included in the semantic pilot out of all transmitted data symbols.  
+
+> •
+
+Precision : The proportion of selected semantic pilot symbols that match the true transmitted symbols.  
+
+> •
+
+Detection Rate : The proportion of correctly decoded data symbols that are included in the semantic pilot, measuring the completeness of the selection.  
+
+> •
+
+Layer 2 Contribution : The proportion of semantic pilot symbols that originate from Layer 2 corrections. VI. S IMULATION RESULTS 
+
+A. Channel Estimation and Detection Performance 
+
+Fig. 7 compares the NMSE of the evaluated methods over SNRs of 1–10 dB. The proposed method consistently yields the lowest NMSE, notably surpassing the MAP Oracle, which serves as the ideal benchmark using all correctly decoded symbols as references. This result indicates that the LLM-aided corrections in Layer 2 provide reliable reference in-formation that is unattainable through conventional physical-layer processing. The factors driving this improvement are analyzed in detail in Section VI-B. Among the baseline methods, Layer 1 w/ NW outperforms Layer 1 w/o NW across all tested SNR levels. This confirms that the NW alignment module enhances the reliability of character-level comparison. Additionally, Layer 1 w/o NW consistently outperforms Semi-DA RL. This indicates that semantic-based symbol selection is more effective than physical-layer-based selection in the considered simulation setup. In contrast, the LLM All Cor-rected method exhibits the worst performance, consistently falling below the Pilot-only baseline. This degradation is 9
+
+TABLE III: BER comparison of compared methods. Best result in bold, second-best underlined.                                                                                                         
+
+> Method 1 dB 2 dB 3 dB 4 dB 5 dB 6 dB 7 dB 8 dB 9 dB 10 dB Pilot Only .1412 .1170 .0950 .0751 .0571 .0430 .0318 .0224 .0151 .0106 Semi-DA RL .1403 .1145 .0911 .0711 .0533 .0395 .0285 .0198 .0135 .0093 Layer 1 w/o NW .1406 .1162 .0939 .0736 .0554 .0414 .0301 .0212 .0142 .0098 Layer 1 w/ NW .1359 .1107 .0881 .0688 .0517 .0381 .0278 .0192 .0131 .0091 LLM All Corrected .1376 .1139 .0934 .0740 .0559 .0421 .0327 .0227 .0170 .0111 Proposed .1326 .1078 .0862 .0670 .0505 .0370 .0270 .0190 .0127 .0089
+> MAP Oracle .1324 .1074 .0855 .0671 .0504 .0373 .0273 .0190 .0127 .0090 Perfect CSI .1260 .1035 .0825 .0652 .0489 .0360 .0269 .0186 .0124 .0089 12345678910
+> SNR (dB)
+> -30 -25 -20 -15 -10
+> NMSE (dB)
+> Pilot Only Semi-DA RL LLM All Corrected Layer 1 w/o NW Layer 1 w/ NW MAP Oracle Proposed
+
+Fig. 7: NMSE performance versus SNR for the compared methods. attributed to the inclusion of incorrect corrections and LLM hallucinations when all LLM outputs are utilized without a filtering mechanism. These unreliable symbols contaminate the channel estimate, demonstrating the importance of verifying corrections before incorporating them into the pilot. Table III summarizes the BER results following MAP detection for each channel estimation scheme. The proposed framework outperforms all practical methods across all SNR levels, closely approaching the MAP Oracle and Perfect CSI bounds at high SNRs. These findings confirm that the channel estimation gains observed in the NMSE analysis directly translate into improved detection performance. 
+
+B. Semantic Pilot Selection Analysis 
+
+Fig. 8 compares the pilot selection quality in terms of selection ratio, precision, and detection rate. Fig. 8a shows the selection ratio, which represents the fraction of data symbols used as additional pilot. LLM All Corrected always achieves a selection ratio of 1, as it uses all data symbols without any filtering. MAP Oracle represents the fraction of correctly decoded symbols among all transmitted symbols, which serves as the upper bound for any selection method that relies on decoded symbols. The Proposed method achieves a higher selection ratio than both Layer 1 baselines, owing to the additional symbols contributed by Layer 2. Fig. 8b shows the precision, defined as the fraction of selected pilot symbols that match the ground-truth transmitted symbols. MAP Oracle achieves a precision of 1 by definition. The Layer 1 baselines achieve the highest precision among practical methods, as they accept only positions where the decoded and corrected texts agree, which is inherently a strict criterion. However, as observed in Fig. 8a, this strictness results in a low selection ratio, limiting the number of reference symbols available for channel estimation. Fig. 8c reports the detection rate, which measures the completeness of the selection rather than its reliability. MAP Oracle achieves a detection rate of 1 by definition. LLM All Corrected also exhibits a high detection rate, since using all corrected symbols. However, it does not reach 1 due to occasional LLM correction errors that displace correctly decoded symbols. While Semi-DA RL achieves a higher detection rate than the proposed method at low SNR, it yields an inferior NMSE due to the lower precision shown in Fig. 8b. The Layer 1 baselines yield the lowest detection rates due to their strict selection criteria. This approach ensures high precision but fails to utilize a substantial volume of symbols. The proposed method achieves superior NMSE performance compared to the MAP Oracle despite utilizing fewer reference symbols. This behavior is consistent with Theorem 1, as corrected symbols admitted through Layer 2 provide a greater NMSE reduction than the correctly decoded symbols. Fig. 9 illustrates the semantic pilot composition, with green and blue segments denoting the proportions of pilots selected by Layer 1 and Layer 2, respectively. In the low SNR regime, Layer 2 accounts for up to 18.2% of the pilot symbols. This ratio diminishes at higher SNR levels as improved signal quality reduces the frequency of detection errors. The threshold τd is selected using a hyperparameter tuning set. Table IV reports the effect of τd on Layer 2 performance at 5 dB. As τd increases, more LLM corrections are accepted at the cost of lower precision. The NMSE is minimized at τd = 2 ,which achieves a precision of 70.7% with an acceptance rate of 20.6%. We adopt this value across all SNRs, as it provides robust performance over the tested range. Fig. 10 depicts the distribution of dratio for LLM-corrected symbols evaluated on the 5 dB test set. Symbols are classified as valid if the LLM-corrected version matches the ground-truth transmission and invalid otherwise. Although the two distributions partially overlap, they remain largely distinguish-able, with valid corrections concentrated around low dratio 
+
+values and invalid corrections spread across higher values. This separation confirms that dratio serves as an effective discriminator for filtering out incorrect LLM corrections. With the threshold τd = 2 , the cross-validation achieves a precision 10 1 2 3 4 5 6 7 8 9 10     
+
+> SNR (dB)
+> 00.2 0.4 0.6 0.8 1
+> Selection Ratio
+> MAP Oracle Semi-DA RL LLM All Corrected Layer 1 w/o NW Layer 1 w/ NW Proposed
+
+(a) Selection Ratio 1 2 3 4 5 6 7 8 9 10     
+
+> SNR (dB)
+> 0.4 0.5 0.6 0.7 0.8 0.9 1
+> Precision
+> MAP Oracle Semi-DA RL LLM All Corrected Layer 1 w/o NW Layer 1 w/ NW Proposed
+
+(b) Precision 1 2 3 4 5 6 7 8 9 10     
+
+> SNR (dB)
+> 00.2 0.4 0.6 0.8 1
+> Detection Rate
+> MAP Oracle Semi-DA RL LLM All Corrected Layer 1 w/o NW Layer 1 w/ NW Proposed
+
+(c) Detection Rate 
+
+Fig. 8: Semantic pilot selection quality of the compared methods versus SNR. of 78.7% among the accepted symbols at this SNR level. 
+
+C. Effect of Fine-Tuning 
+
+To evaluate the impact of fine-tuning on the proposed method, we compare two configurations: Fine-Tuned, which uses the Qwen3-8B model adapted via QLoRA on the channel-corrupted training corpus, and Base, which uses the same Qwen3-8B model with identical quantization but without any task-specific adaptation. Fig. 11 presents the comparison across five metrics. As shown in Fig. 11a, Fine-Tuned model consistently achieves a lower NMSE than Base model across all tested SNR levels. Fig. 11b demonstrates that the Base model achieves a higher selection ratio than the Fine-Tuned 1 2 3 4 5 6 7 8 9 10 
+
+> SNR (dB)
+> 00.2 0.4 0.6 0.8 1
+> Selection Ratio  Layer 1 Layer 2
+
+Fig. 9: Composition of the semantic pilot versus SNR, showing Layer 1 and Layer 2 contributions. 10 -1 10 0 10 1 10 2 
+
+> dratio
+> 0200 400 600 800 1000 1200
+> Count
+> Precision: 78.7%
+> Invalid Valid
+> =d= 2
+
+Fig. 10: Distribution of dratio in Layer 2 cross-validation at 5 dB, separated into valid and invalid corrections. TABLE IV: Effect of τd on Layer 2 cross-validation at 5 dB, evaluated on the hyperparameter tuning set. 
+
+τd Acceptance Rate (%) Precision (%) NMSE (dB) 1 4.1 90.0 −19 .72 
+
+2 20.6 70.7 −21 .31 
+
+3 31.9 59.6 −20 .85 
+
+4 42.7 51.9 −19 .31 
+
+5 51.6 47.1 −17 .67 
+
+model, particularly in the low SNR regime. However, Fig. 11c reveals that this increased selection frequency is accompanied by significantly lower precision. Specifically, at 1 dB, the Base model yields a precision of 0.64, whereas the Fine-Tuned model maintains a precision of 0.90. These findings indicate that the Base model generates outputs that align with the decoded text without successfully resolving the underlying errors. This behavior results in a high volume of unreliable ref-erence symbols that lack the precision necessary for effective channel refinement. Fig. 11d illustrates that the Base model achieves a higher detection rate than the Fine-Tuned model in the low SNR regime. This result occurs as the Base model selects a larger total number of symbols as pilots. By selecting more symbols overall, the model naturally includes more references that are already correct, even if its actual ability to fix errors remains limited. The most significant difference appears in Fig. 11e. Fine-Tuned model achieves a Layer 2 contribution of 18.2% at 1 dB, whereas Base model remains 11 1 2 3 4 5 6 7 8 9 10 
+
+> SNR (dB)
+> -30 -25 -20 -15 -10
+> NMSE (dB)
+> Base Fine-Tuned
+
+(a) NMSE 1 2 3 4 5 6 7 8 9 10  
+
+> SNR (dB)
+> 00.2 0.4 0.6 0.8 1
+> Selection Ratio
+> Base Fine-Tuned
+
+(b) Selection Ratio 1 2 3 4 5 6 7 8 9 10  
+
+> SNR (dB)
+> 00.2 0.4 0.6 0.8 1
+> Precision
+> Base Fine-Tuned
+
+(c) Precision 1 2 3 4 5 6 7 8 9 10  
+
+> SNR (dB)
+> 0.4 0.5 0.6 0.7 0.8 0.9 1
+> Detection Rate
+> Base Fine-Tuned
+
+(d) Detection Rate 1 2 3 4 5 6 7 8 9 10  
+
+> SNR (dB)
+> 0510 15 20
+> Layer 2 Contribution (%)
+> Base Fine-tuned
+
+(e) Layer 2 Contribution 
+
+Fig. 11: Effect of fine-tuning on the proposed method. below 3% across all SNR levels. This indicates that the Fine-Tuned model produces corrections that are sufficiently accurate to pass the dratio cross-validation, while the Base model’s corrections are largely rejected as unreliable. Since Layer 2 is the primary source of the NMSE advantage, the low Layer 2 contribution of the Base model directly explains its inferior NMSE performance. These results confirm that fine-tuning is essential for the proposed framework to fully exploit the correction capability of the LLM. VII. C ONCLUSION 
+
+In this paper, we proposed a novel semantic-aware data-aided channel estimation framework for MIMO systems. The proposed framework exploits the contextual information captured by the LLM to shift the paradigm of data-aided estimation from merely selecting reliable symbols to actively recovering unreliable symbols. To ensure robustness against potential LLM hallucinations, we developed a two-layer se-lection mechanism that combines semantic verification with physical-layer validation, supported by a NW alignment mod-ule to handle text length mismatches. Our theoretical analysis established a fundamental advantage of this approach, proving that recovering misdetected symbols provides a greater reduc-tion in channel estimation error compared to using already correctly decoded symbols. Simulation results using a fine-tuned LLM confirmed that the proposed framework substan-tially improves channel estimation accuracy and detection performance, closely approaching the oracle bound. Overall, this work demonstrates that integrating payload semantics into physical-layer processing offers a highly effective pathway for enhancing the reliability of wireless communications. APPENDIX APROOF OF LEMMA 1Let y = Hx +n denote the received signal of the additional pilot x, where n ∼ CN (0, σ 2INr ). We assume that n is independent of the detection outcome that determines the reference type of x. The expectation En[·] below is therefore taken over its nominal distribution. Augmenting the pilot block with (x, y), the LMMSE esti-mator becomes 
+
+ˆHnew = [ Yp, y][ Xp, x]H 
+
+[Xp, x][ Xp, x]H + σ2INt
+
+−1
+
+=  YpXH 
+
+> p
+
++ yx H   XpXH 
+
+> p
+
++ xx H + σ2INt
+
+−1
+
+=  YpXH 
+
+> p
+
++ yx H   (Lp + σ2)INt + xx H −1. (34) The inverse in (34) is computed using ∥x∥2 = Nt as 
+
+ (Lp + σ2)INt + xx H −1
+
+= 1
+
+Lp + σ2 INt − xx H
+
+(Lp + σ2)( Lp + σ2 + Nt) . (35) Substituting (35) into (34) and using ˆHp = YpXH 
+
+> p
+
+/(Lp +σ2)
+
+yields 
+
+ˆHnew = ˆHp + (y − ˆHpx)xH
+
+Lp + σ2 + Nt
+
+. (36) Applying y = Hx + n and ˆHp = H + E into (36) gives 
+
+ˆHnew − H = E
+
+
+
+INt − xx H
+
+D
+
+
+
++ nx H
+
+D , (37) where D = Lp + σ2 + Nt. Taking the squared Frobenius norm of (37) and the expectation over n yields 
+
+En
+
+h
+
+∥ ˆHnew − H∥2 
+
+> F
+
+E, x
+
+i
+
+= E(INt − xx H 
+
+> D
+
+) 2 
+
+> F
+
++ σ2 Nr Nt
+
+D2 . (38) The first term in (38) expands as 
+
+E(INt − xx H 
+
+> D
+
+) 2
+
+> F
+
+= tr 
+
+h
+
+E INt − 2xx H 
+
+> D
+
++ xx H xx H
+
+> D2
+
+EH i
+
+(39) 
+
+= tr E INt − 2D−Nt 
+
+> D2
+
+xx H EH  (40) 
+
+= ∥E∥2 
+
+> F
+
+− 2D − Nt
+
+D2 R(x; E). (41) Combining (38) and (41) gives 
+
+En
+
+h
+
+∥ ˆHnew − H∥2 
+
+> F
+
+E, x
+
+i
+
+= ∥E∥2 
+
+> F
+
+− a R (x; E) + b, (42) with (a, b ) as defined in (31). Subtracting (42) from ∥E∥2 
+
+> F
+
+and taking the expectation over E yields 
+
+∆( x) = E
+
+h
+
+∥E∥2 
+
+> F
+
+− En
+
+h
+
+∥ ˆHnew − H∥2 
+
+> F
+
+E, x
+
+ii 
+
+= a ER(x; E) x − b, 
+
+(43) which establishes (30). ■
+
+APPENDIX BPROOF OF PROPOSITION 1By Lemma 1, both reference types share the same coeffi-cients (a, b ) with a > 0. Therefore, we only need to compare 
+
+E[R(x; E) | C ] and E[R(x; E) | C c], where C denotes the event that the initial detector decodes the true symbol x correctly. We proceed in three steps. 12 
+
+Step 1: Independence of the pilot estimate and its error: 
+
+Under the orthogonal pilot XpXH 
+
+> p
+
+= LpINt , (3) gives 
+
+ˆHp = LpH + NpXH
+
+> p
+
+Lp + σ2 , E = −σ2H + NpXH
+
+> p
+
+Lp + σ2 . (44) Let ˜N = NpXH 
+
+> p
+
+, whose rows are zero-mean with covariance 
+
+σ2LpINt and independent of H. The cross-covariance between corresponding rows of ˆHp and E is 
+
+E(Lph + ˜ n)( −σ2h + ˜ n)H 
+
+= −σ2LpINt + σ2LpINt = 0. (45) Since ˆHp and E are jointly Gaussian, (45) implies that they are statistically independent. Consequently, the detection margin 
+
+dk = ˆHp(x − xk) is independent of E.Moreover, from (44) each row of E is CN (0, α INt ) with 
+
+α = σ2/(Lp +σ2), so for any deterministic x with ∥x∥2 = Nt,
+
+Ex ∼ CN (0, αN tINr ), Ex = √R u, (46) where R = R(x; E) = ∥Ex ∥2 and u is uniform on the unit sphere, independent of R. In particular, the unconditional dis-tribution of R is identical for every true symbol. The difference between a correctly-decoded reference xD and a corrected reference xC therefore arises solely from conditioning on the detection outcome, i.e., 
+
+E[R(xD; E)] = E[R | C ], E[R(xC; E)] = E[R | C c]. (47) 
+
+Step 2: The correct-decision probability decreases in R:
+
+Writing the effective noise as w = n − Ex , the detection metric in (4) evaluated at the true symbol x and at a competing candidate xk satisfies 
+
+∥y− ˆHpx∥2 = ∥w∥2, ∥y− ˆHpxk∥2 = ∥w+dk∥2. (48) The event C occurs when the true symbol attains the smallest metric, 
+
+∥w∥2 < ∥w + dk∥2, ∀k. (49) Rearranging (49) yields 
+
+2 Re {⟨ w, dk⟩} + ∥dk∥2 > 0, ∀k, (50) where Re {·} denotes the real part of its argument. In the operating SNR range, we adopt the standard nearest-neighbor approximation, under which the error event is domi-nated by the minimum-margin competitor. Denoting its margin by d = arg min k ∥dk∥, the condition in (50) then reduces to the single pairwise test 
+
+2 Re {⟨ w, d⟩} + ∥d∥2 > 0. (51) Substituting w = n − Ex separates the noise and the channel-error contributions, 
+
+2 Re {⟨ n, d⟩} > 2 Re {⟨ Ex , d⟩} − ∥ d∥2. (52) Conditioned on (E, d), the term 2 Re {⟨ n, d⟩} is a real Gaus-sian random variable with zero mean and variance 2σ2∥d∥2,since n ∼ CN (0, σ 2I). Therefore, the probability that (52) holds is 
+
+Pr {C | E, d} = Φ 
+
+ ∥d∥2 − 2 Re {⟨ Ex , d⟩} √2 σ∥d∥
+
+
+
+, (53) where Φ( ·) is the standard normal cumulative distribution function, with derivative ϕ(·) = Φ ′(·) denoting the standard normal probability density function. Substituting Ex = √R u
+
+into (53) and letting γ = ∥d∥/(√2σ) > 0 and t =(√2/σ ) Re ⟨u, d/∥d∥⟩ yields 
+
+Pr {C | R, d, u} = Φ  γ − √R t . (54) Since u is independent of d and isotropic, t is symmetric about 0. Define p(r) = Pr {C | R = r} = Ed,t [Φ( γ − √r t )] .Differentiating and pairing t with −t,
+
+dp (r)
+
+dr = − 12√r Ed Et> 0
+
+h
+
+t ϕ(γ − √r t ) − ϕ(γ + √r t )i
+
+.
+
+(55) For γ, r, t > 0, we have (γ +√r t )2 −(γ −√r t )2 = 4 γ√r t > 
+
+0. This implies ϕ(γ + √r t ) < ϕ (γ − √r t ), which makes the bracket in (55) strictly positive. Therefore, p′(r) < 0, and the correct-decision probability is a strictly decreasing function of 
+
+R.
+
+Step 3: Selection bias via a correlation inequality: Let 
+
+g(R) = p(R), which is strictly decreasing by Step 2. By the law of total probability, E[g(R)] = E[Pr {C | R}] = Pr {C} ,which we denote by Pc ∈ (0 , 1) . For two i.i.d. copies R, R ′,monotonicity gives (R−R′) g(R)−g(R′) ≤ 0 almost surely, with strict inequality on a set of positive probability. Taking expectations, 
+
+E[R g (R)] − E[R] E[g(R)] < 0. (56) Note that g(R) = Pr {C | R} = E[1C | R], where 1C is the indicator of the event C. Hence E[R g (R)] = E[R 1C ] = 
+
+Pc E[R | C], and (56) reduces to E[R | C] < E[R].Applying the same argument to the strictly increasing function 
+
+1 − g(R) gives E[R | C c] > E[R]. Combining these with the identity (47) of Step 1 yields 
+
+ER(xD; E) < E[R] < ER(xC; E), (57) which establishes (32). ■
+
+REFERENCES [1] S. Park and H. J. Yang, “Semantic pilot design for data-aided channel estimation using a large language model,” in Proc. IEEE Int. Conf. Acoust., Speech Signal Process. (ICASSP) , 2026, pp. 21 531–21 535. [2] W. X. Zhao et al. , “A survey of large language models,” arXiv preprint arXiv:2303.18223 , 2023. [3] J. Jiang, F. Wang, J. Shen, S. Kim, and S. Kim, “A survey on large language models for code generation,” ACM Trans. Softw. Eng. Methodol. , vol. 35, no. 2, pp. 1–72, 2026. [4] L. Wang et al. , “A survey on large language model based autonomous agents,” Front. Comput. Sci. , vol. 18, no. 6, p. 186345, 2024. [5] L. Ouyang et al. , “Training language models to follow instructions with human feedback,” in Proc. Adv. Neural Inf. Process. Syst. (NeurIPS) ,2022. [6] Z. Lin, G. Qu, Q. Chen, X. Chen, Z. Chen, and K. Huang, “Pushing large language models to the 6G edge: Vision, challenges, and opportunities,”         
+
+> IEEE Commun. Mag. , vol. 63, no. 9, pp. 52–59, 2025. [7] Z. Chen, Q. Sun, N. Li, X. Li, Y. Wang, and C.-L. I, “Enabling mobile AI agent in 6G era: Architecture and key technologies,” IEEE Netw. ,vol. 38, no. 5, pp. 66–75, 2024. [8] D. G¨ und¨ uz et al. , “Beyond transmitting bits: Context, semantics, and task-oriented communications,” IEEE J. Sel. Areas Commun. , vol. 41, no. 1, pp. 5–41, 2023. [9] W. Yang et al. , “Semantic communications for future internet: Funda-mentals, applications, and challenges,” IEEE Commun. Surveys Tuts. ,vol. 25, no. 1, pp. 213–250, 2023. 13
+
+[10] C. Chaccour, W. Saad, M. Debbah, Z. Han, and H. Vincent Poor, “Less data, more knowledge: Building next-generation semantic communica-tion networks,” IEEE Commun. Surveys Tuts. , vol. 27, no. 1, pp. 37–76, 2025. [11] H. Xie, Z. Qin, G. Y. Li, and B.-H. Juang, “Deep learning enabled semantic communication systems,” IEEE Trans. Signal Process. , vol. 69, pp. 2663–2675, 2021. [12] E. Bourtsoulatze, D. Burth Kurka, and D. G¨ und¨ uz, “Deep joint source-channel coding for wireless image transmission,” IEEE Trans. Cogn. Commun. Netw. , vol. 5, no. 3, pp. 567–579, 2019. [13] Z. Weng and Z. Qin, “Semantic communication systems for speech transmission,” IEEE J. Sel. Areas Commun. , vol. 39, no. 8, pp. 2434– 2444, 2021. [14] P. Jiang, C.-K. Wen, S. Jin, and G. Y. Li, “Wireless semantic communi-cations for video conferencing,” IEEE J. Sel. Areas Commun. , vol. 41, no. 1, pp. 230–244, 2023. [15] C. Liang and D. Li, “Generative AI-enabled semantic communication: State-of-the-art, applications, and the way ahead,” IEEE Commun. Surveys Tuts. , vol. 28, pp. 3976–4015, 2026. [16] H.-L. Qin et al. , “Generative AI meets 6G and beyond: Diffusion models for semantic communications,” IEEE Commun. Surveys Tuts. , vol. 28, pp. 6241–6281, 2026. [17] S. Park, H. Noh, and H. J. Yang, “Robust transmission of punctured text with large language model-based recovery,” IEEE Trans. Veh. Technol. ,vol. 75, no. 1, pp. 1737–1742, 2026. [18] Z. Li, C. Yue, J. Hao, B. Vucetic, and Y. Li, “LLM-Viterbi: Semantic-aware decoding for convolutional codes,” arXiv preprint arXiv:2604.19035 , 2026. [19] J. Hao, C. Yue, W. Liu, Y. Li, and B. Vucetic, “Semantic error correction and decoding for short block channel codes,” arXiv preprint arXiv:2604.22269 , 2026. [20] K. Kim, Y. K. Tun, M. Shirajum Munir, W. Saad, and C. S. Hong, “Pilot optimization and channel estimation scheme for semantic com-munication: A framework for edge intelligence,” in Proc. IEEE/IFIP Netw. Oper. Manag. Symp. (NOMS) , 2024, pp. 1–7. [21] B. Liu, X. Liu, S. Gao, X. Cheng, and L. Yang, “LLM4CP: Adapting large language models for channel prediction,” J. Commun. Inf. Netw. ,vol. 9, no. 2, pp. 113–125, 2024. [22] Y. Sheng, K. Huang, L. Liang, P. Liu, S. Jin, and G. Ye Li, “Beam prediction based on large language models,” IEEE Wireless Commun. Lett. , vol. 14, no. 5, pp. 1406–1410, 2025. [23] Y. Cui, J. Guo, C.-K. Wen, S. Jin, and E. Tong, “Exploring the potential of large language models for massive MIMO CSI feedback,” in Proc. IEEE Glob. Commun. Conf. (GLOBECOM) , 2025, pp. 3511–3516. [24] T. Zheng and L. Dai, “Large language model enabled multi-task physical layer network,” IEEE Trans. Commun. , vol. 74, pp. 307–321, 2026. [25] X. Liu, S. Gao, B. Liu, X. Cheng, and L. Yang, “LLM4WM: Adapting LLM for wireless multi-tasking,” IEEE Trans. Mach. Learn. Commun. Netw. , vol. 3, pp. 835–847, 2025. [26] J. Shao et al. , “WirelessLLM: Empowering large language models towards wireless intelligence,” J. Commun. Inf. Netw. , vol. 9, no. 2, pp. 99–112, 2024. [27] H. Noh, B. Shim, and H. J. Yang, “Adaptive resource allocation optimization using large language models in dynamic wireless environ-ments,” IEEE Trans. Veh. Technol. , vol. 74, no. 10, pp. 16 630–16 635, 2025. [28] M. Soltani, V. Pourahmadi, A. Mirzaei, and H. Sheikhzadeh, “Deep learning-based channel estimation,” IEEE Commun. Lett. , vol. 23, no. 4, pp. 652–655, 2019. [29] Q. Hu, F. Gao, H. Zhang, S. Jin, and G. Y. Li, “Deep learning for channel estimation: Interpretation, performance, and comparison,” IEEE Trans. Wireless Commun. , vol. 20, no. 4, pp. 2398–2412, 2021. [30] M. Zhao, Z. Shi, and M. C. Reed, “Iterative turbo channel estimation for ofdm system over rapid dispersive fading channel,” IEEE Trans. Wireless Commun. , vol. 7, no. 8, pp. 3174–3184, 2008. [31] H. He, C.-K. Wen, S. Jin, and G. Y. Li, “Model-driven deep learning for mimo detection,” IEEE Trans. Signal Process. , vol. 68, pp. 1702–1715, 2020. [32] S. Park, B. Shim, and J. W. Choi, “Iterative channel estimation using virtual pilot signals for MIMO-OFDM systems,” IEEE Trans. Signal Process. , vol. 63, no. 12, pp. 3032–3045, 2015. [33] F. Weißer, N. Turan, D. Semmler, and W. Utschick, “Data-aided channel estimation utilizing gaussian mixture models,” in Proc. IEEE Int. Conf. Acoust., Speech, Signal Process. (ICASSP) , 2024, pp. 8886–8890. [34] T.-K. Kim, Y.-S. Jeon, J. Li, N. Tavangaran, and H. V. Poor, “Semi-data-aided channel estimation for MIMO systems via reinforcement learning,” 
+
+IEEE Trans. Wireless Commun. , vol. 22, no. 7, pp. 4565–4579, 2023. [35] H. Hashempoor and W. Choi, “Deep learning-based data-assisted chan-nel estimation and detection,” IEEE Trans. Mach. Learn. Commun. Netw. , vol. 3, pp. 534–551, 2025. [36] S. B. Needleman and C. D. Wunsch, “A general method applicable to the search for similarities in the amino acid sequence of two proteins,” 
+
+J. Mol. Biol. , vol. 48, no. 3, pp. 443–453, 1970. [37] A. Yang et al. , “Qwen3 technical report,” arXiv preprint arXiv:2505.09388 , 2025. [38] E. J. Hu et al. , “LoRA: Low-rank adaptation of large language models,” in Proc. Int. Conf. Learn. Represent. (ICLR) , 2022. [39] T. Dettmers, A. Pagnoni, A. Holtzman, and L. Zettlemoyer, “QLoRA: Efficient finetuning of quantized LLMs,” in Proc. Adv. Neural Inf. Process. Syst. (NeurIPS) , 2023. [40] P. Koehn, “Europarl: A parallel corpus for statistical machine transla-tion,” in MT summit , 2005, pp. 79–86.
