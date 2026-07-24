@@ -6,34 +6,36 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-23
-- 运行时间：2026-07-23 21:29:05 UTC
+- 最新运行日期：2026-07-24
+- 运行时间：2026-07-24 21:27:22 UTC
 - 运行状态：成功
 - 本次总论文数：4
 - 精读区：3
 - 速读区：1
 
 ### 今日简报（AI）
-1) 今日精读两篇高分通信论文，速读一篇AI无人机检测论文，共处理文献4篇。  
-2) 最值得关注：大语言模型用于MIMO信道估计、联合嵌入预测架构用于流体天线系统。  
-3) 建议优先阅读这两篇8分论文的模型设计与仿真结果，掌握前沿通信技术思路。
-- 详情：[/202607/23/README](/202607/23/README)
+今日精读两篇高分论文：基于轻量GRU的实时信道预测与自注意力Transformer的超奈奎斯特检测，速读一篇3D高斯泼溅信道图更新研究。
+
+最值得关注的方向：实时信道预测的低复杂度循环网络设计，以及自注意力机制在超奈奎斯特信号检测中的适用性。
+
+建议优先阅读这两篇精读论文，了解轻量化模型与自注意力方案在通信物理层的实用潜力，后续可关注其实验对比与部署条件。
+- 详情：[/202607/24/README](/202607/24/README)
 
 ### 精读区论文标签
-1. [Semantic-Aware Data-Aided Channel Estimation with Large Language Models for MIMO Systems](/202607/23/2607.18640v1-semantic-aware-data-aided-channel-estimation-with-large-language-models-for-mimo-systems)  
+1. [Lightweight Gated Recurrent Unit Variants for Real-Time Channel Prediction](/202607/24/2607.20697v1-lightweight-gated-recurrent-unit-variants-for-real-time-channel-prediction)  
+   标签：评分：9.0/10、query:channel-nn
+   evidence：用于实时信道预测的轻量级GRU变体
+2. [Self-Attention Transformer-Based Detector for Faster-than-Nyquist Signaling](/202607/24/2607.20745v1-self-attention-transformer-based-detector-for-faster-than-nyquist-signaling)  
+   标签：评分：9.0/10、query:channel-nn
+   evidence：基于Transformer的接收机用于FTN信号均衡
+3. [Intelligent Disruption: Undetectable Attacks on Wireless Autoencoders](/202607/24/2607.19448v1-intelligent-disruption-undetectable-attacks-on-wireless-autoencoders)  
    标签：评分：8.0/10、query:channel-nn
-   evidence：利用大语言模型进行语义感知的MIMO信道估计，实现可靠符号选择
-2. [JEPA-CFM: A Joint Embedding Predictive Architecture-based Channel Foundation Model for Robust Fluid Antenna Systems](/202607/23/2607.20202v1-jepa-cfm-a-joint-embedding-predictive-architecture-based-channel-foundation-model-for-robust-fluid-antenna-systems)  
-   标签：评分：8.0/10、query:channel-nn
-   evidence：用于流体天线系统的JEPA信道基础模型新型架构
-3. [PG-KINN: A Physics-Informed Petrov-Galerkin Kolmogorov-Arnold Network for Solving Forward and Inverse PDEs](/202607/23/2607.20378v1-pg-kinn-a-physics-informed-petrov-galerkin-kolmogorov-arnold-network-for-solving-forward-and-inverse-pdes)  
-   标签：评分：8.0/10、query:channel-nn
-   evidence：用于偏微分方程的物理信息Kolmogorov-Arnold网络，可应用于通信信道建模
+   evidence：针对无线自编码器的深度学习智能攻击框架
 
 ### 速读区论文标签
-1. [Compact convolutional neural networks for AI-based drone detection system](/202607/23/2607.16455v1-compact-convolutional-neural-networks-for-ai-based-drone-detection-system)  
+1. [Construction and Dynamic Update of Channel Gain Maps via 3D Gaussian Splatting](/202607/24/2607.21099v1-construction-and-dynamic-update-of-channel-gain-maps-via-3d-gaussian-splatting)  
    标签：评分：6.0/10、query:channel-nn
-   evidence：用于无人机射频信号检测的高效CNN设计
+   evidence：利用3D高斯散射构建信道增益图以支持无线网络设计
 
 
 <div class="dpr-home-promo-card">

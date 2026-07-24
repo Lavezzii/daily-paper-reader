@@ -1,0 +1,936 @@
+Title: Construction and Dynamic Update of Channel Gain Maps via 3D Gaussian Splatting
+
+URL Source: https://arxiv.org/pdf/2607.21099v1
+
+Published Time: Fri, 24 Jul 2026 00:53:04 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+> 1
+
+# Construction and Dynamic Update of Channel Gain Maps via 3D Gaussian Splatting 
+
+Yilong Chen, Yuan Guo, Juncong Zhou, Jie Xu, Fellow, IEEE , and Rui Zhang, Fellow, IEEE 
+
+Abstract —Channel knowledge maps (CKMs) have emerged as a promising technique for providing scene-specific and location-dependent propagation knowledge to enable environment-aware wireless network design. This paper investigates the construction and dynamic updating of a particular type of CKM, namely grid-based channel gain maps (CGMs), for large-scale networks using three-dimensional Gaussian splatting (3DGS). First, we formulate a grid-based channel gain model, where each map entry is defined as the locally averaged channel gain over a receiver grid, thereby suppressing phase-sensitive small-scale fluctuations. The resulting channel gain is decomposed into distance-dependent attenuation, path transmittance, and effective scattering contributions. Based on this decomposition, we develop a physics-informed Gaussian-splatting-based channel gain (GS-CG) model, which represents the propagation environment as a set of Gaussian primitives. The proposed model maps Gaus-sian geometry, opacity, and directional features to propagation-related factors and renders grid-level channel gains through a differentiable process. To accommodate real-time environmental changes, we further propose an incremental learning mechanism that updates a static reference GS-CG representation into a dynamic CGM. Specifically, the reference Gaussian primitives are frozen, while a compact set of tunable Gaussians is introduced to capture newly induced local channel-gain variations from sparse measurements. In addition, we design a low-complexity GS-CG variant based on a multilayer perceptron (MLP), termed MLP-GS, which replaces part of the explicit scattering-path interaction computation with lightweight neural surrogates. Nu-merical results demonstrate that the proposed GS-CG and MLP-GS methods accurately reconstruct grid-based CGMs, efficiently adapt to dynamic environmental changes, and achieve a favorable accuracy-complexity tradeoff for fast CGM refinement. 
+
+Index Terms —Channel knowledge map (CKM), three-dimensional Gaussian splatting (3DGS), environment-aware com-munications. 
+
+I. I NTRODUCTION 
+
+Channel knowledge maps (CKMs) have attracted growing research interest for sixth-generation (6G) networks, as they enable a new paradigm toward environment-aware wireless communications [1], [2]. With denser infrastructure deploy-ments, larger antenna arrays, wider bandwidths, and stricter latency requirements, traditional channel acquisition methods based on pilot training and feedback are becoming increasingly costly or even impractical. CKMs address this challenge 
+
+Y. Chen, Y. Guo, J. Zhou, and J. Xu are with School of Science and Engineering, Shenzhen Future Network of Intelligence Institute (FNii-Shenzhen), and Guangdong Provincial Key Laboratory of Future Networks of Intelligence, The Chinese University of Hong Kong (Shenzhen), Shenzhen 518172, China (e-mail: chenyilong@cuhk.edu.cn; guoyuan@cuhk.edu.cn; jun-congzhou@link.cuhk.edu.cn; xujie@cuhk.edu.cn). R. Zhang is with the Department of Electrical and Computer En-gineering, National University of Singapore, Singapore 117583 (e-mail: elezhang@nus.edu.sg). J. Xu is the corresponding author. 
+
+by mapping transceiver locations to location-specific channel knowledge, enabling networks to proactively infer channel conditions with substantially reduced pilot overhead and im-proved system performance. Depending on the application scenario, various types of CKMs have been proposed, such as channel state information (CSI) maps, channel gain maps (CGMs), channel angle maps (CAMs), and beam index maps (BIMs) [2]. Among these CKM instances, CGMs are the most fundamental and practically useful, as they characterize large-scale propagation quality over space and directly support coverage analysis, deployment planning, beam management, and resource allocation [2], [3]. Existing CGM construction methods can be broadly cate-gorized into interpolation-based, model-based, and learning-based approaches [4], [5]. Interpolation methods, such as Kriging [3], kernel regression [6], and matrix completion [7], are effective under sparse measurements but often struggle to capture sharp propagation transitions caused by blockage and diffraction. Model-based approaches, including empirical path-loss models [8], [9] and ray tracing [10], provide strong physical interpretability but require accurate environmental information and often incur high computational complexity. More recently, deep-learning and generative-AI approaches, such as RadioUNet [11], RMTransformer [12], and CKMDiff [13], have demonstrated impressive map reconstruction capa-bilities. However, these methods typically rely on discretized scene representations and may be less suitable for scene-specific modeling and efficient map updating. Consequently, developing CGM representations that achieve physical in-terpretability, data efficiency, and computational affordability remains an important research challenge. Recent advances in neural scene representations, par-ticularly neural radiance fields (NeRFs) [14] and three-dimensional Gaussian splatting (3DGS) [15], provide a new opportunity for CKM construction. Inspired by their success in computer graphics, wireless radiance field (WRF) frame-works have been developed to model radio propagation and predict wireless channels from geometric information [16]– [25]. Compared with NeRF-based approaches [16], which rely on implicit volumetric neural fields and often incur substantial computational overhead, 3DGS provides explicit scene repre-sentations, differentiable rendering, and efficient optimization. Existing 3DGS-based wireless studies [17]–[25] have demon-strated promising performance in radio field reconstruction, CSI prediction, and spectrum mapping. Nevertheless, these works primarily focus on pointwise channel quantities associ-ated with precise transmitter and receiver locations and have not explicitly considered grid-based CGM construction. arXiv:2607.21099v1 [cs.IT] 23 Jul 2026 2
+
+Different from prior works, this paper focuses on the construction of grid-based CGMs, where each map entry rep-resents the locally averaged channel gain over a receiver grid. This formulation is important for practical large-scale wireless deployments, where receiver locations are often subject to spatial uncertainty. In outdoor environments, receiver positions are typically available only with meter-level accuracy, and a nominal receiver location may correspond to a local spatial region rather than an exact point. Under such uncertainty, phase-sensitive channel quantities can fluctuate significantly and become difficult to supervise consistently. By contrast, grid-based CGMs suppress small-scale fluctuations by defining each map entry as the locally averaged channel gain within a receiver grid, thereby providing a more stable and action-able representation for coverage analysis and network opti-mization. Although virtual-scatterer-based approaches have re-cently been proposed for grid-based CGM modeling [26], [27], a physics-informed 3DGS framework specifically tailored to grid-level channel-gain rendering remains largely unexplored. Beyond the initial construction of CGM, maintaining CGM accuracy under dynamic environments is another critical chal-lenge. Practical wireless environments contain not only perma-nent structures such as buildings and walls but also dynamic objects like vehicles, pedestrians, and temporary obstacles. These dynamic factors continuously alter blockage, transmis-sion, and scattering conditions, causing the propagation envi-ronment to evolve over time. Existing 3DGS-based and virtual-scatterer-based CKM methods are primarily designed for static environments and typically require retraining when the envi-ronment changes. Such construction-from-scratch approaches are inefficient because environmental changes often affect only a small subset of propagation paths and local spatial regions. Therefore, an important yet largely unexplored problem is how to incrementally update a previously constructed CGM by efficiently incorporating newly observed channel variations while preserving previously learned propagation knowledge. In this paper, we investigate the construction of astatic/reference grid-averaged CGM and its real-time updating in dynamic environments for a given transmitter using the 3DGS framework. The static/reference CGM represents either a propagation scene without transient dynamic factors or a long-term measured map in which dynamic factors are averaged out or weakened. By contrast, the dynamic CGM characterizes the real-time propagation condition when local blockers or scatterers appear or move. Our objective is to first construct the static CGM from limited measurements and then update it using only a small number of newly collected dynamic measurements. The main contributions of this paper are summarized as follows.  
+
+> •
+
+First, we establish a grid-based average channel gain model for practical CGM construction and updating. By defining each map entry as the locally averaged channel gain over a receiver grid, the proposed model suppresses small-scale phase fluctuations and decomposes the result-ing large-scale power quantity into three components: distance-dependent attenuation, path transmittance, and effective scattering responses.  
+
+> •
+
+Second, based on the proposed model, we develop a physics-informed Gaussian-splatting-based channel gain (GS-CG) model for grid-level channel gain rendering. The proposed model represents the propagation envi-ronment as a set of Gaussian primitives and explicitly matches the physical power decomposition of the grid-based channel gain. Specifically, Gaussian geometry, opacity, and directional features are mapped to path transmittance and effective scattering responses, resulting in a unified rendering model for both static and dynamic CGMs.  
+
+> •
+
+Third, we propose a unified GS-CG framework for static CGM construction and dynamic CGM updating. For static construction, the Gaussian representation is trained from scratch to obtain a reference CGM. For dynamic updating, we develop an incremental learning strategy that freezes the reference representation and introduces a compact set of tunable Gaussian primitives to capture newly induced local channel-gain variations from sparse measurements.  
+
+> •
+
+Fourth, we develop a low-complexity GS-CG variant based on a multilayer perceptron (MLP), termed MLP-GS, for fast CGM construction and updating. This de-sign preserves the Gaussian spatial support and explicit direct-path rendering, while replacing part of the com-putationally expensive scattering-branch interaction with lightweight neural surrogates, thereby achieving a practi-cally appealing accuracy-complexity tradeoff for dynamic CGM refinement.  
+
+> •
+
+Finally, extensive simulations validate the proposed GS-CG and MLP-GS models for both static CGM con-struction and dynamic updating. The results show that the proposed methods can accurately reconstruct grid-based CGMs, effectively adapt to environmental changes using sparse new measurements, and substantially reduce training time compared with full explicit rendering. The remainder of this paper is organized as follows. Sec-tion II presents the grid-based wireless channel model and formulates the static CGM construction and dynamic CGM updating problems. Section III develops the proposed GS-CG model for physics-aware static CGM construction. Section IV presents the incremental GS-CG mechanism for dynamic CGM updating. Section V presents the low-complexity MLP-GS variant. Section VI provides simulation results to validate the proposed methods. Finally, Section VII concludes this paper. 
+
+Notations: Bold lowercase letters are used for vectors, and bold uppercase letters are used for matrices. Calligraphic let-ters denote sets. For a finite set A, |A| denotes its cardinality. For a scalar a, |a| denotes its absolute value or magnitude. For a vector a, ∥a∥ denotes its Euclidean norm. The transpose operator is denoted by (·)T . diag( ·) denotes a diagonal matrix. 
+
+R and C denote the real and complex fields, respectively. E[·]
+
+denotes statistical expectation. N (μ, Σ) denotes the Gaussian distribution with mean μ and covariance Σ. U(a, b ) denotes the uniform distribution in interval [a, b ]. The imaginary unit is denoted by j = √−1.3 
+
+> Fig. 1. Considered system and grid-based channel gain modeling.
+
+II. S YSTEM MODEL AND PROBLEM FORMULATION 
+
+As shown in Fig. 1, we consider a wireless communication system with a single-antenna base station (BS) located at a fixed position pt ∈ R3. The receiver region of interest for CGM construction and updating is a three-dimensional (3D) region D ⊂ R3, which is partitioned into grids. Each grid is indexed by its center pr ∈ D . Let C(pr ) ⊂ D denote the grid centered at pr . Each CGM entry indexed by pr represents the average channel gain over receiver grid C(pr ). This grid-level representation is relevant to practical outdoor scenarios, where receiver locations are typically reliable at the grid scale but not at wavelength-level precision. The wireless propagation environment includes static struc-tures, such as buildings and walls, as well as dynamic ob-jects, such as vehicles, pedestrians, or other moving block-ers/scatterers. We use Ms to denote the static/reference CGM that is mainly determined by the static structures. It can represent either a scene without transient dynamic objects or a long-term measured map in which the effects of moving objects are averaged out. We use Md to denote the dy-namic/current CGM under real-time environmental changes. Our goal is to first construct Ms from grid-averaged channel gain measurements and then update it to obtain Md using sparse new measurements. In the following, we first derive a grid-based channel gain model for a generic CGM state, then formulate the static construction and dynamic updating problems for obtaining Ms
+
+and Md, respectively. 
+
+A. Grid-Based Channel Gain Model 
+
+We first derive the grid-based channel gain model. Under far-field and local-homogeneity conditions, we assume that each grid size is much smaller than the propagation distances to dominant structures, so large-scale path parameters, such as path losses and angles of departure/arrival, remain approx-imately invariant within the grid. Meanwhile, the grid size is much larger than the carrier wavelength λ, so receiver displacement inside the grid mainly induces small-scale phase variation. Thus, the channel within C(pr ) can be decomposed into a grid-level path response and an intra-grid field response [26]. For an exact receiver location x ∈ C (pr ), we adopt the field-response model [26] and write the multi-path channel from the transmitter pt as 
+
+h(x) = uT (pr )f (x; pr ). (1) Here, f (x; pr ) is the field-response vector (FRV) that captures the phase variation caused by the displacement from pr to x,which is given by 
+
+f (x; pr ) = f0(x; pr ), · · · , f Ns (x; pr )T
+
+=
+
+h
+
+e−j 2πλ ∆0(x;pr ), · · · , e −j 2πλ ∆Ns (x;pr )iT
+
+, (2) where ∆n(x; pr ) is the excess propagation distance of the n-th path. In addition, u(pr ) is the path-response vector (PRV) evaluated at the receiver grid center pr . Let Ns ≜ {1, · · · , N s}
+
+denote the set of effective scattering paths. The PRV is given by 
+
+u(pr ) = u0(pr ), u 1(pr ), · · · , u Ns (pr )T , (3) where the 0-th entry corresponds to the direct path and the remaining Ns entries correspond to effective one-bounce scattering paths. 1 Following [28], the path responses are 
+
+u0(pr ) = λ
+
+4πd 0
+
+e−j 2πλ d0 · Φ0,un(pr ) = λ
+
+(4 π) 32 din  
+
+> n
+
+dout 
+
+> n
+
+e−j 2πλ (din   
+
+> n+dout
+> n)
+
+· ΩnΦin  
+
+> n
+
+Φout  
+
+> n
+
+,
+
+(4) for all n ∈ N s. Here, d0 is the direct-path distance, while 
+
+din  
+
+> n
+
+and dout  
+
+> n
+
+are the transmitter-to-scatterer and scatterer-to-receiver distances of the n-th scattering path, respectively. 2
+
+Ωn ∈ C denotes the anisotropic complex scattering response. The coefficients Φ0, Φin  
+
+> n
+
+, Φout  
+
+> n
+
+∈ C denote the complex trans-mittance of the direct path and those of the incident and outgoing segments of the n-th scattering path, respectively, collecting the blockage or penetration effects along the corre-sponding propagation paths. We define each CGM entry by averaging the instantaneous channel power over the receiver grid. The channel gain asso-ciated with grid C(pr ) is given by [26] 
+
+G(pr ) = 1
+
+|C (pr )|
+
+Z 
+
+> C(pr)
+
+|h(x)|2dx, (5) where |C (pr )| denotes the grid volume and dx is the infinites-imal spatial element. The averaged channel gain G(pr ) sup-presses phase-sensitive small-scale fluctuations and preserves the large-scale propagation quality associated with the grid center pr .
+
+Proposition 1 (Grid-level channel gain decomposition): 
+
+Under the above local-homogeneity and far-field conditions, if distinct propagation paths have sufficiently separated local         
+
+> 1We adopt the effective one-bounce scattering model for tractability. It explicitly models both the incident and outgoing propagation segments. This differs from existing semi-implicit [16], [17] or last-bounce [26], [27] formulations, where only part of the propagation process is explicitly modeled. The simulations later show that this model can well represent practical wireless environments involving multi-bounce reflection, diffraction, and scattering. Moreover, the model can be readily extended to six-dimensional (6D) CGM scenarios with varying transceiver locations [18].
+> 2The distance-dependent terms in (4) follow free-space spherical spreading for each explicitly modeled propagation segment. General path-loss models may use a tunable exponent to absorb unresolved effects such as ground reflection [26]. By contrast, the proposed GS-CG model explicitly represents environmental interactions through Gaussian primitives, so the segment-wise spreading exponent is fixed to its free-space value. 4
+
+directions, the grid-based channel gain in (5) can be approxi-mated by the incoherent sum of path powers, i.e., 
+
+G(pr ) ≈ ∥ u(pr )∥2 ≜ G0(pr ) + X
+
+> n∈N s
+
+Gn(pr ), (6) where the direct and n-th scattering terms are expressed as 
+
+G0(pr ) = 
+
+ λ
+
+4πd 0
+
+| {z } 
+
+> Path loss
+
+· |Φ0|
+
+|{z} 
+
+> Transmittance
+
+2
+
+,Gn(pr ) = 
+
+ λ
+
+(4 π) 32 din  
+
+> n
+
+dout 
+
+> n
+
+| {z }
+
+> Path loss
+
+· |Ωn|
+
+|{z} 
+
+> Scattering response
+
+· | Φin  
+
+> n
+
+|| Φout  
+
+> n
+
+|
+
+| {z }
+
+> Transmittance
+
+2
+
+.
+
+(7) 
+
+Proof: Please refer to Appendix A. ■
+
+Proposition 1 shows that a grid-level CGM is a large-scale power map determined by distance-dependent attenuation, path transmittance, and effective scattering strength, rather than a phase-dependent CSI field. We define the generic CGM as the scalar field 
+
+M : pr ∈ D 7 → G(pr ) ∈ R+. (8) The static and dynamic CGMs, Ms and Md, are two instances of M for long-term/static and real-time environmental states, respectively. 
+
+B. CGM Construction and Dynamic Updating Problems 
+
+Let ˆM(Θ) denote a parametric CGM with learnable param-eters Θ to represent the CGM M. This paper instantiates Θ as a 3D Gaussian scene representation and uses it to render the grid-based channel gain over D. We consider the following two tasks. 
+
+1) Static CGM Construction: Let ˆDs ⊂ D denote the set of grids where channel gain measurements are available in the long-term/static environment. Given the measurement data 
+
+G(pr ) for pr ∈ ˆDs as the training set, the static construction problem aims to learn a reference model Θs from scratch so that ˆM(Θs) reconstructs Ms over both measured and unmeasured grids. 
+
+2) Dynamic CGM Updating: Suppose that the static/reference CGM model Θs is already available to the system a priori . When dynamic objects appear or move, we assume that only a sparse measurement set ˆDd ⊂ D is available. Given the measurement data G(pr ) for pr ∈ ˆDd as the training set, the dynamic updating problem aims to learn a refined model Θd such that ˆM(Θd) matches Md while reusing the previously constructed propagation knowledge. III. GS-CG M ODEL FOR STATIC CGM C ONSTRUCTION 
+
+Section II shows that the grid-averaged channel gain can be decomposed into multi-path contributions determined by distance-dependent attenuation, anisotropic scattering, and transmittance. The physical model in (6) and (7), however, depends on unknown scatterer locations, scattering responses 
+
+{Ωn}, and transmittance coefficients Φ0 and {Φin  
+
+> n
+
+, Φout  
+
+> n
+
+}. The GS-CG model aims to represent these inaccessible physical quantities with learnable 3D Gaussian primitives that represent latent radio-interaction structures. Since the target is a grid-based CGM, GS-CG uses the transmitter location pt and receiver grid center pr to define propagation paths and renders the grid-averaged channel gain, rather than a phase-sensitive pointwise channel response in prior work [17], [18]. 
+
+A. Gaussian Representation and Channel Gain Rendering 
+
+We represent the wireless scene by N Gaussian primitives with index set N = {1, · · · , N }. The learnable scene param-eters are 
+
+Θ ≜ {ϑn}n∈N , (9) where the n-th Gaussian primitive is parameterized as 
+
+ϑn = {μn, sn, qn, α n, fn}. (10) Here, μn ∈ R3 is the Gaussian center, sn ∈ R3+ gives its anisotropic scale, qn is a quaternion specifying its rotation, 
+
+αn ∈ [0 , 1] denotes its opacity, and fn contains learnable directional scattering features. Each primitive can act as an effective interaction point for one-bounce scattering and as a soft volumetric attenuator for propagation paths. Note that the number of Gaussian primitives, or Gaussians for short, N , is an adjustable parameter and need not equal the number of physical effective scatterers Ns in (6). Instead, Θ provides a differentiable surrogate of the unknown propagation environ-ment. We construct the rendered channel gain as the Gaussian-parameterized counterpart of (6) and (7): 
+
+ˆG(pr ) = ˆG0(pr ) + X
+
+> n∈N
+
+ˆGn(pr ), (11) where the direct term and the scattering term associated with the n-th Gaussian are given by 
+
+ˆG0(pr ; Θ) = 
+
+ λ
+
+4πd 0
+
+| {z } 
+
+> Path loss
+
+· ˆΦ0(pt, pr )
+
+| {z }
+
+> Transmittance
+
+2
+
+,
+
+ˆGn(pr ; Θ) = 
+
+ λ
+
+(4 π) 32 din  
+
+> n
+
+dout 
+
+> n
+
+| {z }
+
+> Path loss
+
+· ˆΩn(pr )
+
+| {z }
+
+> Scattering response
+
+· ˆΦn(pt, μn) ˆΦn(μn, pr )
+
+| {z }
+
+> Transmittance
+
+2
+
+.
+
+(12) In (12), d0 = ∥pr − pt∥, din  
+
+> n
+
+= ∥μn − pt∥, and dout  
+
+> n
+
+=
+
+∥pr − μn∥. The terms ˆΩn(pr ), ˆΦ0(pt, pr ), ˆΦn(pt, μn), and 
+
+ˆΦn(μn, pr ) are Gaussian-based amplitude surrogates of the unknown scattering response and transmittance coefficients in (7), which will be determined later. Thus, GS-CG preserves the power-decomposition structure of the physical model while replacing inaccessible scatterer parameters with differentiable Gaussian parameters. 
+
+Remark (Compatibility with Grid-Based CGM Learning): 
+
+GS-CG differs from existing wireless 3DGS designs in its prediction target [17], [18]. It does not reconstruct direction-resolved spectra, full CSI, or generic radio fingerprints. In-stead, it renders the locally averaged channel gain of each receiver grid. The Gaussian primitives therefore learn spatially stable propagation structures, such as blockage boundaries, 5 
+
+> Fig. 2. GS-CG pipeline for static CGM construction.
+
+penetrable regions, and dominant scattering support, rather than highly oscillatory pointwise channel responses. Such a grid-level representation also supports dynamic CGM updat-ing, since the learned static propagation structure can be reused while local environmental changes are absorbed incrementally. The unknown components in (12) are the scattering response 
+
+{ ˆΩn} and the path transmittance ˆΦ0 and { ˆΦn}. The next two subsections will determine these terms. Fig. 2 illustrates the overall GS-CG rendering and training pipeline for CGM construction. 
+
+B. Effective Scattering Response 
+
+We first model the effective scattering response { ˆΩn} as the counterpart of {Ωn} in (7). It combines three factors: geomet-ric support, opacity-based interaction strength, and scattering directionality. 
+
+1) Geometric Support: For a query location x ∈ D , the geometric support of the n-th primitive is described by an anisotropic 3D Gaussian kernel: 
+
+Υn(x) = exp 
+
+
+
+− 12 (x − μn)T Σ−1 
+
+> n
+
+(x − μn)
+
+
+
+, (13) where Σn ∈ R3×3 is the covariance matrix. We parameterize it as 
+
+Σn = R(qn)S2(sn)RT (qn), (14) where S(sn) = diag( sn) and R(qn) is the rotation matrix induced by the quaternion qn. This parameterization keeps 
+
+Σn positive definite and allows each primitive to represent object thickness, elongation, and orientation. As such, Υn(x)
+
+measures how strongly x lies within the scattering support of the n-th Gaussian. 
+
+2) Opacity-Based Interaction Strength: The opacity αn ∈
+
+[0 , 1] quantifies the interaction strength between the n-th Gaus-sian primitive and the propagating radio wave. It modulates both the scattered response generated by the Gaussian and the transmittance of propagation paths that pass through it. Thus, a larger αn represents a stronger scatterer and a more lossy obstacle, whereas a smaller αn makes the primitive nearly transparent. 
+
+3) Scattering Directionality: To describe anisotropic scat-tering, we assign each Gaussian a spherical harmonic (SH) feature vector fn = {fn,l,m }0≤l≤LSH ,−l≤m≤l ∈ R(LSH +1) 2
+
+,where LSH denotes the SH degree. Let ˆvn(x) = x−μn
+
+> ∥x−μn∥
+
+denote the outgoing direction from the Gaussian center to x.The directional scattering factor is 
+
+Γn(x) = 
+
+> LSH
+
+X
+
+> l=0
+> l
+
+X
+
+> m=−l
+
+fn,l,m Yl,m 
+
+ ˆvn(x), (15) where Yl,m (·) denotes the SH basis. This representation can capture both nearly isotropic scatterers and directional reflect-ing structures while remaining lightweight and differentiable. Combining the three factors gives the effective scattering response of Gaussian primitive n ∈ N toward x by 
+
+ˆΩn(x) = αnΥn(x)Γ n(x). (16) This formulation captures the reflection and diffusion effects of different Gaussians toward different receiver locations. 
+
+C. Volumetric Transmittance Coefficients 
+
+We next model the path transmittance ˆΦ0 and { ˆΦn}, which corresponds to Φ0 and {Φin  
+
+> n
+
+, Φout  
+
+> n
+
+} in (7). Transmittance char-acterizes the attenuation effect along a propagation segment and is determined by the opacity and geometric overlap of Gaussian primitives with that segment. We define a propagation segment from location xa ∈ D to 
+
+xb ∈ D as 
+
+r(ι) = xa + ι(xb − xa), ι ∈ [0 , 1] . (17) 6
+
+For the i-th Gaussian, we project its center onto this segment by 
+
+ιi = min 
+
+
+
+max 
+
+ (μi − xa)T (xb − xa)
+
+∥xb − xa∥2 , 0
+
+
+
+, 1
+
+
+
+. (18) The perpendicular offset from the Gaussian center to the segment is 
+
+v⊥,i = r(ιi) − μi. (19) We then quantify the path overlap through the Mahalanobis distance induced by Σi:
+
+ˆΥi(xa, xb) = exp   − 12 vT
+
+> ⊥,i
+
+Σ−1 
+
+> i
+
+v⊥,i 
+
+. (20) Different from the point-support kernel Υi defined in (13), 
+
+ˆΥi measures path-level overlap. It provides a geometry-aware surrogate for soft blockage, penetration loss, and volumet-ric attenuation. Unlike projection-domain splatting or virtual projection-plane methods [17], [18], this formulation evaluates ray-Gaussian interaction directly in 3D space, so that the transmittance rendering is directly coupled with the underlying propagation geometry. Using this overlap factor, we model the transmittance of a path segment from xa to xb associated with Gaussian index 
+
+n ∈ { 0} ∪ N as 
+
+ˆΦn(xa, xb) = Y 
+
+> i∈N , i ̸=n
+
+ 1 − αi ˆΥi(xa, xb). (21) For n = 0 , (21) gives the direct-path transmittance along the transmitter-receiver segment, where only Gaussians with non-negligible path overlap and opacity effectively attenuate the path. For n ∈ N , it gives the transmittance of a scattering segment associated with the n-th Gaussian and excludes its self-obstruction, since that primitive already contributes through ˆΩn in (16). 
+
+D. Construction Optimization and Adaptive Density Control 
+
+Next, we present the loss function for training the CGM. Based on (11), the channel gain rendered by the reference model Θs is ˆG(pr ; Θs) in the linear power domain. Since channel gain can span a large dynamic range, a linear-domain loss may overemphasize high-power grids. We therefore fit the model in the logarithmic domain and use the dB-domain mean absolute error (MAE). Given CGM measurements over grids 
+
+ˆDs, the construction loss is given by 
+
+Lcons MAE (Θs) = 1
+
+| ˆDs|
+
+X  
+
+> pr∈ˆDs
+
+10 log 10 ˆG(pr ; Θs)−10 log 10 G(pr ) .
+
+(22) Before training, Θs can be initialized from available scene geometry or environmental structure information. We then optimize Θs end-to-end by back-propagation. The overall static construction procedure is summarized in Algorithm 1. GS-CG also adapts the resolution of the scene repre-sentation. Instead of placing Gaussian primitives uniformly over the entire domain, it refines the primitive distribution according to local propagation complexity. During training, GS-CG tracks the accumulated positional gradient of each primitive and applies adaptive density control (ADC) at fixed 
+
+Algorithm 1: GS-CG Construction 
+
+Input: Channel gain measurements G(pr ) over grids 
+
+pr ∈ ˆDs, transmitter position pt
+
+Output: Reference Gaussian parameters Θs
+
+Initialize Θs from available scene geometry; 
+
+for each training iteration do 
+
+Render ˆG(pr ; Θs) for pr ∈ ˆDs using (11) and (12); Compute Lcons MAE (Θs) and update Θs by back-propagation; Apply ADC at fixed intervals; Return Θs.intervals through cloning, splitting, and pruning. Specifically, a small-scale Gaussian with a large positional gradient is cloned to increase local modeling capacity. A large-scale Gaussian with a large gradient is split into smaller primitives, since it may cover multiple propagation features such as blockage boundaries or sharp transition regions. Gaussians with very low opacity are pruned because they contribute little to the rendered gain. These operations allocate more primitives to electromagnetically complex regions while keeping simple regions sparse. IV. I NCREMENTAL GS-CG FOR DYNAMIC CGM UPDATING 
+
+After constructing the static/reference model Θs, we con-sider updating the CGM from the reference state Ms to the real-time state Md, in dynamic scenarios when objects may appear or move. Such changes usually affect only a local part of the propagation environment. Retraining all Gaussian primitives from sparse dynamic measurements in ˆDd is there-fore inefficient and may distort unchanged regions. We instead update the CGM incrementally by freezing the static represen-tation and introducing a compact active Gaussian set whose primitives jointly participate in channel gain rendering. The incremental GS-CG pipeline for CGM updating is illustrated in Fig. 3. 
+
+A. Incremental Gaussian Representation 
+
+Recall that Θs denotes the Gaussian parameters learned during static construction. We introduce an active Gaussian set with index set Nact , whose parameters are given in the following, similarly to (9) and (10): 
+
+Θact ≜ {ϑn}n∈N act . (23) The dynamic representation is then given by 
+
+Θd ≜ Θs ∪ Θact , (24) which combines the reference model Θs and active Gaussians 
+
+Θact for rendering channel gains. During the forward pass, all primitives in Θd jointly ren-der the dynamic CGM through (11) and (12). In the joint rendering, the newly added active primitives may attenuate existing propagation paths or add new effective scattering contributions. During the back-propagation, GS-CG freezes 7 
+
+> Fig. 3. Incremental GS-CG pipeline for dynamic CGM updating.
+
+Θs and optimizes only Θact . This strategy converts dynamic updating from full-map reconstruction into localized residual learning in the Gaussian domain. 
+
+B. Residual-Guided Active Initialization 
+
+Next, we introduce the initialization of active Gaussian primitives. Since the locations and shapes of newly changed environmental structures are usually unknown, directly placing active Gaussians on these structures is infeasible. Moreover, dynamic changes usually occupy only a small portion of the domain, making random initialization inefficient. We therefore initialize active Gaussians Θact in nearby regions that likely contain new radio-interaction structures, by the following residual-guided back-projection scheme. 3
+
+For each newly measured receiver grid pr ∈ ˆDd, define the one-sided channel gain residual for the reference CGM as 
+
+e(pr ) = max 
+
+
+
+10 log 10 ˆG(pr ; Θs) − 10 log 10 G(pr ), 0
+
+
+
+.
+
+(25) This residual emphasizes locations where the static model overestimates the channel gain. We then allocate active Gaus-sians to each measured grid according to the normalized weight 
+
+ρ(pr ) = e(pr )
+
+P   
+
+> p′
+> r∈ˆDd
+
+e(p′ 
+
+> r
+
+) , (26) such that grids with larger ρ(pr ) receive more Gaussians. Let d(pr ) = pr − pt denote the transmitter-to-receiver propagation path. We place active Gaussians along this path, on which the structure causing the gain reduction is likely to lie. Starting from [κmin , κ max ] = [0 , 1] , we refine the feasi-ble depth interval using nearby measured grids. For another measured grid p′ 
+
+> r
+
+∈ ˆDd, define the ray-direction similarity as 
+
+η(pr , p′ 
+
+> r
+
+) = d(pr )T d(p′ 
+
+> r
+
+)
+
+∥d(pr )∥∥ d(p′ 
+
+> r
+
+)∥ . (27) 
+
+> 3The active initialization mainly targets newly introduced blockage or attenuation structures, since permanent structures are already captured during static CGM construction. If the environment undergoes large-scale reconfig-uration, the reference CGM should be refreshed from denser or long-term measurements. Moreover, the residual-guided back-projection mainly focuses on blockages along direct paths, which is more identifiable from sparse channel gain residuals.
+
+If η(pr , p′ 
+
+> r
+
+) ≥ cos τθ holds for a small angle threshold τθ > 0,then the two grids are deemed to lie in similar propagation directions. In this case, if p′ 
+
+> r
+
+is closer to the transmitter and has a smaller residual than a given threshold τ min  
+
+> e
+
+> 0, i.e., 
+
+∥d(p′ 
+
+> r
+
+)∥ < ∥d(pr )∥ and e(p′ 
+
+> r
+
+) < τ min  
+
+> e
+
+, the changed structure is unlikely to lie before p′ 
+
+> r
+
+. We then update 
+
+κmin ← max 
+
+
+
+κmin , ∥d(p′ 
+
+> r
+
+)∥∥d(pr )∥
+
+
+
+. (28) Conversely, if a closer grid has a larger residual than a given threshold τ max  
+
+> e
+
+> τ min  
+
+> e
+
+, i.e., ∥d(p′ 
+
+> r
+
+)∥ < ∥d(pr )∥ and e(p′ 
+
+> r
+
+) >τ max  
+
+> e
+
+, the changed structure is likely to appear before p′ 
+
+> r
+
+, and we update 
+
+κmax ← min 
+
+
+
+κmax , ∥d(p′ 
+
+> r
+
+)∥∥d(pr )∥
+
+
+
+. (29) In implementation, inconsistent interval constraints are clipped to keep κmin ≤ κmax . As such, an active Gaussian assigned to pr is uniformly initialized in depth interval [κmin , κ max ] as 
+
+μ =pt + κd(pr ) + ζ,κ ∼ U (κmin , κ max ), ζ ∼ N (0, σ 2I), (30) where ζ is a spatial jitter with scale σ. This initialization places active primitives in the 3D subregions that best explain the newly observed propagation mismatch. 
+
+C. Active Set Optimization 
+
+After initialization, we render the dynamic CGM with Θd =
+
+Θs ∪ Θact and back-propagate gradients only to Θact . Using the new sparse measurements over grids ˆDd, the CGM updating loss is given by 
+
+Lupd MAE (Θact ) = 1
+
+| ˆDd|
+
+X  
+
+> pr∈ˆDd
+
+10 log 10 ˆG(pr ; Θs ∪ Θact )
+
+− 10 log 10 G(pr ) .
+
+(31) By preserving the reference Gaussian representation and only optimizing parameters for the active set, GS-CG can efficiently adapt to environmental changes from sparse new measurements while maintaining stable predictions in un-changed regions. The overall dynamic updating procedure is summarized in Algorithm 2. 8
+
+Algorithm 2: Incremental GS-CG Updating 
+
+Input: Reference Gaussian parameters Θs, new channel gain measurements over grids ˆDd,transmitter position pt
+
+Output: Updated Gaussian parameters Θd
+
+Freeze Θs;Initialize Θact by residual-guided back-projection; 
+
+for each update iteration do 
+
+Render ˆG(pr ; Θs ∪ Θact ) for pr ∈ ˆDd;Compute Lupd MAE (Θact ) and update only Θact ;Return Θd = Θs ∪ Θact .V. L OW -C OMPLEXITY MLP-GS M ODEL 
+
+The GS-CG model in Sections III and IV explicitly evalu-ates the scattering response and the transmittance coefficients of each Gaussian-induced path. This provides physical inter-pretability, but the scattering branch can be computationally expensive when many Gaussian primitives participate in ren-dering. To reduce such cost, in this section we further develop a low-complexity MLP-assisted GS-CG model, termed MLP-GS. MLP-GS uses the following set of Gaussian primitives to represent the scene, 
+
+ΘMLP ≜ {ϑMLP  
+
+> n
+
+}n∈N , (32) where the n-th primitive is parameterized as 
+
+ϑMLP  
+
+> n
+
+= {μn, sn, qn, α n, Fn}. (33) Here, μn, sn, qn, and αn retain the same meanings as in GS-CG, and Fn is a compact latent feature decoded by an MLP. Following the GS-CG rendering model in (12), the direct-path gain and the n-th scattering gain in MLP-GS are reformulated as follows by incorporating the MLP: 
+
+ˆGMLP  
+
+> 0
+
+(pr ) = 
+
+ λ
+
+4πd 0
+
+ˆΦ0(pt, pr )
+
+2
+
+,
+
+ˆGMLP  
+
+> n
+
+(pr ) = 
+
+
+
+αnΥn(pr )Ψ( pt, μn; Fn)Ψ( μn, pr ; Fn)
+
+2
+
+,
+
+(34) where Ψ( xa, xb; Fn) denotes a lightweight MLP decoder with two hidden layers that outputs an effective propagation factor for the segment from xa to xb. The rendered channel gain is then obtained in the same additive form as (11): 
+
+ˆGMLP (pr ) = ˆGMLP  
+
+> 0
+
+(pr ) + X
+
+> n∈N
+
+ˆGMLP  
+
+> n
+
+(pr ). (35) The difference between GS-CG and MLP-GS lies mainly in the scattering branch. In (12), ˆΩn(pr ), ˆΦn(pt, μn), and 
+
+ˆΦn(μn, pr ) are explicitly constructed from Gaussian ge-ometry, opacity, SH-based scattering directionality, and ray-Gaussian overlap. In (34), the Gaussian spatial support 
+
+αnΥn(pr ) is retained, while the remaining scattering-path effects, including distance-dependent attenuation, transmit-tance, and directional scattering, are absorbed into the MLP decoder with latent feature Fn, and repeated pairwise scatter-ing/transmittance calculations are avoided.         
+
+> (a) Campus scene for CGM construction.
+> (b) Campus scene for CGM up-dating.
+> (c) Road scene for CGM con-struction.
+> (d) Road scene for CGM updat-ing.
+> (e) Low-altitude scene for CGM construction.
+> (f) Low-altitude scene for CGM updating. Fig. 4. Test scenes for CGM construction and dynamic updating.
+
+As a result, MLP-GS is less physically explicit than GS-CG in modeling individual scattering paths, while preserving the geometry-aware inductive bias of GS-CG for structured and data-efficient learning. After replacing ˆG(pr ) with ˆGMLP (pr ),the same static construction and dynamic updating procedures in Algorithms 1 and 2 can be directly applied, with Fn and the MLP decoder parameters optimized together with the Gaussian parameters during construction and only the parameters asso-ciated with the active set updated during dynamic refinement. VI. S IMULATION RESULTS 
+
+In this section, we evaluate the proposed GS-CG and MLP-GS models for grid-based CGM construction and dynamic updating. The simulations aim to verify the construction accu-racy, updating efficiency, and the effectiveness of the proposed incremental design. 
+
+A. Simulation Setup and Implementation Details 
+
+As shown in Fig. 4, we consider three representative test scenes, including a campus scene, a road scene, and a low-altitude scene. The campus scene has a map size of 100 × 100 
+
+m2 and contains dense building blockage. The road scene has a map size of 50 × 50 m2 and is used to evaluate 9
+
+CGM updating under continuously changing blockers. The low-altitude scene has a map size of 300 × 300 m2 and is used to examine the scalability of the proposed design in a larger area with relatively sparse blockage. The buildings are modeled according to OpenStreetMap [29]. For all scenes, the CGM is partitioned into 50 ×50 = 2500 grids in the horizontal plane, with transmitter altitude of 5 m and receiver altitudes of 1 m, 1 m, and 100 m, respectively. 4 The carrier frequency is fc = 3 .5 GHz. The ground-truth CGM is generated by the radio map solver in Sionna-RT [30]. Specifically, each CGM entry is computed over multiple sampling points within each grid according to (5) as a grid-averaged channel gain rather than a pointwise channel response. In the training process, we use the center of each grid as the reference receiver coordinate. Accordingly, the model learns a mapping from the grid-center location to the corresponding average channel gain. These implementations are consistent with the grid-based channel model and CGM formulation in Section II. The GS-CG model is implemented in PyTorch and trained on an NVIDIA RTX 4090 GPU. For each Gaussian primitive 
+
+n ∈ N , the trainable parameters include its center μn, scale 
+
+sn, rotation qn, opacity αn, and SH coefficients fn of degree 
+
+3. For MLP-GS, the trainable parameters include μn, sn, qn,
+
+αn, and a latent feature vector Fn of dimension 16 . The Adam optimizer is adopted with an initial learning rate of 0.01 and a cosine annealing scheduler. For static CGM construction, 
+
+25 × 25 = 625 grids, corresponding to 25% of all grids, are uniformly selected as training samples. The model is initialized with 5000 Gaussians derived from the scene geometry and trained for 2000 epochs. For dynamic updating, only 10 ×10 = 100 grids, corresponding to 4% of all grids, are uniformly selected as new measurements. In this stage, the previously learned representation is reused, and 1000 additional active Gaussians are introduced and trained for 1000 epochs. For comparison, we consider the following benchmark schemes. 5 
+
+> •
+
+MLP-based radiance field (MLP-RF) model: Motivated by NeRF-based modeling [16], this baseline uses MLPs with inputs of transceiver and scatterer positions to repre-sent the radiance fields and render the direct and scatter-ing channel gain. Without explicitly modeling scatterers’ geometry and opacity, its trainable variables are scatterer positions and MLP parameters.  
+
+> •
+
+Virtual scatterer (VS) model: This baseline follows the scatterer-based CGM construction framework in [26], which also targets grid-averaged channel gain. It esti-     
+
+> 4Although the proposed GS-CG model supports a general 3D receiver re-gion, the simulations consider horizontal receiver-grid slices at fixed altitudes, which are common CGM instances for ground and low-altitude coverage analysis.
+> 5NeRF 2[16], WRF-GS [17], and generative CKM predictors [12] are not included as direct quantitative baselines. NeRF 2learns an RF radiance field and WRF-GS reconstructs spatial spectra, whereas GS-CG is built on a grid-based channel gain model. Adapting NeRF 2or WRF-GS to this task would require redesigning their rendering process. Generative predictors usually rely on large cross-scene training datasets, while our method constructs and updates a newly encountered scene from its own measurements. In addition, these methods do not directly address dynamic CGM updating from sparse new measurements. TABLE I MAE PERFORMANCE OF DIFFERENT SCHEMES (IN D B).
+
+Scene Campus Road Low-altitude Cons. Upd. Cons. Upd. Cons. Upd. GS-CG 0.60 1.46 0.54 2.26 0.58 1.07 
+
+MLP-GS 0.76 1.76 0.64 2.73 0.67 1.31 MLP-RF 1.48 3.99 0.85 4.26 0.93 2.07 VS 1.64 3.74 1.15 3.88 1.32 1.90 Kriging 1.87 4.34 1.38 5.44 1.38 2.95 
+
+> Note: Cons. = Construction, Upd. = Updating.
+
+mates large-scale multi-path parameters including scat-tering responses and path-loss-related coefficients, while the scatterer locations are not optimized.  
+
+> •
+
+Kriging interpolation: This baseline constructs the CGM by spatial interpolation from measured grid samples [31]. All methods are evaluated by the MAE in the dB domain over all grids. 
+
+B. CGM Construction and Dynamic Updating Performances 
+
+Table I summarizes the MAE performance in the three test scenes. GS-CG achieves the best accuracy in all cases. For static construction, it obtains sub-dB MAEs in the three scenes. This verifies that the proposed Gaussian-parameterized rendering can accurately reconstruct grid-based channel gain from 25% training samples. MLP-GS achieves slightly higher but still competitive MAEs, showing that replacing part of the explicit scattering interaction with neural surrogates causes only moderate accuracy loss. In comparison, the benchmark schemes of MLP-RF, VS, and Kriging show larger errors, because they are less effective in jointly capturing smooth path-loss variation and sharp blockage-induced discontinuities. In Table I, the advantage of GS-CG becomes more evident in dynamic updating. With only 4% new measurements, GS-CG achieves the lowest MAEs in the three scenes. By pre-serving the previously learned Gaussian structures and adding active Gaussians for local residual changes, GS-CG converts the underdetermined full-map reconstruction problem into a localized residual learning problem. By contrast, although MLP-RF uses the same incremental update and residual ini-tialization strategy, its updating errors remain much larger. This indicates that the performance gain comes not only from the incremental training protocol, but also from the Gaussian-based physical representation. Figs. 5 and 6 show the construction and updating results in the campus scene. Brighter colors indicate larger channel gain. In Fig. 5, the ground-truth CGM contains both smooth power decay around the transmitter and sharp shadow regions caused by buildings. GS-CG accurately reconstructs these features, while MLP-GS slightly smooths some blockage boundaries due to its simplified scattering rendering. By contrast, MLP-RF misses several sharp attenuation transitions, VS introduces noticeable artifacts, and Kriging interpolation blurs the shadow regions. In Fig. 6, newly introduced structures create additional directional shadow regions. GS-CG and MLP-GS correctly capture their orientation and spatial extent, which validates the proposed incremental updating with residual-guided active 10     
+
+> (a) Ground truth. (b) GS-CG.
+> (c) MLP-GS. (d) MLP-RF.
+> (e) VS. (f) Kriging interpolation. Fig. 5. CGM construction results in the campus scene.
+
+initialization. By contrast, under sparse measurements, MLP-RF fails to recover building-shaped attenuation regions and directional shadows, VS produces fragmented and misaligned shadow patterns around changed structures, and Kriging inter-polation over-smooths the updated map. Fig. 7 further illustrates the learned Gaussian representation in the campus scene. For visual clarity, we display only the Gaussians associated with building structures, while the ground-surface Gaussians used by GS-CG are omitted from the visualization. During construction, the initialization places Gaussians on building structures, and subsequent optimization further adapts their locations and shapes toward propagation-relevant regions. This indicates that the model refines ageometry-aware representation for channel gain rendering rather than merely fitting the CGM as an image. During updating, the active Gaussians initialized from residual-guided back-projection are refined toward the newly changed regions, while the previously learned Gaussians remain unchanged. This observation supports the physical intuition of the pro-posed initialization and shows that the learned representation is interpretable. Fig. 8 evaluates the road scene, where the environment changes continuously across multiple stages. The ground-truth            
+
+> (a) Ground truth. (b) GS-CG.
+> (c) MLP-GS. (d) MLP-RF.
+> (e) VS. (f) Kriging interpolation. Fig. 6. CGM updating results in the campus scene.
+> (a) Representation for reference CGM.
+> (b) Representation for updated CGM. Fig. 7. Learned Gaussian representation for the campus scene.
+
+CGMs show that different newly introduced blockers gen-erate different wedge-shaped shadow regions. The predicted CGMs demonstrate that GS-CG can track these evolving shadow patterns over consecutive updates. Although some sharp shadow boundaries are slightly smoothed due to the limited new measurements, the dominant attenuation regions and their directional structures are well reconstructed. This result indicates that the proposed method is not limited to a one-time update, but can support repeated CGM refinement as the environment evolves. 11           
+
+> (a) Static: Ground truth. (b) Stage 1: Ground truth. (c) Stage 2: Ground truth. (d) Stage 3: Ground truth.
+> (e) Static: Prediction. (f) Stage 1: Prediction. (g) Stage 2: Prediction. (h) Stage 3: Prediction. Fig. 8. CGM prediction results by GS-CG in the road scene.
+> (a) Static: Ground truth. (b) Updated: Ground truth.
+> (c) Static: Prediction. (d) Updated: Prediction. Fig. 9. CGM prediction results by GS-CG in the low-altitude scene.
+
+Fig. 9 shows the low-altitude scene, which has a much larger map size and the channel gain is mainly determined by sparse building-induced shadows. In this case, GS-CG accurately preserves the global power distribution while still recovering the main blockage effects. This confirms that the proposed grid-based physical rendering model remains effective in a larger-scale scenario, where the absolute propagation distance and channel gain dynamic range are both different from those in the ground-level scenes. Table II compares the average training time. GS-CG re- 
+
+> TABLE II AVERAGE TRAINING TIME OF DIFFERENT SCHEMES (IN S ).
+
+Construction Updating GS-CG 279 .7 46 .5
+
+MLP-GS 57 .8 22 .4
+
+MLP-RF 51 .6 9.2
+
+VS 9.8 4.7
+
+Kriging 0.2 0.1
+
+quires 279 .7 s for construction and 46 .5 s for updating. The much shorter update time confirms the efficiency of reusing the previously learned Gaussian representation and optimizing only the active set with sparse measurements. MLP-GS further reduces the training time to 57 .8 s and 
+
+22 .4 s, respectively, with only moderate accuracy degradation. Therefore, GS-CG is preferred when reconstruction fidelity and physical interpretability are important, whereas MLP-GS provides a favorable accuracy-complexity tradeoff for fast CGM construction and frequent updating. Although MLP-RF is faster, especially during updating, its accuracy is much lower, confirming the importance of retaining the geometry-aware Gaussian representation. 
+
+C. Ablation and Grid-Resolution Study 
+
+Fig. 10 evaluates the main components of the incremental GS-CG for dynamic CGM update in the campus scene. As compared to Fig. 6(b), Fig. 10(a) shows the result of directly reconstructing the updated CGM without using prior prop-agation knowledge. The resulting prediction exhibits strong distortion and a much larger MAE, since the sparse update measurements are insufficient for reconstructing the whole CGM from scratch. Fig. 10(b) shows the full-retraining base-line, where all parameters are re-optimized during updating. Although it uses the previous model as initialization, updating 12          
+
+> (a) Direct reconstruction without prior knowledge.
+> (b) Full-model updating without parameter freezing.
+> (c) Random active initialization without residual guidance. Fig. 10. Ablation study on incremental GS-CG for CGM updating.
+
+the entire representation with sparse new data disturbs the learned structures in unchanged regions and yields a larger error. This verifies the necessity of parameter freezing. Fig. 10(c) replaces the proposed residual-guided active initializa-tion with random initialization. The error increases in this case because randomly initialized active Gaussians are less likely to lie near the true changed structures, making it harder to explain the newly formed shadow regions. These results confirm that prior reuse, parameter freezing, and residual-guided active initialization are all important for stable and data-efficient CGM updating. Fig. 11 studies the impact of grid resolution in the campus scene. The same 100 × 100 m2 area is divided into 25 × 25 
+
+and 100 × 100 grids. For both resolutions, 25% samples are used for construction and 4% samples are used for updating. The proposed framework works well under both settings. With the coarse 25 × 25 grids, the model captures the overall power distribution and major blockage regions. With the finer 100 × 100 grids, the predicted CGM contains sharper shadow boundaries and more detailed spatial variation. This is because the Gaussian representation is continuous in space, while the grid only defines the supervision and evaluation resolution. Therefore, GS-CG can adapt to different CGM resolutions according to the required planning granularity and measurement density. VII. C ONCLUSION 
+
+This paper investigated 3DGS-enabled construction and dynamic updating of grid-based CGMs for environment-aware wireless networks. We first formulated a grid-averaged channel gain model that suppresses phase-sensitive small-scale fluctuations and decomposes the gain into distance-               
+
+> (a) Construction with 25 ×25
+> grids.
+> (b) Updating with 25 ×25 grids.
+> (c) Construction with 100 ×100
+> grids.
+> (d) Updating with 100 ×100 grids. Fig. 11. GS-CG prediction results under different grid resolutions.
+
+dependent attenuation, path transmittance, and effective scat-tering components. Based on this model, we developed GS-CG to represent latent radio-interaction structures with Gaus-sian primitives and render grid-level channel gains through propagation-aware scattering and transmittance modeling. We then proposed an incremental updating mechanism that freezes the static/reference Gaussian representation and optimizes only a compact active Gaussian set for dynamic CGM refinement, and further introduced MLP-GS to reduce the cost of ex-plicit scattering-branch rendering with a lightweight decoder. Simulation results in campus, road, and low-altitude scenarios showed that GS-CG accurately reconstructs static CGMs from limited measurements and effectively tracks local environ-mental changes from sparse new measurements. The dynamic updating results confirmed that prior reuse, parameter freezing, and residual-guided active initialization are essential for stable refinement. The comparisons also showed that MLP-GS sub-stantially reduces training time with only moderate accuracy loss, providing a practical accuracy-complexity tradeoff for fast and frequent CGM updating. APPENDIX APROOF OF PROPOSITION 1The proof is motivated by [26], which gives the derivation for square grids on a two-dimensional (2D) plane. Here, we extend to 3D grid cells with a generic shape. Let x ∈ C (pr )
+
+be expressed as x = pr + ξ, where ξ ∈ C (0) is the local displacement and C(0) denotes the grid cell translated to the origin. Under the local plane-wave approximation, the excess distance of the n-th path varies approximately linearly with ξ,i.e., ∆n(x; pr ) ≈ νTn ξ, where νn is the unit vector associated 13 
+
+with the direction of arrival (DoA) of the n-th path. 6 Thus, 
+
+fn(x; pr ) = exp 
+
+
+
+− j 2πλ ∆n(x; pr )
+
+
+
+≈ exp( −jkTn ξ), (36) where kn ≜ 2πλ νn is the effective spatial wave vector of the 
+
+n-th path. Substituting (1) into (5) gives 
+
+G(pr ) = 1
+
+|C (pr )|
+
+Z 
+
+> C(pr)
+> Ns
+
+X
+
+> n=0
+
+un(pr )fn(x; pr ) 2
+
+dx
+
+=
+
+> Ns
+
+X
+
+> n=0
+> Ns
+
+X
+
+> n′=0
+
+un(pr )u∗ 
+
+> n′
+
+(pr )Rn,n ′ (pr ),
+
+(37) where 
+
+Rn,n ′ (pr ) ≜ 1
+
+|C (pr )|
+
+Z 
+
+> C(pr)
+
+fn(x; pr )f ∗ 
+
+> n′
+
+(x; pr )dx (38) is the spatial cross-correlation between the n-th and n′-th field responses over the grid. Using (36) and changing variables from x to ξ, we obtain 
+
+Rn,n ′ (pr ) ≈ 1
+
+|C (0)|
+
+Z
+
+> C(0)
+
+e−j(kn−kn′ )T ξdξ. (39) The last expression is the normalized Fourier transform of the cell indicator evaluated at the differential wave vector kn−kn′ .For n = n′, it gives Rn,n (pr ) = 1 . For n̸ = n′, sufficiently separated local directions make kn −kn′ non-negligible. Since the grid cell spans many wavelengths, the phase term oscil-lates rapidly over C(0), and the integral becomes negligible. Hence, Rn,n ′ (pr ) ≈ 0. Substituting these correlations into the quadratic expansion of G(pr ) yields (6). The expressions in (7) follow by taking the squared magnitudes of the path responses. REFERENCES [1] Y. Zeng and X. Xu, “Toward environment-aware 6G communications via channel knowledge map,” IEEE Wireless Commun. , vol. 28, no. 3, Jun. 2021. [2] Y. Zeng, J. Chen, J. Xu, D. Wu, X. Xu, S. Jin, X. Gao, D. Gesbert, S. Cui, and R. Zhang, “A tutorial on environment-aware communications via channel knowledge map for 6G,” IEEE Commun. Surveys Tut. , vol. 26, no. 3, pp. 1478–1519, thirdquarter 2024. [3] E. D. Anese, S.-J. Kim, and G. B. Giannakis, “Channel gain map tracking via distributed kriging,” IEEE Trans. Veh. Technol. , vol. 60, no. 3, pp. 1205–1211, Mar. 2011. [4] Z. Ren, J. Zhou, J. Xu, L. Qiu, Y. Zeng, H. Hu, J. Zhang, and R. Zhang, “Channel knowledge map construction: Recent advances and open challenges,” IEEE Wireless Commun. , pp. 1–7, Mar. 2026. [5] X. Liu, S. Sun, M. Tao, A. Kaushik, and H. Yan, “Channel knowledge maps for 6G wireless networks: construction, applications, and future challenges,” arXiv preprint arXiv:2505.24151 , 2025. [6] Z. Xu, B. Huang, and B. Jia, “An efficient radio map learning scheme based on kernel density function,” IEEE Trans. Veh. Technol. , vol. 70, no. 12, pp. 13 315–13 324, Dec. 2021. [7] H. Sun and J. Chen, “Propagation map reconstruction via interpolation assisted matrix completion,” IEEE Trans. Signal Process. , vol. 70, pp. 6154–6169, Dec. 2022. [8] S. Seidel and T. Rappaport, “Site-specific propagation prediction for wireless in-building personal communication system design,” IEEE Trans. Veh. Technol. , vol. 43, no. 4, pp. 879–891, Nov. 1994. 
+
+> 6
+
+We assume that distinct paths have sufficiently separated local directions. If two paths have very similar DoAs, their cross-correlation may not vanish after spatial averaging. In that case, they should be treated as one effective path or scattering cluster rather than two separable paths. [9] R. V. Akhpashev and A. V. Andreev, “COST 231 Hata adaptation model for urban conditions in LTE networks,” in Proc. 2016 17th International Conference of Young Specialists on Micro/Nanotechnologies and Elec-tron Devices (EDM) , Jun. 2016, pp. 64–66. [10] Z. Yun and M. F. Iskander, “Ray tracing for radio propagation modeling: Principles and applications,” IEEE Access , vol. 3, pp. 1089–1100, Jul. 2015. [11] R. Levie, C ¸ . Yapar, G. Kutyniok, and G. Caire, “RadioUNet: Fast radio map estimation with convolutional neural networks,” IEEE Trans. Wireless Commun. , vol. 20, no. 6, pp. 4001–4015, Jun. 2021. [12] Y. Li, C. Zhang, W. Wang, and Y. Huang, “RMTransformer: Accurate radio map construction and coverage prediction,” in Proc. 2025 IEEE 101st Vehicular Technology Conference (VTC2025-Spring) , Jun. 2025, pp. 1–5. [13] S. Fu, Y. Zeng, Z. Wu, D. Wu, S. Jin, C.-X. Wang, and X. Gao, “CKMDiff: A generative diffusion model for CKM construction via inverse problems with learned priors,” arXiv preprint arXiv:2504.17323 ,2025. [14] B. Mildenhall, P. P. Srinivasan, M. Tancik, J. T. Barron, R. Ramamoorthi, and R. Ng, “Nerf: Representing scenes as neural radiance fields for view synthesis,” Communications of the ACM , vol. 65, no. 1, pp. 99–106, Dec. 2021. [15] B. Kerbl, G. Kopanas, T. Leimk¨ uhler, and G. Drettakis, “3D Gaussian splatting for real-time radiance field rendering,” ACM Transactions on Graphics , vol. 42, no. 4, Jul. 2023. [Online]. Available: https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/ [16] X. Zhao, Z. An, Q. Pan, and L. Yang, “NeRF2: Neural radio-frequency radiance fields,” in Proc. the 29th Annual International Conference on Mobile Computing and Networking (ACM MobiCom ’23) , Oct. 2023. [17] C. Wen, J. Tong, Y. Hu, Z. Lin, and J. Zhang, “WRF-GS: Wireless radiation field reconstruction with 3D Gaussian splatting,” in Proc. IEEE INFOCOM 2025 - IEEE Conference on Computer Communications ,May 2025, pp. 1–10. [18] J. Zhou, C. Hu, G. Wu, Z. Ren, H. Hu, J. Zhang, R. Zhang, and J. Xu, “6D channel knowledge map construction via bidirectional wireless Gaussian splatting,” arXiv preprint arXiv:2510.26166 , 2025. [19] L. Zhang, H. Sun, S. Berweger, C. Gentile, and R. Q. Hu, “RF-3DGS: Wireless channel modeling with radio radiance field and 3D Gaussian splatting,” IEEE Trans. Wireless Commun. , vol. 25, pp. 10 419–10 433, Jan. 2026. [20] L. Zhang, Z. Li, and H. Sun, “RF-PGS: Fully-structured spatial wireless channel representation with planar Gaussian splatting,” arXiv preprint arXiv:2508.16849 , 2025. [21] M. Liu, C. Zhang, Q. Yang, Y. Cao, Y. Xu, Y. Xu, S. Sun, M. Dai, and Y. Guan, “Deformable 2D Gaussian splatting for efficient wireless radiance field rendering,” IEEE Trans. Vis. Comput. Graph. , pp. 1–17, Apr. 2026. [22] B. S. Nukapotula, R. Tripathi, S. Pregler, D. Kalathil, S. Shakkottai, and T. S. Rappaport, “GSpaRC: Gaussian splatting for real-time reconstruc-tion of RF channels,” arXiv preprint arXiv:2511.22793 , 2025. [23] A. Chen, S. Mao, Z. Li, H. Zhang, D. Niyato, and Z. Han, “A Gaussian splatting approach to continuous radio map construction,” in Proc. IEEE INFOCOM 2025 - IEEE Conference on Computer Communications Workshops (INFOCOM WKSHPS) , May 2025, pp. 1–6. [24] Y. Wang, Y. Xue, S. Zhang, and T.-H. Chang, “RadSplatter: Extend-ing 3D Gaussian splatting to radio frequencies for wireless radiomap extrapolation,” arXiv preprint arXiv:2502.12686 , 2025. [25] Z. Li, L. Yang, Y. Bian, H. Pan, Y. Fu, Y. Wang, Z. Chen, Y.-C. Chen, and G. Xue, “Wideband RF radiance field modeling using frequency-embedded 3D Gaussian splatting,” arXiv preprint arXiv:2505.20714 ,2025. [26] H. Sun, L. Zhu, and R. Zhang, “Channel gain map estimation for wireless networks based on scatterer model,” IEEE Trans. Wireless Commun. , vol. 24, no. 8, pp. 7012–7028, Aug. 2025. [27] H. Sun, L. Zhu, J. Xu, and R. Zhang, “Channel gain map estimation based on 3-D virtual scatterer model,” IEEE Trans. Wireless Commun. ,vol. 25, pp. 15 741–15 757, Apr. 2026. [28] A. Goldsmith, Wireless Communications . Cambridge, U.K.: Cambridge University Press, 2005. [29] OpenStreetMap contributors, “Planet dump retrieved from https://planet.osm.org,” https://www.openstreetmap.org, 2017. [30] J. Hoydis, S. Cammerer, F. Ait Aoudia, M. Nimier-David, L. Maggi, G. Marcus, A. Vem, and A. Keller, “Sionna,” https://nvlabs.github.io/ sionna/, 2022. [31] M. A. Oliver and R. Webster, “Kriging: a method of interpolation for ge-ographical information systems,” International Journal of Geographical Information Systems , vol. 4, no. 3, pp. 313–332, 1990.

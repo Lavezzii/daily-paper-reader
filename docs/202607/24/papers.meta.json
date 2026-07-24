@@ -1,0 +1,69 @@
+{
+  "label": "2026-07-24",
+  "date": "2026-07-24",
+  "generated_at": "2026-07-24T21:27:28",
+  "count": 4,
+  "papers": [
+    {
+      "paper_id": "202607/24/2607.20697v1-lightweight-gated-recurrent-unit-variants-for-real-time-channel-prediction",
+      "section": "deep",
+      "title_en": "Lightweight Gated Recurrent Unit Variants for Real-Time Channel Prediction",
+      "authors": "Kyriakos Christodoulides, Kyriakos M. Deliparaschos, Risto Wichman, Themistoklis Charalambous",
+      "date": "2026-07-22",
+      "pdf": "https://arxiv.org/pdf/2607.20697v1",
+      "score": "9.0",
+      "evidence": "用于实时信道预测的轻量级GRU变体",
+      "tldr": "针对实时信道预测的延迟、计算和内存约束，本文提出三种轻量级GRU变体：无约束L-GRU、稳定性感知SA-GRU（限制候选状态循环矩阵谱半径）和双重约束DCL-GRU（额外控制重置门矩阵）。推导了候选状态映射收缩的充分条件。在3GPP CDL-A信道模型下，约束变体保持预测精度，优化速度比五层GRU快1.72-1.76倍。SA-GRU在观测损坏时隐藏状态偏差降低约15%，但L-GRU滚动NMSE最低，揭示了精度、鲁棒性与稳定性的权衡。",
+      "tags": "query:channel-nn",
+      "abstract_en": "Machine-learning-based channel predictors must operate under stringent latency, memory, and computational constraints while remaining robust to noisy and time-varying observations. This paper develops a causal channel-prediction framework based on three single-layer gated recurrent unit variants: an unconstrained lightweight GRU (L-GRU), a stability-aware GRU (SA-GRU) with a spectral bound on the candidate-state recurrent matrix, and a doubly constrained lightweight GRU (DCL-GRU) with additional control of the reset-gate recurrent matrix. A sufficient condition is derived for contraction of the complete candidate-state mapping, while preserving the parameter count and inference-time structure of the baseline architecture. These guarantees apply to the candidate-state mapping and do not directly imply contraction of the complete GRU hidden-state transition. The models are trained on 2x2 MIMO channels generated using the 3GPP CDL-A model, and their hyperparameters are selected through Bayesian optimisation with Optuna's Tree-structured Parzen Estimator. Across the considered SNR range, the constrained variants retain competitive prediction accuracy and achieve optimisation runtimes close to L-GRU, with speedups of 1.72x and 1.76x relative to a five-layer GRU for SA-GRU and DCL-GRU, respectively. All audited constrained runs satisfy the prescribed spectral bounds. Under temporary observation corruption followed by recursive prediction, SA-GRU reduces the mean and peak hidden-state deviations by approximately 15.3% and 13.0%, respectively, relative to L-GRU, whereas L-GRU achieves the lowest rollout NMSE. These results highlight an explicit trade-off between prediction accuracy, empirical rollout robustness, and candidate-state stability guarantees.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/24/2607.20745v1-self-attention-transformer-based-detector-for-faster-than-nyquist-signaling",
+      "section": "deep",
+      "title_en": "Self-Attention Transformer-Based Detector for Faster-than-Nyquist Signaling",
+      "authors": "Nurettin Safak, Osman Tokluoglu, Enver Cavus",
+      "date": "2026-07-22",
+      "pdf": "https://arxiv.org/pdf/2607.20745v1",
+      "score": "9.0",
+      "evidence": "基于Transformer的接收机用于FTN信号均衡",
+      "tldr": "FTN信号通过故意引入码间干扰提升频谱效率，但传统检测复杂度高。提出一种编码器-only Transformer接收机，无需先验信道知识，采用多SNR预训练与逐SNR课程微调的两阶段策略，在BPSK信号、压缩因子0.8下逼近最优BCJR检测性能。注意力可视化显示模型自主聚焦于中心符号及其邻域，有效捕获ISI结构。该工作为FTN检测提供低复杂度深度学习方案。",
+      "tags": "query:channel-nn",
+      "abstract_en": "In this study, a novel encoder-only Transformer-based receiver architecture is presented for BPSK signals transmitted over Faster-than-Nyquist (FTN) signaling channels that introduce intentional inter-symbol interference (ISI) with a compression factor of $τ=0.8$. A complete end-to-end communication chain encompassing BPSK modulation, RRC pulse shaping, and the ISI coefficients arising from matched filtering was constructed and evaluated. The proposed Transformer receiver was benchmarked against the optimal BCJR detector over an $E_b/N_0$ range of 0-8 dB. To systematically close the BER gap to the BCJR, a two-stage training strategy combining multi-SNR pretraining and per-SNR curriculum fine-tuning was developed. The computational complexity and inference latency of the Transformer receiver were analyzed in comparison with a GRU based receiver. Attention map visualizations revealed that the Transformer autonomously identifies the FTN-induced ISI memory structure without requiring any prior channel knowledge; as the SNR increases, the attention weights become significantly concentrated around the center token and its nearest neighbors.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/24/2607.19448v1-intelligent-disruption-undetectable-attacks-on-wireless-autoencoders",
+      "section": "deep",
+      "title_en": "Intelligent Disruption: Undetectable Attacks on Wireless Autoencoders",
+      "authors": "Han Jiang, Jifa Zhang, Hu Jin, Nan Zhao, Mingqian Liu, Yunfei Chen",
+      "date": "2026-07-21",
+      "pdf": "https://arxiv.org/pdf/2607.19448v1",
+      "score": "8.0",
+      "evidence": "针对无线自编码器的深度学习智能攻击框架",
+      "tldr": "针对无线自编码器通信中多个并行攻击导致的累积泄漏干扰和动态环境挑战，提出基于深度学习的智能攻击框架。通过DNN功率控制抑制干扰泄漏提升不可检测性，并利用条件生成对抗网络生成自适应扰动信号。实验表明该方法在保持隐蔽性的同时显著增强了攻击效果和适应性。",
+      "tags": "query:channel-nn",
+      "abstract_en": "Adversarial attacks can degrade the legitimate decision performance in wireless autoencoder communications. However, in complex scenarios with multiple adversaries, the cumulative leakage interference (CLI) caused by the multiple parallel attacks increases the chance of detecting the attacks, while dynamical environments also make the fixed attack strategies difficult to have stable effectiveness. To jointly enhance the undetectability, aggressivity and adaptability of adversarial attacks, we propose a deep learning based intelligent attack framework. Specifically, considering the CLI caused by the multiple parallel attacks, a deep neural network based transmit power control is established to reduce the interference leakage by regulating the transmit power of these adversaries, thereby improving the undetectability. Furthermore, to enhance the attack effectiveness and stability in the dynamic environment, the conditional generative adversarial attack is further developed. The generator takes the attack channel information as the conditional input to produce the perturbating signals to mislead the discriminator by making the attacked received signals resemble the clean received signals, while the discriminator distinguishes between the two under the same condition. Through the adversarial training, the generator can learn to create adaptive perturbating signals with enhanced attack performance. Simulation results demonstrate that the proposed framework outperforms benchmarks in terms of attack undetectability, aggressivity and adaptability.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/24/2607.21099v1-construction-and-dynamic-update-of-channel-gain-maps-via-3d-gaussian-splatting",
+      "section": "quick",
+      "title_en": "Construction and Dynamic Update of Channel Gain Maps via 3D Gaussian Splatting",
+      "authors": "Yilong Chen, Yuan Guo, Juncong Zhou, Jie Xu, Rui Zhang",
+      "date": "2026-07-23",
+      "pdf": "https://arxiv.org/pdf/2607.21099v1",
+      "score": "6.0",
+      "evidence": "利用3D高斯散射构建信道增益图以支持无线网络设计",
+      "tldr": "信道知识图（CKM）为环境感知无线网络设计提供位置相关传播知识。本文针对网格信道增益图（CGM），提出基于3D高斯泼溅的物理感知信道增益模型（GS-CG），将传播环境表示为高斯基元，通过可微分渲染生成网格级增益，并引入增量学习机制适应动态环境。数值结果验证了GS-CG在准确重构CGM和高效动态更新方面的性能，实现了良好的准确率与复杂度权衡。",
+      "tags": "query:channel-nn",
+      "abstract_en": "Channel knowledge maps (CKMs) have emerged as a promising technique for providing scene-specific and location-dependent propagation knowledge to enable environment-aware wireless network design. This paper investigates the construction and dynamic updating of a particular type of CKM, namely grid-based channel gain maps (CGMs), for large-scale networks using three-dimensional Gaussian splatting (3DGS). First, we formulate a grid-based channel gain model, where each map entry is defined as the locally averaged channel gain over a receiver grid, thereby suppressing phase-sensitive small-scale fluctuations. The resulting channel gain is decomposed into distance-dependent attenuation, path transmittance, and effective scattering contributions. Based on this decomposition, we develop a physics-informed Gaussian-splatting-based channel gain (GS-CG) model, which represents the propagation environment as a set of Gaussian primitives. The proposed model maps Gaussian geometry, opacity, and directional features to propagation-related factors and renders grid-level channel gains through a differentiable process. To accommodate real-time environmental changes, we further propose an incremental learning mechanism that updates a static reference GS-CG representation into a dynamic CGM. Specifically, the reference Gaussian primitives are frozen, while a compact set of tunable Gaussians is introduced to capture newly induced local channel-gain variations from sparse measurements.Numerical results demonstrate that the proposed GS-CG methods accurately reconstruct grid-based CGMs, efficiently adapt to dynamic environmental changes, and achieve a favorable accuracy-complexity tradeoff for fast CGM refinement.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

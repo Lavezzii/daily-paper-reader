@@ -1,0 +1,828 @@
+Title: Intelligent Disruption: Undetectable Attacks on Wireless Autoencoders
+
+URL Source: https://arxiv.org/pdf/2607.19448v1
+
+Published Time: Thu, 23 Jul 2026 00:04:12 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+> 1
+
+# Intelligent Disruption: Undetectable Attacks on Wireless Autoencoders 
+
+Han Jiang, Jifa Zhang, Hu Jin, Senior Member, IEEE , Nan Zhao, Senior Member, IEEE ,Mingqian Liu, Member, IEEE , and Yunfei Chen, Fellow, IEEE 
+
+Abstract —Adversarial attacks can degrade the legitimate de-cision performance in wireless autoencoder communications. However, in complex scenarios with multiple adversaries, the cumulative leakage interference (CLI) caused by the multiple par-allel attacks increases the chance of detecting the attacks, while dynamical environments also make the fixed attack strategies difficult to have stable effectiveness. To jointly enhance the un-detectability, aggressivity and adaptability of adversarial attacks, we propose a deep learning based intelligent attack framework. Specifically, considering the CLI caused by the multiple parallel attacks, a deep neural network based transmit power control is established to reduce the interference leakage by regulating the transmit power of these adversaries, thereby improving the undetectability. Furthermore, to enhance the attack effectiveness and stability in the dynamic environment, the conditional gen-erative adversarial attack is further developed. The generator takes the attack channel information as the conditional input to produce the perturbating signals to mislead the discriminator by making the attacked received signals resemble the clean received signals, while the discriminator distinguishes between the two under the same condition. Through the adversarial training, the generator can learn to create adaptive perturbating signals with enhanced attack performance. Simulation results demonstrate that the proposed framework outperforms benchmarks in terms of attack undetectability, aggressivity and adaptability. 
+
+Index Terms —Adversarial attacks, conditional generative ad-versarial network, deep neural network, dynamic channel, wire-less autoencoder. 
+
+I. I NTRODUCTION 
+
+Conventional communications generally adopt a modular design, consisting of multiple functional blocks such as modu-lation and demodulation, channel encoding and decoding, and channel estimation and detection, each of which is usually designed and optimized independently to improve the perfor-mance [1]. Although this modular design has been widely adopted in practice, the lack of joint optimization across modules seriously limits the communication performance in the complex wireless environment characterized by multipath propagation, time-variance and multi-user interference [2]. Deep learning (DL), with its powerful nonlinear modeling and hierarchical feature representation capabilities, provides a 
+
+H. Jiang, J. Zhang and N. Zhao are with the School of Infor-mation and Communication Engineering, Dalian University of Technol-ogy, Dalian, Liaoning, P. R. China (email: hanjiang@mail.dlut.edu.cn, ji-fazhang@mail.dlut.edu.cn, zhaonan@dlut.edu.cn). H. Jin is with the School of Electrical Engineering, Hanyang University, Ansan 15588, South Korea (e-mail: hjin@hanyang.ac.kr). M. Liu is with the State Key Laboratory of Integrated Services Networks, Xidian University, Xi’an 710071, China (e-mail: mqliu@mail.xidian.edu.cn). Y. Chen is with Department of Engineering, University of Durham, Durham, UK DH1 3LE (e-mail: Yunfei.Chen@durham.ac.uk). N. Zhao is the corresponding author. 
+
+promising paradigm for the end-to-end design and optimiza-tion of wireless communications [3], [4]. In this context, the DL-based autoencoder communications have attracted increas-ing attention [5]. Different from the conventional modular design, the transceiver chain in the DL-based autoencoder communications is implemented as an end-to-end autoencoder architecture [6], [7]. Specifically, the encoder acts as the transmitter, mapping the original message into the transmitted signal, while the decoder serves as the receiver, recovering the original message from the received signal affected by the noise, fading and interference [8]. By jointly training the encoder and decoder, the DL-based autoencoders can adap-tively learn the effective signal representation and transceiver strategy, thereby enhancing the communication performance in the complex wireless environment [9]. Despite these advantages, the DL-based autoencoder com-munications are vulnerable to the adversarial attacks due to the broadcast nature of wireless. [10]. In such attacks, carefully designed perturbations can be added to the original inputs to mislead the autoencoders for erroneous outputs [11], [12]. For example, Sadeghi and Larsson in [13] proposed an input-agnostic adversarial attack against an end-to-end DL-based autoencoder system, revealing that the adversarial attacks can be more destructive than jamming attacks. In [14], Albaseer 
+
+et al. investigated the vulnerability of DL-based autoencoder systems over Rayleigh channels in both the fast-fading and slow-fading scenarios, showing that the fast-fading channels are more susceptible to the adversarial attacks than the slow-fading ones. Considering a more realistic channel model, Jiang et al. in [15] proposed a variable step-size double-iteration attack against the end-to-end DL-based autoencoder, where the channels from both the transmitter and adversary towards the receiver were taken into account. In [16], Son 
+
+et al. investigated the vulnerability of double reconfigurable intelligent surfaces assisted autoencoder systems in the finite-scattering environment, and proposed the projected gradient descent based adversarial attacks to effectively degrade the reliability. Nevertheless, the existing attack methods still suffer from some practical limitations. First, the considered scenarios remain simplified. Although various settings have been con-sidered, including the single input single output (SISO) with a single transmitter and a single receiver [17], [18], the SISO with a single transmitter and multiple receivers [19], [20], the multiple input multiple output (MIMO) with a single transmitter and a single receiver [16] and the MIMO with a single transmitter and multiple receivers [21], [22], the existing arXiv:2607.19448v1 [cs.CR] 21 Jul 2026 2                                                                                                                  
+
+> TABLE I: Comparison between our work and the related works.
+> Reference Legal Receiver Antenna Setting Adversary CLI Attack Channel Adaptability to Dynamic Attack Channels
+> [13] Single SISO Single ✗✗✗
+> [14] Single SISO Single ✗✗✗
+> [15] Single SISO Single ✗✓✗
+> [16] Single MIMO Single ✗✗✗
+> [17] Single SISO Single ✗✗✓
+> [19] Multiple SISO Single ✗✗✗
+> [20] Multiple SISO Single ✗✓✗
+> [21] Multiple MISO Single ✗✗✗
+> [22] Multiple MISO Single ✗✗✗
+> [23] Single SISO Single ✗✗✗
+> [26] Single SISO Single ✗✗✗
+> [27] Single SISO Single ✗✗✗
+> [28] Single SISO Single ✗✗✗
+> [29] Single SISO Single ✗✗✗
+> [30] Single SISO Single ✗✓✗
+> [31] Multiple SISO Single ✗✓✗
+> [32] Multiple MISO Single ✗✗✗
+> This work Multiple MISO Multiple ✓✓✓
+
+studies mainly focus on the single-adversary case. Such setting may be insufficient to reflect the real adversarial environment, where multiple multi-antenna adversaries may launch the targeted attacks via beamforming to the legitimate receivers simultaneously. Meanwhile, due to the energy leakage and the openness of wireless environment, the interference leakage from the multiple parallel attack links may accumulate at the receivers and form the non-negligible cumulative leakage interference (CLI). Such CLI is more likely to be detected by receivers, thereby exposing the presence of adversaries and causing the failure of attacks. On the other hand, most of the above attack methods exhibit limited adaptability to the time-varying channels. In practical adversarial scenarios, the perturbations designed at the adversary side have to go through the attack channel from the adversary to receiver before attacking the receiver. During this process, the channel fading may greatly degrade the effectiveness of adversarial attacks. However, the existing studies primarily focus on modeling the communication chan-nel between the transmitter and receiver, while neglecting the attack channel [23]–[25]. Moreover, the factors such as target mobility may lead to rapid changes in attack channels, making it challenging to maintain stable attack performance in these dynamic environments. Motivated by these, we investigate the adversarial attacks with multi-adversary. Compared with the single-adversary setting, the multi-adversary one better reflects the practical adversarial environment. In this multi-adversary environment, the parallel attacks inevitably introduce CLI, which increases the risk of exposure. Moreover, since the attack channels vary rapidly due to the target mobility, the adversarial attacks should adapt to the channel changing to maintain stable performance. Table I compares our work with the related publications, and the main contributions are listed as below.  
+
+> •
+
+We propose an intelligent attack framework against the MISO DL-based autoencoder with multiple receivers and adversaries, which jointly improves the undetectability, aggressivity and adaptability of adversarial attacks in the practical adversarial environment.  
+
+> •
+
+Considering the CLI caused by the multiple parallel attack links, a deep neural network (DNN) based power control is established to mitigate the CLI at each receiver by regulating the transmit power of multiple adversaries, thereby enhancing the undetectability of attacks.  
+
+> •
+
+To further improve the attack effectiveness in the dynamic adversarial environment, the conditional generative adver-sarial network (cGAN) based adversarial attack is further developed. By exploiting the attack channel information, the generator can produce the adaptive perturbating sig-nals with enhanced aggressivity. The rest of this paper is organized as follows. Section II introduces the system model. DNN based power control and cGAN based adversarial attack are presented in Section III and Section IV, respectively. Section V provides the simulation results, and the conclusion is given in Section VI. 
+
+Notation: √·, (·)T and (·)H stand for square root, transpose and conjugate transpose, respectively. CN { μ, Φ} denotes the circularly symmetric complex Gaussian distribution with mean 
+
+μ and covariance matrix Φ. arg( ·) denotes the angle of a complex number. ‖ · ‖ 2 represents the ℓ2 norm. E[·] stands for the mathematical expectation. II. S YSTEM MODEL 
+
+Consider a multi-adversary and multi-receiver MISO DL-based autoencoder system consisting of a transmitter with 
+
+M antennas, L single-antenna receivers and A N -antenna adversaries, where A = L is assumed for the target attack, as shown in Fig. 1. The transmitter is composed of an encoder, and each receiver is equipped with a decoder, where both the encoder and decoder are implemented via neural networks. Each adversary attacks its targeted receiver (TR) via beam-forming. However, due to the energy leakage and the openness of wireless environment, each adversary inevitably introduces interference to the non-targeted receivers. We assume that the 3 
+
+> Attack Channel
+> Transmitter
+> Encoder
+> Decoder
+> Rx 1
+> Decoder
+> Rx L
+> ...
+
+x
+
+s    
+
+> ATx 1 ATx A
+> ...
+> Transmission Channel
+> Rx 1
+> Tx
+> ATx 1
+> ATx 2
+> ... ...
+> ...
+> Attack link
+> Interference link
+> Rx 2
+> Rx L
+> ... ...
+> ATx A
+> Transmission link
+
+Fig. 1: Multi-adversary MISO DL-based autoencoder system. 
+
+transmitter, receivers and adversaries are synchronized during the transmission, and we adopt an information-rich adversary model for the worst-case vulnerability analysis. 
+
+A. Transmission Model 
+
+In this paper, the wireless channels are modeled as Rayleigh fading over the transmission period, which is evenly divided into Q time slots. Denote the original input message of the transmitter as s, where s ∈ U = {1, 2, · · · , U }, and U = 2 k
+
+represents the dimension of U with k being the number of bits per message. The message is then passed to the encoder, which applies a transformation F : U → CB to form the transmitted signal x = F(s) = [ x1, ..., x b, ...x B ]T ∈ C1×B ,where B denotes the length of transmitted signal and Q is equal to B to guarantee the complete transmission. In each time slot, a single symbol xb is broadcast to all receivers via the channels, where b ∈ { 1, ..., B }. Assume that the channels remain constant within each time slot but vary independently across slots. Without the attack, the received signal at the l-th receiver in the b-th time slot can be expressed as 
+
+yl,b = √PxhHl,b wxxb + nl,b , (1) where l ∈ { 1, ..., L }, Px denotes the transmit power of trans-mitter, hl,b = [ h1
+
+> l,b
+
+, ..., h Ml,b ] ∈ CM×1 and wx ∈ CM×1 denote the channel and beamforming vectors, respectively, where 
+
+hl,b ∼ CN (0M , IM ), ‖wx‖2 = 1 , and nl,b ∼ CN (0, σ 2)
+
+is the additive white Gaussian noise (AWGN) in the b-th time slot with σ2 = N0/(RE ), where E denotes the energy per bit and R is the transmission rate in bits per channel use. Finally, the decoder at the l-th receiver decodes yl using the transformation G : CB → U to estimate the original message as 
+
+ˆsl = G(yl), (2) where yl = [yl, 1, ..., y l,b , ..., y l,B ]T ∈ C1×B denotes the received signal at the l-th receiver during Q time slots. 
+
+B. Attack Model 
+
+With the attack, each adversary transmits a carefully de-signed perturbating signal over the attack channel to confuse the decoder at its TR into making errors in the estimation. Let hal,b ∈ CN ×1 represent the attack channel vector between the a-th adversary and the l-th TR in the b-th time slot, 
+
+a ∈ { 1, ..., A }, given by 
+
+hal,b ∼ CN (0N , Ral,b ), (3) with 
+
+Ral,b = βal,b ˜Ral,b , (4) where βal,b characterizes the large-scale fading of the attack channel between the a-th adversary and the l-th TR in the 
+
+b-th slot as 
+
+βal,b = 10 Γ−10 δlog 10   
+
+> (|ol,b −oa,b |
+> d0
+> )
+
+, (5) where Γ represents the gain at a reference distance of d0,
+
+δ denotes the pathloss exponent, ol,b = cl,b + is l,b ∈ C
+
+and oa,b = ca,b + is a,b ∈ C denote the positions of the 
+
+l-th receiver and the a-th adversary in the b-th time slot, respectively. In (4), ˜Ral,b ∈ CN ×N represents the normalized spatial correlation matrix between the a-th adversary and the 
+
+l-th TR in the b-th time slot, which can be calculated via the local scattering model, considering the phase difference and antenna spacing. To improve the computational efficiency, the small-angle approximation is utilized. Denote the spatial correlation between the u-th and v-th antennas in the b-th time slot as 
+
+˜Ra 
+
+> (l,b ),(u,v )
+
+= ej2πd u,v sin( θb ) · e− (ASD ·π/ 180) 2   
+
+> 2·(2 πd u,v cos( θb)) 2
+
+, (6) 
+
+where ASD denotes the angular standard deviation in angles, and du,v represents the antenna spacing between the u-th and 
+
+v-th antennas of the a-th adversary in wavelengths, u, v ∈{1, 2, ..., N }. θb denotes the angle of arrival in radians in the 
+
+b-th time slot as 
+
+θb = arg( ol,b − oa,b ) = arctan 
+
+( sl,b − sa,b 
+
+cl,b − ca,b 
+
+)
+
+. (7) Furthermore, to ensure the consistency between the large-scale fading scalar and the spatial correlation matrix with respect to the propagation characteristics, we enforce 
+
+βal,b = 1
+
+N tr( Ral,b ), (8) so that the trace of Ral,b reflects the average gain of at-tack channel between the a-th adversary and the l-th TR. Denote the perturbating signal launched by the a-th adver-sary towards the l-th TR during the transmission as ϑal =[ϑal, 1, ..., ϑ al,b , ..., ϑ al,B ]T ∈ C1×B , where ϑal,b denotes the perturbating signal in the b-th time slot. Then, the perturbed received signal at the l-th TR in the b-th time slot (1) can be changed into 
+
+yal,b = √PxhHl,b wxxb
+
+︸ ︷︷ ︸
+
+> Desired signal
+
++ √Pa,b (hal,b )H wa,b ϑal,b 
+
+︸ ︷︷ ︸
+
+> Adversarial attack
+
++
+
+> A
+
+∑ 
+
+> j=1 ,j 6=a
+
+√Pj,b (hjl,b )H wj,b ϑjl,b 
+
+︸ ︷︷ ︸
+
+> CLI
+
++ nl,b 
+
+︸︷︷︸ 
+
+> AWGN
+
+, (9) 4
+
+where Pa,b denotes the transmit power of the a-th adversary in the b-th time slot, and wa,b = [ w1
+
+> a,b
+
+, ..., w na,b , ..., w Na,b ] ∈ CN ×1
+
+denotes the beamforming vector determining the spatial direc-tivity of transmission with ‖wa,b ‖2 = 1 . The calculation of 
+
+wa,b relies on the estimated vector ˆhal,b via the minimum mean square error (MMSE) combining, as adopted in [20]. After the transmission, the received signal and the estimation of the l-th TR can be obtained as yal = [ yal, 1, ..., y al,b , ..., y al,B ]T ∈ C1×B
+
+and ˆsl = G(yal ), respectively. III. DNN B ASED POWER CONTROL TO MITIGATE CLI We focus on the power control to mitigate the CLI at each TR, as this term can be used to detect the attacks and the larger it is, the more likely it can be detected. Specifically, the power control problem is formulated, and the limitation of conventional optimization method is analyzed for the real-time implementation. To overcome this, a DL-based scheme is developed. 
+
+A. Problem Formulation 
+
+In the multi-adversary system, the l-th TR is affected not only by the direct attack from the a-th adversary but also by the interference leakage from other adversaries. Although the interference leakage introduced by other adversaries is generally weaker than the direct attack implemented by the 
+
+a-th adversary, the aggregate leakage caused by all other adversaries cannot be neglected, leading to CLI. Such CLI can potentially alert the l-th TR to the existence of adversaries, thereby degrading the overall undetectability and effectiveness of attacks. Accordingly, we formulate the power control problem as maximizing the product of perturbating-signal-to-interference-plus-noise ratio (PSINR) of all TRs, given by 
+
+max 
+
+> Pa,b
+> L
+
+∏
+
+> l=1
+
+γal,b ,s.t. 0 6 Pa,b 6 Pmax .
+
+(10) In (10), γal,b denotes the PSINR of the l-th TR attacked by the 
+
+a-th adversary in the b-th time slot from (9) as 
+
+γal,b = Pa,b eal,b 
+
+> A
+
+∑ 
+
+> j=1 ,j 6=a
+
+Pj,b rjl,b + σ2
+
+, (11) where σ2 is the variance of AWGN, and eal,b and rjl,b represent the average attack channel gain and average interference gain, respectively, given by 
+
+eal,b = |E[( hal,b )H wa,b ]|2, (12) and 
+
+rjl,b = E[|(hjl,b )H wj,b |2], j = 1 , j 6 = a. (13) 
+
+B. Conventional Optimization Method 
+
+According to (11), the problem (10) is coupled and non-convex, making it difficult to derive a closed-form solution. To address this issue, we introduce a positive auxiliary vari-able ζal,b and equivalently reformulate the original fractional problem into a geometric programming (GP) form as 
+
+max  
+
+> Pa,b ,ζ al,b
+> L
+
+∏
+
+> l=1
+
+ζal,b ,s.t. 
+
+> A
+
+∑ 
+
+> j=1 ,j 6=a
+
+ζal,b Pj,b rjl,b 
+
+Pa,b eal,b 
+
++ ζal,b σ2
+
+Pa,b eal,b 
+
+6 1,
+
+0 6 Pa,b 6 Pmax ,
+
+(14) which can be solved to obtain the solution to (10) [33]. It is worth noting that solving (14) requires rjl,b and eal,b , depending on the following statistics and parameters: 1) Random position of TRs: {ol,b }L,B l=1 ,b =1 ;2) Large-scale fading coefficient: {βal,b }A,L,B a=1 ,l =1 ,b =1 ;3) Spatial correlation matrix: {Ral,b }A,L,B a=1 ,l =1 ,b =1 ;4) Attack channel vector estimated via MMSE: 
+
+{ˆhal,b }A,L,B a=1 ,l =1 ,b =1 ;5) Beamforming vector designed from {ˆhal,b }A,L,B a=1 ,l =1 ,b =1 
+
+using MMSE combining: {wa,b }A,B a=1 ,b =1 ;6) Monte Carlo averaging over the estimated attack channel to compute {rjl,b }A,L,B j=1 ,l =1 ,b =1 and {eal,b }A,L,B a=1 ,l =1 ,b =1 .As a result, whenever the TR position changes, the corre-sponding large-scale fading coefficient βal,b and spatial corre-lation matrix Ral,b should be updated. This further requires reestimating the attack channel vector ˆhal,b and redesigning the beamforming vector wa,b , after which rjl,b and eal,b need to be recomputed via Monte Carlo averaging. Although (14) can be solved in polynomial time, repeatedly recomputing the required statistics and resolving the problem whenever the TR positions change is still computationally burdensome for real-time applications [22]. Nevertheless, by leveraging a DNN based method, the transmit power can be obtained in real time by simply feeding the updated TR positions into the DNN, without the need to recompute rjl,b and eal,b and resolve (14). Furthermore, ac-cording to (9), enhancing the attack effectiveness requires not only suppressing the CLI ∑Aj=1 ,j 6 =a
+
+√Pj,b (hjl,b )Hwj,b ϑjl,b but also carefully designing the perturbating signal ϑal,b , thereby reducing the risk of detection. Motivated by the above, we establish a DL-based framework shown in Fig. 2, which com-prises two main components: 1) DNN based power control, and 2) cGAN based adversarial attack design. The DNN is leveraged to estimate the transmit power of adversaries under the complex adversarial environment to enhance the undetectability, while the cGAN is utilized to carefully craft the perturbating signal to improve both the imperceptibility and aggressivity of attacks. 
+
+C. DNN Based Power Control 
+
+To reduce the high computational burden caused by repeat-ing (14) in real time, a DNN based scheme is established for 5   
+
+> Data
+> Data
+> Supervised
+> (b) DNN Based Transmit Power Control
+> ... Train Output
+> (a) cGAN Based Adversarial Attack Design
+> Generator
+> Conditional Information Discriminator
+> Random Noise
+> Adversarial Training
+> DNN ... ...
+> 1
+
+P
+
+> a
+
+P
+
+> A
+
+P         
+
+> ... ...
+> { (1), (1)} Po{ ( ), ()} TTNPNo
+> ... ...
+> ... ... ... ...
+> Output
+> Transmit Power
+> Perturbating Signals
+> Attack
+> Input
+> Attack
+> Transmitter
+> Encoder
+> Physical Channel 1 Physical Channel  L
+> Decoder
+> Rx 1
+> Decoder
+> Rx L
+> ...
+
+x
+
+s
+
+> ...
+> 1
+
+P
+
+> a
+
+P
+
+> 1
+
+ˆP
+
+ˆaP
+
+> A
+
+P ˆAP
+
+> 1
+
+o
+
+> l
+
+o
+
+> L
+
+o
+
+> 1
+
+o
+
+> l
+
+o
+
+> L
+
+o
+
+Fig. 2: Overview of the DL-based framework. 
+
+the real-time power control, as shown in Fig. 2(b). The DNN is trained to learn the unknown mapping from the TR positions to the power solution of (10), which is obtained through solving (14) via CVX. The proposed DNN is implemented as a feedforward neural network with fully connected layers, comprising a 2 AK -dimension input layer, O hidden layers and a A-dimension output layer, where K represents the number of TRs attacked by each adversary and O denotes the number of hidden layers. After training, the output layer of DNN can produce an esti-mated vector ˆP = [ ˆP1, ..., ˆPa, ..., ˆPA] ∈ RA×1, which approx-imates the optimal solution vector P ⋆ = [ P ⋆ 
+
+> 1
+
+, ..., P ⋆a , ..., P ⋆A] ∈
+
+RA×1, enabling the power estimation even when the TR positions are not included in the training phase, as illustrated in Fig. 2(b). The training process is guided by the following loss function, defined as 
+
+L( ˆP (n), P ⋆(n)) = 1
+
+A
+
+> A
+
+∑
+
+> i=1
+
+( ˆP i(n) − P ⋆i (n)
+
+P ⋆i (n)
+
+)2
+
+, (15) where ˆP i(n) and P ⋆i (n) represent the i-th components of the predicted and optimal transmit power vectors at the n-th sample, respectively, n ∈ { 1, ..., N T }, with NT ∈ Z+
+
+denoting the size of training dataset. Accordingly, the training objective is to minimize the aver-age loss over the entire training dataset as 
+
+min  
+
+> W,b
+
+1
+
+NTNT∑
+
+> n=1
+
+L( ˆP (n), P ⋆(n)) , (16) where W and b denote the weights and biases of DNN, respectively. As a result, the power control problem can be reformulated as a parameter learning task, in which W and 
+
+b of DNN are optimized to approximate the input-output mapping obtained from solving (14). Once W and b have been configured, the trained DNN can directly estimate the transmit power based on the TR positions without the need to resolve (14). 
+
+Remark: During the offline labeling and training, a cen-tralized adversarial controller is assumed to have access to the global information required for the power optimization, including the TR positions, estimated attack channel vectors, beamforming vectors, noise variance and power threshold. This information is utilized to compute rjl,b and eal,b and solve (14) to obtain the position-power labeled dataset, which is sub-sequently used to train the DNN to learn the mapping from the TR positions to the optimal transmit power solution. During the online inference, the trained DNN parameters remain fixed, and only the TR positions are required as the input to DNN. By separating the offline labeling and training from the online inference, the proposed DNN-based scheme avoids repeated statistical computation and GP solving, facilitating the real-time transmit power control in the dynamic environment. IV. CGAN B ASED ADVERSARIAL ATTACK 
+
+In this section, we first formulate the adversarial attack problem, and provide a brief review on cGAN. Then, a cGAN based adversarial attack scheme is proposed to generate the perturbating signal that not only adapts to the dynamic attack channel but also introduces only a small deviation from the original waveform. 
+
+A. Problem Formulation 
+
+By introducing an adversarial perturbating signal, the de-coder at the TR may make a wrong estimation as 
+
+G(yl) 6 = G(yal ), (17) which demonstrates the effectiveness of adversarial attacks. To improve the attack effectiveness, the amplitude of per-turbating signal ϑal,b is required to be large to induce the misclassification. On the other hand, its amplitude should also 6
+
+> Generator
+> Discriminator
+> Fig. 3: Framework of cGAN.
+
+remain small to be imperceptible at the TR and enable the un-detectability. Therefore, the adversarial perturbating signal ϑal
+
+from the a-th adversary to the l-th TR during the transmission should be well designed, and the problem can be formulated as min 
+
+> ϑal,b
+
+‖ϑal ‖2
+
+s.t. G(yl) 6 = G(yal ).
+
+(18) Although the objective in (18) is convex, the misclassifica-tion constraint in (18) corresponds to a discrete 0-1 condition, which is non-differentiable and leads to a non-convex feasible set. Moreover, since G(·) is implemented via neural networks, its nonlinear decision boundary further exacerbates the non-convexity. Consequently, the problem (18) does not have a general closed-form solution and cannot be solved via standard convex optimization methods. In addition, the design of the perturbating signal ϑal,b should consider both the attack effec-tiveness and undetectability. Specifically, a perturbating signal with higher amplitude is more likely to induce misclassifica-tion, while a smaller amplitude helps preserve the waveform similarity and reduce the risk of detection. This inherent trade-off becomes more challenging under the dynamic adversarial environment, where the variations in the attack channel may alter the effectiveness of a given perturbating signal, making it difficult to maintain consistent attack performance. To address these challenges, a cGAN scheme is established, in which the generation process is conditioned on the attack channel information. This enables the generated perturbating signal to adapt to the attack channel variation while taking into account both the attack effectiveness and undetectability. 
+
+B. Brief Review on cGAN 
+
+cGAN is an extension of the original generative adversarial network (GAN) to introduce the conditional information to generate fake samples similar to the real ones, and has been widely utilized to generate various digital contents [34]. As shown in Fig. 3, the cGAN consists of two neural networks: a generator G and a discriminator D. The generator produces fake samples to resemble the real ones from the random noise and corresponding conditional information. In contrast, the discriminator, as a classifier, focuses on distinguishing between the real samples and fake ones created by the generator. More specifically, the generator aims to maximize the probability that generated samples are classified as the real ones by the discriminator. The discriminator has two tasks: 1) maximize the probability of correctly classifying the real samples as real ones, and 2) minimize the probability of classifying the generated samples as real ones. Accordingly, the objectives of generator and discriminator can be respectively formulated as 
+
+min  
+
+> G
+
+Ez∼f log(1 − D(G(z|c))) , (19) 
+
+max  
+
+> D
+
+Ex∼ ˜f log D(x) + Ez∼f log(1 − D(G(z|c))) , (20) where f and ˜f denote the distribution of generative model and real samples, respectively, x, z and c represent the real sample, random noise and conditional information, respectively, and 
+
+G(z|c) is the generated fake samples. In the training period, the generator and discriminator are alternately optimized in an adversarial manner as 
+
+min  
+
+> G
+
+max  
+
+> D
+
+V (D, G ) = min  
+
+> G
+
+max  
+
+> D
+
+[Ex∼ ˜f log D(x)+ Ez∼f log(1 − D(G(z|c)))] , (21) which can enhance the performance of both the generator and discriminator. Finally, the generator and discriminator can reach the Nash Equilibrium, when the distribution of fake samples will be close to that of real ones. 
+
+C. cGAN Based Adversarial Attack Design 
+
+The proposed cGAN based adversarial attack scheme is shown in Fig. 2(a), and the detailed framework of cGAN is illustrated in Fig. 3, which comprises four main components: data input and preprocessing, generator, discriminator and network training. 
+
+1) Data Input and Preprocessing: The input data consist of two components: the random noise z and the conditional information c. The latter contains the beamforming and attack channel vectors. Since the random noise, beamforming and attack channel vectors are complex-valued, which are difficult for cGAN to process directly, they are decomposed into real and imaginary parts before being fed into the cGAN, as shown in Fig. 4A. 
+
+2) Generator: As shown in Fig. 4B, the generator comprises two functional modules. In the first module, the conditional information c, i.e., the beamforming and attack channel vec-tors, is processed to extract the feature, which can characterize the attack channel. The second module integrates the random noise z and the output of first module, refines the joint feature through an enhanced convolutional network, and maps it into a target dimension via the flattening and dense layers, ultimately producing the normalized perturbating signal. 
+
+3) Discriminator: The discriminator aims to distinguish between the clean and attacked received signals, with its architecture depicted in Fig. 4C. Specifically, it takes the same conditional information c as the generator to maintain the conditional consistency, and extracts the feature from both the beamforming and attack channel vectors. Then, the resulting conditional representation is concatenated with the attacked received signal, and fed into a stack of convolutional layers with progressively increased filter sizes, each followed by the batch normalization and Leaky ReLU activation. Afterwards, a dropout layer is introduced to mitigate the overfitting, and the 7            
+
+> Random Noise Beamforming Channel Condition
+> ݖ[ଵ]
+> ଵݖ[ଵ]
+> ଶ…ݖ[ଵ]
+> ஻ݖ[ଵ]
+> ஻ିଵ
+> …R( ݖ[ଵ]
+> ஻ିଵ )
+> I( ݖ[ଵ]
+> ଵ)I( ݖ[ଵ]
+> ଶ)…I( ݖ[ଵ]
+> ஻)I( ݖ[ଵ]
+> ஻ିଵ )
+
+ࢠ[ଵ]       
+
+> …
+> ݖ[ୠୱ ]
+> ଵݖ[ୠୱ ]
+> ଶ…ݖ[ୠୱ ]
+> ஻
+> ݖ[ୠୱ ]
+> ஻ିଵ
+> …R( ݖ[ୠୱ ]
+> ஻ିଵ )
+> …I( ݖ[ୠୱ ]
+> ஻ିଵ )
+
+ࢠ[ୠୱ ]
+
+…            
+
+> R( ݖ[ୠୱ ]
+> ஻)R( ݖ[ୠୱ ]
+> ଶ)R( ݖ[ୠୱ ]
+> ଵ)࢝
+> ଵ,ଵ
+> [ଵ]࢝ଵ,ଶ
+> [ଵ]…࢝ଵ,஻
+> [ଵ]࢝
+> ଵ,஻ିଵ
+> [ଵ]
+> …R( ࢝ଵ,஻ିଵ
+> [ଵ])
+> …I( ࢝ଵ,஻ିଵ
+> [ଵ])
+
+ࢃଵ
+
+> [ଵ]
+> …
+
+ࢃ஺
+
+> [ୠୱ ]
+
+…                               
+
+> R( ࢝ଵ,ଵ
+> [ଵ]) R( ࢝ଵ,ଶ
+> [ଵ])R( ࢝ଵ,஻
+> [ଵ])I( ࢝ଵ,஻
+> [ଵ])࢝
+> ஺,ଵ
+> [ୠୱ ]࢝஺,ଶ
+> [ୠୱ ]…࢝஺,஻
+> [ୠୱ ]࢝
+> ஺,஻ିଵ
+> [ୠୱ ]
+> …R( ࢝஺,஻ିଵ
+> [ୠୱ ])
+> …I( ࢝஺,஻ିଵ
+> [ୠୱ ])R( ࢝஺,ଵ
+> [ୠୱ ]) R( ࢝஺,ଶ
+> [ୠୱ ])R( ࢝஺,஻
+> [ୠୱ ])I( ࢝஺,஻
+> [ୠୱ ])
+> ࢎଵ,ଵଵ,[ ଵ]ࢎଵ,ଶଵ,[ ଵ]…ࢎଵ,஻ଵ,[ ଵ]
+> ࢎଵ,஻ିଵ ଵ,[ ଵ]
+> …R( ࢎଵ,஻ିଵ ଵ,[ ଵ])
+> …I( ࢎଵ,஻ିଵ ଵ,[ ଵ])
+
+ࡴଵଵ,[ ଵ]
+
+> …
+
+ࡴ௅஺,[ ୠୱ ]
+
+…                                               
+
+> R( ࢎଵ,ଵଵ,[ ଵ]) R( ࢎଵ,ଶଵ,[ ଵ])R( ࢎଵ,஻ଵ,[ ଵ])I( ࢎଵ,஻ଵ,[ ଵ])
+> …
+> …
+> …
+> Convolution 2D Batch Normalization Leaky ReLU Dropout
+> Fully Connected
+> Fully Connected
+> Leaky ReLU
+> Pool
+> I( ࢝ଵ,ଵ
+> [ଵ])I( ࢝ଵ,ଶ
+> [ଵ])I( ࢝஺,ଵ
+> [ୠୱ ]) I( ࢝஺,ଶ
+> [ୠୱ ])R( ݖ[ଵ]
+> ଵ)R( ݖ[ଵ]
+> ଶ)R( ݖ[ଵ]
+> ஻)I( ݖ[ୠୱ ]
+> ଵ)I( ݖ[ୠୱ ]
+> ଶ)I( ݖ[ୠୱ ]
+> ஻)I( ࢎଵ,ଵଵ,[ ଵ]) I( ࢎଵ,ଶଵ,[ ଵ])
+> ࢎ௅,ଵ஺,[ ୠୱ ]ࢎ௅,ଶ஺,[ ୠୱ ]ࢎ௅,஻ିଵ ஺,[ ୠୱ ]ࢎ௅,஻஺,[ ୠୱ ]
+> R( ࢎ௅,ଵ஺,ୠୱ )R( ࢎ௅,ଶ஺,ୠୱ )R( ࢎ௅,஻ିଵ ஺,ୠୱ )R( ࢎ௅,஻஺,ୠୱ )I( ࢎ௅,ଵ஺,ୠୱ ) I( ࢎ௅,ଶ஺,ୠୱ )I( ࢎ௅,஻ିଵ ஺,ୠୱ )I( ࢎ௅,஻஺,ୠୱ )
+
+A. Data Input and Preprocessing C. Discriminator B. Generator 
+
+> Convolution 1D Batch Normalization Leaky ReLU
+> Fully Connected
+> Flattening
+> Convolution 2D ReLU
+> Convolution 2D ReLU
+> Normalization
+> M
+
+Fig. 4: Network architectures of data preprocessing, generator, and discriminator. 
+
+global average pooling is utilized to aggregate the output of dropout layer into a compact representation. Finally, two fully connected layers are employed. The first is equipped with the Leaky ReLU activation and produces a 256-dimension feature representation, while the second outputs a final classification result with a dimension of 2k. Notably, the clean received sig-nal is processed through the same discriminator as the attacked received signal, thus enabling the comparability between them. 
+
+4) Network Training: According to (19) and (20), the loss functions of discriminator and generator can be reformulated as 
+
+LD = Ex∼ ˜f [log D(yl|c)] + Ez∼f [log(1 − D(yal |c))] , (22) 
+
+LG = Ez∼f log(1 − D(yal |c)) . (23) The discriminator and generator are trained in an alternating manner. Specifically, the discriminator is updated by maximiz-ing LD to enhance its ability to distinguish the clean received signal from the attacked one under the given condition c, and the generator is updated by minimizing LG to produce the perturbating signal that can mislead the discriminator. Guided by the conditional information c, the generator adapts the generated perturbating signal to the dynamic attack environ-ment. Through this adversarial training process, the generator progressively learns to produce the perturbating signal that can induce the misclassification while remaining difficult to be detected. 
+
+5) Evaluation Metrics: The attack success rate (ASR) is introduced to evaluate the aggressivity of adversarial attacks. It is defined as the proportion of successful attack samples among all attack samples, where an attack is considered successful only when it induces the decoding failure while satisfying the power control. In particular, the power control is regarded as successful when the estimated transmit power does not exceed the threshold during the transmission. To describe this, we introduce an indicator χa(n) as 
+
+χa(n) = ξ
+
+( ˆPa,b (n) ≤ P ⋆a,b (n), ∀b
+
+)
+
+, (24) where χa(n) = 1 indicates that the power control is success-ful during the transmission for the n-th attack sample, and 
+
+χa(n) = 0 otherwise, and P ⋆a,b (n) is the threshold. Accordingly, the ASR can be formulated as ASR = 1
+
+SmSm∑
+
+n=1 
+
+ξ(g(yal (n)) 6 = s(n)) χa(n), (25) where Sm denotes the total number of attack samples, yal (n)
+
+denotes the attacked received signal in the n-th sample, s(n)
+
+is the corresponding original message, and ξ(·) is the indicator function that equals 1 when the specified condition is satisfied and 0 otherwise. 
+
+Remark: Rather than explicitly solving the non-convex problem (18), the proposed cGAN based scheme provides an implicit solution by creating the adversarial perturbating signals conditioned on the attack channel information. Specif-ically, the adversarial training mechanism of cGAN enables the generator to create the perturbating signals balancing the attack effectiveness and undetectability, while the conditional input guides the perturbating signals to adapt to the attack channel variations. As a result, the proposed scheme can produce the perturbating signals with strong aggressivity and low detectability in the dynamic adversarial environment. V. N UMERICAL RESULTS AND DISCUSSION 
+
+In this section, we first describe the experimental setup, including the datasets, baseline methods and parameter setting, 8
+
+(a) 
+
+(b) 
+
+(c) 
+
+(d) 
+
+(e) 
+
+(f) Fig. 5: Waveforms of the clean received signal and corresponding attacked received signal derived from different attack methods, including (a) UIAA, (b) DLIA, (c) GA, (d) CCFA, (e) FGSA and (f) the proposed method. 
+
+and then verify the effectiveness of the proposed framework in terms of undetectability, aggressivity and adaptability. Finally, an ablation study is conducted and presented to validate the necessity of its key components. 
+
+A. Experimental Setup 1) Datasets: The DNN is trained and evaluated respec-tively on a training dataset H and a test dataset J, both of which are obtained by solving (14) via CVX. Specifically, 
+
+H = {o(n), P ⋆(n)}NT 
+
+> n=1
+
+and J = {ot(n), P ⋆t (n)}Nt
+
+> n=1
+
+, where 
+
+H ∩ J = ∅, Nt ∈ Z+ is the size of test dataset, o(n) and 
+
+ot(n) represent the n-th samples of the DNN input during the training and testing, respectively, and P ⋆(n) and P ⋆t (n)
+
+denote their corresponding ground-truth labels. In addition, 
+
+3.125% of the training dataset is set aside as the validation dataset to monitor the performance of DNN during training. For the cGAN, the training, validation and test datasets are denoted as Hc = {Y l(n), Y al (n)}NH
+
+> n=1
+
+, Vc =
+
+{Y l(n), Y al (n)}NV 
+
+> n=1
+
+and Jc = {Y l(n), Y al (n)}NJ
+
+> n=1
+
+, respec-tively, where Y l = {yl(b)}Bb=1 and Y al = {yal (b)}Bb=1 denote the clean and attacked received signals across the transmission period, respectively, Hc ∩Vc = ∅, Hc ∩Jc = ∅ and Vc ∩Jc = ∅,and n denotes the n-th sample. 
+
+2) Baselines: For comparison, consider five baselines, in-cluding the universal-class input-agnostic adversarial attack (UIAA), the double loop iterative attack (DLIA) [35], the fast 9                  
+
+> TABLE II: cGAN training configurations.
+> Batch size Learning rate Epochs
+> 64 1e−3120 64 1e−4120 128 1e−4150 128 1e−5150
+
+gradient sign attack (FGSA) [36], the cGAN based channel-robust and frequency-selective attack (CCFA) [17] and the GAN based attack (GA). They are briefly described as follows. 
+
+• UIAA: A universal-class iterative method that utilizes the bisection to determine the step size in each iteration. 
+
+• DLIA: A two-loop iterative method that introduces the momentum accumulation and utilizes both the outer and inner loop numbers to update the step size in each iteration. 
+
+• FGSA: A gradient-based method that attacks the input along the sign of the loss gradient with a single-step update. The step size is calculated using the bisection. 
+
+• CCFA: A cGAN based method that adapts to the dynamic attack channel and applies a Butterworth lowpass filter to suppress the high-frequency components. 
+
+• GA: A GAN based adversarial attack method. 
+
+3) Parameter Setting: Q = B = 16 , k = 4 , R = k/Q ,
+
+L = A = 4 , M = N = 16 , O = 3 , ASD = 10 ◦, d0 = 1 km ,
+
+Pmax = 10 mW , S = 10 4, NT = 10 5, Nt = 5000 , NH =3500 , NV = 500 and NJ = 1000 . For fair comparison and efficient calculation, the number of iterations in UIAA is fixed at 10 , the number of momentum accumulations in DLIA is set to 10 , the number of outer and inner loops in DLIA are set to 
+
+2 and 5, respectively, and the number of bisection iterations in UIAA and FGSA is set to 30 .
+
+• Hyperparameters of DNN: The batch size is set to 256 ,and the optimizer is Adam with an initial learning rate of 
+
+1e − 2. During the training, learning rate is gradually reduced to 1e − 3, 1e − 4 and 1e − 5. Early stopping is adopted to prevent the overfitting, with a patience of 50 epochs. 
+
+• Hyperparameters of cGAN: The training parameters in-clude batch size, learning rate and epochs. Specifically, four training configurations are adopted, as shown in Table II. Each training configuration is evaluated with the same validation configuration, where the validation batch size and validation interval are set to 128 and 5, respectively. These hyperparam-eter settings are empirically selected to improve the model performance while maintaining the computational efficiency. 
+
+B. Undetectability Comparison 
+
+Taking Adversary 1 as an illustrative example, Fig. 5presents the waveforms of clean received signal and cor-responding attacked received signal under different attack methods, including the CCFA, UIAA, DLIA, FGSA, GA and the proposed scheme. For clarity, the complex signal is decom-posed into real and imaginary parts for comparison. As shown in Fig. 5, the waveform of the attacked received signal obtained by the proposed scheme is the most similar to that of the clean received signal. To further evaluate the performance, we introduce the Euclidean distance to quantitatively measure the 
+
+> Fig. 6: Euclidean distance between the clean and corresponding attacked received signals under diverse attack methods, including CCFA, UIAA, DLIA, FGSA, GA and the proposed scheme.
+
+discrepancy between the clean and attacked received signals in Fig. 6. From the results, we can see that for each adversary, the waveform of the attacked received signal derived by the proposed scheme exhibits the highest similarity to that of the clean received signal. 
+
+C. Aggressivity and Adaptability Comparison 
+
+Fig. 7 presents the ASR and ASR standard deviation (Std) of CCFA, UIAA, DLIA, FGSA, GA and the proposed scheme evaluated on the test dataset. ASR evaluates the aggressivity of attack methods, while ASR Std reflects their adaptabil-ity to dynamic attack channels. As shown in Fig. 7, the proposed scheme achieves the highest ASR and the lowest ASR Std among all schemes for each adversary. Thus, the results demonstrate that the proposed scheme outperforms the baselines in terms of both the attack performance and adaptability under varying adversarial scenarios. 
+
+D. Ablation Experiment 
+
+Ablation experiments are conducted and presented at both the component and module levels. Specifically, the component-level ablation focuses on the two core components of the proposed scheme, including 10 
+
+> Fig. 7: ASR and ASR Std under diverse attack methods, including CCFA, UIAA, DLIA, FGSA, GA and the proposed scheme.
+
+• P 1: DNN based transmit power control, 
+
+• P 2: cGAN based adversarial attack design. The module-level ablation further focuses on the first module of the generator, denoted as M , as shown in Fig. 4B. For clarity, the variants of the proposed scheme that retain only P 1 and only P 2 are denoted as P1 and P2 , respectively. The variant obtained by removing M from the proposed scheme is denoted as w/o M . Fig 8 shows the Euclidean dis-tance between the clean and corresponding attacked received signals of P1 , P2 , w/o M and the proposed scheme under different adversaries, while Fig. 9 presents the ASR and ASR Std of P1 , P2 , w/o M and the proposed scheme. 
+
+1) Component-Level Ablation: For the component-level ablation, we investigate the individual contributions of P 1 and 
+
+P 2 in the proposed scheme. As shown in Fig. 9, P1 achieves higher ASR than P2 ,indicating stronger aggressivity. However, Fig. 8 and Fig. 9 show that P1 also leads to larger Euclidean distance and higher ASR Std than P2 , which weakens the undetectability and adaptability of attacks. In contrast, P2 produces smaller Euclidean distance compared to that of the proposed scheme in Fig. 8, as well as lower ASR Std in Fig. 9, but it suffers    
+
+> Fig. 8: Euclidean distance between the clean and corresponding attacked received signals under diverse attack methods, including P1 ,
+> P2 ,w/o M and the proposed scheme.
+
+from the reduced ASR. Thus, the results reveal the complementary effects of P 1 and 
+
+P 2. By jointly incorporating them, the proposed scheme can achieve better performance among aggressivity, undetectabil-ity and adaptability, yielding higher ASR, smaller Euclidean distance and lower ASR Std. This validates the necessity of both P 1 and P 2 in the proposed scheme. 
+
+2) Module-Level Ablation: For the module-level ablation, we further investigate the contribution of M to design the perturbating signals. As shown in Fig. 8 and Fig. 9, compared with the pro-posed scheme, w/o M consistently produces lower ASR, larger Euclidean distance and higher ASR Std under different adversaries. This indicates that removing M from the proposed scheme not only weakens the aggressivity, but also makes the generated perturbating signals less undetectable and less adaptive to the dynamic attack channels. Therefore, M plays an important role in enabling the proposed scheme to achieve better performance in terms of aggressivity, undetectability and adaptability, demonstrating its necessity and effectiveness. 11 
+
+Fig. 9: ASR and ASR Std under diverse attack methods, including 
+
+P1 , P2 , w/o M and the proposed scheme. TABLE III: Comparison of average running time. 
+
+Method Average Running Time (s) 
+
+GP 9.6950 × 10 −1
+
+DNN 4.4100 × 10 −1
+
+UIAA 3.5883 × 10 3
+
+DLIA 2.3630 × 10 1
+
+FGSA 1.5549 × 10 3
+
+GA 5.5100 × 10 −1
+
+CCFA 5.8100 × 10 −1
+
+Proposed 5.7100 × 10 −1
+
+E. Time Consumption Comparison 
+
+Table III compares the computational time required by GP solving and the DNN-based scheme to obtain the transmit power solution, as well as the time required by different attack methods to generate the perturbating signals, including CCFA, UIAA, DLIA, FGSA, GA and the proposed scheme. As shown in Table III, solving the GP problem once requires more time than performing a single DNN inference, indicating that the DNN-based power control scheme is better suited to the real-time transmit power optimization. Moreover, as shown in Table III, UIAA, DLIA and FGSA incur considerably higher computational time than CCFA, GA and the proposed scheme due to the gradient computation, repeated backpropagation and iterative procedure. Although CCFA, GA and the proposed scheme have comparable running time, the proposed scheme achieves superior performance in terms of undetectability, aggressivity and adaptability, thereby demonstrating its overall effectiveness. VI. C ONCLUSION 
+
+In this paper, we have investigated the adversarial attacks against the DL-based MISO autoencoder communications with multiple receivers and adversaries. To improve the aggressiv-ity, undetectability and adaptability of the adversarial attacks, we propose a DL-based intelligent attack framework consisting of two main components. Specifically, the DNN-based transmit power control is established to mitigate the CLI at each TR by regulating the transmit power of adversaries. This can suppress the CLI caused by the multiple parallel attack links, thereby improving the undetectability. Furthermore, the cGAN-based adversarial attack is developed to generate the perturbating sig-nals considering both the aggressivity and adaptability under the dynamic attack channels. Numerical results demonstrate that the proposed scheme achieves superior performance in terms of aggressivity, undetectability and adaptability. REFERENCES [1] T. Wang, C.-K. Wen, H. Wang, F. Gao, T. Jiang, and S. Jin, “Deep learning for wireless physical layer: Opportunities and challenges,” 
+
+China Commun. , vol. 14, no. 11, pp. 92–111, Nov. 2017. [2] Y. Lu, P. Cheng, Z. Chen, Y. Li, W. H. Mow, and B. Vucetic, “Deep autoencoder learning for relay-assisted cooperative communication sys-tems,” IEEE Trans. Commun. , vol. 68, no. 9, pp. 5471–5488, Sep. 2020. [3] H. Safi, I. Tavakkolnia, and H. Haas, “Deep learning based end-to-end optical wireless communication systems with autoencoders,” IEEE Commun. Lett. , vol. 28, no. 6, pp. 1342–1346, Jun. 2024. [4] Q. Cui, X. You, N. Wei, G. Nan, X. Zhang, J. Zhang, X. Lyu, M. Ai, X. Tao, Z. Feng, et al. , “Overview of AI and communication for 6G network: Fundamentals, challenges, and future research opportunities,” 
+
+Sci. China Inf. Sci. , vol. 68, no. 7, art. no. 171301, 2025. [5] O. Alnaseri, L. Alzubaidi, Y. Himeur, M. A. Ala’Anzy, J. Timmermann, M. S. M. Gismalla, S. Atalla, and W. Mansoor, “A review on deep learning autoencoder in the design of next-generation communication systems,” IEEE Open J. Commun. Soc. , vol. 7, pp. 3850–3880, Apr. 2026. [6] T. O’Shea and J. Hoydis, “An introduction to deep learning for the physical layer,” IEEE Trans. Cognit. Commun. Networking , vol. 3, no. 4, pp. 563–575, Dec. 2017. [7] X. Chen, J. Cheng, Z. Zhang, L. Wu, J. Dang, and J. Wang, “Data-rate driven transmission strategies for deep learning-based communication systems,” IEEE Trans. Commun. , vol. 68, no. 4, pp. 2129–2142, Apr. 2020. [8] Z. Huang, D. He, J. Chen, Z. Wang, and S. Chen, “Autoencoder with fitting network for Terahertz wireless communications: A deep learning approach,” China Commun. , vol. 19, no. 3, pp. 172–180, Mar. 2022. [9] B. D. Son, G. Zhao, T. Van Chien, and D. I. Kim, “Secure distributed RIS-MIMO over double scattering channels: Adversarial attack, defense, and SER improvement,” IEEE Trans. Commun. , vol. 74, pp. 797–811, 2026. [10] Y. Zhang, Y. Wu, and X. Huang, “Toward transferable adversarial attacks against autoencoder-based network intrusion detectors,” IEEE Trans. Ind. Inf. , vol. 20, no. 12, pp. 13863–13872, Dec. 2024. [11] K. Ren, T. Zheng, Z. Qin, and X. Liu, “Adversarial attacks and defenses in deep learning,” Engineering , vol. 6, no. 3, pp. 346–360, Mar. 2020. [12] Z. Zhang, S. Zheng, J. Liang, C. Wang, S. Wu, K. Yue, and W. Li, “Multi-task adversarial attacks for wireless communication signals,” 
+
+IEEE Trans. Commun. , vol. 74, pp. 6558–6570, 2026. 12 
+
+[13] M. Sadeghi and E. G. Larsson, “Physical adversarial attacks against end-to-end autoencoder communication systems,” IEEE Commun. Lett. ,vol. 23, no. 5, pp. 847–850, May 2019. [14] A. Albaseer, B. S. Ciftler, and M. M. Abdallah, “Performance evaluation of physical attacks against E2E autoencoder over rayleigh fading chan-nel,” in Proc. IEEE Int. Conf. Informat., IoT, Enabling Technol. (ICIoT) ,pp. 177–182, Doha, Qatar, Feb. 2020. [15] H. Jiang, J. Zhang, M. Liu, N. Zhao, A. Nallanathan, and Y. Li, “Variable step-size adversarial attacks against deep learning based end-to-end autoencoder,” IEEE Trans. Veh. Technol. , vol. 74, no. 11, pp. 18184– 18189, Nov. 2025. [16] B. D. Son, N. N. Khanh, T. V. Chien, and D. I. Kim, “Adversarial attacks against double RIS-assisted MIMO systems-based autoencoder in finite-scattering environments,” IEEE Wireless Commun. Lett. , vol. 14, no. 6, pp. 1593–1597, Jun. 2025. [17] S. Zhang, J. Fu, J. Yu, H. Xu, H. Zha, S. Mao, and Y. Lin, “Channel-robust class-universal spectrum-focused frequency adversarial attacks on modulated classification models,” IEEE Trans. Cognit. Commun. Networking , vol. 10, no. 4, pp. 1280–1293, Aug. 2024. [18] R. Huang and Y. Li, “Adversarial attack mitigation strategy for machine learning-based network attack detection model in power system,” IEEE Trans. Smart Grid , vol. 14, no. 3, pp. 2367–2376, May 2023. [19] J. Peng, H. Xing, L. Xu, S. Luo, P. Dai, L. Feng, J. Song, B. Zhao, and Z. Xiao, “Adversarial reinforcement learning based data poisoning attacks defense for task-oriented multi-user semantic communication,” 
+
+IEEE Trans. Mob. Comput. , vol. 23, no. 12, pp. 14834–14851, Dec. 2024. [20] B. Kim, Y. E. Sagduyu, K. Davaslioglu, T. Erpek, and S. Ulukus, “Channel-aware adversarial attacks against deep learning-based wireless signal classifiers,” IEEE Trans. Wireless Commun. , vol. 21, no. 6, pp. 3868–3880, Jun. 2022. [21] R. Sahay, M. Zhang, D. J. Love, and C. G. Brinton, “Defending adversarial attacks on deep learning-based power allocation in massive MIMO using denoising autoencoders,” IEEE Trans. Cognit. Commun. Networking , vol. 9, no. 4, pp. 913–926, Aug. 2023. [22] B. R. Manoj, M. Sadeghi, and E. G. Larsson, “Downlink power allocation in massive MIMO via deep learning: Adversarial attacks and training,” IEEE Trans. Cognit. Commun. Networking , vol. 8, no. 2, pp. 707–719, Jun. 2022. [23] D. Ke, X. Wang, and Z. Huang, “Frequency-selective adversarial attack against deep learning-based wireless signal classifiers,” IEEE Trans. Inf. Forensics Secur. , vol. 19, pp. 4001–4011, Jan. 2024. [24] J. Zheng, B. Du, H. Du, J. Kang, D. Niyato, and H. Zhang, “Energy-efficient resource allocation in generative AI-aided secure semantic mo-bile networks,” IEEE Trans. Mob. Comput. , vol. 23, no. 12, pp. 11422– 11435, Dec. 2024. [25] X. Zhou, P. Qi, W. Zhang, S. Zheng, N. Zhang, and Z. Li, “GAN-based siamese neuron network for modulation classification against white-box adversarial attacks,” IEEE Trans. Cognit. Commun. Networking , vol. 10, no. 1, pp. 122–137, Feb. 2024. [26] Y. Dong, H. Wang, and Y.-D. Yao, “A robust adversarial network-based end-to-end communications system with strong generalization ability against adversarial attacks,” in Proc. IEEE Int. Conf. Commun. ,pp. 4086–4091, Seoul, Republic of Korea, May 2022. [27] A. Singh and B. Sikdar, “Adversarial attack and defence strategies for deep-learning-based IoT device classification techniques,” IEEE Internet Things J. , vol. 9, no. 4, pp. 2602–2613, Feb. 2022. [28] Z. Wang, W. Liu, and H.-M. Wang, “GAN against adversarial attacks in radio signal classification,” IEEE Commun. Lett. , vol. 26, no. 12, pp. 2851–2854, Dec. 2022. [29] P. Freitas de Araujo-Filho, G. Kaddoum, M. Naili, E. T. Fapi, and Z. Zhu, “Multi-objective GAN-based adversarial attack technique for modulation classifiers,” IEEE Commun. Lett. , vol. 26, no. 7, pp. 1583–1587, Jul. 2022. [30] B. Kim, Y. E. Sagduyu, T. Erpek, K. Davaslioglu, and S. Ulukus, “Adversarial attacks with multiple antennas against deep learning-based modulation classifiers,” in Proc. IEEE Globecom Workshops (GC Wkshps 2020 , pp. 1–6, Taipei, Taiwan, Dec. 2020. [31] B. Kim, Y. Shi, Y. E. Sagduyu, T. Erpek, and S. Ulukus, “Adversarial attacks against deep learning based power control in wireless com-munications,” in Proc. IEEE Global Commun. Conf. (GLOBECOM) Workshops , pp. 1–6, Madrid, Spain, Dec. 2021. [32] P. M. Santos, B. R. Manoj, M. Sadeghi, and E. G. Larsson, “Universal adversarial attacks on neural networks for power allocation in a massive MIMO system,” IEEE Wireless Commun. Lett. , vol. 11, no. 1, pp. 67–71, Jan. 2022. [33] E. Bj¨ ornson, J. Hoydis, L. Sanguinetti, et al. , “Massive MIMO networks: Spectral, energy, and hardware efficiency,” Found. Trends® in Signal Process. , vol. 11, no. 3-4, pp. 154–655, Nov. 2017. [34] J. Zhang, M. Sheng, C. Xing, J. Liu, N. Zhao, and G. K. Karagiannidis, “Generative-adversarial-network-enhanced DRL for ISAC with double active RISs,” IEEE Internet Things J. , vol. 12, no. 10, pp. 13487–13499, May 2025. [35] Z. Zhang, L. Ma, M. Liu, Y. Chen, and N. Zhao, “Adversarial attacking and defensing modulation recognition with deep learning in cognitive-radio-enabled IoT,” IEEE Internet Things J. , vol. 11, no. 8, pp. 14949– 14962, Apr. 2024. [36] M. Sadeghi and E. G. Larsson, “Adversarial attacks on deep-learning based radio signal classification,” IEEE Wireless Commun. Lett. , vol. 8, no. 1, pp. 213–216, Feb. 2019.
