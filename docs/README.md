@@ -6,29 +6,24 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-25
-- 运行时间：2026-07-25 21:11:43 UTC
+- 最新运行日期：2026-07-26
+- 运行时间：2026-07-26 21:12:40 UTC
 - 运行状态：成功
-- 本次总论文数：2
+- 本次总论文数：1
 - 精读区：0
-- 速读区：2
+- 速读区：1
 
 ### 今日简报（AI）
-今日速读两篇6分论文，分别涉及物理AI的语义通信（范畴论+博弈论）和长时域无线链路调度（图神经网络）。  
-最值得关注的方向：范畴论与博弈论融合的语义通信，以及状态增强图网络解决时序调度难题。  
-建议读者优先抓住“语义通信+物理AI”这个新兴交叉点，同时留意图神经网络在无线资源管理中的潜力。
-- 详情：[/202607/25/README](/202607/25/README)
+今日速读一篇利用深度递归Q学习优化无线供电通信网络波束控制的论文（评分6分）。核心结论是DRQN策略能动态调整波束方向以最大化吞吐量，优于传统算法。建议关注强化学习在无线物理层优化中的应用，可尝试复现并对比实际信道环境。
+- 详情：[/202607/26/README](/202607/26/README)
 
 ### 精读区论文标签
 - 本次无精读推荐。
 
 ### 速读区论文标签
-1. [Compositional Semantic Communication for Physical AI: Category Theory Meets Game Theory](/202607/25/2607.18115v1-compositional-semantic-communication-for-physical-ai-category-theory-meets-game-theory)  
+1. [Deep Recurrent Q-Learning Based Beam Steering Strategy for Throughput Maximization in WPCNs](/202607/26/2607.17838v1-deep-recurrent-q-learning-based-beam-steering-strategy-for-throughput-maximization-in-wpcns)  
    标签：评分：6.0/10、query:channel-nn
-   evidence：基于深度学习的联合源信道编码语义通信框架
-2. [Long-Horizon Wireless Link Scheduling with State-Augmented Graph Neural Networks](/202607/25/2607.18480v1-long-horizon-wireless-link-scheduling-with-state-augmented-graph-neural-networks)  
-   标签：评分：6.0/10、query:channel-nn
-   evidence：用于无线链路调度的新型图神经网络架构
+   evidence：使用深度强化学习进行波束转向以最大化吞吐量
 
 
 <div class="dpr-home-promo-card">

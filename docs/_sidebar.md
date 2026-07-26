@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-07-26 <!--dpr-date:20260726-->
+    * 速读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202607/26/2607.17838v1-deep-recurrent-q-learning-based-beam-steering-strategy-for-throughput-maximization-in-wpcns" data-sidebar-item="{&quot;title&quot;: &quot;Deep Recurrent Q-Learning Based Beam Steering Strategy for Throughput Maximization in WPCNs&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2607.17838v1-deep-recurrent-q-learning-based-beam-steering-strategy-for-throughput-maximization-in-wpcns&quot;, &quot;score&quot;: &quot;6.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;channel-nn&quot;}], &quot;evidence&quot;: &quot;使用深度强化学习进行波束转向以最大化吞吐量&quot;}">Deep Recurrent Q-Learning Based Beam Steering Strategy for Throughput Maximization in WPCNs</a>
   * 2026-07-25 <!--dpr-date:20260725-->
     * 速读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202607/25/2607.18115v1-compositional-semantic-communication-for-physical-ai-category-theory-meets-game-theory" data-sidebar-item="{&quot;title&quot;: &quot;Compositional Semantic Communication for Physical AI: Category Theory Meets Game Theory&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2607.18115v1-compositional-semantic-communication-for-physical-ai-category-theory-meets-game-theory&quot;, &quot;score&quot;: &quot;6.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;channel-nn&quot;}], &quot;evidence&quot;: &quot;基于深度学习的联合源信道编码语义通信框架&quot;}">Compositional Semantic Communication for Physical AI: Category Theory Meets Game Theory</a>

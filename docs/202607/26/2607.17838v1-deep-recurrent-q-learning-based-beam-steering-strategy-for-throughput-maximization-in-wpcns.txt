@@ -1,0 +1,1009 @@
+Title: Deep Recurrent Q-Learning Based Beam Steering Strategy for Throughput Maximization in WPCNs
+
+URL Source: https://arxiv.org/pdf/2607.17838v1
+
+Published Time: Tue, 21 Jul 2026 01:47:50 GMT
+
+Number of Pages: 23
+
+Markdown Content:
+> 1
+
+# Deep Recurrent Q-Learning Based Beam Steering Strategy for Throughput Maximization in WPCNs 
+
+Samannaya Adhikari, Student Member, IEEE , Navchetan Awasthi Senior Member, IEEE ,Siddhartha Sarma 
+
+Abstract 
+
+In wireless powered communication networks, medium access control protocols for devices using the harvest-then-transmit strategy must be distributed, low-overhead, and capable of handling irregular and infrequent data transmissions to ensure efficient energy utilisation. However, most existing protocols fail to meet one or more of those requirements, leading to wasted scarce harvested energy. We address this by identifying beam steering as a potential mechanism to regulate the charging rate of energy harvesting devices and thus control their access to the shared wireless medium. After formulating a joint problem of energy beam steering and slotted ALOHA-based random access, we leverage a deep learning framework based on an action-specific deep recurrent Q-Network (ADRQN) to learn a beam-steering policy only from the macro-level ternary slot outcomes, namely, idle, success and collision. Additionally, we design an oracle policy with global knowledge of the network to benchmark our proposed blind adaptive beam-steering approach. The numerical results demonstrate that our approach achieves up to 68% increase in throughput compared to non-learning schemes, while also reaching 75-80% of the oracle policy’s performance, all without requiring channel estimation, charge-level reporting, or device-state tracking. 
+
+Index Terms 
+
+Wireless powered communication networks, slotted ALOHA, energy beamforming, beam steering, deep rein-forcement learning. 
+
+I. I NTRODUCTION 
+
+Recent advances and convergence in semiconductor technology, material science, and wireless com-munications have fueled a rapid proliferation of ultra-low power consumer electronics into our everyday lives, such as wearable devices, smart transducers, etc. As these devices become more energy-efficient, wirelessly powering them has transitioned from a distant possibility to a near-reality. Radio Frequency energy harvesting (RFEH), a form of long-range wireless power transfer, works in a similar manner to a typical wireless communication system but facilitates the transfer of energy, instead of information, from a transmitter to a receiver [1]. RFEH has the potential to transform several Internet of Things (IoT) use-cases, including healthcare, industrial automation, and environmental monitoring, smart buildings, into greener solutions by eliminating the e-waste and maintenance costs associated with batteries [2]. However, the integration of RFEH into conventional wireless networks gives rise to a new set of challenges involving the joint management of information and energy delivery. These must be thoroughly addressed to facilitate the widespread adoption of RFEH. In wireless Powered Communication Networks (WPCN), a class of RFEH networks, energy harvesting (EH) devices receive energy in the downlink from an energy transmitter and subsequently utilise it for uplink transmission to an access point. Unlike their battery-powered counterparts, which can transmit at regular intervals or predetermined slots, EH devices solely rely on the harvested energy for their operation, resulting in infrequent and irregular transmissions. Consequently, conventional Medium Access Control (MAC) protocols impose stringent constraints and operation requirements that cannot be met by EH devices. For instance, TDMA requires precise coordination and frequent feedback on energy states; 
+
+S. Adhikari and S. Sarma are with the School of Computing and Electrical Engineering, Indian Institute of Technology, Mandi, Himachal Pradesh, 175005, India. N. Awasthi is with the School of Artificial Intelligence and Data Science, Indian Institute of Technology, Jodhpur, Rajasthan, 342037, Indian. Corresponding author : Samannaya Adhikari, Email: s24095@students.iitmandi.ac.in arXiv:2607.17838v1 [eess.SP] 20 Jul 2026 2
+
+framed ALOHA lacks the adaptability to varying energy availability, CSMA and other contention-based schemes deplete scarce harvested energy on repeated channel sensing [3]. Furthermore, advanced schemes like NOMA impose prohibitive overhead via complex encoding and precise channel estimation. These limitations necessitate the development of distributed, low-overhead MAC protocols that explicitly account for the intermittent nature of harvested energy. A well-designed MAC protocol must account for the unique characteristics of WPCNs to ensure the efficient utilisation of the harvested energy while maximizing the network performance. Among the class of primitive, distributed protocols, slotted ALOHA, emerges as a promising solution for meeting the unique requirements of WPCN MAC. It requires no channel sensing, reservation handshakes, channel estimation or synchronisation beyond slot boundaries. A device simply transmits when it has a packet ready. This simplicity aligns perfectly with the constraints of WPCNs, where communication is the primary energy-intensive task and any additional protocol overhead would drain EH device’s scarce energy reserves. Due to the unique characteristics of the WPCN, slotted ALOHA behaves differently than in the conventional networks—uplink transmissions are governed by the stochastic variation of wireless medium and the charging dynamics of an EH device’s energy storage, rather than merely the packet arrival rate. This raises a natural question: can an energy transmitter regulate the transmission of uplink traffic by controlling the power delivery? The answer is Yes . Through energy beamforming, a multi-antenna energy transmitter can focus the radiated power into narrow spatial beams and steer them in different directions over time. Consequently, the charging rates of spatially distributed devices can be dynamically managed by reconfiguring the beam direction across different intervals. The observation reveals a vast design space for WPCN MAC protocols. Building on this, we pose a critical question: can a transmitter learn a beam-steering policy with the goal of maximizing the long-term network throughput through orchestrating the packet transmission solely by observing the macro-level slot outcomes, viz., a successful reception, a collision, or an idle slot? The answer, as we demonstrate in this study, is again Yes .In this work, we propose a blind, adaptive beam steering strategy based on an Action-specific Deep Recurrent Q-Network (ADRQN) that enables an Energy Transmitter cum Access Point (ET/AP) to learn the optimal beam steering policy without any knowledge of device locations, channel states, or charge levels. We leverage Deep Reinforcement Learning (DRL), which has shown remarkable success in learning beamforming and resource allocation policies in wireless systems under complex or partially known environments [4]–[7]. Our work extends these capabilities to the fundamentally different setting of WPCN, where we leverage energy beam steering as a primary mechanism for medium access control. As in our case, the agent never observes the true system state, i.e. the charge levels of the devices and channel conditions, a single slot outcome in isolation carries little information; it is the sequence of outcomes and the actions that produced them that reveal the underlying charging patterns. For instance, a string of idle slots following a particular beam direction suggests that the devices in that direction are still charging, while a collision indicates that multiple devices have reached the transmission threshold simultaneously. The sequential dependencies necessitate a recurrent architecture that can maintain and update an internal memory across time steps. In our preliminary work [8], we employed a feedforward DQN under a simplified system model, where a fully charged device could transmit regardless of the current beam direction. The present work introduces a received power threshold Pth that restricts transmission to devices within the current beam’s coverage (more explained in III-E), tightly coupling the beam direction with transmission eligibility and providing the agent with a spatially informative feedback signal. Furthermore, we observed that the feedforward DQN, which compresses the entire history into a fixed-dimensional flattened vector, struggles to extract meaningful temporal patterns as the history length grows. This motivated the adoption of a recurrent architecture in the present work. The key contributions of this article are as follows.  
+
+> •
+
+We formulate the joint problem of energy beam steering and slotted ALOHA-based random access in a WPCN as a Partially Observable Markov Decision Process (POMDP), incorporating the dynamics 3
+
+of the charging process and its coupling with the transmission protocol.  
+
+> •
+
+We introduce a novel DRL framework in which the ET/AP learns to steer the energy beam by observing only macro-level slot outcomes—success, collision, or idle—without requiring channel estimation, charge-level feedback, or device-state tracking.  
+
+> •
+
+We design an input encoding pipeline for the ADRQN framework [9] tailored to the macro-level slot outcomes of the WPCN setting. Specifically, our designed architecture facilitates encoding both the previous beam index and the ternary slot outcome as one-hot vectors and projecting each through a dedicated fully connected layer with ReLU activation. We further integrate a multi-layer RNN that processes these joint embeddings to accumulate a compressed summary of the entire interaction history within its hidden state. This hidden state implicitly tracks which spatial regions have been charged, for how long, and with what outcomes, enabling the agent to make informed beam steering decisions despite lacking the global knowledge of the network.  
+
+> •
+
+We investigate whether the macro-level feedback is a sufficient state representation for the learning agent to infer the underlying network dynamics and make effective beam steering decisions.  
+
+> •
+
+We design a model-predictive oracle policy with full state knowledge and provide a comprehensive performance analysis, benchmarking our blind approach against the oracle and non-learning baselines. We also compare the proposed recurrent architecture with a standard feedforward DQN baseline to highlight the importance of sequential history processing in this problem setting. 
+
+Organization and Notations 
+
+The remainder of this paper is organized as follows:– Section II reviews the related literature on wireless powered communication networks, slotted ALOHA protocols, and Reinforcement Learning approaches for medium access control and resource allocation. Section III presents the system model, including the beamforming, channel, energy harvesting, charging, and uplink transmission models, and formally states the problem. Section IV describes the proposed RL framework, the training procedure, and the baseline variants used for comparison. Section V introduces the oracle policy with full state knowledge that serves as an upper bound for performance evaluation. Section VI presents the numerical results, including performance comparisons across different network configurations, architectural variants, and spatial device distributions. Finally, Section VII concludes the paper and discusses potential directions for future work. Throughout this paper, we adopt the following notation:– Vectors are denoted by bold lowercase fonts (e.g., w, g), matrices by bold uppercase fonts (e.g., IM ), and scalars by normal fonts. The superscripts 
+
+(·)T , (·)H , and (·)∗ denote transpose, conjugate transpose, and complex conjugate, respectively. Cm×n and 
+
+Rm×n represent the spaces of m × n complex-valued and real-valued matrices, respectively. CN (μ, Σ)
+
+denotes a circularly symmetric complex Gaussian distribution with mean vector μ and covariance matrix 
+
+Σ. E[·] represents the expectation operator, and I{·} is the indicator function. II. R ELATED WORKS 
+
+Early work on WPCNs adopted centralized, orthogonal (e.g., TDMA) [10]–[15] or non-orthogonal (e.g., SDMA) [16] multi-access schemes. These foundational works proposed convex-optimisation-based designs for throughput maximization, which scale poorly with the number of devices due to their reliance on global channel information, coordinated scheduling or precise beamforming. Some protocols (e.g. [17]) require devices to explicitly request and acknowledge energy transfers, introducing additional communication overhead that consumes the very energy it seeks to harvest. To alleviate this overhead, several works have explored distributed MAC protocols for wireless powered networks. These primarily fall into two categories: (i) In channel sensing based MAC, [18], [19] proposed transmission schemes triggered by receiver requests, [20] proposed modified CSMA/CA protocols that incorporate device recharging dynamics, and, [21] designed a distributed CSMA-based MAC protocol with adaptive charging thresholds for RF-powered sensors. (ii) Parallelly, protocols based on slotted ALOHA 4
+
+have also been explored for their low-complexity. [22] designed a slotted ALOHA-based energy harvesting MAC protocol and analytically derived the optimal number of random access slots to maximize throughput, and then a subsequent extension [23] introduced the harvest-or-access protocol which opportunistically exploits idle slots for wireless energy transfer, improving throughput especially at high user counts, and, recently, [24] applied slotted ALOHA to multi-device backscatter communications with joint beamforming and access probability optimisation. Several authors have explored reinforcement learning as an alternative to model-based optimisation for WPCNs. [25] and [26] applied tabular Q-learning for scheduling and resource allocation in wireless powered networks. Beyond tabular methods of RL, DRL has also been applied to various problems in WPCNs. For instance, [27] and [28] demonstrated the successful application of multi-agent DRL frameworks to distributed resource management, including time and power allocation. Close to our setting, [29] proposed a multitask TD3-based DRL framework to maximise the long-term minimum ergodic throughput in a multinode WPCN, training a single centralised agent to adapt across diverse network configurations including varying node locations, battery capacities, and fading channel conditions. In contrast to the centralised optimisation-based designs [10]–[14], [16] that require global CSI, the participation of energy harvesting devices in channel estimation, and coordinated scheduling, and on-demand protocols [17] that consume harvested energy on explicit charging requests, our system eliminates all device-to-AP feedback. While distributed MAC protocols based on channel sensing [18]–[21] and slotted ALOHA [22]–[24] reduce centralised coordination, they still require devices to perform non-trivial local computations such as priority-based slot selection or threshold estimation, and rely on analytical models assuming knowledge of channel statistics. On the other hand, our proposed approach requires no slot reservation, as well as all computation resides at the transmitter; the energy harvesting devices are entirely passive, simply transmitting when charged and when received power is sufficient. The RL based frameworks in [25], [26], [29] assumes full observability with access to instantaneous battery states and channel gains of all nodes. In contrast, our ET/AP observes only a one-hot idle/success/collision signal per slot arising from slotted ALOHA contention among battery-free devices. Although in their approach, [25] demonstrates that a reinforcement learning agent at the base station can learn near-optimal scheduling decisions without explicit knowledge of each node’s real-time battery level, it still operates over a discretised, finite state space with collision-free TDMA access and observable queue transitions — a significantly more overhead-heavy feedback regime compared to the minimal slot-level observations used in our approach. III. S YSTEM MODEL 
+
+In many IoT applications, such as smart homes, smart buildings, and industrial monitoring, low-power IoT devices periodically transmit sensed data to a central coordinator. Since short-range wireless technologies like Bluetooth and WiFi typically cover tens of meters, IoT devices are placed within this range to maintain uninterrupted connectivity. Our system model follows a similar setup, where the central coordinator is replaced by an ET/AP and the IoT devices are powered through RF energy harvesting. In this work, we consider a WPCN consisting of an ET/AP with a uniform linear array (ULA) of M
+
+antennas and N single-antenna battery-free energy harvesting devices (BEHDs). The ET/AP performs downlink wireless energy transfer (WET) to charge the BEHDs and also receives uplink information packets via wireless information transfer (WIT) from the BEHDs in a time-slotted operation, as illustrated in Fig. 1. The BEHDs are assumed to be identical in structure and operation and to depend solely on harvested power for their functioning. The system operates over discrete time slots with a slot duration of 
+
+δt seconds each. We also consider that the ET/AP transmits power and information to and from the BEHDs using different frequency bands, also known as an out-of-band architecture [14], [30]. This requires specific antennas and wireless resources at both the ET/AP and the BEHDs to transmit power and information signals, respectively. The N BEHDs in this system model are assumed to be at approximately equal distances from the ET/AP; however, their exact locations are unknown to the ET/AP. This assumption is 5
+
+> Fig. 1. Pictorial depiction of the considered WPCN, where the BEHDs distributed around the ET/AP receive an energy signal in the downlink and transmit their information on the uplink once they have harvested sufficient energy.
+
+justified, particularly in single-floor or outdoor IoT sensor networks where nodes in the network tend to be at similar distances from the access point. 
+
+A. Beamforming Model 
+
+The ET/AP steers its energy beam to one of the S predefined beam directions Φ = {ϕ1, ϕ 2, . . . , ϕ S }
+
+in each time slot and transmits with power PT to charge the BEHDs. The beamforming weight vector corresponding to beam direction ϕs, as depicted in Fig. 1, is given by 
+
+w(ϕs) = 1
+
+√M
+
+1, e jπ sin( ϕs), . . . , e jπ (M −1) sin( ϕs)T , (1) where ϕs denotes the steering angle of the s-th beam. 
+
+B. Channel Model 
+
+The wireless channel between the ET/AP and the i-th BEHD, positioned at angle θi, is modeled as a Rician fading channel. The channel vector gi ∈ CM ×1 is expressed as 
+
+gi =
+
+r KK + 1 gLoS  
+
+> i
+
++
+
+r 1
+
+K + 1 gNLoS  
+
+> i
+
+, (2) 6
+
+where K denotes the Rician K-factor representing the ratio of the power in the line-of-sight (LoS) component to the scattered component [31]. The LoS component is given by 
+
+gLoS  
+
+> i
+
+= σl
+
+1, e jπ sin( θi), . . . , e jπ (M −1) sin( θi)T , (3) where σ2 
+
+> l
+
+denotes the path loss, and the non-line-of-sight (NLoS) component, gNLoS  
+
+> i
+
+∼ CN (0, σ 2 
+
+> l
+
+IM )
+
+captures the scattered multipath contributions. The channel follows a block fading model with a coherence time Tc. Specifically, the channel remains constant over ⌊Tc/δ t⌋ consecutive slots over a single coherence interval. 
+
+C. Energy Harvesting Model 
+
+The received power at the i-th BEHD in a given time slot when the ET/AP steers beam towards the direction ϕs is 
+
+Pr,i = PT gHi w(ϕs) 2 . (4) The harvested power is calculated assuming the logistic energy harvesting function [32], and the harvested power at the i-th BEHD is modeled as 
+
+Ph,i = Γ1 − Ω
+
+ 11 + e−α(Pr,i −β) − Ω
+
+
+
+, (5) where Ω = 1 /(1 + exp( αβ )) , and Γ, α, and β are parameters characterizing the harvesting system. 
+
+D. Charging Model 
+
+Each BEHD stores the harvested energy in a capacitor of capacitance C connected across a load resistance R. Since the duration of a slot is considerably less than the average time to charge the capacitor, the harvesting power varies several times over a single charging period. Therefore, a charging model, as in [33], is adopted. In each time slot, the charge increment for device i with the current charge Qi(t) and the harvested power Ph,i (t), is given by 
+
+λi(t) = δt
+
+2RC 
+
+
+
+−Qi(t) + 
+
+q
+
+Q2 
+
+> i
+
+(t) + 4 Ph,i (t) R C 2
+
+
+
+, (6) and the charge at the beginning of the next slot is updated as 
+
+Qi(t + 1) = min( Qi(t) + λi(t), Q th ) , (7) where Qth denotes the charge threshold at which the capacitor is considered fully charged. 
+
+E. Uplink Transmission Protocol 
+
+A BEHD becomes eligible to transmit its data to the ET/AP once its stored charge reaches the threshold 
+
+Qth , i.e., Qi(t) ≥ Qth . However, a fully charged BEHD transmits only if the instantaneous received power from the ET/AP exceeds a power threshold Pth , i.e., 
+
+Pr,i (t) > P th . (8) The threshold Pth acts as a contention-control knob . A device whose received power exceeds Pth is admitted to contend in the slot; a device below it defers, even if fully charged. Raising Pth admits fewer devices to transmit per slot, reducing collisions, while lowering it admits more devices, reducing idle slots. Its value is just a design parameter and tuned empirically. This behaviour is confirmed numerically in Section VI, where sweeping Pth traces out the resulting trade-off between idle slots and collisions. The uplink channel follows a slotted ALOHA random access protocol where, in any given slot, the outcome is one of the following three possibilities: 7Charging Time Wait Time for 
+
+New Slot Wait Time for Idle Slot Successful 
+
+Transmission Collision Slot Idle Slot Time axis EH Device N EH Device 1 EH Device 2    
+
+> Fig. 2. Slot timing diagram for the slotted ALOHA protocol, showing the charging period, the waiting time after the upper charge threshold
+> Qth is reached, and the three possible slot outcomes: successful transmission, idle slot, and collision.
+> •
+
+Idle: No BEHD transmits, and the slot is wasted.  
+
+> •
+
+Success: Exactly one BEHD transmits, and its data is successfully decoded by the ET/AP.  
+
+> •
+
+Collision: Two or more BEHDs transmit simultaneously, resulting in a collision and failed reception. The slot timing structure, depicting the charging period, the waiting time after the charge threshold is reached, and the three possible slot outcomes, is illustrated in Fig. 2. After every transmission attempt, a BEHD’s charge level is reset to the initial state Q0, and the device begins a new charging cycle. 
+
+F. Problem Formulation 
+
+We aim to maximize the system throughput, which is defined as the long-term average of successful packet transmissions per slot, i.e., 
+
+η = lim  
+
+> T→∞
+
+1
+
+T
+
+> T
+
+X
+
+> n=1
+
+I{success in slot n} . (9) At the beginning of each slot n, the ET/AP selects a beam index (action) a(n) ∈ A = {1, 2, . . . , S },corresponding to beam angle ϕa(n), and transmits energy using the steering vector w(ϕa(n)) for the entire slot duration δt. At the end of the slot, the ET/AP observes a feedback tuple 
+
+o(n) = eo(n) ∈ { 0, 1}3, (10) where eo(n) is the one-hot encoding of the slot outcome : 
+
+o(n) ∈ O = {0 ( idle ), 1 ( success ), 2 ( collision )}. (11) 8
+
+The reward associated with the outcome of slot n is defined as 
+
+r(n) = 
+
+(
+
+1, if o(n) = 1 ,
+
+0, otherwise . (12) The ET/AP must learn an optimal beam selection policy π : H → A that maps from the observed history 
+
+H(n) = a(0) , o(0) , a (1) , o(1) , . . . , a (n−1) , o(n−1) (13) to the next beam direction index. Although the primary performance metric is the long-term average throughput η, defined in (9), for learning the optimal policy we optimise a discounted return :
+
+Jγ (π) = E
+
+" ∞X
+
+> n=0
+
+γn r(n) π
+
+#
+
+, (14) where γ ∈ [0 , 1) is the discount factor. A value of γ close to unity guarantees that the agent will not overly favor short-term rewards and that the discounted return will act as a good surrogate objective for the long-term average throughput objective. That being said, in the numerical results VI section, the final performance of the agent is measured and reported by computing the average throughput η under the learned policy. IV. R EINFORCEMENT LEARNING BASED SOLUTION 
+
+Since the ET/AP has no access to the joint charge state Q(n) or the channel realisations, we therefore adopt a model-free DRL framework, in which the ET/AP acts as the learning agent. In this section, we first describe how the ADRQN framework [9] is tailored to the WPCN beam steering setting, detailing the architecture and training procedure, and then present two baseline variants for comparison. 
+
+A. ADRQN-Based Beam Steering Agent 
+
+The beam steering problem is a sequential decision process and is cast as a POMDP, defined by the tuple (S, A, T , O, Ω, r, γ ), with the following elements.  
+
+> •
+
+State space S: The true system state at slot n comprises the joint charge vector Q(n) ∈ RN and the instantaneous channel realisations {gi}Ni=1 . This state space is inherently high-dimensional and not directly accessible to the ET/AP, nor is a compact, sufficient representation readily available.  
+
+> •
+
+Action space A: The action is the beam index a(n) ∈ A = {1, 2, . . . , S }, corresponding to beam direction ϕa(n) ∈ Φ. 
+
+> •
+
+Transition function T : The state transition T (s′|s, a ) is governed by the charging dynamics (6)–(7), the energy harvesting model (5), and the transmission protocol in Section III-E.  
+
+> •
+
+Observation space O: The observation available to the agent is the slot outcome o(n) ∈ { 0, 1}3, as defined in (10).  
+
+> •
+
+Observation function Ω: The mapping Ω( o|s′, a ) is deterministic within a coherence block: given the post transition state s′ and the selected beam a(n), the slot outcome is uniquely determined by the number of devices that are both fully charged and satisfy (8).  
+
+> •
+
+Reward: r(n) is defined in (12).  
+
+> •
+
+Discount factor: γ ∈ [0 , 1) .The objective is to maximise the discounted return Jγ (π) in (14). Since the true state is unobservable, the agent relies on the interaction history H(n), defined in (13), as a surrogate for decision making. 
+
+1) Network Architecture: The proposed architecture, illustrated in Fig. 3, consists of three modules: 
+
+a) Action Encoder: At each time step n, the previous action a(n−1) ∈ A is represented as a one-hot vector a(n − 1) ∈ { 0, 1}S and mapped to a dense embedding through a fully connected layer followed by a ReLU activation: 
+
+za(n) = ReLU( Wa a(n − 1) + ba) ∈ Rda , (15) where da is the action embedding dimension. 9 
+
+> Fig. 3. Architecture of the proposed ADRQN agent. The action and observation encoders produce embeddings that are concatenated and processed by a multi-layer RNN. The final hidden state is passed through a Q-value head to produce per-beam action values.
+
+b) Observation Encoder: The observation o(n) ∈ R3, as defined in (10), is similarly encoded: 
+
+zo(n) = ReLU( Wo o(n) + bo) ∈ Rdo , (16) where do is the observation embedding dimension. 
+
+c) Recurrent Module: The action and observation embeddings are concatenated to form the input to a multi-layer RNN: 
+
+x(n) = [ za(n) ∥ zo(n)] ∈ Rda+do , (17) where ∥ denotes concatenation. The hidden state of the l-th RNN layer evolves as 
+
+h(l)(n) = tanh 
+
+
+
+W(l) 
+
+> xh
+
+x(l)(n)+ W(l) 
+
+> hh
+
+h(l)(n − 1)+ b(l)
+
+> h
+
+
+
+, (18) where tanh( ·) is the hyperbolic tangent activation function, x(1) (n) = x(n) and x(l)(n) = h(l−1) (n) for 
+
+l ≥ 2, and L denotes the total number of recurrent layers. The hidden state h(L)(n) ∈ Rdh of the final layer encodes a compressed representation of the entire interaction history up to slot n.
+
+d) Q-Value Head: The Q-values for all beam directions are computed from the top-layer hidden state via a two-layer feedforward network: 
+
+Qθ(H(n), a ) = W2 ReLU  W1 h(L)(n) + b1
+
+ + b2
+
+ 
+
+> a
+
+, (19) where the subscript a selects the component corresponding to action a ∈ A , and θ collectively denotes all trainable parameters of the network. 10 
+
+2) Action Selection: During interaction with the environment, the agent follows an ε-greedy policy. At slot n, the action is selected as 
+
+a(n) = 
+
+(
+
+Uniform (A), with probability ε, 
+
+arg max a∈A Qθ(H(n), a ) , otherwise , (20) where the exploration rate ε is decayed multiplicatively after each episode as ε ← max( εmin , ε · εdecay ).
+
+B. Training Procedure 
+
+The ADRQN stores complete episodes in a sequence replay buffer. During training, a minibatch of 
+
+B sequences, each of length H, is sampled by selecting a random episode and extracting a contiguous subsequence from a uniformly random starting position. To address the mismatch between the zero-initialised hidden state at the start of a sampled subsequence and the hidden state that would have resulted from the full preceding history, we adopt a burn-in strategy [34]: each sequence is partitioned into a burn-in prefix of length Hb and a training suffix of length H − Hb, where the prefix is processed without computing gradients solely to produce a warm hidden state. Training updates are performed every U
+
+environment steps. The TD loss is computed over the training suffix only. At training step n within the suffix, the policy network processes (a(n − 1) , o(n)) to produce Q-values Qθ(h(t), ·), and the TD target is 
+
+y(n) = r(n) + γ max  
+
+> a′∈A
+
+Q¯θ
+
+ ¯h(n+1) , a ′ (1 − d(n)) , (21) where ¯h(n + 1) is obtained by feeding (a(n), o(n + 1)) into the target network. Here, d(n) ∈ { 0, 1} is the terminal flag, which equals 1 if slot n is the last slot of the episode and 0 otherwise. The loss over the training suffix is 
+
+L(θ) = 1
+
+H − HbH−1X
+
+> n=Hb
+
+(y(n) − Qθ(h(n), a (n))) 2 . (22) The target network parameters ¯θ after every training step are updated via : 
+
+¯θ ← τ θ + (1 − τ ) ¯θ, (23) with gradient clipping applied to prevent exploding gradients. The complete procedure is summarised in Algorithm 1. 
+
+C. Baseline Variants 
+
+To highlight the contribution of the recurrent architecture and to study the effect of different temporal modelling choices, we consider two baseline variants that share the same training hyperparameters as the proposed ADRQN, differing only in the mechanism used to process temporal information. 
+
+1) ADRQN-LSTM: The first variant replaces the Elman RNN in the recurrent module with a Long Short-Term Memory (LSTM) network [35], which employs forget, input, and output gates to selectively retain or discard information over long sequences. This gating mechanism may be beneficial when the actual dynamics of the system span many time slots. The LSTM can better propagate relevant information such as the approximate charging phase of device clusters over extended horizons. The LSTM maintains a hidden state tuple (h(n), c(n)) , where h(n) is the output hidden state and c(n) is the cell state which is an internal memory vector that is selectively updated by the gating mechanisms at each step, enabling the network to retain or forget information over long time horizons. Both components are warmed up during the burn-in phase. All other aspects of the architecture and training procedure remain identical to the RNN-based ADRQN described in Algorithm 1. 11 
+
+Algorithm 1 ADRQN-Based Beam Steering Agent for WPCN  
+
+> 1:
+
+Initialise policy network QΨ and target network Q¯Ψ with ¯Ψ ← Ψ 
+
+> 2:
+
+Initialise sequence replay buffer D, exploration rate ε ← 1.0 
+
+> 3:
+
+for episode = 1 , 2, . . . , E do  
+
+> 4:
+
+Initialise hidden state h ← 0, episode buffer T ← ∅  
+
+> 5:
+
+for slot n = 0 , 1, . . . , T − 1 do  
+
+> 6:
+
+Select action a(n) via ε-greedy policy (20)  
+
+> 7:
+
+Apply a(n) to the environment;  
+
+> 8:
+
+observe outcome o(n) and reward r(n) 
+
+> 9:
+
+Append (a(n − 1) , o(n − 1) , a (n), r (n), o(n), d (n)) to T 
+
+> 10:
+
+if n mod U = 0 and |D| ≥ B then  
+
+> 11:
+
+Sample minibatch of B sequences of length H from D 
+
+> 12:
+
+Burn-in: forward the first Hb steps without gradient  
+
+> 13:
+
+Compute loss L(Ψ) over remaining H − Hb steps via (22)  
+
+> 14:
+
+Update Ψ via Adam with gradient clipping  
+
+> 15:
+
+Soft-update target: ¯Ψ ← τ Ψ + (1 − τ ) ¯Ψ 
+
+> 16:
+
+end if  
+
+> 17:
+
+end for  
+
+> 18:
+
+Store episode T in replay buffer D 
+
+> 19:
+
+Decay ε ← max( εmin , ε · εdecay ) 
+
+> 20:
+
+end for 
+
+2) Feedforward DQN with History Window: The second baseline uses a standard Deep Q-Network (DQN) [36], in which a feedforward neural network Qθ approximates the optimal action-value function. The parameters are updated by minimising the temporal-difference loss 
+
+L(θ) = E
+
+
+
+r + γ max  
+
+> a′
+
+Q¯θ(s′, a ′) − Qθ(s, a )
+
+2
+
+, (24) where ¯θ denotes the target network parameters. Since the DQN requires a fixed-dimensional state input, partial observability is addressed by concatenating the most recent H action–observation pairs into a single vector: 
+
+s(n) = [ a(n−H)∥o(n−H)∥· · ·∥ a(n−1) ∥o(n−1)] ∈ RH(S+4) . (25) This vector is processed by a feedforward encoder comprising two fully connected layers with ReLU activations: 
+
+z(n) = ReLU( W′ 
+
+> 2
+
+ReLU( W′ 
+
+> 1
+
+s(n) + b′
+
+> 1
+
+) + b′
+
+> 2
+
+) , (26) followed by the same Q-value head as in (19). A standard experience replay buffer storing individual transitions (s(n), a (n), r (n), s(n + 1) , d (n)) is used. V. O RACLE UPPER BOUND 
+
+To establish a performance ceiling against which the proposed learning-based policies can be bench-marked, we design an oracle beam steering policy that assumes the ET/AP has perfect knowledge of the instantaneous charge levels Q(n), the current channel realisations {gi}Ni=1 , the beam coverage geometry, and the thresholds Qth and Pth . Since the slot outcome under any candidate beam can be computed deterministically from this information within a coherence block, the oracle does not learn through exploration; it directly evaluates the consequences of its actions via forward simulation and selects the best one. 12 
+
+For a given beam index a ∈ A , in the slot n, the coverage set contains all devices whose received power exceeds the threshold: 
+
+Ca(n) = 
+
+n
+
+i ∈ { 1, . . . , N } : PT gHi w(ϕa) 2 > P th 
+
+o
+
+. (27) A device is said to be covered by beam ϕs if it belongs to Ca(n), i.e., its received power under that beam exceeds Pth . The ready set is the subset of covered devices that are also fully charged: 
+
+Ra(n) = {i ∈ C a(n) : Qi(n) ≥ Qth } . (28) The cardinality |R s(n)| directly determines the slot outcome: idle if |R a(n)| = 0 , success if |R a(n)| = 1 ,and collision if |R a(n)| ≥ 2. Within a coherence block, the coverage sets remain constant 
+
+A. Policy 
+
+The oracle operates in two tiers, evaluated sequentially at each slot. 
+
+1) Tier 1: Immediate Success: The oracle first checks whether any beam yields an immediate success. Let S1(n) = {a ∈ A : |R a(n)| = 1 }. If |S 1(n)| ≥ 1, the oracle selects a beam from this set, bypassing the more expensive sequence search. When multiple beams qualify, ties are broken by simulating the charge update and device reset for each candidate a ∈ S 1(n) and computing the worst-case collision potential at the next slot as ρ(a) = max a′∈A | ˆR(a) 
+
+> a′
+
+(n + 1) |, where ˆR(a) 
+
+> a′
+
+(n + 1) is the prospective ready set after selecting beam a and resetting the transmitting device. The beam with smallest ρ(a) is chosen. 
+
+2) Tier 2: Exhaustive Sequence Search: When S1(n) = ∅, the oracle searches over all Sk beam sequences of length k. For each candidate sequence a = ( a0, a 1, . . . , a k−1) ∈ A k, the system dynamics are simulated starting from the current state Q(n). At each simulated step t ∈ { 0, . . . , k − 1}, the charges are updated via (6)–(7) under beam at, the ready set Rat (n + t) is computed, and the outcome is recorded as 
+
+σt(a) = I{|R at (n + t)| = 1 } . (29) If |R at (n + t)| ≥ 1 (success or collision), the charges of all transmitting devices are reset to Q0. The total number of successes over the horizon is 
+
+Σ( a) = 
+
+> k−1
+
+X
+
+> t=0
+
+σt(a). (30) The oracle selects the first action of the sequence that maximises Σ( a):
+
+a∗(n) = first 
+
+
+
+arg max 
+
+> a∈A k
+
+Σ( a)
+
+
+
+. (31) Ties among sequences with the same Σ∗ are broken hierarchically: first, the sequence whose earliest success occurs at the smallest step index is preferred; if still tied, the sequence whose terminal charge state ˆQ(a)(n + k) contains the fewest devices with charge exceeding ξ · Qth is selected, where ξ ∈ (0 , 1) 
+
+is a near-threshold parameter. This favours actions that leave the system in the least collision-prone state beyond the planning horizon. The complete oracle policy is thus 
+
+a∗(n) = 
+
+
+
+arg min  
+
+> s∈S 1(n)
+
+ρ(s), if S1(n)̸ = ∅,
+
+first 
+
+
+
+arg max 
+
+> a∈A k
+
+Σ( a)
+
+
+
+, otherwise ,
+
+(32) and is summarised in Algorithm 2. 13 
+
+Algorithm 2 Oracle Beam Steering Policy (MPC) 
+
+Require: State Q(n), channels {gi}, beams {w(ϕa)}Sa=1 , thresholds Qth , Pth , horizon k, parameter ξ 
+
+> 1:
+
+for each slot n do  
+
+> 2:
+
+Compute Pr(a, i ), Ca(n) for all a 
+
+> 3:
+
+Compute Ra(n) for all a ∈ A  
+
+> 4:
+
+S1(n) ← { a : |R a(n)| = 1 } 
+
+> 5:
+
+if S1(n)̸ = ∅ then (Tier 1: immediate success)  
+
+> 6:
+
+for each a ∈ S 1(n) do  
+
+> 7:
+
+Simulate charge update and reset;  
+
+> 8:
+
+compute ρ(a) 
+
+> 9:
+
+end for  
+
+> 10:
+
+Select a∗(n) = arg min a∈S 1(n) ρ(a) 
+
+> 11:
+
+else (Tier 2: exhaustive sequence search)  
+
+> 12:
+
+for each sequence a ∈ A k do  
+
+> 13:
+
+ˆQ ← Q(n), Σ ← 0 
+
+> 14:
+
+for t = 0 , 1, . . . , k − 1 do  
+
+> 15:
+
+Update ˆQ via (6)–(7) under beam at 
+
+> 16:
+
+Compute Rat ; if |R at | = 1 then Σ ← Σ + 1  
+
+> 17:
+
+If |R at | ≥ 1: reset ˆQi ← Q0 for i ∈ R at 
+
+> 18:
+
+end for  
+
+> 19:
+
+Record (Σ , first success step , ˆQ) for a 
+
+> 20:
+
+end for  
+
+> 21:
+
+Select a∗(n) = first action of best a via (31) with tie-breaking  
+
+> 22:
+
+end if  
+
+> 23:
+
+Execute beam a∗(n); 
+
+> 24:
+
+update Q and reset transmitting devices  
+
+> 25:
+
+end for 
+
+VI. N UMERICAL RESULTS 
+
+A. Simulation Settings 
+
+All simulations are performed over E = 900 episodes, where each episode is divided into T = 3500 time slots. we perform a few independent experiments, each with a different random device placement where the angular position of each BEHD is drawn independently and uniformly from [0 ◦, 360 ◦). The device placements are kept identical across all algorithms within each experiment to ensure a fair comparison. The reported average throughput values are calculated by first averaging the throughput over the last 100 episodes of each simulation run and then averaging over all independent device placement configurations. The architectures for the recurrent models consist of embedding dimensions for actions and observations, which are set to 32. For the oracle policy, the planning horizon is set to k = 5 and the near-threshold parameter to ξ = 0 .85 . All architectures share a hidden dimension of 128 and the Adam optimizer is utilized for training keeping the learning rate at 10 −5. The target networks are updated via Polyak averaging with coefficient τ = 0 .005 , and gradient norms are clipped to a maximum of 10. The exploration rate is initialised to ε = 1 .0 and decayed multiplicatively by a factor of 0.995 per episode to a minimum of 0.05. For the recurrent architectures, the sequence replay buffer stores entire episodes, and the capacity is 10,000. A burn-in length of Hb = 10 is used for hidden state warm-up. Training updates are performed every 6 environment steps with a minibatch size of 32. 
+
+B. System Parameters 
+
+The physical layer parameters used in all simulations are summarised in Table I. The set of steering 14                                  
+
+> TABLE I SYSTEM PARAMETERS
+> Param. Value Param. Value Param. Value
+> K6 dB PT1 W δt0.1 s
+> Γ0.024 W C1 mF Tc1.0 s
+> α150 R100 Ωσ2
+> l10 −2
+> β0.014 Q01.5 mC Pth −12 dB
+> γ0.95 Qth 3.0 mC T3500 slots
+
+150 100 50 0 50 100 150 
+
+Angle (degrees) 
+
+40 
+
+35 
+
+30 
+
+25 
+
+20 
+
+15 
+
+10 
+
+5
+
+0
+
+> Normalized Power (dB)
+
+# Beam Coverage for M = 5 Antennas  
+
+> s
+
+= 60  
+
+> s
+
+= 170  
+
+> s
+
+= 330 
+
+Threshold = -12 dB                 
+
+> Fig. 4. Beam coverage for M= 5 antennas with S= 3 steering directions {ϕs}={60 ◦,170 ◦,330 ◦}. The shaded regions indicate angular ranges where the normalised received power exceeds the threshold Pth =−12 dB.
+
+angles {ϕs}Ss=1 is chosen such that, for a given number of antennas M and power threshold Pth , the union of the beam coverage regions spans nearly the full 360 ◦ angular range with minimal overlap between adjacent lobes. This design criterion serves two purposes: it ensures that every BEHD, regardless of its angular position, falls within the coverage of at least one beam, and the limited overlap reduces the likelihood of multiple beams simultaneously charging the same set of devices, thereby helping the agent learn effective spatial scheduling patterns. To determine the beam directions, we compute the normalised array factor for each candidate steering angle and identify the angular regions where the received power exceeds Pth . We repeat the same process for different sets of steering angles and find the set which approximately covers the whole 360 ◦ with minimal overlap among the lobes. Figs. 4 and 5 illustrate the beam coverages with two of such beam directions sets for M = 5 and M = 8 antennas, respectively. For the 5-antenna configuration, three steering directions Φ = {60 ◦, 170 ◦, 330 ◦} are taken and for the 8-antenna configuration, due to the narrower beamwidth, five directions {ϕs} = {30 ◦, 60 ◦, 180 ◦, 300 ◦, 330 ◦} are considered. In the remainder of this section, unless stated otherwise, the 5-antenna experiments use S = 3 beams and the 8-antenna experiments use S = 5 beams as defined above. 15 150 100 50 0 50 100 150 
+
+Angle (degrees) 
+
+40 
+
+35 
+
+30 
+
+25 
+
+20 
+
+15 
+
+10 
+
+5
+
+0
+
+> Normalized Power (dB)
+
+# Beam Coverage for M = 8 Antennas  
+
+> s
+
+= 30  
+
+> s
+
+= 60  
+
+> s
+
+= 180  
+
+> s
+
+= 300  
+
+> s
+
+= 330 
+
+Threshold = -12 dB                   
+
+> Fig. 5. Beam coverage for M= 8 antennas with S= 5 steering directions {ϕs}={30 ◦,60 ◦,180 ◦,300 ◦,330 ◦}. The shaded regions indicate angular ranges where the normalised received power exceeds the threshold Pth =−12 dB.
+
+C. Performance Analysis 
+
+Fig. 6 shows the comparison between the proposed ADRQN-based beam steering policy (with history length H = 50 and M = 8 antennas) and two non-learning baselines, namely Round Robin (RR) and Random Selection (RS). The performance of the two baselines is evaluated over the network size ranging from N = 5 to N = 125 BEHDs. In the RR policy, the ET/AP sequentially selects S predetermined steering vectors and chooses one per slot in a fixed order. In the RS policy, the beam direction is selected uniformly at random per slot. Both the RR and RS policies do not utilize the charge state and spatial location information of the devices; hence, they provide fair baselines to compare the performance of the proposed learning-based policy. The performance of the RR and RS obtained through simulating the same device placement configurations as the evaluation of the proposed policy. The results show that the proposed policy outperforms the two baselines in all network configurations. For example, at N = 50 devices, the proposed approach achieves an average throughput of 0.4635 , whereas the Round Robin and Random Selection policies achieve throughputs of 0.2758 and 0.2755 , respectively. Hence, the proposed policy achieves around 68% improvement compared to the two baselines. As the network size increases from N = 5 to a moderate value, the throughput of all three algorithms increases. This is because more the number of devices enable the effective utilization of the idle time slots. However, beyond a certain network density, the throughput decreases due to the increased number of collisions among the fully charged devices using the slotted ALOHA protocol. A comparison of the three different neural network architectures’ throughput as a function of the sequence length H is depicted in Fig. 7, which considers a neural network consisting of N = 50 BEHDs and M = 8 antennas. The feedforward DQN achieves competitive results when the sequence length is relatively short (e.g., H = 10 ), but the throughput gets reduced as H is increased. This is because the input dimensionality of the feedforward DQN grows linearly with H, given by H(S + 4) , and when H is large, the input dimensionality is too large for the fixed hidden layer dimensionality, making optimisation 16 5 10 20 50 75 100 125 
+
+## Number of Devices 
+
+0.0 
+
+0.1 
+
+0.2 
+
+0.3 
+
+0.4 
+
+0.5 
+
+0.6 
+
+> Average Throughput
+
+Round Robin (RR) 
+
+Random Selection (RS) 
+
+Proposed Approach     
+
+> Fig. 6. Average throughput (averaged over all device placement configurations for the last 100 episodes) versus number of BEHDs for the proposed ADRQN ( H= 50 ,M= 8 ), Round Robin (RR), and Random Selection (RS).
+
+increasingly difficult. Both the recurrent architectures exhibit increasing throughput with increasing H, and this is because the fixed hidden dimensionality of the RNN and LSTM is not affected by the sequence length H, allowing them to effectively capture patterns in the sequence of received signals over long sequence lengths. The LSTM performs slightly better than the RNN over long sequence lengths, which is expected given the superior capacity of the LSTM to retain information over long time scales. Figs. 8 shows the sensitivity of beam steering algorithms in terms of their response to the spatial distribution of BEHDs in networks with N = 20 devices. Two representative configurations are shown from among the different independent placements, with one configuration where the performance (i.e. the throughput averaged over the last 100 episodes out of 900 episodes for the shown device placement setup only) of RR and RS is comparable to that of the proposed approach, and another where their performance is significantly lower than the proposed approach. For the 20 device placement scenario, in setup 1 (left panel of Fig. 8), we have throughput 0.4909 for RR and 0.4992 for RS, which is comparable to the throughput of 0.4845 for ADRQN based algorithm. However, in setup 2 (right panel), the performance of both RR and RS drops significantly to 0.2787 and 0.2703, respectively, while ADRQN based algorithm achieves a throughput of 0.5003. This shows that the proposed approach achieves high performance regardless of the spatial distribution of BEHDs, while both non-adaptive approaches exhibit significant sensitivity in response to the relative positioning of devices with respect to fixed beam directions. Figs 9 and 10 show the average idle and collision slot counts for the ET/APs with M = 5 and M = 8 
+
+antennas, respectively, with the number of devices in the network is increased from N = 5 to N = 125 
+
+BEHDs. The simulations were run with the proposed ADRQN based policy with history length H = 50 .The idle slots monotonically decrease as the number of devices in the network is increased, whereas the 17 5 20 50 100 150 200 
+
+## Number of H 
+
+0.0 
+
+0.1 
+
+0.2 
+
+0.3 
+
+0.4 
+
+0.5 
+
+0.6 
+
+> Average Throughput
+
+RNN 
+
+LSTM 
+
+Feed Forward        
+
+> Fig. 7. Average throughput (averaged over all device placement configurations for the last 100 episodes) versus history/sequence length H
+> for the feedforward DQN, ADRQN (RNN), and ADRQN (LSTM) with N= 50 and M= 8 .
+
+number of collisions is increased for both antenna configurations. The 5-antenna ET/AP configuration maintains higher idle slot counts as the number of devices is increased from N = 5 to N = 125 , ranging from 3451 to 2170, whereas for 8-antenna configuration the decrease is from 2243 to 664 over the same range. The 8-antenna configuration also maintains significantly higher numbers of collisions (e.g. 852 at N = 75 , compared to the 5-antenna configuration which is 87 only). This is due to the fact that the 8-antenna configuration maintains narrower beamwidths and thus focuses the transmitted power in smaller angular ranges. This enables multiple spatially proximate devices in a dense network to charge rapidly and reach the transmission threshold Qth within the same or adjacent slots, thereby increasing the likelihood of simultaneous transmissions and resulting collisions. On the other hand, the 5-antenna configuration maintains wider beamwidths that result in the dissipation of transmitted power over larger angular ranges. This in turn staggers the time it takes for devices of nearby devices to reach threshold Qth , reducing collisions at the cost of increased idle time. As presented in Fig. 11, we plot the throughput with respect to the episodes for our proposed ADRQN (RNN) and its LSTM version, with history length H = 200 , for a system consisting of N = 50 BEHDs and M = 8 antennas. The horizontal dashed line in the plot represents the throughput value achieved by the oracle policy described in Section V. The learning curves for both recurrent neural networks show that average system throughput improves steadily over time. The initial average throughput is around 0.25, and it improves to values greater than 0.52 for both ADRQN (RNN) and LSTM, as training progresses through 900 episodes. This monotonic improvement in average system throughput over time indicates that neither ADRQN (RNN) nor its LSTM version overfits to early exploration patterns and continues to refine its beam-steering policies. Also, it is important to observe that both learning curves remain 18 Proposed Approach = 0.4845 
+
+RS = 0.4992 
+
+RR = 0.4909 
+
+20 device placement setup 1 
+
+> ET/AP
+> EHDs
+
+Proposed Approach = 0.5003 
+
+RS = 0.2703 
+
+RR = 0.2786 
+
+20 device placement setup 2     
+
+> ET/AP
+> EHDs
+> Fig. 8. Two representative device placement configurations for N= 20 BEHDs. Setup 1 (left): RR and RS achieve throughput comparable to the ADRQN. Setup 2 (right): RR and RS degrade significantly while the ADRQN maintains robust performance.
+
+below the oracle value, which is around 0.70. This is expected, as our proposed oracle policy utilizes perfect knowledge of charge states, channel realizations, and system states, which is not available to our learning-based policies. The gap between the converged ADRQN throughput and oracle value represents the cost of partial observability in our problem formulation. Our learning-based policies achieve 75-80% of oracle performance without channel estimation, charge-level reporting, and device state tracking, and only relying on macro-level slot feedback. Fig. 12 shows the normalised slot ratios (idle, success, and collision) as a function of the eligibility threshold Pth varied over {− 6, −10 , −12 , −18 , −22 , −30 , −∞} dB (relative to PT ), for N = 50 EH devices, M = 8 antennas and H = 50 history sequence length. The success ratio corresponds to the average throughput, while idle and collision ratios are normalised by the total number of slots (e.g. idle ratio = total number of idle slots/total number of slots ). 
+
+D. Discussion 
+
+The experimental results show that a larger history size results in better performance. This confirms the main argument that, even though the ET/AP cannot directly observe the charge states of the devices, it can infer this information from previous interactions. Of the three architectures, the feedforward DQN uses a fixed-dimensional vector, where the size of the vector grows linearly with H but eventually exceeds the network’s capacity. The RNN-based ADRQN architecture uses long-range dependencies in a fixed-dimensional vector. The performance of this architecture is improved in the LSTM architecture, showing its capability for better inference of the long charging cycles in the WPCN scenario. Furthermore, tabular Q-learning is infeasible for this problem because the observation-history space grows exponentially as 
+
+(S × |O| )H , exceeding 10 144 distinct states for the configurations considered in this work, necessitating function approximation. The observed throughput scaling with the size of the network is in line with the expected performance of slotted ALOHA. As the number of devices increases, the slot utilization improves initially; however, 19 0 20 40 60 80 100 120 
+
+## Number of Devices 
+
+1000 
+
+1500 
+
+2000 
+
+2500 
+
+3000 
+
+3500 
+
+> Average Idle Count
+
+5 Antennas 
+
+8 Antennas         
+
+> Fig. 9. Average number of idle slots (averaged across all device placements for last 100 episodes) versus network size for M= 5 and
+> M= 8 antennas using the ADRQN policy with H= 50 .
+
+beyond a certain point, it is dominated by collisions. The performance difference between the ADRQN and the oracle represents the price of partial observability. The optimal oracle could be computed using dynamic programming (DP), but the N -dimensional charge state space is too large to be precisely computed (for example, discretising each device’s charge level into 10 bins between Q0 and Qth yields 10 50 states for 
+
+N = 50 devices), making the exact DP intractable. The oracle proposed in this work, which has a per-slot cost of O(Sk × k × N ), offers a robust upper bound. The proposed ADRQN-based policy performs fairly well compared to the oracle without global network information. It is also noteworthy that the proposed policy does not explicitly guarantee fairness among devices. However, as illustrated in Figs. 4 and 5, the beam directions are chosen such that their coverage regions span nearly the entire 360 ◦ angular range, ensuring almost every device falls within the main lobe of at least one beam. Devices located at the edges of these coverage zones may receive relatively less power, but they do not face complete energy starvation, as they continue to receive energy through NLoS channel components and side-lobe radiation even when the beam is steered in a different direction. VII. C ONCLUSION 
+
+Our work introduced a new design paradigm for MAC protocols in networks comprising battery-free energy harvesting devices. We proposed an approach to maximize network throughput by intelligently steering the energy beam from an energy transmitter-cum-access point. To preserve scarce harvested energy, our approach eliminated the overheads inherent in conventional MAC protocols. By formulating the joint problem of beam steering and random access under slotted ALOHA as a Partially Observable Markov Decision Process (POMDP), we developed an Action-specific Deep Recurrent Q-Network (ADRQN) 20 0 20 40 60 80 100 120 
+
+## Number of Devices 
+
+0
+
+200 
+
+400 
+
+600 
+
+800 
+
+1000 
+
+1200 
+
+1400 
+
+1600 
+
+> Average Collision Count
+
+5 Antennas 
+
+8 Antennas         
+
+> Fig. 10. Average number of collision slots (averaged across all device placements for last 100 episodes) versus network size for M= 5
+> and M= 8 antennas using the ADRQN policy with H= 50 .
+
+framework that leveraged the history of ternary slot outcomes and beam directions to dynamically deter-mine the optimal next beam direction. We benchmarked our proposed approach and its variants against traditional non-learning policies and an oracle policy with access to the global knowledge of the network. The numerical results clearly showed that not only did the proposed approach improve throughput by up to 68% compared to round-robin and random selection policies, but it also achieved up to 80% of the throughput of the oracle policy despite having access to limited system information. Future research opportunities arise from generalizing the considered system model, specifically through the inclusion of heterogeneous energy harvesting devices or the implementation of a more complex energy transfer infrastructure. The heterogeneity in energy harvesting devices could be attributed to differences in structure (e.g., storage capacity, number of antennas), operation (e.g., backscattering capability), or both. On the other hand, the energy transfer infrastructure could comprise multiple energy transmitters, each capable of transmitting multicarrier energy signals and dynamically regulating transmit power as the beam direction changes. Finally, incorporating optimization goals that prioritize fairness and maintain strict limits on the age-of-information (AoI) could help address a broader spectrum of application requirements. REFERENCES     
+
+> [1] B. Clerckx, A. Costanzo, A. Georgiadis, and N. B. Carvalho, “Toward 1G Mobile Power Networks: RF, Signal, and System Designs to Make Smart Objects Autonomous,” IEEE Microwave Magazine , vol. 19, no. 6, pp. 69–82, 2018. [2] H. H. R. Sherazi, D. Zorbas, and B. O’Flynn, “A comprehensive survey on RF energy harvesting: Applications and performance determinants,” Sensors , vol. 22, no. 8, p. 2990, 2022. 21
+
+0 200 400 600 800 
+
+Episode 
+
+0.2 
+
+0.3 
+
+0.4 
+
+0.5 
+
+0.6 
+
+0.7 
+
+0.8 
+
+> Average Throughput
+
+H=200 LSTM-ADRQN 
+
+H=200 Proposed-ADRQN 
+
+Oracle Policy 
+
+Fig. 11. Convergence of the proposed ADRQN and LSTM-ADRQN ( H = 200 , N = 50 , ξ = 0 .85 , M = 8 ) over 900 training episodes. The dashed line denotes the oracle policy throughput with full state knowledge. [3] F. Iannello, O. Simeone, and U. Spagnolini, “Medium access control protocols for wireless sensor networks with energy harvesting,” 
+
+IEEE Transactions on Communications , vol. 60, no. 5, pp. 1381–1389, 2012. [4] F. B. Mismar, B. L. Evans, and A. Alkhateeb, “Deep Reinforcement Learning for 5G Networks: Joint Beamforming, Power Control, and Interference Coordination,” IEEE Transactions on Communications , vol. 68, no. 3, pp. 1581–1592, March 2020. [5] V. Raj, N. Nayak, and S. Kalyani, “Deep Reinforcement Learning Based Blind mmWave MIMO Beam Alignment,” IEEE Transactions on Wireless Communications , vol. 21, no. 10, pp. 8772–8785, October 2022. [6] W. Wu, N. Cheng, N. Zhang, P. Yang, W. Zhuang, and X. S. Shen, “Fast mmWave Beam Alignment via Correlated Bandit Learning,” 
+
+IEEE Transactions on Wireless Communications , vol. 18, no. 12, pp. 5894–5908, December 2019. [7] J. Park, S. Hwang, H. Lee, and I. Lee, “Deep Recurrent Q-Network Methods for mmWave Beam Tracking Systems,” IEEE Transactions on Vehicular Technology , vol. 71, no. 12, pp. 13 429–13 434, December 2022. [8] S. Adhikari and S. Sarma, “Adaptive beam steering in wpcns under slotted aloha via deep q-learning,” in 2026 18th International Conference on COMmunication Systems and NETworks (COMSNETS) . IEEE, 2026, pp. 228–236. [9] P. Zhu, X. Li, P. Poupart, and G. Miao, “On Improving Deep Reinforcement Learning for POMDPs,” arXiv preprint arXiv:1704.07978 ,2017. [10] H. Ju and R. Zhang, “Throughput Maximization in Wireless Powered Communication Networks,” IEEE Transactions on Wireless Communications , vol. 13, no. 1, pp. 418–428, January 2014. [11] L. Liu, R. Zhang, and K.-C. Chua, “Multi-Antenna Wireless Powered Communication with Energy Beamforming,” IEEE Transactions on Communications , vol. 62, no. 12, pp. 4349–4361, December 2014. [12] P. Ramezani and A. Jamalipour, “Optimal resource allocation in backscatter assisted wpcn with practical energy harvesting model,” 
+
+IEEE Transactions on Vehicular Technology , vol. 68, no. 12, pp. 12 406–12 410, 2019. [13] J. Liu, H. Dai, and W. Chen, “On throughput maximization of time division multiple access with energy harvesting users,” IEEE Transactions on Vehicular Technology , vol. 65, no. 4, pp. 2457–2470, 2015. [14] S.-B. Lee, J.-H. Kwon, and E.-J. Kim, “Residual energy estimation-based mac protocol for wireless powered sensor networks,” Sensors ,vol. 21, no. 22, p. 7617, 2021. [15] H. Ju and R. Zhang, “Optimal resource allocation in full-duplex wireless-powered communication network,” IEEE Transactions on Communications , vol. 62, no. 10, pp. 3528–3540, 2014. [16] G. Yang, C. K. Ho, R. Zhang, and Y. L. Guan, “Throughput Optimization for Massive MIMO Systems Powered by Wireless Energy Transfer,” IEEE Journal on Selected Areas in Communications , vol. 33, no. 8, pp. 1640–1650, 2015. 22 -inf -30 -22 -18 -12 -10 -6 
+
+## P_th (in dB) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> Slot Ratio (Normalized)
+
+Idle Ratio 
+
+Success Ratio (Throughput) 
+
+Collision Ratio 
+
+Fig. 12. Normalised idle, success, and collision slot ratios versus the power threshold Pth (in dB relative to PT ), for N = 50 and M = 8 .The success ratio (throughput) peaks at Pth = −12 dB. [17] M. Li, C.-C. Fang, and H.-W. Ferng, “On-demand energy transfer and energy-aware polling-based mac for wireless powered sensor networks,” Sensors , vol. 22, no. 7, p. 2476, 2022. [18] X. Fafoutis and N. Dragoni, “Odmac: An on-demand mac protocol for energy harvesting-wireless sensor networks,” in Proceedings of the 8th ACM Symposium on Performance evaluation of wireless ad hoc, sensor, and ubiquitous networks , 2011, pp. 49–56. [19] K. Nguyen, V.-H. Nguyen, D.-D. Le, Y. Ji, D. A. Duong, and S. Yamada, “Eri-mac: An energy-harvested receiver-initiated mac protocol for wireless sensor networks,” International Journal of Distributed Sensor Networks , vol. 10, no. 5, p. 514169, 2014. [20] G. Yang, G.-Y. Lin, and H.-Y. Wei, “Markov chain performance model for ieee 802.11 devices with energy harvesting source,” in 2012 IEEE global communications conference (GLOBECOM) . IEEE, 2012, pp. 5212–5217. [21] M. Y. Naderi, P. Nintanavongsa, and K. R. Chowdhury, “RF-MAC: A Medium Access Control Protocol for Re-Chargeable Sensor Networks Powered by Wireless Energy Harvesting,” IEEE Transactions on Wireless Communications , vol. 13, no. 7, pp. 3926–3937, 2014. [22] H.-H. Choi and W. Shin, “Slotted ALOHA for Wireless Powered Communication Networks,” IEEE Access , vol. 6, pp. 53 342–53 355, 2018. [23] H.-H. Choi et al. , “Harvest-or-access: Slotted ALOHA for Wireless Powered Communication Networks,” IEEE Transactions on Vehicular Technology , vol. 68, no. 11, pp. 11 394–11 398, 2019. [24] B. Gu, D. Li, H. Xie, K. Yu, Q. Guan, and Y. Xu, “Exploring hybrid active and passive multiple access via slotted aloha-driven backscatter communications,” IEEE Transactions on Cognitive Communications and Networking , vol. 11, no. 5, pp. 3317–3332, 2025. [25] K. Li et al. , “Reinforcement Learning for Scheduling Wireless Powered Sensor Communications,” IEEE Transactions on Green Communications and Networking , vol. 3, no. 2, pp. 264–274, 2018. [26] J.-M. Kang, “Reinforcement Learning Based Adaptive Resource Allocation for Wireless Powered Communication Systems,” IEEE Communications Letters , vol. 24, no. 8, pp. 1752–1756, 2020. [27] S. Hwang et al. , “Multi-Agent Deep Reinforcement Learning for Distributed Resource Management in Wirelessly Powered Commu-nication Networks,” IEEE Transactions on Vehicular Technology , vol. 69, no. 11, pp. 14 055–14 060, 2020. [28] M. K. Sharma, A. Zappone, M. Assaad, M. Debbah, and S. Vassilaras, “Distributed power control for large energy harvesting networks: A multi-agent deep reinforcement learning approach,” IEEE Transactions on Cognitive Communications and Networking , vol. 5, no. 4, pp. 1140–1154, 2019. 23 
+
+[29] A. Ahmadian, W. Shin, and H. Park, “Long-term throughput maximization in wireless powered communication networks: A multitask drl approach,” IEEE Internet of Things Journal , vol. 11, no. 11, pp. 19 616–19 631, 2024. [30] X. Lu, P. Wang, D. Niyato, D. I. Kim, and Z. Han, “Wireless Networks with RF Energy Harvesting: A Contemporary Survey,” IEEE Commun. Surveys Tuts. , vol. 17, no. 2, pp. 757–789, 2015. [31] C. Xu, J. An, T. Bai, L. Xiang, S. Sugiura, R. G. Maunder, L.-L. Yang, and L. Hanzo, “Reconfigurable Intelligent Surface Assisted Multi-Carrier Wireless Systems for Doubly Selective High-Mobility Ricean Channels,” IEEE Transactions on Vehicular Technology ,vol. 71, no. 4, pp. 4023–4041, 2022. [32] E. Boshkovska, R. Morsi, D. W. K. Ng, and R. Schober, “Power Allocation and Scheduling for SWIPT Systems with Non-Linear Energy Harvesting Model,” in 2016 IEEE Int. Conf. Commun. (ICC) . IEEE, 2016, pp. 1–6. [33] S. Sarma, “Characterisation of the Time-to-Recharge of Battery-Free RF Energy Harvesting Devices in Wireless Powered Communi-cation Networks,” in Proc. Nat. Commun. Conf. (NCC) , 2025. [34] S. Kapturowski, G. Ostrovski, J. Quan, R. Munos, and W. Dabney, “Recurrent Experience Replay in Distributed Reinforcement Learning,” in International Conference on Learning Representations (ICLR) , 2018. [35] S. Hochreiter and J. Schmidhuber, “Long Short-Term Memory,” Neural Computation , vol. 9, no. 8, pp. 1735–1780, 1997. [36] V. Mnih, K. Kavukcuoglu, D. Silver, A. A. Rusu, J. Veness, M. G. Bellemare, A. Graves, M. Riedmiller, A. K. Fidjeland, G. Ostrovski, S. Petersen, C. Beattie, A. Sadik, I. Antonoglou, H. King, D. Kumaran, D. Wierstra, S. Legg, and D. Hassabis, “Human-Level Control Through Deep Reinforcement Learning,” Nature , vol. 518, no. 7540, pp. 529–533, 2015.
