@@ -1,0 +1,1931 @@
+Title: Task-Oriented Precoding for Edge Inference over Large-Scale MIMO Systems
+
+URL Source: https://arxiv.org/pdf/2607.17877v1
+
+Published Time: Tue, 21 Jul 2026 02:14:23 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+> 1
+
+# Task-Oriented Precoding for Edge Inference over Large-Scale MIMO Systems 
+
+Hongru Li, Zeyan Zhuang, Zixin Wang, Hengtao He, Shenghui Song, Jun Zhang, Fellow, IEEE, and Khaled B. Letaief, Fellow, IEEE 
+
+Abstract —Future wireless networks are expected to support networked artificial intelligence (AI) services, where multiple devices transmit learned features to an edge server for dis-tributed inference. This setting calls for task-oriented physical-layer optimization, where wireless transmission should preserve useful information for inference rather than only maximize the rate or reconstruct the transmitted signals. A key physical-layer control variable is the multiple-input multiple-output (MIMO) precoder, which determines how device features are shaped and combined over wireless channels. Existing task-oriented precoding methods typically adapt the precoder to instantaneous channel state information at the transmitter (CSIT). However, in multi-device MIMO systems, acquiring the aggregate channel, feeding back CSI or optimized precoders, and reoptimizing across coher-ence blocks introduce substantial overhead. This paper develops a random-matrix-theoretic framework based on statistical CSIT that designs a slow-timescale precoder from channel covariance statistics and training-set feature statistics, without requiring instantaneous CSIT. We adopt maximal coding rate reduction (MCR 2) to measure the class separability of the received features, yielding a task-aware utility for MIMO precoder design. Since this utility still depends on random small-scale fading, we derive a deterministic approximation that converts it into a fixed-point objective depending only on long-term statistics and large-system dimension ratios by leveraging random matrix theory. A projected block-coordinate ascent and successive convex approximation algorithm is developed to optimize this deterministic objective under per-device power constraints. Experiments on ModelNet10 validate the approximation and show that the proposed statistical precoder improves task-aware mode allocation and inference performance over competitive benchmarks. 
+
+Index Terms —Task-oriented communications, random matrix theory, MIMO precoding. 
+
+I. I NTRODUCTION 
+
+# WITH the continuing evolution toward sixth-generation (6G) networks, wireless systems are expected to serve not only as connectivity infrastructures, but also as platforms for distributed intelligence [1]. In such systems, intelligence is no longer confined to a single device or cloud server, but is distributed across sensors, edge devices, edge servers, and wireless links that jointly support decision-making [2]. This shift calls for task-oriented communication and physical-layer designs that preserve task-relevant information for downstream tasks, rather than aiming solely at bit recovery, data reconstruc-tion, or throughput [3]. Existing studies on task-oriented communication have fo-cused on learning compact task-relevant representations for 
+
+Hongru Li, Zeyan Zhuang, Zixin Wang, Shenghui Song, Jun Zhang, and Khaled B. Letaief are with the Department of Electronic and Computer Engineering, The Hong Kong University of Science and Technology (HKUST), Hong Kong (e-mail: hlidm@connect.ust.hk, zzhuangac@connect.ust.hk, ee-wangzx@ust.hk, eeshsong@ust.hk, eejzhang@ust.hk, eekhaled@ust.hk). Hengtao He is with the National Mobile Communications Research Labo-ratory, School of Information Science and Engineering, Southeast University, Nanjing, 210093, China (e-mail: hehengtao@seu.edu.cn). 
+
+downstream intelligent task inference [3]–[6]. Nevertheless, in multiple-input multiple-output (MIMO) systems, the inference performance depends critically on both the precoding of the features and the channel conditions. Therefore, recent works have started to incorporate task objectives into physical layer design. Task-oriented over-the-air computation was proposed in [7], where the transceivers were jointly designed for a classification-oriented surrogate instead of the conventional aggregation mean-square error (MSE). Beyond over-the-air computation, an end-to-end framework for task-oriented com-munication over MIMO channels was developed in [8], where feature encoders, transmit precoders, and inference models at the receiver side were jointly trained under an information-theoretic objective. More closely, the authors in [9] adopt the maximal coding rate reduction (MCR 2) as the performance metric for multi-device edge inference system design. This metric captures the separability among different classes and only depends on the second-order statistics of the features. Notably, prior works commonly assume that instantaneous channel state information at the transmitter (CSIT) is avail-able. However, in practical systems, the transmitter typically acquires channel state information (CSI) via feedback from the receiver. In rapidly varying environments, accurate channel estimation becomes challenging, making instantaneous CSIT unachievable. Moreover, the precoder must be redesigned in such scenarios. Given the high computational complexity of task-oriented performance metrics, this frequent recomputation becomes prohibitive [10]–[12]. To address this issue, a more practical approach is to consider statistical CSIT for precoder design [11], [13]. In conventional MIMO communications, the ergodic capacity and outage probability have been extensively studied by leveraging tools from random matrix theory (RMT) [14]–[19], yielding rich insights. However, the analysis and optimization of task-oriented performance metrics based on statistical CSIT still remain in their infancy. In this paper, we consider the multi-device edge inference system design with statistical CSIT. We also consider the received-feature MCR 2 utility as the task-aware performance metric. Unfortunately, this metric consists of a set of coding rate reduction functions, where the feature statistics and the heterogeneous multi-device MIMO channels are coupled in each function, making it very challenging to evaluate. To this end, we first leverage RMT to derive the approximation for the metric. Based on the analytical result, we propose an optimization algorithm to obtain the task-oriented precoder. The main contributions are summarized as follows. 1) For the multi-device edge inference system, we formulate a precoder optimization problem under classification tasks. In particular, we adopt the received-feature MCR 2 utility as the task-aware objective and optimize the precoder un-arXiv:2607.17877v1 [cs.IT] 20 Jul 2026 2
+
+der per-device power constraints, given training-set feature statistics and statistical CSIT. 2) We derive a deterministic approximation for MCR 2 utility using RMT, and the convergence rate is of order O(N −1).This result is general and can be applied to the analysis of distributed and decentralized MIMO systems. 3) The theoretical result is applied to design the precoder for maximizing the MCR 2 utility. To address the non-convexity and the block structure constraint of the pre-coder, we propose a block coordinate ascent (BCA) method that adopts successive convex approximation (SCA) for each block. 4) We conduct numerical experiments on ModelNet10. The experiment results demonstrate the accuracy of the theoret-ical results and the effectiveness of the proposed method. It is shown that the performance of the proposed precoder approaches that of the oracle in favorable regimes. We further provide diagnostic analyses that illustrate how the proposed precoder distributes transmit power among task-relevant features and channel modes. The rest of this paper is organized as follows. In Section II, we review related work. In Section III, we introduce the system model and formulate the task-oriented precoding problem. In Section IV, we derive the deterministic approximation for the received-feature utility. The proposed BCA-SCA algorithm for optimizing the precoder is provided in Section V. Section VI reports numerical experiments and Section VII concludes the paper. 
+
+Notations: Throughout this paper, lowercase and uppercase boldface letters denote vectors and matrices, respectively. We use CN and CN ×M to denote the spaces of N -dimensional complex vectors and N -by-M complex matrices, respectively. The transpose and conjugate transpose operators are denoted by (·)T and (·)H , respectively. We write ∥ · ∥ for the spectral norm of a matrix or the Euclidean norm of a vector, and 
+
+∥ · ∥ ∞ for the infinity norm. The trace and determinant of a matrix A are denoted by Tr( A) and det( A), respectively. The identity matrix of size N and the all-zero vector are denoted by IN and 0, respectively. For Hermitian matrices A and B,
+
+A ⪰ B means that A−B is positive semidefinite. The notation 
+
+blkdiag( ·) denotes the block-diagonal matrix. The probability measure and expectation operator are denoted by P[·] and 
+
+E[·], respectively. CN (μ, Σ) denotes the circularly symmetric complex Gaussian distribution with mean μ and covariance 
+
+Σ. For a positive integer N , [N ] denotes the set {1, . . . , N }.The notation a.s. 
+
+−−→ denotes almost sure convergence, and O(·)
+
+denotes the standard Big-O notation. II. R ELATED WORK 
+
+A. Task-Oriented Precoder Design 
+
+The design goal of task-oriented communication systems is to enhance the ability of the received signal to serve down-stream tasks, rather than merely focusing on the reconstruction of the transmitted signal [20]. Existing works mainly consider inference tasks and focus on learning effective data represen-tations and designing end-to-end transceivers to improve the inference performance [3]–[6]. At the physical layer, precod-ing directly affects the transmission of encoded features over the wireless channel, thereby influencing the performance of downstream tasks. In [7], the authors proposed a task-oriented over-the-air computation scheme where the transmit precoding and receive beamforming were jointly designed to improve the inference accuracy. In [8], an end-to-end framework for task-oriented semantic communication over MIMO channels was developed, in which feature encoders, precoders, and classifiers were jointly trained by incorporating the instantaneous CSI into the end-to-end learning pipeline. More closely related to this work, received-feature MCR 2-based precoding was proposed in [9], where the class separability of the received representation was used as the semantic utility. However, these task-oriented precoder designs rely on instantaneous CSIT or state-dependent precoder feedback. The design of precoders for semantic communication systems based on statistical CSIT remains unexplored. 
+
+B. MCR 2 Representation Learning 
+
+MCR 2 was introduced as a geometric criterion for dis-criminative representation learning [21]. The main idea is to evaluate feature quality through a coding-rate decomposition: a desirable representation should preserve a rich global fea-ture structure while making samples from the same class concentrate around lower-dimensional class-specific structures. Accordingly, MCR 2 is defined as the coding rate of the entire feature set minus the weighted sum of the coding rates of per-class feature sets, thereby encouraging both inter-class diversity and intra-class compactness. Recent work has further analyzed the geometric properties and the optimal solution of MCR 2, providing theoretical insight into why this criterion yields structured and discriminative representations [22]. For task-oriented communication systems, MCR 2 has also been employed to characterize the received-feature class-separability for semantic precoding design [9], which motivates its use as a task-aware performance metric in this paper. 
+
+C. Analysis and Precoder Design for MIMO Communications with Statistical CSIT 
+
+Multi-antenna technology has proven to be a promising ap-proach for enhancing both spectral and energy efficiency [23]– [25]. Due to the complex distributions and spatial correlations, performance analysis for MIMO systems is essential. Fortu-nately, RMT provides a powerful tool for handling the random-ness of MIMO channels [15]. For instance, in [16], the authors derived the deterministic approximations for the ergodic mutual information and outage probability under correlated Rayleigh channels. Subsequently, the ergodic mutual information for Rician channels was analyzed in [18]. As antenna architectures evolve to offer higher flexibility, recent studies have covered more general systems, including distributed MIMO channels [26], [27], double-scattering MIMO channels [28], intelligent reflecting surface (IRS)-aided MIMO channels [29], [30], and holographic MIMO channels [31]. Accordingly, the precoder was designed based on these analyses with statistical CSIT [32], [33]. In particular, to achieve the ergodic rate region boundary of the MIMO multiple access channel, an iterative water-filling algorithm was proposed to optimize the precoder in [32]. In [33], the authors considered the IRS-aided MIMO 3
+
+communication system, where the precoder and the phase-shift matrix are jointly optimized to minimize the outage probability. However, these designs are typically developed for capacity-oriented transmission or signal reconstruction, and their objectives are not aligned with task utility. This leaves open the problem of MIMO precoding for task-oriented feature transmission with statistical CSIT. III. S YSTEM MODEL AND PROBLEM FORMULATION 
+
+This section presents the system model for cooperative multi-device MIMO inference with statistical CSIT, as illustrated in Fig 1. In particular, we first describe the encoded-feature trans-mission model and the heterogeneous Rayleigh channel model. We then introduce the MCR 2 utility for the received features and formulate the precoder design problem accordingly. 
+
+A. System Model 1) Signal Model: We consider a multi-device cooperative MIMO edge-inference system with K edge devices and one edge server [9]. Device k ∈ [K] observes a local input ok and maps it through a fixed feature encoder fk(·; θk) into a raw encoded feature vector ezk = fk(ok; θk) ∈ Cdk . To allocate the transmit power to the informative signal components, the transmitted feature vector is centered as zk = ezk − E[ezk].Assume each edge device k ∈ [K] is equipped with Nt,k 
+
+antennas and the edge receiver is equipped with Nr antennas. For each device k ∈ [K], a linear precoder Vk ∈ CNt,k ×dk is applied to zk and the transmitted signal of device k is 
+
+xk = Vkzk ∈ CNt,k . (1) As a result, the average transmitted power at device k is given by 
+
+E ∥xk∥2 = Tr 
+
+
+
+VkΣ(kk )VHk
+
+
+
+, (2) where Σ(kk ) = E[zkzHk ] denotes the covariance matrix of the local centered feature. With per-device power budget Pk > 0,the power constraint for precoder Vk is given by 
+
+Tr 
+
+
+
+VkΣ(kk )VHk
+
+
+
+≤ Nt,k Pk. (3) Here, the factor Nt,k is used to normalize the transmit power and is subsequently absorbed into the channel. The details are given in (6). We assume the symbol-level synchronization among the devices at the edge receiver and the received signal y ∈ CNr
+
+can be expressed as 
+
+y = X
+
+> k∈[K]
+
+Hkxk + n, (4) where n ∼ CN (0, δ 20 INr ) denotes the additive white Gaussian noise (AWGN) at the receiver and Hk ∈ CNr ×Nt,k represents the channel between device k and the receiver. To simplify the notation, the signal model can be rewritten in a more compact form 
+
+y = HVz + n, (5) where we define H = [H1, . . . , HK ] ∈ CNr ×Nk , V =blkdiag( V1, . . . , VK ) ∈ CNk ×d, and z = [ z1, . . . , zK ] ∈ Cd,with dimensions Nt = P 
+
+> k∈[K]
+
+Nt,k and d = P 
+
+> k∈[K]
+
+dk.
+
+2) Channel Model: : Due to limited angular spread and insufficient antenna spacing, spatial correlation between the transceiver antennas is inevitable. In this paper, we consider the Kronecker correlated Rayleigh model [34] for the channel: 
+
+Hk = pβkR1/2 
+
+> k
+
+XkT1/2 
+
+> k
+
+, (6) where Rk ∈ CNr ×Nr and T1/2 
+
+> k
+
+∈ CNt,k ×Nt,k are Hermitian nonnegative and represent the spatial correlation of the receive and transmit antennas, respectively. The large-scale fading coefficient is denoted by βk. Here, Xk ∈ CNr ×Nt,k is a random matrix with i.i.d. CN (0 , N −1 
+
+> t,k
+
+) entries, and X1, . . . , XK are mutually independent. Since the environment changes rapidly, it is difficult to obtain instantaneous CSI at the transmitter side. Therefore, we consider that the edge devices only know the statistical CSI {Bk, Tk}Kk=1 with Bk = βkRk denoting the effective correlation matrix for simplicity, and the feature statistics [13], [35], which are defined in the following section. 
+
+3) MCR 2 Utility: We consider a classification task and assume there are J classes. Let ℓ(z) ∈ [J] denote the label of feature z and pj = P[ℓ(z) = j]. The covariance matrix and the class-conditional covariance matrix of the full feature vector 
+
+z are denoted by Σ = E[zz H ] and Σj = E[( z−μj )( z−μj )H |
+
+ℓ(z) = j], respectively, where μj = E[z | ℓ(z) = j] represents the conditional mean. Then, we define the feature statistics as {Σ, Σ1, . . . , ΣJ , p 1, . . . , p J }, which are estimated from the training set in the implementation. For receiver-side classification, we use a maximum a pos-teriori (MAP) classifier based on a Gaussian Mixture Model (GMM) approximation for the class-conditional received-feature distribution [9], [36]. The edge receiver is assumed to know the instantaneous channel state information (CSIR) H
+
+and the precoder V. It also has access to the training-set feature statistics needed to form the Gaussian likelihood. The label of the received feature is then inferred as 
+
+bℓ = arg max  
+
+> j∈[J]
+
+p(j|y, H, V) = arg max  
+
+> j∈[J]
+
+pj p(y | j, H, V). (7) Directly optimizing the MAP classification rule is generally intractable. Following the received-feature MCR 2 formulation in [9], we therefore use a class-separability surrogate that in-creases the coding rate of the received total feature distribution while penalizing the weighted coding rates of the received class-conditional feature distributions. In particular, the MCR 2
+
+surrogate utility for inference accuracy is defined as 
+
+∆( V; σ2, H) = IΣ(V; σ2, H) −
+
+> J
+
+X
+
+> j=1
+
+pj IΣj (V; σ2, H), (8) where 
+
+IC (V; σ2, H) = log det 
+
+
+
+INr + 1
+
+σ2 HV CVH HH
+
+
+
+(9) for C ∈ eΣ = {Σ, Σ1, . . . , ΣJ }. Here, the parameter σ2 is given by σ2 = β/α , with β = 1 + αδ 20 and α = Nr /ε 2, where 
+
+ε > 0 represents the MCR 2 coding precision. We note that the function IΣ in (8) quantifies the coding rate of the received feature vector y, whereas the function IΣj measures the coding rate for features belonging to class j.4Feature Statistics  {Σ, Σj, pj}J                                 
+
+> j=1
+> Channel Statistics {Bk,Tk}K
+> k=1
+> Fixed precoder V
+> Frozen
+> feature encoder Task-oriented
+> precoder V1
+> Fast-fading
+> MIMO channels
+> Task Classifier
+> Inference Results
+> z1=f1(view 1)
+> Device 1
+> view 1Nt,1
+> z1x1
+> Frozen
+> feature encoder Task-oriented
+> precoder V2
+> z2=f2(view 2)
+> Device 2
+> view 2Nt,2
+> z2x2
+> Frozen
+> feature encoder Task-oriented
+> precoder Vk
+> zk=fk(view k)
+> Device k
+> view kNt,k
+> zkxk
+> Nr
+> Offline/long-term statistics
+> ( Not instantaneous )Xk
+> Statistical-CSIT task-oriented
+> precoder design
+> V⋆≈arg max
+> V
+> 𝔼 H[Δ(V;σ2,H)]Fixed precoder V*
+> Feature Statistics {Σ,Σj,pj}J
+> j=1
+> Instantaneous CSIR
+
+H
+
+Fig. 1. An illustration of multi-device edge inference over MIMO systems. At the transmitter side, the precoder V is designed based on channel statistics 
+
+{Bk , Tk }Kk=1 and encoded training-feature statistics {Σ, Σj , p j }.
+
+B. Problem Formulation 
+
+In this paper, we aim to design the precoder that maximizes the MCR 2 surrogate function in (8) under the power constraint (3). To this end, we define the feasible set of the concatenated precoder matrix as V = N 
+
+> k∈[K]
+
+Vk, where 
+
+Vk =
+
+n
+
+Vk ∈ CNt,k ×dk : Tr( VkΣ(kk )VHk ) ≤ Nt,k Pk
+
+o
+
+.
+
+(10) Then, the precoding optimization problem is formulated as 
+
+P1 : max  
+
+> V∈V
+
+E∆( V; σ2, H) , (11) where the expectation is taken over the small-scale fading components {Xk}Kk=1 . Problem (11) is challenging to solve for two reasons. First, the objective function involves an expecta-tion over log-determinant terms, which makes direct evaluation computationally prohibitive. Second, the optimization problem is non-convex due to the difference of these log-determinant terms. To overcome these difficulties, in the following, we first leverage RMT to derive the closed-form deterministic approximation for the objective function, which is in closed-form. Then, we propose a block coordinate ascent (BCA) algorithm to optimize the precoder. IV. D ETERMINISTIC APPROXIMATION FOR THE MCR 2
+
+OBJECTIVE 
+
+In this section, we first present a general result establishing the convergence of the resolvent for the covariance matrix of sums of Gaussian random matrices. Based on this theoretical result, we then obtain the desired deterministic approximation. 
+
+A. Theoretical Results 
+
+The surrogate objective ∆ comprises a linear combination of log-determinant terms whose behavior is governed by the eigenvalue distribution of the channel matrix H. To study this distribution, a fundamental tool is to investigate the resolvent for H [37]. The following theorem provides the deterministic approximation for the resolvent of a broad class of random matrices that includes H as a special case. 
+
+Theorem 1: Let {Zk}Kk=1 be a collection of K random matrices with size Nr × Nt. For each k ∈ [K], suppose 
+
+Zk = AkXk eAk, where Ak ∈ CNr ×Lk and eAk ∈ CMk ×Nt
+
+are deterministic, and Xk ∈ CLk ×Mk is a random matrix with i.i.d. CN (0 , M −1 
+
+> k
+
+) elements. Define Ωk = AkAHk and 
+
+eΩk = eAHk eAk. We impose the following assumptions: i) K is a given constant. Let dk = Lk/N r , edk = Mk/N r
+
+for k ∈ [K]. Dimensions Lk, M k, N r , and Nt approach infinity such that 0 < lim inf min k∈[K]{dk, edk} ≤
+
+lim sup max k∈[K]{dk, edk} < ∞ and 0 <
+
+lim inf Nr /N t ≤ lim sup Nr /N t < ∞.ii) lim sup max k∈[K]{∥ Ωk∥, ∥ eΩk∥} < ∞.iii) lim inf min k∈[K]{ 1 
+
+> Nr
+
+Tr Ωk, 1 
+
+> Nt
+
+Tr eΩk} > 0.Let Z = PKk=1 Zk and define its resolvent as 
+
+Q(z) =  −zINr + ZZ H −1 , z < 0. (12) Then, for any deterministic matrix R ∈ CNr ×Nr with uni-formly bounded norm, i.e., lim sup ∥R∥ < ∞, we have 
+
+Tr REQ(z) − Tr RΘ(z) = O
+
+ P5(|z|−1)
+
+Nr |z|4
+
+
+
+, (13) where P5(|z|) is a polynomial of degree at most 5 with positive coefficients and Θ(z) is defined by the solution of the following self-consistent system of equations: 
+
+δk(z) = 1
+
+Mk
+
+Tr ΩkΘ(z), k ∈ [K], (14a) 5
+
+Algorithm 1 Fixed-Point Algorithm for Solving (14) 
+
+Require: parameter z < 0, correlation matrices {Ak}Kk=1 and 
+
+{ eAk}Kk=1 , initial points δ(0)  
+
+> k
+
+> 0 and eδ(0)  
+
+> k
+
+> 0, for k ∈ [K],tolerance ϵ.
+
+Ensure: Solutions {δk}Kk=1 and {eδk}Kk=1 . 
+
+> 1:
+
+Set t ← 1 
+
+> 2:
+
+repeat  
+
+> 3:
+
+Set Θ(t) ← − 1 
+
+> z
+
+(INr + P 
+
+> k∈[K]
+
+eδ(t−1)  
+
+> k
+
+Ωk)−1. 
+
+> 4:
+
+Set eΘ(t) ← − 1 
+
+> z
+
+(INt + P 
+
+> k∈[K]
+
+δ(t−1)  
+
+> k
+
+eΩk)−1. 
+
+> 5:
+
+for k = 1 , . . . , K do  
+
+> 6:
+
+Compute δ(t) 
+
+> k
+
+← 1 
+
+> Mk
+
+Tr ΩkΘ(t). 
+
+> 7:
+
+Compute eδ(t) 
+
+> k
+
+← 1 
+
+> Mk
+
+Tr eΩk eΘ(t). 
+
+> 8:
+
+end for  
+
+> 9:
+
+Set ϵt ← max k∈[K] |δ(t) 
+
+> k
+
+− δ(t−1)  
+
+> k
+
+| and t ← t + 1 . 
+
+> 10:
+
+until ϵt ≤ ϵ. 
+
+> 11:
+
+Return {δ(t−1)  
+
+> k
+
+}Kk=1 and {eδ(t−1)  
+
+> k
+
+}Kk=1 .
+
+eδk(z) = 1
+
+Mk
+
+Tr eΩk eΘ(z), k ∈ [K], (14b) 
+
+Θ(z) = − 1
+
+z
+
+"
+
+INr + X
+
+> k∈[K]
+
+eδk(z)Ωk
+
+#−1
+
+, (14c) 
+
+eΘ(z) = − 1
+
+z
+
+"
+
+INt + X
+
+> k∈[K]
+
+δk(z) eΩk
+
+#−1
+
+, (14d) with δk(z) > 0 and eδk(z) > 0 for all k ∈ [K] and z < 0.
+
+Proof: The proof of Theorem 1 is given in Appendix A. ■
+
+We note that the positive solution to the fixed-point equations (14) can be proved to exist and be unique. A numerical procedure for computing this solution is summarized in Al-gorithm 1. We provide the following technical remarks for a more comprehensive understanding of the theoretical results in Theorem 1. 
+
+Remark 1: The polynomial bound in (13) is derived to ensure that this error is integrable over an unbounded region of z < 0.
+
+Remark 2: Theorem 1 can be used for approximating the linear functional of the eigenvalues of ZZ H . Denote the ordered eigenvalues of ZZ H as 0 ≤ λ1 ≤ λ2 ≤ · · · ≤ λNr and the em-pirical spectral distribution as F ZZ H
+
+(x) = 1
+
+> Nr
+
+PNr 
+
+> i=1
+
+I{λi≤x}.
+
+According to the properties of the Stieltjes transform, there ex-ists a probability measure F such that 1 
+
+> Nr
+
+Tr Θ(z) = R F (dx ) 
+
+> x−z
+
+.
+
+Using Theorem 1, one can prove that 
+
+Z
+
+> R
+
+f (x)
+
+h
+
+F ZZ H
+
+(dx ) − F (dx )
+
+i a.s. 
+
+−−→ 0, (15) for any bounded continuous function f . In particular, by setting 
+
+f (x) = log(1 + x/σ 2), we obtain the approximation for the MCR 2 utility. 
+
+B. Approximation for the MCR 2 utility 
+
+In this section, we apply Theorem 1 to obtain the determin-istic approximation for the optimization objective in (11). To this end, we introduce 
+
+T k = blkdiag( 0Nt, 1×Nt, 1 , . . . , Tk, . . . , 0Nt,K ×Nt,K ), (16) where the only non-zero block is the k-th diagonal block, and all other blocks are zero matrices. To facilitate the analysis, we make the following assumptions. 
+
+Assumption 1: The numbers K and J are given. Dimensions 
+
+Nr and Nt,k approach infinity with 
+
+0 < lim inf 
+
+> Nr
+
+Nt,k 
+
+Nr
+
+≤ lim sup 
+
+> Nr
+
+Nt,k 
+
+Nr
+
+< ∞, k ∈ [K].
+
+Assumption 2: The spectral norms of Bk, Tk, and PC are uniformly bounded, i.e., 
+
+lim sup 
+
+> Nr
+
+max  
+
+> k∈[K]
+
+{∥ Bk∥, ∥Tk∥} < ∞, (17) 
+
+lim sup 
+
+> Nr
+
+max 
+
+> C∈eΣ
+
+∥PC ∥ < ∞. (18) 
+
+Assumption 3: The normalized traces of the correlation matrices are uniformly bounded away from 0. In particular, 
+
+lim inf 
+
+> Nr
+
+min 
+
+> k∈[K]
+
+1
+
+Nr
+
+Tr Bk > 0, (19) 
+
+lim inf 
+
+> Nr
+
+min 
+
+> C∈eΣ,k ∈[K]
+
+1
+
+Nr
+
+Tr T kPC > 0. (20) Assumption 1 is the high-dimensional system assumption, i.e., the number of antennas goes to infinity at the same ratio, which is common in the study of RMT [15]. In the following, for notational convenience, we use Nr → ∞ to denote this asymptotic regime. Assumptions 2 and 3 ensure that the spectral norm of the spatial correlation matrices is bounded and prevent antenna imbalance such that the rank of the spatial correlation matrix is very small. The following theorem provides the deterministic approxi-mation for the terms in the MCR 2 utility. 
+
+Theorem 2: Assume Assumptions 1-3 hold. Then, we have, for C ∈ eΣ,
+
+E IC (V; σ2, H) = IC (V; σ2) + O(N −1 
+
+> r
+
+) (21) where 
+
+IC (V; σ2) = log det 
+
+
+
+INr + X
+
+> k∈[K]
+
+eδC,k (−σ2)Bk
+
+
+
++ log det 
+
+
+
+INt + DC,δ (−σ2)PC
+
+
+
+− X
+
+> k∈[K]
+
+σ2δC,k (−σ2)eδC,k (−σ2), (22) where DC,δ (−σ2) = blkdiag( δC,k (−σ2)Tk; k ∈ [K]) and C ∈
+
+eΣ. Here, {δC,k (−σ2), eδC,k (−σ2)}Kk=1 is the positive solution for the following system of equations 
+
+δC,k (−σ2) = 1
+
+σ2Nt,k 
+
+Tr Bk
+
+
+
+INr + X
+
+> l∈[K]
+
+eδC,l (−σ2)Bl
+
+−1
+
+,
+
+(23a) 
+
+eδC,k (−σ2) = 1
+
+σ2Nt,k 
+
+Tr T kPC
+
+
+
+INt + DC,δ (−σ2)PC
+
+−1
+
+,
+
+(23b) for k ∈ [K] and C ∈ eΣ.
+
+Proof: The proof for Theorem 2 is given in Appendix B. ■
+
+By Theorem 2 and Assumption 1 that the number of classes 
+
+J is given, we immediately obtain the deterministic approxima-tion for the MCR 2 utility with the corresponding convergence rate 
+
+E[∆( V; σ2, H)] = ∆( V; σ2) + O(N −1 
+
+> r
+
+), (24) 6
+
+where ∆( V; σ2) = IΣ(V; σ2) − PJj=1 pj IΣj (V; σ2).
+
+Remark 3: Theorem 2 has wide applicability in the analysis of MIMO systems. For example, setting K = 1 , Theorem 2 reduces to [16, Theorem 1] and can be used to approximate the ergodic mutual information of point-to-point MIMO systems. For a general K, Theorem 2 has potential applications in distributed or decentralized MIMO systems [26], [27]. V. S TATISTICAL -CSIT S EMANTIC PRECODER DESIGN 
+
+In this section, we optimize the precoder by utilizing the deterministic approximation in Theorem 2. With ∆( V; σ2)
+
+defined in (24), the optimization problem P1 in (11) can be formulated as 
+
+P2 : max  
+
+> V∈V
+
+∆( V; σ2). (25) However, the above problem is still non-convex because ∆ in-volves a weighted difference of log determinant terms and each 
+
+IC depends on V implicitly through the fixed-point equation (23). Fortunately, the derivative of the objective function with respect to V can be given in a closed form. Therefore, together with the product structure of the feasible set V, problem P2 can be solved by the BCA method. In particular, at iteration t, for each block k ∈ [K], we solve the following subproblem 
+
+max  
+
+> Vk∈V k
+
+∆( V(t)1 , . . . , V(t)
+
+> k−1
+
+, Vk, V(t−1)  
+
+> k+1
+
+, . . . ; σ2) (26) using the SCA and line-search method. Here, we write 
+
+∆( V; σ2) = ∆( V1, V2, . . . , VK ; σ2).
+
+A. BCA-SCA Method 
+
+To start with, we first compute the derivative of the objective function with respect to V. Under the Wirtinger convention 
+
+df (x) = 2 Re Tr( ∇x∗ f (x)) H dx and using ∂ log det( X) = Tr X−1∂X, the gradient for IC can be given by 
+
+∇V∗ IC (V; σ2) = eΘC DC,δ VC, (27) where eΘC = (INt + DC,δ PC (V)) −1, and the dependence of DC,δ on σ2 and V is omitted for brevity. Hence, by the definition in (23), we have 
+
+∇V∗ ∆( V; σ2) = eΘΣDΣ,δ VΣ −
+
+> J
+
+X
+
+> j=1
+
+pj eΘΣj DΣj ,δ VΣ j .
+
+(28) The quantity in (28) is not used to perform an unconstrained joint update due to the block diagonal structure of V. Instead, it supplies the local ascent direction. In particular, the gradient with respect to Vk is given by 
+
+Gk(V) = ∇V∗ 
+
+> k
+
+∆( V; σ2) = [ ∇V∗ ∆( V; σ2)] [τk ,ηk ], (29) where the index vectors τk and ηk are defined as 
+
+τk =
+
+" X
+
+> l∈[k−1]
+
+Nt,l + 1 , X
+
+> l∈[k−1]
+
+Nt,l + 2 , . . . , X
+
+> l∈[k]
+
+Nt,l 
+
+#⊤
+
+,
+
+ηk =
+
+" X
+
+> l∈[k−1]
+
+dl + 1 , X
+
+> l∈[k−1]
+
+dl + 2 , . . . , X
+
+> l∈[k]
+
+dl
+
+#⊤
+
+. (30) By (29), at the current point V = blkdiag( Vl; l ∈ [K]) ∈
+
+CNt×d, for each block k ∈ [K], we can derive the first-order proximal SCA surrogate for the objective in (26) as 
+
+e∆k(Fk|V, μ ) = Constant + 2 Re Tr Gk(V)H (Fk − Vk)
+
+− 1
+
+μ ∥Fk − Vk∥2 
+
+> F
+
+,
+
+(31) where μ > 0 controls the size of the local trust region. Hence, at iteration t, for block k ∈ [K], the corresponding SCA subproblem can be formulated as 
+
+Pt 
+
+> 2,k
+
+: max  
+
+> Fk∈V k
+
+e∆k(Fk|V, μ ) V=V(t,k ) , (32) where we define 
+
+V(t,k ) = blkdiag( V(t)1 , . . . , V(t)
+
+> k−1
+
+, V(t−1)  
+
+> k
+
+, . . . , V(t−1)  
+
+> K
+
+).
+
+(33) One can verify that Pt 
+
+> 2,k
+
+is convex. The following lemma demonstrates its optimal solution. 
+
+Lemma 1: For a given feasible precoder V and stepsize 
+
+μ > 0, define Zk = Vk + μGk(V). The optimal solution of max Fk ∈V k
+
+e∆k(Fk|V, μ ) is given by 
+
+F⋆k = Zk
+
+
+
+Idk + λkΣ(kk )−1
+
+, (34) where λk ≥ 0 satisfies 
+
+λk
+
+
+
+Tr 
+
+h
+
+F⋆kΣ(kk )(F⋆k)H i
+
+− Nt,k Pk
+
+
+
+= 0 . (35) If Zk is feasible, then λk = 0 and F⋆k = Zk. Otherwise, λk > 0
+
+is chosen such that 
+
+Tr 
+
+h
+
+F⋆kΣ(kk )(F⋆k)H i
+
+= Nt,k Pk. (36) 
+
+Proof: The optimal solution can be obtained by completing the square in (31) and applying the KKT conditions. The details are omitted for brevity. ■
+
+According to Lemma 1, at iteration t, V(t) 
+
+> k
+
+for k ∈ [K] can be obtained as 
+
+V(t) 
+
+> k
+
+= arg max  
+
+> Fk∈V k
+
+e∆k(Fk|V, μ ) V=V(t,k ) . (37) Note that the above step is generated from a local approx-imation, while the objective in P2 is non-convex. Hence, the candidate block is accepted after evaluating the original objective. Let V(t,k )+ be the precoder obtained by replacing only block V(t) 
+
+> k
+
+with V(t+1)  
+
+> k
+
+. The backtracking line search chooses 
+
+μ = μ0, τ μ 0, τ 2μ0, . . . , with τ ∈ (0 , 1) , until 
+
+∆( V(t,k )+ ; σ2) ≥ ∆( V(t,k ); σ2) + cls 
+
+μ ∥V(t) 
+
+> k
+
+− V(t−1)  
+
+> k
+
+∥2 
+
+> F
+
+, (38) where cls ≥ 0 represents the line-search constant. The detailed procedure for solving P2 is summarized in Algorithm 2. 
+
+B. Computational Complexity 
+
+The computational burden of Algorithm 2 is dominated by repeated evaluations of the objective and its gradient, which requires solving the fixed-point system in (23) and then com-puting the corresponding log-determinant and matrix inverses. Assume Lfp iterations for computing the solution for (23) are 7
+
+Algorithm 2 BCA-SCA Algorithm for MCR 2 Utility Maxi-mization by Optimizing Precoder Matrix V
+
+Require: Channel statistics {Bk, Tk}Kk=1 , feature statistics 
+
+{Σ, Σj , p j }Jj=1 , parameter σ2, initial feasible precoder 
+
+V(0) , initial stepsize μ0, minimum allowed stepsize μm,backtracking factor τ ∈ (0 , 1) , line-search constant cls ≥ 0,tolerance ϵopt 
+
+Ensure: A feasible precoder V 
+
+> 1:
+
+Set t ← 1 and Vcur ← V(0) . 
+
+> 2:
+
+repeat  
+
+> 3:
+
+Set aold ← ∆( Vcur ; σ2). 
+
+> 4:
+
+for k = 1 , . . . , K do  
+
+> 5:
+
+Set V(t,k ) ← Vcur . 
+
+> 6:
+
+Compute Gk(V(t,k )) by (29).  
+
+> 7:
+
+Set μ ← μ0 and accepted ← false . 
+
+> 8:
+
+repeat  
+
+> 9:
+
+Compute V(t) 
+
+> k
+
+by (37).  
+
+> 10:
+
+Let V(t,k )+ be V(t,k ) with block k replaced by 
+
+V(t) 
+
+> k
+
+. 
+
+> 11:
+
+Evaluate ∆( V(t,k )+ ; σ2) by (24).  
+
+> 12:
+
+if (38) holds then  
+
+> 13:
+
+Set Vcur ← V(t,k )+ and accepted ← true . 
+
+> 14:
+
+else  
+
+> 15:
+
+Set μ ← τ μ . 
+
+> 16:
+
+end if  
+
+> 17:
+
+until accepted = true or μ ≤ μm. 
+
+> 18:
+
+end for  
+
+> 19:
+
+Set anew ← ∆( Vcur ; σ2). 
+
+> 20:
+
+Set t ← t + 1 . 
+
+> 21:
+
+until |anew − aold | ≤ ϵopt (1 + |aold |) 
+
+> 22:
+
+Return Vcur .required. Then, the computational cost for a single gradient evaluation (28) is given by 
+
+O (J + 1)( Lfp + 1)( N 3 
+
+> r
+
++ N 3 
+
+> t
+
+) . (39) With an average of Lls line-search trials per block, the dominant computational cost for a single BCA-SCA sweep over the K
+
+precoder blocks is given by 
+
+O K(J + 1)(1 + Lls )( Lfp + 1)( N 3 
+
+> r
+
++ N 3 
+
+> t
+
+) . (40) Solving for the local surrogate optimum (37) involves inverting the local block covariance Σ(kk ) and performing a scalar search for the multiplier λk. If Lproj scalar-search iterations are used, the additional cost per sweep is O(Lproj 
+
+PKk=1 d3
+
+> k
+
+),which is of lower order when the feature dimensions dk are moderate compared with the number of the receive and transmit antennas. VI. N UMERICAL EXPERIMENTS 
+
+This section presents numerical experiments to validate the proposed semantic precoding optimization framework. The experiments are designed to examine both the accuracy of the deterministic approximation and the behavior of the resulting precoder under controlled task-oriented transmission settings. 
+
+A. Experiment Setup 
+
+We consider the classification task on the ModelNet10 [38] dataset in the multi-device edge inference system. In particular, the dataset contains J = 10 classes of computer-aided design objects, with each object represented by 12 rendered views. The number of samples per class is imbalanced, ranging from 106 to 889 training samples and from 50 to 100 testing samples. Following the multi-device feature interface in the task-oriented communication baseline, we select three views for each object as the inputs. In the experiments, the VGG11 backbone [39] is adopted as the feature encoder fk(·; θk), with its parameters frozen in advance. The dimension of the feature vector is set to dk = 4 for each device. The extracted training and testing feature sets contain 3991 and 908 samples, respectively, and the data statistics {Σ, Σj , p j } are computed from the training feature set. The system dimensions are set as K = 3 edge devices, 
+
+Nt,k = 4 transmit antennas per device, and Nr = 8 receive an-tennas. The power budget for each edge device is Pk = 1 W and the signal-to-noise ratio (SNR) is defined as SNR = 1 /δ 20 . We consider the standard exponential correlation model [40], where the spatial correlation matrices are given by [Rk]i,j = r|i−j|
+
+> k
+
+and [Tk]i,j = t|i−j| 
+
+> k
+
+, with (r1, r 2, r 3) = (0 .15 , 0.55 , 0.85) and 
+
+(t1, t 2, t 3) = (0 .10 , 0.50 , 0.80) , respectively. The large-scale fading coefficients and the MCR 2 coding rate in (8) are set to 
+
+(β1, β 2, β 3) = (0 .4, 1.0, 0.8) and ϵ = 10 −3, respectively. 
+
+B. Controlled Feature-Role Construction 
+
+This subsection describes the construction of the controlled feature-role that will be employed in the following experiments. The purpose of this construction is to diagnose how different precoding methods allocate transmission power to feature com-ponents with different task relevance. Specifically, by slightly modifying the loss function in the training process of encoder, we obtain two feature components with contrasting roles: the 
+
+nuisance component has a larger energy but is less informative, whereas the semantic component has a smaller energy but is more informative. Following the notation in Section III, we write the transmitted feature of device k as zk = [ u⊤ 
+
+> k
+
+, s⊤ 
+
+> k
+
+]⊤,where uk, sk ∈ C2 represent the nuisance and the semantic sub-features, respectively. Then, the corresponding covariance matrix is partitioned as Σ(kk ) =
+
+"
+
+Σ(kk ) 
+
+> u
+
+Σ(kk )
+
+> us
+
+Σ(kk ) 
+
+> su
+
+Σ(kk )
+
+> s
+
+#
+
+. Hence, the energy of the two sub-features is given by Tr Σ(kk ) 
+
+> u
+
+and 
+
+Tr Σ(kk ) 
+
+> s
+
+, respectively. We note that the nuisance sub-feature has high energy but weak standalone label information, and it is not simply artificial noise. For further insights, Table I summarizes the diagnostic results across the different feature-roles. The diagnostics are evaluated on the given test set, and the five encoders are independently trained with the same architecture. It can be observed that the energy of the nuisance sub-feature is larger than that of the semantic sub-feature, with an average trace ratio of 6.09 ±0.63 .However, the linear classification accuracy for the nuisance feature is only 48 .52 ± 7.64% , whereas the semantic sub-feature achieves 96 .19 ± 0.92% . Moreover, the full feature vector [u, s] also exhibits strong linear separability, with a probe accuracy of 96 .32 ±0.83% . These discrepancies in probe accuracy and feature energy indicate an energy-discriminability mismatch within the full feature: The sub-feature with high energy is weakly informative when used alone, whereas lower-8
+
+TABLE I CONTROLLED FEATURE -ROLE DIAGNOSTICS ON MODEL NET 10. P ROBE ACCURACIES ARE PERCENTAGES ; TRACE RATIO DENOTES Tr Σu/ Tr Σs , AND κ
+
+> DENOTES COVARIANCE CONDITION NUMBER
+
+.                                                                              
+
+> Encoder u-probe acc. s-probe acc. [u,s]acc. Tr ΣuTr ΣsTrace ratio κuκs
+> Encoder 1 48.46 95.93 96.92 2019.54 303.72 6.65 20.53 15.75 Encoder 2 40.64 96.04 95.93 899.66 165.14 5.45 13.84 20.80 Encoder 3 55.73 95.15 95.59 1160.96 210.69 5.51 25.46 20.34 Encoder 4 41.19 97.69 97.47 2140.37 313.82 6.82 24.21 17.12 Encoder 5 56.61 96.15 95.70 1008.38 167.98 6.00 40.79 23.76 Mean ±std 48 .52 ±7.64 96 .19 ±0.92 96 .32 ±0.83 1445 .78 ±587 .87 232 .27 ±72 .22 6.09 ±0.63 24 .96 ±9.93 19 .55 ±3.17
+
+TABLE II CHANNEL INFORMATION AND DESIGN PRINCIPLES OF THE PROPOSED METHOD , BASELINES , AND ORACLE METHOD .Method Channel information Depends on realized H? Design principle Proposed BCA-SCA Long-term statistics {Bk , Tk }Kk=1 No Deterministic approximation for the MCR 2 surrogate Identity None No Fixed block identity map Random None No Feasible block-random precoders Maximum-ER Eigenvalue SAA Statistics and training-channel samples No Capacity over Tk -eigenmode powers Maximum-ER Cov. SAA Training-channel samples No SAA capacity over full transmit covariances LMMSE SAA Training-channel samples No Sample-average feature reconstruction Maximum-ER Water-Filling Long-term statistics {Bk , Tk }Kk=1 No Deterministic-equivalent water filling Maximum-MCR 2 Oracle Realized channel H Yes Instantaneous MCR 2 utility reference 
+
+energy directions carry more discriminative information. The condition numbers of the covariance matrices of the two sub-features are also listed in Table I. Notably, the observed discrepancies are not artifacts of the ill-conditioning of the covariance matrix. Collectively, the diagnostics establish the setting of the controlled feature that is used in the following experiments. 
+
+C. Baselines 
+
+For performance comparison, we consider the following precoder baselines. For baselines 3)–5), the expected objective is approximated by sample average approximation (SAA) [41] over M offline training channel samples {H(m)}Mm=1 .1) Identity : Each device uses a scaled rectangular identity precoder. Specifically, let Ek ∈ CNt,k ×dk be the matrix with ones on the first min( Nt,k , d k) diagonal entries and zeros elsewhere. We set Vk = akEk, where ak is chosen to satisfy (3). 2) Random : For each device, we draw eVk ∈ CNt,k ×dk with i.i.d. CN (0 , 1) entries and set Vk = ak eVk, where ak is chosen to satisfy (3). The reported result is averaged over 8 independent realizations. 3) Maximum-ER Eigenvalue SAA [42] : Write the eigen-value decomposition for Tk as Tk = UkΛkUHk . Device 
+
+k ∈ [K] transmits along the eigenvectors of Tk [42, Theorem 1], and the corresponding transmission covari-ance is parameterized as Qk = Uk diag( qk)UHk , where 
+
+{qk,i }K,N t,k  
+
+> k,i =1
+
+are obtained by maximizing the ergodic rate (ER) [42, Eq. (5)]. The resulting covariance blocks are then converted to feasible feature precoders 1 {Vk}Kk=1 .4) Maximum-ER Covariance SAA : This baseline serves as a less constrained ER-oriented counterpart compared 
+
+> 1
+
+The solution for Vk exists if Nt,k ≤ dk and Σ(kk ) is full rank. In the experiment, we set Nt,k = dk = 4 and Vk = Q1/2 
+
+> k
+
+(Σ(kk ))−1/2.
+
+to baseline 3). Instead of parameterizing Qk by the eigenvectors of Tk, this baseline directly optimizes the transmit covariance matrices {Qk ⪰ 0}Kk=1 . The opti-mization maximizes the same SAA ER objective under 
+
+Tr( Qk) ≤ Nt,k Pk. The resulting covariance blocks are then converted to feasible feature precoders {Vk}Kk=1 .5) LMMSE SAA [9] : For each channel sample H(m) ∈{H(m)}Mm=1 , the edge receiver observes ym = H(m)Vz +
+
+nm and applies a linear minimum mean-square error (LMMSE) detector Rm(V) ∈ Cd×Nr . The precoder is obtained by solving 
+
+min 
+
+> V∈V
+
+1
+
+M
+
+> M
+
+X
+
+> m=1
+
+E
+
+h
+
+∥z − Rm(V)ym∥2i
+
+. (41) 6) Maximum-ER Water-Filling [17] : Using Theorem 2, the deterministic approximation for the ER can be derived. The covariance matrix Q = blkdiag( Qk; k ∈ [K]) is obtained by optimizing the deterministic approximation under the power constraint via an iterative water-filling method [17, Table II]. Finally, Vk is obtained by Qk using the same method as in baseline 3). 7) Maximum-MCR 2 Oracle [9] : In this baseline, the trans-mitter knows the instantaneous H, and the precoder is obtained by solving 
+
+max  
+
+> V∈V
+
+∆( V; σ2, H) (42) using the BCA method. This precoder is used only as an oracle reference and is not counted as a statistical-CSIT baseline. Table II summarizes all the considered methods. All reported results are evaluated with the same frozen feature encoder, channel model, power constraints, MAP receiver, and fixed ModelNet10 test split. 94 8 16 32 64 96 128                     
+
+> Receive antennas Nr
+> 2
+> 4
+> 6
+> 8
+> 10
+> 12
+> 14
+> 16
+> EH[ (V; H)]
+> Identity
+> Random
+> Proposed
+> MC
+> DA
+> mean-Gram
+> (a) 20 10 010 20 30
+> SNR (dB)
+> 0.0
+> 2.5
+> 5.0
+> 7.5
+> 10.0
+> 12.5
+> 15.0
+> 17.5
+> EH[ (V; H)]
+> Identity
+> Random
+> Proposed
+> MC
+> DA
+> mean-Gram (b) 4812 16 24 32 48
+> Transmit antennas per device Nt,k
+> 4
+> 6
+> 8
+> 10
+> 12
+> EH[ (V; H)]
+> Identity
+> Random
+> Proposed
+> MC
+> DA
+> mean-Gram (c) Fig. 2. Deterministic approximation validation of the task utility. The three subfigures compare Monte-Carlo estimates of EH[∆( V;H)] , the finite-ratio deterministic approximation, and the mean-Gram approximation for the identity, random, and proposed precoders.
+
+D. Accuracy of the Theoretical Result 
+
+Fig. 2 validates the accuracy of Theorem 2. For each precoder, we compare the Monte-Carlo simulation of 
+
+E[∆( V; σ2, H)] , the deterministic approximation (24), and the mean-Gram approximation ∆MG (V; σ2)2. The mean-Gram curve is included as an intuitive benchmark because it preserves the log-det form of the semantic utility while replacing channel by the Gram matrix, whereas the Monte-Carlo simulation serves as an empirical ground truth. All three subfigures eval-uate three precoders: identity, random, and the proposed BCA-SCA precoder. In Fig. 2a, we set SNR = 10 dB , Nt,k = 4 , and vary 
+
+Nr from 4 to 128. In Fig. 2b, we set Nr = 8 , Nt,k = 4 ,and vary the SNR from −20 dB to 30 dB. In Fig. 2c, we set Nr = 8 , SNR = 10 dB , and vary Nt,k from 4 to 48. Across the three settings, the proposed deterministic approx-imation closely matches the Monte-Carlo estimates of (11). This agreement provides a numerical validation of Theorem 2 and confirms that the deterministic approximation remains accurate in the finite-dimensional regimes. Notably, the mean-Gram approximation deviates largely from the Monte-Carlo curves, especially in the high SNR and small Nr regime. This is because HH H is replaced by E[HH H] before applying the nonlinear log det( ·) operation. Such replacement removes the finite-dimensional eigenvalue fluctuations of HH H, which become important in the high SNR or small Nr regime. By contrast, the proposed deterministic approximation captures the finite-dimensional eigenvalue distribution through the fixed-point equations, which explains its closer agreement with the Monte-Carlo curves in Fig. 2. 
+
+E. System Performance Comparison 
+
+Fig. 3 compares the MAP classification accuracy of the proposed task-oriented precoder with the baseline methods. In Fig. 3a, we set SNR = 10 dB, N t,k = 4 and vary Nr from 4 to 128. In Fig. 3b, we set Nr = 8 , Nt,k = 4 , and vary the SNR from −20 dB to 30 dB. In Fig. 3c, we set Nr = 8 ,SNR = 10 dB , and vary Nt,k from 4 to 48.                                 
+
+> 2For any covariance matrix C∈eΣ,the mean-Gram approximation is given by Elog det( βINr+αHV CVHHH)≈log det( βINr+
+> αCVHE[HHH]V), where the right-hand side follows from the identity
+> det( I+XY ) = det( I+YX )and the replacement HHH←E[HHH].
+
+Across all three sweeps, the proposed precoder is close to the oracle method in the moderate-to-high SNR and large Nr
+
+regimes. The proposed method also outperforms all non-oracle baselines, especially in small Nr and low SNR regimes. This indicates that when the wireless channel remains a bottleneck for downstream task, transmit power allocation directly affects which feature components are reliably transmitted to the re-ceiver. The proposed method optimizes an MCR 2 objective as a task utility surrogate, such criterion encourages transmit power to be allocated towards semantic feature components rather than high energy but less informative nuisance feature components. By contrast, the capacity-oriented baselines and the LMMSE baseline prioritize spectral efficiency and mean-square feature reconstruction rather than the contribution of each feature component to the downstream task. Since the nuisance block has larger feature energy in our controlled feature construction, reconstruction-oriented methods tend to preserve nuisance components, while capacity-oriented meth-ods maximize an ergodic rate objective that are agnostic to the nuisance or semantic role of the transmitted features. Hence, neither type of method explicitly aligns the resulting precoder with the class-discriminative feature directions required for MAP classification. Furthermore, as Nr or SNR increases, the performance of all methods improves and the gaps among methods become smaller. This is because the wireless channel becomes less limiting for the downstream task and the accuracy of all methods eventually approaches the ceiling performance imposed by the fixed feature encoder. 
+
+F. Semantic Role-Power Allocation 
+
+To interpret the accuracy gains in Fig. 3, we examine how the transmit covariance induced by the precoder is distributed between the two feature components defined in Section VI-B. For device k, we write the extracted feature as zk =[u⊤ 
+
+> k
+
+, s⊤ 
+
+> k
+
+]⊤, where uk and sk denote the nuisance and semantic blocks, respectively. We partition the precoder and the device-wise feature covariance as 
+
+Vk = Vk,u Vk,s 
+
+ , Σ(kk ) =
+
+"
+
+Σ(kk ) 
+
+> u
+
+Σ(kk )
+
+> us
+
+Σ(kk ) 
+
+> su
+
+Σ(kk )
+
+> s
+
+#
+
+, (43) respectively. With Nt,k P tx  
+
+> k
+
+= Tr( VkΣ(kk )VHk ), the nuisance, 10 4 8 16 32 64 96 128   
+
+> Receive antennas Nr
+> 60
+> 70
+> 80
+> 90
+> MAP accuracy (%)
+> Identity
+> Random
+> Max. ER Eig. SAA
+> Max. WF
+> Max. Cov. SAA
+> LMMSE SAA
+> Max.-MCR 2Oracle
+> Proposed BCA-SCA
+
+(a) 20 15 10 5 0 5 10 15 20 25 30   
+
+> SNR (dB)
+> 20
+> 40
+> 60
+> 80
+> 100
+> MAP accuracy (%)
+> Identity
+> Random
+> Max. ER Eig. SAA
+> Max. WF
+> Max. Cov. SAA
+> LMMSE SAA
+> Max.-MCR 2Oracle
+> Proposed BCA-SCA
+
+(b) 4 8 12 16 24 32 48     
+
+> Transmit antennas per device Nt,k
+> 80
+> 85
+> 90
+> 95
+> MAP accuracy (%)
+> Identity
+> Random
+> Max. ER Eig. SAA
+> Max. WF
+> Max. Cov. SAA
+> LMMSE SAA
+> Max.-MCR 2Oracle
+> Proposed BCA-SCA
+
+(c) Fig. 3. MAP classification accuracy comparison. The setting for each subfigure is as follows: (a) Nt,k = 4 , SNR = 10 dB, and Nr ∈ { 4, 8, 16 , 32 , 64 , 128 };(b) Nt,k = 4 , Nr = 8 , and SNR ∈ {− 20 , −10 , 0, 10 , 20 , 30 } dB; (c) Nr = 8 , SNR = 10 dB, and Nt,k ∈ { 4, 8, 16 , 32 , 48 }.
+
+semantic, and u-s cross role-power fractions are defined as 
+
+pk,u = Tr( Vk,u Σ(kk ) 
+
+> u
+
+VHk,u )
+
+Nt,k P tx 
+
+> k
+
+, pk,s = Tr( Vk,s Σ(kk ) 
+
+> s
+
+VHk,s )
+
+Nt,k P tx 
+
+> k
+
+,pk,us = Tr( Vk,u Σ(kk ) 
+
+> us
+
+VHk,s + Vk,s (Σ(kk ) 
+
+> us
+
+)H VHk,u )
+
+Nt,k P tx 
+
+> k
+
+. (44) Table III presents these role-power fractions at 10 dB under the default antenna setting. For all methods, we report the mean and standard deviation of each entry which are computed over the five frozen feature encoders, the three edge device and method-specific random seeds or channel realizations when applicable. The results show a clear two-group structure. The proposed precoder and the oracle method both allocate most transmit-ted covariance to the semantic block, whereas the remaining methods retain substantially more covariance on the nuisance block. This indicates that the proposed precoder based on statistical-CSIT allocates transmitted covariance according to task relevance, rather than simply following high-energy feature directions. This role allocation provides a mechanism-level explanation for the accuracy gain in Fig. 3. The u-s cross entry can be negative because it is an interaction term in the decomposition of Tr( VkΣ(kk )VHk ), not an independent nonnegative power component. We next examine whether the same power allocation is re-flected at the eigenmode level. Specifically, we decompose the precoded transmit covariance and the corresponding receive-side signal covariance as follows 
+
+PΣ(V) = VΣV H = Pu + Ps + Pus,su 
+
+= X
+
+> i
+
+λiaiaHi , (45) 
+
+SΣ(V, H) = ρmcr HVΣV H HH
+
+= Su + Ss + Sus,su = X
+
+> i
+
+μibibHi , (46) where Pu, Ps, and Pus,su are induced by the partition (43), and Su = ρmcr HP uHH , Ss = ρmcr HP sHH , and Sus,su =
+
+ρmcr HP us,su HH . Fig. 4 visualizes the above eigenmode de-compositions. Fig. 4a shows the sorted normalized eigenvalues 
+
+λi/ Tr( PΣ) of the precoded transmit signal covariance, while Fig. 4b shows the sorted normalized eigenvalues μi/ Tr( SΣ) of the receive signal covariance. The bubble area is proportional to the corresponding normalized eigenvalue, while the bubble color represents the following semantic fraction 
+
+ϕtx  
+
+> i
+
+= aHi Psai
+
+aHi (Pu + Ps)ai
+
+, ϕrx  
+
+> i
+
+= bHi Ssbi
+
+bHi (Su + Ss)bi
+
+. (47) Here, ϕtx  
+
+> i
+
+and ϕrx  
+
+> i
+
+quantify the fraction of the i-th transmit-side or receive-side eigenmode that is contributed by the semantic block. A larger ϕi means that the corresponding eigenmode is mainly induced by the semantic block. Fig. 4 shows that the two-group structure in Table III is also reflected at the eigenmode level. For the proposed statistical-CSIT precoder, the dominant transmit-side and receive-side eigenmodes have large semantic fractions, and the oracle method exhibits a similar pattern. By contrast, the dominant eigenmodes of the remaining baselines have much smaller semantic fractions, indicating that their strongest modes are still mainly induced by the nuisance block. Therefore, the eigenmode-level diagnostic supports the same conclusion as Ta-ble III: the strongest transmit-side and receive-side eigenmodes of the proposed statistical-CSIT precoder are mainly induced by the semantic block, whereas those of the baseline methods are mainly induced by the nuisance block. VII. C ONCLUSION 
+
+In this paper, we studied the task-oriented precoding problem for multi-device MIMO systems with statistical CSIT. We adopted the received-feature MCR 2 utility as a surrogate for inference accuracy, and formulated it as a coupled difference of log-det terms. By leveraging RMT, we derived deterministic approximations for the log-det terms in the surrogate objec-tive. The resulting approximation depends only on channel statistics and training-set feature statistics, enabling precoder optimization without instantaneous CSIT. Based on this de-terministic approximation objective, we developed a BCA-SCA algorithm under per-device power constraints. Numerical experiments on the ModelNet10 dataset verify the accuracy of the proposed deterministic approximation and demonstrate the superior system performance of the statistical-CSIT precoder among all baselines. Future work may extend the framework to non-centered channel models and second-order analyses for reliability-constrained statistical-CSIT precoding. 11 
+
+TABLE III SEMANTIC ROLE -POWER ALLOCATION AT 10 DB. 
+
+Method Nuisance Semantic u-s cross MAP accuracy Proposed BCA-SCA 0.067 ± 0.072 0.955 ± 0.070 −0.023 ± 0.021 95 .97 ± 0.40 
+
+Identity 0.856 ± 0.019 0.144 ± 0.019 0.000 ± 0.000 88 .70 ± 2.23 
+
+Random 0.851 ± 0.069 0.154 ± 0.062 −0.005 ± 0.035 85 .51 ± 2.03 
+
+Maximum-ER Eigenvalue SAA 0.746 ± 0.198 0.282 ± 0.199 −0.028 ± 0.023 89 .97 ± 1.45 
+
+Maximum-ER Covariance SAA 0.765 ± 0.184 0.263 ± 0.186 −0.027 ± 0.023 90 .38 ± 1.15 
+
+LMMSE SAA 0.954 ± 0.046 0.031 ± 0.049 0.015 ± 0.011 78 .07 ± 4.59 
+
+Maximum-ER Water Filling 0.745 ± 0.200 0.283 ± 0.202 −0.028 ± 0.024 90 .06 ± 1.59 
+
+Maximum-MCR 2 Oracle 0.157 ± 0.100 0.865 ± 0.093 −0.023 ± 0.023 96 .12 ± 0.36 1 2 3 4 5 6 7 8 9 10 11 12      
+
+> Sorted normalized eigenvalues of P(V) = VVH
+> Proposed BCA-SCA
+> Identity
+> Random
+> Max. ER Eig. SAA
+> Max. WF
+> Max. Cov. SAA
+> LMMSE SAA
+> Max.-MCR 2Oracle
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Semantic fraction
+
+(a) 1 2 3 4 5 6 7 8       
+
+> Sorted normalized eigenvalues of S(V,H) = mcr HV VHHH
+> Proposed BCA-SCA
+> Identity
+> Random
+> Max. ER Eig. SAA
+> Max. WF
+> Max. Cov. SAA
+> LMMSE SAA
+> Max.-MCR 2Oracle
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Semantic fraction
+
+(b) Fig. 4. Semantic composition of sorted normalized eigenvalues. The transmit-side plot uses PΣ(V) = VΣV H , while the receive-side plot uses SΣ(V, H) = 
+
+ρmcr HVΣV H HH . Bubble area represents normalized eigenvalue mass, and color represents the semantic fraction of the corresponding mode. 
+
+APPENDIX APROOF OF THEOREM 1Before going to the details, we define the key intermediate quantities below: 
+
+gk(z) = 1
+
+Mk
+
+Tr ΩkQ(z), gk(z) = Egk(z),
+
+eΨ(z) = − 1
+
+z
+
+INt + X
+
+k∈[K]
+
+gk(z) eΩk
+
+
+
+−1
+
+,
+
+egk(z) = 1
+
+Mk
+
+Tr eΩk eΨ(z),
+
+Ψ(z) = − 1
+
+z
+
+INr + X
+
+k∈[K]
+
+egk(z)Ωk
+
+
+
+−1
+
+. (48) Our proof proceeds in two steps: a stochastic step and a deterministic step. In the stochastic step, we first show that 
+
+Q(z) can be approximated by Ψ(z), i.e., the two matrices are close in the weak operator sense. In the deterministic step, we use the bound on Q − Ψ obtained in the stochastic step to establish the connection between Ψ and Θ.The stochastic step is completed using Gaussian tools [16], which consist of two main ingredients: the integration by parts formula and the Nash–Poincar´ e inequality. First, employing the resolvent identity 
+
+Q(z)ZZ H − zQ(z) = INr , (49) we apply the integration by parts formula to decompose 
+
+[Q(z)ZZ H ]i,j into products of resolvent functional terms (see (48) below). Then, the Nash–Poincar´ e inequality is used to control the variance for the related terms. Expanding the matrix product, we have 
+
+E[Q(z)ZZ H ]i,j 
+
+= X
+
+t,m,s ′,s,k 
+
+E[Q(z)Ak]i,t [Xk]t,m [ eAk]m,s ′ [Z]∗
+
+j,s . (50) Applying the integration by parts formula to each term of RHS of the above equation and taking [Xk]t,m as the variable, we obtain 
+
+E[QA k]i,t [Xk]t,m [ eAk]m,s ′ [Z]∗
+
+j,s 
+
+= [ eAk]m,s ′
+
+Mk
+
+E ∂[QA k]i,t [Z]∗
+
+j,s 
+
+∂[Xk]∗
+
+t,m 
+
+= − [ eAk]m,s ′
+
+Mk
+
+E
+
+h
+
+[QZ eAHk ]i,m [AHk QA k]t,t [Z]∗
+
+j,s 
+
+i
+
++ X
+
+k
+
+[ eAk]m,s ′ [ eAk]∗
+
+m,s [AHk ]t,j 
+
+Mk
+
+E [[ QA k]i,t ] . (51) Summing over the subscripts k, t, and m, we obtain 
+
+E[QZ ]i,s ′ [Z]∗
+
+j,s 
+
+= E
+
+"
+
+− X
+
+k
+
+gk[QZ eΩk]i,s ′ [Z]∗
+
+j,s 
+
+#
+
++ [ eΩk]s,s ′
+
+Mk
+
+E[QΩ k]i,j . (52) Writing the random variable gk = Egk + g◦
+
+k, multiplying 
+
+−z[ eΨ]s′,s on both sides of the above equation, and summing 12 
+
+over the subscripts s and s′ yields 
+
+E[QZZ H ]i,j = − X
+
+> k
+
+zegkE[QΩ k]i,j 
+
++ z X
+
+> k
+
+Cov( gk, [QZ eΩk eΨZ H ]i,j ). (53) Applying the resolvent identity (49), multiplying [ΨR]j,i at both sides of the above equation, and summing over i and j,we obtain 
+
+Tr REQ − Tr RΨ = X
+
+> k
+
+εR,k , (54) where εR,k = −z Cov( gk, Tr QZ eΩk eΨZ H ΨR). To derive the bound for εR,k , it suffices to control the variances of gk and 
+
+hk = Tr QZ eΩk eΨZ H ΨR, respectively and then apply the Cauchy-Schwarz inequality E1/2|XY | ≤ E|X|2E|Y |2. This can be achieved using the Nash-Poincar´ e inequality. We only state the results below and refer the reader to [16] for the detailed derivations. In particular, we have 
+
+Var( gk) = O  N −2 
+
+> r
+
+|z|−4 , Var( hk) = O  |z|−6 + |z|−8 ,
+
+(55) for z < 0. As a result, from (54), we derived 
+
+Tr R(EQ − Ψ) = O  N −1 
+
+> r
+
+(|z|−4 + |z|−5) , (56) which establishes the convergence of Q − Ψ in the weak operator sense. For the deterministic step, we connect Ψ with Θ (recall the definition in (14)). This can be accomplished by examining the differences gk − δk and the derivatives of gk and δk,respectively. Define δ = [ δ1, . . . , δ K ]⊤ and g = [ g1, . . . , g K ]⊤.By the resolvent identity X−Y = X(Y−1 −X−1)Y and (14), we have 
+
+(IK − z2Γδ eΓδ )δ′ = vδ , (57a) 
+
+(IK − z2Γg eΓg )g′ = vg + 1K O(N −2 
+
+> r
+
+qz ), (57b) 
+
+(IK − z2Γg,δ eΓg,δ )( g − δ) = 1K O(N −2 
+
+> r
+
+qz ), (57c) where qz = |z|−4 + |z|−5 and 
+
+[vδ ]k = Tr ΩkΘ2
+
+Mk
+
+, [vg ]k = Tr ΩkΨ2
+
+Mk
+
+,
+
+[Γδ ]k,l = Tr ΩkΘΩ lΘ
+
+Mk
+
+, [eΓδ ]k,l = Tr eΩk eΘ eΩl eΘ
+
+Mk
+
+,
+
+[Γg ]k,l = Tr ΩkΨΩ kΨ
+
+Mk
+
+, [eΓg ]k,l = Tr eΩk eΨ eΩl eΨ
+
+Mk
+
+,
+
+[Γg,δ ]k,l = Tr ΩkΨΩ lΘ
+
+Mk
+
+, [eΓg,δ ]k,l = Tr eΩk eΨ eΩl eΘ
+
+Mk
+
+. (58) Here, (57a) and (57b) are derived to solve (57c) and evaluate the upper bounds for g − δ. In particular, one can verify that there exists a constant C > 0 such that 
+
+C−1
+
+(|z| + C)2 ≤ x ≤ C
+
+|z|2 (59) for any symbol x belongs to {[vδ ]k, [vg ]k, [δ′]k, [g′]k}Kk=1 .As a result, the matrix IK − z2Γg eΓg is invertible when 
+
+N −2 
+
+> r
+
+qz ≤ C′/(|z| + C)2 for some constant C′ depend-ing on C. By the Cauchy-Schwarz inequality | Tr XY H | ≤ 
+
+(Tr XX H Tr YY H )1/2, we know that |[Γg,δ eΓg,δ ]k,l | ≤
+
+([ Γδ eΓδ ]k,l [Γg eΓg ]k,l )1/2. Using [43, Lemmas 7, 8], it follows that IK − z2Γg,δ eΓg,δ is also invertible in the region {z :
+
+N −2 
+
+> r
+
+qz ≤ C′/(|z| + C)2}. A further analysis similar to that in [43] yields 
+
+g − δ ∞ = O
+
+ P4(|z|−1)
+
+N 2 
+
+> r
+
+|z|3
+
+
+
+, z < 0. (60) where P4 is a polynomial of degree at most 4 with positive coefficients. Applying the resolvent identity yields 
+
+Tr RΨ − Tr RΘ = O
+
+ P4(|z|−1)
+
+Nr |z|5
+
+
+
+. (61) Combining the above bound with (56), we can get 
+
+Tr R(EQ − Θ) = O
+
+ P5(|z|−1)
+
+Nr |z|4
+
+
+
+. (62) Therefore, we have completed the proof for Theorem 1. ■
+
+APPENDIX BPROOF OF THEOREM 2In this section, we apply Theorem 1 to prove Theorem 2. We define the resolvents QC (x) = ( −xINr + HP C HH ), for 
+
+C ∈ eΣ. Setting the parameters z = −σ2, Lk = Nr , Mk = Nt,k ,
+
+Ak = B1/2 
+
+> k
+
+, and eAk = ΠkT 1/2 
+
+> k
+
+P1/2 
+
+> C
+
+, where 
+
+Πk = 0Nt,k ×Nt, 1 0Nt,k ×Nt, 2 . . . INt,k . . .  (63) denotes the selection matrix of size Nt,k × Nt, we obtain from Theorem 1 the fixed point equation in (23). Moreover, the resolvent QC (−x) can be approximated by ΘC (−x), where 
+
+ΘC (−x) = 1
+
+x
+
+"
+
+INr + X
+
+> k∈[K]
+
+eδC,k (−x)Bk
+
+#−1
+
+. (64) Recall the definition of IC in (9). Taking the derivative 
+
+∂I C (V; x, H)/∂x and noting that lim x→+∞ IC (V; x, H) = 0 ,we have 
+
+IC (V; σ2, H) = 
+
+Z ∞
+
+> σ2
+
+− ∂I C (V; x, H)
+
+∂x dx 
+
+=
+
+Z ∞
+
+> σ2
+
+ Nr
+
+x − Tr QC (−x)
+
+
+
+dx. (65) Setting R = INr in Theorem 1, we obtain Tr EQC (−x) = Tr ΘC (−x)+ O(N −1 
+
+> r
+
+x−4P5(x−1)) . Consequently, by Fubini’s theorem, 
+
+EIC (V; σ2, H) = 
+
+Z ∞
+
+> σ2
+
+ Nr
+
+x − Tr ΘC (−x)
+
+
+
+dx 
+
++
+
+Z ∞
+
+> σ2
+
+O
+
+ P5(x−1)
+
+Nr x4
+
+
+
+dx 
+
+=
+
+Z ∞
+
+> σ2
+
+ Nt
+
+x − Tr ΘC (−x)
+
+
+
+dx + O(N −1 
+
+> r
+
+). (66) Write IC (V; x) = fC ({δC,k }Kk=1 , {eδC,k }Kk=1 , x ). Then, the derivative ∂I C (V; x)/∂x can be given by 
+
+∂I C (V; x)
+
+∂x = X
+
+> k∈[K]
+
+∂f C
+
+∂δ C,k 
+
+∂δ C,k 
+
+∂x 
+
++ X
+
+> k∈[K]
+
+∂f C
+
+∂eδC,k 
+
+∂eδC,k 
+
+∂x + ∂f C
+
+∂x . (67) 13 
+
+From the fixed point equations (23), we obtain for each l ∈ [K]
+
+∂f C
+
+∂eδC,l 
+
+= Tr Bl
+
+INr + X
+
+> k∈[K]
+
+eδC,k Bk
+
+
+
+> −1
+
+− xδ C,l = 0 , (68) and similarly ∂f C 
+
+> ∂δ C,l
+
+= 0 . Therefore, 
+
+− ∂I C
+
+∂x = X
+
+> k∈[K]
+
+Nt,k δC,k (−x)eδC,k (−x)= Tr( xINr )−1( X
+
+> k∈[K]
+
+xeδC,k (−x)Bk)ΘC (−x)= Nr
+
+x − Tr ΘC (−x). (69) Using lim x→+∞ IC (V; x) = 0 and combining (69) and (66), we obtain 
+
+EIC (V; σ2, H) = IC (V; σ2) + O(N −1 
+
+> r
+
+), (70) which completes the proof of Theorem 2. ■
+
+REFERENCES [1] K. B. Letaief, W. Chen, Y. Shi, J. Zhang, and Y.-J. A. Zhang, “The roadmap to 6G: AI empowered wireless networks,” IEEE Communica-tions Magazine , vol. 57, no. 8, pp. 84–90, 2019. [2] K. B. Letaief, Y. Shi, J. Lu, and J. Lu, “Edge artificial intelligence for 6G: Vision, enabling technologies, and applications,” IEEE Journal on Selected Areas in Communications , vol. 40, no. 1, pp. 5–36, 2021. [3] D. G¨ und¨ uz, Z. Qin, I. E. Aguerri, H. S. Dhillon, Z. Yang, A. Yener, K. K. Wong, and C.-B. Chae, “Beyond transmitting bits: Context, semantics, and task-oriented communications,” IEEE Journal on Selected Areas in Communications , vol. 41, no. 1, pp. 5–41, 2022. [4] H. Xie, Z. Qin, G. Y. Li, and B.-H. Juang, “Deep learning enabled seman-tic communication systems,” IEEE Transactions on Signal Processing ,vol. 69, pp. 2663–2675, 2021. [5] J. Shao, Y. Mao, and J. Zhang, “Learning task-oriented communication for edge inference: An information bottleneck approach,” IEEE Journal on Selected Areas in Communications , vol. 40, no. 1, pp. 197–211, 2021. [6] ——, “Task-oriented communication for multidevice cooperative edge inference,” IEEE Transactions on Wireless Communications , vol. 22, no. 1, pp. 73–87, 2022. [7] D. Wen, X. Jiao, P. Liu, G. Zhu, Y. Shi, and K. Huang, “Task-oriented over-the-air computation for multi-device edge ai,” IEEE Transactions on Wireless Communications , vol. 23, no. 3, pp. 2039–2053, 2023. [8] C. Cai, X. Yuan, and Y.-J. A. Zhang, “End-to-end learning for task-oriented semantic communications over mimo channels: An information-theoretic framework,” IEEE Journal on Selected Areas in Communica-tions , vol. 43, no. 4, pp. 1292–1307, 2025. [9] ——, “Multi-device task-oriented communication via maximal coding rate reduction,” IEEE Transactions on Wireless Communications , vol. 23, no. 12, pp. 18 096–18 110, 2024. [10] T. L. Marzetta, “Noncooperative cellular wireless with unlimited numbers of base station antennas,” IEEE transactions on wireless communications ,vol. 9, no. 11, pp. 3590–3600, 2010. [11] E. G. Larsson, O. Edfors, F. Tufvesson, and T. L. Marzetta, “Massive MIMO for next generation wireless systems,” IEEE communications magazine , vol. 52, no. 2, pp. 186–195, 2014. [12] D. J. Love, R. W. Heath, V. K. Lau, D. Gesbert, B. D. Rao, and M. An-drews, “An overview of limited feedback in wireless communication systems,” IEEE Journal on selected areas in Communications , vol. 26, no. 8, pp. 1341–1365, 2008. [13] S. A. Jafar and A. Goldsmith, “Multiple-antenna capacity in correlated rayleigh fading with channel covariance information,” IEEE Transactions on Wireless Communications , vol. 4, no. 3, pp. 990–997, 2005. [14] A. M. Tulino and S. Verd´ u, Random matrix theory and wireless commu-nications . Now Publishers Inc, 2004. [15] R. Couillet and M. Debbah, Random matrix methods for wireless com-munications . Cambridge University Press, 2011. [16] W. Hachem, O. Khorunzhiy, P. Loubaton, J. Najim, and L. Pastur, “A new approach for mutual information analysis of large dimensional multi-antenna channels,” IEEE Transactions on Information Theory , vol. 54, no. 9, pp. 3987–4004, 2008. [17] R. Couillet, M. Debbah, and J. W. Silverstein, “A deterministic equivalent for the analysis of correlated mimo multiple access channels,” IEEE Transactions on Information Theory , vol. 57, no. 6, pp. 3493–3514, 2011. [18] J. Dumont, W. Hachem, S. Lasaulce, P. Loubaton, and J. Najim, “On the capacity achieving covariance matrix for Rician MIMO channels: An asymptotic approach,” vol. 56, no. 3, pp. 1048–1069, Mar. 2010. [19] C.-K. Wen and K.-K. Wong, “Asymptotic analysis of spatially correlated MIMO multiple-access channels with arbitrary signaling inputs for joint and separate decoding,” vol. 53, no. 1, pp. 252–268, Jan. 2007. [20] E. C. Strinati and S. Barbarossa, “6G networks: Beyond shannon towards semantic and goal-oriented communications,” Computer Networks , vol. 190, p. 107930, 2021. [21] Y. Yu, K. H. R. Chan, C. You, C. Song, and Y. Ma, “Learning diverse and discriminative representations via the principle of maximal coding rate reduction,” Advances in neural information processing systems , vol. 33, pp. 9422–9434, 2020. [22] P. Wang, H. Liu, D. Pai, Y. Yu, Z. Zhu, Q. Qu, and Y. Ma, “A global geometric analysis of maximal coding rate reduction,” arXiv preprint arXiv:2406.01909 , 2024. [23] E. Telatar, “Capacity of multi-antenna gaussian channels,” European transactions on telecommunications , vol. 10, no. 6, pp. 585–595, 1999. [24] A. Goldsmith, S. A. Jafar, N. Jindal, and S. Vishwanath, “Capacity limits of mimo channels,” IEEE Journal on selected areas in Communications ,vol. 21, no. 5, pp. 684–702, 2003. [25] M. Vu and A. Paulraj, “Mimo wireless linear precoding,” IEEE Signal Processing Magazine , vol. 24, no. 5, pp. 86–105, 2007. [26] J. Zhang, C.-K. Wen, S. Jin, X. Gao, and K.-K. Wong, “On capacity of large-scale mimo multiple access channels with distributed sets of correlated antennas,” IEEE Journal on Selected Areas in Communications ,vol. 31, no. 2, pp. 133–148, 2013. [27] Z. Zhuang, X. Zhang, D. Xu, S. Song, and Y. C. Eldar, “Decentralized mimo systems with imperfect csi using lmmse receivers,” IEEE Journal of Selected Topics in Signal Processing , 2025. [28] X. Zhang and S. Song, “Asymptotic mutual information analysis for double-scattering mimo channels: A new approach by gaussian tools,” 
+
+IEEE Transactions on Information Theory , vol. 69, no. 9, pp. 5497–5527, 2023. [29] ——, “Secrecy analysis for irs-aided wiretap mimo communications: Fundamental limits and system design,” IEEE Transactions on Informa-tion Theory , vol. 70, no. 6, pp. 4140–4159, 2023. [30] Z. Zhuang, X. Zhang, D. Xu, and S. Song, “Fundamental limits of two-hop mimo channels: An asymptotic approach,” IEEE Transactions on Information Theory , vol. 71, no. 6, pp. 4069–4111, 2025. [31] X. Zhang, S. Song, and K. B. Letaief, “Fundamental limits of non-centered non-separable channels and their application in holographic mimo communications,” IEEE Transactions on Information Theory , 2025. [32] R. Couillet, M. Debbah, and J. W. Silverstein, “A deterministic equivalent for the analysis of correlated mimo multiple access channels,” IEEE Transactions on Information Theory , vol. 57, no. 6, pp. 3493–3514, 2011. [33] X. Zhang, X. Yu, and S. Song, “Outage probability and finite-snr dmt analysis for irs-aided mimo systems: How large irss need to be?” IEEE Journal of Selected Topics in Signal Processing , vol. 16, no. 5, pp. 1070– 1085, 2022. [34] J. Hoydis, S. Ten Brink, and M. Debbah, “Massive mimo in the ul/dl of cellular networks: How many antennas do we need?” IEEE Journal on selected Areas in Communications , vol. 31, no. 2, pp. 160–171, 2013. [35] E. A. Jorswieck and H. Boche, “Optimal transmission strategies and impact of correlation in multiantenna systems with different types of channel state information,” IEEE Transactions on Signal Processing ,vol. 52, no. 12, pp. 3440–3453, 2004. [36] D. A. Reynolds et al. , “Gaussian mixture models.” Encyclopedia of biometrics , vol. 741, no. 659-663, p. 3, 2009. [37] W. Hachem, P. Loubaton, and J. Najim, “Deterministic equivalents for certain functionals of large random matrices,” 2007. [38] Z. Wu, S. Song, A. Khosla, F. Yu, L. Zhang, X. Tang, and J. Xiao, “3d shapenets: A deep representation for volumetric shapes,” in Proceedings of the IEEE conference on computer vision and pattern recognition , 2015, pp. 1912–1920. [39] K. Simonyan and A. Zisserman, “Very deep convolutional networks for large-scale image recognition,” arXiv preprint arXiv:1409.1556 , 2014. [40] S. Wagner, R. Couillet, M. Debbah, and D. T. M. Slock, “Large system analysis of linear precoding in correlated miso broadcast channels under limited feedback,” IEEE Transactions on Information Theory , vol. 58, no. 7, pp. 4509–4537, 2012. [41] A. J. Kleywegt, A. Shapiro, and T. Homem-de Mello, “The sample av-erage approximation method for stochastic discrete optimization,” SIAM Journal on optimization , vol. 12, no. 2, pp. 479–502, 2002. [42] E. A. Jorswieck and H. Boche, “Channel capacity and capacity-range of beamforming in mimo wireless systems under correlated fading with covariance feedback,” IEEE Transactions on Wireless Communications ,vol. 3, no. 5, pp. 1543–1553, 2004. [43] Z. Zhuang, X. Zhang, D. Xu, and S. Song, “No eigenvalues outside the limiting support of generally correlated and noncentral sample covariance matrices,” IEEE Transactions on Information Theory , 2026.

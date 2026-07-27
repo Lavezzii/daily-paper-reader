@@ -1,0 +1,201 @@
+Title: Depthwise Separable CNN for D-MIMO Indoor Localization with Data Reduction
+
+URL Source: https://arxiv.org/pdf/2607.22217v1
+
+Published Time: Mon, 27 Jul 2026 00:40:44 GMT
+
+Number of Pages: 5
+
+Markdown Content:
+# Depthwise Separable CNN for D-MIMO Indoor Localization with Data Reduction 
+
+Georgios Mystriotis 
+
+ESAT, WaveCoRE KU Leuven 
+
+Leuven, Belgium george.mystriotis@kuleuven.be 
+
+Dr. Rodney Martinez Alonso 
+
+ESAT, WaveCoRE KU Leuven 
+
+Leuven, Belgium rodney.martinezalonso@kuleuven.be 
+
+Dr. Achiel Colpaert 
+
+imec 
+
+Kapeldreef 75 3001 Leuven, Belgium achiel.colpaert@imec.be 
+
+Prof. Sofie Pollin 
+
+imec 
+
+Kapeldreef 75 3001 Leuven, Belgium sofie.pollin@imec.be 
+
+Abstract —Indoor localization using Distributed Multiple-Input Multiple-Output (D-MIMO) and machine learning (ML) achieves sub-centimeter accuracy but faces midhaul capacity bottlenecks when transmitting raw Channel State Information (CSI) in Open Radio Access Networks (O-RAN) architectures. To address this, we propose a lightweight, distributed ML framework that shifts initial processing to the network edge. By deploying localized models as dApps on Distributed Units (DUs), each requiring just 1.39 MB of memory and 1.96 MFLOPs, the system performs CSI feature extraction and reduction on the edge. The reduced low-dimensional features are transmitted to the Central Unit (CU), where another dApp is deployed for location estimation. Evaluated on a high-density dataset, this framework reduces midhaul traffic by 100x while maintaining an average error of 8.5 mm, even with half the deployed Radio Units (RUs), providing a scalable blueprint for practical D-MIMO localization. 
+
+Index Terms —Localization, MIMO, Edge Computing, Data Reduction, Machine Learning 
+
+I. I NTRODUCTION 
+
+Driven by a growing demand for highly accurate position es-timation, indoor localization has emerged as a critical research domain to bridge the navigational gap in GPS-denied environ-ments [1]. In complex indoor environments characterized by severe multipath fading and non-line-of-sight (NLoS) condi-tions, traditional positioning technologies often fall short. Re-cently, Distributed Multiple-Input Multiple-Output (D-MIMO) systems have emerged as an effective solution. When com-bined with Machine Learning (ML) fingerprinting techniques, which map complex spatial signatures to physical coordinates, D-MIMO networks can leverage massive spatial diversity to achieve centimeter-level localization accuracy [2]. Despite these advantages, the practical deployment of ML-assisted D-MIMO localization is hindered by architectural constraints. In traditional Open Radio Access Network (O-RAN) deployments, Radio Units (RUs) act merely as data collectors, transmitting high-dimensional raw frequency in-formation to a Distributed Unit (DU) for processing [3]. As the number of deployed antennas increases to improve spatial resolution, the volume of raw data grows drastically, requiring it to be transmitted to the Central Unit (CU). This centralized paradigm creates midhaul capacity bottlenecks, rendering the system unscalable for real-time applications or dense deployments [4]. Although recent literature has begun exploring decentralized processing to mitigate these midhaul constraints [4], existing solutions often overlook the real-time processing constraints inherent to DUs. Moving standard Deep Neural Networks (DNNs) to the network edge shifts the burden to the DU hardware, leading to processing delays due to larger model size and a high number of FLOPs [5]. Furthermore, to the best of our knowledge, there is a lack of research addressing the trade-offs among the number of RUs deployed, ML computational complexity, and overall localization accuracy. To overcome these bottlenecks, this paper proposes a novel, lightweight, distributed ML framework that shifts the initial CSI processing directly to the network edge. By deploying MobileNet-inspired models on the DUs, our system simulta-neously performs feature extraction and reduction. Rather than forwarding raw CSI, the DUs transmit only low-dimensional features to the CU for the location estimation. The main contributions of this paper are summarized as follows: 1) Lightweight edge processing: We introduce a lightweight, distributed ML architecture deployed directly at the DUs (1.39 MB, 1.96 MFLOPs per inference), enabling edge-based CSI feature extraction. 2) Data Reduction: We demonstrate that our distributed model effectively reduces midhaul traffic by a factor of up to 100 compared to raw CSI transmission, while maintaining sub-centimeter accuracy. 3) RU-complexity tradeoff analysis: We evaluate the trade-offs between the number of RUs deployed, model com-plexity, and accuracy, demonstrating that our framework achieves sub-centimeter accuracy even in scenarios with fewer RUs. II. R ELATED WORK 
+
+A. D-MIMO and ML-Assisted Indoor Localization 
+
+Recent advances in indoor localization have significantly improved accuracy by integrating vision-based architectures into traditional pipelines. For example, Swin Transformer-based models have been successfully employed to mitigate CSI fingerprint distortion, significantly outperforming traditional DNNs, achieving accuracies around 8mm while also reducing fingerprint storage overhead [6]. arXiv:2607.22217v1 [eess.SP] 24 Jul 2026 However, the majority of these highly accurate ML frame-works, including the latest Transformer architectures, still fundamentally rely on a centralized processing paradigm, assuming that all raw CSI can be seamlessly aggregated and processed in a single location. 
+
+B. Lightweight Localization Fingerprinting at the Edge 
+
+CSI fingerprinting remains the gold standard for centimeter-level indoor positioning due to its granular capture of ampli-tude and phase shifts [7]. Nevertheless, standard DNNs impose a significant computational burden on network infrastructure, motivating a shift toward lightweight, edge-native ML deploy-ment [8]. Recent advancements have addressed this need by designing neural network architectures tailored to mobile constraints. For example, CSILoc employs a two-channel 1D CNN on preprocessed CSI magnitude and phase data [9]. By avoiding complex 2D convolutions and traditional pooling layers, this 1D CNN architecture requires a minimal memory footprint (11,280 to 12,600 parameters), while achieving 1.89 ms infer-ence on commercial smartphones and improved localization performance [9]. Alternative approaches reduce feature dimensionality via vector embeddings adapted from speech processing, extracting d-vectors from a truncated DNN and classifying with a simpler backend such as time-reversal resonating strength (TRRS) [10]. This approach requires only 82.01% of the original DNN’s parameter count while maintaining comparable local-ization accuracy, substantially reducing the storage space and processing power required by IoT nodes [10]. 
+
+C. ML-Assisted Data Reduction in O-RAN 
+
+In standard O-RAN architectures, the limited capacity of fronthaul and midhaul links often creates transmission bot-tlenecks. Traditional compression techniques specified by the O-RAN architecture, such as Block Floating Point (BFP) and 
+
+μ-law companding, often struggle to balance the compression ratio with the signal fidelity required for more complex tasks [3]. Recent work has shifted toward AI-driven reduction, using distributed and meta-learning to jointly optimize edge trans-formation and central decoding. Neural transform-compress-forward schemes reduce uplink signal dimensionality before transmission, outperforming mathematical compression and achieving up to 64:1 ratios [4], [11], [12]. However, these methods target generic throughput rather than preserving task-specific features (e.g., for localization), and degrade at high reduction ratios. The LITE framework addresses this via compression-aware training with an autoencoder at the O-DU [13]. By compress-ing CSI signaling by 50%, an attention-enhanced predictor at the Near-RT-RIC achieves a 4.6x throughput gain while drasti-cally reducing model complexity. However, this 2x reduction factor remains insufficient for dense or heavily constrained networks. III. S YSTEM MODEL 
+
+A. Network Architecture and Geometric Topology 
+
+We consider a D-MIMO uplink localization scenario within an O-RAN architecture. The physical topology consists of K
+
+distributed RUs deployed around the User Equipment (UE). These RUs enclose a predefined square planar Region of Interest (RoI), denoted as A ∈ R3, in which a single-antenna UE operates. Each RU is equipped with an N -element Uniform Linear Array (ULA), where N = 8 . The K distributed RUs are connected to M DUs that subsequently connect to a single CU (Fig. 1). 
+
+Fig. 1: System Topology & Architecture. 
+
+B. Signal Model and CSI Acquisition (RU-Level) 
+
+Let the true spatial coordinates of the UE be denoted as 
+
+p = [ x, y, z ]T , inside the square operating area ( p ∈ A ). To perform the localization, the UE transmits standard uplink pilot signals. The estimated CSI matrix at the k-th DU, denoted as 
+
+Hk ∈ CN ×S , with S the number of subcarriers, implicitly captures the spatial signatures of the multipath channel. 
+
+C. Edge Feature Extraction and Data Reduction (DU-Level) 
+
+To alleviate midhaul link capacity constraints, feature ex-traction and data reduction are performed directly at the edge. Instead of forwarding raw CSI matrices, the k-th DU utilizes a local feature extraction neural network to map the high-dimensional CSI to a lower-dimensional latent representation: 
+
+Zk = fθRU (Hk, η ), (1) where fθDU (·) represents the feature extraction function pa-rameterized by θDU . This process reduces the data by a predefined reduction ratio η, retaining only the most significant features necessary for localization. The reduced feature tensors 
+
+Zk are then transmitted to the CU over the midhaul interface. 
+
+D. Feature Aggregation and Centralized Fusion (CU-Level) 
+
+The CU acts as both an aggregator and a fuser of the information to predict the UE’s coordinates. The CU collects the reduced features from all the DU and aggregates them to reconstruct the global spatial context: 
+
+Zglobal = gaggregate (Z1, Z2, . . . , ZK ). (2) Finally, this global feature map is passed through a centralized localization neural network running at the CU to output the estimated coordinates of the UE, ˆp:ˆp = hθCU (Zglobal ), (3) where hθCU (·) represents the regression network parameter-ized by θCU .IV. P ROPOSED ML F RAMEWORK 
+
+A. Data Preprocessing 
+
+To ensure the neural network can effectively capture the underlying physical characteristics of the wireless channel, the raw complex-valued CSI is preprocessed to enrich the channel representation. 
+
+1) Data Reshaping and Real-Imaginary Separation: The raw CSI data initially exists as a complex-valued array. Be-cause standard deep learning frameworks are optimized for real-valued arithmetic, the complex CSI matrices are first transformed. A complex matrix of size S × A (where S
+
+represents the number of subcarriers and A represents the number of antennas) is split into its real and imaginary components. The data is then reshaped and stacked along a new dimension, resulting in samples of shape 2 × S × A.
+
+2) Multi-Domain Feature Extraction: Based on [14] we extract complementary representations of the channel in our dApp preprocessing pipeline (Fig. 1). Rather than feeding only the Cartesian representation into the neural network, this multi-domain approach explicitly exposes amplitude, phase, delay, and angular characteristics to the neural network. For a given input tensor, three distinct feature transformations are applied:  
+
+> •
+
+Polar Conversion: The model computes the amplitude and phase for each CSI element.  
+
+> •
+
+Time-Domain Conversion (Delay Profile): To capture the multipath delay characteristics of the channel, an Inverse Fast Fourier Transform (IFFT) is applied along the subcarrier dimension ( S).  
+
+> •
+
+Angle-Delay Domain Conversion (2D FFT): To capture the spatial-frequency characteristics, a 2-dimensional Fast Fourier Transform (2D FFT) is applied across both the subcarrier ( S) and antenna ( A) dimensions. 
+
+3) Feature Concatenation: In the final step of preprocess-ing, the tensors generated by the three transformations are concatenated, yielding samples of shape 6 × S × A. By explicitly providing these physical features, the burden on the initial layers of the network to discover these transformations is reduced, facilitating faster convergence and improved rep-resentation learning. 
+
+B. DU Feature Extraction and Data Reduction 
+
+In the proposed D-MIMO O-RAN architecture, each DU must process and transmit channel observations to the CU over capacity-constrained midhaul links. To achieve sub-centimeter localization accuracy under midhaul constraints, we employ DU-hosted dApps that leverage lightweight neural networks for CSI feature extraction and data reduction (Fig. 1). The model is specifically designed for edge deployment, utilizing a MobileNet-inspired architecture with Depthwise-Separable Convolutions (DSCs) and channel-attention mechanisms to minimize computational complexity [15]. The key differences lie in the use of 1D instead of 2D convolutions across the subcarrier dimension to further reduce complexity, the adoption of the smoother GELU activation over ReLU, and the integration of a Channel-Attentive Bottleneck Head. 
+
+Fig. 2: Distributed Model Architecture The DU model consists of three primary stages: a feature-extraction backbone, an intermediate adapter, and a channel-attentive bottleneck-reduction head. 
+
+1) Lightweight Feature Extraction Backbone: Let the input channel tensor at the DU be denoted as X ∈ RF ×S×A, where 
+
+F is the number of input channels, and S and A represent the number of subcarriers and number of antennas, respec-tively. To efficiently extract localized features, the backbone processes X through five DSC blocks. Unlike standard convolutions, each DSC block factorizes the operation into a depthwise spatial convolution and a 1 × 1
+
+pointwise convolution. This significantly reduces the param-eter count and computational footprint [15]. To manage the scale of the features, we employ Group Normalization paired with non-linear activation functions, specifically GELU in the early layers and Hardswish in the deeper layers [15]. Spatial downsampling (across the subcarrier dimension) is applied to each block, serving as a learnable pooling layer that increases the model’s expressiveness while reducing computational load in deeper layers. 
+
+2) Adapter Head and Squeeze-and-Excitation Recalibra-tion: To refine the semantic features before reduction, the backbone output is passed through an adapter module. This module interleaves additional DSC blocks with Squeeze-and-Excitation (SE) blocks. The SE blocks explicitly model chan-nel interdependencies by dynamically recalibrating channel-wise feature responses via a Hardsigmoid gating mechanism. This ensures that the network prioritizes the most informative features for the downstream localization task. 
+
+3) Channel-Attentive Bottleneck Head: The final stage is responsible for aggregating the refined features and reducing them into a latent vector representation z ∈ Rl, where l is the dimension of the latent vector, strictly determined by the predefined data reduction ratio η.Let the output of the adapter be X′ ∈ RF ′×S′×A′
+
+. The bottleneck head first computes a channel descriptor g ∈ RF ′
+
+using global average pooling: 
+
+gc = 1
+
+S′A′
+
+> S′
+
+X
+
+> i=1
+> A′
+
+X
+
+> j=1
+
+X′f,i,j . (4) This descriptor is fed into a small multi-layer perceptron (MLP) with a Hardsigmoid activation to generate channel attention logits, a ∈ [0 , 1] F ′
+
+. These logits are broadcast and applied element-wise to the feature map to produce the attention-weighted features ˜X′:
+
+˜X′ = X′ ⊙ a, (5) where ⊙ denotes channel-wise multiplication. Finally, ˜X′ is flattened and passed through a projection bottleneck to achieve the desired reduction. The bottleneck utilizes a low-rank intermediate projection to further constrain complexity. The resulting projected latent tensor z is then transmitted over the midhaul interface. 
+
+C. Centralized Aggregation and Localization at the CU 
+
+Upon receiving the reduced data from the DUs, the CU aggregates them and performs coordinate regression. Let zk ∈
+
+Rdlatent represent the latent feature tensor received from the 
+
+k-th DU. Since the distributed RUs observe the UE from different spatial vantage points, the features extracted from their corre-sponding DUs must be fused to exploit the diversity of the D-MIMO system. In this architecture, we employ a direct concatenation strategy, aggregating everything into a single global feature vector zglobal ∈ RK·dlatent :
+
+zglobal = z⊤ 
+
+> 1
+
+, z⊤ 
+
+> 2
+
+, . . . , z⊤
+
+> K
+
+⊤ (6) The aggregated global feature vector zglobal serves as input to a centralized Feed-Forward Neural Network (FFNN) that predicts the UE’s 3D coordinates. V. R ESULTS 
+
+To assess the performance of the proposed distributed framework, we utilize the “Ultra-dense indoor MaMIMO CSI dataset” [16]. Specifically, the ML model is evaluated using the DIS LoS scenario, which provides dense CSI fingerprints in an environment for D-MIMO systems. 
+
+A. Localization Accuracy and RU deployment Tradeoffs 
+
+One objective of this framework is to understand the trade-off between the number of deployed RUs and the resulting localization accuracy. Fig. 3 illustrates the Complementary Cumulative Distribution Function (CCDF) of the absolute positioning error at a baseline reduction ratio of 2.5. The results demonstrate that while deploying all 8 RUs yields the highest accuracy ( ≈ 5.3mm ), it is not strictly necessary to achieve sub-centimeter-level accuracy. Remark-ably, reducing the active RUs to 4 or even 3 still yields subcentimeter average localization errors (≈ 7.5mm and 
+
+≈ 8mm , respectively). This confirms that our end-to-end model captures the spatial signatures required for accurate positioning while relaxing RU deployment requirements. 
+
+Fig. 3: CCDF of absolute positioning error for η = 2 .5 across different active RU configurations. 
+
+B. Computational Complexity and Edge Feasibility 
+
+To verify that our dApps can be practically deployed in a live O-RAN network, we evaluated the computational complexity and memory footprint of the framework across different RU deployments and reduction ratios (Fig. 4a and Fig. 4b).  
+
+> (a) End-to-End FLOPs. (b) Model Size (MB).
+
+Fig. 4: Computational complexity and memory footprint across reduction ratios for varying numbers of active RUs. The results indicate that the end-to-end model complexity is primarily reduced by decreasing the number of active RUs (and consequently, the number of distributed models), rather than relying solely on the reduction ratio. Each distributed RU model operates with a minimal memory footprint of approximately 1.39 MB and executes just 1.96 MFLOPs at a reduction ratio of 1, even without quantization. By moving away from the high number of 2D convolution channels (e.g., 256 per layer) typical of previous approaches [4], we achieve around a 500-fold reduction in computational complexity. The reduction ratio mostly affects the computational complexity of the Channel-Attentive Bottleneck, which is already optimized by utilizing a low-rank intermediate projection, thus we do not see much improvement in complexity as we increase the reduction ratio. 
+
+C. Data Reduction Capabilities 
+
+To assess the data reduction capabilities, we compared three distinct deployment scenarios: 1) The full 64-antenna setup with η = 2 .5, 2) a 32-antenna setup with η = 2 .5, and 3) a 32-antenna setup with η = 100 .As shown in 5, even when increasing the reduction ratio to 100 in the 32-antenna topology, the framework success-fully maintains centimeter-level accuracy ( ≈ 8.5mm ). This demonstrates that our distributed models not only act as efficient feature extractors but are also capable of accurate dimensionality reduction. 
+
+Fig. 5: CCDF of absolute positioning error across different Reduction Ratios & active RU configurations. VI. C ONCLUSION 
+
+In this paper, we introduced a novel, lightweight, distributed Machine Learning framework designed to address the mid-haul capacity and computational load bottlenecks inherent in centralized D-MIMO indoor localization systems. By shifting the initial CSI processing directly to the network edge, our architecture enables DUs to simultaneously execute CSI fea-ture extraction and data reduction. Our evaluations, conducted on a high-density fingerprinting dataset, demonstrated several advantages: 1) the DU models are exceptionally lightweight, requiring a minimal memory footprint of just 1.39 MB and ex-ecuting only 1.96 MFLOPs per model, remaining well within the real-time execution windows required by the DU, 2) the proposed framework effectively reduces midhaul data traffic by a factor of up to 100, without compromising accuracy and 3) the system manages to maintain centimeter-level accuracy even when half of the RUs are deployed. By drastically reducing bandwidth requirements without sacrificing accuracy, this framework provides a scalable, computationally efficient blueprint for the practical deployment of D-MIMO indoor localization networks within O-RAN distributed architectures. The code to reproduce our simulations and experiments is available on our gitlab. ACKNOWLEDGEMENT 
+
+This paper was supported by the SUNRISE-6G project, which has received funding from the European Union un-der Grant Agreement No. 101139257. Views and opinions expressed are, however, those of the authors only and do not necessarily reflect those of the European Union or the Smart Networks and Services Joint Undertaking. The work of Rodney Martinez Alonso is supported by the Research Foundation–Flanders (FWO) under Grant 1211926N. This research received funding from the Flemish Government un-der the “Onderzoeksprogramma Artifici¨ ele Intelligentie (AI) Vlaanderen” programme. REFERENCES [1] X. Zhu, W. Qu, T. Qiu, L. Zhao, M. Atiquzzaman, and D. O. Wu, “Indoor intelligent fingerprint-based localization: Principles, approaches and challenges,” IEEE Communications Surveys & Tutorials , vol. 22, no. 4, pp. 2634–2657, 2020. [2] B. Zholamanov, A. Saymbetov, M. Nurgaliyev, A. Bolatbek, G. Dosym-betova, N. Kuttybay, S. Orynbassar, A. Kapparova, N. Koshkarbay, and ¨O. F. Beyca, “Rssi fingerprint-based indoor localization solutions using machine learning algorithms: A comprehensive review,” Smart Cities ,vol. 8, no. 5, p. 153, 2025. [3] M. Rahmani, J. Zhao, V. Ranjbar, A. Al-Tahmeesschi, H. Ahmadi, S. Pollin, and A. G. Burr, “Exploring o-ran compression techniques in decentralized distributed mimo systems: Reducing fronthaul load,” in 2025 IEEE 36th International Symposium on Personal, Indoor and Mobile Radio Communications (PIMRC) , pp. 1–7, 2025. [4] J. Zhu, R. M. Alonso, S. De Bast, and S. Pollin, “Resource-aware deep learning models for beyond-wave-length positioning accuracy in massive mimo architecture,” Computers and Electrical Engineering , vol. 116, p. 109154, may 2024. [5] D. Ngo, H.-C. Park, and B. Kang, “Edge intelligence: A review of deep neural network inference in resource-limited environments,” Electronics ,vol. 14, no. 12, p. 2495, 2025. [6] X. Xu, F. Zhu, S. Han, Z. Yu, H. Zhao, B. Wang, and P. Zhang, “Swin-loc: Transformer-based csi fingerprinting indoor localization with mimo isac system,” IEEE Transactions on Vehicular Technology , vol. 73, no. 8, 2024. [7] R. Che and H. Chen, “Channel state information based indoor finger-printing localization,” Sensors , vol. 23, no. 13, 2023. [8] S. Mart´ ın-Frechina, E. Dura, I. Miralles, and J. Torres-Sospedra, “From fingerprinting to advanced machine learning: A systematic review of wi-fi and ble-based indoor positioning systems,” Sensors , vol. 25, no. 22, p. 6946, 2025. [9] L. Wang and S. Pasricha, “A framework for csi-based indoor localization with id convolutional neural networks,” in 2022 IEEE 12th International Conference on Indoor Positioning and Indoor Navigation (IPIN) , pp. 1– 8, 2022. [10] J. M. R. Reyes, I. W.-H. Ho, and M.-W. Mak, “Wi-fi csi fingerprinting-based indoor positioning using deep learning and vector embedding for temporal stability,” Expert Systems with Applications , vol. 264, p. 125802, 2025. [11] A. Gr¨ onland, A. Russo, Y. Jedra, B. Klaiqi, and X. Gelabert, “Con-strained deep reinforcement learning for fronthaul compression opti-mization,” in 2024 IEEE International Conference on Machine Learning for Communication and Networking (ICMLCN) , pp. 498–504, 2024. [12] K. Lou and X. Wu, “Attention-infused autoencoder for massive mimo csi compression,” IEEE Transactions on Wireless Communications , vol. 25, pp. 8005–8017, 2026. [13] D. Goez, M. Piazzola, G. Costa, A. Colpaert, R. M. Alonso, E. A. Beyazit, N. Slamnik-Krijestorac, J. M. Marquez-Barja, and M. C. Botero, “Lite: Lightweight channel gain estimation with reduced x-haul csi signaling in o-ran,” 2026. [14] S. D. Bast, A. P. Guevara, and S. Pollin, “Csi-based positioning in massive mimo systems using convolutional neural networks,” in 2020 IEEE 91st Vehicular Technology Conference (VTC2020-Spring) , pp. 1– 5, 2020. [15] M. Sandler, A. Howard, M. Zhu, A. Zhmoginov, and L.-C. Chen, “Mobilenetv2: Inverted residuals and linear bottlenecks,” in Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR) , June 2018. [16] S. D. Bast and S. Pollin, “Ultra dense indoor mamimo csi dataset,” 2021.

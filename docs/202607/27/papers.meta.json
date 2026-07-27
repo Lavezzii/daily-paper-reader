@@ -1,0 +1,54 @@
+{
+  "label": "2026-07-27",
+  "date": "2026-07-27",
+  "generated_at": "2026-07-27T21:28:16",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202607/27/2607.17877v1-task-oriented-precoding-for-edge-inference-over-large-scale-mimo-systems",
+      "section": "quick",
+      "title_en": "Task-Oriented Precoding for Edge Inference over Large-Scale MIMO Systems",
+      "authors": "Hongru Li, Zeyan Zhuang, Zixin Wang, Hengtao He, Shenghui Song, Jun Zhang, Khaled B. Letaief",
+      "date": "2026-07-20",
+      "pdf": "https://arxiv.org/pdf/2607.17877v1",
+      "score": "7.0",
+      "evidence": "深度学习用于MIMO边缘推理的任务导向预编码",
+      "tldr": "针对多设备边缘推理中瞬时CSI开销大的问题，本文提出基于统计CSI的任务导向预编码方案。利用随机矩阵理论推导接收特征可分性的确定性近似，并设计投影块坐标上升算法优化。实验表明，该方法在ModelNet10上优于竞争基准，提升了任务感知模式分配与推理性能。",
+      "tags": "query:channel-nn",
+      "abstract_en": "Future wireless networks are expected to support networked artificial intelligence (AI) services, where multiple devices transmit learned features to an edge server for distributed inference. This setting calls for task-oriented physical-layer optimization, where wireless transmission should preserve useful information for inference rather than only maximize the rate or reconstruct the transmitted signals. A key physical-layer control variable is the multiple-input multiple-output precoder, which determines how device features are shaped and combined over wireless channels. Existing task-oriented precoding methods typically adapt the precoder to instantaneous channel state information at the transmitter (CSIT). However, in multi-device MIMO systems, acquiring the aggregate channel, feeding back CSI or optimized precoders, and reoptimizing across coherence blocks introduce substantial overhead. This paper develops a random-matrix-theoretic framework based on statistical CSIT that designs a slow-timescale precoder from channel covariance statistics and training-set feature statistics, without requiring instantaneous CSIT. We adopt maximal coding rate reduction (MCR${^2}$) to measure the class separability of the received features, yielding a task-aware utility for MIMO precoder design. Since this utility still depends on random small-scale fading, we derive a deterministic approximation that converts it into a fixed-point objective depending only on long-term statistics and large-system dimension ratios via random matrix theory. A projected block-coordinate ascent and successive convex approximation algorithm is developed to optimize this deterministic objective under per-device power constraints. Experiments on ModelNet10 verify the approximation and show that the proposed statistical precoder improves task-aware mode allocation and inference performance over competitive benchmarks.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/27/2607.22155v1-neuromorphic-non-orthogonal-multiple-access-for-parallel-remote-inference-via-vector-symbolic-architecture",
+      "section": "quick",
+      "title_en": "Neuromorphic Non-Orthogonal Multiple Access for Parallel Remote Inference via Vector Symbolic Architecture",
+      "authors": "Jiechen Chen, Zihang Song, Dengyu Wu, Bipin Rajendran, Osvaldo Simeone",
+      "date": "2026-07-24",
+      "pdf": "https://arxiv.org/pdf/2607.22155v1",
+      "score": "7.0",
+      "evidence": "脉冲神经网络用于通信中的远程推理",
+      "tldr": "针对边缘智能系统中每个设备需独立分类的并行远程推理场景，现有神经形态多址协议仅支持协作推理。本文提出NOMA-NC协议，基于向量符号架构，每个设备将稀疏脉冲特征与设备特定置换键绑定，组内设备同时传输，利用空中叠加直接实现VSA捆绑操作。共享解码SNN结合轻量级解绑定，单次推理恢复所有设备决策。在N-MNIST和DVS128数据集上，NOMA-NC实现吞吐量增益和接收计算能效随同时活动设备数亚线性增长，且不增加每设备传输能量。该工作是首个针对并行推理的神经形态非正交多址方案。",
+      "tags": "query:channel-nn",
+      "abstract_en": "Emerging edge intelligence systems increasingly rely on dense deployments of always-on sensors that must convey task-relevant information to a remote model under tight energy and spectral budgets. The deployment of event-driven neuromorphic sensing paired with spiking neural networks (SNNs) is attractive in this regime because it produces dynamically sparse representations, so that energy is spent on communication and computation only when informative events occur. Prior multiple-access protocols for remote inference using neuromorphic sensing and computing targeted collaborative settings, in which the server fuses information from all devices into a single decision. This paper instead addresses parallel remote inference, in which each device observes a distinct input, and requires its own classification decision. We propose NOMA-NC, a non-orthogonal multiple-access (NOMA) neuromorphic communication (NC) protocol built on the vector symbolic architecture (VSA) framework. In NOMA-NC, each device binds its sparse spike feature map with a device-specific permutation key, and all devices in a group transmit concurrently so that the over-the-air superposition directly realizes the VSA bundling operation. A shared decoding SNN, together with lightweight per-device learned unbinding, recovers all decisions in a single inference pass. Experiments on the N-MNIST and DVS128 Gesture datasets show that NOMA-NC yields goodput gains and savings in terms of receiver computing energy that are sub-proportional to the number of simultaneously active devices, without increasing the per-device transmission energy.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/27/2607.22217v1-depthwise-separable-cnn-for-d-mimo-indoor-localization-with-data-reduction",
+      "section": "quick",
+      "title_en": "Depthwise Separable CNN for D-MIMO Indoor Localization with Data Reduction",
+      "authors": "Georgios Mystriotis, Rodney Martinez Alonso, Achiel Colpaert, Sofie Pollin",
+      "date": "2026-07-24",
+      "pdf": "https://arxiv.org/pdf/2607.22217v1",
+      "score": "7.0",
+      "evidence": "高效的深度可分离CNN用于D-MIMO定位中的CSI处理",
+      "tldr": "针对D-MIMO室内定位中原始CSI传输造成前传容量瓶颈的问题，提出一个轻量级分布式机器学习框架。该框架在分布式单元部署深度可分离卷积网络作为边缘dApp，提取并压缩CSI特征，再将低维数据传至中央单元完成位置估计。在高密度数据集上，前传流量降低100倍，平均定位误差仅8.5毫米，即使无线单元减半仍保持精度。该方案为O-RAN架构下的大规模室内定位提供了可扩展、低成本的实用蓝图。",
+      "tags": "query:channel-nn",
+      "abstract_en": "Indoor localization using Distributed Multiple-Input Multiple-Output (D-MIMO) and machine learning (ML) achieves sub-centimeter accuracy but faces midhaul capacity bottlenecks when transmitting raw Channel State Information (CSI) in Open Radio Access Networks (O-RAN) architectures. To address this, we propose a lightweight, distributed ML framework that shifts initial processing to the network edge. By deploying localized models as dApps on Distributed Units (DUs), each requiring just 1.39 MB of memory and 1.96 MFLOPs, the system performs CSI feature extraction and reduction on the edge. The reduced low-dimensional features are transmitted to the Central Unit (CU), where another dApp is deployed for location estimation. Evaluated on a high-density dataset, this framework reduces midhaul traffic by 100x while maintaining an average error of 8.5 mm, even with half the deployed Radio Units (RUs), providing a scalable blueprint for practical D-MIMO localization.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

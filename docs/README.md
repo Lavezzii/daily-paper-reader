@@ -6,24 +6,30 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-26
-- 运行时间：2026-07-26 21:12:40 UTC
+- 最新运行日期：2026-07-27
+- 运行时间：2026-07-27 21:28:09 UTC
 - 运行状态：成功
-- 本次总论文数：1
+- 本次总论文数：3
 - 精读区：0
-- 速读区：1
+- 速读区：3
 
 ### 今日简报（AI）
-今日速读一篇利用深度递归Q学习优化无线供电通信网络波束控制的论文（评分6分）。核心结论是DRQN策略能动态调整波束方向以最大化吞吐量，优于传统算法。建议关注强化学习在无线物理层优化中的应用，可尝试复现并对比实际信道环境。
-- 详情：[/202607/26/README](/202607/26/README)
+今天速读了3篇论文，聚焦大规模MIMO边缘推理、神经形态非正交多址和深度可分离CNN室内定位。最值得关注的是《Task-Oriented Precoding for Edge Inference》和《Neuromorphic Non-Orthogonal Multiple Access》两篇，分别从预编码和架构创新提升推理效率。建议普通读者先了解任务导向预编码优化边缘推理的思路，再关注深度可分离CNN如何降低定位数据量。
+- 详情：[/202607/27/README](/202607/27/README)
 
 ### 精读区论文标签
 - 本次无精读推荐。
 
 ### 速读区论文标签
-1. [Deep Recurrent Q-Learning Based Beam Steering Strategy for Throughput Maximization in WPCNs](/202607/26/2607.17838v1-deep-recurrent-q-learning-based-beam-steering-strategy-for-throughput-maximization-in-wpcns)  
-   标签：评分：6.0/10、query:channel-nn
-   evidence：使用深度强化学习进行波束转向以最大化吞吐量
+1. [Task-Oriented Precoding for Edge Inference over Large-Scale MIMO Systems](/202607/27/2607.17877v1-task-oriented-precoding-for-edge-inference-over-large-scale-mimo-systems)  
+   标签：评分：7.0/10、query:channel-nn
+   evidence：深度学习用于MIMO边缘推理的任务导向预编码
+2. [Neuromorphic Non-Orthogonal Multiple Access for Parallel Remote Inference via Vector Symbolic Architecture](/202607/27/2607.22155v1-neuromorphic-non-orthogonal-multiple-access-for-parallel-remote-inference-via-vector-symbolic-architecture)  
+   标签：评分：7.0/10、query:channel-nn
+   evidence：脉冲神经网络用于通信中的远程推理
+3. [Depthwise Separable CNN for D-MIMO Indoor Localization with Data Reduction](/202607/27/2607.22217v1-depthwise-separable-cnn-for-d-mimo-indoor-localization-with-data-reduction)  
+   标签：评分：7.0/10、query:channel-nn
+   evidence：高效的深度可分离CNN用于D-MIMO定位中的CSI处理
 
 
 <div class="dpr-home-promo-card">
