@@ -1,0 +1,1292 @@
+Title: Restoration Flow Matching-Based Channel Refinement and Equalization Correction for MIMO Semantic Communications
+
+URL Source: https://arxiv.org/pdf/2607.23615v1
+
+Published Time: Tue, 28 Jul 2026 01:21:55 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+> 1
+
+# Restoration Flow Matching-Based Channel Refinement and Equalization Correction for MIMO Semantic Communications 
+
+Wenkai Liu, Nan Ma, Member, IEEE, Jianqiao Chen, Xiaodong Xu, Senior Member, IEEE, Meixia Tao, Fellow, IEEE, and Ping Zhang, Fellow, IEEE 
+
+Abstract —In multiple-input multiple-output (MIMO) semantic communication, imperfect channel state information (CSI) and equalization mismatch can seriously degrade semantic recon-struction quality. To address this issue, we propose a unified restoration flow matching (RFM)-based framework for channel refinement and equalization correction. Specifically, the channel RFM (CRFM) module is developed to refine the coarse channel, thereby improving channel estimation accuracy. Based on the refined channel, the developed semantic RFM (SRFM) module is employed to correct the residual distortions in the post-equalization latent space. The key idea is to formulate the two cascaded inverse problems of channel estimation and equalization as the unified conditional restoration task, in which the learned conditional velocity field guides the perturbed distribution to-wards the target distribution. To enhance the robustness of these two modules under various distortion conditions, we develop a dual-anchor perturbation training strategy that jointly learns near-manifold refinement and large-error correction, and imple-ment inference through a few-step deterministic ordinary differ-ential equation (ODE) solver. Extensive experiments on MIMO channels and visual semantic transmission tasks demonstrate that the proposed scheme improves key metrics for channel estimation and semantic reconstruction quality. Moreover, compared with representative diffusion-based generative baselines, the proposed method requires fewer sampling steps. 
+
+Index Terms —Semantic communication, flow matching, chan-nel estimation and equalization, MIMO communications. 
+
+I. I NTRODUCTION 
+
+Semantic communication has emerged as a highly promis-ing paradigm for next-generation wireless networks by shifting the design objective from bit-level fidelity to the transmission of task-relevant information and semantic preservation [1], [2], [3]. This paradigm is particularly appealing for 6G visual transmission services, as the massive scale of source data and complex channel environments make traditional approaches that separate source coding from channel coding increasingly inefficient. In this context, deep joint source-channel coding (DeepJSCC) has become one of the most representative im-plementation frameworks for semantic communication, as it enables the end-to-end optimization of semantic representa-tion, channel adaptation, and reconstruction quality within a neural network architecture [4], [5].                          
+
+> Wenkai Liu, Nan Ma, Xiaodong Xu and Ping Zhang are with the State Key Laboratory of Networking and Switching Technol-ogy, Beijing University of Posts and Telecommunications, Beijing 100876, China (e-mail: liuwenkai@bupt.edu.cn; manan@bupt.edu.cn; xuxi-aodong@bupt.edu.cn; pzhang@bupt.edu.cn).(Corresponding author: Nan Ma.) Jianqiao Chen is with the ZGC Institute of Ubiquitous-X Innovation and Applications, Beijing 100876, China (e-mail: jqchen1988@163.com). Meixia Tao is with the Cooperative Medianet Innovation Center (CMIC) and the Department of Electronic Engineering, Shanghai Jiao Tong University, Shanghai 200240, China (mxtao@sjtu.edu.cn).
+
+Following this line of thought, a deep learning-based JSCC framework was proposed in [6], in which image compression and error correction were jointly realized through a convo-lutional neural network (CNN)-based autoencoder architec-ture. In addition, Transformer-based architectures have demon-strated superior capabilities in modeling high-dimensional visual semantics [7]. In particular, the hierarchical shifted-window design of the Swin Transformer achieves an ideal balance among multi-scale feature extraction, long-range de-pendency modeling, and computational efficiency, making it highly suitable for semantic image transmission [8]. The performance of these models degrades sharply when channel noise is severe or the testing statistics deviate from the training distribution. To address this issue, the authors in [9] proposed an adaptive JSCC with an attention module, exhibiting enhanced robustness under additive white Gaussian noise (AWGN) channel mismatch conditions. Subsequently, DeepJSCC explicitly established signal-to-noise ratio (SNR) adaptation as a design objective, emphasizing the robustness of a single model when operating under varying SNR conditions [10]. In [11], the authors used the Swin transformer as the backbone of the JSCC, and the SNR and rate adaptation tech-niques were able to adapt to different channel conditions and transmission rates. These end-to-end scheme studies enable se-mantic transceivers to adapt to channel variations, but they rely on direct decoding from degraded semantic features, which limits the high-fidelity recovery of source information in the presence of severe noise or channel distribution mismatches. With the emergence of diffusion models, which excel at generating realistic textures in image synthesis [12], various diffusion models are now being applied to improve the quality of reconstructed images, even under high compression ratios [13], [14]. This trend has further propelled the development of generative denoising and recovery methods tailored for seman-tic communication systems [15], [16], [17]. In wireless seman-tic communication, the channel denoising diffusion models (CDDM) is deployed as a denoising module following channel equalization to achieve channel adaptivity in [15]. The authors in [16] proposed an unsupervised latent diffusion posterior sampling method that achieves joint semantic equalization and denoising. Further, the authors in [17] proposed an interference cancellation diffusion model (ICDM), which formulates the interference cancellation problem as a maximum a posteriori problem for the joint posterior probability of the signal and interference. Therefore, under the influence of multiplicative channel distortion, explicit equalization becomes a critical component of the semantic receiver. Its role is to suppress amplitude-phase distortion and feature coupling caused by the arXiv:2607.23615v1 [cs.LG] 26 Jul 2026 2
+
+channel, thereby providing a latent representation that is easier to recover for subsequent semantic reconstruction. However, the majority of existing works primarily focus on single-input single-output (SISO) channels [18]. In view of the leading role that MIMO technology plays in enhancing chan-nel capacity and transmission reliability, extending semantic communication from single-antenna links to MIMO systems is critically important [19]. In MIMO configurations, the received semantic information exhibits the nonlinear mixture and multi-stream coupling induced by the channel matrix, which poses significant challenges to robust semantic transmission. To address this issue, several representative works have explored robust transmission mechanisms from various perspectives in the context of MIMO semantic communications [20], [21], [22], [23]. In [20], orthogonal space-time block coding (OS-TBC) was utilized to improve the robustness of image trans-mission against MIMO channel variations, and an equalizer was employed to estimate the codewords. In [21], the authors performed diffusion-based denoising on the equalized sub-channels. Furthermore, the authors developed the DeepJSCC framework, which is specifically tailored for MIMO communi-cations. This framework employed a vision transformer-based architecture that leverages both contextual semantic features and channel conditions through self-attention mechanisms [22]. Another study proposed a communication framework for MIMO-OFDM systems based on semantic importance, which utilizes semantic importance to jointly optimize quantization, subcarrier mapping, and power allocation [23]. Although the aforementioned studies have improved the recovery quality of corrupted semantic representations and advanced research on semantic communication, they largely rely on the assumption of perfect CSI at the receiver. This assumption is often difficult to satisfy in practical wireless environments, thereby limiting the real-world applicability of these methods. Therefore, it is crucial to design high-precision, low-complexity channel estimation methods under pilot-constrained conditions. In fact, channel estimation itself is a classic inverse problem with a wealth of existing literature [24], [25]. The least squares (LS) was widely used due to its simplicity, but its estimation accuracy degrades significantly under low SNR conditions [24]. Sparse recovery methods, such as orthogonal matching pursuit (OMP) [25], can leverage channel sparsity to achieve superior performance. However, their performance depends on the quality of the sparse repre-sentation dictionary and the validity of the sparsity assumption. In recent years, deep learning (DL) methods have provided new insights into channel estimation by exploiting statistical correlations in wireless channels [26], [27], [28], [29], [30]. The authors in [26] proposed a denoising CNN based on deep residual learning for channel denoising. In [27], the authors further proposed a score-based method with posterior sampling. In [28], a generative prior-based MIMO channel estimation method was proposed, which can handle quantized observations even when using low-resolution analog-to-digital converters (ADCs). In the field of semantic communications, a few studies have also begun to explicitly consider the channel estimation module. For example, [29] developed an end-to-end digital semantic communication system and introduced a ResNet-based channel estimator for OFDM transmission over frequency-selective fading channels. Additionally, [30] proposed a semantic-aware system tailored for speech-to-text transmission and extended it with a neural network channel estimation module to mitigate the system’s reliance on precise CSI. Nevertheless, existing research still lacks systematic stud-ies on semantic recovery under imperfect-CSI conditions. In MIMO semantic communication, the receiver essentially needs to solve two cascaded and coupled inverse problems. First, the channel is estimated based on pilot observations, and then equalization is performed using imperfect-CSI to recover the semantic latent state. Since channel estimation errors directly lead to equalization mismatch [31] and propagate to subsequent semantic reconstruction modules, the overall semantic recovery performance is significantly degraded. Therefore, to solve these cascaded inverse problems of channel estimation and equalization, we transform both into generative model-based restoration tasks. However, for latency-sensitive communication receivers, a key limitation of diffusion-based generative models is that the sampling process is typically iterative and relatively slow [32], [33], [34], [17], [35]. Compared with standard diffusion sampling, accelerated variants such as DDIM reduce the reverse sampling step [32], [33]. Some studies truncated the denoising chain according to channel conditions or receiver-side SNR information [17], [34]. In addition, the variational inference method based on score matching was introduced to directly approximate the posterior distribution of the MIMO channel, thereby achieving efficient channel recovery by reducing sampling steps [35]. Nevertheless, the inference process generally still requires multiple successive denoising evaluations. Recently, the flow matching (FM) framework [36], based on continuous normal-izing flows, represents the latest advancement in generative modeling. Instead of explicitly simulating step-by-step reverse diffusion on stochastic differential equation (SDE) like tra-ditional diffusion models, FM directly learns a continuous, deterministic transport process from a simple distribution to the target distribution by regressing a time-dependent vector field along a predefined probability path. More importantly, FM supports deterministic inference based on ordinary dif-ferential equation (ODE) and enables fast sampling utilizing standard numerical ODE solvers. Recent work [37], [38] has introduced FM to wireless communications, achieving faster inference while maintaining recovery accuracy by learning the vector field of the signal distribution. Motivated by these observations, we develop a unified RFM-based framework for robust semantic recovery in practical MIMO receivers subject to cascaded distortions from pilot-based CSI acquisition and CSI-dependent equalization. The framework formulates channel refinement and equalization correction as two domain-specific yet structurally aligned conditional restoration tasks. The main contributions of this work are summarized as follows.  
+
+> •
+
+We formulate the problem of practical MIMO semantic image receiver under imperfect CSI conditions as a cas-caded inverse recovery problem. This modeling approach elucidates how channel estimation errors caused by pilot 3
+
+signals propagate through the CSI-dependent equalization process and ultimately translate into structured distortion in the semantic latent domain. Furthermore, we reveal that channel refinement and equalization correction share a common restoration structure, both recovering the clean target from a disturbed state.  
+
+> •
+
+To counteract these two distinct types of interference that affect semantic decoding, we unify channel refinement and equalization correction into a cascaded RFM task. We construct optimal transport-based conditional restoration paths in the channel and semantic-latent domains, where controlled corrupted source states are transported toward paired clean target states through velocity fields learned under constant-velocity supervision. Specifically, we de-velop a CRFM module to mitigate channel estimation errors, and a SRFM module to suppress residual latent distortion after equalization. We further show that the learned velocity field provides a local restoration direction of the Gaussian-smoothed clean-state distribution.  
+
+> •
+
+We propose a dual-anchor perturbation training strategy for learning robust restoration flows under various re-ceiver distortion conditions. By learning a shared velocity field through a mixture of low-perturbation and high-perturbation paths, this approach provides an implicit multiscale restoration mechanism that enables the restora-tion model to handle varying degrees of distortion.  
+
+> •
+
+Based on the learned restoration velocity field, we pro-pose an efficient cascaded ODE inference scheme. Com-pared with representative diffusion-based generative base-lines, the proposed method requires fewer sampling steps. Experiments on MIMO channels and visual semantic transmission tasks demonstrate that the proposed scheme achieves superior performance in both channel estimation and semantic reconstruction quality. 
+
+A. Organization 
+
+The remainder of this paper is organized as follows. Section II presents the system model and problem formulation. Section III develops the cascaded restoration flow matching within the SwinT-JSCC framework. Section IV provides numerical results and ablation studies. Section V concludes the paper. 
+
+Notation: Scalars, vectors, and matrices are denoted by italic letters, boldface lower-case letters, and boldface upper-case letters, respectively. The superscripts (·)T , (·)∗, (·)H , (·)−1,and (·)† denote transpose, conjugate, Hermitian transpose, inverse, and pseudo-inverse, respectively. The operators ⊗,
+
+⊙, vec( ·), and tr( ·) denote Kronecker product, Hadamard product, vectorization, and trace. The Euclidean and Frobenius norms are denoted by ∥ · ∥ 2 and ∥ · ∥ F , respectively. Moreover, 
+
+⌈·⌉ denotes the ceiling function, and E[·] denotes expectation. Finally, N (μ, Σ) and CN (μ, Σ) denote real Gaussian and circularly symmetric complex Gaussian distributions, respec-tively. II. S YSTEM MODEL AND PROBLEM FORMULATION 
+
+A. Semantic Transmitter Design 
+
+As illustrated in Fig. 1, we consider a visual semantic communication system over a MIMO channel H ∈ CNr ×Nt
+
+with Nt transmit antennas and Nr receive antennas. The trans-mitter sends Ns spatial streams, where Ns ≤ min {Nt, N r }.The transmitted frame is composed of a pilot block followed by a semantic data block. The pilot block is represented by P ∈ CNs×Tp , where Tp denotes the pilot length. Let 
+
+I ∈ RC×H×W denote the source image, where C, H, and W
+
+represent the number of channels, height, and width, respec-tively. At the transmitter, a pretrained Swin-Transformer-based JSCC (SwinT-JSCC) encoder is employed to extract compact semantic features from the source image. Specifically, the encoder maps I into a low-dimensional latent representation 
+
+Z = fθ⋆ 
+
+> e
+
+(I), Z ∈ RL×D , (1) where fθ⋆ 
+
+> e
+
+(·) denotes the pretrained semantic encoder with fixed parameters θ⋆ 
+
+> e
+
+, L is the latent sequence length, and D
+
+is the feature dimension. The latent representation is then quantized by a scalar quantizer Q(·), yielding U = Q(Z), U ∈
+
+RL×D . To facilitate physical-layer transmission, the quantized latent U is mapped into a complex baseband signal through a deterministic layer mapping operator 
+
+X = T (U), T : RL×D → CNs×Td , (2) where X denotes the MIMO baseband signal and Td is the number of channel uses. For clarity, the mapping T (·) is detailed as follows. First, U is vectorized into a one-dimensional sequence 
+
+u = vec( U) = [ u1, u 2, . . . , u LD ]T ∈ RLD . (3) To construct complex symbols, two adjacent real-valued en-tries are grouped into the in-phase and quadrature components. If LD is odd, one zero is appended to the tail of u for pairing. Let eu = [ eu1, eu2, . . . , eu2Nc ]T ∈ R2Nc denote the zero-padded sequence, where Nc = ⌈LD/ 2⌉ is the total number of complex channel symbols. The resulting complex symbol sequence is given by 
+
+rm = eu2m−1 + jeu2m, m = 1 , 2, . . . , N c. (4) To match the spatial degrees of freedom of the MIMO channel, we reconstruct the one-dimensional symbol stream 
+
+r = [ r1, r 2, . . . , r Nc ]T into Ns parallel streams. Let Td =
+
+⌈Nc/N s⌉ denote the required number of channel uses. After zero-padding, the symbol stream is rearranged into R =reshape( r, N s, T d) ∈ CNs×Td . To satisfy the average transmit power constraint, R is normalized as 
+
+X = R
+
+p∥R∥2F/(NsTd) , (5) where the matrix X ∈ CNs×Td is the complex baseband signal transmitted over the MIMO channel. Before MIMO transmission, both pilot and semantic data blocks are precoded by the same QR-orthonormalized random matrix F ∈ CNt×Ns
+
+satisfying FH F = INs . Accordingly, the equivalent channel after precoding is defined as 
+
+He = HF ∈ CNr ×Ns . (6) This equivalent channel is shared by the pilot and semantic data blocks and will be estimated at the receiver based on the pilot observation. 4MIMO Transmission 
+
+> Precoder
+> Pilot Block
+> Source Image Source Image
+
+Semantic Transmitter 
+
+SwinT -JSCC Encoder 
+
+> Swin Block
+> Patch Embedding
+> Patch Merging
+> Swin Block
+> Patch Merging
+> Swin Block
+> Patch Merging
+> Swin Block
+> FC
+
+SwinT -JSCC Encoder 
+
+> Swin Block
+> Patch Embedding
+> Patch Merging
+> Swin Block
+> Patch Merging
+> Swin Block
+> Patch Merging
+> Swin Block
+> FC
+
+Semantic Receiver       
+
+> Reconstructed Image Reconstructed Image Reconstructed Image
+> AWGN
+> LS Estimation CRFM LS Estimation CRFM
+> MMSE
+> Equalizer SRFM
+
+SwinT -JSCC Decoder 
+
+> Swin Block
+> Patch Embedding
+> Patch Division
+> Swin Block
+> Patch Division
+> Swin Block
+> Patch Division
+> Swin Block
+> FC
+> Swin Block
+> Patch Embedding
+> Patch Division
+> Swin Block
+> Patch Division
+> Swin Block
+> Patch Division
+> Swin Block
+> FC
+
+SwinT -JSCC Decoder   
+
+> Swin Block
+> Patch Embedding
+> Patch Division
+> Swin Block
+> Patch Division
+> Swin Block
+> Patch Division
+> Swin Block
+> FC
+> LS Estimation CRFM
+> MMSE
+> Equalizer SRFM
+
+SwinT -JSCC Decoder              
+
+> Swin Block
+> Patch Embedding
+> Patch Division
+> Swin Block
+> Patch Division
+> Swin Block
+> Patch Division
+> Swin Block
+> FC
+> Quantizer Quantizer Layer
+> Mapping
+> Layer
+> Mapping
+> Train only:
+> Multi -scale Discriminator
+> Train only:
+> Multi -scale Discriminator LN SW -MSA Add LN MLP Add LN SW -MSA Add LN MLP Add
+
+Swin Block      
+
+> LN SW -MSA Add LN MLP Add
+
+Swin Block         
+
+> LN: Layer Normalization
+> SW -MSA: Shifted Window -based Multi -head Self -
+> Attention
+> MLP: Multi -Layer Perceptron
+> LN SW -MSA Add LN MLP Add
+
+Swin Block     
+
+> LN: Layer Normalization
+> SW -MSA: Shifted Window -based Multi -head Self -
+> Attention
+> MLP: Multi -Layer Perceptron
+> Tx Rx
+
+Fig. 1. Overall architecture of the cascaded RFM-based MIMO semantic communication system. 
+
+B. Semantic Receiver Design 
+
+At the receiver, the received frame is first divided into a pilot observation block and a semantic data observation block. The pilot block is used to acquire the MIMO channel, whereas the semantic data block is used to recover the transmitted semantic representation. The corresponding received signals are given by 
+
+Yp = HeP + Np, (7) 
+
+Yd = HeX + Nd, (8) where Np and Nd denote AWGN matrices whose entries independently follow CN (0 , σ 2
+
+n). The receiver first obtains a coarse estimate of the channel from the pilot observation. The LS estimate is given by 
+
+HLS = YpPH  PP H † . (9) This estimate provides an informative but noise-contaminated channel state. To mitigate the LS estimation error before semantic equalization, we introduce a channel restoration flow matching (CRFM) module, which refines the coarse estimate as bH = RH (HLS ) , (10) where RH(·) denotes the CRFM operator 1. Based on the refined channel, the receiver constructs the minimum mean square error (MMSE) equalizer as 
+
+W
+
+ bH
+
+
+
+=
+
+ bHH bH + σ2
+
+nINs
+
+−1 bHH . (11) The equalized semantic signal is then obtained by 
+
+bXMMSE = W
+
+ bH
+
+
+
+Yd. (12) Through the deterministic receive-side demapping operator 
+
+T −1(·), the corresponding coarse semantic latent represen-tation is obtained as bUMMSE = T −1
+
+ bXMMSE 
+
+
+
+. Although 
+
+1Here, all channel states fed into the CRFM module are first mapped into real-valued tensors by stacking their real and imaginary parts, i.e., 
+
+CNr ×Ns → R2×Nr ×Ns .
+
+channel restoration and MMSE equalization suppress part of the physical-layer distortion, bUMMSE may still contain residual perturbations caused by imperfect-CSI, equalization mismatch, and data-domain noise. Therefore, a semantic restoration flow matching (SRFM) module is further employed to correct the coarse semantic latent representation 
+
+bU = RU
+
+ bUMMSE 
+
+
+
+, (13) where RU(·) denotes the SRFM operator. Finally, the restored semantic latent representation is fed into the pretrained SwinT-JSCC decoder to reconstruct the source image 
+
+bI = gθ⋆
+
+> d
+
+ bU
+
+
+
+, (14) where gθ⋆ 
+
+> d
+
+(·) denotes the pretrained semantic decoder with fixed parameters θ⋆
+
+d.
+
+C. Problem Formulation 
+
+In imperfect-CSI-MIMO semantic communication, seman-tic recovery at the receiver is essentially performed in a cascaded manner, since the semantic equalizer is constructed based on channel estimates rather than the actual channel. Consequently, channel estimation errors are not confined to the channel domain but are converted by the equalizer into struc-tured distortions in the transmitted semantic signal, thereby affecting the latent semantic representation. Substituting (7) into (9), we obtain 
+
+HLS = He + NpPH  PP H†
+
+| {z }
+
+∆H
+
+, (15) where ∆H denotes the channel estimation error. Based on this imperfect-CSI, the MMSE equalizer given by (11) is 
+
+W(HLS ) = 
+
+h
+
+(HLS )H HLS + σ2
+
+nINs
+
+i−1
+
+(HLS )H . (16) 5
+
+For the semantic data block, substituting (11) into the MMSE equalization gives 
+
+XMMSE = W(HLS ) Yd
+
+= W(He + ∆ H) ( HeX + Nd)= W(He + ∆ H) HeX + W(He + ∆ H) Nd.
+
+(17) Accordingly, the equalization error can be decomposed as 
+
+XMMSE − X = [ W(He + ∆ H) He − INs ] X
+
++ W(He + ∆ H) Nd. (18) Therefore, the channel estimation error |∆H| typically am-plifies the residual equalization mismatch in XMMSE and further propagates it into the semantic latent representations [31]. The above error propagation relationship indicates that it is necessary to improve the accuracy of channel estimation before performing semantic equalization. Therefore, we first introduce the CRFM operator RH(·)
+
+R⋆ 
+
+> H
+
+= arg min 
+
+> RH
+
+E
+
+h
+
+∥R H (HLS ) − He∥2F
+
+i
+
+. (19) Although CRFM improves the accuracy of channel estimation, as derived in (12), the equalized semantic latent remain a disturbed representation [15], [16], as follows 
+
+bUMMSE = T −1  bXMMSE 
+
+
+
+= U + ∆ U, (20) where ∆U denotes the effective semantic latent perturbation. This motivates the introduction of the SRFM operator RU(·)
+
+R⋆ 
+
+> U
+
+= arg min 
+
+> RU
+
+E
+
+
+
+RU
+
+ bUMMSE 
+
+
+
+− U 2F
+
+
+
+. (21) In short, (15)–(18) show that channel estimation errors are converted by a CSI-based equalizer into structured equaliza-tion mismatches, which in turn induce the semantic latent disturbances described in (20). Although the two inverse prob-lems of channel estimation and equalization differ in terms of signal-domain distortion and distortion characteristics, making it difficult to address them adequately with a single model, they share the same restoration structure. Whether for channel refinement or equalization correction, their objective is to recover a clean target from observation-dependent corrupted states. Section III addresses this issue using a cascaded RFM framework. III. C ASCADED RESTORATION FLOW MATCHING WITHIN THE SWIN T-JSCC F RAMEWORK 
+
+Tailored for the SwinT-JSCC-based MIMO semantic com-munication framework, this section develops a cascaded restoration flow matching receiver for the two successive inverse recovery tasks at the receiver, namely channel restora-tion flow matching (CRFM) and semantic restoration flow matching (SRFM). 
+
+A. Semantic Representation Learning Based on SwinT-JSCC 
+
+As shown in Fig. 1, before developing the restoration flow modules, we first pretrain the SwinT-JSCC encoder-decoder to establish a stable semantic latent representation space [8]. To improve perceptual realism, an adversarial loss is incorporated through a multi-scale discriminator D, eI denotes the interpo-lated sample between the real image and the reconstructed image. We design the loss function as follows 
+
+LJSCC = λmse Lmse +λssim Lssim +λadv Ladv +λgp Lgp , (22) where 
+
+Lmse = E
+
+h
+
+∥bI − I∥22
+
+i
+
+, (23) 
+
+Lssim = 1 − SSIM( bI, I), (24) 
+
+Ladv = −E
+
+h
+
+D(bI)
+
+i
+
+, (25) 
+
+Lgp = EeI
+
+
+
+∥∇ eID(eI)∥2 − 1
+
+2
+
+, (26) where λmse , λssim , λadv , and λgp are nonnegative weighting coefficients. By minimizing LJSCC , the pretrained semantic encoder and decoder are obtained as 
+
+(θ⋆ 
+
+> e
+
+, θ ⋆
+
+> d
+
+) = arg min 
+
+> θe,θ d
+
+LJSCC , (27) which yield the semantic encoding and decoding mappings 
+
+fθ⋆ 
+
+> e
+
+(·) and gθ⋆ 
+
+> d
+
+(·), respectively. After pretraining, these two mappings are fixed to provide a stable latent representation space. 
+
+B. Unified Flow Matching Framework 
+
+In this subsection, we first introduce a unified flow matching framework for the two recovery tasks described in (19) and (21). To simplify the derivation, we use (S0, S1) to denote a generic source-target pair along a restoration path. Specifically, 
+
+(S0, S1) = 
+
+((H0, H1), for the CRFM operator ,
+
+(U0, U1), for the SRFM operator . (28) where H0, H1 ∈ R2×Nr ×Ns denote the source and target endpoints in the real-valued channel tensor space, respectively, and U0, U1 ∈ RL×D denote the source and target endpoints in the semantic latent space, respectively. FM learns a time-dependent vector field v⋆t (S) that transports a source distri-bution p0 to a target distribution p1 [36]. Let {pt}t∈[0 ,1] be a probability path connecting p0 and p1. The corresponding marginal velocity field v⋆t (S) is defined through the continuity equation 
+
+∂p t(S)
+
+∂t + ∇S ·pt(S) v⋆t (S) = 0 . (29) Ideally, one would learn a neural field vθ (St, t ) by minimizing 
+
+LFM (θ) = 
+
+Z 10
+
+ESt∼pt
+
+h
+
+∥vθ (St, t ) − v⋆t (S)∥22
+
+i
+
+dt. (30) However, directly minimizing (30) is generally intractable since the marginal velocity field is unavailable. According to conditional flow matching (CFM), this objective can be 6
+
+replaced by a tractable conditional velocity regression with the same optimal marginal vector field [36], i.e., 
+
+LCFM (θ) = Et, p t(St|S1)
+
+h
+
+vθ (St, t ) − v⋆t (St|S1) 22
+
+i
+
+. (31) For the optimal transport path [39] 
+
+St = tS1 + (1 − t)S0, (32) In standard FM, the two endpoints of the probability path are given by S0 ∼ p0 and S1 ∼ p1, where S0 ∼ p0 denotes the random source state, which is usually chosen as a standard Gaussian noise, i.e., p0∼N (0 , 1) . The resulting conditional velocity field is as follows 
+
+v⋆t (St|S1) = dSt
+
+dt = S1 − S0. (33) Therefore, the CFM loss is rewritten as 
+
+LCFM (θ) = Et, (S0,S1)
+
+h
+
+vθ (St, t ) − (S1 − S0) 22
+
+i
+
+. (34) Based on the probabilistic path model described above, the generation process can be viewed as a transition from Gaussian noise to the target data distribution. However, for communication recovery tasks, this noise-to-data paradigm is not always the most natural choice. Unlike unconditional generation, the receiver’s goal is to recover the specific channel or semantic latent state corresponding to the currently received observations. Therefore, the recovered results must not only be distribution-wise reasonable but also consistent with the received pilot signals or semantic observations. To address this issue, we propose training and inference schemes for the RFM model in Sections III-C and III-D, respectively. 
+
+C. Training of Restoration Flow Matching Models 
+
+In this subsection, we train the CRFM and SRFM modules as coarse-to-clean restoration flow models. For each clean target, we construct a controlled perturbed source state and learn a constant-velocity path toward the paired clean state. The training of the CRFM velocity field is parameterized using a UNet-based network [12], while the training of the SRFM velocity field is parameterized using a DiT-based network [13]. Specifically, we inject controlled perturbation into the clean channel state and the clean semantic latent variables as the source states, while using the corresponding clean states as the recovery targets, as follows 
+
+S0 
+
+> τ
+
+= S1 + τ ξ, ξ ∼ N (0, I), (35) where τ > 0 controls the perturbation strength around the clean-state manifold. Here, S0 
+
+> τ
+
+represents the perturbed chan-nel state in CRFM, or the perturbed semantic latent state in SRFM. In this way, the source states are locally perturbed states around the clean state manifold. This provides a man-ageable training path from coarse to clean states for learning the restoration vector field used for channel refinement and equalization correction. For t ∈ [0 , 1] , the associated interpolation path is defined as 
+
+Stτ = tS1 + (1 − t)S0 
+
+> τ
+
+= S1 + (1 − t)τ ξ. (36) Taking the derivative of (36) with respect to t gives the conditional velocity 
+
+utτ ≜ dStτ
+
+dt = −τ ξ. (37) This path starts from the perturbed source state S0 
+
+> τ
+
+at t = 0 
+
+and reaches the clean target state S1 at t = 1 . Therefore, the restoration flow field can be trained through the following single-anchor velocity regression objective 
+
+LRFM (θ; τ ) = ES1,ξ,t 
+
+h
+
+vθ (Stτ , t ) − utτ
+
+> 22
+
+i
+
+. (38) Accordingly, the generic restoration path in (36) is instan-tiated for CRFM and SRFM as 
+
+Htτ = H1 + (1 − t)τ ξ, (39) 
+
+Utτ = U1 + (1 − t)τ ξ, (40) where Htτ and Utτ denote the intermediate restoration states at time t in the channel and semantic latent domains, respectively. For notational simplicity, ξ denotes an independently sampled Gaussian perturbation in each domain, with dimensions con-formable to H1 or U1.Since the two restoration paths are linear in t, their target velocities are both given by −τ ξ. Accordingly, the CRFM and SRFM velocity fields are learned in their respective domains by minimizing the following task-specific velocity-regression objectives 
+
+LH(θH; τ ) = EH1,ξ,t 
+
+h
+
+vθH (Htτ , t ) + τ ξ 22
+
+i
+
+, (41) 
+
+LU(θU; τ ) = EU1,ξ,t 
+
+h
+
+vθU (Utτ , t ) + τ ξ 22
+
+i
+
+, (42) where θH and θU are the trainable parameters of the CRFM and SRFM velocity networks, respectively. These objectives force the predicted velocity fields to match the constant restoration directions along the channel-domain and semantic-domain paths. Therefore, the learned networks are encouraged to progressively transport perturbed states toward their corre-sponding clean targets. The following proposition shows that the resulting optimal restoration velocity is proportional to the score of the Gaussian-smoothed clean-state distribution. 
+
+Proposition 1: Under the fixed-perturbation path in (36) 
+
+with the standard Gaussian perturbation in (35) , let v⋆τ (s, t ) be the population-risk minimizer of (38) over square-integrable velocity fields, where τ > 0 and t ∈ [0 , 1) . Assume that the marginal density ptτ (s) of Stτ is differentiable and positive. Then, 
+
+v⋆τ (s, t ) = (1 − t)τ 2∇s log ptτ (s). (43) 
+
+Proof: For a fixed t ∈ [0 , 1) , (38) reduces to a squared-error regression problem that maps the intermediate state Stτ
+
+to the target velocity utτ [36]. Therefore, the population-risk minimizer is given by the conditional mean estimator 
+
+v⋆τ (s, t ) = E utτ Stτ = s . (44) From the restoration path in (36) and the target velocity in (37), we have 
+
+utτ = −τ ξ = S1 − Stτ
+
+1 − t . (45) 7
+
+Substituting (45) into (44) gives 
+
+v⋆τ (s, t ) = E S1 Stτ = s − s
+
+1 − t . (46) Under the Gaussian perturbation model in (35), Stτ | S1 ∼N (S1, σ 2
+
+> τ,t
+
+I), where σ2 
+
+> τ,t
+
+= (1 −t)2τ 2. Therefore, ptτ (s) is the Gaussian-smoothed density of the clean state. By Tweedie’s identity [40], we have 
+
+E S1 Stτ = s − s = σ2
+
+> τ,t
+
+∇s log ptτ (s). (47) Substituting (47) into (46) yields 
+
+v⋆τ (s, t ) = σ2
+
+> τ,t
+
+1 − t ∇s log ptτ (s) = (1 − t)τ 2∇s log ptτ (s). (48) This completes the proof. ■
+
+Remark 1: Proposition 1 provides a score-based interpretation of the fixed-perturbation RFM objective. Specifically, the population-optimal velocity field does not merely fit the artifi-cially injected Gaussian perturbation of each training sample. Rather, it captures a local restoration direction characterized by the score of the Gaussian-smoothed clean-state density, which guides perturbed states toward the clean-state manifold. These directions point toward regions of high probability on the “clean channel” or the “clean semantic latent”. Hence, the online initial state need not exactly follow the artificial Gaussian perturbation model used in training, as long as the receiver-side coarse estimate lies within the clean-state neighborhood. However, a single perturbation anchor is insufficient to characterize the heterogeneous distortion conditions encoun-tered by practical receivers [41], [42]. Specifically, a small perturbation anchor generates training states close to the clean-state manifold and is suitable for fine-grained refinement, but it provides limited coverage for severely corrupted coarse receiver states. In contrast, a large perturbation anchor enlarges the coverage of heavily distorted states, but may weaken the local restoration accuracy around the clean-state manifold. To accommodate different distortion levels, we introduce a dual-anchor perturbation training strategy with two perturba-tion anchors 0 < τ ℓ < τ h. The low perturbation anchor τℓ
+
+focuses on local refinement around the clean-state manifold, whereas the high perturbation anchor τh improves the cov-erage of strongly corrupted receiver states. The sensitivity to the perturbation-anchor selection is empirically evaluated in Section IV-B. Specifically, the low- and high-anchor restoration paths are defined as 
+
+Stτℓ = S1 + (1 − t)τℓξ, Stτh = S1 + (1 − t)τhξ, (49) The corresponding conditional restoration velocities are de-fined as 
+
+utτℓ ≜ dStτℓ
+
+dt = −τℓξ, utτh ≜ dStτh
+
+dt = −τhξ. (50) 
+
+Algorithm 1 Training of CRFM 
+
+Require: Clean channel tensor dataset DH, perturbation an-chors {τℓ, τ h}, batch size B, iterations Nit .
+
+Ensure: Trained channel velocity field vθ⋆ 
+
+> H
+
+(·, t ). 
+
+> 1:
+
+for n = 1 , . . . , N it do  
+
+> 2:
+
+Sample clean channel targets {H1,(b)}Bb=1 from DH. 
+
+> 3:
+
+Sample t(b) ∼ U (0 , 1) and τ (b) ∈ { τℓ, τ h}. 
+
+> 4:
+
+Construct the channel restoration state and target ve-locity according to (49) and (50).  
+
+> 5:
+
+Update θH by gradient step on LH(θH; τℓ, τ h) in (52).  
+
+> 6:
+
+end for Algorithm 2 Training of SRFM 
+
+Require: Image dataset DI, pretrained semantic encoder 
+
+fθe (·), quantizer Q(·), perturbation anchors 
+
+{τℓ, τ h}, batch size B, iterations Nit .
+
+Ensure: Trained semantic velocity field vθ⋆ 
+
+> U
+
+(·, t ). 
+
+> 1:
+
+for n = 1 , . . . , N it do  
+
+> 2:
+
+Sample images {I(b)}Bb=1 from DI and obtain clean semantic targets U1,(b) = Q(fθe (I(b))) . 
+
+> 3:
+
+Sample t(b) ∼ U (0 , 1) and τ (b) ∈ { τℓ, τ h}. 
+
+> 4:
+
+Construct the semantic restoration state and target velocity according to (49) and (50).  
+
+> 5:
+
+Update θU by gradient step on LU(θU; τℓ, τ h) in (53).  
+
+> 6:
+
+end for Dual-anchor Perturbation Training Objective: Based on (49) and (50), the dual-perturbation restoration flow matching objective is formulated as 
+
+LRFM (θ; τℓ, τ h) = ωℓES1,ξ,t 
+
+h
+
+vθ
+
+ Stτℓ , t  − utτℓ
+
+> 22
+
+i
+
++ ωhES1,ξ,t 
+
+h
+
+vθ
+
+ Stτh , t  − utτh
+
+> 22
+
+i
+
+,
+
+(51) In this work, we set ωℓ = ωh = 1 /2 to balance near-manifold refinement and large-error correction. Based on the single-anchor restoration objectives in (41) and (42), the proposed dual-anchor perturbation training objectives for CRFM and SRFM are obtained by weighted aggregation over the low-and high-perturbation anchors 
+
+θ⋆ 
+
+> H
+
+= arg min 
+
+> θH
+
+{ωℓLH(θH; τℓ) + ωhLH(θH; τh)}
+
+| {z } 
+
+> ≜LH(θH;τℓ,τ h)
+
+, (52) 
+
+θ⋆ 
+
+> U
+
+= arg min 
+
+> θU
+
+{ωℓLU(θU; τℓ) + ωhLU(θU; τh)}
+
+| {z } 
+
+> ≜LU(θU;τℓ,τ h)
+
+, (53) where θ⋆ 
+
+> H
+
+and θ⋆ 
+
+> U
+
+are the optimized parameters for CRFM and SRFM, respectively. It is worth noting that each of these two modules learns a mixed restoration vector field on the composite trajectory distribution induced by these two perturbation anchors. The following analysis shows that the dual-perturbation objectives in (52) and (53) can be interpreted as a velocity regression problem over a mixture of restoration-path distribu-tions. This interpretation explains how a single shared velocity field can adapt to different receiver-side corruption levels without requiring a densely sampled perturbation schedule. 8CRFM  
+
+> Velocity Field
+> Euler steps
+> MMSE
+> Equalizer
+> SRFM
+> Velocity Field
+> Euler steps
+> Fig. 2. Overall workflow of the proposed cascaded RFM inference.
+
+Let μtτℓ and μtτh denote the joint distributions of (Stτℓ , utτℓ )
+
+and (Stτh , utτh ), respectively. The mixture training law is given by 
+
+μtτℓ,τ h = ωℓμtτℓ + ωhμtτh . (54) Let ptτ (s) denote the marginal density of Stτ for τ ∈{τℓ, τ h}. Since Stτ = S1 + (1 − t)τ ξ, we have 
+
+ptτ (s) = ES1∼p1
+
+N  s; S1, (1 − t)2τ 2I , τ ∈ { τℓ, τ h}.
+
+(55) Accordingly, 
+
+ptτℓ,τ h (s) = ωℓptτℓ (s) + ωhptτh (s). (56) For each anchor, define the corresponding population opti-mal velocity field as 
+
+v⋆τ (s, t ) = Eμtτ [u | S = s] , τ ∈ { τℓ, τ h}. (57) 
+
+Proposition 2: For a fixed t ∈ [0 , 1) , consider the population squared-risk minimizer under the mixture law μtτℓ,τ h ,
+
+v⋆τℓ,τ h (·, t ) = arg min  
+
+> v
+
+Eμtτℓ,τ h
+
+h
+
+∥v(S, t ) − u∥22
+
+i
+
+. (58) 
+
+For any s with ptτℓ,τ h (s) > 0, the optimal velocity field satisfies 
+
+v⋆τℓ,τ h (s, t ) = γτℓ (s, t )v⋆τℓ (s, t ) + γτh (s, t )v⋆τh (s, t ), (59) 
+
+where 
+
+γτℓ (s, t ) = ωℓptτℓ (s)
+
+ωℓptτℓ (s) + ωhptτh (s) , (60) 
+
+γτh (s, t ) = ωhptτh (s)
+
+ωℓptτℓ (s) + ωhptτh (s) . (61) Proof. See Appendix A. ■
+
+Remark 2: Proposition 2 shows that dual-anchor perturbation training yields a shared population-optimal velocity field that adaptively combines the anchor-specific velocities through posterior responsibilities. These responsibilities act as implicit soft gates over different corruption scales: the low-perturbation anchor dominates near the clean-state manifold, whereas the high-perturbation anchor becomes more influential for severely distorted states. Therefore, the proposed strategy provides a compact multi-scale restoration mechanism for imperfect-CSI MIMO semantic reception, without requiring a dense perturbation schedule. 
+
+D. Cascaded ODE-Based Inference for Restoration Flow Matching 
+
+Based on the learned restoration vector fields, we develop a cascaded RFM inference scheme by solving two succes-sive recovery ODEs for channel refinement and equalization correction, as illustrated in Fig. 2. An important feature of the proposed inference is that the restoration trajectories are coupled with the physical measurements through observation-dependent initialization. In the channel domain, the ODE starts from the LS estimate, which is directly obtained from the pilot observation and therefore already encodes the pilot measure-ment constraint. Hence, CRFM does not generate a channel realization from an uninformative prior, but performs prior-guided residual correction around a pilot-consistent coarse CSI. Similarly, in the semantic domain, the initial state is the MMSE-equalized latent representation obtained from the actual data observation using the restored channel, followed by the deterministic receive-side demapping. This state inherits the regularized data-fitting property of the MIMO receiver chain and serves as a coarse semantic representation. This design reduces the risk of the generated distribution being reasonable but inconsistent with measurement results, while retaining the ability to perform rapid ODE inference within a few steps. Accordingly, fast online inference is achieved with only kH = 5 CRFM Euler steps and kU = 2 SRFM Euler steps, as determined by the sensitivity analysis in Section IV-B. Specifically, the CRFM and SRFM operators are im-plemented as terminal-state mappings of two deterministic restoration ODEs. For the channel-domain trajectory, the initial and terminal states are given by H[0] = HLS and bH = H[kH],respectively. Using a uniform time grid t[k]H = k/k H, where 
+
+kH denotes the number of CRFM sampling steps, and the time step is ∆tH = 1 /k H, the explicit Euler discretization can be expressed as 
+
+H[k+1] = H[k] + ∆ tH vθ⋆
+
+> H
+
+
+
+H[k], t [k]H
+
+
+
+, k = 0 , . . . , k H − 1.
+
+(62) After channel restoration, the refined channel bH is used for MMSE equalization according to (12), yielding the coarse semantic latent representation bUMMSE .For the semantic-domain trajectory, the initial and terminal states are U[0] = bUMMSE and bU = U[kU], respectively. With 9
+
+t[k]U = k/k U and ∆tU = 1 /k U, the explicit Euler discretization of the SRFM ODE is given by 
+
+U[k+1] = U[k] + ∆ tU vθ⋆
+
+> U
+
+
+
+U[k], t [k]U
+
+
+
+, k = 0 , . . . , k U − 1.
+
+(63) As a result, CRFM first calibrates the pilot-derived LS channel estimate, thereby reducing the CSI mismatch before equalization. SRFM then compensates for the residual latent distortion after MMSE equalization. The restored semantic latent representation bU is finally fed into the semantic decoder according to (14). IV. N UMERICAL RESULTS 
+
+In this section, we conduct a series of experiments to evaluate the performance of the proposed scheme, providing a comprehensive demonstration of its effectiveness across various scenarios. 
+
+A. Experimental Setup 1) Dataset and System Configurations: The wireless prop-agation channels are generated according to the CDL-B and CDL-C models specified in 3GPP TR 38.901 [43]. Unless otherwise stated, 10 ,000 independent channel realizations are used for training and 1,000 independent channel realizations are used for testing. The carrier frequency is set to 40 GHz ,and the normalized antenna spacing is fixed at 0.5. Throughout the experiments, we consider a MIMO configuration with 
+
+Nt = 64 transmit antennas and Nr = 16 receive antennas. The number of spatial streams is set to Ns = 4 by default. For visual semantic transmission, we use two image datasets constructed from ImageNet-mini [44] and CelebA [45]. All images are center-cropped and resized to 512 × 512 before semantic encoding. The ImageNet-mini split contains 34 ,745 
+
+training images and 3,923 testing images, while the CelebA split contains 2,693 training images and 300 testing images. 
+
+2) Training and Inference Configurations: All our experi-ments are performed on a Linux server with RTX 4090 GPU. The overall framework consists of three learnable components, namely the SwinT-JSCC semantic transceiver, the CRFM mod-ule and the SRFM module. The SwinT-JSCC encoder-decoder is first trained over an AWGN channel at SNR = 10 dB with a learning rate of 1 × 10 −4. After pretraining, the semantic transceiver is frozen, providing fixed latent representations for the SRFM training. The CRFM and SRFM modules are then trained separately according to the restoration flow matching objectives in (52) and (53), respectively. For both modules, the learning rate is set to 1 × 10 −5. The dual-anchor perturbation strategy is adopted with (τℓ, τ h) = (0 .1, 1.0) .During inference, kH = 5 , k U = 2 Euler sampling steps are used for CRFM and SRFM, respectively. 
+
+3) Evaluation Metrics: For channel estimation, we use the normalized mean square error (NMSE) [27], defined as 
+
+NMSE [dB] = 10 log 10 
+
+∥ bH − He∥2
+
+> F
+
+∥He∥2
+
+> F
+
+!
+
+. (64) For semantic reconstruction, the channel bandwidth ratio (CBR) is defined as 
+
+ρ = Nc
+
+C × H × W . (65) The CBR was set to ρ = 1 /96 throughout the experiment. The reconstruction quality is evaluated using two widely adopted image-quality metrics, namely PSNR and MS-SSIM [46]. 
+
+4) Baselines: We consider two benchmark groups for chan-nel estimation and end-to-end semantic reconstruction. For channel estimation, the proposed CRFM is bench-marked against the representative estimators covering classical model-based estimation, sparse recovery, supervised denois-ing, and generative recovery. Specifically, we consider LS 
+
+estimation [24] and Approximate MMSE [27], orthogonal matching pursuit (OMP) [25] as a sparsity-driven recovery baseline, and Score-based method [27] and DDIM-based method [32] as diffusion based generative baselines. For semantic reconstruction, we evaluate several ablation configurations of the receiver to quantify the individual and joint effects of CRFM and SRFM. The AWGN schemes, including SwinT-JSCC (train 10 dB ) and SwinT-JSCC with SRFM , are used as non-MIMO reference cases that only involve AWGN. For practical imperfect-CSI MIMO trans-mission, we consider LS-MMSE , LS-MMSE with SRFM ,
+
+LS-MMSE with CRFM , and LS-MMSE with CRFM and SRFM . LS-MMSE denotes the baseline receiver that uses LS-estimated CSI to construct the MMSE equalizer. In addition, 
+
+Perfect-CSI MMSE and Perfect-CSI MMSE with SRFM 
+
+are included as upper-bound references to quantify the perfor-mance loss caused by pilot-based CSI acquisition. A conven-tional JPEG-1/2LDPC-4QAM system is also evaluated over the same MIMO channel as a separated source-channel coding baseline [6]. 
+
+B. Sensitivity Analysis of RFM Design Parameters 
+
+This subsection examines two key factors of the proposed cascaded RFM receiver: the number of ODE sampling steps and the perturbation anchors used for RFM training. Fig. 3(a) shows the effect of the number of Euler steps on CRFM-based channel restoration. A single step is insufficient, especially in the low- and medium-SNR regions, since the learned restoration field cannot be fully integrated. As the number of steps increases from 1 to 2, the NMSE decreases rapidly, while the gain becomes marginal beyond 10 steps. This indicates that CRFM can reach a near-converged channel estimate with only a few deterministic ODE evaluations. Accordingly, we use kH = 5 in the following experiments. Fig. 3(b) presents the corresponding result for SRFM. The MS-SSIM improves noticeably with only a few semantic restoration steps, con-firming that SRFM effectively compensates for residual latent distortion after equalization. Although more steps can further improve the reconstruction quality, the incremental gain gradu-ally decreases. Considering the latency requirement of seman-tic receivers, we adopt kU = 2 as a practical operating point. Figs. 3(c) and 3(d) compare different perturbation anchors. The low-perturbation anchor τℓ = 0 .1 is more effective in the high-SNR region, where the coarse estimate is already 10 −5 0 5 10 15 
+
+> SNR (dB)
+> −15
+> −10
+> −5
+> 0
+> 5
+> NMSE (dB)
+> LS
+> CRFM (1 step)
+> CRFM (2 steps)
+> CRFM (5 steps)
+> CRFM (10 steps)
+> CRFM (20 steps)
+> CRFM (50 steps)
+
+(a) −2.5 0.0 2.5 5.0 7.5 10.0 12.5 15.0      
+
+> SNR (dB)
+> 0.50
+> 0.55
+> 0.60
+> 0.65
+> 0.70
+> 0.75
+> 0.80
+> 0.85
+> 0.90
+> MS-SSIM
+> Without SRFM
+> SRFM (1 step)
+> SRFM (2 steps)
+> SRFM (4 steps)
+> SRFM (8 steps)
+> SRFM (10 steps)
+> SRFM (20 steps)
+> 6810 12 14
+> 0.775
+> 0.800
+> 0.825
+> 0.850
+> 0.875
+> 0.900
+> 0.925
+
+(b) −5.0 −2.5 0.0 2.5 5.0 7.5 10.0 12.5 15.0                  
+
+> SNR (dB)
+> −15
+> −10
+> −5
+> 0
+> NMSE (dB)
+> CRFM τ= 0.1
+> CRFM τ= 1.0
+> CRFM τℓ= 0.1, τh= 1.0
+> CRFM τ= 0.5
+> CRFM τ= 0.8
+> CRFM τℓ= 0.5, τh= 0.8
+
+(c) −3 0 3 6 9 12 15                  
+
+> SNR (dB)
+> 0.50
+> 0.55
+> 0.60
+> 0.65
+> 0.70
+> 0.75
+> 0.80
+> 0.85
+> 0.90
+> MS-SSIM
+> SRFM τ= 1
+> SRFM τ= 0.1
+> SRFM τℓ= 0.1, τh= 1.0
+> SRFM τ= 0.8
+> SRFM τ= 0.5
+> SRFM τℓ= 0.5, τh= 0.8
+
+(d) 
+
+Fig. 3. Ablation study of the proposed cascaded RFM receiver under different ODE sampling steps and perturbation anchors. (a) Channel-estimation NMSE versus SNR over the CDL-C channel for different CRFM Euler steps, with Tp = 4 . (b) Semantic reconstruction MS-SSIM versus SNR for different SRFM Euler steps under perfect CSI. (c) Channel-estimation NMSE versus SNR over the CDL-C channel for different CRFM perturbation anchors, with Tp = 4 .(d) Semantic reconstruction MS-SSIM versus SNR for different SRFM perturbation anchors under perfect CSI. 5 0 5 10 15 
+
+> SNR (dB)
+> 15
+> 10
+> 5
+> 0
+> 5
+> NMSE (dB)
+> LS
+> OMP
+> DDIM-based method
+> Score-based method
+> Proposed CRFM
+> Approximate MMSE
+
+(a) 5 0 5 10 15  
+
+> SNR (dB)
+> 15
+> 10
+> 5
+> 0
+> 5
+> NMSE (dB)
+> LS
+> OMP
+> DDIM-based method
+> Score-based method
+> Proposed CRFM
+> Approximate MMSE
+
+(b) 2 4 6 8 10 12  
+
+> Pilot length
+> 18
+> 16
+> 14
+> 12
+> 10
+> 8
+> 6
+> 4
+> 2
+> NMSE (dB)
+> LS
+> OMP
+> DDIM-based method
+> Score-based method
+> Proposed CRFM
+> Approximate MMSE
+
+(c) 2 4 6 8 10 12  
+
+> Pilot length
+> 17.5
+> 15.0
+> 12.5
+> 10.0
+> 7.5
+> 5.0
+> 2.5
+> NMSE (dB)
+> LS
+> OMP
+> DDIM-based method
+> Score-based method
+> Proposed CRFM
+> Approximate MMSE
+
+(d) 
+
+Fig. 4. Channel-estimation NMSE comparison over 3GPP CDL-B and CDL-C MIMO channels. (a) NMSE versus SNR over CDL-B with Tp = 4 . (b) NMSE versus SNR over CDL-C with Tp = 4 . (c) NMSE versus pilot length over CDL-B at SNR = 10 dB . (d) NMSE versus pilot length over CDL-C at 
+
+SNR = 10 dB .
+
+close to the clean manifold. By contrast, the high-perturbation anchor τh = 1 .0 provides stronger robustness in the low-SNR region with severe corruption. The dual-anchor model with 
+
+(τℓ, τ h) = (0 .1, 1.0) achieves the most balanced performance over the whole SNR range. These results verify that the proposed receiver is both sample-efficient and robust: few-step ODE inference is sufficient for online restoration, while dual-anchor training enables the learned flow to handle both coarse recovery and near-manifold refinement. 
+
+C. Evaluation of Channel Estimation Performance 
+
+We next evaluate the channel-estimation performance of the proposed CRFM under different SNRs and pilot lengths. The purpose is to verify whether CRFM can improve the coarse LS estimate under both noise-limited and pilot-limited conditions. Figs. 4(a) and 4(b) show the NMSE versus SNR over the CDL-B and CDL-C channels, respectively, with the pilot length fixed at Tp = 4 . The proposed CRFM consistently achieves lower NMSE than LS, OMP, DDIM-based estimation, and score-based estimation over both channel models. The gain is especially evident in the low-SNR region, where the LS observation is severely corrupted and conventional sparse or generative baselines suffer from residual estimation errors. This confirms that CRFM can effectively learn a coarse-to-clean restoration field from noisy pilot-based channel es-timates. Compared with the approximate MMSE estimator, CRFM also shows competitive performance without requiring explicit online covariance modeling. Figs. 4(c) and 4(d) further compare the NMSE performance versus pilot length at SNR = 3 0 3 6 9 12 15 
+
+> SNR (dB)
+
+0.3 
+
+0.4 
+
+0.5 
+
+0.6 
+
+0.7 
+
+0.8 
+
+0.9 
+
+> MS-SSIM
+> LS
+> OMP
+> DDIM-based method
+> Score-based method
+> CRFM without SRFM
+> CRFM with SRFM
+> Perfect CSI
+> Perfect CSI with SRFM
+
+Fig. 5. Semantic reconstruction MS-SSIM versus SNR under different channel-estimation algorithms, with Tp = 8 and ρ = 1 /96 .
+
+10 dB . As expected, increasing Tp improves the estimation accuracy of all methods, since more pilot observations provide a more reliable coarse channel estimate. However, CRFM maintains a clear advantage in the short-pilot regime, where channel recovery is more challenging and pilot overhead is more critical. The performance gap gradually decreases as the pilot length increases, but CRFM remains among the best practical schemes over the whole pilot range. 
+
+D. The Impact of Different Channel Estimation Algorithms on Semantic Reconstruction 
+
+Figs. 5 and 6 show the MS-SSIM and PSNR performance under different channel-estimation algorithms. The results reveal a clear correlation between CSI accuracy and semantic reconstruction quality. In this experiment, different channel estimators are used to construct the MMSE equalizer, while the 11 3 0 3 6 9 12 15       
+
+> SNR (dB)
+> 14
+> 16
+> 18
+> 20
+> 22
+> 24
+> PSNR (dB)
+> LS
+> OMP
+> DDIM-based method
+> Score-based method
+> CRFM without SRFM
+> CRFM with SRFM
+> Perfect CSI
+> Perfect CSI with SRFM
+> Fig. 6. Semantic reconstruction PSNR versus SNR under different channel-estimation algorithms, with Tp= 8 and ρ= 1 /96 .
+
+semantic encoder, decoder, MIMO configuration, and restora-tion settings are kept unchanged. This comparison isolates the impact of CSI quality on the final image reconstruc-tion performance. Less accurate channel estimates introduce stronger MMSE equalization mismatch, which appears as residual amplitude-phase distortion and inter-stream interfer-ence in the recovered semantic latent representation. Conse-quently, both perceptual similarity and pixel-level fidelity are degraded. With the proposed CRFM, the receiver achieves consistently better semantic reconstruction over the whole SNR range, indicating that the channel-estimation NMSE gain is effectively transferred to the semantic domain through more reliable equalization. Moreover, SRFM further improves the reconstruction quality by refining the residual latent distortion after equalization. 
+
+E. Ablation Study of Cascaded CRFM and SRFM for Image Reconstruction 
+
+Fig. 7 evaluates the image reconstruction performance of different receiver configurations on ImageNet-mini and CelebA, including AWGN reference schemes, imperfect-CSI MIMO receivers, perfect-CSI upper-bound receivers, and the JPEG-1/2LDPC-4QAM baseline. For the AWGN reference case, the degradation mainly comes from additive channel noise and SNR mismatch with the pretrained SwinT-JSCC model. The performance gain of AWGN+SRFM over the plain AWGN receiver shows that SRFM can effectively refine semantic latent perturbations caused by additive noise alone. In imperfect-CSI MIMO transmission, the LS-MMSE receiver suffers further degradation because pilot-induced channel-estimation errors lead to MMSE equalization mismatch, which introduces structured distortion into the recovered semantic latent representation. The ablation results show that CRFM and SRFM play complementary roles. Therefore, the cascaded CRFM-SRFM receiver achieves the best performance among all imperfect-CSI schemes and substantially approaches the perfect-CSI upper bound over a wide SNR range. The con-sistent improvements on both datasets demonstrate the ef-fectiveness of the proposed cascaded restoration design in enhancing perceptual similarity and pixel-level fidelity. In contrast, the JPEG-1/2LDPC-4QAM baseline exhibits a typ-ical low-SNR cliff effect, whereas the JSCC-based schemes degrade more gracefully. Fig. 8 provides representative visual examples. The LS-MMSE receiver produces visible artifacts                
+
+> TABLE I COMPUTATIONAL COMPLEXITY AND INFERENCE LATENCY COMPARISON .
+> Method MACs/Forward Params Latency
+> Score-based method 40 .98 M2.68 M6.58 sDDIM-based method 41 .05 M2.68 M831 .19 ms CRFM 40 .98 M2.68 M0.52 ms SRFM 21 .8G129 .81 M35 .78 ms
+
+and structural distortions, whereas CRFM alleviates channel-induced degradation and SRFM further improves semantic details and textures. The cascaded CRFM-SRFM receiver yields the most faithful reconstruction among the imperfect-CSI schemes, which is consistent with the quantitative results in Fig. 7. 
+
+F. Complexity and Latency Comparison 
+
+To evaluate the online receiver overhead from an imple-mentation perspective, Table I reports the multiply–accumulate operations (MACs), the number of trainable parameters, and the inference latency of the considered receiver-side mod-ules. MACs/Forward denotes the computational cost of one neural-network evaluation, whereas Latency denotes the aver-age runtime of the complete inference procedure under the adopted sampling configuration. For a fair comparison,the score-based method, the DDIM-based method, and CRFM are implemented with the same UNet-based network backbone [12]. Therefore, these three methods have nearly identical single-forward computational costs and model sizes, with about 41 M MACs and 2.68 M trainable parameters. Their latency difference mainly comes from the number and type of sampling steps. Specifically, the latency of the score-based method includes the complete sampling chain with 50 noise levels and 3 Langevin correction steps at each level, resulting in 50 ×3 score-network evaluations. The latency of the DDIM-based method includes the full 20 -step reverse sampling chain. In contrast, CRFM performs deterministic ODE inference with only kH = 5 Euler steps. Under the measured setting, CRFM achieves the lowest infercence latency among the compared generative channel estimators. The semantic restoration mod-ule SRFM has a larger model size than CRFM, with 21 .8GMACs and 129 .81 M trainable parameters. This is expected because SRFM operates on the high-dimensional semantic latent representation rather than the low-dimensional channel tensor. V. C ONCLUSION 
+
+This paper investigated MIMO semantic communications under imperfect-CSI and formulated the receiver-side process-ing as two cascaded inverse recovery problems. To address the error propagation from channel estimation to semantic re-construction, we proposed a cascaded restoration flow match-ing receiver consisting of CRFM and SRFM. CRFM refines the coarse LS channel estimate before MMSE equalization, while SRFM restores the residual distortion in the equalized semantic latent representation. Simulation results over MIMO channels and visual semantic transmission tasks showed that 12 −3 0 3 6 9 12 15 
+
+> SNR (dB)
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> MS-SSIM
+> SwinT-JSCC(train 10dB), AWGN
+> SwinT-JSCC with SRFM, AWGN
+> LS-MMSE, MIMO
+> LS-MMSE with SRFM, MIMO
+> LS-MMSE with CRFM, MIMO
+> LS-MMSE with CRFM and SRFM, MIMO
+> Perfect CSI-MMSE, MIMO
+> Perfect CSI-MMSE with SRFM, MIMO
+> JPEG-1/2LDPC-4QAM, MIMO
+
+(a) −3 0 3 6 9 12 15  
+
+> SNR (dB)
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> MS-SSIM
+> SwinT-JSCC(train 10dB), AWGN
+> SwinT-JSCC with SRFM, AWGN
+> LS-MMSE, MIMO
+> LS-MMSE with SRFM, MIMO
+> LS-MMSE with CRFM, MIMO
+> LS-MMSE with CRFM and SRFM, MIMO
+> Perfect CSI-MMSE, MIMO
+> Perfect CSI-MMSE with SRFM, MIMO
+> JPEG-1/2LDPC-4QAM, MIMO
+
+(b) −3 0 3 6 9 12 15  
+
+> SNR (dB)
+> 7.5
+> 10.0
+> 12.5
+> 15.0
+> 17.5
+> 20.0
+> 22.5
+> 25.0
+> PSNR (dB)
+> SwinT-JSCC(train 10dB), AWGN
+> SwinT-JSCC with SRFM, AWGN
+> LS-MMSE, MIMO
+> LS-MMSE with SRFM, MIMO
+> LS-MMSE with CRFM, MIMO
+> LS-MMSE with CRFM and SRFM, MIMO
+> Perfect CSI-MMSE, MIMO
+> Perfect CSI-MMSE with SRFM, MIMO
+> JPEG-1/2LDPC-4QAM, MIMO
+
+(c) −3 0 3 6 9 12 15  
+
+> SNR (dB)
+> 10
+> 15
+> 20
+> 25
+> PSNR (dB)
+> SwinT-JSCC(train 10dB), AWGN
+> SwinT-JSCC with SRFM, AWGN
+> LS-MMSE, MIMO
+> LS-MMSE with SRFM, MIMO
+> LS-MMSE with CRFM, MIMO
+> LS-MMSE with CRFM and SRFM, MIMO
+> Perfect CSI-MMSE, MIMO
+> Perfect CSI-MMSE with SRFM, MIMO
+> JPEG-1/2LDPC-4QAM, MIMO
+
+(d) 
+
+Fig. 7. Semantic reconstruction performance under different transmission and receiver schemes on the ImageNet-mini and CelebA datasets, with Tp = 8 and 
+
+ρ = 1 /96 . (a) MS-SSIM versus SNR on ImageNet-mini. (b) MS-SSIM versus SNR on CelebA. (c) PSNR versus SNR on ImageNet-mini. (d) PSNR versus SNR on CelebA. (a) 
+
+Original image 
+
+(b) 
+
+MS-SSIM=0.880 | PSNR=27.1 dB 
+
+(c) 
+
+MS-SSIM=0.924 | PSNR=28.4 dB 
+
+(d) 
+
+MS-SSIM=0.693 | PSNR=19.5 dB 
+
+(e) 
+
+MS-SSIM=0.835 | PSNR=21.3 dB 
+
+(f) 
+
+MS-SSIM=0.855 | PSNR=26.0 dB 
+
+(g) 
+
+MS-SSIM=0.925 | PSNR=28.0 dB 
+
+(h) 
+
+MS-SSIM=0.778 | PSNR=21.7 dB 
+
+(i) 
+
+MS-SSIM=0.880 | PSNR=23.7 dB 
+
+Fig. 8. Visual reconstruction examples at SNR = 3 dB . (a) Original image; (b) SwinT-JSCC trained at 10 dB over AWGN; (c) SwinT-JSCC with SRFM over AWGN; (d) LS-MMSE over MIMO; (e) LS-MMSE with SRFM over MIMO; (f) perfect-CSI-MMSE over MIMO; (g) perfect-CSI-MMSE with SRFM over MIMO. (h) LS-MMSE with CRFM over MIMO; (i) LS-MMSE with CRFM and SRFM over MIMO; The MS-SSIM and PSNR values are reported below each reconstructed image. 
+
+the proposed method improves both physical-layer channel estimation and image reconstruction. The results confirm that channel restoration and semantic latent restoration are com-plementary for robust MIMO semantic reception. Future work will extend the proposed framework to time-varying and multi-user MIMO scenarios, and further explore adaptive sampling strategies and multimodal semantic transmission. APPENDIX ABy the L2 projection property of conditional expectation, the population minimizer of (58) is given by 
+
+v⋆τℓ,τ h (s, t ) = Eμtτℓ,τ h
+
+[u | S = s] . (66) Using the mixture law in (54), the above conditional expecta-tion can be decomposed as 
+
+Eμtτℓ,τ h
+
+[u | S = s]= ωℓptτℓ (s)
+
+ptτℓ,τ h (s) Eμtτℓ
+
+[u | S = s]+ ωhptτh (s)
+
+ptτℓ,τ h (s) Eμtτh
+
+[u | S = s] . (67) From the marginal mixture density in (56), we have 
+
+ptτℓ,τ h (s) = ωℓptτℓ (s) + ωhptτh (s). (68) Moreover, by the anchor-wise optimal velocity definition in (57), 
+
+Eμtτℓ
+
+[u | S = s] = v⋆τℓ (s, t ), Eμtτh
+
+[u | S = s] = v⋆τh (s, t ).
+
+(69) Substituting (68) and (69) into (67) yields 
+
+v⋆τℓ,τ h (s, t ) = ωℓptτℓ (s)
+
+ωℓptτℓ (s) + ωhptτh (s) v⋆τℓ (s, t )+ ωhptτh (s)
+
+ωℓptτℓ (s) + ωhptτh (s) v⋆τh (s, t ). (70) Recognizing the two coefficients in (70) as γτℓ (s, t ) and 
+
+γτh (s, t ) defined in (60) and (61), respectively, we obtain (59). This completes the proof. ■
+
+REFERENCES [1] P. Zhang et al., “Toward wisdom-evolutionary and primitive-concise 6G:A new paradigm of semantic communication networks,” Engineering. , vol. 8, pp. 60–73, Jan. 2022. [2] W. Yang et al., “Semantic Communications for Future Internet: Funda-mentals, Applications, and Challenges,” IEEE Commun. Surv. Tutorials. ,vol. 25, no. 1, pp. 213-250, Firstquarter, 2023. [3] C. Chaccour, W. Saad, M. Debbah, Z. Han, and H. Vincent Poor, “Less Data, More Knowledge: Building Next-Generation Semantic Communi-cation Networks,” IEEE Commun. Surv. Tutorials. , vol. 27, no. 1, pp. 37-76, Feb. 2025. [4] M. Kountouris and N. Pappas, “Semantics-empowered communication for networked intelligent systems,” IEEE Commun. Mag. , vol. 59, no. 6, pp. 96–102, Jun. 2021. [5] J. Dai et al., “Nonlinear transform source-channel coding for semantic communications,” IEEE J. Sel. Areas Commun. , vol. 40, no. 8, pp. 2300–2316, Aug. 2022. [6] E. Bourtsoulatze, D. B. Kurka, and D. G¨ und¨ uz, “Deep joint source-channel coding for wireless image transmission,” IEEE Trans. Cognit. Commun. Netw. , vol. 5, no. 3, pp. 567–579, Sep. 2019. 13 
+
+[7] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, L. Kaiser, and I. Polosukhin, “Attention is all you need,” in Proc. Adv. Neural Inf. Process. Syst. (NeurIPS) , 2017, pp. 5998–6008. [8] Z. Liu, Y. Lin, Y. Cao, H. Hu, Y. Wei, Z. Zhang, S. Lin, and B. Guo, “Swin transformer: Hierarchical vision transformer using shifted windows,” in 
+
+Proc. IEEE/CVF Int. Conf. Comput. Vis. (ICCV) , 2021, pp. 10012–10022. [9] J. Xu, B. Ai, W. Chen, A. Yang, P. Sun, and M. Rodrigues, “Wireless image transmission using deep source channel coding with attention modules,” IEEE Trans. Circuits Syst. Video Technol. , vol. 32, no. 4, pp. 2315–2328, Apr. 2022. [10] M. Ding, J. Li, M. Ma, and X. Fan, “SNR-adaptive deep joint source-channel coding for wireless image transmission,” in Proc. IEEE Int. Conf. Acoust., Speech, Signal Process. (ICASSP) , Toronto, ON, Canada, Jun. 2021, pp. 1555–1559. [11] K. Yang, S. Wang, J. Dai, X. Qin, K. Niu, and P. Zhang, “SwinJSCC: Taming Swin Transformer for Deep Joint Source-Channel Coding,” IEEE Trans. Cognit. Commun. Netw. , vol. 11, no. 1, pp. 90–104, Feb. 2025. [12] J. Ho, A. Jain, and P. Abbeel, “Denoising diffusion probabilistic models,” in Adv. Neural Inf. Process. Syst. (NeurIPS) , vol. 33, 2020, pp. 6840– 6851. [13] W. Peebles and S. Xie, “Scalable diffusion models with transformers,” in Proc. IEEE/CVF Int. Conf. Comput. Vis. , Oct. 2023, pp. 4195–4205. [14] S. Welker, H. N. Chapman, and T. Gerkmann, “DriftRec: Adapting Dif-fusion Models to Blind JPEG Restoration,” IEEE Trans. Image Process. ,vol. 33, pp. 2795–2807, 2024. [15] T. Wu, Z. Chen, D. He, L. Qian, Y. Xu, M. Tao, and W. Zhang, “CDDM: Channel denoising diffusion models for wireless semantic communications,” IEEE Trans. Wireless Commun. , vol. 23, no. 9, pp. 11168–11183, Sep. 2024. [16] B. Xu, S. Han, X. Xu, W. Li, R. Meng, C. Dong, and P. Zhang, “Se-mantic prior aided channel-adaptive equalizing and de-noising semantic communication system with latent diffusion model,” IEEE Trans. Wireless Commun. , vol. 24, no. 6, pp. 4614–4630, Jun. 2025. [17] T. Wu, Z. Chen, D. He, F. Yang, M. Tao, X. Xu, W. Zhang, and P. Zhang, “ICDM: Interference cancellation diffusion models for wireless semantic communications,” IEEE J. Sel. Areas Commun. , vol. 44, pp. 2528–2543, 2026. [18] J. Xu, T.-Y. Tung, B. Ai, W. Chen, Y. Sun, and D. G¨ und¨ uz, “Deep joint source-channel coding for semantic communications,” IEEE Commun. Mag. , vol. 61, no. 11, pp. 42–48, Nov. 2023. [19] R. Chataut and R. Akl, “Massive MIMO systems for 5G and beyond networks—Overview, recent trends, challenges, and future research di-rection,” Sensors. , vol. 20, no. 10, Art. no. 2753, May 2020. [20] C. Bian, Y. Shao, H. Wu, and D. G¨ und¨ uz, “Space-time design for deep joint source-channel coding of images over MIMO channels,” in 
+
+Proc. IEEE 24th Int. Workshop Signal Process. Adv. Wireless Commun. (SPAWC) , 2023, pp. 616–620. [21] Y. Duan, T. Wu, Z. Chen, and M. Tao, “DM-MIMO: Diffusion models for robust semantic communications over MIMO channels,” in Proc. IEEE/CIC Int. Conf. Commun. China (ICCC) , Hangzhou, China, 2024, pp. 1609–1614. [22] H. Wu, Y. Shao, C. Bian, K. Mikolajczyk, and D. G¨ und¨ uz, “Deep joint source-channel coding for adaptive image transmission over MIMO channels,” IEEE Trans. Wireless Commun. , vol. 23, no. 10, pp. 15002– 15017, Oct. 2024. [23] J. Park, Y. Oh, J. Park, and Y.-S. Jeon, “Importance-aware semantic communication in MIMO-OFDM systems using vision transformer,” 
+
+IEEE Trans. Wireless Commun. , vol. 25, pp. 13494–13510, Mar. 2026. [24] M. K. Ozdemir and H. Arslan, “Channel estimation for wireless ofdm systems,” IEEE Commun. Surv. Tutorials. , vol. 9, no. 2, pp. 18-48, Second Quarter 2007. [25] C. Ruan, Z. Zhang, H. Jiang, Y. Qi, J. Dang, and L. Wu, “Low com-plexity orthogonal matching pursuit-based near-field channel estimation in XL-MIMO systems,” IEEE Commun. Lett. , vol. 28, no. 12, pp. 2859– 2863, Dec. 2024. [26] C. Liu, X. Liu, D. W. K. Ng, and J. Yuan, “Deep residual learning for channel estimation in intelligent reflecting surface-assisted multi-user communications,” IEEE Trans. Wireless Commun. , vol. 21, no. 2, pp. 898–912, Feb. 2022. [27] M. Arvinte and J. I. Tamir, “MIMO Channel Estimation Using Score-Based Generative Models,” IEEE Trans. Wireless Commun. , vol. 22, no. 6, pp. 3698-3713, Jun. 2023. [28] X. Zhou, L. Liang, J. Zhang, P. Jiang, Y. Li, and S. Jin, “Generative Diffusion Models for High Dimensional Channel Estimation,” IEEE Trans. Wireless Commun. , vol. 24, no. 7, pp. 5840-5854, Jul. 2025. [29] Y. Feng, Z. Shan, H. Shen, X. Shi, Q. Yang, and J. Chen, “Digital semantic communication system with a learnable channel estimator for OFDM transmission,” IEEE Trans. Cognit. Commun. Netw. , vol. 11, no. 5, pp. 3361–3370, 2025. [30] Z. Weng, Z. Qin, H. Xie, X. Tao, and K. B. Letaief, “Semantic MIMO systems for speech-to-text transmission,” IEEE Trans. Wireless Commun. ,vol. 23, no. 12, pp. 18697–18710, Dec. 2024. [31] Y. Sun, H. Shen, W. Xu, N. Hu and C. Zhao, “Robust MIMO Detection With Imperfect CSI: A Neural Network Solution,” IEEE Trans. Commun. ,vol. 71, no. 10, pp. 5877-5892, Oct. 2023. [32] J. Song, C. Meng, and S. Ermon, “Denoising diffusion implicit models,” in Proc. Int. Conf. Learn. Represent. (ICLR) , 2021. [33] X. Ma, Y. Xin, Y. Ren, D. Burghal, H. Chen, and J. C. Zhang, “Diffusion model based channel estimation,” in Proc. IEEE Int. Conf. Commun. Workshops (ICC Workshops) , 2024, pp. 1159–1164. [34] B. Fesl, M. Baur, F. Strasser, M. Joham, and W. Utschick, “Diffusion-based generative prior for low-complexity MIMO channel estimation,” 
+
+IEEE Wireless Commun. Lett. , vol. 13, no. 12, pp. 3493–3497, Dec. 2024. [35] Z. Chen, H. Shin and A. Nallanathan, “Generative Diffusion Model-Based Variational Inference for MIMO Channel Estimation,” IEEE Trans. Commun. , vol. 73, no. 10, pp. 9254-9269, Oct. 2025. [36] Y. Lipman, R. T. Q. Chen, H. Ben-Hamu, M. Nickel, and M. Le, “Flow Matching for Generative Modeling,” in Proc. Int. Conf. Learn. Represent. (ICLR) , 2023. [37] W. Liu, N. Ma, J. Chen et al., “Flow matching-based generative models for MIMO channel estimation,” arXiv preprint arXiv:2511.10941, 2025. [38] J. Fu, M. Xiao, M. Skoglund, and D. In Kim, “Land-then-transport: A Flow Matching-Based Generative Decoder for Wireless Image Transmis-sion,” arXiv preprint , arXiv:2601.07512, 2026. [39] G. Kerrigan, G. Migliorini and P. Smyth, “Dynamic Conditional Optimal Transport through Simulation-Free Flows,” in Adv. Neural Inf. Process. Syst. (NeurIPS) , vol. 37, 2024. [40] K. Kim and J. C. Ye, “Noise2Score: Tweedie’s approach to self-supervised image denoising without clean images,” in Proc. Adv. Neural Inf. Process. Syst. (NeurIPS) , vol. 34, 2021. [41] Y. Song, J. Sohl-Dickstein, D. P. Kingma, A. Kumar, S. Ermon and B. Poole, “Score-Based Generative Modeling through Stochastic Differential Equations,” in Proc. Int. Conf. Learn. Represent. (ICLR) , 2021. [42] Y. Song and S. Ermon, “Generative Modeling by Estimating Gradients of the Data Distribution,” in Proc. Adv. Neural Inf. Process. Syst. (NeurIPS) ,2019. [43] Study on Channel Model for Frequencies From 0.5 to 100 GHz, 3GPP,document 38.901, 2020. [44] J. Deng, W. Dong, R. Socher, L.-J. Li, K. Li, and L. Fei-Fei, “ImageNet: A large-scale hierarchical image database,” in Proc. IEEE Conf. Comput. Vis. Pattern Recognit. (CVPR) , Miami, FL, USA, 2009, pp. 248–255. [45] Z. Liu, P. Luo, X. Wang, and X. Tang, “Deep Learning Face Attributes in the Wild,” in Proc. IEEE Int. Conf. Comput. Vis. (ICCV) , Dec. 2015. [46] A. Hore and D. Ziou, “Image quality metrics: PSNR vs. SSIM,” in 
+
+Proc.20th Int. Conf. Pattern Recognit. , Aug. 2010, pp. 2366–2369.

@@ -1,0 +1,1404 @@
+Title: Electromagnetic Neural Network for Direction-of-Arrival Estimation
+
+URL Source: https://arxiv.org/pdf/2607.23021v1
+
+Published Time: Tue, 28 Jul 2026 00:30:45 GMT
+
+Number of Pages: 17
+
+Markdown Content:
+> DRAFT 1
+
+# Electromagnetic Neural Network for Direction-of-Arrival Estimation 
+
+Shining Lin, Jiancheng An, Senior Member, IEEE, Lu Gan, Member, IEEE, Victor C. M. Leung, Life Fellow, IEEE, Mehdi Bennis, Fellow, IEEE, Mérouane Debbah, Fellow, IEEE, and Tie Jun Cui, Fellow, IEEE 
+
+Abstract—Accurate and real-time direction of arrival (DOA) estimation is crucial for beamforming in unmanned aerial vehicle (UAV) communication systems. However, the exist-ing high-precision DOA estimation algorithms encounter high computational complexity when implemented on a UAV with on-board signal processing constraints. To tackle this issue, an electromagnetic neural network (EMNN) is developed for DOA estimation, which is capable of generating the angular spectrum of the incident signal based solely on amplitude observation. Specifically, the proposed EMNN consists of two components: a stacked intelligent metasurfaces (SIM) is mounted on the UAV, and each meta-atom is an artificial neuron that can process signals in the electromagnetic domain with low energy consumption and ultra-fast computing speed. Furthermore, a fully connected layer is cascaded to process the received amplitude signal, enhancing the non-linear extraction and representational ability of EMNN. Moreover, to reduce the computational complexity and observation snapshots required for high-resolution DOA estimation, we develop a hierarchical DOA estimation framework, which involves two stages for conducting coarse and fine DOA estimation, respectively. For each stage, EMNN is trained on randomly generated training samples and their corresponding spectra to achieve the desired estimation goal. Finally, the simulation results validate that the proposed EMNN achieves approximately 13 dB gain in classification error reduction over the conventional beamform-ing (CBF) method in dual-signal scenarios, albeit its lower cost and radio frequency (RF)-related power consumption. Index Terms—Electromagnetic neural network (EMNN), stacked intelligent metasurfaces (SIM), direction-of-arrival (DOA) estimation, unmanned aerial vehicle (UAV). 
+
+This work was supported by the National Natural Science Foun-dation of China (NSFC) under Grant 62471096. This article was presented in part at the IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP), Hyderabad, India, 2025 [1]. (Corresponding Author: Jiancheng An.) S. Lin and L. Gan are with the School of Information and Communication Engineering, University of Electronic Science and Technology of China (UESTC), Chengdu 611731, China. L. Gan is also with the Yibin Institute of UESTC, Yibin 644000, China (e-mail: 202221011710@std.uestc.edu.cn; ganlu@uestc.edu.cn). J. An is with the School of Electronic Science and Engineering, University of Electronic Science and Technology of China (UESTC), Chengdu, 611731, China (e-mail: jiancheng.an@uestc.edu.cn). V. C. M. Leung is with the College of Computer Science and Soft-ware Engineering, Shenzhen University, Shenzhen 518060, China, and also with the Department of Electrical and Computer Engineer-ing, The University of British Columbia, Vancouver, BC V6T 1Z4, Canada (e-mail: vleung@ieee.org). M. Bennis is with the Centre for Wireless Communications, Uni-versity of Oulu, Oulu 90570, Finland (e-mail: mehdi.bennis@oulu.fi). M. Debbah is with the Research Institute for Digital Fu-ture, Khalifa University, 127788 Abu Dhabi, UAE (e-mail: mer-ouane.debbah@ku.ac.ae) and also with CentraleSupelec, University Paris-Saclay, 91192 Gif-sur-Yvette, France. T. J. Cui is with the Institute of Electromagnetic Space, and the State Key Laboratory of Millimeter Wave, Southeast University, Nanjing 211189, China (e-mail: tjcui@seu.edu.cn). 
+
+I. Introduction 
+
+# THE realization of seamless connectivity is widely acknowledged as a key feature of future sixth-generation (6G) networks, with unmanned aerial vehicle (UAV) technology being a potent means to achieve this goal. In Release 18, 3GPP has introduced non-terrestrial networks as an effective complement to terrestrial commu-nication networks [2]. Capitalizing on their advantages of broad and adaptable deployment, UAV networks offer: i) Extensive source localization and surveillance capabilities [3]; ii) Emergency communication capabilities for disaster relief scenarios [4]; iii) Routing and broadcasting services to enhance quality of service (QoS) for terrestrial networks [5]. In UAV communication systems, fast and accurate direction of arrival (DOA) estimation is a crucial task due to two reasons. First, it facilitates effective beam steering to enhance beamforming gain and increase the achievable communication rate [6]. Second, the DOA provides ageometric property that can be leveraged for other sensing functionalities such as localization [3], [7]. Common DOA estimation algorithms are based on observations from multiple sensors. Initially, receiving beamforming algorithms were employed for DOA estima-tion [8], and under specific array arrangements, they could be computed rapidly using the fast Fourier transform (FFT) algorithm. However, the resolution of beamforming algorithms is limited by the Rayleigh criterion. To over-come this limitation, several high-resolution algorithms have been proposed. Among them, the multiple signal classification (MUSIC) [9] and the estimation of signal parameters via rotational invariance techniques (ESPRIT) [10], both based on the signal subspace, are the most representative. The former produces an angular spectrum by leveraging the orthogonality of the signal subspace and noise subspace. The latter utilizes the rotational invariance of the signal subspace. Moreover, on this basis, some variants have been introduced, such as Root-MUSIC [11] and unified ESPRIT [12], to reduce the complexity for searching spectral peaks and catering to coherent signal scenarios. Although traditional model-based methods can excel in certain scenarios, they come at a high computational cost, particularly when involving eigenvalue decomposition. Moreover, their performance drops substantially when there are limited data snapshots or in the face of hardware imperfections. In recent years, there has been a growing trend in the development of DOA estimation algorithms based on advanced machine learning (ML) techniques [13]–[18]. arXiv:2607.23021v1 [cs.IT] 25 Jul 2026 DRAFT 2                       
+
+> TABLE I Comparison of various neural networks for DOA estimation Network type RF-related hardware complexity Computation load Operation latency Number of observation snapshots required Feature extraction capability References ANN High High High Low High [13]–[18] SIM Low Low Low High Moderate [19], [20] EMNN Low Low Low Moderate High ⋆
+
+Compared to traditional approaches, these data-driven ML methods exhibit greater adaptability to a broader range of scenarios and demonstrate enhanced robustness under challenging conditions such as the limited number of snapshots and low signal-to-noise ratio (SNR). There are primarily two types of ML-based DOA estimation algorithms. The first type directly learns the mapping between observed signals and their DOA, without explicit modeling. For instance, in [13], DOA estimation was modeled as a multi-label classification task, which was addressed by employing a convolutional neural network (CNN). They demonstrated that the proposed CNN out-performs conventional methods in low SNR scenarios. In [14], a multi-layer perceptron (MLP) was utilized to construct the angular spectrum, providing robustness against array imperfections. The second type integrates machine learning with traditional model-based methods. For instance, in [15], a CNN network was utilized to learn the MUSIC spectrum from the covariance matrix. Despite the advantages offered by ML methods, their speed and energy consumption remain constrained by digital computing units. Moreover, in UAV communication scenarios, the stringent constraints on UAVs’ embedded hardware render it difficult to perform large-scale digital computations in real-time. Recently, stacked intelligent metasurfaces (SIM) [21]–[23], as a novel computing device, have garnered attention due to their substantial advan-tages in terms of computational energy efficiency and latency when compared to traditional digital computing units. SIM consists of several customized diffraction layers, each composed of numerous meta-atoms that are capable of tuning incident electromagnetic (EM) waves. As EM waves propagate through these meta-atoms, they act as secondary sources, generating secondary waves that propagate to all meta-atoms in the subsequent layer based on the Rayleigh-Sommerfeld diffraction principle [21]. The received signal at each meta-atom in the next layer is the weighted sum of signals radiated by all meta-atoms in the preceding layer. Viewing each meta-atom as a transmissive neuron, a SIM possesses an elec-tromagnetic neural network (EMNN) architecture with controllable wave propagation for performing computing automatically. Early SIMs were fabricated from passive materials, such as 3D printed materials [21] and po-larization conversion units [24]. Their structures remain fixed once manufactured, constraining their adaptability for diverse tasks or dynamic environments. In recent years, reconfigurable metasurface technology has under-gone rapid advancements [25]–[28], including reconfig-urable transmission metasurfaces capable of dynamically manipulating the phase or amplitude of EM waves in real-time. Therefore, reconfigurable transmission metasurfaces have been developed as diffraction layers for SIM [22], [29]. These metasurfaces are designed using meta-atoms that incorporate programmable components like power amplifiers [22] and diodes [29], significantly enhancing the adaptability of SIM. Over the past years, the EM tuning capability of SIM has found diverse applications. For image recognition, in [22], grayscale images of MNIST handwritten digits were modulated into the transmission coefficient pattern of the input metasurface, and the designed 5-layer SIM achieved 90.76% recognition accuracy. In wireless communications, leveraging the capability of SIM to effectively control radiation patterns [30], An et al. [31], [32] integrated a SIM with the radome of the base station, achieving multiuser downlink beamforming entirely in the wave domain. Later, this architecture was extended to the MIMO scenario by placing another SIM at the receiver, enabling the capability of MIMO precoding and combining in the wave domain [33]–[35]. Furthermore, the SIM-based MIMO transceiver has garnered significant research attention across a diverse range of applications, including integrated sensing and communications [36], satellite communications [37], cell-free networks [38], secure communications [39], and semantic communications [40], among others. For DOA estimation, in [20], a SIM was trained for focusing incident EM waves of different frequencies and DOAs onto corresponding positions on the detection plane. By doing so, DOA estimation can be executed by detecting the received peak power. Nevertheless, the resolution of this method is constrained by the number of sensors, and the constrained inference capability of the SIM further limits the precision of DOA estimation. Furthermore, in [19], a SIM was used to generate the two-dimensional (2D) Fourier angular spectrum. By subtly varying the SIM’s phase shifts to assemble the entire angular spectrum, the accuracy of DOA estimation was improved at the cost of increasing the number of observation snapshots, given the limitations in the number of sensors. However, even though increasing the number of diffrac-tion layers enhances the computing performance [41], the intrinsic linearity of the input-output relationship in the overall architecture of the SIM constraints its inference capability, making it difficult to complete com-plex tasks that an artificial neural network (ANN) can handle independently. Therefore, to further enhance its versatility, nonlinear effects should be integrated into the DRAFT 3 
+
+> (a) Traditional sensing receiver
+> (b) SIM-based sensing receiver Fig. 1. Comparison between traditional and SIM-based sensing receivers.
+
+EMNN architecture, making it closer to an ANN. To this end, significant efforts have been made by cascading metasurface layers with nonlinear amplitude measurement for achieving nonlinear activation functions in the analog domain. Then, a small number of digital hidden layers are involved for further processing the amplitude signals 1
+
+[42]–[48]. This structure strikes flexible tradeoffs between computational load, hardware complexity, and inference capability. For instance, in [46], Mengu et al. explored the enhancement effects by cascading SIM with diverse digital neural networks, and in [47], SIM is cascaded with an analog electronic neural network comprised of photodiodes, resulting in a high-speed and energy-efficient EMNN. Motivated by these observations, we develop a novel DOA estimation method using an EMNN, which com-prises a SIM and a single fully connected layer. Since this represents the first attempt to utilize an EMNN for DOA estimation, the characteristics of various neural networks – including ANN, SIM, and EMNN – such as their compu-tational load and operation latency during inference, are summarized in Table I. It is revealed that an EMNN, which consists of SIM-based analog hidden layers and digital hidden layers, enhances the computing capability of pure SIM. Compared to a digital ANN, the EMNN is capable of reducing RF-related power consumption and hardware complexity. Furthermore, the preprocessing by SIM further reduces the digital computational burden. Moreover, the EMNN requires fewer observation snapshots compared to SIM for implementing the DOA estimation task. Therefore, compared to other network types, the EMNN-based DOA estimation method is more suitable for embedded scenarios where latency, power consumption,               
+
+> 1To make a distinction, the traditional cascade of multiple meta-surfaces is termed as SIM, and the neural network that introduces the nonlinear response and possesses wave-domain computing power is termed as EMNN. In certain cases, the EMNN considered in this paper is also termed as the hybrid optical-electric neural network (HOENN) [42]–[45]. TABLE II Comparison of various sensing receivers Metrics Receiver type Traditional EM lens-based SIM-based Information preservation Strong Poor Moderate Deployment flexibility Flexible Restricted Flexible Cost High Low Moderate Adaptability Adaptable Fixed Adaptable
+
+and complexity are critical. As shown in Fig. 1(a), traditional DOA estimation methods based on amplitude-phase measurement require a frequency synthesizer for down-conversion and I/Q separation. During this process, I/Q balance and phase synchronization should be ensured across multiple anten-nas. In contrast, SIM-based sensing receivers only require relatively simple amplitude measurement circuits, such as the envelope detectors shown in Fig. 1(b). We note that another class of sensing architectures employs EM lenses, which exploit their spatial focusing capability to map incident waves from different directions onto a focal arc for DOA estimation [49]. However, a SIM can achieve stronger feature extraction capabilities through appro-priate training, thereby realizing higher DOA estimation accuracy, while also offering greater placement flexibility (e.g., the receiving antennas are not restricted to the focal arc). Moreover, the programmable SIM-based sensing receiver can better adapt to diverse scenarios through various preset configurations, thereby achieving superior performance. Furthermore, for ease of comparison, the characteristics of these three sensing architectures are summarized in Table II. More specifically, the major contributions of this work are outlined as follows: 1) We design an EMNN for DOA estimation. Specifi-cally, the DOA estimation process comprises three primary steps. Firstly, the SIM extracts the spatial distribution characteristics of incident EM waves and converts them into received power information at the receiving antenna array. Notably, all computations occur naturally as the EM signals propagate through the SIM at the speed of light, resulting in remarkably low energy consumption and latency. Subsequently, the power received at the antenna array is measured and connected to a fully connected layer to generate the angular spectrum. Finally, the DOA estimate is determined through peak detection. Compared to existing DOA estimation methods based only on SIM, EMNN requires fewer snapshots and, thus can be utilized to accommodate high-speed UAV scenarios. 2) A novel DOA estimation protocol based on amplitude measurement is developed. This method is in sharp contrast to conventional DOA estimation approaches relying on amplitude-phase measurements. Specifi-cally, it replaces the intricate and power-intensive RF chains with straightforward and energy-efficient power measurement circuits. Due to the preprocess-ing of the SIM, it can achieve satisfactory DOA DRAFT 4         
+
+> TABLE III A list of major symbols and their definitions Symbol Definition
+> LNumber of metasurfaces
+> NNumber of meta-atoms on each layer
+> MNumber of antennas
+> KNumber of incident signals
+> GNumber of divided regions for coarse estimation
+> VNumber of divided regions for fine estimation
+> SNumber of snapshots for each SIM configuration
+> QNumber of SIM configurations used by EMNN
+
+estimation performance even when relying on the low-complexity energy detector, which makes it very suitable for UAV communications with embedded hardware constraints. Moreover, it solely requires the estimation of received amplitude rather than the covariance matrix, resulting in reduced computational complexity for smoothing noise over multiple snap-shots. 3) To enhance the DOA estimation performance given the limited number of antennas and SIM scale, time-division multiplexing is utilized to expand the scale of EMNN. Specifically, by inputting the power received by antennas in different time blocks with different SIM phase shift configurations into the fully connected layer, the controllable parameters are proportionally increased without increasing hardware costs, while enhancing the inference capability of the EMNN. 4) To mitigate the demand for excessive observation snapshots and computational resources, a hierarchical DOA estimation framework, consisting of two steps, coarse estimation and fine estimation, is developed. In the coarse estimation phase, EMNN is employed to generate a low-resolution angular spectrum to identify the possible DOA range. Then, in the fine estimation phase, EMNN’s parameters are adjusted to generate a high-resolution angular spectrum within the reduced range, thereby facilitating the DOA estimation. 5) The Cramér-Rao bound (CRB) for a single source is derived for the SIM-based sensing receiver under am-plitude measurement with single-snapshot constant-modulus signals. Simulation results are provided to investigate the impact of SIM training on the CRB. 6) Simulation results validate the feasibility of the EMNN for DOA estimation and the effectiveness of the proposed hierarchical estimation design. Specif-ically, the proposed hierarchical estimation protocol achieves a DOA estimation error of approximately 0.01 ◦. Furthermore, under certain circumstances, the proposed DOA estimation technique outperforms the conventional beamforming (CBF) method, showing considerable benefits in common multi-signal scenar-ios. Notations: Scalars, vectors, matrices, and sets are de-noted by italic letters, lowercase bold letters, uppercase bold letters, and uppercase calligraphic letters, respec- 
+
+> Fig. 2. A schematic of the considered system model, where a UAV is equipped with a SIM.
+
+tively; CM ×N and RM ×N represent the spaces of complex matrices and real matrices with dimensions M × N ; For a vector x, [x]i, || x|| F , diag (x) represent its i-th element, Frobenius norm, diagonal matrix with its elements as diagonal elements, respectively; x ∈ CN (m, R) indicates that the vector x follows a complex Gaussian distribution with mean m and covariance matrix R; For a real vector 
+
+r ∈ RP ×1, min {r} and max {r} represent its minimum value and maximum value, respectively; z = softmax(r) represents softmax operation, which is defined by [z]p =
+
+e[r]p /∑Pp=1 e[r]p , p = 1 , · · · , P ; For a matrix A, [A]i,j , AT ,and AH denote its (i, j )-th element, transpose and conju-gate transpose, respectively; |A| denotes the cardinality of set A; A ⊗ B represents the Kronecker product of 
+
+A and B; A ∪ B and A ∩ B represent the union and intersection of sets A and B, respectively; |·| , E[·], cos −1(·),real (·) represent the modulus operation, the expectation operator, the arccosine function, and the operation of taking the real part, respectively; ∂y ∂x represents the partial derivative of y with respect to x; j is the imaginary unit; 1
+
+represents an all-one matrix with appropriate dimensions. The major symbols used in this paper and their meanings are summarized in Table III. II. System Model As shown in Fig. 2, we consider a UAV equipped with a uniform planar array (UPA) and a SIM for DOA estimation 2. The SIM consists of many meta-atoms, whose EM responses can be reconfigured in real-time based on an attached smart controller. As a result, the UAV only performs simple computations based on the received signal power from the antenna array to obtain the angular spectrum. Specifically, the UPA consists of M = Mx × My
+
+antennas, where Mx and My represent the numbers of antennas in the x-axis and y-axis directions, respectively. The antenna spacing in the x-axis direction and y-axis direction is represented as dA 
+
+> x
+
+and dA 
+
+> y
+
+, respectively. The SIM comprises L layers of equidistant metasurfaces      
+
+> 2Notably, the proposed EMNN-based method is not restricted to UAV scenarios; rather, it is well-suited for embedded platforms with constrained power consumption and hardware complexity. DRAFT 5
+> (a) (b) Fig. 3. (a) The workflow of using an EMNN for DOA estimation. (b) The network architecture of the EMNN when Q= 1 .
+
+parallel to the UPA, each composed of N = Nx ×Ny meta-atoms arranged in a uniform rectangular array, where Nx
+
+and Ny denote the number of meta-atoms in the x-axis and y-axis directions, respectively. The meta-atom spacing in the x-axis direction and y-axis direction is represented as dM 
+
+> x
+
+and dM 
+
+> y
+
+, respectively. The spacing between meta-surfaces is denoted as dlayer , while the spacing between the UPA and the SIM is denoted as dUS . Furthermore, for convenience, let L = {1, 2, · · · , L }, N = {1, 2, · · · , N }
+
+and M = {1, 2, · · · , M } denote the set of metasurfaces, meta-atoms on each metasurface layer, and antennas on the UPA, respectively. And for the n-th meta-atom on each layer, we define 
+
+n = nx + ( ny − 1) Nx, (1) where nx = 1 , 2, · · · , N x and ny = 1 , 2, · · · , N y represent the x-axis and y-axis coordinates of the n-th meta-atom, respectively. Moreover, the same convention is adopted for the m-th antenna. Furthermore, we consider far-field narrowband incident signals radiating from K distinct signal sources, denoted as s ∈ CK×1. It is assumed that they are mutually inde-pendent with zero means, satisfying E[ss H ] = diag (ps),where ps = [ p1, · · · , p K ]T ∈ RK×1 denotes incident signal power vector, pk denotes the power of the k-th signal. Furthermore, the incident azimuth and elevation angles of the k-th signal are represented as θak ∈ [0 , 2π) and 
+
+θek ∈ [0 , π/ 2) , respectively. For convenience, we define 
+
+θk = [ θak , θ ek]T ∈ R2×1, and denote Θ = {θ1, · · · , θK } as the set of incident angles. Therefore, the incident signal 
+
+s′ ∈ CN ×1 at the first layer of SIM can be modeled as 
+
+s′ = A(Θ)s, (2) where A(Θ) = [ a(θ1), · · · , a(θK )] ∈ CN ×K is the array response matrix of the first layer of SIM associated with 
+
+K signal sources, with a(θk) ∈ CN ×1 being the array response vector of the k-th signal. For a specific θ, the array response vector of the first layer of SIM is given by 
+
+a(θ) = g(uy ) ⊗ g(ux). (3) In (3), the vectors g(ux) ∈ CNx×1 and g(uy ) ∈ CNy ×1 are respectively represented as 
+
+g(ux) = [1 , e ju x , · · · , e ju x(Nx−1) ]T , (4a) 
+
+g(uy ) = [1 , e ju y , · · · , e ju y (Ny −1) ]T , (4b) where ux = κd M 
+
+> x
+
+sin θe cos θa, uy = κd M 
+
+> y
+
+sin θe sin θa, and 
+
+κ = 2 π/λ is the wavenumber. In this paper, we aim to estimate the DOA parameters of 
+
+K signal sources by utilizing an EMNN. The DOA estima-tion problem is modeled as a multi-label classification task. Specifically, let P denote the total number of classes to be classified and P = {C 1, C2, · · · , CP }, Ci ∩ C j = ∅ denote the designed DOA partition set. Moreover, let f ∈ RP ×1
+
+denote the output of the EMNN. The aim is to train an EMNN to result in a higher value of [f ]p when the DOA parameter of an incident signal falls within Cp.III. EMNN for DOA Estimation In this section, we introduce the structure of EMNN and the forward propagation model for inference. As shown in Fig. 3, an EMNN is a cascade of metasurfaces as analog hidden layers and a digital hidden layer. A. Analog Hidden Layers As illustrated in Fig. 3(a), when the signal passes through the analog hidden layers inside the SIM, it is equivalent to performing cascaded matrix operations in the EM domain. Therefore, the transfer function of SIM 
+
+B(Φ) ∈ CM ×N can be expressed as 
+
+B(Φ) = WLΛLWL−1 · · · Λ2W1Λ1, (5) DRAFT 6
+
+where Φ = {ϕ11, · · · , ϕ LN } denotes the set of phase shifts in the SIM and ϕln ∈ (0 , 2π], ∀l ∈ L , ∀n ∈ N denotes the phase shift imposed by the n-th meta-atom on the 
+
+l-th metasurface layer, Λl = diag (ejϕ l 
+
+> 1
+
+, e jϕ l 
+
+> 2
+
+, · · · , e jϕ lN ) ∈
+
+CN ×N denotes the phase shift matrix induced by the l-th metasurface layer, and Wl ∈ CN ×N , ∀l̸ = L, l ∈ L 
+
+denotes the propagation matrix from the l-th metasurface layer to the (l + 1) -th metasurface layer, where [Wl]n,n ′
+
+represents the attenuation coefficient from the n′-th meta-atom on the l-th metasurface layer to the n-th meta-atom on the (l+1) -th metasurface layer. Following the Rayleigh-Sommerfeld diffraction theory [21], [Wl]n,n ′ is given by 
+
+[Wl]n,n ′ = S meta-atom dlayer 
+
+(rln,n ′ )2
+
+(
+
+12πr ln,n ′
+
+− j 1
+
+λ
+
+)
+
+e 
+
+> j2πr ln,n ′
+> λ
+
+,
+
+(6) where Smeta-atom denotes the size of each meta-atom, rln,n ′
+
+denotes the corresponding propagation distance, and λ
+
+denotes the radio wavelength. More specifically, rln,n ′ can be expressed as 
+
+rln,n ′ =
+
+√
+
+(Dn,n ′ 
+
+> x
+
+)2 + ( Dn,n ′ 
+
+> y
+
+)2 + d2
+
+> layer
+
+, (7) where Dn,n ′ 
+
+> x
+
+and Dn,n ′ 
+
+> y
+
+represent the distances between two meta-atoms projected on the x-axis and y-axis, re-spectively. In the system setup considered, they can be calculated as 
+
+Dn,n ′ 
+
+> x
+
+= |(nx − n′
+
+> x
+
+)dM 
+
+> x
+
+|, D n,n ′ 
+
+> y
+
+= |(ny − n′ 
+
+> y
+
+)dM 
+
+> y
+
+|, (8) respectively. Moreover, WL ∈ CM ×N denotes the prop-agation matrix from the L-th layer to the UPA, and 
+
+[WL]m,n can also be expressed by (6) and (7), where the vertical distance dlayer between layers is replaced by dUS .Besides, the distances between the m-th antenna of the UPA and the n-th meta-atom on the L-th layer projected in the x-axis and y-axis can be expressed as 
+
+Dm,n x = |(mx − Mx + 1 2 )dA 
+
+> x
+
+− (nx − Nx + 1 2 )dM 
+
+> x
+
+|, (9a) 
+
+Dm,n y = |(my − My + 1 2 )dA 
+
+> y
+
+− (ny − Ny + 1 2 )dM 
+
+> y
+
+|, (9b) respectively. Therefore, the signal received at the UPA y ∈ CM ×1 at a specific time t can be modeled as 
+
+y(t) = B(Φ)s′(t) + n(t), (10) where n(t) ∈ CM ×1 is the additive white Gaussian noise satisfying n(t) ∈ CN (0, σ 2
+
+> n
+
+IM ), with σ2 
+
+> n
+
+being the noise power. After preprocessing in the EM domain, the power distribution across the receiving antenna array is mea-sured using the amplitude measurement circuit to obtain the output of the analog hidden layers. Furthermore, to expand the scale of the analog hidden layers under practical hardware constraints, as shown in Fig. 3(a), different SIM phase shift configurations are utilized in different time blocks, and the corresponding received signal power is recorded. Additionally, the received signal power under each SIM configuration is smoothed across multiple snapshots before inputting the fully connected layer. Assuming Q SIM configurations are utilized, let ˜y =(yT 
+
+> 1
+
+, · · · , yTQ)T ∈ CM Q ×1 denote the received signal under all Q SIM configurations, where yq denotes the received signal under the q-th SIM configuration. Specifically, considering the noise is uncorrelated with the incident signals, the output of the analog hidden layers can be calculated as 
+
+E [|˜y|2] =
+
+> K
+
+∑
+
+> k=1
+
+| ˜Ba (θk)|2pk + σ2
+
+> n
+
+1, (11) where ˜B = [ B(Φ1)T , · · · , B(ΦQ)T ]T ∈ CM Q ×N denotes equivalent propagation matrix under all SIM configura-tions. Remark 1: Note that SIM extracts and transforms phase and amplitude distribution information of incident EM waves on the large-aperture metasurface into an amplitude pattern as they pass through the layered structure. Con-sequently, the system can estimate the DOA of targets by relying solely on the amplitude measurements. Existing DOA estimation methods, directly replacing amplitude-phase measurements with amplitude measurements [50], [51], would result in severe ambiguity. Remark 2: Although the calculation of B in (5) in-volves a considerable amount of matrix operations, these computations naturally occur in the EM domain and are completed at the speed of light as the incident EM waves propagate through the SIM. This property forms the cornerstone of EMNN and incurs relatively low energy consumption. Remark 3: In this paper, we suppose that Wl, l ∈ L 
+
+are accurately obtainable. Although (6) to (9) may not precisely capture the attenuation coefficients in practical scenarios due to hardware imperfections such as metasur-face misalignment, the efficient backpropagation algorithm in [22] can be utilized to calibrate these attenuation coefficients. B. Digital Hidden Layer After passing through a digital hidden layer, the output 
+
+f of the EMNN can be represented as 
+
+f = WFC (E [|˜y|2] − σ2
+
+> n
+
+1), (12) where WFC ∈ RP ×M Q denotes the weight coefficients of the fully connected layer. In practice, the average power of the received signal in (12) is approximated by the mean of a limited number of samples. Upon collecting S snapshots for each SIM configuration, the angular spectrum obtained is expressed as 
+
+˜f = WFC 
+
+(
+
+1
+
+S
+
+> S
+
+∑
+
+> s=1
+
+|˜ys|2 − σ2
+
+> n
+
+1
+
+)
+
+. (13) In (13), ˜ys = ( yT 
+
+> 1
+
+(t1,s ), · · · , yTQ(tQ,s )) T ∈ CM Q ×1, where 
+
+tq,s denotes the s-th snapshot slot under the q-th SIM configuration. DRAFT 7
+
+Remark 4: In (12), the noise power is used as the bias in the fully connected layer, which facilitates EMNN’s adaptation to different SNR setups. Specifically, for an arbitrary bias b ∈ RP ×1, the obtained angular spectrum can be expressed as 
+
+f = WFC 
+
+> K
+
+∑
+
+> k=1
+
+| ˜Ba (θk)|2pk + σ2
+
+> n
+
+WFC 1 + b. (14) When the bias b is fixed, and σ2
+
+> n
+
+WFC 1̸ = ξ1, ξ ∈ C,the peak location of f will be affected by the weighted noise floor, even if the noise power is perfectly estimated. By contrast, employing (12) as the forward propagation model can eliminate this issue. Remark 5: Most traditional DOA estimation methods [8]–[16] require the measurement of the covariance ma-trix of the received signals E [yy H ], which necessitates complex amplitude-phase measurement circuits composed of down-conversion and I/Q separation. Additionally, smoothing over S snapshots involves 4SM 2 real multi-plications and (4 S − 2) M 2 real additions. In contrast, the methods based on amplitude measurement only require measuring the received signal power distribution E [|y|2].This requires only low-complexity and energy-efficient amplitude measurement circuits, and smoothing involves 
+
+(S − 1) M real additions. Remark 6: The CRB lower-bounds the covariance of any unbiased estimator [52], [53]. For a parametric probability density function f (r; θ) of an observation r with respect to the parameter vector θ = [ θa, θ e]T , the Fisher information matrix (FIM) F(θ) ∈ R2×2 is defined as [52] 
+
+F(θ) = E{∇θ ln f (r; θ) ∇T 
+
+> θ
+
+ln f (r; θ)} , (15) based on which the angular root-mean-square error (RMSE) 
+
+√
+
+E[∥ ˆθ − θ∥2 
+
+> F
+
+] is lower-bounded by [52] 
+
+CRB E(θ) = √tr( F−1(θ)) . (16) Consider the single-source, single-snapshot, and constant-modulus case, and let Bq = B(Φq ) denote the 
+
+q-th block of ˜B in (11). The angular derivatives of a(θ)
+
+is given by 
+
+∂a(θ)
+
+∂θ a = j[ ˙uax(INy ⊗Ωx) + ˙ uay (Ωy ⊗INx )] a(θ), (17a) 
+
+∂a(θ)
+
+∂θ e = j[ ˙uex(INy ⊗Ωx) + ˙ uey (Ωy ⊗INx )] a(θ), (17b) where Ωx = diag (0 , 1, . . . , N x − 1) , Ωy =
+
+diag (0 , 1, . . . , N y − 1) , and the phase-gradient scalars are 
+
+˙uax = −κd M 
+
+> x
+
+sin θe sin θa, ˙uay = κd M 
+
+> y
+
+sin θe cos θa, (18a) 
+
+˙uex = κd M 
+
+> x
+
+cos θe cos θa, ˙uey = κd M 
+
+> y
+
+cos θe sin θa. (18b) For the m-th antenna at the q-th SIM configuration, further define the effective steering scalar and its angular derivatives as 
+
+αm,q (θ) = [ Bq a(θ)] m, (19a) 
+
+βam,q (θ) = 
+
+[
+
+Bq ∂a(θ)
+
+> ∂θ a
+
+]
+
+> m
+
+, (19b) 
+
+βem,q (θ) = 
+
+[
+
+Bq ∂a(θ)
+
+> ∂θ e
+
+]
+
+> m
+
+. (19c) Stacking the real and imaginary parts of the per-antenna cross-correlations yields the in-phase and quadrature gra-dient vectors 
+
+ηm,q (θ) = 2 ρ
+
+[real {α∗ 
+
+> m,q
+
+βam,q 
+
+}
+
+real {α∗ 
+
+> m,q
+
+βem,q 
+
+}]
+
+, (20a) 
+
+η⊥ 
+
+> m,q
+
+(θ) = 2 ρ
+
+[imag {α∗ 
+
+> m,q
+
+βam,q 
+
+}
+
+imag {α∗ 
+
+> m,q
+
+βem,q 
+
+}]
+
+, (20b) where we have ρ = p1/σ 2
+
+> n
+
+, γm,q (θ) = ρ|αm,q (θ)|2.The phase-aware coherent FIM is obtained from the classical array CRB [52], [53] by substituting the conven-tional steering vector a(θ) with the SIM-filtered effective steering vector Bq a(θ), which can be recast as 
+
+Fcoh (θ) = 
+
+> Q
+
+∑
+
+> q=1
+> M
+
+∑
+
+> m=1
+
+ηm,q ηTm,q + η⊥ 
+
+> m,q
+
+(η⊥ 
+
+> m,q
+
+)T
+
+2γm,q (θ) . (21) Under the amplitude-only observation, the scalar Fisher information can be expressed as 
+
+J1(γ) = 
+
+∫ ∞
+
+> 0
+
+[√ z/γ I1(2 √γz ) 
+
+> I0(2 √γz )
+
+− 1]2e−(z+γ)I0(2 √γz ) d z, 
+
+(22) where I0(·), I1(·) and zm,q = |ym,q |2/σ 2 
+
+> n
+
+denote the mod-ified Bessel functions of the first kind of orders zero and one, and the normalized power, respectively. Furthermore, the amplitude-only FIM is given by 
+
+Fpow (θ) = 
+
+> Q
+
+∑
+
+> q=1
+> M
+
+∑
+
+> m=1
+
+J1
+
+(γm,q (θ)) ηm,q (θ) ηTm,q (θ). (23) The detailed derivation of (23) is provided in Appendix A. IV. Hierarchical DOA Estimation Based on Angular Spectrum Subregions Although the proposed EMNN can be directly applied to the global DOA estimation, its requirement for a large number of SIM configurations in high-resolution scenarios limits its applicability. In this section, to reduce the computational complexity and the number of observation snapshots required for DOA estimation, a hierarchical DOA estimation method is proposed. Specifically, Sec-tion IV-A introduces the framework of the proposed hierarchical protocol. In Section IV-B, we elaborate on the grid partitioning method. Section IV-C introduces the corresponding training methodology of EMNN, while Section IV-D offers a comprehensive summary of the entire algorithm. A. Hierarchical DOA Estimation Framework As shown in Fig. 4, the entire DOA estimation process is divided into two stages: coarse estimation and fine estima-tion. In the coarse estimation stage, an EMNN is trained to generate the low-resolution global angular spectrum, based on which a potential region containing the DOA of incident signals is determined for fine estimation. In the fine estimation stage, multiple EMNNs are used to generate a high-resolution angular spectrum within the DRAFT 8 
+
+> (a) A single-signal scenario.
+> (b) A dual-signals scenario. Fig. 4. Schematic diagram of the proposed hierarchical DOA estimation framework.
+
+potential region, and the final DOA estimate is obtained by searching across this spectrum. Next, we elaborate on the procedures involved in these two stages.  
+
+> •
+
+Coarse estimation: The entire DOA range is uni-formly divided into G subregions {G g }, from which a potential region is tailored for conducting the fine estimation. First, a global low-resolution spectrum is generated using an EMNN, which is pre-trained for recognizing these P = G subregions. Then, the spectrum peaks are identified, based on which the potential region is constructed by incorporating peaks and their surroundings. The expansion is due to the fact that the DOA may be located at the grid boundary. Specifically, let Ggk denote the subregion containing the peak found in the coarse estimation phase for the k-th target. The expanded potential region Rk for the fine estimation consists of Ggk
+
+and its eight neighboring subregions surrounding 
+
+Ggk . Whereas, for Ggk located at the maximum and minimum boundaries of the elevation angle, there are five surrounding subregions. Assuming that K peaks can be identified, R = ⋃Kk=1 Rk is denoted as the potential region identified for fine estimation.  
+
+> •
+
+Fine estimation: In the fine estimation phase, each Gg
+
+is uniformly divided into V DOA regions {A g,v }, and an EMNN is utilized to generate the corresponding sub-spectrum. In contrast to the coarse estimation, the EMNNs in the fine estimation stage also need to identify the region outside of Gg , so it is required to recognize P = V + 1 subregions. By generating and combining all sub-spectra for the subregions within the potential region R, a high-resolution global spec-trum is obtained. Ultimately, applying peak searching on this spectrum yields the DOA estimate with fine granularity. Remark 7: The hierarchical estimation method improves estimation accuracy by progressively narrowing the range of the generated angular spectrum. This fully enhances the inference capability of the EMNN, which in turn lowers the requirements for the number of SIM configurations and observation snapshots required. Moreover, the digital computation burden imposed on the fully connected layer is also mitigated. Taking a single incident signal as an example, the computational complexity for generating the angular spectrum is directly proportional to its output size. Therefore, the condition for the hierarchical estima-tion method to achieve lower computational complexity in angular spectrum generation compared to the exclusive EMNN approach is given by the G + 9 V < GV . This inequality is equivalent to (G − 9)( V − 1) > 9, which can be readily satisfied when the grid resolutions, i.e., G and 
+
+V , are sufficiently high. B. Grid Partitioning In this subsection, we will elucidate the grid partitioning of the angular spectrum for implementing the proposed hierarchical DOA estimation framework. To facilitate this, we define three distinct sets: {G g }, {R k} and {A g,v }. 
+
+> •
+
+{G g } corresponds to the global angular spectrum generated for coarse estimation. It is obtained by uniformly dividing the entire DOA region into G =
+
+Ga ×Ge parts based on azimuth and elevation angles. Specifically, for a given subregion index g, we define: 
+
+g = ga + ( ge − 1) Ga, (24) where ga = 1, 2, · · · , G a and ge = 1, 2, · · · , G e.Therefore, Gg can be expressed as Gg = {θ|θa ∈
+
+[θa, start  
+
+> g
+
+, θ a, start  
+
+> g
+
++ Ea, coarse ), θ e ∈ [θe, start  
+
+> g
+
+, θ e, start  
+
+> g
+
++
+
+Ee, coarse )}, where we have 
+
+θa, start  
+
+> g
+
+= ( ga − 1) Ea, coarse , (25a) 
+
+θe, start  
+
+> g
+
+= ( ge − 1) Ee, coarse , (25b) 
+
+Ea, coarse = 2πGa
+
+, E e, coarse = π
+
+2Ge
+
+. (25c) DRAFT 9 
+
+> •
+
+{R k} represent the enlarged potential region ac-cording to {G gk } obtained in the coarse estimation stage. For a given Ggk , the enlarged set Rk includes 
+
+Ggk and its surrounding subregions. Considering the periodicity of the azimuth angle, it can be represented as 
+
+Rk = {Gg |leg,g k ≤ 1, l ag,g k ≤ 1} , (26a) 
+
+leg,g k = |ge − gek|, (26b) 
+
+lag,g k = min {| ga − gak |, G a − | ga − gak |} . (26c)  
+
+> •
+
+{A g,v } represent the local angular spectrum produced for fine estimation. Similarly, for each g, {A g,v } is derived by uniformly dividing Gg into V = Va × Ve
+
+parts. After rewriting v in a similar form as (24), Ag,v 
+
+can be expressed as Ag,v = {θ|θa ∈ [θa, start  
+
+> g,v
+
+, θ a, start  
+
+> g,v
+
++
+
+Ea, fine ), θ e ∈ [θe, start  
+
+> g,v
+
+, θ e, start  
+
+> g,v
+
++ Ee, fine )}, where 
+
+θa, start  
+
+> g,v
+
+= θa, start  
+
+> g
+
++ ( va − 1) Ea, fine , (27a) 
+
+θe, start  
+
+> g,v
+
+= θe, start  
+
+> g
+
++ ( ve − 1) Ee, fine , (27b) 
+
+Ea, fine = 2πGaVa
+
+, E e, fine = π
+
+2GeVe
+
+. (27c) C. Training Procedure In this subsection, we will elaborate on the training procedures of the EMNNs used for the hierarchical DOA estimation method. This includes the generation of the training set, comprising the methods for sampling and labeling, as well as the forward propagation model, and the normalization of weight coefficients for sub-spectra concatenation. 1) Training Data Generation: For the EMNN used for coarse estimation, we first randomly generate a single-signal DOA dataset { ˆθ}, which is composed of a large number of randomly generated samples from the entire DOA region. Furthermore, each sample in multiple-signal training set { ˆΘ} is generated by combining K samples extracted randomly from { ˆθ}. For the EMNN used in fine estimation corresponding to a certain Gg , a similar method is used to construct the training set. However, in the fine estimation stage, the single-signal training set { ˆθ} needs to include samples from both Gg and other subregions outside Gg to suppress the influence of signals from those subregions. The higher the proportion of samples from Gg , the stronger EMNN’s ability to identify signals within that region, which, however, weakens its ability to suppress signals from other subregions. Assuming that Rk
+
+represents the expanded potential region when the peak is located in Gg , to minimize interference from signals in the surrounding subregions Rk − G g , the ratio of the number of samples in { ˆθ} within Gg , Rk −G g , and other subregions is set to an empirical value of 1:1:1. 2) Data Labeling: The training data needs to be la-beled to map the target to its corresponding spectrum. Specifically, for a given sample ˆΘ for training the EMNN to generate the spectrum in P, let Kp denote the number of ˆθk fall within the p-th subregion Cp. Moreover, ptrn is denoted as the power of all incident signals during the  
+
+> TABLE IV Examples of Labeling Method DOA distribution Label
+
+ˆq = [ 25 , 15 , 0, 0, 15 , 0, 0, 0, 15 , 0] T
+
+ˆq = [ 15 , 0, 0, 0, 25 , 0, 0, 0, 0, 25 ]T
+
+ˆq = [0 , 0, 0, 0, 0, 0, 0, 0, 0, 1] T
+
+training process, i.e., pk = ptrn , k = 1 , · · · , K , and the target output probability distribution ˆq ∈ RP ×1 is used as the label for calculating the loss function. Specifically, the p-th element of ˆq can be represented as 
+
+[ˆ q]p = Kp
+
+K , p = 1 , · · · , P. (28) Specifically, for the EMNN used for coarse estimation, it needs to distinguish {G g }, which means P = G and 
+
+Cp = Gp, p = 1 , · · · , G . In contrast, the EMNN used for fine estimation corresponding to a given Gg encounters an open-set recognition problem. Therefore, it needs to dis-tinguish subregions including {A g,v } ⊂ G g and the DOA region outsides Gg , which means P = V +1 , Cp = Ag,p , for 
+
+p = 1 , · · · , V and Cp = Og for p = V +1 , where Og denotes the DOA region outsides Gg . To illustrate, we present three examples of DOA samples and their corresponding labels for training EMNNs used for fine estimation in Table IV. On the left side of the Table IV, each square corresponds to a high-resolution subregion Ag,v , the shaded area indicates the coarse-resolution subregion Gg , the number of blue dots, i.e., the targets, in each shaded grid defines the corresponding value in ˜q, according to the convention in (28). 3) Forward Propagation Model: In the inference phase, the forward propagation model directly evaluates the output value for identifying the index of the peak. By contrast, in the training stage, an additional softmax layer is incorporated to expedite the convergence speed of the loss function. Additionally, to enhance the robustness of the EMNNs, an extra perturbation np ∈ CM Q ×1 ∈CN (0, σ 2 
+
+> p
+
+IM Q ) with power σ2 
+
+> p
+
+is introduced during the training process. Therefore, based on (11) and (12), the forward propagation model during training is given by 
+
+ˆz(Θ) = softmax (WFC (
+
+> K
+
+∑
+
+> k=1
+
+| ˜Ba (θk)|2pk + |np|2)) . (29) DRAFT 10 
+
+Moreover, the cross-entropy function is used as the loss function to train the EMNNs. Specifically, assuming the batch size is D, let ˆzd, d = 1 , · · · , D represent the output of the EMNN and ˆqd, d = 1, · · · , D represent the corresponding probability distribution label, the loss function is defined as Loss = − 1
+
+D
+
+> D
+
+∑
+
+> d=1
+> P
+
+∑
+
+> p=1
+
+[ˆ zd]plog [ˆ qd]p. (30) Remark 8: It is noted that the perturbation term |np|2 in (29) characterizes the error by using (13) to approximate (12), which contributes to enhancing the robustness of the EMNN against the measurement error. In each training epoch, np will be randomly regenerated. 4) Normalization of Weight Coefficients: As described in Section II, the expected peak power in the high-resolution spectrum, formed by splicing the sub-spectra in fine estimation, should be proportional to the incident signal power. Therefore, the weights of the fully connected layer WFC of each EMNN used for fine estimation need to be normalized such that the peak heights of the spectrum generated by unit power signals incident from all directions are close to 1. Specifically, for an EMNN corresponding to certain Gg , we extract U samples ˆθu, u = 1 , · · · , U 
+
+sampled from Gg and use the average of the peaks generated by these samples for normalization. Therefore, the normalization process can be represented as 
+
+WFC ← U
+
+∑Uu=1 max {WFC | ˜Ba ( ˆθu)|2} WFC . (31) Furthermore, in the inference process for fine estimation, the last column of WFC is removed since it corresponds to the region outside the subregion Gg .D. Overall Algorithm To elaborate, the proposed hierarchical DOA method based on EMNNs is summarized in Algorithm 1. It is noted that the execution of Algorithm 1 hinges on the pre-training of all EMNNs, as well as the prior regarding the number of incident signals K and the noise power σ2
+
+> n
+
+.V. Numerical Simulation In this section, we present the numerical results to evaluate the performance of the proposed DOA estimation method based on the EMNN. A. Simulation Setup and Performance Metrics We consider a SIM integrated with the UAV. The number of metasurfaces, the number of meta-atoms per metasurface, and the number of receiving antennas are set to L = 5 and N = 1600 , M = 36 , respectively, with 
+
+Nx = Ny = 40 and Mx = My = 6 . The side length and size of the meta-atoms, spacing between adjacent receiving antennas, spacing between adjacent metasur-faces, spacing between metasurfaces and receiving antenna array are set to dM 
+
+> x
+
+= dM 
+
+> y
+
+= λ/ 2, S meta-atom = λ2/4,Algorithm 1 Hierarchical DOA Estimation Based on Angular Spectrum Subregions. Input: K, S, σ2
+
+> n
+
+, all EMNN parameters. Output: Agk ,v k corresponding to θk. 
+
+> 1:
+
+Initialize the potential region to R = ∅. 
+
+> 2:
+
+Stage 1. Coarse estimation:  
+
+> 3:
+
+Use EMNN to obtain f coarse ∈ RGaGe×1, and reshape 
+
+f coarse to obtain the global angular spectrum Fcoarse ∈
+
+RGa×Ge . 
+
+> 4:
+
+Perform a 2D spectral peak search on Fcoarse , extract the positions of the top K peaks and the corresponding 
+
+Ggk , k = 1 , · · · , K . 
+
+> 5:
+
+for k = 1 : K do  
+
+> 6:
+
+Obtain Rk from Ggk . 
+
+> 7:
+
+Enlarge potential region: R = R ⋃ Rk. 
+
+> 8:
+
+end for  
+
+> 9:
+
+Assuming R consists of R subregions, the elements in R are denoted as Gδr , r = 1 , · · · , R , where {δr }
+
+denotes the indices corresponding to the subregions within R. 
+
+> 10:
+
+Stage 2. Fine estimation:  
+
+> 11:
+
+for r = 1 : R do  
+
+> 12:
+
+Use EMNN corresponding to Gδr to obtain f fine  
+
+> r
+
+∈
+
+RVaVe×1, and reshape f fine  
+
+> r
+
+to obtain the sub-spectrum Ffine  
+
+> r
+
+∈ RVa×Ve . 
+
+> 13:
+
+Assign Ffine  
+
+> r
+
+to the positions corresponding to 
+
+Gδr in angular spectrum for fine estimation A ∈
+
+RGaVa×GeVe . 
+
+> 14:
+
+end for  
+
+> 15:
+
+Perform a 2D spectral peak search on A within R,extract the positions of the top K peaks, and obtain the final estimation result Agk ,v k corresponding to θk.
+
+dA 
+
+> x
+
+= dA 
+
+> y
+
+= λ, dlayer = dUS = 5 λ, respectively. Moreover, it is assumed that the incident signals sk, k = 1 , · · · , K 
+
+are constant-modulus signals with uniformly distributed and mutually independent phases, and the power is set to pk = −40 dBm , k = 1 , · · · , K . SNR n = pk/σ 2 
+
+> n
+
+denotes SNR at the SIM. Furthermore, the number of grids for coarse estimation and fine estimation is set to Ga = 32 , Ge = 16 , Va = 16 ,
+
+Ve = 8 , respectively. The number of SIM configurations used for coarse estimation and fine estimation is Q = 6 
+
+and Q = 2 , respectively. For the EMNNs used for coarse estimation and fine estimation, the sizes of their training set { ˆθ} are 50,000 and 100,000, respectively. The former is trained for 250 epochs while the latter is trained for 150 epochs. The batch size for both is set to 128. The perturbation SNR, i.e., SNR p = ptrn /σ 2 
+
+> p
+
+, during training is set to SNR p = 10 dB. All EMNNs are trained by using the PyTorch framework and the Adam optimizer [54]. The learning rate and the two parameters related to momentum are respectively set to lr = 0 .001 , β1 = 0 .9,and β2 = 0 .999 [54]. Next, we will introduce three metrics used to evaluate the performance of the DOA estimator in this paper, DRAFT 11 
+
+(a) 78 80 82 84 86 88 90  
+
+> Azimuth angle (Degree)
+> -0.8 -0.6 -0.4 -0.2 00.2 0.4
+> Angular spectrum
+> DPA
+
+(b) 80 82 84 86 88 90  
+
+> Azimuth angle (Degree)
+> -0.8 -0.6 -0.4 -0.2 00.2 0.4
+> Angular spectra
+> DPA
+
+(c) 78 80 82 84 86 88 90  
+
+> Azimuth angle (Degree)
+> -0.8 -0.6 -0.4 -0.2 00.2 0.4
+> Angular spectra
+> DPA
+
+(d) Fig. 5. (a) Illustration of classification error. (b) Angular spectrum generated by a signal incident from the estimated subregion, where 
+
+DPA of the spectrum should be as large as possible. (c) Angular spectrum generated by a signal outside the estimated subregion, where 
+
+DPA of the spectrum should be as small as possible. (d) Angular spectrum of two incident signals by superimposing (b) and (c), where 
+
+DPA of the spectrum should be as large as possible. 0 0 00  0 00  0 00  0 
+
+> "    
+
+0
+
+0 
+
+0 
+
+0
+
+0
+
+>        
+
+00 
+
+0 
+
+0 
+
+0 
+
+0 
+
+0 
+
+>     !  !
+
+00 
+
+0 
+
+00 
+
+0 
+
+00 
+
+0 
+
+(a) 0 0 00  0 00  0 00  0 
+
+> "    
+
+0
+
+0 
+
+0 
+
+0
+
+0
+
+>        
+
+00 
+
+0 
+
+0 
+
+0 
+
+0 
+
+0 
+
+>     !  !
+
+0 
+
+00 
+
+0 
+
+00 
+
+0 
+
+00 
+
+0 
+
+0 0 (b) 8 8 8 8 88  
+
+> $!    
+
+
+
+ 
+
+ 
+
+ 
+
+ 
+
+> "     
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+     
+
+>  ! !     !#   #
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ (c) Fig. 6. Generated spectra by EMNNs when θa = 86 .5◦, θ e = 30 .5◦, (a) High-resolution global spectrum; (b) Coarse-resolution spectrum in the coarse estimation stage; (c) Fine-resolution spectrum in the fine estimation stage. 
+
+including classification error, RMSE, and peak-to-average difference of angular spectrum. 1) Classification Error: As shown in Fig. 5(a), we first define an intermediate variable ˆθedge to represent the DOA within the classified subregion Cp having the closest distance to the testing sample ˆθ, and use the angle between the directional vectors of these two DOAs to characterize the classification error. Specifically, ˆθedge is represented as 
+
+ˆθedge = min 
+
+θ {|| θ − ˆθ|| 2
+
+F , θ ∈ C p}. (32) Therefore, the classification error is defined as 
+
+∆e = cos −1(ˆ v · ˆvedge ) ∈ [0 , π ], (33) where ˆv = (cos ˆθa sin ˆθe, sin ˆθa sin ˆθe, cos ˆθe)T denotes the direction vector corresponding to ˆθ and 
+
+ˆvedge = (cos ˆθa
+
+edge sin ˆθe
+
+edge , sin ˆθa
+
+edge sin ˆθe
+
+edge , cos ˆθe
+
+edge )T
+
+denotes the direction vector corresponding to ˆθedge . When the classification result is correct, we have ∆e = 0◦.Conversely, a larger classification error indicates that the testing sample is farther from the classified subregion. Next, we illustrate the expression of (32) by utilizing the coarse-resolution subregions in the coarse estimation. Suppose that the test sample ˆθ is classified into subregion 
+
+Gg , ˆθedge can be given by 
+
+ˆθe
+
+edge =
+
+
+
+geEe, coarse , if ˆθe ∈ (geEe, coarse , π ],
+
+ˆθe, if ˆθe ∈ [θe, start 
+
+g , g eEe, coarse ],θe, start 
+
+g , if ˆθe ∈ [0 , θ e, start 
+
+g ),
+
+(34a) 
+
+ˆθa
+
+edge =
+
+
+
+gaEa, coarse , if ˆθa ∈ D right 
+
+g ,
+
+ˆθa, if ˆθa ∈ [θga, start , g aEa, coarse ],θa, start 
+
+g , if ˆθa ∈ D left 
+
+g ,
+
+(34b) where Dright 
+
+g = (gaEa, coarse , θ a, start 
+
+g + Ea, coarse /2 + π],
+
+Dleft 
+
+g = [0 , θ a, start 
+
+g ) ∪ (θa, start 
+
+g + Ea, coarse /2 + π, 2π] for 
+
+θa, start 
+
+g + Ea, coarse /2 < π and Dright 
+
+g = [0 , θ a, start 
+
+g +
+
+Ea, coarse /2 − π) ∪ (gaEa, coarse , 2π], Dleft 
+
+g = [θa, start 
+
+g +
+
+Ea, coarse /2 − π, θ a, start 
+
+g ) for θa, start 
+
+g + Ea, coarse /2 > π .2) RMSE: The RMSE is defined as 
+
+∆E = √(∆ θa)2 + (∆ θe)2, (35) where 
+
+∆θa = min 
+
+{
+
+|ˆθa − θa|, 2π − | ˆθa − θa|
+
+}
+
+, (36a) 
+
+∆θe = ˆθe − θe. (36b) 3) Peak-to-Average Difference of Angular Spectrum: We employ the peak-to-average difference to quantify the DRAFT 12 
+
+prominence of the peak in the angular spectrum, which is denoted as 
+
+DPA = max {f } − 
+
+∑Pp=1 [f ]p
+
+P . (37) In the fine estimation phase, DPA holds two different implications for the testing sample ˆθ.
+
+• If ˆθ ∈ G g , a larger value of DPA is expected when the peak location of the sub-spectrum aligns with ˆθ, this implies that other positions in the angular spectrum hardly surpass the spectral peak, as shown in Fig. 5(b). 
+
+• If ˜θ /∈ Gg , as shown in Fig. 5(c)-(d), the signal component outside the subregion Gg would affect the estimation of DOA within Gg . Specifically, greater spectral fluctuations indicate stronger interference. Hence, as a result, a higher value of DPA is expected when the signal DOA is aligned with ˆθ, and the value of DPA 
+
+should be reduced when the signal is from the outside subregion Gg .B. Simulation Results Fig. 6 illustrates the angular spectra generated by the EMNN when considering θa = 86 .5◦, θ e = 30 .5◦. Specifi-cally, the high-resolution spectrum in Fig. 6(a) is obtained by considering grid division of Ga = 512 , G e = 128 , while Fig. 6(b) and Fig. 6(c) show the spectra corresponding to the two stages of the proposed hierarchical estimation protocol. It can be observed that the spectra exhibit a prominent peak in the region corresponding to the incident angle. Compared to directly using the EMNN for gener-ating the global high-resolution spectrum, the proposed hierarchical estimation protocol is capable of achieving the same classification resolution, while significantly reducing the computational complexity. Fig. 7(a) and Fig. 7(b) illustrate the distribution of received power across the antenna array when the incident angles (θa, θ e) are (30 ◦, 60 ◦) and (0 ◦, 45 ◦), respectively. The power distribution of UPA formed by the six SIM phase shift configurations is arranged in three rows and two columns. It can be seen that the received energy distri-butions exhibit clear clustering phenomena. This implies that the SIM extracts the amplitude-phase distribution characteristics of the incident signals and transforms them into the received power distribution, thereby enabling DOA estimation based solely on amplitude measurements. Conversely, in an array system without the SIM, the received power distribution is constant for a single incident signal, and the DOA can not be estimated by leveraging low-complexity amplitude detection. In Fig. 8(a), we evaluate the classification error versus DOA for coarse estimation under SNR n = 5 dB and S =10. Specifically, the entire DOA region is segmented into 
+
+512 × 128 pixels for azimuth and elevation angles. Within each pixel, 100 samples are randomly drawn to compute the mean classification error of misclassified samples for visualization. As seen in Fig. 8(a), the EMNN accurately 2   2   
+
+> 
+> 2
+> 
+> 
+> 2
+> 
+> 
+> 
+> 
+> 
+>    
+> 
+> 
+> 
+> 2
+> 2
+
+(a) θa = 30 ◦, θ e = 60 ◦2   2    
+
+> 
+> 2
+> 
+> 
+> 2
+> 
+> 
+> 
+> 
+> 
+>    
+> 
+> 
+> 
+> 2
+> 2
+
+(b) θa = 0 ◦, θ e = 45 ◦
+
+Fig. 7. Received power pattern across antenna array. 0 0 00  0 00  0 00  0 
+
+> "     
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> !   
+>     
+> 
+> 
+> 
+> 
+> 
+> 
+
+(a) 0 0 00  0 00  0 00  0   
+
+> #!    
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> "     
+>   "  
+>  
+>  
+>  
+>  
+>  
+
+(b) Fig. 8. (a) The classification error versus DOA for coarse estima-tion. (b) The peak-to-average difference DPA versus DOA for fine estimation. 
+
+classifies DOAs of incident signals in most cases, with 96% 
+
+samples perfectly classified into the corresponding DOA subregions. Furthermore, the estimation error becomes significant in high-elevation-angle regions. Nonetheless, the DOAs of targets in these regions are primarily misclassified into adjacent subregions, thus preventing significant errors. In Fig. 8(b), we evaluate the peak-to-average difference DPA of the sub-spectrum generated by a specific EMNN for fine estimation. Specifically, the EMNN is trained for the subregion Gg , with ga = 8 , g e = 6 ,corresponding to the red box in Fig. 8(b). After inputting the signal from each potential direction into the EMNN, the peak-to-average difference of the output sub-spectrum is calculated and normalized. Notably, the magnitude of 
+
+DPA within the Gg is significantly higher than that of signals from other regions, highlighting the efficacy of the proposed labeling approach in mitigating interference from signals outside the current subregion. In Fig. 9, we illustrate the classification error for coarse estimation versus SNR n for Ga = 32 , Ge = 16 , L = 5 ,
+
+N = 1600 , Q = 3 . Moreover, we consider varying SNR p
+
+values during the training stage. Note that classification error improves as SNR n increases. Although the intro-duction of perturbation noise during training enhances robustness against measurement errors, it is suggested to accommodate varying SNR levels encountered in practical scenarios. For example, although low perturbation SNR during training leads to higher DOA estimation accuracy in low SNR environments, it diminishes accuracy in high SNR environments. In Fig. 10, we present the classification accuracy of coarse estimation versus the number of layers L in the single-signal scenario, where we set SNR n = 35 dB, DRAFT 13 -10 -5 0 5 10 15 20     
+
+> SNR n(dB)
+> 10 -1
+> 10 0
+> 10 1
+> 10 2
+> Classification error (Degree)
+> SNR p= 35 dB
+> SNR p= 10 dB
+> SNR p= 0 dB
+
+Fig. 9. Classification error for coarse estimation versus SNR n.
+
+SNR p = 35 dB, Ga = 8 , Ge = 8 , N = 225 , M = 16 , S = 1 ,
+
+Q = 1. Meanwhile, we compare the DOA estimation performance of the EMNN to plain SIM. In the SIM-aided system, each receiving antenna is associated with a specific DOA region, and the DOA region corresponding to the receiving antenna with the highest received power is des-ignated as the corresponding class. Therefore, the number of receiving antennas required for the SIM-aided system is 
+
+Ga × Ge = 64 . Notably, to ensure that adjacent receiving antennas correspond to adjacent DOA subregions within the SIM system, and considering the periodicity of the azimuth angle, 64 antennas are arranged in 8 radially equidistant concentric circular arrays. For each array, the angular spacing between antennas is set as 2π/G a, and the radial spacing between adjacent circular arrays is set as λ/ 2. Specifically, when L = 0 , the received signal power is directly utilized for training and extracting the peak for DOA estimation. From Fig. 10, it can be observed that as the number of metasurface layers increases, both the classification accuracy of the EMNN and the SIM improve due to the enhanced inference capability of the SIM. When L = 0 , the uniform power distribution is observed, thus yielding random classification results for both two schemes. Furthermore, the proposed EMNN consistently outperforms the SIM in terms of classification accuracy, indicating the gain achieved through the integration of the fully connected layer. Additionally, in Fig. 11(a), we examine the convergence of the loss function during the training process of the EMNN for various L. It is noted that the loss function converges by increasing the number of training epochs under all configurations. In Fig. 11(b), we present the classification error of coarse estimation versus the number of snapshots S in single-signal scenario for SNR n = 0 dB, SNR p = 10 dB, Ga = 32 , Ge = 16 , L = 5 , N = 1600 , M =16 , where the varying numbers of SIM configurations Q is considered. It can be observed that the classification error decreases as the number of snapshots increases, thanks to the noise smoothing effect. Moreover, the EMNN utilizing multiple configurations exhibits stronger DOA estimation capability compared to those employing the single SIM configuration. This indicates the advantage of employing 0 2 4 6 8
+
+Number of metasurfaces L 
+
+> 020 40 60 80 100
+> Classification accuracy (%)
+> EMNN
+> SIM
+
+Fig. 10. Classification accuracy for coarse estimation versus the number of metasurface layers L.0 50 100 150 200 250 
+
+> Number of epochs
+> 1.5 22.5 33.5 44.5
+> Value of loss function
+> L = 1
+> L = 2
+> L = 3
+
+(a) 50 51 52 53 54 
+
+> Number of snapshots S
+> 10 -1
+> 10 0
+> 10 1
+> 10 2
+> Classification error (Degree)  Q = 1
+> Q = 2
+> Q = 3
+
+(b) Fig. 11. (a) The loss function in the training process. (b) Classifica-tion error for coarse estimation versus the number of snapshots S.-10 -5 0 5 10 15 20  
+
+> SNR n(dB)
+> 10 -2
+> 10 -1
+> 10 0
+> 10 1
+> 10 2
+> Classification error (Degree)
+> CBF [8]
+> EMNN (coarse estimation only)
+> EMNN (hierarchical method)
+
+Fig. 12. Classification error versus SNR n in dual-signals scenario. 
+
+multiple SIM configurations in EMNNs. Fig. 12 illustrates the classification error in a dual-signal scenario for S = 100 , where we contrast the proposed method with the coarse estimation only and the CBF method. For the sake of comparison, we use the same grid resolution for the coarse estimation only and the hierarchical method, i.e., Ga = 512 , Ge = 128 . Moreover, the CBF method utilizes an identical antenna array as the EMNN system. Additionally, to avoid ambiguity, the antenna spacing is set to dA 
+
+> x
+
+= dA 
+
+> y
+
+= λ/ 2 for the CBF method. For each signal sample, the two testing DOAs are randomly chosen from Gg , g a = 8 , g e = 6 and 
+
+Gˆg , ˆga = 12 , ˆge = 6 , respectively. Moreover, the classifi-cation error is obtained by computing the average errors associated with two pairs between the estimated results and the testing DOAs and selecting the smaller value. DRAFT 14 -10 -5 0 5 10 15       
+
+> SNR n(dB)
+> 10 -2
+> 10 -1
+> 10 0
+> 10 1
+> 10 2
+> RMSE / CRB (Degree)
+> RMSE and CRB versus SNR n
+> EMNN RMSE
+> Amplitude-only CRB (trained SIM)
+> Phase-aware CRB (trained SIM)
+> Amplitude-only CRB (random phase)
+> Fig. 13. RMSE and CRB versus SNR nat the fixed DOA θa=30 .1◦, θ e= 44 .8◦.
+
+From Fig. 12, it can be observed that the hierarchical method exhibits significantly smaller classification error when compared to using coarse estimation only. This indicates that the introduction of the fine estimation stage effectively improves the DOA estimation accuracy. When comparing with the CBF method, it is observed that, under lower SNR, the performance of the EMNN-based method is inferior to the CBF method, and under higher SNR, the EMNN-based method outperforms the CBF method. This discrepancy arises because, in the low SNR region, the classification errors primarily result from peak detection being affected by noise. Due to energy attenuation caused by multi-layer propagation, the EMNN method performs worse than the CBF method. As the SNR increases, classification errors are predominantly de-termined by signal interference rather than noise. Since the EMNN demonstrates a stronger capability in mitigating signal interference due to the higher angular resolution provided by the large aperture of the metasurface, its per-formance significantly surpasses that of the CBF method under high-SNR conditions. In Fig. 13, we evaluate the RMSE of the coarse estimation versus SNR n at the fixed testing DOA θa =30 .1◦, θ e = 44 .8◦, alongside the amplitude-only CRB with the trained SIM, the amplitude-only CRB under random SIM phase configurations, and the phase-aware CRB. The simulation parameters are set as Ga = 1024 , Ge = 256 ,
+
+Q = 9, S = 1, where the EMNN is trained on the single-signal dataset, and the DOA estimate is taken as the center of the predicted grid. The integrals involved in evaluating the CRB are computed via the numerical integration routines from the SciPy library. It can be observed that the RMSE exceeds the amplitude-only CRB with the trained SIM, as a single fully connected layer is insufficient to attain the bound. Nonetheless, the trained SIM yields a lower amplitude-only CRB than random configurations, indicating its effectiveness in preserving the angle-relevant information when converting the wave-front into the received power distribution. The phase-aware CRB attains the lowest value among the three cases, consistent with the fact that retaining the phase incurs less information loss. VI. Conclusions In this paper, we propose a DOA estimation method by leveraging the advanced EMNN, which consists of a UAV-mounted SIM and a fully connected layer to generate the angular spectrum. Furthermore, to reduce the computational burden and the requirement for observation snapshots, a hierarchical DOA estimation method was proposed. Moreover, we derived the single-snapshot CRB of the SIM-based sensing receiver under amplitude-only observation. Simulation experiments validate the effective-ness of the proposed EMNN-based DOA estimators and demonstrate that, under certain conditions, the proposed method outperforms the CBF algorithm with the same computational complexity. In summary, leveraging the powerful wave-domain computing capabilities of SIM, the proposed DOA estimation method not only reduces hardware complexity but also maintains high performance with lower digital computing requirements, showing poten-tial applications in UAV communication scenarios where digital computing capability is limited. Furthermore, leveraging the contributions of this paper, the proposed EMNN-based DOA estimation methodology can be advanced in several areas for future research, in-cluding: i) Employing techniques such as transfer learning to enable the EMNN to rapidly adapt to more challenging scenarios, including those with coherent signals or hard-ware impairments. ii) Integrating non-linear components, for instance, power amplifiers [55], within the meta-atoms to further augment the inference capabilities of the EMNN. iii) Introducing unsupervised learning and self-feedback mechanisms to refine the network architecture and improve estimation performance. Moreover, extending the SIM concept to low-latency localization at the EM domain is an intriguing avenue for future work. This could involve leveraging time-varying characteristics of SIMs, for instance, by designing real-time waveforms to perform distance or velocity estimation within the EM domain. However, numerous challenges remain. From a training methodology perspective, future work needs to address the limitations of current models that assume continuous phase modulation and perfectly known inter-layer prop-agation coefficients. This necessitates exploring optimiza-tion algorithms for discrete variables and designing error calibration algorithms. Appendix A CRB Under Amplitude-Only Observation For the per-antenna observation ym,q = αm,q (θ)s+nm,q 
+
+extracted from the signal model in (10), 2zm,q follows a non-central chi-square distribution with two degrees of freedom and non-centrality parameter 2γm,q (θ), whose probability density function reads [56], [57] 
+
+fZ (z; γ) = e−(z+γ)I0(2 √γz ), z ≥ 0. (38) Accordingly, the score function with respect to γ is 
+
+∂ ln fZ (z; γ)
+
+∂γ = √z/γ I1(2 √γz )
+
+I0(2 √γz ) − 1, (39) DRAFT 15 
+
+and the per-sample scalar Fisher information is 
+
+J1(γ) = EZ
+
+[( ∂ ln fZ (z; γ)
+
+∂γ 
+
+)2]
+
+, (40) which, upon substituting (38) and (39), coincides with (22). Differentiating γm,q (θ) and invoking (19) give 
+
+∂γ m,q /∂θ a = 2 ρ real {α∗ 
+
+> m,q
+
+βam,q } = [ ηm,q (θ)] 1, (41a) 
+
+∂γ m,q /∂θ e = 2 ρ real {α∗ 
+
+> m,q
+
+βem,q } = [ ηm,q (θ)] 2, (41b) which identifies ηm,q (θ) = ∇θ γm,q (θ).Since γm,q (θ) enters (38) only through the non-centrality parameter, the chain rule yields 
+
+∇θ ln fZ (zm,q ; γm,q ) = ∂ ln fZ (z; γ)
+
+∂γ 
+
+∣∣∣∣z=zm,q 
+
+> γ=γm,q
+
+ηm,q (θ). (42) Taking the expected outer product of (42) and invoking (40) reduce the per-sample FIM to the rank-one form 
+
+EZ
+
+{∇θ ln fZ ∇T 
+
+> θ
+
+ln fZ
+
+} = J1(γm,q )ηm,q ηTm,q . (43) Since {zm,q }m,q are mutually independent, and the per-sample FIMs in (43) accumulate additively [52], giving 
+
+Fpow (θ) = 
+
+> Q
+
+∑
+
+> q=1
+> M
+
+∑
+
+> m=1
+
+J1(γm,q (θ)) ηm,q (θ)ηTm,q (θ), (44) which recovers (23). Acknowledgment The authors would like to thank Jinbao Li for the helpful discussions. References 
+
+[1] S. Lin, J. An, L. Gan, and M. Debbah, “UAV-mounted SIM: A hybrid optical-electronic neural network for DoA estimation,” in IEEE Int. Conf. Acoust., Speech Signal Process. (ICASSP), Apr. 2025, pp. 1–5. [2] “Study on New Radio (NR) to Support Non-Terrestrial Net-works (Release 15),” 3GPP, Sophia Antipolis, Valbonne, France, document TR 38.811, V15.4.0, Sep. 2020. [3] J. Cong, X. Wang, C. Yan et al., “CRB weighted source localization method based on deep neural networks in multi-UAV network,” IEEE Internet Things J., vol. 10, no. 7, pp. 5747–5759, Apr. 2023. [4] T. Do-Duy, L. D. Nguyen, T. Q. Duong, S. R. Khosravirad, and H. Claussen, “Joint optimisation of real-time deployment and resource allocation for UAV-aided disaster emergency commu-nications,” IEEE J. Sel. Areas Commun., vol. 39, no. 11, pp. 3411–3424, Nov. 2021. [5] W. Mei and R. Zhang, “Cooperative downlink interference transmission and cancellation for cellular-connected UAV: A divide-and-conquer approach,” IEEE Trans. Commun., vol. 68, no. 2, pp. 1297–1311, Feb. 2020. [6] W. Miao, C. Luo, G. Min, Y. Mi, and Z. Yu, “Location-based robust beamforming design for cellular-enabled UAV communications,” IEEE Internet Things J., vol. 8, no. 12, pp. 9934–9944, Jun. 2021. [7] X. Lin, X. Zhang, L. He et al., “Multiple emitters localization by UAV with nested linear array: System scheme and 2D-DOA estimation algorithm,” China Commun., vol. 17, no. 3, pp. 117– 130, Mar. 2020. [8] H. Krim and M. Viberg, “Two decades of array signal processing research: the parametric approach,” IEEE Signal Process. Mag., vol. 13, no. 4, pp. 67–94, Jul. 1996. [9] R. Schmidt, “Multiple emitter location and signal parameter estimation,” IEEE Trans. Antennas Propag., vol. 34, no. 3, pp. 276–280, Mar. 1986. [10] R. Roy and T. Kailath, “ESPRIT-estimation of signal pa-rameters via rotational invariance techniques,” IEEE Trans. Acoustics Speech Signal Process., vol. 37, no. 7, pp. 984–995, Jul. 1989. [11] A. Barabell, “Improving the resolution performance of eigenstructure-based direction-finding algorithms,” in Proc. IEEE Int. Conf. Acoust., Speech, Signal Process., vol. 8, Apr. 1983, pp. 336–339. [12] M. Haardt and J. A. Nossek, “Unitary ESPRIT: How to obtain increased estimation accuracy with a reduced computational burden,” IEEE Trans. Signal Process., vol. 43, no. 5, pp. 1232– 1242, May. 1995. [13] G. K. Papageorgiou, M. Sellathurai, and Y. C. Eldar, “Deep networks for direction-of-arrival estimation in low SNR,” IEEE Trans. Signal Process., vol. 69, pp. 3714–3729, Jun. 2021. [14] Z.-M. Liu, C. Zhang, and S. Y. Philip, “Direction-of-arrival estimation based on deep neural networks with robustness to array imperfections,” IEEE Trans. Antennas Propag., vol. 66, no. 12, pp. 7315–7327, Dec. 2018. [15] A. M. Elbir, “DeepMUSIC: Multiple signal classification via deep learning,” IEEE Sens. Lett., vol. 4, no. 4, pp. 1–4, Apr. 2020. [16] J. P. Merkofer, G. Revach, N. Shlezinger et al., “Deep aug-mented music algorithm for data-driven DoA estimation,” in Proc. IEEE Int. Conf. Acoust. Speech Signal Process. (ICASSP), May 2022, pp. 3598–3602. [17] X. Q. Chen, L. Zhang, S. Liu, and T. J. Cui, “Artificial neural network for direction-of-arrival estimation and secure wireless communications via space-time-coding digital metasurfaces,” Adv. Opt. Mater., vol. 10, no. 23, p. 2201900, Dec. 2022. [18] X. Q. Chen, L. Zhang, Y. N. Zheng et al., “Integrated sensing and communication based on space-time-coding metasurfaces,” Nat. Commun., vol. 16, no. 1, p. 1836, Feb. 2025. [19] J. An, C. Yuen, Y. L. Guan et al., “Two-dimensional direction-of-arrival estimation using stacked intelligent metasurfaces,” IEEE J. Sel. Areas Commun., vol. 42, no. 10, pp. 2786–2802, Oct. 2024. [20] S. Gao, H. Chen, Y. Wang et al., “Super-resolution diffractive neural network for all-optical direction of arrival estimation beyond diffraction limits,” Light-Sci. Appl., vol. 13, no. 1, p. 161, July. 2024. [21] X. Lin, Y. Rivenson, N. T. Yardimci, M. Veli, Y. Luo, M. Jarrahi, and A. Ozcan, “All-optical machine learning using diffractive deep neural networks,” Science, vol. 361, no. 6406, pp. 1004–1008, Jul. 2018. [22] C. Liu, Q. Ma, Z. J. Luo et al., “A programmable diffractive deep neural network based on a digital-coding metasurface array,” Nature Electronics, vol. 5, no. 2, pp. 113–122, Feb. 2022. [23] H. Liu, J. An, X. Jia, S. Lin, X. Yao, L. Gan, B. Clerckx, C. Yuen, M. Bennis, and M. Debbah, “Stacked intelligent metasurfaces for wireless sensing and communication: Applications and challenges,” 2024. [Online]. Available: https://arxiv.org/abs/2407.03566 [24] M. Huang, B. Zheng, R. Li, X. Li, Y. Zou, T. Cai, and H. Chen, “Diffraction neural network for multi-source information of arrival sensing,” Laser Photon. Rev., p. 2300202, Oct. 2023. [25] J. An, M. Debbah, T. J. Cui et al., “Emerging technologies in intelligent metasurfaces: Shaping the future of wireless communications,” 2024. [Online]. Available: https://arxiv.org/ abs/2411.19754 [26] J. An, C. Yuen, C. Huang et al., “A tutorial on holographic MIMO communications—part I: Channel modeling and channel estimation,” IEEE Commun. Lett., vol. 27, no. 7, pp. 1664–1668, Jul. 2023. [27] J. An, C. Yuen, M. D. Renzo et al., “Flexible intelligent metasurfaces for downlink multiuser MISO communications,” IEEE Trans. Wireless. Commun., pp. 1–1, 2025, Early Access. [28] J. An, C. Xu, Q. Wu et al., “Codebook-based solutions for reconfigurable intelligent surfaces and their open challenges,” IEEE Wireless. Commun., vol. 31, no. 2, pp. 134–141, Apr. 2024. [29] Y. Jia, H. Lu, Z. Fan, B. Wu, F. Qu, M.-j. Zhao, C. Qian, and H. Chen, “High-efficiency transmissive tunable metasurfaces DRAFT 16 
+
+for binary cascaded diffractive layers,” IEEE Trans. Antennas Propag., May. 2024. [30] N. U. Hassan, J. An et al., “Efficient beamforming and radiation pattern control using stacked intelligent metasurfaces,” IEEE Open J. Commun. Soc., vol. 5, pp. 599–611, Jan. 2024. [31] J. An, M. D. Renzo, M. Debbah et al., “Stacked intelligent metasurfaces for multiuser downlink beamforming in the wave domain,” IEEE Trans. Wireless. Commun., pp. 1–1, May, Early Access 2025. [32] H. Liu, J. An, D. W. K. Ng et al., “DRL-based orchestration of multi-user MISO systems with stacked intelligent metasur-faces,” in Proc. IEEE Int. Conf. Commun. (ICC), Jun. 2024, pp. 4991–4996. [33] J. An, C. Xu, D. W. K. Ng et al., “Stacked intelligent metasur-faces for efficient holographic MIMO communications in 6G,” IEEE J. Sel. Areas Commun., vol. 41, no. 8, pp. 2380–2396, Aug. 2023. [34] J. An, C. Yuen, C. Xu et al., “Stacked Intelligent Metasurface-Aided MIMO Transceiver Design,” IEEE Wirel. Commun., vol. 31, no. 4, pp. 123–131, Apr. 2024. [35] A. Papazafeiropoulos, J. An, P. Kourtessis et al., “Achievable rate optimization for stacked intelligent metasurface-assisted holographic MIMO communications,” IEEE Trans. Wireless. Commun., vol. 23, no. 10, pp. 13 173–13 186, Oct. 2024. [36] H. Niu, J. An, A. Papazafeiropoulos et al., “Stacked intelligent metasurfaces for integrated sensing and communications,” IEEE Wireless. Commun. Lett., vol. 13, no. 10, pp. 2807–2811, Oct. 2024. [37] S. Lin, J. An, L. Gan et al., “Stacked intelligent metasurface enabled LEO satellite communications relying on statistical CSI,” IEEE Wireless. Commun. Lett., vol. 13, no. 5, pp. 1295– 1299, May. 2024. [38] E. Shi, J. Zhang, Y. Zhu et al., “Uplink performance of stacked intelligent metasurface-enhanced cell-free massive MIMO sys-tems,” IEEE Trans. Wireless. Commun., pp. 1–1, 2025, Early Access. [39] H. Niu, X. Lei, J. An, L. Zhang, and C. Yuen, “On the efficient design of stacked intelligent metasurfaces for secure SISO transmission,” IEEE Trans. Inf. Forensic Secur., vol. 20, pp. 60–70, Jan. 2025. [40] G. Huang, J. An, Z. Yang, L. Gan, M. Bennis, and M. Debbah, “Stacked intelligent metasurfaces for task-oriented semantic communications,” IEEE Wireless. Commun. Lett., vol. 14, no. 2, pp. 310–314, Feb. 2025. [41] O. Kulce, D. Mengu, Y. Rivenson, and A. Ozcan, “All-optical information-processing capacity of diffractive surfaces,” Light-Sci. Appl., vol. 10, no. 1, p. 25, Jan. 2021. [42] J. Chang, V. Sitzmann, X. Dun et al., “Hybrid optical-electronic convolutional neural networks with optimized diffractive optics for image classification,” SCI REP-UK, vol. 8, no. 1, pp. 1–10, Aug. 2018. [43] L. Fan, X. Long, J. Dai et al., “Optical-electronic hybrid Fourier convolutional neural network based on super-pixel complex-valued modulation,” Appl. Opt, vol. 62, no. 5, pp. 1337–1344, Feb. 2023. [44] G. Qu, G. Cai, X. Sha et al., “All-dielectric metasurface empowered optical-electronic hybrid neural networks,” Laser Photon. Rev., vol. 16, no. 10, p. 2100732, Oct. 2022. [45] T. Zhou, X. Lin, J. Wu, Y. Chen, H. Xie, Y. Li, J. Fan, H. Wu, L. Fang, and Q. Dai, “Large-scale neuromorphic optoelectronic computing with a reconfigurable diffractive processing unit,” Nat. Photonics, vol. 15, no. 5, pp. 367–373, Apr. 2021. [46] D. Mengu, Y. Luo, Y. Rivenson, and A. Ozcan, “Analysis of diffractive optical neural networks and their integration with electronic neural networks,” IEEE J. Sel. Top. Quantum Electron., vol. 26, no. 1, pp. 1–14, Jan. 2020. [47] Y. Chen, M. Nazhamaiti, H. Xu, Y. Meng, T. Zhou, G. Li, J. Fan, Q. Wei, J. Wu, F. Qiao et al., “All-analog photoelectronic chip for high-speed vision tasks,” Nature, pp. 1–10, Oct. 2023. [48] Z. Gu, Q. Ma, X. Gao, J. W. You, and T. J. Cui, “Direct electromagnetic information processing with planar diffractive neural network,” Sci. Adv., vol. 10, no. 29, p. eado3937, Jul. 2024. [49] W. Xu, D. Inserra, G. Wen, and A. M. Tonello, “Low complexity aoa estimation with planar electromagnetic lens arrays,” in IEEE Int. Conf. Control, Electron. Comput. Technol. (IC-CECT), Apr. 2023, pp. 1582–1587. [50] H. Kim, A. M. Haimovich, and Y. C. Eldar, “Non-coherent direction of arrival estimation from magnitude-only measure-ments,” IEEE Signal Process. Lett., vol. 22, no. 7, pp. 925–929, Jul. 2015. [51] Z. Wan, W. Liu, and P. Willett, “Target localization based on distributed array networks with magnitude-only measure-ments,” IEEE Trans. Aerosp. Electron. Syst., vol. 59, no. 6, pp. 9704–9710, Dec. 2023. [52] S. M. Kay, Fundamentals of Statistical Signal Processing: Estimation Theory. Upper Saddle River, NJ: Prentice-Hall, 1993. [53] P. Stoica and A. Nehorai, “MUSIC, maximum likelihood, and Cramér-Rao bound,” IEEE Trans. Acoust., Speech, Signal Process., vol. 37, no. 5, pp. 720–741, May 1989. [54] D. P. Kingma and J. Ba, “Adam: A method for stochastic optimization,” in Proc. 3rd Int. Conf. Learn. Representations, 2014. [55] X. Gao, Q. Ma, Z. Gu et al., “Programmable surface plasmonic neural networks for microwave detection and processing,” Nat. Electron., vol. 6, no. 4, pp. 319–328, Apr. 2023. [56] NIST Digital Library of Mathematical Functions, “NIST digital library of mathematical functions,” 2024, f. W. J. Olver et al., eds. [57] N. L. Johnson, S. Kotz, and N. Balakrishnan, Continuous univariate distributions, 2nd ed. New York, NY, USA: Wiley, 1995, vol. 2. 
+
+Shining Lin received his B.S. degree in 2022 and M.S. degree in 2025, both from the School of Information and Communication Engineer-ing at the University of Electronic Science and Technology of China (UESTC), Chengdu. His current research focuses on electromagnetic neural networks (EMNN), stacked intelligent metasurfaces (SIM), and DOA estimation. He was honored with the National Scholarship in 2024. 
+
+Jiancheng An (Senior Member, IEEE) re-ceived his B.S. in Electronics and Information Engineering (2016) and Ph.D. in Informa-tion and Communication Engineering (2021) from the University of Electronic Science and Technology of China (UESTC), Chengdu. He was a Visiting Scholar at the University of Southampton, U.K. (2019–2020), a Post-Doctoral Fellow at Singapore University of Technology and Design (2021–2023), and aResearch Fellow at Nanyang Technological University, Singapore (2023–2026). He is currently a Professor at UESTC’s School of Electronic Science and Engineering. He received the IEEE ICC 2023 Best Paper Award, co-invented six patents, and has published over 100 papers in peer-reviewed journals and confer-ences. His research focuses on stacked intelligent metasurfaces (SIM), flexible intelligent metasurfaces (FIM), and electromagnetic neural networks (EMNN). He serves as an Editor for IEEE Transactions on Communications, IEEE Open Journal of the Communications Society, and IEEE Wireless Communications Letters, and as Lead Guest Editor for a Special Issue on SIM-empowered signal processing for 6G in IEEE Wireless Communications. DRAFT 17 
+
+Lu Gan (Member, IEEE) received the M.S. and Ph.D. degrees from the University of Electronic Science and Technology of China (UESTC), Chengdu, China, in 2002 and 2006, respectively. From September 2012 to Septem-ber 2013, he was a Visiting Researcher with the University of Concordia, Montreal, QC, Canada. Since August 2014, he has been a Professor with UESTC. His research inter-ests include signal detection and classification, array signal processing, compressive sensing, passive radar, and reconfigurable intelligent surfaces. 
+
+Victor C. M. Leung (Life Fellow, IEEE) is a Distinguished Professor of computer sci-ence and software engineering with Shenzhen University, and also an Emeritus Professor of electrical and computer engineering and the Director of the Laboratory for Wireless Networks and Mobile Systems, The Univer-sity of British Columbia (UBC), Canada. His published works have together attracted more than 80000 citations. His broad research in-terests include wireless networks and mobile systems. He has published widely in these areas. He is a fellow of the Royal Society of Canada (Academy of Science), Canadian Academy of Engineering, and the Engineering Institute of Canada. He received the 1977 APEBC Gold Medal, the 1977–1981 NSERC Postgraduate Scholarships, the IEEE Vancouver Section Centennial Award, the 2011 UBC Killam Research Prize, the 2017 Canadian Award for Telecommunications Research, the 2018 IEEE TCGCC Distinguished Technical Achievement Recognition Award, and the 2018 ACM MSWiM Reginald Fessenden Award. He co-authored papers that won the 2017 IEEE ComSoc Fred W. Ellersick Prize, the 2017 IEEE Systems Journal Best Paper Award, the 2018 IEEE CSIM Best Journal Paper Award, and the 2019 IEEE TCGCC Best Journal Paper Award. He was named in the Clarivate Analytics list of “Highly Cited Researchers” for several years. He is serving on the Editorial Boards for IEEE TRANSACTIONS ON GREEN COM-MUNICATIONS AND NETWORKING, IEEE TRANSACTIONS ON COMPUTATIONAL SOCIAL SYSTEMS, and several other journals. 
+
+Mehdi Bennis (Fellow, IEEE) is a Full (Tenured) Professor with the Centre for Wire-less Communications, University of Oulu, Oulu, Finland, and the Head of the Intelligent Connectivity and Networks/Systems Group (ICON). His research interests include ra-dio resource management, game theory and distributed AI in 5G/6G networks. He has published more than 300 research papers in international conferences, journals and book chapters. He has been a recipient of several prestigious awards including the 2015 Fred W. Ellersick Prize from the IEEE Communications Society, the 2016 Best Tutorial Prize from the IEEE Communications Society, the 2017 EURASIP Best paper Award for the Journal of Wireless Communications and Networks, the all-University of Oulu award for research, the 2019 IEEE ComSoc Radio Communications Committee Early Achievement Award, and the 2020–2026 Clarivate Highly Cited Researcher by the Web of Science. 
+
+Mérouane Debbah (Fellow, IEEE) is Professor at Khalifa University of Science and Tech-nology in Abu Dhabi and founding Senior Director of KU Digital Future Institute. His research has been lying at the interface of fun-damental mathematics, algorithms, statistics, information and communication sciences with a special focus on random matrix theory and learning algorithms. In the Communication field, he has been at the heart of the develop-ment of small cells (4G), Massive MIMO (5G) and Large Intelligent Surfaces (6G) technologies. In the AI field, he is known for his work on Large Language Models, distributed AI systems for networks and semantic communications. He received multiple prestigious distinctions, prizes and best paper awards (more than 50 IEEE best paper awards) for his contributions to both fields. He is an IEEE Fellow, a WWRF Fellow, a Eurasip Fellow, an AAIA Fellow, an Institut Louis Bachelier Fellow, an AIIA Fellow and a Membre émérite SEE. 
+
+Tie Jun Cui (M’98-SM’00-F’15) received the B.Sc., M.Sc., and Ph.D. degrees in electrical engineering from Xidian University, Xi’an, China, in 1987, 1990, and 1993, respectively. In March 1993, he joined the Department of Electromagnetic Engineering, Xidian Univer-sity, and was promoted to an Associate Pro-fessor in November 1993. From 1995 to 1997 he was a Research Fellow with the Institut fur Hochstfrequenztechnik und Elektronik (IHE) at University of Karlsruhe, Germany. In July 1997, he joined the Center for Computational Electromagnetics, Department of Electrical and Computer Engineering, University of Illinois at Urbana-Champaign, first as a Postdoctoral Research Asso-ciate and then a Research Scientist. In September 2001, he became a Cheung-Kong Professor with the Department of Radio Engineering, Southeast University, Nanjing, China. Currently he is the Chief Professor of Southeast University, and the Director of State Key Laboratory of Millimeter Waves. He is also the Founding Director of the Institute of Electromagnetic Space, Southeast University. Dr. Cui’s research interests include metamaterials and computational electromagnetics. Dr. Cui is the Academician of Chinese Academy of Science, and IEEE Fellow. He served as Associate Editor of IEEE Transactions on Geoscience and Remote Sensing, and Guest Editors of Science China - Information Sciences, Science Bulletin, IEEE Transactions on Microwave Theory and Techniques, IEEE Journal of Emerging Technologies in Circuits and System, Applied Physics Letters, Engineering, Advanced Optical Materials, and Research. Currently he is the Chief Editor of Metamaterial Short Books in Cambridge University Press, the Senior Editor of IEEE Journal of Selected Topics in Electromagnetics, Antennas, and Propagation, the Editor of Materials Today Electronics, and the Editorial Board Members or International Advisory Members of National Science Re-view, eLight, PhotoniX, Small Structure, Physical Review Applied, npj Metamaterials, Research, Advanced Optical Materials, Advanced Photonics Research, and Journal of Physics: Photonics. He presented more than 200 Keynote and Plenary Talks in Academic Conferences, Symposiums, or Workshops.

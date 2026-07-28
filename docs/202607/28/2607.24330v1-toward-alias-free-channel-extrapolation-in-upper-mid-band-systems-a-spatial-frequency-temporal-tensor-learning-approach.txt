@@ -1,0 +1,964 @@
+Title: Toward Alias-Free Channel Extrapolation in Upper Mid-Band Systems: A Spatial-Frequency-Temporal Tensor Learning Approach
+
+URL Source: https://arxiv.org/pdf/2607.24330v1
+
+Published Time: Tue, 28 Jul 2026 01:54:21 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+> 1
+
+# Toward Alias-Free Channel Extrapolation in Upper Mid-Band Systems: A Spatial-Frequency-Temporal Tensor Learning Approach 
+
+Jiawei Zhuang, Hongwei Hou, Yafei Wang, Graduate Student Member, IEEE , Xinping Yi, Member, IEEE ,Wenjin Wang, Member, IEEE , Jiangzhou Wang, Fellow, IEEE , Bj¨ orn Ottersten, Fellow, IEEE 
+
+Abstract —Upper mid-band massive multiple-input multiple-output (MIMO) offers a favorable capacity-coverage trade-off for next-generation wireless systems, but its large antenna arrays, wide bandwidths, and faster temporal variation substantially increase the pilot overhead required for accurate channel state information (CSI) acquisition. To reduce this overhead, this paper establishes a tensor-structured multi-domain channel ex-trapolation framework that exploits the limited-scattering na-ture of practical propagation environments to recover complete CSI across the spatial-frequency-temporal (SFT) domains from limited observations. Specifically, we develop a Tucker-based SFT-domain signal model to represent the complete CSI, where the factor matrices are parameterized by angle-delay-Doppler (ADD)-domain grids. Thanks to this representation, we reveal that limited SFT-domain observations imposed by uniform pilot patterns and antenna-port selection inherently induce ADD-domain aliasing, so that multiple physically distinct ADD-domain components become indistinguishable within structured ADD aliasing groups. To tackle this issue, we introduce a support-prior-assisted ADD-domain de-aliasing mechanism that leverages coarse-grained support information. Since exact closed-form characterization of this mechanism is difficult to derive, we propose a tensor-structure-aware axial-attention neural network (TANN), which integrates axis-wise attention with a lightweight multi-scale CNN-based gating module to incorporate support pri-ors for ADD-domain de-aliasing. With tensor-structure modeling and mixed-configuration training over different pilot decimation factors, TANN yields a unified model that generalizes across pilot configurations without retraining. Extensive numerical results demonstrate that the proposed framework consistently outper-forms representative baselines across diverse pilot configurations, user velocities, carrier frequencies, and propagation scenarios. 
+
+Index Terms —Multi-domain channel extrapolation, tensor rep-resentation, deep learning, massive MIMO. 
+
+I. I NTRODUCTION 
+
+# DRIVEN by the growing demand for data-intensive appli-cations such as broadband Internet of Things (IoT) [1] and extended reality (XR) [2], next-generation wireless net-works are envisioned to deliver high capacity and broad coverage simultaneously. However, the currently deployed frequency ranges (FRs), namely FR1 (sub-6 GHz) and FR2  
+
+> (Jiawei Zhuang and Hongwei Hou contributed equally to this work.) (Corresponding author: Wenjin Wang.)
+> Jiawei Zhuang, Hongwei Hou, Yafei Wang, Wenjin Wang and Jiangzhou Wang are with the National Mobile Communications Research Laboratory, Southeast University, Nanjing 210096, China, and also with Purple Moun-tain Laboratories, Nanjing 211100, China (e-mail: {jwzhuang, hongweihou, wangyf, wangwj, j.z.wang }@seu.edu.cn). Xinping Yi is with the National Mobile Communications Research Labora-tory, Southeast University, Nanjing 210096, China (e-mail: xyi@seu.edu.cn). Bj¨ orn Ottersten is with the Interdisciplinary Centre for Security, Reli-ability and Trust (SnT), University of Luxembourg, Luxembourg (e-mail: bjorn.ottersten@uni.lu).
+
+(millimeter-wave), remain unable to simultaneously achieve high throughput under limited bandwidth availability and pro-vide wide-area coverage [3]. In this context, growing attention has been directed toward the newly defined FR3 (upper mid-band, 7–24 GHz), which offers a favorable trade-off between spectrum exhaustion in FR1 and severe attenuation in FR2 [4]. To realize the envisioned capacity and coverage of FR3, ac-curate channel state information (CSI) acquisition is essential for enabling effective wireless transmission designs, including user scheduling, precoding, and signal detection [5]. CSI is conventionally acquired via pilot-based channel estimation. However, the large antenna arrays, wide bandwidths, and elevated carrier frequencies envisioned for FR3 systems col-lectively impose prohibitive pilot overhead across the spatial, frequency, and temporal domains, thereby posing fundamental challenges to accurate CSI acquisition:  
+
+> •
+
+Spatial domain: Hybrid beamforming (HBF) is widely adopted in wideband massive multiple-input multiple-output (MIMO) systems to reduce hardware cost and power consumption by limiting the number of radio frequency (RF) chains at the base station (BS) [6]. Nevertheless, acquiring full-dimensional CSI under HBF requires multi-slot pilot training with different analog beamforming matrices, incurring substantial pilot over-head and considerable time and power consumption [7].  
+
+> •
+
+Frequency domain: The wide bandwidth of FR3 leads to larger subcarrier spacing in orthogonal frequency-division multiplexing (OFDM) systems [8] [9], which induces rapid channel variations across subcarriers and exacerbates frequency-selective fading. To ensure reli-able channel estimation, frequency-domain pilots must be placed more densely, thereby increasing pilot overhead.  
+
+> •
+
+Temporal domain: The elevated carrier frequency of FR3 results in larger Doppler shifts and faster channel variations than FR1, thereby exacerbating channel aging under mobility. Consequently, a shorter pilot transmission interval is required to track the channel variation, substan-tially increasing temporal-domain pilot overhead [10]. Therefore, multi-domain channel extrapolation has emerged as a promising solution to reduce pilot overhead by reconstructing and predicting CSI across antennas, subcarriers, and OFDM symbols from limited observations. 
+
+A. Prior Work 
+
+Due to the limited-scattering nature of practical propagation environments [11], wireless channels are often governed by a small number of dominant propagation paths, giving rise to structured correlations across the spatial, frequency, and arXiv:2607.24330v1 [eess.SP] 27 Jul 2026 2
+
+temporal domains. Accordingly, existing channel extrapolation methods exploit such correlations either within individual do-mains or jointly across multiple domains, and can be broadly categorized into spatial-, frequency-, and temporal-domain approaches, as well as multi-domain combinations. For the spatial domain, prior works demonstrated that full-dimensional CSI can be reconstructed from observations at only a subset of antenna ports [12]. Since the extrapolation performance strongly depends on the antenna-port selection pattern at the BS, recent studies have developed learning-based frameworks that jointly optimize antenna selection and channel extrapo-lation [13] [14], with the effectiveness of this joint design paradigm further validated in massive MIMO systems on a 3rd generation partnership project (3GPP)-compliant over-the-air prototype [15]. Beyond optimizing the antenna observation pattern, recent studies have exploited auxiliary information to improve spatial-domain extrapolation accuracy. Specifically, environment-related multipath information extracted from CSI was incorporated into the extrapolation network through cross-attention in [16]. In a complementary direction, uplink and downlink reference-signal observations were fused for full CSI reconstruction in the spatial domain [17]. In the frequency domain, channel extrapolation aims to recover full-band CSI from limited pilot subcarriers to reduce pilot overhead. A straightforward approach is to perform least-squares (LS) estimation on pilot subcarriers and then interpolate the resulting CSI to data subcarriers [18]. To further improve estimation accuracy, linear minimum mean squared error (LMMSE) estimators were developed in [19], incorporat-ing channel covariance information to better exploit frequency-domain channel correlations. Nevertheless, such model-driven methods are limited by fixed interpolation rules or statistical assumptions, and their performance may degrade under low-density pilot configurations or mismatched channel statistics. This has motivated learning-based approaches to capture richer channel structures from data. For example, a dual-attention-based channel estimation network was proposed in [20] to exploit spatial-delay features for frequency-domain channel extrapolation under low-density pilot configurations. In the temporal domain, channel extrapolation predicts future CSI based on historical observations, thereby avoiding frequent transmission of pilots. Model-based methods, includ-ing the sum-of-sinusoids model [21], autoregressive models [22], [23] and parametric channel models [24], have shown promising performance in channel prediction. The advance-ment of deep learning has further enhanced channel prediction performance by enabling data-driven modeling of complex temporal dynamics. Prior data-driven approaches primarily re-lied on recurrent neural networks (RNNs) to capture temporal correlations in CSI sequences, achieving improved prediction accuracy over classical approaches [25]. To alleviate the error accumulation caused by serial processing, Transformer-based channel prediction was introduced in [26], leveraging self-attention to capture long-term temporal dependencies. Building upon the progress of single-domain channel ex-trapolation, recent studies have explored multi-domain channel extrapolation to improve CSI acquisition efficiency by exploit-ing coupled structures across multiple domains. As an early effort, a two-stage two-dimensional (2D) scheme was proposed in [27] to exploit the frequency-temporal channel structure, thereby improving extrapolation robustness against practical impairments. Beyond the frequency-temporal domain, a uni-fied multi-domain channel extrapolation framework was devel-oped in [28], where the time, frequency, polarization, spatial, and user domains were considered with sparse pilot pattern de-sign for efficient channel extrapolation. Since the cross-domain coupling inherent in practical wireless channels arises from complex scattering environments and is difficult to characterize analytically, learning-based approaches have been introduced for multi-domain channel extrapolation. In [29], a unified three-dimensional (3D) framework based on deep learning was developed for spatial-frequency-temporal (SFT)-domain channel extrapolation, enabling full-dimensional uplink CSI recovery from sparse spatial-frequency pilots and slot-level downlink CSI prediction by exploiting uplink-downlink reci-procity and temporal correlations. To reduce the computa-tional burden of joint cross-domain modeling, a Transformer encoder-like architecture was developed in [30] for joint time-frequency-space extrapolation, using a multilayer perceptron (MLP) in place of multi-head attention. 
+
+B. Motivation and Main Contributions 
+
+The aforementioned single-domain channel extrapolation approaches cannot jointly exploit the coupled correlations across the SFT domains, which limits their capability to reduce pilot overhead and enhance extrapolation accuracy. Although several preliminary attempts mitigate this issue by leveraging multi-domain correlations, they mainly operate in the SFT domains, without explicitly exploiting the sparse structures in angle-delay domains enabled by large-scale an-tenna arrays and wide bandwidths, nor the Doppler-domain structure that better characterizes temporal channel variations. Moreover, model-driven methods often depend on restrictive assumptions and are vulnerable to environmental mismatch, whereas data-driven methods are usually tailored to specific pilot configurations and may require retraining when the pilot pattern changes. To this end, we investigate multi-domain channel extrapolation for upper mid-band massive MIMO-OFDM systems, leveraging an angle-delay-Doppler (ADD) representation to capture limited-scattering channel structures and adopting a unified model to generalize across diverse pilot configurations. The main contributions of this work are summarized as follows:  
+
+> •
+
+By exploiting the limited-scattering propagation char-acteristics of wireless channels, we develop a tensor-structured SFT-domain channel model along with its ADD-domain representation, where the factor matrices are parameterized by the discrete grids of the correspond-ing domains. Building upon this model, we analytically reveal the limitation of uniform pilot decimation in the SFT domains that induces asymmetric aliasing across ADD domains, in such a way that the aliasing ADD-domain components are rendered indistinguishable from decimated observations. To resolve this aliasing ambigu-ity, we reformulate multi-domain channel extrapolation as a support-prior-assisted ADD-domain de-aliasing prob-3
+
+lem, where support priors obtainable from historical ob-servations, environmental context, or auxiliary reference signals are incorporated to guide ambiguity resolution.  
+
+> •
+
+To tackle the support-prior-assisted ADD-domain de-aliasing problem, we propose a tensor-structure-aware axial-attention neural network (TANN), which integrates an axial-attention backbone with a support-prior process-ing gating module. The axial-attention backbone exploits the tensor-structured ADD-domain representation to de-compose full self-attention over the joint ADD-domain into sequential axis-wise self-attention along the angle, delay, and Doppler domains, alleviating the computa-tional bottleneck of Transformer-based modeling under large antenna arrays and wide bandwidths. To effectively incorporate coarse domain-wise support priors, we design a lightweight multi-scale convolutional neural network (CNN) gating module that extracts local support fea-tures and neighborhood contiguity, and adaptively mod-ulates axial-attention features to guide ADD-domain de-aliasing. Moreover, a learnable per-axis residual gate is incorporated to adaptively regulate prior-guided feature updates, enhancing robustness to imperfect priors.  
+
+> •
+
+To incorporate the ADD-domain sparsity prior into the training process, we design a composite loss that com-bines the SFT-domain normalized mean squared error (NMSE) with auxiliary axis-wise ADD-domain spectral consistency terms. The training samples are generated under 3GPP-defined outdoor propagation scenarios, and the corresponding support priors are provided as auxiliary inputs for learning a prior-conditioned de-aliasing oper-ator. During deployment, the support-prior input can be derived from the specific propagation conditions observed at the target site, allowing the model to adapt to site-dependent propagation characteristics without site-wise retraining. To enable pilot-configuration-generalizable ex-trapolation, we develop a mixed-configuration training strategy that jointly trains the model over randomized pilot decimation factors. By mapping different pilot con-figurations into a common ADD-domain input space through flexible transform sampling densities, the pro-posed framework learns a unified model that generalizes across diverse pilot configurations without retraining. This paper is structured as follows: Section II presents the system and signal models. Section III formulates the problem through multi-domain aliasing analysis and a support-prior-assisted de-aliasing framework. Section IV details the proposed network architecture, together with the loss design and training strategy. Numerical results are given in Section V. Finally, Section VI concludes this paper. 
+
+Notations : Scalars, vectors, matrices, and tensors are de-noted by x, x, X, and X , respectively. The superscripts (·)∗,
+
+(·)T , (·)H , and (·)† denote conjugate, transpose, conjugate transpose, and pseudo-inverse, respectively. The norms ∥ · ∥ F
+
+and ∥ · ∥ 2 denote the Frobenius and Euclidean norms, respec-tively. ⊙ and ◦ denote the Hadamard and outer products, re-spectively, and ×d denotes the mode-d tensor-matrix product. 
+
+CN (μ, σ 2) denotes the complex Gaussian distribution with mean μ and variance σ2, and E{·} denotes expectation. RF Chain     
+
+> Baseband
+> RF Chain …
+> …
+> …
+> Observed antenna Unselected antenna Extrapolated antenna -
+> domain channel
+> Observed Antenna Subset
+> …
+> Extrapolated Channels
+> Spatial domain Channel
+> Extrapolation
+> (a) Spatial-domain channel extrapolation under the HBF architecture. Pilot Segment
+> Channels
+> Extrapolated
+> Channels
+> Frequency -temporal domain
+> Channel Extrapolation
+> Time
+> Frequency
+> Pilot
+> Non -pilot
+> To be extrapolated
+> 12Msym
+> (b) Frequency- and temporal-domain channel extrapolation. Fig. 1. Illustration of multi-domain channel extrapolation in upper mid-band massive MIMO-OFDM systems.
+
+II. S YSTEM MODEL 
+
+Consider a massive MIMO-OFDM system operating in time-division duplexing (TDD) mode, where the BS, equipped with a uniform linear array (ULA) comprising Nan antennas and NRF RF chains with NRF < N an , serves a typical single-antenna mobile terminal (MT). As illustrated in Fig. 1a, the BS adopts an HBF architecture, where NRF RF chains are connected to Nan antennas through an analog phase shift network and digital baseband processing. OFDM modula-tion is employed with NFFT subcarriers, among which Nsc 
+
+subcarriers are used for data transmission with a subcarrier spacing of ∆f and NCP -length cyclic prefix (CP). Hence, the system sampling interval, the OFDM symbol duration, and the CP duration are given by ∆Tsam = 1 
+
+> NFFT ∆f
+
+, ∆Tsym =
+
+NFFT ∆Tsam , and ∆TCP = NCP ∆Tsam , respectively, so that the total OFDM symbol duration is ∆T = ∆ Tsym + ∆ TCP .As antenna arrays and bandwidths continue to scale, exhaus-tive pilot-based CSI acquisition becomes increasingly costly in next-generation wireless networks. To reduce the resulting pilot overhead, we adopt sparse channel sounding over the SFT domains and recover or predict the unobserved CSI through multi-domain channel extrapolation. In the spatial domain, the 
+
+NRF RF chains are connected to NRF uniformly selected an-tenna ports, such that the number of sounded antennas matches the available RF chains. The uniform antenna selection avoids configuration-dependent antenna-selection signaling and fa-cilitates model generalization. In the frequency domain, the MT employs a comb-type pilot pattern with a uniform spac-ing of Nf subcarriers, corresponding to a pilot spacing of 
+
+∆ ¯f = Nf ∆f . In the temporal domain, pilot observations are collected over Nt OFDM symbols, forming a temporal observation window of duration ∆ ¯T = Nt∆T . Under such SFT-domain pilot configuration, as illustrated in Fig. 1, multi-4
+
+domain channel extrapolation is employed to reconstruct the CSI over all Nan antennas and Nsc subcarriers, and to predict the CSI of OFDM symbols beyond the observation window. 
+
+A. Channel Model 
+
+The channel impulse response (CIR) at the nan -th antenna is expressed as [31] 
+
+hnan (t, τ ) = 
+
+> L
+
+X
+
+> l=1
+
+glej2πν ltδ(τ − τnan ,l ) , (1) where L is the number of multipath components, and τnan ,l =
+
+τl + (nan −1) d cos( ϑl) 
+
+> c
+
+is the propagation delay of the l-th path from the MT to the nan -th BS antenna under the far-field planar-wave assumption. Here, ϑl denotes the angle of arrival (AoA) of the l-th path, while gl, τl, and νl denote its complex gain, delay, and Doppler frequency, respectively. In addition, 
+
+c is the speed of light, and d is the inter-antenna spacing. By taking the Fourier transform of the CIR and stacking the channel responses across antennas, subcarriers, and OFDM symbols, the full SFT-domain channel tensor is obtained as 
+
+H =
+
+> L
+
+X
+
+> l=1
+
+gla(ψl) ◦ b(τl) ◦ c(νl), (2) where ψl ≜ d cos( ϑl)/λ is the directional cosine of the l-th propagation path, and λ is the carrier wavelength. The vectors a(ψ), b(τ ), and c(ν) denote the steering vectors in the angle, delay, and Doppler domains, respectively, with 
+
+[a(ψ)] nan ≜ e−j2π(nan −1) ψ , [b(τ )] nsc ≜ e−j2π(nsc −1)∆ f τ ,and [c(ν)] nsym ≜ ej2π(nsym −1)∆ T ν . The parametric decompo-sition in (2) is not specific to FR3 and remains applicable to FR1 and FR2, with the principal band-dependent differences reflected in the statistical distributions of the path gains, de-lays, angles, and Doppler frequencies. Available measurement results show that FR3 generally exhibits lower propagation loss and richer resolvable multipath than FR2, while tending to exhibit smaller delay and angular spreads and, for a given user velocity, larger Doppler shifts than FR1 [32], [33]. The representation in (2) reveals that the SFT-domain chan-nel admits a rank-L canonical polyadic structure, owing to the limited scattering characteristics of practical propagation envi-ronments. When this low-rank structure is exploited through an unstructured canonical polyadic decomposition, the practical lack of uniqueness guarantee calls for additional structural priors on the factor matrices. To this end, we construct the factor matrices A(ψ), B(τ ), and C(ν) of the SFT-domain channel based on predefined ADD-domain grids, defined as 
+
+A(ψ) = a   ¯ψ1
+
+ , . . . , a   ¯ψKang 
+
+ ∈ CNan ×Kang ,
+
+B(τ ) = [ b (¯ τ1) , . . . , b (¯ τKde )] ∈ CNsc ×Kde ,
+
+C(ν) = [ c (¯ ν1) , . . . , c (¯ νKdo )] ∈ CNsym ×Kdo ,
+
+(3) where Kx, x ∈ { ang , de , do }, denotes the number of grid points in the corresponding domain, and ψ, τ , and ν denote the angle, delay, and Doppler grids, respectively. Following common practice in dynamic grid modeling, uniform sampling is adopted in the angle, delay, and Doppler domains, with grid sizes proportional to the numbers of antennas, subcarriers, and OFDM symbols so as to balance computational complexity and model flexibility. Accordingly, the SFT-domain channel can be represented by the following Tucker-decomposition-based model [34]: 
+
+H = G ×1 A ×2 B ×3 C, (4) where G ∈ CKang ×Kde ×Kdo denotes the ADD-domain channel tensor, whose entries represent the gains associated with the corresponding ADD-domain grid points and each of which contributes a rank-one component in the SFT domains. 
+
+B. Signal Model 
+
+During channel sounding, sparse measurements are col-lected over the SFT domains to reduce pilot overhead and CSI acquisition burden. Specifically, the subsampled SFT-domain channel tensor is obtained as 
+
+Hp = H ×1 Ps ×2 Pf ×3 Pt
+
+= G ×1 PsA ×2 Pf B ×3 PtC, (5) where Ps ∈ { 0, 1}Man ×Nan , Pf ∈ { 0, 1}Msc ×Nsc , and Pt ∈{0, 1}Msym ×Nsym denote the binary selection matrices in the spatial, frequency, and temporal domains, respectively, Man ,
+
+Msc , and Msym denote the numbers of observed antenna ports, subcarriers, and OFDM symbols, respectively, with Man =
+
+NRF = Nan /N s, Msc = Nsc /N f , and Msym = Nsym /N t.Following the uniform antenna selection, comb-type frequency pilots, and uniform temporal observation pattern described above, the selection matrices are constructed as 
+
+[Pξ ]m,n =
+
+(
+
+1, n = 1 + ( m − 1) Nξ ,
+
+0, otherwise , ξ ∈ { s, f, t}. (6) Unlike the spatial and frequency domains, where extrapola-tion reconstructs the unobserved antenna and subcarrier entries within the same SFT block, the temporal domain is used for forward prediction. Specifically, the observations within the temporal window Tobs are exploited to predict the CSI of future OFDM symbols in Tpred , while the CSI of symbols between adjacent pilot-bearing symbols is not reconstructed. After cyclic-prefix removal and OFDM demodulation, the received pilot observations can be expressed as 
+
+Y = Sp ⊙ Hp + Z, (7) where Sp, Hp, and Z denote the pilot, the observed SFT-domain channel, and the additive white Gaussian noise (AWGN), respectively. Since the pilot symbols are known at both BS and MT, Sp is assumed to be an all-ones tensor without loss of generality. By substituting the Tucker-based channel model into the observation equation, the received signal can be expressed in terms of the ADD-domain channel as 
+
+Y = G ×1 Ao ×2 Bo ×3 Co + Z, (8) where Ao ≜ PsA, Bo ≜ Pf B, and Co ≜ PtC denote the subsampled factor matrices associated with the spatial, frequency, and temporal domains, respectively. Based on (8), multi-domain channel extrapolation is for-mulated as the recovery of the ADD-domain channel from 5
+
+the noisy and subsampled SFT-domain pilot observations Y,which contains only partial channel information after the action of the multi-domain selection matrices. Once the ADD-domain channel and its angle, delay, and Doppler structures are estimated, the full SFT-domain channel can be reconstructed via the multilinear transformation in (4). In this framework, the angle and delay domains support reconstruction over the spatial and frequency domains, respectively, while the Doppler domain enables prediction over the temporal domain, forming a unified framework for multi-domain channel extrapolation. III. P ROBLEM FORMULATION 
+
+In Tucker-based representations, the ADD-domain channel acquisition depends on its sparse structure. However, practical channel sounding provides only sparse SFT-domain observa-tions, whose selection operations alter the effective ADD-domain representation through the subsampled factor matrices. Under uniform multi-domain sampling, this effect can fold multiple physically distinct ADD-domain components into the same observed coefficients, thereby obscuring the sparse support and introducing structural ambiguity for ADD-domain recovery. In this section, we formalize the folding effect induced by uniform multi-domain sampling, characterize the resulting asymmetric ambiguity across the angle, delay, and Doppler domains, and formulate the recovery problem as a support-prior-assisted ADD-domain de-aliasing problem. 
+
+A. ADD-Domain Aliasing under SFT Decimation 
+
+The effect of SFT-domain pilot decimation on the ADD-domain can be analyzed through the decimation of underlying steering vectors. Specifically, decimation along the spatial, fre-quency, and temporal dimensions is equivalent to subsampling the antenna-, subcarrier-, and OFDM-symbol-indexed steering vectors, respectively. We therefore first recall the classical one-dimensional decimation property and then extend it to the tensor modes of the Tucker-based ADD representation. 
+
+Lemma 1. Let x[n], n ∈ Z, be a discrete sequence with discrete-time Fourier transform (DTFT) X(ejω ), where ω ∈
+
+[−π, π ). For a positive integer R, define the R-fold uniform decimation by y[m] = x[mR ], m ∈ Z. The DTFT of y[m] is 
+
+Y (ejω ) = 1
+
+R
+
+> R−1
+
+X
+
+> r=0
+
+X
+
+
+
+ej ω−2πr R
+
+
+
+. (9) 
+
+Consequently, decimation compresses the spectrum and gen-erates R equal-weight replicas. Aliasing occurs when the original bandwidth exceeds π/R .
+
+Since the steering responses along the spatial, frequency, and temporal modes take the form of complex exponentials indexed by antennas, subcarriers, and OFDM symbols, re-spectively, Lemma 1 indicates that uniform decimation over these indices gives rise to periodic equivalence classes in the corresponding angle, delay, and Doppler parameters. This leads to the following proposition. 
+
+Proposition 1. Under uniform SFT-domain decimation by 
+
+(Ns, N f , N t), the parameter tuple (ψ, τ, ν ) and its shifted counterpart generate identical decimated observations. There-fore, they satisfy the following equivalence relation: 
+
+(ψ, τ, ν ) ∼ (ψ + pNs , τ + qNf ∆f , ν + rNt∆T ), p, q, r ∈ Z. (10) 
+
+Proof: For the spatial domain, for any p ∈ Z, the m-th sampled response satisfies 
+
+Psa(ψ + p/N s) 
+
+> m
+
+= e−j2π(m−1) Nsψ e−j2π(m−1) p
+
+= Psa(ψ)
+
+> m
+
+, (11) where the last equality follows from m, p ∈ Z. Hence, the spatial alias equivalence is established. Delay and Doppler cases follow analogously for the decimations by Nf and Nt,respectively. This completes the proof. ■
+
+Proposition 1 shows that uniform SFT-domain decimation renders certain shifted parameter tuples indistinguishable. To characterize this ambiguity under the discrete signal model, we construct the ADD-domain dictionaries on periodic discrete Fourier transform (DFT) grids, with the grid sizes Kang , Kde ,and Kdo chosen as integer multiples of decimation factors Ns,
+
+Nf , and Nt, respectively. The associated reduced grid sizes are defined as ¯Kang ≜ Kang /N s, ¯Kde ≜ Kde /N f , and ¯Kdo ≜
+
+Kdo /N t. Under this condition, the continuous parameter shifts in (10) reduce to cyclic index displacements by ¯Kang , ¯Kde ,and ¯Kdo on the corresponding DFT grids. To describe the discrete counterpart of the equivalence relation in Proposition 1, let d ∈ {ang , de , do } with 
+
+(Nang , N de , N do ) = ( Ns, N f , N t). For each i = 1 , . . . , ¯Kd,define the corresponding one-dimensional aliasing group as 
+
+Adi = ⟨i + p ¯Kd⟩Kd : p = 0 , . . . , N d − 1 , (12) where ⟨n⟩K ≜ (( n−1) mod K) + 1 denotes the modulo-
+
+K indexing operator under 1-based indexing. Extending this definition to the joint ADD-domain via the Cartesian product gives the 3D aliasing group 
+
+Ai,j,k ≜ {(i′, j ′, k ′) : i′ ∈ A ang  
+
+> i
+
+, j ′ ∈ A de  
+
+> j
+
+, k ′ ∈ A do  
+
+> k
+
+}, (13) with |A i,j,k | = NsNf Nt. This discrete aliasing structure yields the following proposition on non-identifiability under multi-domain decimation. 
+
+Proposition 2. For the ground-truth ADD-domain channel G
+
+and any alias-equivalent ADD-domain channel G′̸ = G,
+
+X
+
+> (i′,j ′,k ′)∈A i,j,k
+
+[G]i′,j ′,k ′ = X
+
+> (i′,j ′,k ′)∈A i,j,k
+
+[G′]i′,j ′,k ′ , ∀ i, j, k 
+
+(14) 
+
+implies 
+
+G ×1 Ao ×2 Bo ×3 Co = G′ ×1 Ao ×2 Bo ×3 Co. (15) 
+
+Hence, G and its alias-equivalent counterpart G′ are obser-vationally indistinguishable under multi-domain decimation. Proof: The noiseless observation admits the following rank-one expansion over the ADD-domain grid: 
+
+Y0 =
+
+> Kang
+
+X
+
+> i=1
+> Kde
+
+X
+
+> j=1
+> Kdo
+
+X
+
+> k=1
+
+[G]i,j,k ao,i ◦ bo,j ◦ co,k , (16) 6
+
+where ao,i , bo,j , and co,k are the i-th, j-th, and k-th columns of Ao, Bo, and Co, respectively. By the aliasing identity in Proposition 1, the columns of each decimated dictionary are invariant within the one-dimensional aliasing groups. There-fore, for any i′ ∈ A ang  
+
+> i
+
+, j′ ∈ A de  
+
+> j
+
+, and k′ ∈ A do  
+
+> k
+
+,
+
+ao,i ′ = ¯ ai, bo,j ′ = ¯bj , co,k ′ = ¯ ck, (17) where ¯ai, ¯bj , and ¯ck denote the common columns associated with the corresponding aliasing groups. Since the aliasing sets {A i,j,k } ¯Kang , ¯Kde , ¯Kdo  
+
+> i=1 ,j =1 ,k =1
+
+form a disjoint partition of the ADD-domain grid, the summation in (16) can be regrouped according to these aliasing sets. Moreover, by the column equivalence, all entries within the same Ai,j,k share the identical outer-product factor ¯ai ◦ ¯bj ◦ ¯ck. Hence, 
+
+Y0 =
+
+> ¯Kang
+
+X
+
+> i=1 ¯Kde
+
+X
+
+> j=1 ¯Kdo
+
+X
+
+> k=1
+
+X
+
+> (i′,j ′,k ′)∈A i,j,k
+
+[G]i′,j ′,k ′ ao,i ′ ◦ bo,j ′ ◦ co,k ′
+
+=
+
+> ¯Kang
+
+X
+
+> i=1 ¯Kde
+
+X
+
+> j=1 ¯Kdo
+
+X
+
+> k=1
+
+ X
+
+> (i′,j ′,k ′)∈A i,j,k
+
+[G]i′,j ′,k ′
+
+ ¯ai ◦ ¯bj ◦ ¯ck,
+
+(18) where the inner sum is the group-wise sum of G over the aliasing group Ai,j,k . Therefore, the decimated observation 
+
+Y0 depends on G only through these group-wise aggregate coefficients. This completes the proof. ■
+
+Remark 1. Proposition 1 first establishes that uniform SFT-domain decimation can make shifted angle-delay-Doppler tuples produce identical observations. Proposition 2 further reveals the ambiguity introduced by uniform multi-domain decimation in the ADD domain. Specifically, each ADD-domain aliasing group contains NsNf Nt aliased positions that are observationally indistinguishable from the decimated SFT-domain observations. Hence, physically distinct ADD-domain components may give rise to the same decimated observations, yielding a many-to-one mapping from the original sparse representation to the observations and thereby obscuring the original sparse support. B. Asymmetric Aliasing Characteristics Across Domains 
+
+The practical impact of aliasing differs substantially across domains because the delay, Doppler, and angle parameters obey distinct physical constraints. 
+
+1) Delay Domain: In the delay domain, channel energy is typically confined to a compact low-delay support, enabling large frequency-domain decimation. According to [11], about 
+
+80% of non-line-of-sight (NLoS) urban macro (UMa) real-izations have delay spreads below 1 μs. For ∆f = 60 kHz, 
+
+Nf = 8 yields an unambiguous delay window of 1/(Nf ∆f ) ≈
+
+2.08 μs, which generally covers the dominant low-delay com-ponents. However, when Nf increases to 16 , this window shrinks to about 1.04 μs, so high-delay paths may be folded into the low-delay region, as illustrated in the delay-domain row of Fig. 2. Therefore, hard selection of the first ¯Kde delay bins becomes insufficient because it may discard high-delay components and cannot distinguish true low-delay paths from folded high-delay replicas. Delay bin index Delay bin index        
+
+> Doppler bin index Doppler bin index
+> Angle bin index Angle bin index
+> Original ADD -domain support Folded/aliased support after decimation
+> Magnitude Magnitude Magnitude
+> Kang -10
+> 0
+> 0
+> 0Kang -1
+> Kdo -1Kdo -10
+> 0Kde -1Kde -1
+> low -delay support
+> high -delay component
+> folded high -delay
+> component
+> Folding boundary
+> low -Doppler support
+> retained low -delay
+> component
+> retained low -
+> Doppler component
+> true angular component ambiguous alias branch
+> alias outside the
+> physical Doppler range
+
+Fig. 2. Illustration of decimation-induced ADD-domain support folding with 
+
+Ns = Nf = Nt = 2 . The original delay, Doppler, and angle supports are shown together with their folded counterparts after SFT-domain decimation. 
+
+2) Doppler Domain: The Doppler domain follows a sim-ilar low-frequency concentration principle. The maximum Doppler frequency is given by νmax = fcvmax /c , which remains moderate even under high mobility. For example, when fc = 15 GHz, ∆f = 60 kHz, and vmax = 120 km/h, we have νmax ≈ 1.67 kHz and νmax ∆T ≈ 0.03 per OFDM symbol. Thus, most Doppler energy is confined to the low-frequency region. When the temporal pilot spacing Nt satisfies 
+
+νmax < 1/(2 Nt∆T ), high-Doppler components are not folded into the low-Doppler region, which makes low-Doppler bin selection feasible. Accordingly, we retain the low-Doppler bins and set the Doppler grid size to Kdo = Sν Msym , where 
+
+Sν ≥ 1 denotes the Doppler oversampling factor. Nevertheless, low-Doppler concentration does not guarantee an accurate Doppler-domain representation when only a few pilot symbols are available. The limited temporal aperture leads to a coarse Doppler grid, and off-grid Doppler components may leak into neighboring bins, weakening the low-Doppler sparsity. 
+
+3) Angle Domain: Unlike the delay and Doppler domains, the angle domain does not exhibit such low-frequency concen-tration. The spatial frequency ψl = d cos( ϑl)/λ is governed by the AoA, which is determined by the scattering geometry and may occupy arbitrary locations over the Nyquist interval. According to the 3GPP channel model [11], multipath AoAs in typical UMa scenarios can span a wide angular range. Therefore, no reliable prior can indicate whether a path should lie in a low- or high-frequency angular grid region. Under 
+
+Ns-fold spatial decimation, a spatial frequency ψ is indistin-guishable from its wrapped replicas ψr = ( ψ + r/N s) mod 1 ,
+
+r = 1 , . . . , N s − 1, so the correct alias branch cannot be determined from decimated pilots alone. As shown in Fig. 2, unlike delay- or Doppler-domain folding, angle-domain fold-ing introduces aliases over the entire angular grid, degrading spatial extrapolation even for modest decimation factors. 
+
+C. Support-Prior-Assisted De-Aliasing Formulation 
+
+The preceding analysis shows that the dominant impairment arises from the loss of location-discriminating information within each ADD-domain aliasing group, rather than from intrinsic similarity among physical components. We therefore exploit ADD-domain priors to compensate for this informa-tion loss, resolving delay-domain aliasing and angle-domain ambiguity while mitigating Doppler-domain energy leakage. 7
+
+In practice, such prior information is often available in modern wireless systems, e.g., from channel knowledge maps (CKMs) [35], [36], historical CSI and sensing-assisted per-ception. As the delay and angular supports depend on the scattering geometry and user location, they remain stable over many channel coherence intervals and hence require only infrequent acquisition, whereas Doppler priors are governed by the user velocity, which can be estimated from radar echoes in integrated sensing and communication (ISAC)-enabled sys-tems with marginal additional overhead. To avoid the signaling and computational overhead associ-ated with acquiring accurate continuous physical parameters, we represent the prior information as binary support priors. A joint ADD-domain support can capture cross-domain cou-pling, but its size scales as Kang × Kde × Kdo , rendering acquisition, storage, and real-time update costly. Hence, we employ domain-wise marginal support priors, which provide a practical separated representation that retains the essential de-aliasing information in each domain while improving ro-bustness to support errors. Specifically, we introduce 
+
+sang ∈ { 0, 1}Kang ×1, sde ∈ { 0, 1}Kde ×1, sdo ∈ { 0, 1}Kdo ×1,
+
+(19) where [sx]k = 1 indicates that the k-th grid in domain x ∈{ang , de , do } is estimated to contain a significant component. Given the marginal binary support priors, a key issue is how to exploit them for de-aliasing. Hard filtering, which masks unsupported grid points, is non-adaptive and discards useful aliasing information, failing to resolve residual ambiguity un-der imperfect priors, while model-based regularization requires handcrafted regularizers matched to the three-dimensional aliasing structure and is sensitive to model mismatch. Con-ventional AI-based prior-injection schemes, such as channel concatenation or feature-level fusion, often map external priors into latent features, obscuring their physical semantics and leading to insufficient exploitation of the underlying aliasing structure. Motivated by this, we reformulate de-aliasing as a prior-conditioned operator learning problem, in which the recovery operator is learned directly from data under the guidance of the support priors. Since the priors serve as auxiliary inputs rather than hard constraints, the formulation tolerates moderate support errors by leveraging reliable sup-port information while suppressing misleading entries. In this formulation, we use the LS estimate as the network input, defined as 
+
+GLS = Y ×1 A† 
+
+> o
+
+×2 B† 
+
+> o
+
+×3 C†
+
+> o
+
+. (20) The LS estimate GLS retains the group-wise aggregate in-formation in the decimated observation but cannot resolve the corresponding intra-group ambiguity, thereby providing a coarse initialization for network-based de-aliasing. The re-covery problem is therefore cast as estimating G from GLS 
+
+conditioned on the marginal support priors: 
+
+bG = fθ (GLS , sang , sde , sdo ) , (21) where fθ denotes a neural network that jointly exploits the LS-initialized tensor and the marginal support priors to produce the de-aliased ADD-domain estimate bG. The extrapolated SFT-domain channel is subsequently obtained as 
+
+bHextra = bG ×1 A(ψ) ×2 B(τ ) ×3 ˜C(ν), (22) where ˜C(ν) = [˜ c (¯ ν1) , . . . , ˜c (¯ νKdo )] ∈ CNpred ×Kdo denotes the factor matrix in the temporal domain for channel pre-diction, Npred is the prediction length, and ˜c(¯ ν) denotes the Doppler-domain steering vector with entry [˜ c(¯ ν)] npred =
+
+ej2π(T0+npred ∆T )¯ ν , npred = 1, . . . , N pred . Here, T0 =(Msym − 1) Nt∆T denotes the prediction origin. IV. P ROPOSED NETWORK ARCHITECTURE 
+
+Based on the formulation in (21), we develop a TANN for ADD-domain de-aliasing. TANN applies axial-attention along the angle, delay, and Doppler domains to capture domain-wise correlations. To combat multi-domain decimation-induced aliasing, lightweight multi-scale CNN-based gates with feature-wise linear modulation (FiLM) are employed to inject support priors into the learned features. Axis-wise gated residual connections are further incorporated to adaptively regulate prior-guided feature refinement. Moreover, a dual-domain loss is designed to jointly enforce reconstruction consistency. Owing to the fixed ADD-domain grid, TANN preserves a unified network architecture while maintaining scalability across different SFT-domain decimation config-urations. Such configuration scalability provides the basis for mixed-configuration training, enabling robust single-model performance across diverse pilot configurations. 
+
+A. Overall Architecture 
+
+The overall architecture of TANN is depicted in Fig. 3. The network takes the LS-initialized ADD-domain tensor together with domain-wise support priors as inputs, and outputs the de-aliased ADD-domain estimate through three successive stages: a feature embedding with 3D positional encoding, an L-layer axial-attention backbone, and an output projection followed by multilinear channel reconstruction. 
+
+1) Feature Embedding and 3D Positional Encoding: The input X in ∈ RKang ×Kde ×Kdo ×2 is obtained by stacking the real and imaginary parts of GLS . A point-wise linear layer embeds each grid point into a D-dimensional feature space: 
+
+X (0) = X in ×4 Wemb + Bemb ∈ RKang ×Kde ×Kdo ×D , (23) where Wemb ∈ RD×2 and Bemb denotes the tensor obtained by broadcasting bemb ∈ RD over the first three modes. As discussed in Section III-C, resolving ADD-domain alias-ing fundamentally requires distinguishing aliased components by their positions in the ADD domains. However, Trans-former blocks based solely on self-attention are permutation-equivariant and therefore unable to distinguish elements by their positions [37]. In conventional Transformer architectures, this limitation is typically addressed by one-dimensional (1D) positional encodings. Since the angle, delay, and Doppler axes exhibit distinct positional semantics, we extend the 1D sinusoidal positional encoding to a 3D separable form by superimposing independent axis-wise encodings: 
+
+X (0) PE = X (0) + X
+
+> d∈{ ang ,de ,do }
+
+Bd(Ed) , (24) 8ang de do K K K D  FC 
+
+> Transformer
+> MHSA
+> FC1
+> FC2
+> FC3
+> Add & Norm QKV
+> CNN
+> Gating
+> Gated
+> Residual
+> PE
+> Add & Norm
+> FFN
+> Concat
+> FC ang sde sdo
+
+sds
+
+> Delay -axis
+
+LAngle -axis Doppler -axis        
+
+> Shared structure for each axis ang de do 2KKKLS d
+
+s                   
+
+> Linear
+> Sigmoid
+> 1×1 Conv+
+> 1+tanh(· )
+> Concat
+> ...
+> 1×1 Conv+GELU 1kk=
+> Conv1D GELU(×2) Conv1D GELU(×2)
+> Conv1D GELU(×2) Conv1D GELU(×2) 2kk=Jkk=PE g
+> 1×1 Conv
+> Conv1D GELU(×2) Conv1D GELU(×2) wdgb
+> dgang de do 2KKK
+> FiLM: ()att
+> d()gated
+> d()in
+> d
+
+( ) ( )             
+
+> ()()
+> gated att
+> dwdb
+> dddd=+gg()res
+> d
+
+( )( ) ( ) ( ) ( ) ( )out res gated res in           
+
+> ddddd
+> =+−1()att
+> d()gated
+> d()in
+> d()out
+> d
+
+Fig. 3. Overall architecture of the proposed TANN. 
+
+where Ed ∈ RKd×D is the standard sinusoidal positional encoding along axis d and Bd(·) denotes the axis-wise broad-cast operator that maps RKd×C to RKang ×Kde ×Kdo ×C by expansion along the non-d dimensions. 
+
+2) Multi-Layer Axial-Attention Backbone: The encoded features X (0) PE are then processed by L axial-attention layers, each applying three axis-wise blocks in sequence: 
+
+X (ℓ) = f (ℓ)do 
+
+
+
+f (ℓ)de 
+
+
+
+f (ℓ)ang 
+
+
+
+X (ℓ−1) ; sang 
+
+
+
+; sde 
+
+
+
+; sdo 
+
+
+
+, (25) where ℓ = 1 , . . . , L , f (ℓ) 
+
+> d
+
+(·; sd) integrates axis-wise multi-head self-attention (MHSA), support-prior-conditioned gating, and a gated residual connection, as detailed in Section IV-B. 
+
+3) Output Projection and SFT-Domain Channel Recon-struction: After L axial-attention layers, a point-wise linear projection maps the features back to two channels: 
+
+X out = X (L) ×4 Wproj + Bproj ∈ RKang ×Kde ×Kdo ×2, (26) where Wproj ∈ R2×D, and Bproj denotes the tensor obtained by broadcasting bproj ∈ R2 over the first three modes. The resulting tensor is regarded as the de-aliased ADD-domain estimate bG, from which the extrapolated SFT-domain channel is reconstructed via the multilinear transformation in (22). 
+
+B. Axial-Attention Layer 
+
+Applying standard MHSA to the flattened 3D tensor would require processing a sequence of length Kang Kde Kdo with complexity O (Kang Kde Kdo )2D, which is computationally prohibitive in practical systems. To reduce this complexity, we leverage the separable structure across the angle, de-lay, and Doppler domains and decompose the 3D attention in each of the L axial-attention layers into three succes-sive 1D axis-wise operations, reducing the complexity to 
+
+O(Kang Kde Kdo (Kang +Kde +Kdo )D). This decomposition is implemented by the shared axis-wise architecture shown in Fig. 3. Specifically, within each axial-attention layer, the angle-, delay-, and Doppler-wise operations share the same axis-wise block, which consists of a Transformer, a support-conditioned CNN gating module, and a gated residual unit, while being conditioned on sang , sde , and sdo , respectively. 
+
+1) Axis-Wise MHSA: For axis d with length Kd, all Kd-length sequences along that axis are extracted from the feature tensor X ∈ RKang ×Kde ×Kdo ×D . In the first axial layer, 
+
+X is initialized as the position-encoded input X (0) PE . This extraction yields N ⊥ 
+
+> d
+
+≜ Q  
+
+> d′̸=d
+
+Kd′ independent sequences, and MHSA is then applied to them in parallel with Nh heads of dimension Dh = D/N h. For each sequence ˜Xd ∈ RKd×D ,head-specific projection matrices map the features into Nh
+
+representation subspaces. For head h, the query, key, and value representations are 
+
+Q(d) 
+
+> h
+
+, K(d) 
+
+> h
+
+, V(d)
+
+> h
+
+ = ˜Xd
+
+WQh,d , WKh,d , WVh,d 
+
+, (27) where WQh,d , WKh,d , WVh,d ∈ RD×Dh . Multi-head aggregation is performed via concatenation and linear projection with a learnable output matrix WOd ∈ RD×D:
+
+Y(d) 
+
+> h
+
+= softmax 
+
+
+
+Q(d)
+
+> h
+
+
+
+K(d)
+
+> h
+
+T
+
+/pDh
+
+
+
+V(d) 
+
+> h
+
+, (28) 
+
+Att (d)( ˜Xd) = Concat 
+
+
+
+Y(d)1 , . . . , Y(d)
+
+> Nh
+
+
+
+WOd , (29) where Concat( ·) denotes concatenation along the feature dimension. Following standard Transformer architecture [38], each axis-wise MHSA block is followed by a position-wise feed-forward network (FFN), with pre-layer normalization and residual connections. The processed axis-wise sequences are then folded back into the 4D tensor form to obtain the axis-wise output feature tensor X (d)att ∈ RKang ×Kde ×Kdo ×D .
+
+2) Multi-Scale CNN Context Gating: Following each axis-wise MHSA step, the corresponding domain-wise support prior sd ∈ { 0, 1}Kd×1, with d ∈ { ang , de , do }, is injected through a lightweight context gating module. The gate gener-ates soft, data-adaptive multiplicative and additive modulation signals from the support vector. Compared with complex cross-attention or dense feature concatenation schemes, this design introduces minimal overhead while progressively re-fining features within the serial axial composition. To generate the gating parameters from sd, we employ a multi-scale 1D CNN with J parallel branches of distinct kernel sizes κ(j), so as to capture local support features and neighborhood contiguity. Small kernels capture narrow isolated peaks associated with dominant paths, whereas large 9
+
+kernels capture wider contiguous clusters induced by angular or delay spreading. Each branch j ∈ {1, . . . , J } contains two stacked 1D convolutional layers with Gaussian error linear unit (GELU) activations, where the two-layer design enlarges the effective receptive field and the successive GELU nonlinearities enhance representation capacity: 
+
+h(j) 
+
+> d
+
+= GELU 
+
+
+
+Conv κ(j) 
+
+GELU 
+
+
+
+Conv κ(j)
+
+(sd)
+
+ 
+
+, (30) where h(j) 
+
+> d
+
+∈ RKd×Dg , sd is treated as a single-feature 1D signal, and Dg denotes the number of intermediate feature maps per branch. The multi-scale branch outputs are then concatenated along the feature dimension and compressed by a point-wise 1×1 convolution: 
+
+fd = GELU 
+
+
+
+Conv 1h 
+
+h(1)  
+
+> d
+
+; . . . ; h(J)
+
+> d
+
+i 
+
+∈ RKd×Dg , (31) where the fusion layer input has JD g feature maps. To encode positional semantics within the gate module, a fixed sinusoidal positional encoding E(g) 
+
+> d
+
+∈ RKd×Dg is added to fd before projection, so that the generated gates are position-aware. We then adopt FiLM-style conditioning, where support-driven features produce a multiplicative scale and an additive bias through two separate point-wise 1 × 1
+
+convolutional projections: 
+
+gwd = σg
+
+
+
+Conv 1
+
+fd + E(g)
+
+> d
+
+ 
+
+∈ RKd×D , (32) 
+
+gbd = Conv 1
+
+fd + E(g)
+
+> d
+
+
+
+∈ RKd×D , (33) where σg (z) = 1 + tanh( z) yields a gate centered at one with range (0 , 2) . The modulated output is then written as 
+
+X (d)gated = Bd(gwd ) ⊙ X (d)att + Bd
+
+ gbd
+
+ ∈ RKang ×Kde ×Kdo ×D .
+
+(34) To further reduce trainable parameters, we adopt layer sharing for the context gate modules, where the prior-guided gates are shared across all L layers. 
+
+3) Per-Axis Gated Residual Connection: Rather than a fixed additive skip connection, we adopt a learnable gated residual connection that adaptively balances the modulated and original features. Specifically, the modulated output X (d)gated is fused with the axis input X (d)in as follows: 
+
+M(d)res = σ(Concat 
+
+
+
+X (d)in , X (d)gated 
+
+
+
+×4 W(d)res + B(d)res ), (35) 
+
+X (d)out = M(d)res ⊙ X (d)gated +
+
+
+
+1 − M(d)res 
+
+
+
+⊙ X (d)in , (36) where W(d)res ∈ RD×2D, B(d)res is formed by expanding b(d)res ∈
+
+RD along the first three modes, σ(·) denotes the sigmoid function, and 1 denotes the all-ones tensor of compatible size. Since the gate is derived from both inputs jointly, it can retain the refined features where the context gate provides reliable modulation and fall back to the original features otherwise. The output X (d)out of one axis becomes input to the next; completing all three axis-wise steps constitutes one axial-attention layer, and the output of the L-th layer is converted to bG via (26). The extrapolated SFT-domain channel is then reconstructed via the multilinear transformation in (22). 
+
+C. SFT-ADD Dual-Domain Consistency Loss Design 
+
+Different from SFT-domain supervision adopted in prior extrapolation methods [29], our network predicts the ADD-domain tensor bG, from which the SFT-domain channel is obtained through (22). Since SFT-domain NMSE alone does not explicitly enforce ADD-domain sparsity, it may lead to suboptimal extrapolation. We therefore adopt a composite loss that combines SFT-domain reconstruction with ADD-domain spectral consistency. The primary loss measures the NMSE between the ex-trapolated and ground-truth SFT-domain channels over the prediction set Tpred :
+
+LNMSE (θ) = E
+
+h bHextra − Hpred 
+
+> 2F
+
+ Hpred 
+
+> 2F
+
+i
+
+, (37) where Hpred ∈ CNan ×Nsc ×Npred denotes the ground-truth SFT-domain channel tensor corresponding to the OFDM sym-bols in the prediction set Tpred .To guide the network to capture the ADD-domain sparsity structure, we introduce axis-wise spectral consistency terms. Since the proposed network adopts an axial-attention archi-tecture that processes the ADD-domain tensor along each axis independently, formulating the auxiliary loss in an axis-wise manner aligns with the network structure and facilitates the learning of the sparsity pattern along each dimension. Specifically, for each axis d ∈ { ang , de , do }, the marginal power spectrum of X ∈ CKang ×Kde ×Kdo is defined as 
+
+p(d)
+
+> kd
+
+ X  = P  
+
+> k¯d
+
+|[X ]kang ,k de ,k do |2, where k ¯d collects indices on the remaining two axes. The corresponding spectral vector is p(d)(X ) = [ p(d)1 (X ), . . . , p (d) 
+
+> Kd
+
+(X )] T ∈ RKd 
+
+> +
+
+. The spectral consistency along axis d is quantified by the cosine similarity 
+
+ρ(d)(bG, G) = ⟨p(d)(bG), p(d)(G)⟩∥p(d)(bG)∥2 ∥p(d)(G)∥2
+
+, (38) and the auxiliary spectral loss on axis d is L(d)spec (θ) = 1 −
+
+ρ(d)(bG, G). The overall training objective is 
+
+L(θ) = wmain LNMSE + X  
+
+> d∈{ ang ,de ,do }
+
+wd L(d)spec , (39) where auxiliary weights wd are gradually reduced via expo-nential decay during training. This composite loss guides the network toward sparse ADD-domain representations in the early phase, while progressively shifting focus to the primary NMSE objective to refine end-to-end extrapolation accuracy. 
+
+D. Mixed-Configuration Training and Complexity Analysis 1) Mixed-Configuration Training: The ADD-domain repre-sentation decouples the network input dimensionality from the SFT-domain decimation factors, since its tensor dimensions are specified only by the predefined angle, delay, and Doppler grids. This decoupling allows the proposed network to ac-commodate different decimation configurations under a unified architecture, and consequently enables mixed-configuration training. Specifically, the decimation factors and signal-to-noise ratios (SNRs) are randomized across samples within each mini-batch. Such configuration-invariant dimensionality is not available in prior SFT-domain designs [29], where 10 
+
+the tensor dimensions vary with the decimation factors and thus require configuration-specific training. As a result, the proposed framework reduces retraining and deployment over-head while achieving robust single-model performance across different decimation configurations and noise levels. Moreover, the network learns a prior-conditioned de-aliasing mapping from channel samples generated under 3GPP-defined outdoor propagation scenarios and their associated support priors. Dur-ing deployment, the support-prior input can be derived from the specific propagation conditions observed at the target site, enabling site-aware adaptation without site-wise retraining. 
+
+2) Complexity Analysis: The computational complexity of the proposed framework is dominated by the multilin-ear transformations and the TANN inference. The multilin-ear transformations, governed by mode-wise tensor-matrix multiplications in (20) and (22), incur O(Kang Kde Kdo ¯M )
+
+and O(Kang Kde Kdo ¯N ) operations, where ¯M ≜ Man +
+
+Msc + Msym and ¯N ≜ Nan + Nsc + Npred , whereas the TANN is governed by its L-layer axial-attention backbone with cost O(LK ang Kde Kdo (Kang + Kde +
+
+Kdo )D), while the multi-scale CNN context-gating, gated-residual, embedding, and projection layers are point-wise and thus negligible. Retaining the dominant terms, the overall complexity of the proposed framework is 
+
+O Kang Kde Kdo 
+
+  ¯M + ¯N + L(Kang + Kde + Kdo )D .
+
+V. S IMULATION RESULTS 
+
+A. Simulation Configuration 1) Scenario Setting: In this section, we present simulation results to evaluate the performance of the proposed scheme. To generate the channels for simulations, we employ the QuaDRiGa channel simulator [39], which is capable of pro-ducing time-varying massive MIMO-OFDM channels consis-tent with the 3GPP 38.901 specifications [11] and has been validated in various field trials. A total of 30 ,000 channel sam-ples are generated under mixed SNRs and decimation factors, and then partitioned into 24 ,000 , 3,000 , and 3,000 samples for training, validation, and testing, respectively. Unless otherwise specified, the simulation configurations follow the system model in Section II. The basic simulation parameters and TANN hyper-parameters are jointly summarized in Table I. 
+
+2) Benchmarks: To demonstrate the superiority of the pro-posed support-prior-assisted TANN (SPA-TANN), we compare it with several representative channel extrapolation bench-marks. Guided by the aliasing analysis in Section III, SPA-TANN jointly integrates the multi-domain support priors into the network inference process for learned de-aliasing, whereas the prior-assisted (PA)-prefixed benchmarks employ angle-domain circular shifting to resolve the aliasing ambiguity. The considered baselines are described as follows:  
+
+> •
+
+PA-OMP [40] : The orthogonal matching pursuit (OMP) algorithm estimates the ADD-domain channel from Y via greedy sparse recovery over a predefined dictionary.  
+
+> •
+
+PA-VSD [41] : The Vandermonde structured decomposi-tion (VSD) algorithm estimates the channel parameters from Y via tensor decomposition by exploiting the Van-dermonde structure of the factor matrices in (4).                                          
+
+> TABLE I SUMMARY OF SIMULATION SETTINGS
+> Parameter Values Basic System Parameters Carrier frequency fc(GHz) 10, 15 (training), 20 Subcarrier spacing ∆f60 kHz Number of subcarriers Nsc 64 Number of pilot interval symbols Nt14 Number of pilot symbols Msym 10 Number of prediction symbols Npred 14 Number of antennas Nan 32 Frequency decimation factor Nf2, 4, 8, 16 Spatial decimation factor Ns1, 2, 4 MT velocity v(km/h) 3, 30, 60 (training), 90 Doppler oversampling factor Sν2Channel model 38.901 RMa NLoS TANN Hyper-Parameters Initial learning rate 1×10 −3
+> Batch size 16 Multi-scale convolution kernel sizes κ(j)1, 3 Embedding dimension D16 Number of attention heads Nh4Number of axial-attention layers L4
+> •
+
+KDD-SFTCEN [29] : The knowledge-and-data-driven SFT channel extrapolation network (KDD-SFTCEN) per-forms channel extrapolation in the SFT domains without using prior information.  
+
+> •
+
+PA-KDD-SFTCEN [29] : PA-KDD-SFTCEN is the vari-ant of KDD-SFTCEN that performs channel extrapolation in the SFT domains after PA-based preprocessing. 
+
+B. Performance Evaluation 1) NMSE Versus SNR: Fig. 4 compares the NMSE perfor-mance of all schemes versus SNR under two pilot-decimation configurations. In Fig. 4a, with (Ns, N f ) = (1 , 2) , there is no spatial decimation and therefore no angle-domain aliasing arises. In this regime, both KDD-SFTCEN and PA-KDD-SFTCEN achieve comparable performance and significantly outperform the model-based PA-OMP and PA-VSD bench-marks, confirming that data-driven methods can effectively exploit the SFT correlations in the absence of angular ambi-guity. SPA-TANN further improves upon PA-KDD-SFTCEN, indicating that its ADD-domain formulation provides more effective multi-domain feature modeling. The performance hi-erarchy changes markedly in Fig. 4b under (Ns, N f ) = (2 , 4) ,where two-fold spatial decimation introduces severe angle-domain aliasing. Without PA-based preprocessing, KDD-SFTCEN fails to resolve the aliasing ambiguity and degrades below PA-VSD, which benefits from PA-based de-aliasing. This reveals that angular aliasing induces a fundamental am-biguity that purely data-driven learning cannot overcome. In-corporating the PA-based preprocessing (PA-KDD-SFTCEN) restores advantage over model-based methods, while the pro-posed SPA-TANN further extends this margin through its context-gated prior injection for ADD-domain de-aliasing. 
+
+2) NMSE Versus Pilot-Decimation Factors: Fig. 5 presents the NMSE with respect to the frequency and spatial decimation factors Nf and Ns, respectively. In Fig. 5a with Ns = 1 ,increasing Nf reduces the pilot density and intensifies delay-domain aliasing, causing NMSE degradation for all methods. The proposed SPA-TANN consistently achieves the lowest NMSE over the entire Nf range, and its performance at 
+
+Nf = 16 is comparable to that of KDD-SFTCEN at Nf = 2 ,11 -10 -5 0 5 10 15 20 
+
+> -22 -20 -18 -16 -14 -12 -10 -8 -6 -4 -2 0
+> NMSE (dB)
+
+(a) Ns = 1 , Nf = 2 -10 -5 0 5 10 15 20  
+
+> -16 -14 -12 -10 -8 -6 -4 -2 02
+> NMSE (dB)
+
+(b) Ns = 2 , Nf = 4 
+
+Fig. 4. Channel extrapolation performance versus SNR at v = 60 km/h and 
+
+fc = 15 GHz. 2 4 8 16 
+
+> -16 -14 -12 -10 -8 -6 -4 -2 0
+> NMSE (dB)
+
+(a) Frequency domain, Ns = 1 1 2 4 
+
+> -14 -12 -10 -8 -6 -4 -2 0
+> NMSE (dB)
+
+(b) Spatial domain, Nf = 2 
+
+Fig. 5. Channel extrapolation performance versus decimation factors at SNR =0 dB, v = 60 km/h and fc = 15 GHz. 3 30 60 90 
+
+> -25 -20 -15 -10 -5 0
+
+(a) Ns = 1 , Nf = 2 3 30 60 90  
+
+> -14 -12 -10 -8 -6 -4 -2 0
+
+(b) Ns = 2 , Nf = 4 
+
+Fig. 6. Channel extrapolation performance versus MT velocity v at SNR =20 dB and fc = 15 GHz. 10 15 20 
+
+> -20 -15 -10 -5 0
+
+(a) Ns = 1 , Nf = 2 10 15 20  
+
+> -12 -10 -8 -6 -4 -2 0
+
+(b) Ns = 2 , Nf = 4 
+
+Fig. 7. Channel extrapolation performance versus carrier frequency fc at SNR = 20 dB and v = 60 km/h. 
+
+suggesting up to an 8-fold frequency-domain pilot overhead reduction with comparable extrapolation accuracy. In Fig. 5b with Nf = 2 , increasing Ns aggravates angle-domain aliasing and degrades all schemes. The performance gap between KDD-SFTCEN and PA-KDD-SFTCEN indicates that angle-domain priors are essential for alleviating the ambiguity intro-duced by spatial pilot decimation. The proposed SPA-TANN achieves the best NMSE throughout, with its performance at 
+
+Ns = 4 comparable to KDD-SFTCEN at Ns = 1 , indicating up to a 4-fold spatial-domain pilot reduction. These results demonstrate that the proposed method enables aggressive pilot decimation in both frequency and spatial domains while limiting the associated performance degradation. 
+
+3) NMSE Versus MT Velocity: We further examine the robustness of SPA-TANN to the MT velocity. The NMSE performance versus velocity is shown in Fig. 6 under two decimation configurations, where all data-driven methods are trained at v = 60 km/h. As the MT velocity increases, the NMSE generally tends to increase due to the stronger temporal variation of the channel. For testing velocities below the training velocity, i.e., v = 3 and 30 km/h, the deep learning-based methods remain effective overall, since slower temporal channel variation usually corresponds to a less challenging extrapolation task. When the velocity increases to v = 90 km/h beyond the training condition, the performance degradation becomes more pronounced for the baselines. In contrast, the proposed SPA-TANN consistently achieves the lowest NMSE and exhibits a smaller performance degradation under velocity mismatch, demonstrating strong robustness enabled by the Doppler-domain modeling in the ADD-domain formulation. 
+
+4) NMSE Versus Carrier Frequency: Fig. 7 evaluates all considered schemes at three carrier frequencies within the FR3 band, with all data-driven methods trained exclusively at fc = 15 GHz. Since the Doppler frequency scales linearly with the carrier frequency, higher fc leads to faster temporal -10 -5 0 5 10 15 20 
+
+> -11 -10 -9 -8 -7 -6 -5 -4 -3 -2
+> NMSE (dB)
+
+Fig. 8. NMSE versus SNR for SPA-TANN and its ablated variants. 
+
+channel variation, and accordingly increases the NMSE of all schemes in both cases. The proposed SPA-TANN consistently achieves the lowest NMSE, demonstrating its effectiveness throughout the FR3 band. Notably, the performance degra-dation of KDD-SFTCEN is more severe from fc = 15 GHz to 20 GHz than from 15 GHz to 10 GHz. This asymmetry arises because fc = 10 GHz entails a moderate Doppler spread whose temporal characteristics remain well represented by the training data at 15 GHz, whereas fc = 20 GHz introduces faster temporal variation beyond the training distribution. In contrast, SPA-TANN suffers less degradation from 15 GHz to 20 GHz, benefiting from its physically grounded Doppler-domain representation that generalizes temporal channel be-havior across carrier frequencies. 
+
+5) NMSE for Different Scenarios: To demonstrate the ro-bustness of the proposed method, we consider three typical outdoor scenarios defined in the 3GPP specifications [11]: UMa NLoS, urban micro (UMi) NLoS, and rural macro (RMa) NLoS. UMa NLoS represents macro-cellular urban propaga-tion with moderate multipath, UMi NLoS exhibits richer local scattering with larger delay and angle spreads, and RMa NLoS is characterized by sparser scattering and smaller delay-angle spreads. All deep learning-based methods are trained on a mixed-scenario dataset containing the same number of sam-12                                                                   
+
+> TABLE II NMSE ( DB) OF CHANNEL EXTRAPOLATION VERSUS SCENARIOS AT SNR = 20 DBAND v= 60 KM /H.
+> Pilot-Decimation Setting Scenario Algorithm
+> SPA-TANN PA-OMP PA-VSD KDD-SFTCEN PA-KDD-SFTCEN
+> (Ns, N f) = (1 ,2)
+> UMa NLoS −16 .87 −3.87 −3.71 −8.56 −9.77
+> UMi NLoS −17 .26 −2.91 −1.84 −10 .22 −11 .50
+> RMa NLoS −18 .21 −5.16 −5.78 −10 .73 −11 .85 (Ns, N f) = (2 ,4)
+> UMa NLoS −9.05 −2.17 −1.57 −2.73 −4.19
+> UMi NLoS −8.52 −1.95 −0.75 −3.03 −5.19
+> RMa NLoS −13 .29 −4.10 −4.26 −2.24 −7.57
+> (a) Alias-Group Input (b) Ground Truth (c) SPA-TANN Output (d) w/o Support Prior Fig. 9. Angle-delay power spectrum visualization under (Ns, N f) = (2 ,4) , SNR = 20 dB, v= 60 km/h, and fc= 15 GHz.
+
+ples as single-scenario training, and their NMSE performance under two pilot-decimation settings is summarized in Table II. For (Ns, N f ) = (1 , 2) , the performance variation across propagation scenarios remains limited, while SPA-TANN con-sistently outperforms all baselines. As the decimation factors increase to (Ns, N f ) = (2 , 4) , the scenario-dependent per-formance gap becomes more pronounced. The sparse chan-nel structure in RMa NLoS facilitates extrapolation, whereas the richer multipath and larger delay-angle spreads in urban NLoS scenarios exacerbate aliasing ambiguity. Across both settings, PA-KDD-SFTCEN improves upon KDD-SFTCEN through PA-based preprocessing, while SPA-TANN achieves the lowest NMSE in all evaluated scenarios, demonstrating robust generalization under mixed-scenario training. 
+
+C. Ablation Study 
+
+To validate the effectiveness of the key components of TANN, we conduct ablation experiments under the challenging decimation configuration (Ns, N f ) = (2 , 4) at v = 60 km/h and fc = 15 GHz, comparing the full model with two variants:  
+
+> •
+
+SPA-TANN w/o Support Prior : This variant removes the multi-scale CNN context gating module entirely, so that no support prior is injected and the network relies solely on the axial-attention mechanism to resolve aliasing from the LS-initialized ADD-domain tensor.  
+
+> •
+
+SPA-TANN w/o Axial-Attention : This variant replaces the axis-wise Transformer-based attention blocks with 3D convolutional layers, evaluating the contribution of the global dependency modeling and feature representation capacity provided by axial-attention. As shown in Fig. 8, both ablated variants exhibit substantial NMSE degradation relative to the SPA-TANN across the entire SNR range, confirming that each component contributes meaningfully to the overall performance. The variant without the support prior exhibits the most pronounced loss, which confirms the importance of support prior-assisted context mod-eling in mitigating angle-domain ambiguity caused by spatial decimation. Replacing axial-attention with 3D CNN also de-grades the reconstruction accuracy, indicating that local con-volutional operations are less effective in capturing the long-range aliasing dependencies across multiple domains. The SPA-TANN, which integrates both components, consistently achieves the lowest NMSE, verifying the complementary and indispensable roles of the axial-attention architecture and the SPA context gating in the proposed design. To provide an intuitive understanding of how the support prior assists in resolving multi-domain aliasing, we visualize the angle-delay power spectrum of one representative test sample in Fig. 9. Owing to the limited delay spread of wireless channels, the dominant components are confined to a compact low-delay support; this inherent concentration alleviates the ambiguity from frequency-domain decimation and renders the principal delay structure recoverable. The angle domain, lack-ing a comparable concentration property, is far more suscepti-ble to spatial-decimation-induced ambiguity. Absent support-prior guidance, the ablated network may resolve the aliased angular components incorrectly, yielding noticeable deviations of the angular peaks from the ground truth. This limitation is effectively overcome by the SPA de-aliasing module in SPA-TANN, which suppresses the aliasing ambiguity and recovers a spectrum closely matching the ground truth. VI. C ONCLUSION 
+
+This paper investigated multi-domain channel extrapola-tion for upper mid-band massive MIMO-OFDM systems. Through the Tucker-based ADD-domain analysis, we found that uniform pilot decimation across the SFT domains induces asymmetric aliasing across the angle, delay, and Doppler domains, which fundamentally limits channel extrapolation and necessitates support-prior guidance to resolve the ADD-domain aliasing. Guided by this finding, SPA-TANN combines axial attention and lightweight multi-scale gating for support-prior-assisted ADD-domain de-aliasing, and is trained over dif-ferent pilot decimation factors to achieve cross-configuration generalization without retraining. Simulation results show that the proposed framework consistently achieves the low-est NMSE across diverse velocities, carrier frequencies, and 13 
+
+scenarios, while reducing the frequency- and spatial-domain pilot overhead by up to eight-fold and four-fold, respectively, demonstrating its potential for efficient CSI acquisition in FR3 massive MIMO systems with limited pilot overhead. REFERENCES [1] H. Zhou, Y. Deng, and A. Nallanathan, “Novel listen-before-talk access scheme with adaptive backoff procedure for uplink centric broadband communication,” IEEE Internet Things J. , vol. 10, no. 22, pp. 19 981– 19 992, 2023. [2] B. Bojovi´ c, S. Lag´ en, K. Koutlia, X. Zhang, P. Wang, and L. Yu, “Enhancing 5G QoS management for XR traffic through XR loopback mechanism,” IEEE J. Sel. Areas Commun. , vol. 41, no. 6, pp. 1772– 1786, 2023. [3] S. H. R. Naqvi, P. H. Ho, and L. Peng, “5G NR mmWave indoor coverage with massive antenna system,” J. Commun. Networks , vol. 23, no. 1, pp. 1–11, 2021. [4] H. Hou, Y. Wang, X. Yi, W. Wang, D. T. M. Slock, and S. Jin, “Tensor-structured Bayesian channel prediction for upper mid-band XL-MIMO systems,” IEEE Trans. Commun. , vol. 74, pp. 3968–3983, 2026. [5] Y. Wang, H. Hou, X. Yi, W. Wang, and S. Jin, “Toward unified AI models for MU-MIMO communications: A tensor equivariance framework,” IEEE Trans. Wireless Commun. , vol. 24, no. 12, pp. 10 517– 10 533, Dec. 2025. [6] I. Ahmed, H. Khammari, A. Shahid, A. Musa, K. S. Kim, E. De Poorter, and I. Moerman, “A survey on hybrid beamforming techniques in 5G: Architecture and system model perspectives,” IEEE Commun. Surveys Tuts. , vol. 20, no. 4, pp. 3060–3097, 2018. [7] E. Vlachos, G. C. Alexandropoulos, and J. Thompson, “Massive MIMO channel estimation for millimeter wave systems via matrix completion,” 
+
+IEEE Signal Process. Lett. , vol. 25, no. 11, pp. 1675–1679, 2018. [8] H. Zhu and J. Wang, “Chunk-based resource allocation in OFDMA systems - part I: chunk allocation,” IEEE Trans. Commun. , vol. 57, no. 9, pp. 2734–2744, 2009. [9] ——, “Chunk-based resource allocation in OFDMA systems—part II: Joint chunk, power and bit allocation,” IEEE Trans. Commun. , vol. 60, no. 2, pp. 499–509, 2012. [10] H. Miao, J. Zhang, P. Tang, L. Tian, X. Zhao, B. Guo, and G. Liu, “Sub-6 GHz to mmWave for 5G-advanced and beyond: Channel measurements, characteristics and impact on system performance,” IEEE J. Sel. Areas Commun. , vol. 41, no. 6, pp. 1945–1960, 2023. [11] Study on channel model for frequencies from 0.5 to 100 GHz, Version 16.1.0 . document 3GPP T.R. 38.901, Dec. 2019. [12] S. Zhang, S. Zhang, J. Ma, T. Liu, and O. A. Dobre, “Deep learning based antenna-time domain channel extrapolation for hybrid mmWave massive MIMO,” IEEE Trans. Veh. Technol. , vol. 71, no. 12, pp. 13 398– 13 402, 2022. [13] Y. Yang, S. Zhang, F. Gao, C. Xu, J. Ma, and O. A. Dobre, “Deep learning based antenna selection for channel extrapolation in FDD massive MIMO,” in Proc. IEEE Int. Conf. Wireless Commun. Signal Process. (WCSP) . IEEE, 2020, pp. 182–187. [14] B. Lin, F. Gao, S. Zhang, T. Zhou, and A. Alkhateeb, “Deep learning-based antenna selection and CSI extrapolation in massive MIMO sys-tems,” IEEE Trans. Wireless Commun. , vol. 20, no. 11, pp. 7669–7681, 2021. [15] H. Li, M. Wang, R. Han, N. Wang, H. Wu, Y. Gu, W. Yuan, and F. Gao, “Deep learning-based channel extrapolation for 5G advanced massive MIMO: Hardware prototype and experimental evaluation,” IEEE Trans. Wireless Commun. , vol. 24, no. 3, pp. 1756–1771, 2025. [16] Y. Gao, X. Wu, J. Jun, Z. Zhang, Z. Yang, S. Xu, C.-X. Wang, and Z. Han, “Channel extrapolation for MIMO systems with the assistance of multi-path information induced from channel state information,” arXiv preprint arXiv:2601.21524 , 2026. [17] X. He, H. Hou, Y. Wang, W. Wang, S. Jin, S. Chatzinotas, and B. Ottersten, “Deep learning-based joint uplink-downlink CSI acqui-sition for next-generation upper mid-band systems,” arXiv preprint arXiv:2512.02557 , 2025. [18] S. J. Lee, “On the training of MIMO-OFDM channels with least square channel estimation and linear interpolation,” IEEE Commun. Lett. , vol. 12, no. 2, pp. 100–102, 2008. [19] O. Edfors, M. Sandell, J.-J. Van de Beek, S. K. Wilson, and P. O. Bor-jesson, “OFDM channel estimation by singular value decomposition,” 
+
+IEEE Trans. Commun. , vol. 46, no. 7, pp. 931–939, 1998. [20] B. Zhou, X. Yang, S. Ma, F. Gao, and G. Yang, “Pay less but get more: A dual-attention-based channel estimation network for massive MIMO sys-tems with low-density pilots,” IEEE Trans. Wireless Commun. , vol. 23, no. 6, pp. 6061–6076, 2024. [21] I. C. Wong and B. L. Evans, “WLC43-5: low-complexity adaptive high-resolution channel prediction for OFDM systems,” in Proc. IEEE Global Telecommun. Conf. (GLOBECOM) . IEEE, 2006, pp. 1–5. [22] C. Wu, X. Yi, Y. Zhu, W. Wang, L. You, and X. Gao, “Channel prediction in high-mobility massive MIMO: From spatio-temporal autoregression to deep learning,” IEEE J. Sel. Areas Commun. , vol. 39, no. 7, pp. 1915–1930, 2021. [23] J. Yuan, H. Q. Ngo, and M. Matthaiou, “Machine learning-based channel prediction in massive MIMO with channel aging,” IEEE Trans. Wireless Commun. , vol. 19, no. 5, pp. 2960–2973, 2020. [24] S. Uehashi, Y. Ogawa, T. Nishimura, and T. Ohgane, “Prediction of time-varying multi-user MIMO channels based on DOA estimation using compressed sensing,” IEEE Trans. Veh. Technol. , vol. 68, no. 1, pp. 565– 577, 2019. [25] I. Helmy, P. Tarafder, and W. Choi, “LSTM-GRU model-based chan-nel prediction for one-bit massive MIMO system,” IEEE Trans. Veh. Technol. , vol. 72, no. 8, pp. 11 053–11 057, 2023. [26] H. Jiang, M. Cui, D. W. K. Ng, and L. Dai, “Accurate channel prediction based on transformer: Making mobility negligible,” IEEE J. Sel. Areas Commun. , vol. 40, no. 9, pp. 2717–2732, 2022. [27] Y. Wan and A. Liu, “A two-stage 2D channel extrapolation scheme for TDD 5G NR systems,” IEEE Trans. Wireless Commun. , vol. 23, no. 8, pp. 8497–8511, 2024. [28] Y. Han, S. Jin, X. Li, C.-K. Wen, and T. Q. S. Quek, “Multi-domain channel extrapolation for FDD massive MIMO systems,” IEEE Trans. Commun. , vol. 69, no. 12, pp. 8534–8550, 2021. [29] B. Zhou, X. Yang, S. Ma, F. Gao, and G. Yang, “Low-overhead channel estimation via 3D extrapolation for TDD mmWave massive MIMO systems under high-mobility scenarios,” IEEE Trans. Wireless Commun. ,vol. 24, no. 4, pp. 2797–2813, 2025. [30] Y. Gao, Z. Lu, Y. Wu, Y. Jin, S. Zhang, X. Chu, S. Xu, and C.-X. Wang, “Enabling 6G through multi-domain channel extrapolation: Opportunities and challenges of generative artificial intelligence,” IEEE Commun. Mag. , vol. 64, no. 1, pp. 222–228, 2026. [31] H. Hou, Y. Wang, X. Yi, W. Wang, and S. Jin, “Joint beam alignment and Doppler estimation for fast time-varying wideband mmWave channels,” 
+
+IEEE Trans. Wireless Commun. , vol. 23, no. 9, pp. 5477–5492, 2024. [32] H. Miao, J. Zhang, P. Tang, Q. Zhen, J. Meng, X. Liu, E. Liu, P. Liu, L. Tian, and G. Liu, “6G new mid-band/FR3 (6–24 GHz): Channel measurement, characteristics and modeling,” IEEE Open J. Commun. Soc. , vol. 6, pp. 9942–9960, 2025. [33] E. Liu, P. Tang, H. Miao, Q. Zhen, J. Zhang, and S. Wang, “Measurement-based analysis of outdoor massive MIMO channel char-acteristics over FR3 frequency band,” arXiv preprint arXiv:2606.11622 ,2026. [34] H. Hou, Y. Wang, Y. Zhu, X. Yi, W. Wang, D. T. M. Slock, and S. Jin, “A tensor-structured approach to dynamic channel prediction for massive MIMO systems with temporal non-stationarity,” IEEE Trans. Wireless Commun. , vol. 25, pp. 6869–6886, 2026. [35] Y. Zeng, J. Chen, J. Xu, D. Wu, X. Xu, S. Jin, X. Gao, D. Gesbert, S. Cui, and R. Zhang, “A tutorial on environment-aware communications via channel knowledge map for 6G,” IEEE Commun. Surveys Tuts. , vol. 26, no. 3, pp. 1478–1519, Feb. 2024. [36] D. Wu, Y. Zeng, S. Jin, and R. Zhang, “Environment-aware hybrid beamforming by leveraging channel knowledge map,” IEEE Trans. Wireless Commun. , vol. 23, no. 5, pp. 4990–5005, May. 2024. [37] Y. Wang, V. N. Ha, K. Ntontin, H. Yan, W. Wang, S. Chatzinotas, and B. Ottersten, “Statistical CSI-based distributed precoding design for OFDM-cooperative multi-satellite systems,” IEEE J. Sel. Areas Commun. , vol. 44, pp. 3219–3236, 2026. [38] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, Ł. Kaiser, and I. Polosukhin, “Attention is all you need,” Advances in neural information processing systems , vol. 30, 2017. [39] S. Jaeckel, L. Raschkowski, K. B¨ orner, and L. Thiele, “QuaDRiGa: A 3-D multi-cell channel model with time evolution for enabling virtual field trials,” IEEE Trans. Antennas Propag. , vol. 62, no. 6, pp. 3242–3256, Jun. 2014. [40] J. A. Tropp and A. C. Gilbert, “Signal recovery from random mea-surements via orthogonal matching pursuit,” IEEE Trans. Inf. Theory ,vol. 53, no. 12, pp. 4655–4666, Dec. 2007. [41] P. Chen and L. Cheng, “Estimating channels with hundreds of sub-paths for MU-MIMO uplink: A structured high-rank tensor approach,” IEEE Signal Process. Lett. , vol. 31, pp. 2320–2324, Sep. 2024.
