@@ -1,0 +1,1091 @@
+Title: Beam-Response Contrastive Learning for Transmitter-Side MIMO CSI Representation
+
+URL Source: https://arxiv.org/pdf/2607.24872v1
+
+Published Time: Wed, 29 Jul 2026 00:04:53 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+> SUBMITTED TO IEEE TRANSACTIONS ON WIRELESS COMMUNICATIONS 1
+
+# Beam-Response Contrastive Learning for Transmitter-Side MIMO CSI Representation 
+
+Sehyun Ryu, Yumin Kim, Minjae Lee, and Hyun Jong Yang, Senior Member, IEEE ,John M. Cioffi, Life Fellow, IEEE 
+
+Abstract —Self-supervised representation learning from unla-beled channel state information (CSI) can reduce labeling and adaptation overhead in learning-based multiple-input multiple-output (MIMO) systems. Existing CSI pretraining methods typically use reconstruction objectives or contrastive pairs from generic augmentations, which do not explicitly reflect transmission-relevant channel similarity. This paper proposes beam-response contrastive learning (BRCL), a self-supervised CSI pretraining framework based on the transmit-side Gram matrix. For a channel matrix H, R = HHH determines the received power of any unit-norm transmit beam w as |Hw |22 =
+
+wHRw . BRCL maps each CSI sample to a beam-response profile and uses the induced soft similarity as a label-free relational target for contrastive pretraining. Combined with reconstruc-tion learning, BRCL enforces both sample-level CSI recovery and beam-response-level consistency, yielding transferable CSI representations without task-specific labels or manual positive pairs. Experiments on diverse MIMO channel datasets show that BRCL improves label efficiency and outperforms autoencoder-and channel-charting-based pretraining across beam selection, user selection, and future beam selection tasks. 
+
+Index Terms —Channel State Information, Channel Represen-tation, Self-Supervised Learning, Channel Gram Matrix. 
+
+I. I NTRODUCTION 
+
+Self-supervised learning (SSL) has emerged as a central paradigm for learning transferable representations from unla-beled data by deriving supervisory signals from the data [1]– [3]. Contrastive learning (CL), in particular, learns represen-tations by comparing samples in an embedding space using objectives such as InfoNCE [4]. Methods such as SimCLR and MoCo showed that two augmented views of the same sample can provide effective positive pairs for representation learn-ing [5], [6]. Accordingly, the learned representation depends strongly on the similarity relation imposed during pretraining. For wireless channel state information (CSI), this leads to a fundamental question: what physical relation between CSI samples should be preserved in the representation space? 
+
+Wireless SSL methods differ primarily in how this relation is defined. One line constructs positive pairs through perturba-tions or paired observations. Time–frequency augmentations, 
+
+> Corresponding authors: H. J. Yang S. Ryu is with the Department of Electrical Engineering, Pohang University of Science and Technology, Pohang, Republic of Korea, and also with the Institute of New Media and Communications, Seoul National University, Seoul, Republic of Korea (e-mail: sh.ryu@postech.ac.kr). Y. Kim, M. Lee, and H. J. Yang are with the Department of Electrical and Computer Engineering, Seoul National University, Seoul, Republic of Korea. H. J. Yang is also with the Institute of New Media and Communications, Seoul National University (e-mail: yumin0107@snu.ac.kr; lmjlmj2580@snu.ac.kr; hjyang@snu.ac.kr). J. M. Cioffi is with the Department of Electrical Engineering, Stanford University, Stanford, CA 94305 USA (e-mail: cioffi@stanford.edu).
+
+multi-receiver observations, and CSI-domain transformations have been adopted for wireless sensing and activity recog-nition [7]–[9]. Self-supervised invariant representations have also been learned from unlabeled CSI and adapted to local-ization with limited labels [10]. For beam management, cross-band correspondence has been exploited to support mmWave beam decisions using sub-6 GHz channels [11]. These methods demonstrate the value of wireless CL when an appropriate invariance or cross-view correspondence is available. However, the resulting similarity is determined mainly by the selected augmentation, observation pairing, or application-specific as-sumption, rather than by the communication behavior of distinct CSI samples. A second line of work uses masked modeling or reconstruction-based pretext tasks. Motivated by masked lan-guage and image modeling [12]–[15], these methods treat CSI, channel impulse response (CIR), or other radio measurements as structured arrays whose missing components are to be recovered. Masked prediction has been applied to channel extrapolation, wireless positioning, and radio foundation mod-eling [16]–[20], as well as to multiple-input multiple-output (MIMO) channel feedback, interpolation, and prediction [21]– [23]. By design, however, reconstruction losses primarily reward raw CSI fidelity. Such fidelity is not always aligned with transmitter-side decisions: CSI samples with different entry-wise reconstruction errors may produce similar beam re-sponses, whereas samples that are close under a reconstruction loss may lead to different precoding behavior. Recent wireless foundation models extend these ideas to-ward representations that can be reused across scenarios and tasks. Multi-modal pretraining has aligned CSI with physical or scattering-environment information [24], while CIR–CSI consistency has been used to learn shared representations for positioning, beam management, and channel identifica-tion [25]. Other studies combine masked reconstruction and CL to obtain task-agnostic channel representations or uni-fied radio representations for sensing, communication, and localization [19], [26]–[29]. In Wi-Fi CSI sensing, related SSL and contrastive objectives have improved representation transfer, label efficiency, and few-shot generalization [30]– [33]. These studies show growing interest in reusable wireless representations, but their supervisory signals still arise mainly from reconstruction, cross-modal consistency, or application-specific invariance. Consequently, the relation that should organize distinct CSI samples for communication-oriented downstream tasks remains largely implicit. Channel charting provides a complementary approach in which the inter-sample relation is defined more explicitly. arXiv:2607.24872v1 [cs.IT] 27 Jul 2026 SUBMITTED TO IEEE TRANSACTIONS ON WIRELESS COMMUNICATIONS 2
+
+TABLE I: Comparison of representative CSI representation SSL approaches.                                             
+
+> Research Line Supervisory Signal / Similarity Self-Supervised Comm. Tasks Distinct-CSI Relation Beam-Response Relation Soft Target
+> Augmented-View CL [7]–[9] Hard positives from augmented CSI views O△△XXTask-Oriented SSL [10], [11] Task-specific invariance or cross-band objective O△△XXMasked/Reconstruction SSL [16]–[23] Masked CSI/CIR/radio recovery O△XXXWireless Foundation Models [19], [24]– [29] Multimodal alignment or masked recovery O△△X△
+> Wi-Fi CSI Sensing SSL [30]–[33] Sensing-specific invariances OX△XXChannel Charting [34]–[38] Radio-geometry or topology relation O△OX△
+> BRCL Beam-response soft relation OOOOOO, △, and X denote yes, partial, and no, respectively. Here, “partial” means that the property is addressed only in some works or only indirectly.
+
+It maps high-dimensional CSI into a low-dimensional chart while preserving local radio geometry without explicit position labels [34]. Subsequent methods introduced temporal triplet constraints, phase-insensitive distances, and predictive latent dynamics to organize or predict channel evolution [35]–[38]. The resulting similarity, however, is primarily geometric or topological. For transmitter-side decisions, geometric proxim-ity does not necessarily imply similar beamforming behav-ior. Nearby users may experience different blockage, angular spreads, or path gains, whereas geographically separated users may produce similar responses to a transmit beam codebook. Taken together, existing methods organize CSI representa-tions through augmentation-induced invariance, reconstruction fidelity, cross-view consistency, or radio geometry. What re-mains less explored is a similarity relation defined directly by the physical quantities that govern transmitter-side com-munication decisions. To address this gap, this paper takes a precoding-oriented view of self-supervised CSI representation learning. This perspective is not intended to provide a universal similarity for every wireless task. Instead, it focuses on AI-based MIMO tasks in which CSI representations support transmitter-side decisions, including beam selection, precoder design, user selection, and beam-response prediction. For a MIMO channel matrix H and a transmit beam w, the beamformed received power is given by 
+
+∥Hw ∥22 = wHHHHw . (1) The transmit-side Gram matrix HHH therefore determines the channel response to any transmit beam and provides a direct physical basis for precoding-relevant CSI similarity [39]. This view is consistent with classical MIMO and massive MIMO principles, in which channel Gram matrices, subspaces, and eigenspaces govern multicarrier MIMO beamforming, limited-feedback precoding, reduced-dimensional CSIT, and user grouping [40]–[42]. Accordingly, the frequency-resolved transmit-side Gram-matrix profile serves as a self-supervised relational target for structuring the CSI representation space. Based on this principle, this paper proposes beam-response contrastive learning (BRCL), a self-supervised framework for MIMO orthogonal frequency-division multiplexing (OFDM) CSI representation learning. BRCL computes a beam-response dissimilarity between CSI samples from their transmit-side Gram-matrix profiles and converts the resulting pairwise re-lations into a soft target distribution over each mini-batch. Within the conventional two-view CL framework, augmented views of the same CSI sample remain explicit positive pairs, while distinct samples are weighted according to the similarity of their transmit beam-response profiles. BRCL thus retains augmentation-induced instance invariance while adding a precoding-relevant relation that is not directly en-forced by generic augmentations, masked reconstruction, or geometry-preserving charting objectives. When combined with reconstruction learning, BRCL jointly promotes sample-level CSI recovery and beam-response-level relational consistency, yielding compact and transferable representations without task-specific labels or manually designed inter-sample pos-itive pairs. The beam-selection and user-selection tasks as-sess whether compact CSI representations preserve decision-relevant information, while future beam selection evaluates temporal prediction from past CSI, corresponding to task-oriented CSI compression and channel prediction, respec-tively [43]–[45]. Table I summarizes the supervisory signals and similarity notions used in the related CSI representation-learning approaches. The main contributions of this paper are:  
+
+> •
+
+A precoding-oriented CSI similarity is introduced by us-ing the transmit-side Gram-matrix profile. This similarity compares distinct CSI samples through their induced transmit beam-response profiles and provides a physically meaningful basis for CSI representation learning for transmitter-side decisions.  
+
+> •
+
+Beam-response contrastive learning (BRCL) is proposed to incorporate this similarity into self-supervised MIMO-OFDM CSI pretraining. BRCL combines same-instance positive-pair contrastive learning with a soft relational loss over distinct CSI samples, and can be augmented with reconstruction learning to jointly promote instance-level invariance, beam-response-level consistency, and sample-level CSI recovery without task-specific labels or manual positive-pair design.  
+
+> •
+
+The learned representations are evaluated on beam se-lection, MU-MIMO user selection, and future beam se-lection. Experiments on large-scale ray-tracing MIMO-OFDM datasets show that BRCL improves label effi-ciency and downstream transfer performance over autoen-coder, CL, masked-modeling, and channel-charting-based pretraining baselines. The rest of this paper is organized as follows. Section II introduces the MIMO-OFDM channel model and formulates the self-supervised CSI representation learning problem. Sec-tion III presents the proposed BRCL framework. Section IV provides the theoretical interpretation of the Gram-matrix-induced target. Section V describes the experimental setup and presents the results. Finally, Section VI concludes the paper. SUBMITTED TO IEEE TRANSACTIONS ON WIRELESS COMMUNICATIONS 3(B) Gram-Matrix-Induced Beam-Response Relation (A) Two-View Contrastive Representation Learning Self-Supervised BRCL Pretraining Unlabeled MIMO-OFDM CSI Dataset BRCL Objective         
+
+> balances instance and relational alignment ... Shared Encoder Projection Head ... Instance-Level Contrastive Loss Negatives Others Positive Pair and Two Stochastic Views Beam-Response Dissimilarity
+> Gain
+> Normalized Gram Matrix (Shape )Transmit-Side Channel Gram Matrix
+> Pretrained Encoder
+> ...
+> 2) MU-MIMO User Selection 3) Future Beam Selection Downstream Transfer 1) Beam Selection
+> Transfer to Downstream Tasks ... ... tt + 1 t +T
+> User 2 User 4 User K
+> Selected User Set ... Gram-Matrix-Relational Loss Top-K
+> Neighbors Soft Positives Zero Target Mass Others
+
+Fig. 1: Overview of the proposed BRCL framework. BRCL pretrains a CSI encoder by combining two-view instance-level contrastive learning with Gram-matrix-induced relational learning. For each CSI sample, the transmit-side Gram matrix is used to form beam-response profiles, which are separated into normalized beam-response shape and gain components to define the beam-response dissimilarity DBR . The resulting dissimilarities provide soft relational targets, and the pretrained encoder f ∗ 
+
+> θ
+
+is transferred to downstream wireless tasks. II. S YSTEM MODEL AND PROBLEM FORMULATION 
+
+A. MIMO-OFDM Channel Dataset 
+
+A downlink MIMO-OFDM system with Nt transmit an-tennas and Nr receive antennas is considered. An unlabeled CSI dataset is assumed to be available for self-supervised pretraining: 
+
+D = {X i}Nu 
+
+> i=1
+
+, (2) where i denotes the sample index and Nu is the number of unlabeled CSI samples. Each sample Xi represents an instantaneous MIMO-OFDM channel realization observed over Nf subcarriers: 
+
+Xi = Hi[f ] ∈ CNr ×Nt Nf  
+
+> f=1
+
+, (3) where Hi[f ] is the channel matrix of the i-th sample at subcarrier f . The narrowband flat-fading case is obtained by setting Nf = 1 , in which case a sample reduces to a single channel matrix Hi ∈ CNr ×Nt .At subcarrier f , the received signal is modeled as 
+
+yi[f ] = Hi[f ]xi[f ] + ni[f ], (4) where xi[f ] ∈ CNt is the transmitted signal vector and ni[f ]
+
+is additive noise. The CSI sample Xi is used as the input to the learning model. In implementation, the complex-valued CSI can be represented by stacking its real and imaginary components, but this preprocessing step is omitted from the notation for clarity. 
+
+B. Self-Supervised CSI Representation Learning 
+
+The objective of self-supervised CSI representation learning is to pretrain an encoder from the unlabeled dataset D without using task-specific labels. Let fθ (·) denote the CSI encoder that maps a CSI sample to a drep -dimensional representation. For each CSI sample Xi ∈ D , the encoder produces 
+
+ui = fθ (Xi) ∈ Rdrep , (5) where ui denotes the learned representation of Xi. The no-tation ui is adopted for the representation to avoid confusion with the channel matrix Hi[f ].After pretraining, the encoder is transferred to a downstream wireless task using a labeled dataset 
+
+S(r) =
+
+n 
+
+Xj , η (r)
+
+> j
+
+o |S (r)|
+
+> j=1
+
+, (6) where r denotes the downstream task index and η(r) 
+
+> j
+
+is the corresponding task-specific target. Depending on the task, η(r)
+
+> j
+
+may denote a codebook beam label, a MU-MIMO user-set utility or quality indicator, or a future beam-response target such as a future beam index or beam-gain profile. A task-specific head ℓ(r) 
+
+> ω
+
+(·) is trained on top of the pre-trained encoder. For a downstream CSI sample Xj ∈ S (r), the predicted target is 
+
+ˆη(r) 
+
+> j
+
+= ℓ(r) 
+
+> ω
+
+(fθ (Xj )) . (7) The downstream performance is evaluated by comparing ˆη(r)
+
+> j
+
+with the ground-truth target η(r) 
+
+> j
+
+on held-out samples from 
+
+S(r). Depending on the evaluation protocol, the encoder fθ
+
+is either frozen to assess representation quality or fine-tuned jointly with the task head. The effectiveness of the pretrained encoder is measured by its transferability and label efficiency across downstream tasks. 
+
+C. Transmit-Response-Oriented Problem Formulation 
+
+A key question in self-supervised CSI representation learn-ing is which physical relation among unlabeled CSI samples should be preserved in the representation space. Existing self-supervised approaches often treat CSI as a generic data array and define pretext objectives through raw channel reconstruc-tion, masking, or augmentation-based instance discrimination. While such objectives can learn useful features, they do not explicitly specify which channel properties should be preserved for communication decisions. This work instead SUBMITTED TO IEEE TRANSACTIONS ON WIRELESS COMMUNICATIONS 4Random Raw CSI  
+
+> L2
+> Norm. CSI
+> L2
+> Gram Matrix
+> L2
+> DBR
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Beam-transfer NBG
+> 0.064
+> 0.799
+> 0.869
+> 0.938 0.950
+
+Fig. 2: Beam-transfer NBG of nearest-neighbor CSI samples under different similarity metrics, evaluated on the Deep-MIMO dataset. targets transmit-domain CSI representations , where the rel-evant information is how the channel responds to candidate beams, precoders, and scheduled user groups, rather than how accurately the raw CSI entries can be reconstructed. Accordingly, the representation is not designed to reconstruct the full CSI sample, but to preserve the information that determines transmit responses over OFDM subcarriers. For a unit-norm transmit beam w ∈ CNt , the received power of CSI sample Xi at subcarrier f is 
+
+γi[f ; w] = ∥Hi[f ]w∥22 = wH Ri[f ]w, (8) where 
+
+Ri[f ] = Hi[f ]H Hi[f ] ∈ CNt×Nt (9) is the transmit-side channel Gram matrix of sample Xi at subcarrier f .Together, (8) and (9) show that Ri[f ] determines the trans-mit beam response of the channel at subcarrier f . Accordingly, the frequency-resolved beam-response profile of sample Xi is defined as 
+
+Bi = {Ri[f ]}Nf  
+
+> f=1
+
+. (10) The profile Bi characterizes the transmitter-side response of an instantaneous MIMO-OFDM CSI sample across frequency. Since different subcarriers may exhibit different gains, ranks, and preferred transmit directions, preserving this frequency-resolved response is important for OFDM precoding, power allocation, and feedback-related decisions. The proposed problem is to learn an encoder fθ from the unlabeled dataset D such that the representation ui = fθ (Xi)
+
+preserves the transmit-response geometry induced by Bi. In this formulation, two CSI samples should be close in the learned representation space when their beam-response pro-files induce similar beam gains over subcarriers and transmit beams. Thus, similarity in Bi implies that the transmitter can treat the corresponding channels similarly for beamforming-oriented decisions, even without reconstructing the full CSI samples. BRCL exploits this transmit-response relation to learn compact, label-free, and communication-relevant CSI representations. III. B EAM -R ESPONSE CONTRASTIVE LEARNING 
+
+This section presents the proposed BRCL framework. BRCL aims to learn CSI embeddings whose geometry re-flects the transmit-side physical behavior of MIMO-OFDM channels. Instead of defining sample similarity solely through generic augmentations or channel-domain reconstruction, BRCL constructs a soft relational target from the transmit-side Gram-matrix profile of each channel realization, which char-acterizes CSI similarity via subcarrier-wise beam responses. To this end, BRCL combines instance-level contrastive learn-ing with physically grounded relational learning. Augmented views of the same CSI sample are aligned to ensure representa-tion invariance, while CSI samples with similar Gram-matrix-induced beam-response profiles are encouraged to have nearby embeddings through a Gram-matrix-relational objective. An optional ℓ2 reconstruction loss can further be incorporated to preserve channel-domain information. As a result, BRCL retains the stability of instance discrimination while organiz-ing the embedding space according to transmission-relevant channel similarity. 
+
+A. CSI Augmentation and Encoder 
+
+For each CSI sample Xi ∈ D , two stochastic views are generated as 
+
+˜X (1)  
+
+> i
+
+= a1(Xi), ˜X (2)  
+
+> i
+
+= a2(Xi), (11) where a1(·) and a2(·) denote independently sampled CSI augmentations. This two-view construction follows the stan-dard CL protocol, where independently perturbed views of the same sample form an explicit positive pair [5]. In the CSI setting, such augmentations can model noisy or partially observed channel measurements, as commonly adopted in wireless SSL through channel perturbations such as noise injection and masking [19]. The resulting positive pair encour-ages the encoder to learn representations that are invariant to measurement-level perturbations while preserving the identity of the underlying channel realization. The physical relation among different CSI samples, how-ever, is not defined by the augmentations. Instead, it is defined by the Gram-matrix-induced beam-response similarity intro-duced in the next subsection. Thus, BRCL retains the stability of two-view instance-level CL while injecting transmitter-side physical structure through a soft relational target. Let fθ (·) denote the CSI encoder and πϕ(·) denote the projection head used during self-supervised pretraining. The encoder maps each augmented view to a representation 
+
+u(v) 
+
+> i
+
+= fθ
+
+ ˜X (v)
+
+> i
+
+
+
+∈ Rdrep , v ∈ { 1, 2}, (12) where drep denotes the dimension of the encoder representa-tion. The projection head then maps this representation to a normalized contrastive embedding 
+
+z(v) 
+
+> i
+
+=
+
+πϕ
+
+
+
+u(v)
+
+> i
+
+
+
+πϕ
+
+
+
+u(v)
+
+> i
+
+
+
+> 2
+
+∈ Rdz , v ∈ { 1, 2}, (13) where dz denotes the dimension of the projection space in which the contrastive objectives are applied. The projection SUBMITTED TO IEEE TRANSACTIONS ON WIRELESS COMMUNICATIONS 5
+
+head is used only during pretraining, and the encoder repre-sentation u(v) 
+
+> i
+
+is used for downstream tasks. 
+
+B. Soft Relational Contrastive Target 
+
+BRCL constructs a physical target distribution from the frequency-resolved beam-response profile defined in (10). The transmit-side Gram matrix is first computed at each subcarrier as 
+
+Ri[f ] = Hi[f ]H Hi[f ], f = 1 , . . . , N f . (14) The corresponding subcarrier beam-gain component is defined as 
+
+gi[f ] = log (tr ( Ri[f ]) + ϵ) , (15) where tr ( Ri[f ]) represents the aggregate transmit-side chan-nel gain at subcarrier f , and ϵ > 0 is a small constant introduced for numerical stability. To separate the relative beam-response shape from the absolute gain, the normalized Gram matrix is further defined as 
+
+¯Ri[f ] = Ri[f ]tr ( Ri[f ]) + ϵ . (16) Accordingly, ¯Ri[f ] captures the relative transmit beam-response shape at subcarrier f , whereas gi[f ] captures the corresponding absolute beam gain. Since the dynamic range of the gain component can differ substantially from that of the normalized Gram-matrix shape component, the gain term is calibrated using statistics com-puted from the unlabeled pretraining dataset. Specifically, for each subcarrier index f , let 
+
+μg [f ] = 1
+
+Nu
+
+X
+
+> Xn∈D
+
+gn[f ], (17) 
+
+σg [f ] = 1
+
+Nu
+
+X
+
+> Xn∈D
+
+(gn[f ] − μg [f ]) 2
+
+!1/2
+
+, (18) where Nu = |D| is the number of unlabeled CSI samples, and μg [f ] and σg [f ] denote the empirical mean and standard deviation of the gain component at subcarrier f , respectively. The normalized gain component is then defined as 
+
+˜gi[f ] = gi[f ] − μg [f ]
+
+σg [f ] + ϵg
+
+, (19) where ϵg > 0 is a small constant for numerical stability. The statistics μg [f ] and σg [f ] are computed once from the unla-beled pretraining dataset and kept fixed throughout pretraining. For two CSI samples Xi and Xj , the Gram-matrix-shape dissimilarity is defined as 
+
+Dshape (i, j ) = 1
+
+NfNf
+
+X 
+
+> f=1
+
+¯Ri[f ] − ¯Rj [f ] 2 
+
+> F
+
+, (20) and the normalized gain dissimilarity is defined as 
+
+Dgain (i, j ) = 1
+
+NfNf
+
+X 
+
+> f=1
+
+(˜ gi[f ] − ˜gj [f ]) 2 . (21) The beam-response dissimilarity is then given by 
+
+DBR (i, j ) = Dshape (i, j ) + λg Dgain (i, j ), (22) where λg ≥ 0 controls the contribution of the normalized absolute gain component. The first term compares trace-normalized Gram matrices and captures the beam-response shape, including dominant transmit directions, rank structure, and relative eigenmode strengths. Since trace normalization re-moves the overall channel power, the second term reintroduces absolute gain information through ˜gi[f ]. This decomposition prevents large-scale power differences from dominating the shape comparison, while incorporating path loss, shadowing, and blockage effects with a controlled scale. To assess whether DBR selects beam-decision-relevant neighbors, Fig. 2 compares nearest-neighbor transfer across different CSI similarity metrics. For each anchor sample i,the neighbor j selected by each metric provides its optimal beam k⋆j , which is evaluated on the anchor channel using the normalized beamforming gain (NBG) 
+
+NBG( i ← j) = Gi(k⋆j )
+
+Gi(k⋆i ) , (23) where k⋆i is the anchor-optimal beam and Gi(k) denotes the beamforming gain of beam k for sample i. Thus, 1−NBG( i ←
+
+j) represents the normalized regret of using the neighbor’s beam. As shown in Fig. 2, DBR achieves the highest NBG among the considered metrics, supporting its use for construct-ing beam-relevant relational targets in BRCL. Motivated by this observation, DBR is used during pre-training to identify local beam-response neighbors within each mini-batch. At each training iteration, a mini-batch is sampled as 
+
+M = {X i}i∈I ⊂ D , (24) where I denotes the index set of samples included in the mini-batch. For an anchor sample i ∈ I , let 
+
+I−i = I \ { i} (25) denote the set of candidate indices excluding the anchor. The top-K beam-response-neighbor set of anchor sample i is then defined as 
+
+NK (i) = arg topK 
+
+> j∈I −i
+
+(−DBR (i, j )) , (26) where arg topK returns the K indices with the largest values of −DBR (i, j ), equivalently the K smallest beam-response dissimilarities. The Gram-matrix-induced soft relational target for anchor sample i is then defined as 
+
+qgram  
+
+> ij
+
+=
+
+
+
+exp ( −DBR (i, j )/τ p)
+
+P  
+
+> k∈N K(i)
+
+exp ( −DBR (i, k )/τ p) , j ∈ N K (i),
+
+0, otherwise ,
+
+(27) where τp > 0 is a temperature that controls the sharpness of the physical similarity distribution induced by the beam-response distance. The anchor itself is excluded from qgram 
+
+> ij
+
+because the same-instance positive relation is optimized sep-arately through the instance-level contrastive loss. The top-K
+
+restriction assigns nonzero target probability only to the most similar Gram-matrix-induced beam-response neighbors, while SUBMITTED TO IEEE TRANSACTIONS ON WIRELESS COMMUNICATIONS 60 20 40 60              
+
+> Target Index
+> 0
+> 10
+> 20
+> 30
+> 40
+> 50
+> 60
+> Anchor Index
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Probability
+> (a) SimCLR one-hot target 020 40 60
+> Target Index
+> 0
+> 10
+> 20
+> 30
+> 40
+> 50
+> 60
+> Anchor Index
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> Probability (b) Top-K soft target qgram
+> ij 12345678
+> Neighbor Rank
+> 0
+> 5
+> 10
+> 15
+> 20
+> Anchor Row
+> 0.00
+> 0.05
+> 0.10
+> 0.15
+> 0.20
+> 0.25
+> 0.30
+> 0.35
+> 0.40
+> Probability (c) Ranked target probabilities
+
+Fig. 3: Construction of the Gram-matrix-induced soft target ( qgram  
+
+> ij
+
+). Unlike the one-hot SimCLR target, BRCL assigns nonzero probability to the top-K beam-response-similar CSI samples ( K = 8 in the figure), providing structured soft supervision over communication-relevant neighbors. the remaining mini-batch samples receive zero target mass and act as negatives through the embedding-space softmax normalization. The beam-response descriptors can be precomputed for a fixed unlabeled dataset. During training, BRCL only requires the pairwise beam-response dissimilarities DBR (i, j ) among samples in the mini-batch index set I, and the corresponding top-K Gram-matrix-neighbor sets NK (i). These quantities can be computed efficiently by flattening the normalized Gram matrix profiles across subcarriers, appending the normalized gain components, and applying vectorized matrix operations. 
+
+C. Embedding-Space Similarity Distributions 
+
+Given the normalized embeddings in (13), BRCL defines two cross-view embedding-space similarity distributions: one for same-instance CL and one for Gram-matrix-relational learning. Let v ∈ {1, 2} denote the anchor view and let 
+
+¯v = 3 − v denote the opposite view. For the instance-level contrastive loss, the probability as-signed to candidate sample j ∈ I for anchor sample i ∈ I 
+
+is 
+
+pinst ,(v) 
+
+> ij
+
+=exp 
+
+
+
+sim 
+
+
+
+z(v) 
+
+> i
+
+, z(¯ v)
+
+> j
+
+
+
+/τ z
+
+P 
+
+> k∈I
+
+exp 
+
+
+
+sim 
+
+
+
+z(v) 
+
+> i
+
+, z(¯ v)
+
+> k
+
+
+
+/τ z
+
+ , j ∈ I .
+
+(28) The same-instance probability pinst ,(v) 
+
+> ii
+
+is used to preserve instance-level invariance between the two augmented views of the same CSI sample. For the Gram-matrix-relational loss, the same-instance can-didate is excluded, and the off-diagonal embedding-space distribution is defined as 
+
+prel ,(v) 
+
+> ij
+
+=exp 
+
+
+
+sim 
+
+
+
+z(v) 
+
+> i
+
+, z(¯ v)
+
+> j
+
+
+
+/τ z
+
+P 
+
+> k∈I −i
+
+exp 
+
+
+
+sim 
+
+
+
+z(v) 
+
+> i
+
+, z(¯ v)
+
+> k
+
+
+
+/τ z
+
+ , j ∈ I −i.
+
+(29) The distribution prel ,(v) 
+
+> ij
+
+represents how the learned embedding space ranks distinct CSI samples in the opposite view relative to anchor sample i. Since the embeddings are ℓ2-normalized, cosine similarity is equivalent to the inner product. Fig. 3 illustrates the Gram-matrix-induced target distribu-tion. Unlike the one-hot SimCLR target, BRCL assigns soft probabilities to the top-K CSI samples with the smallest beam-response dissimilarities, with larger weights given to more similar neighbors. This structured target guides the embedding space to preserve communication-relevant inter-sample similarity beyond instance-level discrimination. 
+
+D. BRCL Objective 
+
+BRCL optimizes instance-level invariance and Gram-matrix-induced relational learning as two separate objectives. This separation prevents the same-instance positive pair from competing with Gram-matrix-neighbor positives in a single mixed target distribution, while retaining both sources of self-supervision. The instance-level contrastive loss is defined as 
+
+Linst = − 12|I| 
+
+> 2
+
+X
+
+> v=1
+
+X
+
+> i∈I
+
+log pinst ,(v) 
+
+> ii
+
+. (30) This term is equivalent to the standard SimCLR-style cross-view instance discrimination objective over the mini-batch. The Gram-matrix-relational loss aligns the off-diagonal embedding-space distribution prel ,(v) 
+
+> ij
+
+with the Gram-matrix-induced target distribution qgram  
+
+> ij
+
+:
+
+Lrel = − 12|I| 
+
+> 2
+
+X
+
+> v=1
+
+X
+
+> i∈I
+
+X
+
+> j∈I −i
+
+qgram  
+
+> ij
+
+log prel ,(v) 
+
+> ij
+
+. (31) Because qgram  
+
+> ij
+
+is nonzero only for j ∈ N K (i), only the top-
+
+K Gram-matrix-induced beam-response neighbors contribute positive target mass. All other off-diagonal samples remain in the denominator of (29) and therefore act as negatives. The final BRCL pretraining loss is 
+
+LBRCL = (1 − α)Linst + αLrel , 0 ≤ α ≤ 1. (32) The parameter α controls the trade-off between instance-level invariance and physical relational learning. When α = 0,BRCL reduces to a SimCLR-style instance contrastive ob-jective. When α = 1 , the objective is determined entirely by the Gram-matrix-induced beam-response relation among distinct CSI samples. For 0 < α < 1, the encoder is trained to preserve both same-instance invariance and Gram-matrix-induced transmit-response relations. SUBMITTED TO IEEE TRANSACTIONS ON WIRELESS COMMUNICATIONS 7
+
+This objective extends conventional instance discrimination with a communication-aware relational loss, rather than replac-ing the one-hot positive pair with a mixed target distribution. 
+
+E. Overall Pretraining Objective 
+
+To further preserve channel-domain information during pretraining, the BRCL objective can include an optional ℓ2
+
+reconstruction regularizer. Let rψ (·) denote a decoder used only during pretraining. For each original CSI sample Xi, the encoder and decoder produce 
+
+ui = fθ (Xi) , ˆXi = rψ (ui) . (33) The reconstruction loss for a mini-batch M is defined as 
+
+Lrec = 1
+
+|I| 
+
+X
+
+> i∈I
+
+ˆXi − X i
+
+> 2
+> F
+
+, (34) where ∥·∥ F denotes the Frobenius norm. The overall pretrain-ing loss is then given by 
+
+Lpre = LBRCL + βrec Lrec , (35) where βrec ≥ 0 controls the contribution of the reconstruction regularizer. Setting βrec = 0 recovers the BRCL objective without reconstruction. The encoder, projection head, and optional decoder are pretrained by minimizing the overall loss over mini-batches sampled from the unlabeled CSI dataset: 
+
+(θ⋆, ϕ ⋆, ψ ⋆) = arg min  
+
+> θ,ϕ,ψ
+
+EM∼D [Lpre (M; θ, ϕ, ψ )] . (36) For each mini-batch, the Gram-matrix-induced target qgram  
+
+> ij
+
+is constructed from the beam-response dissimilarity DBR (i, j )
+
+and treated as a parameter-independent physical target during backpropagation. The objective does not exploit task-specific labels. After pretraining, the projection head πϕ(·) and the decoder rψ (·), if used, are discarded, and the pretrained encoder fθ⋆ (·) is used to extract the transferable representation of a downstream CSI sample X :
+
+u = fθ⋆ (X ) ∈ Rdrep . (37) IV. T HEORETICAL INTERPRETATION 
+
+This section provides a physical interpretation of the Gram-matrix-induced target used in BRCL. The purpose of the analy-sis is not to establish an end-to-end performance guarantee for the learned downstream predictors. Rather, the Gram-matrix-shape component of DBR (i, j ) is shown to upper-bound dis-crepancies between normalized transmit beam responses. This result explains why DBR (i, j ) is a meaningful self-supervised relation for transmitter-side CSI representation learning. For a unit-norm transmit beam w, define the normalized transmit beam response of sample Xi at subcarrier f as 
+
+¯γi[f ; w] = wH ¯Ri[f ]w. (38) For notational compactness, define the Gram-matrix-shape difference between samples Xi and Xj as 
+
+Aij [f ] = ¯Ri[f ] − ¯Rj [f ]. (39) 10 −5 10 −4 10 −3 10 −2 10 −1 10 0   
+
+> DBR (i,j)
+> 10 −10
+> 10 −8
+> 10 −6
+> 10 −4
+> 10 −2
+> 10 0
+> Average Squared Beam-Transfer Regret  Spearman ρ=0.587
+> Violation=0.00%
+> Sample pairs
+> Binned mean
+> Binned 95th percentile
+> Theorem bound 4DBR
+
+(a) Global random pairs 10 −7 10 −6 10 −5 10 −4 10 −3 10 −2 10 −1 10 0   
+
+> DBR (i,j)
+> 10 −11
+> 10 −9
+> 10 −7
+> 10 −5
+> 10 −3
+> 10 −1
+> 10 1
+> Average Squared Beam-Transfer Regret  Spearman ρ=0.346
+> Violation=0.00%
+> Sample pairs
+> Binned mean
+> Binned 95th percentile
+> Theorem bound 4DBR
+
+(b) Top-16 local DBR -neighbor pairs 
+
+Fig. 4: Empirical evaluation of Theorem 1. The average squared beam-transfer regret is plotted against DBR (i, j ) for global random CSI pairs and top-16 local DBR -neighbor pairs, with binned curves computed using 5%-wide DBR bins. Since ¯Ri[f ] and ¯Rj [f ] are Hermitian, Aij [f ] is also Her-mitian. The following results use the shape component 
+
+Dshape (i, j ). The gain component in DBR (i, j ) is not required for the normalized-response bounds; since λg ≥ 0, it follows that Dshape (i, j ) ≤ DBR (i, j ).
+
+Lemma 1 (Normalized beam-response bound) . For any col-lection of unit-norm transmit beams {wf }Nf 
+
+> f=1
+
+,
+
+1
+
+NfNf
+
+X 
+
+> f=1
+
+|¯γi[f ; wf ] − ¯γj [f ; wf ]|2 ≤ Dshape (i, j ) ≤ DBR (i, j ).
+
+(40) 
+
+Proof: For each subcarrier f ,
+
+¯γi[f ; wf ] − ¯γj [f ; wf ] = wHf Aij [f ]wf . (41) Since Aij [f ] is Hermitian, 
+
+wHf Aij [f ]wf ≤ ∥ Aij [f ]∥2 ≤ ∥ Aij [f ]∥F . (42) Squaring and averaging over f gives the first inequality. The second inequality follows from the definition of DBR (i, j ). ■
+
+A. Beam-Transfer Regret Bound 
+
+The Gram-matrix-induced dissimilarity is next related to codebook-based beam transfer. The codebook is introduced only for interpretation; BRCL itself does not require a prede-fined beam codebook during pretraining. SUBMITTED TO IEEE TRANSACTIONS ON WIRELESS COMMUNICATIONS 80.0 0.2 0.4 0.6 0.8 1.0                                     
+
+> Normalized Gram-Matrix Distance
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Normalized Embedding Distance
+> BRCL
+> Pearson=0.650, Spearman=0.452
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> Normalized Gram-Matrix Distance
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Normalized Embedding Distance
+> AE+BRCL
+> Pearson=0.672, Spearman=0.477
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> Normalized Gram-Matrix Distance
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Normalized Embedding Distance
+> AE
+> Pearson=0.058, Spearman=0.026
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> Normalized Gram-Matrix Distance
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Normalized Embedding Distance
+> MAE
+> Pearson=0.116, Spearman=0.104
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> Normalized Gram-Matrix Distance
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Normalized Embedding Distance
+> ContraWiMAE
+> Pearson=0.137, Spearman=0.120
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> Normalized Gram-Matrix Distance
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Normalized Embedding Distance
+> SimCLR
+> Pearson=0.562, Spearman=0.335
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> Normalized Gram-Matrix Distance
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Normalized Embedding Distance
+> GramCC
+> Pearson=0.380, Spearman=0.189
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> Normalized Gram-Matrix Distance
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Normalized Embedding Distance
+> DBRCC
+> Pearson=0.641, Spearman=0.569
+> 10 0
+> 10 1
+> 10 2
+> 10 3
+> 10 4log pair density
+
+Fig. 5: Pairwise alignment between Gram-matrix-domain and embedding-domain ℓ2 distances. Each hexbin plot shows normalized distances over sampled CSI pairs, with color indicating the log-scaled pair density. Median trends with interquartile ranges and Pearson/Spearman correlations are reported in each panel. Let W denote a nonempty finite set of unit-norm candidate transmit beams. For sample Xi at subcarrier f , choose an optimal beam 
+
+w⋆i [f ] ∈ arg max 
+
+w∈W ¯γi[f ; w]. (43) Since W is finite, the maximizer exists. The same argu-ment also applies to a compact continuous beam set because 
+
+¯γi[f ; w] is continuous in w.
+
+Theorem 1 (Beam-transfer regret bound) . For two CSI sam-ples Xi and Xj , define the normalized beam-transfer regret incurred by using w⋆i [f ] on sample Xj as 
+
+Ri→j [f ] = max 
+
+w∈W ¯γj [f ; w] − ¯γj [f ; w⋆i [f ]] . (44) 
+
+Then 
+
+0 ≤ R i→j [f ] ≤ 2 ∥Aij [f ]∥2 ≤ 2 ∥Aij [f ]∥F . (45) 
+
+Consequently, the average squared regret over OFDM subcar-riers satisfies 
+
+1
+
+NfNf
+
+X
+
+f =1 
+
+R2
+
+i→j [f ] ≤ 4Dshape (i, j ) ≤ 4DBR (i, j ). (46) 
+
+Proof: For any w ∈ W , the Rayleigh quotient bound gives 
+
+|¯γi[f ; w] − ¯γj [f ; w]| ≤ ∥ Aij [f ]∥2 . (47) Let 
+
+δij [f ] = ∥Aij [f ]∥2 . (48) Then 
+
+Ri→j [f ] = max 
+
+w∈W ¯γj [f ; w] − ¯γj [f ; w⋆i [f ]] 
+
+≤ max 
+
+w∈W ¯γi[f ; w] − ¯γi[f ; w⋆i [f ]] + 2 δij [f ]= 2 δij [f ], (49) because w⋆i [f ] maximizes ¯γi[f ; w] over W. This proves (45). Squaring (45), averaging over f , and using ∥Aij [f ]∥2 ≤∥Aij [f ]∥F give (46). ■
+
+Relation to OFDM-averaged beam selection: Although The-orem 1 is stated for subcarrier-wise beam decisions, Jensen’s inequality implies that, for any fixed unit-norm codebook beam, the squared discrepancy between the corresponding OFDM-averaged normalized beam responses is also bounded by Dshape (i, j ) ≤ DBR (i, j ). Therefore, this response-level bound is consistent with the OFDM-averaged codebook beam-selection metric used in the experiments, while it should not be interpreted as a guarantee on classification accuracy, rate ratio, MU-MIMO scheduling utility, or temporal prediction performance. 
+
+B. Implication for BRCL 
+
+Lemma 1 and Theorem 1 provide a physical rationale for the Gram-matrix-induced target used in BRCL. If DBR (i, j )
+
+is small, then the normalized transmit responses of Xi and 
+
+Xj are close in the sense of the bounds above. In particular, transferring a codebook beam selected for one sample to the other incurs a bounded normalized beam-response regret. This interpretation justifies using DBR (i, j ) to construct soft positive relations during contrastive pretraining. The instance-level loss preserves augmentation-based same-sample invari-ance, whereas the Gram-matrix-relational loss encourages the embedding space to reflect transmitter-side beam-response similarity among distinct CSI samples. Thus, the analysis provides a physical justification of the proposed pretraining target, rather than an end-to-end guarantee on downstream task performance. It shows that the self-supervised relation is aligned with a fundamental transmit beam-response property of MIMO channels. SUBMITTED TO IEEE TRANSACTIONS ON WIRELESS COMMUNICATIONS 9
+
+Fig. 4 provides an empirical consistency check for this inter-pretation. For both global random CSI pairs and local DBR -neighbor pairs, the measured average squared beam-transfer regret remains below the theoretical upper bound. Moreover, the regret statistics tend to increase with DBR , indicating that CSI pairs with smaller beam-response dissimilarity are more likely to exhibit lower beam-transfer regret in the generated channel population. V. E XPERIMENTS 
+
+A. Dataset and Simulation Setup 
+
+Following prior work, ray-tracing-based CSI is generated using the DeepMIMO dataset framework [46], which enables fair comparison through a common data-generation pipeline, facilitates reproducibility through its open framework, and supports geographical generalization evaluation across diverse ray-traced urban environments. The training set consists of 2.5 million CSI samples gener-ated at 3.5 GHz from 56 city scenarios and is used for both self-supervised pretraining and downstream-head training. 1
+
+Downstream testing uses a separate test-only set of 0.55 million CSI samples from 10 unseen scenarios disjoint from the training scenarios. 2 Unless otherwise stated, the MIMO-OFDM system uses Nf = 32 , ∆f = 30 kHz, 960-kHz bandwidth, Nt = 32 half-wavelength ULA BS antennas, 
+
+Nr = 4 receive antennas, and up to 20 dominant paths. For temporal tasks, CSI sequences are sampled along mobility trajectories at one-coherence-time intervals, Tc = 13 .0 ms, corresponding to a maximum speed of approximately 10 km/h at 3.5 GHz. 
+
+B. Evaluation Protocol and Baselines 
+
+Unless otherwise specified, the following evaluation proto-col is used throughout the experiments. Task-specific heads are trained using labeled samples from the 56 training scenarios and evaluated on the 10 unseen test scenarios, yielding a cross-scenario transfer setting. To assess label efficiency, only a frac-tion of the downstream training labels is used, with labeled-data ratios ρlabel ∈ {1% , 5% , 10% , 20% , 100% }. For each pretrained encoder, the encoder parameters are frozen, and only the task-specific modules are trained using the available labeled samples. Three representative transmitter-side tasks are considered: beam selection, MU-MIMO user selection, and future beam selection. All experiments are conducted over datasets generated using five independent random user-location seeds, and the reported metrics are averaged over the resulting datasets.          
+
+> 1The training scenarios are Amsterdam, ASU Campus, Athens, Bangkok, Barcelona, Beijing, Boston, Brussels, Cairo, Cape Town, Charlotte, Chicago, Denver, Dubai, Edinburgh, Florence, Fort Worth, Fujiyoshida, Granada, Hatsukaichi, Helsinki, Hong Kong, Indianapolis, Istanbul, Jerusalem, Kyoto, Havana, Lisbon, Los Angeles, Madrid, Marrakesh, Mumbai, New Delhi, New York, North Jakarta, Oklahoma City, Philadelphia, Phoenix, Reykjavik, Rio de Janeiro, Rome, San Francisco, San Nicolas, Saint Petersburg, Santa Clara, Santiago, Seattle, Seoul, Singapore, Stockholm, Sumida City, Sydney, Taipei, Taito City, Toronto, and Warsaw.
+> 2The unseen test scenarios are Austin, Centro, Columbus, Dallas, Gurbchen, Houston, Miami, Montreal, Prague, and San Diego.
+
+All methods use a 256-dimensional representation and are configured with approximately 3M trainable parameters. For CNN-based methods, the BRCL variants and CNN-based baselines share the same 16-layer CNN backbone. The com-pared pretraining methods are summarized as follows. 
+
+BRCL : The proposed method trained with instance-level and Gram-matrix-relational losses, without reconstruction regular-ization. The hyperparameters are set to α = 0 .9, λg = 0 .5,
+
+βrec = 0 , τp = 0 .05 , and τz = 0 .2.
+
+AE+BRCL : A reconstruction-regularized variant of BRCL that adds an ℓ2 reconstruction loss to the BRCL objective. The hyperparameters are set to α = 0 .9, λg = 0 .5, and βrec = 0 .5.
+
+AE : An autoencoder-based CSI pretraining baseline following CsiNet [47], trained only with reconstruction loss. 
+
+MAE : A masked autoencoder baseline for CSI representation learning [18]. It uses an 8-layer Transformer encoder with 4×4
+
+patches and a masking ratio of 0.75. 
+
+ContraWiMAE : A contrastive masked autoencoder base-line [19], using the same Transformer configuration as MAE. 
+
+SimCLR : An instance-level contrastive learning baseline that forms positive pairs from two augmented views of the same CSI sample and treats other mini-batch samples as nega-tives [5], [19]. 
+
+GramCC : A channel-charting-based baseline that defines inter-sample relations using a Gram-matrix-based similarity metric [34]. 
+
+DBRCC : A channel-charting-inspired baseline that defines inter-sample relations using the proposed beam-response dis-similarity DBR .
+
+C. Representation Analysis 
+
+Fig. 5 quantifies how well the learned embedding distances preserve the Gram-matrix-domain geometry of CSI samples. BRCL and its reconstruction-regularized variant, AE+BRCL, achieve the highest Pearson correlations, indicating that the proposed objectives better preserve the metric-scale structure induced by Gram-matrix-based channel similarity, which is consistent with their strong performance in the downstream tasks. Meanwhile, DBRCC achieves the highest Spearman correlation, showing that the proposed beam-response dissim-ilarity DBR provides a more effective rank-order similarity measure than the plain Gram-matrix ℓ2 distance. 
+
+D. Downstream Task 1: Beam Selection in Unseen Scenarios 
+
+The first downstream evaluation considers out-of-scenario beam selection. This task directly measures whether the pre-trained encoder captures transmitter-side information that is useful for beam management in propagation environments not observed during self-supervised pretraining. Let W = {wb}Bb=1 denote a ULA-DFT transmit codebook with B beams, where wb ∈ CNt×1 and ∥wb∥2 = 1 . For each CSI sample Xj = {Hj [f ]}Nf 
+
+> f=1
+
+, the codebook-domain beam gain of beam b is computed from the raw CSI as 
+
+gb(j) = 1
+
+NfNf
+
+X 
+
+> f=1
+
+∥Hj [f ]wb∥22 .SUBMITTED TO IEEE TRANSACTIONS ON WIRELESS COMMUNICATIONS 10      
+
+> "&'!%$
+> 
+> 
+> 
+> 
+> 
+> #%&#!$ !$'!%
+> 
+> 
+> 
+> 
+> %$'&!
+> !#
+> &#
+> 
+> Up to 6.23% improvement
+
+Fig. 6: Beamforming gain ratio for beam selection in unseen scenarios under different labeled-data fractions. Results are averaged over five independent user-location seeds. The ground-truth beam label is then defined as 
+
+b⋆j = arg max  
+
+> 1≤b≤B
+
+gb(j).
+
+This label-generation rule depends only on the codebook-domain transmit-beam response and does not require SNR calibration. Input normalization is applied to the encoder input. For representation-based prediction, each CSI sample is passed through the pretrained encoder. A linear classification head is then trained on top of the representation to predict the beam logits over the B codebook beams. The predicted beam is selected as the beam with the largest output logit, and the head is trained using the cross-entropy loss with the ground-truth beam label ( b⋆j ). This downstream task is evaluated using a B = 32 beam codebook under different labeled-data fractions. The beam-forming gain ratio is defined as the beamforming gain achieved by the predicted beam normalized by that of the optimal beam. As shown in Fig. 6, BRCL and AE+BRCL achieve the highest or near-highest gain ratios across all labeled-data fractions. The advantage is particularly pronounced in the label-scarce regime; with only 1% labeled data, AE+BRCL improves the beamforming gain ratio by approximately 6.23% over the strongest non-BRCL baseline. These results demonstrate that beam-response-aware pretraining yields label-efficient and transferable representations for beam management in unseen scenarios. 
+
+E. Downstream Task 2: MU-MIMO User Selection 
+
+The next downstream task considers multi-user MIMO (MU-MIMO) user selection [48], [49]. Unlike single-user beam selection, MU-MIMO scheduling depends on the joint spatial separability of multiple users. A high-quality user set should contain users whose channels can be simultane-ously served with limited inter-user interference after pre-coding. This task therefore examines whether the pretrained encoder preserves the multi-user spatial structure required for transmitter-side scheduling, beyond individual beam prefer-ences. Candidate user-index sets are constructed from unseen sce-narios as 
+
+U = {j1, j 2, . . . , j Ku }, (50)              
+
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+>  
+> 
+> 
+>  
+>  
+> 
+> 
+> Up to 4.85% improvement
+> (a) Spearman rank correlation 
+> #!%"&
+> 
+>  
+>  
+>  
+> 
+>  
+>  
+>  
+> 
+> !"$!
+> 
+> 
+> 
+> 
+> ! $#
+> 
+> #
+> 
+> Up to 1.38% improvement
+> (b) Top sum-rate ratio
+
+Fig. 7: MU-MIMO user selection performance as a function of group size. The SNR is 10 dB, and results are averaged over labeled-data fractions and five independent user-location seeds. Higher Spearman correlation and sum-rate ratio indicate better grouping quality. TABLE II: Averaged performance comparison of different rep-resentation learning schemes for the MU-MIMO user selection downstream task over five independent user-location seeds.                                     
+
+> Method Top SR Ratio (%) ↑
+> Spearman
+> ρ↑
+> Good-group AUC ↑
+> Top Recall ↑
+> BRCL 98.90 0.877 0.927 0.614 AE+BRCL 98.97 0.881 0.924 0.617
+> AE 93.68 0.582 0.829 0.403 MAE 95.53 0.675 0.865 0.468 ContraWiMAE 95.36 0.649 0.858 0.469 SimCLR 98.21 0.845 0.895 0.544 GramCC 96.07 0.564 0.826 0.452 DBRCC 93.97 0.467 0.775 0.372
+
+*Best: bold , second-best: underline. 
+
+where Ku denotes the number of co-scheduled users. The corresponding CSI samples are denoted by 
+
+XU = {X jk }Ku
+
+> k=1
+
+. (51) The number of selected users is set to Ku ∈ { 2, 4, 6, 8, 10 } in the experiments. Users in each candidate set are sampled from the same scenario so that the candidates represent physically meaningful MU-MIMO scheduling groups. The ground-truth utility of each candidate user set is com-puted using regularized zero-forcing (RZF) precoding [50]. To focus the utility label on spatial compatibility rather than large-scale channel gain, each user’s channel is normalized before utility computation. For each user j, a single-stream effective transmit-side channel is formed by applying the dominant SUBMITTED TO IEEE TRANSACTIONS ON WIRELESS COMMUNICATIONS 11 Up to 9.74%                  
+
+> improvement
+> (a) ρlabel = 1% Up to 5.98%
+> improvement (b) ρlabel = 5% Up to 4.92%
+> improvement (c) ρlabel = 10% Up to 2.69%
+> improvement
+> (d) ρlabel = 20% Up to 6.03%
+> improvement (e) ρlabel = 100%
+
+Fig. 8: Future beam selection performance across prediction horizons and labeled-data fractions, measured by rate ratio. Results are averaged over five independent user-location seeds. receive combining vector cj [f ] ∈ CNr to the MIMO channel 
+
+Hj [f ] ∈ CNr ×Nt :
+
+hj [f ] = cj [f ]H Hj [f ] ∈ C1×Nt . (52) The normalized effective channel is denoted by ¯hj [f ]. For each candidate set U, the normalized effective channels are stacked at each subcarrier, and an RZF precoder with column normalization is used to evaluate the achievable sum-rate. The resulting average sum-rate over OFDM subcarriers is used as the utility label. Unless otherwise stated, the utility is evaluated at a fixed receiver-side SNR of 10 dB after per-user normalization. For representation-based prediction, the pretrained encoder is shared across all users in the candidate set. Each CSI sample 
+
+Xjk is encoded into a user representation, and the resulting set of representations is fed into a permutation-invariant set-level prediction head. The head outputs both a scheduling utility score and a high-quality user-set probability. For each Ku, candidate sets in the top 25% of the RZF-based utility distribution among the corresponding training candidates are labeled as high-quality sets. The set-level head is trained with a weighted combination of utility regres-sion, high-quality-set classification, and an optional spatial-compatibility regularizer based on effective transmit-direction overlap. This objective promotes representations that support utility ranking, high-quality set identification, and interference-aware user separability. Fig. 7 shows the MU-MIMO user selection performance under different group sizes. BRCL and AE+BRCL consistently achieve strong performance, with clearer advantages for larger user groups, where accurate estimation of spatial compatibility becomes more challenging. Table II further shows that the BRCL variants consistently rank first or second across all metrics, with AE+BRCL leading the top sum-rate ratio, Spearman correlation, and top recall, and BRCL achieving the best good-group AUC. These results indicate that beam-response-aware pretraining preserves CSI representations that transfer effectively to interference-aware MU-MIMO user selection under limited labeled supervision. 
+
+F. Downstream Task 3: Future Beam Selection 
+
+The learned CSI representation is further evaluated for future beam selection to assess whether it captures temporally predictive channel information. While Downstream Task 1 considers beam selection from the current CSI sample, this task extends the same codebook-domain criterion to a temporal setting: given a short history of past CSI snapshots, the model predicts the future optimal transmit beam at multiple prediction horizons. This formulation evaluates whether the pretrained representation preserves channel information that remains useful for anticipating future transmitter-side deci-sions, without requiring full complex CSI reconstruction. Let L denote the number of past CSI snapshots used as input and let ∆ denote the temporal spac-ing between consecutive snapshots. Given the CSI history 
+
+{Xt−(L−1)∆ , . . . , X t−∆, X t}, the model predicts the optimal codebook beam at future horizons q ∈ Q . Using the same ULA-DFT transmit codebook W = {wb}Bb=1 as in the beam-selection task, the future beam gain at horizon q is computed as 
+
+gb(t + qT c) = 1
+
+NfNf
+
+X 
+
+> f=1
+
+∥Ht+qT c [f ]wb∥22 ,
+
+and the corresponding target beam is 
+
+b⋆(t + qT c) = arg max  
+
+> 1≤b≤B
+
+gb(t + qT c), q ∈ Q .
+
+Here, Tc denotes the coherence time, such that q represents the prediction horizon in units of Tc. The experiments use Q =1, 2, 4, 8, 16 , a history length of L = 4 , and a beam codebook of size B = 64 . In the test set, these horizons correspond to SUBMITTED TO IEEE TRANSACTIONS ON WIRELESS COMMUNICATIONS 12 
+
+TABLE III: Ablation correlation results between embedding-space ℓ2 distance and DBR on a held-out validation split. Unless swept, default parameters are α = 0 .9, λg = 0 .5,
+
+βrec = 0 .5, K = 16 , τp = 0 .05 , τz = 0 .2, dz = 512 , and batch size 256.                                     
+
+> Parameter Value Pearson ↑Spearman ρ↑
+> α
+> 0.1 0.6352 0.4402 0.3 0.6228 0.4006 0.5 0.5788 0.3589 0.7 0.6370 0.4506
+> 0.9 0.6401 0.4494
+> λg
+> 0.1 0.5723 0.3382 0.3 0.6235 0.3853
+> 0.5 0.6507 0.3641 0.7 0.6392 0.3676 0.9 0.5962 0.3599
+> βrec
+> 0.1 0.6483 0.4334 0.3 0.6806 0.5210
+> 0.5 0.6823 0.5024 0.7 0.6881 0.4486 0.9 0.6234 0.4595
+
+*Best: bold , second-best: underline. 
+
+average look-ahead times of approximately 13 .0, 26 .1, 52 .2,
+
+104 .3, and 208 .7 ms, respectively. Rate-oriented metrics are evaluated at an SNR of 10 dB. For prediction, each CSI snapshot in the history is first passed through the pretrained encoder to obtain a sequence of representations. A gated recurrent unit (GRU) [51] is then used as a lightweight temporal adapter to extract short-term temporal dependencies from the encoded CSI history. The resulting temporal state is passed to an MLP head that outputs future beam logits for all horizons in Q.Fig. 8 shows the future beam selection performance across prediction horizons and labeled-data fractions. BRCL achieves the best performance for horizons up to 8 under all labeled-data fractions, with a particularly clear advantage in the label-scarce regime. Although the rate ratio generally improves as more labels are used, the cross-scenario setting still limits performance even with full labeled data. These results indicate that BRCL learns temporally informative CSI representations that transfer effectively to future beam-domain decisions, especially when labeled future-beam data are scarce. 
+
+G. Ablation Study 
+
+Table III examines the sensitivity of BRCL to the main loss weights α, λg , and βrec on a held-out validation split. Higher Pearson and Spearman correlations indicate better preservation of the metric and rank-order structures induced by DBR .The results show that the relational weight α is important for aligning the embedding geometry with the beam-response dissimilarity. The gain weight λg controls the contribution of absolute channel-gain information, while the reconstruction weight βrec balances raw CSI recovery and beam-response-aware geometry preservation. These results motivate the use of α = 0 .9 and λg = 0 .5, while βrec = 0 .5 is adopted as a balanced reconstruction weight in the main experiments. VI. C ONCLUSION 
+
+This paper proposed beam-response contrastive learning (BRCL), a self-supervised CSI representation learning frame-work for transmitter-side MIMO tasks. Unlike reconstruction-based or augmentation-driven pretraining, BRCL defines inter-sample similarity through the transmit-side Gram matrix, which determines the channel response to transmit beams. By converting the resulting beam-response dissimilarity into a soft relational target, BRCL learns CSI embeddings that preserve precoding-relevant channel geometry without task-specific labels. This work showed that the proposed beam-response dissimi-larity admits a physical interpretation through its connection to transmit beam-response discrepancy and beam-transfer regret. Experiments on large-scale ray-tracing MIMO-OFDM datasets demonstrated that BRCL improves representation alignment, label efficiency, and downstream performance across beam se-lection, MU-MIMO user selection, and future beam selection in unseen scenarios. These results underscore the potential of communication-oriented similarity as a foundation for transfer-able CSI representation learning and motivate future research on task-adaptive or universal optimal similarity metrics and QoE-driven objectives for AI-enabled MIMO systems. REFERENCES [1] C. Doersch, A. Gupta, and A. A. Efros, “Unsupervised visual representation learning by context prediction,” in Proceedings of the 2015 IEEE International Conference on Computer Vision (ICCV) ,ser. ICCV ’15. USA: IEEE Computer Society, 2015, p. 1422–1430. [Online]. Available: https://doi.org/10.1109/ICCV.2015.167 [2] M. Noroozi and P. Favaro, “Unsupervised learning of visual represen-tations by solving jigsaw puzzles,” in Computer Vision – ECCV 2016 ,B. Leibe, J. Matas, N. Sebe, and M. Welling, Eds. Cham: Springer International Publishing, 2016, pp. 69–84. [3] S. Gidaris, P. Singh, and N. Komodakis, “Unsupervised representation learning by predicting image rotations,” in International Conference on Learning Representations , 2018. [Online]. Available: https: //openreview.net/forum?id=S1v4N2l0-[4] A. van den Oord, Y. Li, and O. Vinyals, “Representation learning with contrastive predictive coding,” 2019. [Online]. Available: https: //arxiv.org/abs/1807.03748 [5] T. Chen, S. Kornblith, M. Norouzi, and G. Hinton, “A simple framework for contrastive learning of visual representations,” in Proceedings of the 37th International Conference on Machine Learning , ser. ICML’20. JMLR.org, 2020. [6] K. He, H. Fan, Y. Wu, S. Xie, and R. Girshick, “Momentum contrast for unsupervised visual representation learning,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2020, pp. 9729–9738. [7] D. Liu, T. Wang, S. Liu, R. Wang, S. Yao, and T. Abdelzaher, “Contrastive self-supervised representation learning for sensing signals from the time-frequency perspective,” in 2021 International Conference on Computer Communications and Networks (ICCCN) , 2021, pp. 1–10. [8] K. Xu, J. Wang, L. Zhang, H. Zhu, and D. Zheng, “Dual-stream contrastive learning for channel state information based human activity recognition,” IEEE Journal of Biomedical and Health Informatics ,vol. 27, no. 1, pp. 329–338, 2022. [9] J. Yang, X. Chen, H. Zou, D. Wang, and L. Xie, “Autofi: Toward automatic wi-fi human sensing via geometric self-supervised learning,” 
+
+IEEE Internet of Things Journal , vol. 10, no. 8, pp. 7416–7425, 2023. [10] A. Salihu, S. Schwarz, and M. Rupp, “Self-supervised and invariant representations for wireless localization,” 2023. [Online]. Available: https://arxiv.org/abs/2302.07000 [11] I. Chafaa, R. Negrel, E. V. Belmega, and M. Debbah, “Self-supervised deep learning for mmwave beam steering exploiting sub-6 ghz channels,” 
+
+IEEE Transactions on Wireless Communications , vol. 21, no. 10, pp. 8803–8816, 2022. [12] O. Melamud, J. Goldberger, and I. Dagan, “context2vec: Learning generic context embedding with bidirectional LSTM,” in Proceedings of the 20th SIGNLL Conference on Computational Natural Language Learning , S. Riezler and Y. Goldberg, Eds. Berlin, Germany: Association for Computational Linguistics, Aug. 2016, pp. 51–61. [Online]. Available: https://aclanthology.org/K16-1006/ SUBMITTED TO IEEE TRANSACTIONS ON WIRELESS COMMUNICATIONS 13 
+
+[13] J. Devlin, M.-W. Chang, K. Lee, and K. Toutanova, “BERT: Pre-training of deep bidirectional transformers for language understanding,” in Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, Volume 1 (Long and Short Papers) , J. Burstein, C. Doran, and T. Solorio, Eds. Minneapolis, Minnesota: Association for Computational Linguistics, Jun. 2019, pp. 4171–4186. [Online]. Available: https://aclanthology.org/N19-1423/ [14] K. He, X. Chen, S. Xie, Y. Li, P. Doll´ ar, and R. Girshick, “Masked au-toencoders are scalable vision learners,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , June 2022, pp. 16 000–16 009. [15] H. Bao, L. Dong, S. Piao, and F. Wei, “BEit: BERT pre-training of image transformers,” in International Conference on Learning Representations , 2022. [Online]. Available: https://openreview.net/ forum?id=p-BhZSz59o4 [16] X. Wu, H. Zhang, C.-C. Wang, and Z. Li, “Channel state information ex-trapolation in fluid antenna systems based on masked language model,” in 2024 IEEE International Conference on Communications Workshops (ICC Workshops) . IEEE, 2024, pp. 1383–1388. [17] J. Ott, J. Pirkl, M. Stahlke, T. Feigl, and C. Mutschler, “Radio foundation models: Pre-training transformers for 5g-based indoor localization,” in 
+
+2024 14th International Conference on Indoor Positioning and Indoor Navigation (IPIN) . IEEE, 2024, pp. 1–6. [18] J. Wang, W. Fang, J. Xiao, Y. Zheng, L. Zheng, and F. Liu, “Signal-guided masked autoencoder for wireless positioning with limited labeled samples,” IEEE Transactions on Vehicular Technology , vol. 74, no. 1, pp. 1759–1764, 2025. [19] B. Guler, G. Geraci, and H. Jafarkhani, “A multi-task foundation model for wireless channel representation using contrastive and masked autoen-coder learning,” IEEE Journal on Selected Areas in Communications ,vol. 44, pp. 4489–4504, 2026. [20] Y. Liu, H. Si, G. O. Boateng, X. Guo, B. Qian, and N. Ansari, “A self-supervised masked autoencoder leveraging temporal-frequency representation for csi localization,” IEEE Transactions on Network Science and Engineering , vol. 13, pp. 7265–7282, 2026. [21] Y. Gao, Y. Liu, R. Yu, S. Liu, Y. Jin, S. Zhang, S. Xu, and X. Chu, “Ssnet: Flexible and robust channel extrapolation for fluid antenna sys-tems enabled by an self-supervised learning framework,” IEEE Journal on Selected Areas in Communications , 2025. [22] B. Banerjee, A. Nimr, and G. Fettweis, “Applicability of masked au-toencoders in wireless communications: Generalizing mimo channels,” in 2025 IEEE 36th International Symposium on Personal, Indoor and Mobile Radio Communications (PIMRC) , 2025, pp. 1–6. [23] J. Jiang, X. Ruan, and S. Xu, “Csi-mae: A masked autoencoder-based channel foundation model,” 2026. [Online]. Available: https: //arxiv.org/abs/2601.03789 [24] T. Jiao, C. Ye, Y. Huang, Y. Feng, Z. Xiao, Y. Xu, D. He, Y. Guan, B. Yang, J. Chang, L. Cai, and Q. Bi, “6g-oriented csi-based multi-modal pre-training and downstream task adaptation paradigm,” in 2024 IEEE International Conference on Communications Workshops (ICC Workshops) , 2024, pp. 1389–1394. [25] J. Jiang, W. Yu, Y. Li, Y. Gao, and S. Xu, “A mimo wireless channel foundation model via cir-csi consistency,” in 2025 IEEE International Conference on Machine Learning for Communication and Networking (ICMLCN) . IEEE, 2025, pp. 1–6. [26] A. Aboulfotouh, A. Eshaghbeigi, and H. Abou-Zeid, “Building 6g radio foundation models with transformer architectures,” in ICC 2025-IEEE International Conference on Communications . IEEE, 2025, pp. 1888– 1893. [27] A. Aboulfotouh, E. Mohammed, and H. Abou-Zeid, “6g wavesfm: A foundation model for sensing, communication, and localization,” IEEE Open Journal of the Communications Society , 2025. [28] L. Jing, T. Yang, H. Zhang, Y. Shi, C. Zhang, and B. Zhang, “Sig-nal compression for wireless communication and sensing: A general approach utilizing pretrained wireless foundation models,” IEEE Trans-actions on Mobile Computing , pp. 1–15, 2026. [29] K. Xu, J. Wang, H. Zhu, and D. Zheng, “Evaluating self-supervised learning for wifi csi-based human activity recognition,” 
+
+ACM Trans. Sen. Netw. , vol. 21, no. 2, Mar. 2025. [Online]. Available: https://doi.org/10.1145/3715130 [30] L.-H. Shen, C.-C. Hsieh, A.-H. Hsiao, and K.-T. Feng, “Cronos: Col-orization and contrastive learning for device-free nlos human presence detection using wi-fi csi,” IEEE Internet of Things Journal , vol. 11, no. 3, pp. 5491–5510, 2024. [31] Q. Gao, Y. Hao, and Y. Liu, “Autosen: Improving automatic wifi human sensing through cross-modal autoencoder,” in ICASSP 2024-2024 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) . IEEE, 2024, pp. 8235–8239. [32] X. Liu, S. Gao, B. Liu, X. Cheng, and L. Yang, “Wifo-cf: Wireless foundation model for csi feedback,” IEEE Transactions on Wireless Communications , vol. 25, pp. 15 039–15 053, 2026. [33] C. Liu, Y. Zhou, X. Yuan, Y. Liu, and Y. Liu, “Wisacl: A subdomain adaptive wi-fi-based gesture recognition via contrastive learning,” IEEE Internet of Things Journal , vol. 13, no. 10, pp. 21 041–21 056, 2026. [34] C. Studer, S. Medjkouh, E. Gonultas ¸, T. Goldstein, and O. Tirkkonen, “Channel charting: Locating users within the radio environment using channel state information,” IEEE Access , vol. 6, pp. 47 682–47 698, 2018. [35] P. Ferrand, A. Decurninge, L. G. Ordo˜ nez, and M. Guillaud, “Triplet-based wireless channel charting: Architecture and experiments,” IEEE Journal on Selected Areas in Communications , vol. 39, no. 8, pp. 2361– 2373, 2021. [36] L. L. Magoarou, “Efficient channel charting via phase-insensitive distance computation,” 2021. [Online]. Available: https://arxiv.org/abs/ 2104.13184 [37] P. Ferrand, M. Guillaud, C. Studer, and O. Tirkkonen, “Wireless channel charting: Theory, practice, and applications,” Comm. Mag. ,vol. 61, no. 6, p. 124–130, Jun. 2023. [Online]. Available: https://doi.org/10.1109/MCOM.001.2200344 [38] C. B. Chaaya, A. M. Girgis, and M. Bennis, “Learning latent wireless dynamics from channel state information,” IEEE Wireless Communica-tions Letters , vol. 14, no. 2, pp. 489–493, 2024. [39] E. Telatar, “Capacity of multi-antenna gaussian channels,” European Transactions on Telecommunications , vol. 10, no. 6, pp. 585–595, 1999. [Online]. Available: https://onlinelibrary.wiley.com/doi/abs/10.1002/ett. 4460100604 [40] D. Palomar, J. Cioffi, and M. Lagunas, “Joint tx-rx beamforming design for multicarrier mimo channels: a unified framework for convex optimization,” IEEE Transactions on Signal Processing , vol. 51, no. 9, pp. 2381–2401, 2003. [41] D. J. Love, R. W. Heath, V. K. N. Lau, D. Gesbert, B. D. Rao, and M. Andrews, “An overview of limited feedback in wireless communi-cation systems,” IEEE Journal on Selected Areas in Communications ,vol. 26, no. 8, pp. 1341–1365, 2008. [42] A. Adhikary, J. Nam, J.-Y. Ahn, and G. Caire, “Joint spatial division and multiplexing—the large-scale array regime,” IEEE Transactions on Information Theory , vol. 59, no. 10, pp. 6441–6463, 2013. [43] S. Choi, H. Joo, S. Ryu, T. Melodia, and H. J. Yang, “Performance-guaranteed csi feedback via model-agnostic incremental residual com-pression framework,” IEEE Wireless Communications Letters , vol. 15, pp. 880–884, 2026. [44] M. Lee, S. Ryu, H. Joo, S. Choi, and H. J. Yang, “Importance-aware csi feedback with adaptive latent truncation,” IEEE Transactions on Vehicular Technology , 2026, accepted for publication. [45] S. Ryu and H. J. Yang, “Standards-compliant dm-rs allocation via tem-poral channel prediction for massive mimo systems,” IEEE Transactions on Vehicular Technology , vol. 75, no. 7, pp. 15 171–15 175, 2026. [46] A. Alkhateeb, “Deepmimo: A generic deep learning dataset for mil-limeter wave and massive MIMO applications,” Information Theory and Applications Workshop (ITA) , 2019. [47] C.-K. Wen, W.-T. Shih, and S. Jin, “Deep learning for massive mimo csi feedback,” IEEE Wireless Communications Letters , vol. 7, no. 5, pp. 748–751, 2018. [48] T. Yoo and A. Goldsmith, “On the optimality of multiantenna broadcast scheduling using zero-forcing beamforming,” IEEE Journal on Selected Areas in Communications , vol. 24, no. 3, pp. 528–541, 2006. [49] T. Yoo, G. J. Foschini, R. A. Valenzuela, and A. J. Goldsmith, “Common rate support in multi-antenna downlink channels using semi-orthogonal user selection,” IEEE Transactions on Information Theory , vol. 57, no. 6, pp. 3449–3461, 2011. [50] C. Peel, B. Hochwald, and A. Swindlehurst, “A vector-perturbation technique for near-capacity multiantenna multiuser communication-part i: channel inversion and regularization,” IEEE Transactions on Commu-nications , vol. 53, no. 1, pp. 195–202, 2005. [51] K. Cho, B. van Merri¨ enboer, C. Gulcehre, D. Bahdanau, F. Bougares, H. Schwenk, and Y. Bengio, “Learning phrase representations using RNN encoder–decoder for statistical machine translation,” in 
+
+Proceedings of the 2014 Conference on Empirical Methods in Natural Language Processing (EMNLP) . Doha, Qatar: Association for Computational Linguistics, Oct. 2014, pp. 1724–1734. [Online]. Available: https://aclanthology.org/D14-1179/

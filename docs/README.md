@@ -6,44 +6,61 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-28
-- 运行时间：2026-07-28 21:07:22 UTC
+- 最新运行日期：2026-07-29
+- 运行时间：2026-07-29 21:42:39 UTC
 - 运行状态：成功
-- 本次总论文数：8
-- 精读区：6
-- 速读区：2
+- 本次总论文数：13
+- 精读区：5
+- 速读区：8
 
 ### 今日简报（AI）
-今日精选2篇高分论文，涉及电磁神经网络DOA估计与MIMO语义通信优化。最值得关注的是《Electromagnetic Neural Network for Direction-of-Arrival Estimation》与《Restoration Flow Matching-Based Channel Refinement and Equalization Correction for MIMO Semantic Communications》，均获9.0分。建议优先精读这两篇，快速把握前沿方法。
-- 详情：[/202607/28/README](/202607/28/README)
+今日共收录13篇论文，精读5篇，速读8篇，聚焦生成式语义通信与医学图像分割创新。  
+最值得关注的是《Low-Latency Generative Semantic Communication via Channel-Realization Flow Matching》（9.0分）提出的低延迟生成式语义通信方法，以及《AdaKAN: A dual-branch adaptive Kolmogorov-Arnold network for medical image segmentation》（8.0分）的双分支自适应网络架构。  
+建议优先精读上述两篇高评分论文，尤其可重点关注其对比传统方法的性能提升与实现细节。
+- 详情：[/202607/29/README](/202607/29/README)
 
 ### 精读区论文标签
-1. [Electromagnetic Neural Network for Direction-of-Arrival Estimation](/202607/28/2607.23021v1-electromagnetic-neural-network-for-direction-of-arrival-estimation)  
+1. [Low-Latency Generative Semantic Communication via Channel-Realization Flow Matching](/202607/29/2607.24876v1-low-latency-generative-semantic-communication-via-channel-realization-flow-matching)  
    标签：评分：9.0/10、query:channel-nn
-   evidence：利用堆叠智能超表面的新型电磁神经网络用于DOA估计
-2. [Restoration Flow Matching-Based Channel Refinement and Equalization Correction for MIMO Semantic Communications](/202607/28/2607.23615v1-restoration-flow-matching-based-channel-refinement-and-equalization-correction-for-mimo-semantic-communications)  
-   标签：评分：9.0/10、query:channel-nn
-   evidence：用于MIMO语义通信的信道细化和均衡校正的神经流匹配
-3. [Wireless Intelligence Needs a Cerebellum: Score-Based Foundation Models Toward Real-Time Physical-Layer Inference](/202607/28/2607.23712v1-wireless-intelligence-needs-a-cerebellum-score-based-foundation-models-toward-real-time-physical-layer-inference)  
-   标签：评分：9.0/10、query:channel-nn
-   evidence：用于物理层通信的高效神经网络设计
-4. [Cross-System Neural Precoder: Exploiting Structural Consistency for Fast Adaptation](/202607/28/2607.23738v1-cross-system-neural-precoder-exploiting-structural-consistency-for-fast-adaptation)  
+   evidence：提出用于生成式语义通信的新型流匹配接收机
+2. [AdaKAN: A dual-branch adaptive Kolmogorov-Arnold network for medical image segmentation](/202607/29/2607.22891v1-adakan-a-dual-branch-adaptive-kolmogorov-arnold-network-for-medical-image-segmentation)  
    标签：评分：8.0/10、query:channel-nn
-   evidence：通信系统中的神经网络预编码
-5. [Variational Boosting for Physics-Informed Neural Networks](/202607/28/2607.23940v1-variational-boosting-for-physics-informed-neural-networks)  
+   evidence：自适应KAN架构，高效设计可迁移至通信领域
+3. [DeepNC: A Fast GNN-based Pre-Verification Surrogate for TSN Configuration](/202607/29/2607.24398v1-deepnc-a-fast-gnn-based-pre-verification-surrogate-for-tsn-configuration)  
    标签：评分：8.0/10、query:channel-nn
-   evidence：改进了直接需求的物理信息神经网络
-6. [Toward Alias-Free Channel Extrapolation in Upper Mid-Band Systems: A Spatial-Frequency-Temporal Tensor Learning Approach](/202607/28/2607.24330v1-toward-alias-free-channel-extrapolation-in-upper-mid-band-systems-a-spatial-frequency-temporal-tensor-learning-approach)  
+   evidence：新颖的图神经网络结构用于时间敏感网络配置
+4. [Physics-Informed Broad Learning System: An Efficient Backpropagation-Free Framework for Solving Partial Differential Equations](/202607/29/2607.25608v1-physics-informed-broad-learning-system-an-efficient-backpropagation-free-framework-for-solving-partial-differential-equations)  
    标签：评分：8.0/10、query:channel-nn
-   evidence：利用张量学习进行MIMO信道外推
+   evidence：物理信息宽学习系统用于高效求解PDE，可迁移至通信信道建模
+5. [WALoMA: A Multitask Wireless Foundation Model via Adaptive Low-Rank Masked Autoencoders](/202607/29/2607.25763v1-waloma-a-multitask-wireless-foundation-model-via-adaptive-low-rank-masked-autoencoders)  
+   标签：评分：8.0/10、query:channel-nn
+   evidence：使用掩码自编码器处理信道数据的多任务无线基础模型
 
 ### 速读区论文标签
-1. [AI Empowered Communication and Radar Modulation Recognition: A Survey](/202607/28/2607.23014v1-ai-empowered-communication-and-radar-modulation-recognition-a-survey)  
+1. [Cross-Domain Generalization in Optical Networks via Joint Contrastive and Classification Learning](/202607/29/2607.20666v1-cross-domain-generalization-in-optical-networks-via-joint-contrastive-and-classification-learning)  
+   标签：评分：7.0/10、query:channel-nn
+   evidence：联合对比与分类学习用于光网络
+2. [Efficient Automatic Modulation Classification for Next-Generation Wireless Networks](/202607/29/2607.24831v1-efficient-automatic-modulation-classification-for-next-generation-wireless-networks)  
+   标签：评分：7.0/10、query:channel-nn
+   evidence：用于无线网络自动调制分类的高效RNN
+3. [Beam-Response Contrastive Learning for Transmitter-Side MIMO CSI Representation](/202607/29/2607.24872v1-beam-response-contrastive-learning-for-transmitter-side-mimo-csi-representation)  
+   标签：评分：7.0/10、query:channel-nn
+   evidence：自监督CSI表示学习用于MIMO
+4. [System-Aware Adaptive CSI Feedback via RL-Guided Autoencoder Switching in Multi-User MIMO System](/202607/29/2607.25588v1-system-aware-adaptive-csi-feedback-via-rl-guided-autoencoder-switching-in-multi-user-mimo-system)  
+   标签：评分：7.0/10、query:channel-nn
+   evidence：提出强化学习指导自动编码器切换的自适应CSI反馈方案
+5. [SignDeepSC: A Semantic Signature-based Approach for Robust Semantic Communication](/202607/29/2607.25676v1-signdeepsc-a-semantic-signature-based-approach-for-robust-semantic-communication)  
+   标签：评分：7.0/10、query:channel-nn
+   evidence：使用神经网络架构的鲁棒语义通信深度学习技术
+6. [Extending Fourier Neural Operators for Modeling Parameterized and Coupled PDEs](/202607/29/2607.23466v1-extending-fourier-neural-operators-for-modeling-parameterized-and-coupled-pdes)  
    标签：评分：6.0/10、query:channel-nn
-   evidence：综述了通信中调制识别的AI技术
-2. [A Heterogeneous Neural Network Accelerator for End-to-End Multitask RF Signal Recognition](/202607/28/2607.24669v1-a-heterogeneous-neural-network-accelerator-for-end-to-end-multitask-rf-signal-recognition)  
+   evidence：提出针对参数化偏微分方程的傅里叶神经算子架构扩展
+7. [ML-based Predictive Models for Power Consumption in Virtualised O-RANs](/202607/29/2607.24256v1-ml-based-predictive-models-for-power-consumption-in-virtualised-o-rans)  
    标签：评分：6.0/10、query:channel-nn
-   evidence：用于高效射频信号识别的异构神经网络加速器
+   evidence：深度学习用于O-RAN功耗预测
+8. [Optimization of Collaborative Semantic Communication Network Performance with Channel and Content Preference Feedback](/202607/29/2607.25011v1-optimization-of-collaborative-semantic-communication-network-performance-with-channel-and-content-preference-feedback)  
+   标签：评分：6.0/10、query:channel-nn
+   evidence：利用深度学习进行语义通信和信道反馈优化
 
 
 <div class="dpr-home-promo-card">

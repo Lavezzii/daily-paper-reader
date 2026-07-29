@@ -1,0 +1,398 @@
+Title: WALoMA: A Multitask Wireless Foundation Model via Adaptive Low-Rank Masked Autoencoders
+
+URL Source: https://arxiv.org/pdf/2607.25763v1
+
+Published Time: Wed, 29 Jul 2026 01:16:33 GMT
+
+Number of Pages: 14
+
+Markdown Content:
+> 1
+
+# WALoMA: A Multitask Wireless Foundation Model via Adaptive Low-Rank Masked Autoencoders 
+
+Madi Makin, Graduate Student Member, IEEE, Asmaa Abdallah, Senior Member, IEEE, Abdulkadir Celik, Senior Member, IEEE, and Ahmed M. Eltawil, Senior Member, IEEE 
+
+Abstract—This paper proposes a multitask wireless foun-dation model via adaptive low-rank masked autoencoders (WALoMA), a unified multi-task foundation model for sixth-generation (6G) wireless physical layer architectures, to address the limitations of specialized, task-specific deep learning models and the practical challenge of scarce labeled wireless datasets. By leveraging concepts inspired by foundation models, the proposed framework adopts a masked autoencoder (MAE) paradigm to learn from unlabeled channel data, to significantly reduce reliance on extensive annotations. The model treats wireless channel state information (CSI) as a universal modality and learns transferable representations through self-supervised channel reconstruction. Key architectural novelties include the use of 2D positional encoding (PE) to explicitly preserve the spatial-frequency relationships between antennas and subcar-riers, and low-rank adaptation (LoRA) for parameter-efficient fine-tuning. The framework’s efficacy is demonstrated across five downstream tasks, achieving individual scores of 96.47% for LoS/NLoS classification, 80.45% for beam prediction, 85.78% for channel interpolation, 99.12% for channel estimation, and 77.18% for channel charting. Consequently, numerical results show that the proposed model achieves a composite score of 87.80%, significantly outperforming the 59.90% achieved by the large wireless model (LWM) baseline while training an average of only 14.68% of total parameters, and maintaining strong performance even under extremely limited labeled data conditions. 
+
+I. Introduction 
+
+# TRANSITIONING to sixth-generation (6G) wireless networks represents more than an incremental evo-lution, but a fundamental architectural transformation driven by unprecedented requirements for ultra-reliable low-latency communications (URLLC), extreme data rates, massive connectivity, and intelligent edge services [1], [2]. Achieving these performance targets demands a radical rethinking of physical layer (PHY) design, where conven-tional model-based signal processing techniques are increas-ingly strained by the scale, heterogeneity, and dynamic nature of emerging wireless environments. Modern PHY architectures heavily rely on massive multiple-input multiple-output (MIMO), millimeter-wave and terahertz communications, and orthogonal frequency division multiplexing (OFDM). While these technologies 
+
+M. Makin, A. Abdallah, and A. M. Eltawil are with Computer, Elec-trical, and Mathematical Sciences & Engineering (CEMSE) Division at King Abdullah University of Science and Technology (KAUST), Thuwal, KSA 23955-6900. A. Celik is with the School of Electronics and Computer Science, University of Southampton, Southampton SO17 1BJ, U.K. 
+
+unlock significant spectral efficiency gains, they also intro-duce high-dimensional optimization problems and intricate channel dynamics [3], [4]. Core tasks such as channel esti-mation, beamforming design, signal detection, and resource allocation become computationally intensive and analyt-ically intractable under realistic propagation conditions, hardware impairments, and mobility scenarios [4], [5]. As a result, traditional closed-form or iterative optimization methods face scalability and adaptability limitations. Data-driven deep learning (DL) has therefore emerged as a powerful alternative, capable of modeling complex non-linear relationships directly from high-dimensional wireless data [6], [7]. Despite promising performance gains across individual PHY-layer tasks, most existing DL-based so-lutions remain narrowly specialized. Models are typically designed for a single objective and trained under fixed system configurations, requiring retraining when antenna geometries, channel statistics, or deployment scenarios change [8]. Such task-specific designs limit generalization, increase deployment overhead, and hinder scalability in dynamic 6G environments. Addressing these limitations requires unified and adapt-able learning frameworks capable of jointly handling multi-ple interrelated wireless tasks within a single architecture. Multitask large language models (LLMs) and foundation models offer a promising direction by learning shared representations across heterogeneous communications and signal processing objectives [9]–[11]. By enabling cross-task knowledge transfer, such models can improve generaliza-tion, reduce retraining costs, and support more scalable and intelligent PHY-layer design for future 6G systems. Inspired by the success of LLMs and vision transformers (ViTs) [12], these frameworks treat wireless channel state information (CSI) as a universal modality, analogous to text tokens or image patches. Through large-scale pretrain-ing, they aim to learn transferable representations that can be efficiently adapted to diverse downstream tasks with minimal additional training. Despite these advances, several critical challenges re-main. The scarcity of labeled wireless datasets restricts the scalability of supervised learning approaches. More-over, existing models are inherently task-specific and fail to generalize across heterogeneous deployment scenarios that necessitate repeated retraining and increasing system complexity. Finally, the lack of a unified framework capable of learning transferable, task-agnostic representations of arXiv:2607.25763v1 [cs.NI] 28 Jul 2026 2
+
+wireless channels limits the realization of truly intelligent PHY-layer architectures. These challenges call for a data-efficient and scalable learning paradigm that can exploit the intrinsic structure of wireless signals while minimizing reliance on labeled data, which is the main source of motivation for this paper. A. Related Works The first wave of DL integration focused on swapping out individual analytical blocks for neural networks. Convolu-tional neural networks (CNNs) became a building block for CSI compression and feedback [13]–[15], due to their capability of treating time-frequency channel responses as images. On the other side, recurrent neural networks (RNNs) were similarly drafted for channel prediction [16]– [18]. Because standard RNNs struggle with long-term de-pendencies [19], long short-term memory (LSTM) networks were widely adopted to mitigate vanishing gradients and better retain historical channel states [20]–[22]. However, the sequential processing nature of both RNNs and LSTMs inherently bottlenecks strict real-time latency and limits the simultaneous modeling of global spatial-frequency fea-tures [19]. DL has also been applied to resource allocation, including multi-agent reinforcement learning for reconfig-urable intelligent surface (RIS) codebook design [23], [24] and power control [25]. In this context, while classical optimization and non-DL heuristics provide high reliability and theoretical guarantees for power allocation as explored in [26], [27], DL approaches seek to approximate these solutions with lower online latency. Despite these advances, traditional DL models remain rigid, typically designed for fixed system dimensions and requiring architectural redesign when network configurations change. Following the paradigm shift in natural language pro-cessing (NLP) [19] and computer vision (CV) [12], the wireless community has begun exploring transformer ar-chitectures that utilize self-attention to capture long-range dependencies in spatial and frequency domains. Rather than relying on fixed receptive fields, transformers offer a flexible architecture for modeling complex CSI distribu-tions. Driven by the self-attention mechanism, they capture global structural patterns by allowing each patch of the channel matrix to attend to all other visible patches, resolv-ing the long-range dependency issues of CNNs and LSTMs. Expanding on the generative capabilities of physical layer reconstruction, in [28], a foundation model pretrained via masked channel modeling (MCM) demonstrated that it can effectively extract generic features applicable to diverse downstream tasks that range from channel estimation to beam management. This drive toward unified represen-tation learning has catalyzed the development of large-scale wireless foundation models and adapted language architectures. For example, WirelessGPT [10] leverages unsupervised pretraining on massive channel datasets to extract universal spatiotemporal features, enabling seam-less adaptation to integrated sensing and communication (ISAC) objectives. In parallel, frameworks such as LLM for wireless multi-tasking (LLM4WM) [9] adapt pre-trained models for channel-associated multi-tasking by employing a mixture of experts with low-rank adaptation (MoE-LoRA) to align complex wireless data with semantic feature spaces. Similarly, agentic frameworks such as ENWAR [29], [30] demonstrated the potential of multimodal LLMs to execute situation-aware reasoning for ISAC and beam tracking. This unsupervised reconstruction-based paradigm has also been extended to cross-layer applications; for instance, the authors in [31] developed a BERT-based foundation model capable of simultaneous wireless technology recognition and localization, proving that a single pretrained backbone can effectively distinguish between diverse signal types while performing precise ranging. To address the heterogeneity of reconstruction targets across distinct deployment scenarios, the work in [32] introduced multi-task environment-aware foundation model (MUSE-FM), which employs a prompt-guided encoder-decoder mechanism. By treating environ-mental contexts as multi-modal prompts, this architecture allows for the adaptive reconstruction of channel features across varying signal formats and environments, further validating the efficacy of generative pre-training for the physical layer. The large wireless model (LWM) [33] is widely con-sidered a pivotal first step toward foundation models for wireless communications. While LWM represents a more specialized and effective approach for the physical layer than general-purpose pre-trained models such as GPT or Llama, there remains significant potential for further architectural refinements. Advancing wireless foundation models necessitates architectural refinements that accom-modate the unique properties of complex-valued channel representations and varying system dimensions. Improved tokenization strategies and scalable input embeddings can enhance adaptability across heterogeneous deployments. The wireless masked autoencoder (WiMAE) [34] exempli-fies this evolution by integrating masked autoencoding with contrastive objectives. By leveraging heavily masked inputs (up to 90%) and treating noisy channel realizations as positive pairs, WiMAE promotes invariant feature learning, resulting in superior linear separability and robustness under low-SNR conditions. While the LWM established a baseline across multiple tasks, its encoder-only design lacks a generative pretraining mechanism, limiting representation learning under con-strained supervision. WiMAE, although adopting masked autoencoding, remains limited in scope and does not gener-alize across diverse tasks, and falls short of a true wireless foundation model. In contrast, this work introduces aunified foundation model framework, driven by a multitask wireless foundation model via adaptive low-rank masked autoencoders (WALoMA) backbone, that goes beyond incremental architectural improvements. We jointly de-3
+
+sign self-supervised MAE pretraining and geometry-aware representation learning via: (i) 2D positional encoding (PE) and (ii) scalable adaptation through LoRA within a single cohesive pipeline. This integration enables the model to learn transferable representations from unlabeled data, generalize across heterogeneous system configura-tions, and efficiently adapt to multiple downstream tasks without retraining the full model. Unlike prior approaches that address these components in isolation, the proposed framework unifies them into a data-efficient and scalable architecture evaluated across five PHY-layer tasks, directly addressing the key limitations of generalization, scalability, and labeled data scarcity. B. Main Contributions This paper introduces a unified and data-efficient founda-tion model framework for wireless channels, referred to as WALoMA, designed to generalize across diverse physical layer tasks. Its effectiveness is demonstrated through a comprehensive evaluation spanning LoS/NLoS classifica-tion, beam prediction, channel interpolation, channel esti-mation, and channel charting. The main contributions are summarized as follows:  
+
+> ‚
+
+We propose a unified foundation model pipeline that transforms raw wireless channel measurements from heterogeneous sources into invariant token represen-tations, enabling an encoder–decoder transformer to generalize across diverse scenarios.  
+
+> ‚
+
+We introduce a geometry-aware representation learn-ing scheme based on 2D PE, which preserves the in-trinsic spatial–frequency structure of wireless channels and enables seamless adaptation to varying antenna and subcarrier configurations.  
+
+> ‚
+
+To enable efficient multi-task adaptation with minimal trainable parameters, we integrate low-rank adapta-tion (LoRA) as a parameter-efficient fine-tuning strat-egy by injecting low-rank updates into the transformer attention layers while freezing the pretrained back-bone, enabling efficient multi-task adaptation with minimal trainable parameters.  
+
+> ‚
+
+We demonstrate the robust cross-band generalization of the proposed architecture through highly effective transfer learning from sub-6 GHz datasets to millime-ter wave (mmWave) deployment scenarios, supported by extensive analysis showing that 2-dimensional po-sitional encoding (2D PE) drives the largest perfor-mance gains and unsupervised channel charting pre-serves physical topology. Consistently outperforming raw-data approaches even in low-data regimes, the model trains only 14.68% of its total parameters while achieving strong individual performance across the five downstream tasks (96.47% for LoS/NLoS classification, 80.45% for beam prediction, 85.78% for channel interpolation, 99.12% for channel estimation, and 77.18% for channel charting.), culminating in a composite score of 87.80% that significantly surpasses the LWM baseline (59.90%). II. System Model and Problem Formulation This section introduces the system model and formulates the multi-task learning problem addressed in this work. We consider wireless CSI as a high-dimensional signal exhibiting structured dependencies across spatial (antenna) and spectral (subcarrier) domains. The objective is to learn a unified representation of the wireless channel that generalizes across heterogeneous deployment scenarios and supports multiple downstream tasks. We consider a massive multiple-input single-output (MISO) OFDM communication system, where a base station (BS) equipped with a uniform linear array (ULA) of Nant antennas serves a single-antenna user equipment (UE). The frequency-domain channel response is repre-sented by a complex-valued matrix H P CNant ˆNsub , where 
+
+Nsub denotes the number of subcarriers. In practical de-ployments, both Nant and Nsub may vary across scenarios, leading to heterogeneous channel dimensions. We consider a family of downstream wireless tasks defined over channel realizations. Let T “ t T1, T 2, . . . , T K u
+
+denote a set of K tasks, such as LoS/NLoS classification, beam prediction, channel interpolation, channel estimation, and channel charting. Each task Tk defines a mapping 
+
+Tk : CNant ˆNsub Ñ Yk, where Yk represents the task-specific output space. Our objective is to learn a unified encoder function fθ : H Þ Ñ Z, that maps variable-sized channel matrices to a fixed-dimensional latent representation Z.This representation should capture the intrinsic spatial and frequency correlations of the wireless channel and generalize across tasks and deployment scenarios. For each downstream task Tk, a compact task-specific head gpkq 
+
+> ϕ
+
+p¨q 
+
+is attached such that ˆyk “ gpkq
+
+> ϕ
+
+`fθ pHq˘. Instead of training separate models for each task independently, we aim to pre-train a single, shared backbone fθ p¨q that learns transferable channel representations in a self-supervised manner. Lower retraining costs and enhanced performance on unseen data are key advantages of this technique, ultimately paving the way for flexible, multi-task scaling. III. Solution Methodology This section presents the proposed unified learning framework for data-efficient multi-task modeling of wireless channels. The core idea is to leverage self-supervised learn-ing to pre-train a shared encoder that captures the intrinsic spatial–frequency structure of CSI without labeled data. Specifically, we adopt a channel reconstruction paradigm, where the model learns to recover corrupted channel realizations, to enable the extraction of rich, task-agnostic latent representations. 4
+
+Fig. 1. Proposed Pipeline. A. Self-Supervised Pretraining via Channel Reconstruction Wireless channels exhibit structured dependencies across antennas and subcarriers due to spatial correlation, fre-quency selectivity, and propagation geometry. To capture these intrinsic properties without relying on labeled data, we adopt a masked autoencoder (MAE) pretraining strat-egy based on channel reconstruction. Let Mm P t 0, 1uNant ˆNsub denote a binary masking ma-trix generated by a random masking operator that removes a fraction m of channel patches, where Mmpi, j q “ 0
+
+indicates a masked entry and Mmpi, j q “ 1 denotes a visible entry. The masked input is 
+
+˜H “ H d Mm, (1) where d denotes element-wise multiplication. The encoder takes the visible subset ˜H as input and produces latent embeddings, while a lightweight decoder reconstructs the full channel as 
+
+ˆH “ gψ
+
+´
+
+fθ p ˜Hq
+
+¯
+
+, (2) where fθ p¨q and gψ p¨q denote the encoder and decoder, respectively. The pretraining objective minimizes the re-construction error over the masked entries only: 
+
+Lpre “ EH,Mm
+
+„›››´
+
+H ´ ˆH
+
+¯
+
+d p 1 ´ Mmq
+
+›››22
+
+ȷ
+
+. (3) By optimizing reconstruction only over masked regions, the encoder is forced to infer missing channel components from global context. This encourages the model to internalize the spatial–frequency structure of the channel rather than memorize input samples. B. Unified Pipeline Overview The overview pipeline is presented in Fig. 1, where the flow is divided into three main stages: data preparation, MAE pretraining, and model finetuning and evaluation. Stage 1 - Data Preparation: The pipeline begins with raw channel realizations extracted from a given deploy-ment scenario. Each complex-valued channel matrix is decomposed into its real and imaginary components and interpreted as a structured two-dimensional grid over an-tennas and subcarriers. Rather than flattening the channel into a one-dimensional sequence, the grid is partitioned into small non-overlapping patches. These patches serve as tokens for transformer processing, preserving local spatial– frequency relationships while enabling global context mod-eling through self-attention. Stage 2 - MAE Pretraining: During pretraining, a 2D positional encoding and high masking ratio is applied to the patch sequence, to preserve the positional knowledge of the tokens and removing a large fraction of tokens from the encoder input. The encoder processes only the visible patches and learns context-aware representations through stacked self-attention layers. A lightweight decoder recon-structs the masked patches from the latent embeddings. This reconstruction-based pretext task compels the encoder to learn robust, scenario-agnostic channel representations that capture global dependencies across antennas and subcarriers. Stage 3 - Model Finetuning and Evaluation: After pretraining, the reconstruction decoder is discarded, and the task-agnostic encoder serves as a shared backbone. To adapt the encoder’s generic understanding of the channels to specific classification and regression objectives, we apply LoRA alongside task-specific heads. Because the encoder has already learned structured channel features through self-supervised reconstruction, this targeted fine-tuning requires significantly fewer labeled samples and converges more rapidly compared to training from scratch. This unified framework enables efficient multi-task adaptation while preserving the underlying physical structure of the wireless environment. IV. Proposed Design Architecture In this section, we provide the architectural details of each stage in Fig. 2, focusing on the representation design, transformer backbone, and parameter-efficient task adaptation. A. Data Preparation: Channel Tokenization This stage transforms raw complex-valued channel re-alizations into structured transformer-compatible tokens while preserving the underlying antenna–subcarrier geom-etry. 1) Grid-Based Patching: Unlike standard tokenization methods that flatten the entire channel matrix prior to segmentation, in this work, a grid-based partitioning strat-egy is adopted as illustrated in the data preparation stage 5
+
+Fig. 2. Proposed Design Architecture. of Fig. 2. We partition H into a grid of non-overlapping rectangular patches pn P CPhˆPw , defined as 
+
+pn “ Hpin : in ` Ph ´ 1, j n : jn ` Pw ´ 1q, (4) where pin, j nq denotes the starting antenna and subcarrier indices of the n-th patch. Here, Ph and Pw represent the patch height (spanning antennas) and width (spanning subcarriers), respectively. The total number of patches N
+
+is given by 
+
+N “
+
+R Nant 
+
+Ph
+
+V R Nsub 
+
+Pw
+
+V
+
+. (5) This formulation naturally supports variable-sized CSI matrices in which changes in Nant or Nsub modify only the token count N , while the embedding dimension remains fixed. Furthermore, the formulation allows for manual configuration of the patch geometry. For instance, a 4 ˆ 4
+
+configuration ( Ph “ 4, P w “ 4) emphasizes local correla-tions in both domains, while a 1 ˆ 16 configuration ( Ph “
+
+1, P w “ 16 ) captures broader frequency dependencies for a single antenna element. 2) Complex Token Representation: To process complex-valued channel data efficiently, the real and imaginary components of each patch are stacked together rather than being treated as separate tokens. For a given grid location, the real and imaginary parts of the ρ “ Ph ¨ Pw patch elements are flattened and combined into a single raw feature vector xn:
+
+xn “ “Re ppnqJ, Im ppnqJ‰J P RL, (6) where the raw feature dimension is L “ 2ρ and n Pt1, . . . , N u represents the sequence index of the patch. By jointly embedding the real and imaginary components into a single token, we maintain a sequence length of N rather than 2N , significantly reducing the self-attention overhead, which scales quadratically with sequence length ( OpN 2q)[19]. B. Input Representation and Masking Mechanism This subsection describes the input representation and pretraining framework, including embedding, positional encoding, and masking, used to construct position-aware tokens for self-supervised learning. 1) Linear Embedding: The combined feature vectors 
+
+xn, @n, are mapped to the latent model dimension D via a trainable linear projection: 
+
+en “ Wemb xn ` bemb , (7) where Wemb P RDˆL is the trainable projection matrix, 
+
+bemb P RD is the bias vector, and en P RD represents the resulting latent token embedding. By retaining the grid structure and jointly embedding the complex components, we ensure that subsequent positional encodings can accu-rately map each token to its distinct physical location on the antenna-frequency plane. 2) 2D Positional Encoding: Unlike natural language sequences where token order is strictly linear, wireless channel data exhibits a fundamental 2D grid structure defined by the spatial (antenna) and spectral (subcarrier) domains. Flattening this grid into a 1D sequence for transformer processing inevitably obscures these orthog-onal dependencies. To explicitly preserve the geometric relationships within the MISO-OFDM channel, we employ a 2D learnable PE scheme [12]. 6
+
+Although the tokens are processed as a sequence, the underlying 2D grid structure is preserved through patch indexing. Each token n is associated with a spatial–spectral coordinate pu, v q corresponding to its position in the antenna–subcarrier grid. Because each patch encapsulates a local Ph ˆ Pw region of the raw channel, the indices track macro-level physical features: u P t 1, . . . , H grid u represents the patch row index along the spatial axis (corresponding to a sub-array of adjacent antennas), and v P t 1, . . . , W grid u
+
+represents the patch column index along the spectral axis (corresponding to a sub-band of adjacent frequency sub-carriers). Here, Hgrid and Wgrid denote the dynamic spatial and spectral patch dimensions of the current tokenized input. To encode positional information, we define two learn-able embedding matrices: Eant P RHgrid ˆdant , Esub P
+
+RWgrid ˆdsub , where dant ` dsub “ D. These matrices act as lookup tables that map discrete spatial and spectral indices to continuous latent representations. Unlike fixed sinusoidal encodings, Eant and Esub are fully learnable parameters optimized during training, allowing the model to adapt positional representations to the statistical structure of wireless channels. Formally, for a given coordinate pu, v q, the positional components are obtained as: 
+
+epuq 
+
+> ant
+
+“ Eant ru, :s P Rdant , epvq 
+
+> sub
+
+“ Esub rv, :s P Rdsub . (8) This can equivalently be interpreted as a linear embedding of one-hot encoded indices. The full positional encoding is constructed via a separa-ble concatenation: 
+
+Ppu,v q “
+
+«
+
+epuq
+
+> ant
+
+epvq
+
+> sub
+
+ff 
+
+P RD . (9) This separable formulation introduces an explicit inductive bias that decouples spatial and spectral representations, en-abling the model to independently capture antenna-domain correlations (e.g., beamforming patterns) and frequency-domain variations (e.g., channel selectivity). The positional encoding is then added to the token embedding: 
+
+zn “ en ` Ppu,v q, (10) yielding position-aware representations that jointly encode channel content and spatial–spectral location within aunified latent space. 3) Masking Strategy: Following tokenization and 2D positional embedding, we apply the random masking to facilitate the self-supervised reconstruction objective. Let 
+
+Ω “ t 1, . . . , N u denote the set of all patch sequence indices. The masking operator uniformly samples a subset of visible indices V Ă Ω such that |V| “ tp1 ´ mqN u and m is the masking ratio. The indices in the complement set ΩzV are entirely discarded from the encoder’s view. This selective processing represents a critical efficiency feature of the architecture. Unlike standard masked lan-guage models that process full sequences populated with placeholder tokens, our encoder operates exclusively on the reduced visible subset. The final input to the transformer encoder, Zvis P R|V|ˆ D , is constructed by gathering only the position-aware embeddings zn corresponding to the visible indices: 
+
+Zvis “ t zn | n P Vu. (11) Because the physical geometry of the channel is already ex-plicitly encoded within each token zn via the 2D positional encoding, the sequence length can be drastically reduced without losing the spatial-spectral topology of the data. C. Transformer Backbone The backbone follows MAE design composed of (i) a transformer encoder that produces latent channel represen-tations from visible tokens, and (ii) a lightweight decoder used only during pretraining to reconstruct masked tokens. After pretraining, the decoder is removed and the encoder is retained for downstream adaptation. 1) Encoder Architecture: The encoder consists of Lenc 
+
+stacked transformer layers, operating specifically on the visible subset of the input sequence. Let Zℓ´1 denote the input to layer ℓ P t 1, . . . , L enc u, where the input to the first layer is the visible patch sequence ( Zvis ), and the input to any subsequent layer is the output of the preceding one. Each layer processes this representation through two primary sub-layers: multi-head self-attention (MHSA) and a feed-forward network (FFN). Residual connections and layer normalization (LN) are employed to facilitate stable deep learning. a) Multi-Head Self-Attention (MHSA): To jointly model heterogeneous spatial–frequency dependencies, we employ MHSA with H parallel attention heads. For each head h P t1, . . . , H u, each sub-layer follows the pre-normalized convention, in which an LN is applied to the input before projection. Letting rZℓ´1 “ LN pZℓ´1q denote the normalized layer input, the per-head query, key, and value projections are computed as 
+
+Qh “ rZℓ´1WhQ, Kh “ rZℓ´1WhK , Vh “ rZℓ´1WhV ,
+
+(12) where WhQ, WhK , WhV P RDˆdh are learnable projection matrices and dh “ D{H denotes the per-head feature dimension. The attention weights for head h are computed using scaled dot-product attention 
+
+Ah “ softmax 
+
+ˆ QhKJ
+
+> h
+
+?dh
+
+˙
+
+, (13) which captures pairwise token interactions exclusively within the visible subset. The corresponding head output is 
+
+head h “ AhVh P R|V|ˆ dh . (14) 7
+
+The outputs of all H heads are concatenated and linearly projected to restore the latent model dimension 
+
+MHSA pZℓ´1q “ Concat phead 1, . . . , head H qWO , (15) where WO P RDˆD is the output projection matrix. This formulation enables the encoder to attend to chan-nel correlations across multiple representation subspaces simultaneously, allowing distinct heads to specialize in complementary spatial and frequency interaction patterns while preserving global contextual aggregation across the visible tokens. b) Position-wise FFN and LN: Given an intermediate token representation z P RD , LN is applied along the feature dimension independently for each token: 
+
+LN pzq “ z ´ μ
+
+?σ2 ` ϵ d γ ` β, (16) where μ and σ2 are the mean and variance computed over the D features of the token, ϵ ensures numerical stability, and γ, β P RD are learnable affine parameters. The position-wise FFN is then applied identically and independently to each token: 
+
+FFN pzq “ ϕpLN pzq W1 ` b1q W2 ` b2, (17) where W1 P RDˆDff and W2 P RDff ˆD are the weight matrices, b1 P RDff and b2 P RD are the biases, and 
+
+ϕp¨q denotes a general non-linear activation function; and 
+
+Dff defines the intermediate hidden expansion dimension. To ensure stable optimization in deep architectures, the complete transformer layer ℓ follows the pre-normalized residual structure 
+
+Z1 
+
+> ℓ
+
+“ Zℓ´1 ` MHSA pZℓ´1q, (18) 
+
+Zℓ “ Z1 
+
+> ℓ
+
+` FFN pZ1
+
+> ℓ
+
+q, (19) ensuring stable optimization while preserving token-wise feature transformations. 2) Decoder and Reconstruction: The decoder is alightweight transformer consisting of Ldec layers (typically 
+
+Ldec ă Lenc ) designed to reconstruct the full channel matrix from the latent representation. Unlike the encoder, which processes only the visible subset, the decoder oper-ates on the full sequence Ω of length N . The reconstruction process involves sequence restoration, positional encoding injection, and feature projection, as detailed below. a) Sequence Restoration and Mask Tokens: First, we recover the complete patch sequence by restoring the orig-inal ordering of the visible patches and inserting learnable mask tokens for the previously discarded positions. We initialize a full sequence representation Zfull P RN ˆD . For each token index n in the grid 
+
+zfull  
+
+> n
+
+“
+
+#
+
+zenc  
+
+> n
+
+n P V,
+
+emask n R V, (20) where zenc  
+
+> n
+
+is the corresponding encoded latent vector output by the encoder, and emask P RD is a shared, learnable mask token. b) Positional Encoding Restoration: Since the mask tokens emask are identical for all missing positions, they possess no inherent spatial or spectral information. To restore geometric context across the 2D plane, we add a full set of decoder positional encodings Pdec P RN ˆD to the restored sequence, yielding the final position-aware decoder input sequence, denoted as Zin P RN ˆD :
+
+Zin “ Zfull ` Pdec . (21) This addition is critical; it ensures the decoder can uniquely identify the location of every masked patch and accurately propagate physical channel information from the surround-ing visible anchors. c) Decoder Layers: The complete input sequence Zin 
+
+is then processed through Ldec transformer layers. These layers mirror the encoder architecture (employing MHSA and FFN), but are functionally shallower. The global self-attention mechanism enables the mask tokens to attend to the visible patches, effectively interpolating the missing channel state information based on the learned spatial-frequency context. d) Final Projection and Reconstruction: After passing through the decoder layers, the output feature matrix 
+
+Zout P RN ˆD is projected back to the original raw element space via a linear projection layer: 
+
+ˆX “ Zout Wout ` bout , (22) where Wout P RDˆL and bout P RL are the output projection parameters, and L is the flattened complex patch dimension established during the initial tokenization. Finally, to recover the predicted complex-valued channel matrix ˆH, the output vectors in ˆX are split into their real and imaginary components, unflattened, and recombined according to the original CNant ˆNsub spatial-spectral grid. V. Model Training and Fine Tuning for Downstream Wireless Tasks A. Model Pretraining The model is pre-trained via self-supervised learning to minimize the reconstruction error. We employ the mean squared error (MSE) as the objective function. Crucially, the loss is calculated only on the masked patches, forcing the model to infer the missing channel structures from global context rather than memorizing the visible input. Given the ground truth patch vectors xk and the re-constructed output vectors ˆxk from the decoder, the loss function can be expressed as 
+
+Lpre “ 1
+
+|ΩzV|
+
+ÿ
+
+> nPΩzV
+
+}xn ´ ˆxn}22, (23) where ΩzV represents the set of masked patch indices (the complement to the visible subset), |ΩzV| is the total number of masked patches, and xn, ˆxn P RL are the original and reconstructed flattened feature vectors for the 8
+
+n-th patch, respectively. By strictly optimizing over the unobserved regions, this objective drives the encoder to learn robust, scenario-agnostic latent representations of the physical wireless channel. A defining feature of the MAE encoder is its efficiency. Because the self-attention mechanism computes pairwise interactions exclusively among the visible tokens (dis-carding the masked tokens entirely), the computational complexity is significantly reduced. Standard attention scales quadratically with the full sequence length, OpN 2q.However, by operating solely on the unmasked subset V,the complexity becomes Op| V|2q “ Opp 1 ´ mq2N 2q. For a high masking fraction (e.g., m “ 0.75 ), the encoder processes only 25% of the total patches. This results in a drastic, quadratic reduction in memory and compute usage, allowing the model to scale efficiently to high-resolution channel grids and larger batch sizes without the prohibitive costs associated with standard transformers. B. Finetuning Mechanism and Downstream Tasks To adapt the pre-trained foundation model to specific downstream tasks, we employ a parameter-efficient fine-tuning (PEFT) strategy that transitions the architecture from a reconstructive objective to a discriminative one, as outlined in Fig. 2. 1) Backbone Adaptation: The transition to the fine-tuning stage involves structural modifications to the foun-dation model. We discard the lightweight pre-training decoder and the random masking operator, retaining only the pre-trained WALoMA encoder fθ to serve as the generic feature backbone. Unlike the pretraining phase, the encoder now processes the full, unmasked channel sequence. Let Zseq P RN ˆD
+
+denote the complete input matrix formed by gathering all position-aware patch embeddings zn for n P Ω. The encoder 
+
+fθ processes this full sequence to produce a dense, globally contextualized latent representation Zlat “ fθ pZseq q, where the final output matrix retains the dimensions Zlat P
+
+RN ˆD .2) Low-Rank Adaptation: To achieve parameter-efficient adaptation and avoid full fine-tuning of the transformer backbone, we adopt LoRA, which reduces the number of trainable parameters while mitigating catastrophic forget-ting. Specifically, we re-parameterize the encoder’s weights 
+
+θ. Rather than fine-tuning all parameters of the WALoMA encoder fθ p¨q , we freeze the pre-trained weights W0 and inject trainable rank decomposition matrices into the linear layers of the transformer blocks. For a pre-trained weight matrix W0 P Rdˆn, the weight update is parameterized as 
+
+W “ W0 ` αr BA , (24) where B P Rdˆr and A P Rrˆn are low-rank matrices with 
+
+r ! min pd, n q.3) Downstream Tasks and Adaptation Heads: Following the formulation in Section III, for each task k P t 1, . . . , K u,a specialized evaluation head gpkq 
+
+> ϕ
+
+p¨q is attached to the backbone. These heads are designed to map the high-dimensional features in Z to specific wireless metrics. For each task, a specialized evaluation head is attached to the backbone, corresponding to the multi-task outputs of Fig. 2. Task 1: LoS/NLoS Classification: A classical binary classification task in wireless communication to determine if the UE has a LoS path to the BS. Given that LoS/NLoS detection is a comparatively low-complexity binary classi-fication task, we utilize a lightweight multilayer perceptron (MLP) head gp1q 
+
+> ϕ
+
+p¨q , where the patch embeddings Zlat are flattened and passed through a hidden layer with batch normalization and ReLU activation. A final linear layer maps these features to 2 class logits. The loss function is a cross-entropy loss defined as 
+
+Llos “ ´ 
+
+> S
+
+ÿ
+
+> s“1
+
+ys log ppsq, (25) where S is the total number of classes, ys P t 0, 1u is the ground-truth binary indicator for class s, and ps is the predicted probability for class s derived from the softmax-normalized logits. Task 2: Beam Prediction: This task identifies the optimal beam index among NB beams. We employ a ResNet-inspired 2D CNN head gp2q 
+
+> ϕ
+
+p¨q , chosen for its ability to cap-ture complex spatial patterns in the channel grid without the vanishing gradient issues typical of deep networks. The input embeddings are first projected via a stem convolution to 32 channels. This is followed by three residual stages with increasing widths ( 32 Ñ 64 Ñ 128 ). A global average pooling layer collapses the spatial dimensions before a final linear classifier with a 0.3 dropout rate maps the features to the beam logits. The loss function Lbp is a cross-entropy loss defined in (25) for S “ NB .Task 3: Channel Interpolation: Reconstructing the full dense channel response from the latent features. The tokens are reshaped into a 2D grid and passed through a projection stem (128 channels). The model then distills information through progressive residual blocks ( 128 Ñ 64 Ñ 32 ). The final output is reshaped and processed by a patch recon-structor to recover the original dimensions. The objective is to minimize the normalized mean squared error (NMSE): 
+
+Linter “ E “|y ´ ˆy|22
+
+‰
+
+E r| y|22s , (26) where y represents the ground-truth channel vector and 
+
+ˆy “ gp3q 
+
+> ϕ
+
+pZlat q is the predicted vector. To facilitate acomparative analysis across the varying noise regimes and to align with the challenge’s evaluation criteria, the performance is reported in dB as NMSE dB “ 10 log 10 pLinter q . (27) 9
+
+Table I. Simulation and model parameters                                       
+
+> Parameter Value DeepMIMO Environment Scenarios City (0-19), O1, ASU Campus, Boston5G Frequency 3.5 GHz BS Antennas ( Nant )t8,16 ,32 ,64 ,128 u
+> Subcarriers ( Nsub )t32 ,64 , . . . , 1024 u
+> Number of beams ( NB)t8,64 u
+> Model Architecture Embed. Dim ( D)64 Encoder layers 12 Decoder layers 4Encoder attention heads 12 Decoder attention heads 4Patch Size 4ˆ4
+> Masking ratio m0.75
+> Dropout 0.1 Encoder parameters «0.6M Decoder parameters «0.2M Pretraining Pretraining samples «2.45M Epochs 1000 Batch Size 768 Optimizer AdamW Learning Rate 3ˆ10 ´4
+> Weight Decay 0.05
+
+The final composite performance score is calculated by mapping these NMSE dB values against task-specific limits 
+
+rNMSE min , NMSE max s, ensuring that the model’s accuracy is benchmarked relative to the physical limits of the wireless environment. Task 4: Channel Estimation: Denoising and estimating accurate CSI from noisy observations. Task head gp4q 
+
+> ϕ
+
+p¨q 
+
+utilizes a 2-layer convolutional stack ( 128 Ñ 64 channels) with an explicit residual shortcut from the input grid to the final processed features to facilitate gradient flow. The output is projected to the patch element space and reconstructed into a full CSI matrix using the NMSE loss 
+
+Lest and scores defined in (26) and (27). Task 5: Channel Charting: We perform unsupervised manifold learning to regress 2D spatial coordinates. The head gp5q 
+
+> ϕ
+
+p¨q adopts a funnel architecture similar to Task 3. After global pooling, a regressor MLP (32 Ñ 16 Ñ 2) predicts the continuous coordinates px, y q. The objective is the MSE in the spatial domain: 
+
+Lloc “ E “px ´ ˆxq2 ` p y ´ ˆyq2‰ . (28) 4) Downstream Inference and Evaluation: In the final stage, the adapted encoder fθ p¨q processes the input channel data to generate context-aware latent embeddings Zlat P
+
+RN ˆD , which are subsequently passed to the task-specific heads tgp1q 
+
+> ϕ
+
+, . . . , g pT q 
+
+> ϕ
+
+u. To rigorously assess the model’s gen-eralization capabilities, we utilize task-appropriate metrics: the weighted F1-Score for classification tasks (Tasks 1 and 2), NMSE for CSI reconstruction (Tasks 3 and 4), and MSE in meters for channel charting (Task 5). Performance is visualized via a radar chart comparing the optimized model against baseline model (LWM). VI. Numerical Results and Discussion 
+
+Fig. 3. Training validation - comparison between ground-truth channels to reconstructed ones. 
+
+Fig. 4. Comparison of Composite Performance Scores: WALoMA vs. LWM Baseline Table II. Dataset Partitioning for Downstream Evaluation 
+
+Task Training Validation Test LoS/NLoS 6 500 1500 Beam Prediction 1000 500 1500 Channel Interpolation 300 500 1500 Channel Estimation 250 500 1500 Channel Charting 450 500 1500 
+
+In this section, we evaluate the efficacy of the proposed foundation model and validate its generalization capabili-ties across diverse downstream wireless tasks. The default simulation and architectural parameters are listed in Table I, unless specified otherwise. All model pre-training was conducted using six NVIDIA Tesla V100 GPUs, while the downstream task adaptation and evaluation were per-formed on a single V100 GPU. 1) Deployment Scenarios and Variability: To encourage scenario-agnostic representation learning, we utilize large-scale channel realizations generated by the DeepMIMO 10 
+
+[35] ray-tracing framework. The dataset spans heteroge-neous propagation environments with diverse geometric and blockage characteristics. Specifically, training and evaluation are conducted across:  
+
+> ‚
+
+Urban city scenarios (City 0–19): 20 distinct metropolitan layouts with substantial variability in building density and height.  
+
+> ‚
+
+Campus and specialized scenarios: ASU Campus (mixed vegetation and structures), O1/O1b (con-trolled outdoor blockage), and Boston5G (dense urban deployment). This diversity exposes the model to varying spatial corre-lation structures, delay spreads, and angular distributions, promoting generalization across deployment conditions. For the downstream evaluation, the dataset is partitioned into specific training, validation, and test sets to ensure rigorous assessment, as summarized in Table II. A. Reconstruction Performance Fig. 3 demonstrates the model’s capability for high-fidelity reconstruction of both the magnitude (top row) and phase (bottom row) components of the wireless channel. The visual progression illustrates the ground truth channel matrices (left), the highly sparse visible patches provided to the network (middle), and the complete reconstructed outputs (right). Notably, the visible patches within the reconstructed matrices differ slightly from their ground-truth counter-parts. Rather than a flaw, this variance is a fundamental characteristic of the MAE architecture. The final output is not a mere identity mapping of the visible input; instead, the entire spatial-spectral sequence undergoes a rigorous compression and decompression process. During self-supervised pre-training, the encoder heavily compresses the high-dimensional channel data into a lower-dimensional latent space, and the decoder subsequently generates the full channel response entirely from scratch. Consequently, this inherent reconstruction loss is directly governed by the dimensionality of the embedding vector. A constrained latent space acts as an information bottleneck, forcing the model to distill the most salient, generalized physical features of the propagation environment rather than simply memorizing exact input values. This compres-sion behavior is crucial to the framework’s overall efficacy, as these highly robust latent embeddings are precisely what feed into the adaptation and inference heads, ensuring efficient downstream multi-task performance without over-fitting to the pretraining data. B. Comparative Evaluation Across Downstream Tasks After self-supervised pretraining, the decoder is dis-carded, and the encoder is retained as a pretrained feature extractor for efficient adaptation to downstream tasks. As illustrated in Fig. 4, the proposed model demonstrates a substantial advantage over the LWM baseline across five critical evaluations. Most notably, the architecture achieves a score of 0.8045 in beam prediction, a 31.09% improvement over the LWM baseline (0.6137). Even more dramatic leaps are observed in dense spatial reconstruction, with both channel estimation (from 0.4165 to 0.8578) and channel interpolation (from 0.4576 to 0.9912) experiencing over a 100% increase in accuracy. Conversely, the LoS/NLoS classification task exhibits a much narrower margin of improvement, shifting only 2.67% (from 0.9396 to 0.9647). This plateau is structurally ex-pected; determining LoS/NLoS presence is fundamentally a low-complexity binary classification problem that relies primarily on macroscopic power thresholding. Because it does not inherently require deep comprehension of complex spatial and spectral correlations, the rich geometric repre-sentations captured by our advanced positional encoding do not yield the massive comparative advantage seen in analytically demanding regression tasks. Ultimately, the marked overall increase in performance across the frame-work is directly attributed to the transition to an MAE integrated with 2D PE, alongside significant architectural upgrades to the downstream convolutional task heads. Table III. Ablation study: PE vs. LoRA efficiency.                             
+
+> Task 1D PE 2D PE LoRA Param %LoS/NLoS 96.81 96.87 96.47 12.83 Beam Prediction 79.53 80.51 80.45 11.27 Channel Interpolation 59.48 79.44 85.78 12.84 Channel Estimation 97.28 98.68 99.12 16.88 Channel Charting 66.08 75.26 77.18 19.59 Composite 79.84 86.15 87.80 14.68
+
+C. Ablation Study The ablation study results, summarized in Table III, quantify the individual and cumulative contributions of the proposed architectural enhancements, demonstrating a significant performance trajectory. The transition from 1D to 2D PE provides the first major performance leap, particularly in spatially-sensitive tasks such as channel interpolation and channel charting where scores increased from 59.48% to 79.44% and 66.08% to 75.26%, respectively, confirming that explicitly modeling the two-dimensional grid structure of the channel is essential for capturing the physical correlations between antennas and subcarriers. Further gains are realized through the integration of LoRA, which pushes the composite score to 87.80% while only requiring the training of a small fraction of the total model parameters, averaging just 14.68% across all tasks. The effectiveness of LoRA is most evident in channel estimation, which reaches a peak score of 99.12%, validating that LoRA successfully preserves the rich latent embeddings learned 11 
+
+Table IV. Task Performance (%) Across Training Budgets. 
+
+Model Task 10% 25% 50% 75% 100% LWM LoS/NLoS N/A N/A 31.936 29.019 93.962 Beam Prediction 14.305 32.876 44.405 58.962 61.037 Channel Interpolation 14.209 15.051 28.294 33.446 41.650 Channel Estimation 14.233 31.011 34.423 44.993 45.760 Channel Charting 33.575 33.361 50.319 62.717 67.110 Raw LoS/NLoS N/A N/A 22.477 23.080 69.738 Beam Prediction 16.936 32.408 47.146 58.079 63.846 Channel Interpolation 21.615 24.544 26.127 27.029 27.477 Channel Estimation 40.885 70.426 73.272 75.493 75.868 Channel Charting 15.694 25.758 28.865 33.983 38.951 Proposed LoS/NLoS N/A N/A 37.716 37.716 96.471 Beam Prediction 19.127 51.500 65.244 73.805 80.450 Channel Interpolation 24.869 47.778 58.557 80.799 85.784 Channel Estimation 19.050 49.162 55.750 88.726 99.118 Channel Charting 33.725 40.722 60.762 72.941 77.182 
+
+by the MAE. Consequently, the proposed configuration achieves superior performance across most metrics with substantially reduced resource consumption, establishing a highly scalable framework for advanced wireless communi-cation tasks. D. Task Performance Scores Across Training Budgets. The performance of the proposed model across varying training data availability is shown in Table IV, which compares the task scores against the LWM baseline and a raw channel approach across different training budget percentages. We define the training budget as the specific fraction of the available training dataset used to fine-tune the downstream task heads; these subsets are sampled from the total allocated training splits (detailed in Table II), while the validation and test sets remain completely fixed to ensure a fair and consistent evaluation benchmark. The comparative analysis reveals that the proposed model consistently outperforms both the LWM baseline and the raw channel approach across nearly all tasks and training budget levels. A significant finding is the model’s high data efficiency; for instance, at a 25% training budget, the proposed solution achieves a score of 51.50% in beam prediction, surpassing the LWM baseline’s performance at a much higher 50% budget. This suggests that the latent representations learned during the MAE pretraining phase provide a robust foundation that requires fewer labeled samples to specialize for downstream applications. Notably, the LoS/NLoS classification task reports ”N/A” results at the 10% and 25% levels. This is attributed to the extreme scarcity of data in this category with only 6 training sam-ples available with further reduction by budget percentages results in insufficient data points (e.g., a single sample) to achieve stable model convergence or meaningful gradient updates. The results also highlight the performance of the raw channel approach, which utilized the proposed ResNet-based downstream heads directly on raw data, whereas the LWM baseline relied on standard linear layers. 0 50 100 150 200 0,2 0,4 0,6 0,8 1,0           
+
+> F1  Score
+> Epoch
+> Los/NLoS (channel embedings)
+> Los/NLoS (mean pooled)
+> Beam Prediction (top-1)
+> Beam Prediction (top-2)
+> Beam Prediction (top-3)
+
+Fig. 5. Convergence behavior across LoS/NLoS classifica-tion and beam prediction tasks. -15 -10 -5 0 5 10 15 20 25 30 35                       
+
+> Masking Ratio
+> Estimation (100% Train Budget)
+> Estimation (50% Train Budget)
+> Interpolation (100% Train Budget)
+> Interpolation (50% Train Budget)
+> 10 20 30 40 50 60 70 80 90 100
+> -25 -20 -15 -10 -5 0
+> NMSE  [dB]
+> SNR
+
+Fig. 6. Performance analysis across varying masking ratio and noise regimes for channel interpolation and channel estimation. Interestingly, the raw approach demonstrated superior performance in the channel estimation task at lower budget levels (10% to 50%), suggesting that direct spatial features may be more readily exploitable by 2D CNN-based residual blocks in low-data regimes. However, as the data budget increases to 75% and 100%, the proposed model regains the peak estimation score of 99.118%, indicating that the sophisticated feature extraction of the optimized encoder ultimately provides a more precise understanding of the wireless environment. E. Training Dynamics and Convergence Analysis The training curves illustrated in the Fig. 5 provide a detailed view of the convergence behavior and stability of the proposed model across the beam prediction and LoS/NLoS classification tasks. For beam prediction, the model demonstrates rapid learning, reaching a peak Top-1 F1 score of 0.8045 within the first 100 epochs. As the 12 
+
+Fig. 7. Comparison of physical space coordinates and learned latent space representations in channel charting task. prediction window expands, the performance increases sig-nificantly, achieving maximum F1 scores of 0.9473 for Top-2 and 0.9647 for Top-3 results. This trend indicates that while exact beam selection is a high-precision challenge, the model consistently identifies the optimal propagation paths within its top three candidates with very high reliability. In the LoS/NLoS classification task, the model reaches its peak performance of 0.9647 when utilizing the default channel embeddings. A notable observation is the performance disparity when switching to a mean-pooled token, which yields a significantly lower F1 score of 0.8985. The mean-pooled token is generated by averaging the latent embeddings across the entire sequence length, effectively compressing the high-dimensional spatial and frequency features into a single global vector. While this reduces the input dimensionality for the downstream head, the results suggest that this averaging process causes a loss of critical fine-grained information necessary for accurate environ-ment classification. Furthermore, the fact that the mean-pooled approach underperforms relative to the baseline indicates that this specific feature extraction method may require a more specialized LoRA configuration, adjusting 
+
+r and α or transitioning to distinct downstream head architecture to effectively process the reduced information density of the pooled tokens. The superior results achieved using the full channel embeddings confirm that retaining the detailed spatial hierarchy learned by the encoder is essential for high-fidelity wireless sensing applications. F. Impact of Masking Ratio and SNR The performance of the proposed model in regression-based tasks is further analyzed in Fig. 6, which illustrates the NMSE for channel estimation and interpolation across different training budgets and environmental conditions. The channel interpolation task is evaluated against a patch-wise masking ratio, which represents the percentage of missing channel data the model must reconstruct. Utilizing the default 25% masking ratio, the 100% budget model achieves an NMSE of -17.16 dB, significantly outperforming the -11.71 dB achieved with a 50% budget. An interesting phenomenon occurs at the 12.5% masking ratio, where the 100% budget model exhibits a slight worsening of NMSE (-16.17 dB) compared to its performance at 25%. This localized dip is not present in the 50% budget curve, suggesting a potential over-fitting to specific spatial struc-tures or a sensitivity in the attention mechanism when the masking density is too low to engage the model’s full recon-structive capabilities. As expected, performance for both budgets degrades as the masking ratio increases beyond 50%, though the model continues to provide meaningful reconstructions even when more than 75% of the channel patches are missing. The channel estimation results, plotted against varying SNR levels, demonstrate the high precision of the model in reconstructing channel state information. At the default SNR of 10 dB, the 100% budget model achieves a significant NMSE of -19.71 dB, which continues to improve toward a near-perfect reconstruction floor of approximately -21 dB as SNR increases. Interestingly, the model maintains respectable performance even in lower SNR regimes, successfully capturing channel characteristics despite increased noise levels. A notable performance gap is observed when the training budget is reduced to 50%; in this case, the NMSE plateaus around -12 dB for SNR levels above 15 dB. This indicates that while the encoder provides a strong feature base, the final fine-tuning of the residual heads for high-precision estimation is sensitive to the volume of task-specific training data. G. Latent Space Analysis and Topological Preservation The channel charting results in Fig. 7 demonstrate that the learned latent space closely preserves the global topol-ogy and spatial consistency of the physical environment, as reflected by the alignment between the ground truth coordinates and the latent representations, including the consistent color-coded spatial gradients. Although minor distortions remain, the encoder effectively maps complex CSI into a structured manifold that captures the geographic distribution of users. Notably, under a multi-task setting and limited labeled data, the model achieves a chart-ing score of 0.7718, significantly outperforming the base-line (0.6711), highlighting the effectiveness of the MAE-based framework with 2D positional encoding in learning spatially-aware and transferable channel representations. H. t-SNE Visualization of the Latent Space in mmWave Environments Fig. 8 illustrates the latent space representations for a Miami deployment scenario operating at 28 GHz, highlight-ing the robust cross-band generalization capabilities of the 13 
+
+Fig. 8. Latent space t-SNE embeddings for the 28 GHz Miami scenario. On the left the physical scene layout with the optimal DFT beams. Sequentially, the panels evaluate the clustering performance by comparing the 2D representations of the raw channel data, the LWM baseline, and WALoMA. proposed architecture. To effectively visualize these high-dimensional embeddings, we employ t-distributed stochas-tic neighbor embedding (t-SNE). As a non-linear dimen-sionality reduction technique, t-SNE maps complex, multi-dimensional feature vectors into a 2D space by modeling the similarities between data points as joint probabilities. By minimizing the Kullback-Leibler (KL) divergence between the high-dimensional and low-dimensional probability dis-tributions, t-SNE inherently preserves local data structures. Consequently, it forces similar channel features to cluster tightly together while pushing dissimilar, unrelated states further apart, making it highly effective for evaluating the discriminative power of a model’s latent space. Applying this technique to the Miami scenario, the plots demonstrate highly effective transfer learning to mmWave environments, even though the foundation model was exclusively pre-trained on sub-6 GHz datasets but inferred on a 28 GHz dataset. For the beam prediction task (NB “ 8), the proposed model exhibits superior spatial feature extraction compared to both the LWM baseline and the raw channel processing. The visualization reveals that the proposed framework visibly segregates each optimal discrete Fourier transform (DFT) beam class into distinct, tight clusters, whereas the baseline approaches produce significantly more scattered and overlapping manifolds. This well-structured latent space directly translates to predictive precision, allowing the model to achieve an 87% top-1 accuracy for beam prediction. The clear class separation confirms that the model successfully captures fundamental geometric properties of the propagation channel and retains the de-tailed spatial hierarchies essential for high-fidelity wireless sensing. VII. Conclusion This work presented a robust foundation model frame-work tailored for diverse wireless communication tasks, leveraging an MAE architecture optimized with 2D PE and parameter-efficient fine-tuning via LoRA. By treating the wireless channel as a structured image-like grid, the model successfully learned high-fidelity latent representations that generalize across classification, regression, and spatial man-ifold learning tasks. The numerical results demonstrate that the proposed solution consistently outperforms established baselines, particularly in data-constrained regimes, while requiring significantly fewer trainable parameters. Despite the extreme scarcity of data in certain scenarios, such as LoS/NLoS classification, the model maintains high predictive accuracy and spatial awareness. Ultimately, this research underscores the potential of foundation models to serve as a versatile backbone for next-generation wireless systems, providing a scalable path toward unified and data-efficient network intelligence. References                                     
+
+> [1] A. A. Shamsabadi, A. Yadav, Y. Gadallah, and H. Yanikomeroglu, “Exploring the 6G potentials: Immersive, hyperreliable, and low-latency communication,” IEEE Veh. Technol. Mag., vol. 20, no. 1, pp. 74–82, 2025. [2] S. Prasad Tera, R. Chinthaginjala, G. Pau, and T. Hoon Kim, “Toward 6G: An overview of the next generation of intelligent network connectivity,” IEEE Access, vol. 13, pp. 925–961, 2025. [3] Y. Chen, H. Shen, and C. Han, “Cross far-and near-field beam management technologies in millimeter-wave and terahertz MIMO systems,” IEEE Open J. of Veh. Technol., vol. 7, pp. 73– 107, 2026. [4] P. K. Gkonis, “A survey on machine learning techniques for massive MIMO configurations: Application areas, performance limitations and future challenges,” IEEE Access, vol. 11, pp. 67– 88, 2023. [5] N. Islam and S. Shin, “Deep learning in physical layer: Review on data driven end-to-end communication systems and their enabling semantic applications,” IEEE Open J. of the Commun. Society, vol. 5, pp. 4207–4240, 2024. [6] A. Abdallah, A. Celik, M. M. Mansour, and A. M. Eltawil, “RIS-aided mmwave MIMO channel estimation using deep learning and compressive sensing,” IEEE Trans. on Wirel. Commun., vol. 22, no. 5, pp. 3503–3521, 2023. [7] A. Abdallah, A. Celik, M. M. Mansour, and A. M. Eltawil, “Deep learning-based frequency-selective channel estimation for hybrid mmwave MIMO systems,” IEEE Trans. on Wirel. Commun., vol. 21, no. 6, pp. 3804–3821, 2022. [8] V. Yazdnian and Y. Ghasempour, “A multi-modal foundational model for wireless communication and sensing,” 2026. 14
+
+[9] X. Liu, S. Gao, B. Liu, X. Cheng, and L. Yang, “LLM4WM: Adapting LLM for wireless multi-tasking,” IEEE Trans. on Machine Learning in Commun. and Netw., vol. 3, pp. 835–847, 2025. [10] T. Yang, P. Zhang, M. Zheng, Y. Shi, L. Jing, J. Huang, and N. Li, “WirelessGPT: A generative pre-trained multi-task learning framework for wireless communication,” IEEE Network, vol. 39, no. 5, pp. 58–65, 2025. [11] T. Zheng and L. Dai, “Large language model enabled multi-task physical layer network,” IEEE Trans. on Commun., vol. 74, pp. 307–321, 2026. [12] A. Dosovitskiy, L. Beyer, A. Kolesnikov, D. Weissenborn, X. Zhai, T. Unterthiner, M. Dehghani, M. Minderer, G. Heigold, S. Gelly, J. Uszkoreit, and N. Houlsby, “An image is worth 16x16 words: Transformers for image recognition at scale,” 2021. [13] Z. Cao, W.-T. Shih, J. Guo, C.-K. Wen, and S. Jin, “Lightweight convolutional neural networks for CSI feedback in massive MIMO,” IEEE Commun. Lett.s, vol. 25, no. 8, pp. 2624–2628, 2021. [14] J. Guo, C.-K. Wen, S. Jin, and G. Y. Li, “Convolutional neural network-based multiple-rate compressive sensing for massive MIMO CSI feedback: Design, simulation, and analysis,” IEEE Trans. on Wirel. Commun., vol. 19, no. 4, pp. 2827–2840, 2020. [15] G. Fan, J. Sun, G. Gui, H. Gacanin, B. Adebisi, and T. Ohtsuki, “Fully convolutional neural network-based CSI limited feedback for FDD massive MIMO systems,” IEEE Trans. on Cognitive Commun. and Netw., vol. 8, no. 2, pp. 672–682, 2022. [16] Y. Zhu, X. Dong, and T. Lu, “An adaptive and parameter-free recurrent neural structure for wireless channel prediction,” IEEE Trans. on Commun., vol. 67, no. 11, pp. 8086–8096, 2019. [17] J. P. Lemayian and J. M. Hamamreh, “Recurrent neural network-based channel prediction in mMIMO for enhanced performance in future wireless communication,” in 2020 Int. Conf. on UK-China Emerging Technologies (UCET), pp. 1–4, 2020. [18] W. Jiang and H. D. Schotten, “Recurrent neural network-based frequency-domain channel prediction for wideband communi-cations,” in 2019 IEEE 89th Veh. Technol. Conf. (VTC2019-Spring), pp. 1–6, 2019. [19] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, L. Kaiser, and I. Polosukhin, “Attention is all you need,” 2023. [20] C. Luo, J. Ji, Q. Wang, X. Chen, and P. Li, “Channel state information prediction for 5G wireless communications: A deep learning approach,” IEEE Trans. on Network Science and Engi-neering, vol. 7, no. 1, pp. 227–236, 2020. [21] I. Helmy, P. Tarafder, and W. Choi, “LSTM-GRU model-based channel prediction for one-bit massive MIMO system,” IEEE Trans. on Veh. Technol., vol. 72, no. 8, pp. 11053–11057, 2023. [22] C. Nguyen, T. M. Hoang, and A. A. Cheema, “Channel esti-mation using CNN-LSTM in RIS-NOMA assisted 6G network,” IEEE Trans. on Machine Learning in Commun. and Netw., vol. 1, pp. 43–60, 2023. [23] A. Abdallah, A. Celik, M. M. Mansour, and A. M. Eltawil, “Multi-agent DRL for distributed codebook design in RIS-aided cell-free massive MIMO networks,” IEEE Trans. on Commun., Oct 2024. [24] A. Abdallah, A. Celik, M. M. Mansour, and A. M. Eltawil, “Multi-agent deep reinforcement learning for beam codebook design in RIS-aided systems,” IEEE Trans. on Wirel. Commun., Jan 2024. [25] M. Fabiani, A. Abdallah, A. Celik, O. Haliloglu, and A. M. Eltawil, “Unsupervised learning for distributed downlink power allocation in cell-free mMIMO networks,” IEEE Trans. on Ma-chine Learning in Commun. and Netw., vol. 3, pp. 644–658, 2025. [26] M. Makin, S. Arzykulov, A. Celik, A. M. Eltawil, and G. Nau-ryzbayev, “Optimal RIS partitioning and power control for bidi-rectional NOMA networks,” IEEE Trans. on Wirel. Commun., vol. 23, no. 4, pp. 3175–3189, 2024. [27] M. Makin, A. Celik, S. Arzykulov, A. M. Eltawil, and G. Nau-ryzbayev, “A unified optimization framework for multiple access in STAR-RIS-aided full-duplex systems,” IEEE Open J. of the Commun. Society, pp. 1–1, 2026. [28] B. Liu, X. Liu, S. Gao, X. Cheng, and L. Yang, “Foundation model for intelligent wireless communications,” 2025. [29] A. M. Nazar, A. Celik, M. Y. Selim, A. Abdallah, D. Qiao, and A. M. Eltawil, “ENWAR: A RAG-empowered multi-modal LLM framework for wireless environment perception,” IEEE Commun.Mag., pp. 1–8, 2026. [30] A. M. Nazar, A. Celik, M. Y. Selim, A. Abdallah, D. Qiao, and A. M. Eltawil, “ENWAR 2.0: An agentic multimodal wireless LLM framework with reasoning, situation-aware explainability and beam tracking,” IEEE Trans. on Mobile Computing, vol. 25, no. 4, pp. 5234–5252, 2026. [31] M. Cheraghinia, E. De Poorter, J. Fontaine, M. Debbah, and A. Shahid, “A foundation model for wireless technology recog-nition and localization tasks,” IEEE Open J. of the Commun. Society, vol. 6, pp. 9879–9896, 2025. [32] T. Zheng, J. Guo, L. Dai, S. Jin, and J. Zhang, “MUSE-FM: Multi-task environment-aware foundation model for wireless communications,” 2026. [33] S. Alikhani, G. Charan, and A. Alkhateeb, “Large wireless model (LWM): A foundation model for wireless channels,” 2024. [34] B. Guler, G. Geraci, and H. Jafarkhani, “A multi-task founda-tion model for wireless channel representation using contrastive and masked autoencoder learning,” IEEE J. on Sel. Areas in Commun., vol. 44, pp. 4489–4504, 2026. [35] A. Alkhateeb, “DeepMIMO: A generic deep learning dataset for millimeter wave and massive MIMO applications,” 2019.

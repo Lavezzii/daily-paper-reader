@@ -1,0 +1,346 @@
+Title: SignDeepSC: A Semantic Signature-based Approach for Robust Semantic Communication
+
+URL Source: https://arxiv.org/pdf/2607.25676v1
+
+Published Time: Wed, 29 Jul 2026 00:57:10 GMT
+
+Number of Pages: 5
+
+Markdown Content:
+# SignDeepSC: A Semantic Signature-based Approach for Robust Semantic Communication 
+
+Khalil Alhaj, Razane Tajeddine, and Hadi Sarieddeen Department of Electrical and Computer Engineering American University of Beirut, Beirut 1107 2020, Lebanon kma90@mail.aub.edu, razane.tajeddine@aub.edu.lb, hadi.sarieddeen@aub.edu.lb 
+
+Abstract —Semantic communication systems such as deep se-mantic communication (DeepSC) offer high efficiency but are vulnerable to adversarial attacks on their underlying neural networks. We address a physical-layer man-in-the-middle (MitM) threat in which an adversary injects perturbations into the trans-mitted signal to distort its meaning. We propose SignDeepSC, an architectural defense that achieves adversarial robustness without requiring explicit adversarial example generation during train-ing. The approach is built on a perceiver-inspired semantic sig-nature, a compact vector summary of the source features trans-mitted over a separate low-rate auxiliary channel. This signature is used by a self-repairing decoder that leverages cross-attention to correct distortions and can additionally drive a scrambler that shuffles the feature layout. We evaluate SignDeepSC over Rayleigh fading and additive white Gaussian noise channels under both single-step fast gradient sign method (FGSM) and iterative projected gradient descent (PGD) attacks. Under PGD (ϵ = 0 .7), at 12 dB signal-to-noise ratio with Rayleigh fading, SignDeepSC achieves a bilingual evaluation understudy (BLEU-4) score of 0.237 and bidirectional encoder representations from transformers (BERT) sentence similarity of 0.646, outperforming all baselines without degrading clean-channel performance, when the signature channel is well protected. 
+
+Index Terms —Semantic communication, DeepSC, secure com-munication, adversarial robustness, deep learning. 
+
+I. I NTRODUCTION 
+
+Semantic communication aims to transmit the intended meaning of a message rather than its exact bit-level represen-tation [1], [2]. Deep semantic communication (DeepSC) [3] is a representative framework that leverages a transformer-based encoder–decoder architecture [4] to jointly perform source and channel coding in an end-to-end manner, enabling efficient semantic transmission. However, its reliance on deep neural networks makes it inherently vulnerable to adversarial attacks [5], [6]. In practice, this vulnerability enables a physical-layer man-in-the-middle (MitM) attack, in which an adversary injects a perturbation into the transmitted signal, causing the receiver to output a message with altered meaning [7]. Existing defenses broadly fall into two categories [8]. Model-level defenses such as adversarial training [5], [9] and robust encoding [10] modify the main transceiver and can 
+
+This work is supported by the American University of Beirut University Research Board and Vertically Integrated Projects Program. © 2026 IEEE. Personal use of this material is permitted. Permission from IEEE must be obtained for all other uses, in any current or future media, including reprinting/republishing this material for advertising or promotional purposes, creating new collective works, for resale or redistribution to servers or lists, or reuse of any copyrighted component of this work in other works. 
+
+degrade clean-channel accuracy. Auxiliary-channel defenses transmit side information to aid recovery. For example, the se-mantic protection (SemProtector) framework, and specifically its SemRECT module [11], trains a Wasserstein generative adversarial network (GAN) on clean encoder outputs and requires computationally costly per-sentence gradient opti-mization at inference. To the best of our knowledge, the impact of side-channel quality on semantic communication robustness under auxiliary-channel defenses has not been studied. To address these gaps, we propose SignDeepSC, an architecture-level defense for the physical-layer MitM threat that achieves robustness without requiring adversarial noise injection during training. Instead of modifying the transceiver or running costly per-sentence optimization, SignDeepSC transmits a compact perceiver-inspired [12] semantic signa-ture over a side channel and feeds it into a self-repairing decoder that introduces signature-conditioned cross-attention at each transformer decoder layer. The use of clean auxiliary information as cross-attention keys and values to condition a corrupted representation follows the same principle as in latent diffusion models [13] and reference-based restoration [14]: because the signature is transmitted over an independent channel, it is less affected by attacks on the main signal; each decoder layer then queries this clean reference via cross-attention to correct corrupted features before producing its output. Inspired by [15], we also include a scrambler that derives a permutation seed κ from the signature to shuffle the feature layout, disrupting the spatial locality exploited by gradient-based attacks. SignDeepSC preserves clean-channel accuracy and requires only a single forward pass at inference. We additionally present a sensitivity analysis of side-channel quality on defense performance. Our main contributions are as follows:  
+
+> •
+
+A perceiver-inspired semantic signature generator for compact side-channel transmission.  
+
+> •
+
+A self-repairing decoder with signature-conditioned cross-attention and gated fusion, and a scrambler that ob-fuscates feature layout via a signature-derived invariant κ. 
+
+> •
+
+Evaluation across Rayleigh and additive white Gaussian noise (AWGN) channels, including a side-channel sensi-tivity study for auxiliary-channel defenses, a component ablation, and a joint attack analysis considering white-box attacks on both channels. arXiv:2607.25676v1 [cs.CR] 28 Jul 2026 II. S YSTEM MODEL AND PROBLEM FORMULATION 
+
+We consider the semantic communication system shown in Fig. 1. Source text x of length L is encoded into semantic features Z = fenc (x), scrambled into Zsc , and transmitted as 
+
+Tx = genc (Zsc ) over a Rayleigh fading channel h ∼ CN (0 , 1) 
+
+with additive white Gaussian noise. The receiver recovers Z′ =
+
+gdec (Rx) and reconstructs the output ˆx = fdec (Z′, s′), where 
+
+s′ is the received signature transmitted over the independent side channel. We investigate a physical-layer MitM attack under the following threat model:  
+
+> •
+
+Knowledge: The adversary has white-box access only to the architecture and weights of the shared main-channel path; it cannot access the signature generator, side-channel codec, or scrambler/inverse-scrambler, since these depend on content carried by the inaccessible side channel, and hence cannot include them in its gradient computation.  
+
+> •
+
+Access: The adversary can intercept and modify the main data channel but cannot access the signature side-channel. This models a physically separated link (e.g., a different frequency band or a low-rate coded sub-carrier) for the low-bandwidth signature. We relax this assumption in Section V by evaluating joint attacks on both channels. Under this threat model, the received signal becomes Rx =
+
+h(Tx + δ), and the receiver, unaware of the attack, produces an output ˆx′ with distorted meaning. III. T HE PROPOSED SIGN DEEP SC A PPROACH 
+
+As shown in Fig. 1, SignDeepSC adds three components to the baseline DeepSC transceiver: a signature generator, a signature-conditioned scrambler, and a self-repairing decoder. The core insight is that adversarial attacks corrupt a high-dimensional feature space, while the compact signature pro-vides a low-dimensional clean anchor; cross-attention then projects corrupted features toward the clean manifold defined by this anchor, effectively converting robustness into represen-tation alignment. 
+
+A. Signature Generator 
+
+The signature generator maps the semantic feature matrix 
+
+Z ∈ RL×dmodel to a compact signature sclean ∈ Rdsig . Inspired by the perceiver [12], a learnable aggregator token pagg ∈ Rdmodel 
+
+is prepended to form Zaug = [ pagg , Z] and processed via multi-head self-attention [4]. The updated token p′
+
+> agg
+
+, which attends to all positions, is then projected as 
+
+sclean = Wproj p′ 
+
+> agg
+
++ bproj , (1) where Wproj ∈ Rdsig ×dmodel . The resulting sclean is passed through a dedicated channel encoder for transmission. 
+
+B. Signature-Conditioned Scrambler 
+
+To defend against attacks that exploit feature arrangement, we permute the feature sequence using a signature-derived invariant κ. We define κ as a robust signature invariant 
+
+computed via a difference hash (dHash) of s ∈ Rdsig :
+
+κ =
+
+> Nbits
+
+X
+
+> i=1
+
+1
+
+
+
+si+∆ − si > 0
+
+
+
+· 2 i−1. (2) Because κ encodes only relative sign differences, it remains stable under moderate channel noise. Both the transmitter and receiver independently compute the same κ and apply inverse permutations. The hash-based permutation acts as a heuristic defense that disrupts gradient-based attacks by breaking fea-ture locality; as this relies on a non-differentiable operation, it does not provide cryptographic security guarantees and may raise concerns of gradient masking [16], though it remains robust to signature noise (Fig. 3) and requires no additional training or channel. 
+
+C. The Self-Repairing Decoder 
+
+The key idea is to provide the decoder with clean ref-erence information at every layer. The signature tokens act as uncorrupted keys and values that each decoder position can attend to. A dedicated multi-head cross-attention block is inserted after each self-attention layer. We note that using s′
+
+directly as a single key collapses the softmax to unity, resulting in vanishing key and value gradients. To restore attention diversity, a signature unpacker at the receiver splits s′ into 
+
+N chunks s′ 
+
+> i
+
+∈ Rc, where c = dsig /N and i = 1 , . . . , N , and projects each: 
+
+ti = LN( Wup s′ 
+
+> i
+
++ bup ), (3) 
+
+S = [ t1; . . . ; tN ] ∈ RN ×dmodel , (4) where LN( ·) denotes LayerNorm (per-token zero-mean, unit-variance normalization) and Wup ∈ Rdmodel ×c, with no addi-tional transmission cost. The decoder features Xdec query the 
+
+N tokens: 
+
+Q = Xdec WQ, K = SW K , V = SW V , (5) 
+
+Asig = softmax 
+
+ QK ⊤
+
+√dk
+
+
+
+V. (6) The correction is fused via a gated recurrent unit (GRU)-style gate [17]: 
+
+g = σ(Wg [Xdec ∥Asig ] + bg ), (7) 
+
+X′ 
+
+> dec
+
+= LN((1 −g) ⊙ Xdec + g ⊙ Asig ) , (8) where σ denotes the sigmoid function, ∥ concatenation, and 
+
+⊙ element-wise multiplication. The bias bg is positively initialized to favor reliance on signature. This block is placed before encoder cross-attention, priming the decoder with clean signal information before processing the corrupted features. 
+
+D. Channel Transmission and Training 
+
+We use a single signature vector with dsig = dmodel , provid-ing a compact summary of the L × dmodel feature matrix. Both 
+
+Z and sclean are passed through dedicated channel encoders for compression and transmission. We freeze the original DeepSC sender weights and train only the signature generator and self-repairing decoder, ensuring backward compatibility. Training follows a two-phase strategy: Phase 1 optimizes the signature TRANSMITTER RECEIVER    
+
+> Semantic encoder Scrambler Channel encoder
+> Wireless channel
+> Channel decoder Scrambler −1
+> Self-repairing decoder
+> Signature generator
+> Channel encoder
+> Sig. channel
+> Channel decoder
+> Adversary
+
+source 
+
+output          
+
+> δ
+> ZZsc TXRXZ′
+> sc Z′
+> sclean tsig rsig s′
+> sclean s′
+
+Fig. 1: Proposed SignDeepSC architecture. Source text is encoded into Z, permuted by a signature-keyed scrambler into Zsc ,and transmitted as TX. In parallel, Z is compressed into sclean , encoded, and sent as tsig over a side channel. At the receiver, 
+
+Z′ is recovered from Zsc using s′, and the self-repairing decoder reconstructs the output from Z′ and s′. An adversary injects 
+
+δ into the main channel, while the side channel remains inaccessible. channel codec alone under a mean squared error (MSE) loss to maximize dHash stability, achieving >99% hash match at a signature signal-to-noise ratio (SNR) of SNR sig =18 dB; Phase 2 freezes the Phase-1 codec and fine-tunes all remaining components jointly. The signature is transmitted over a secure side-channel. To encourage the decoder to rely on the signature, we employ a 
+
+memory replacement strategy: during training, the main input 
+
+Z′ is stochastically replaced with Gaussian noise N using m ∼
+
+Bernoulli (pdrop ),
+
+˜Z′ = (1 − m) · Z′ + m · N, (9) causing pdrop to be annealed during training, and encouraging the decoder to use s′ for reconstruction. IV. E XPERIMENTAL SETUP 
+
+A. Adversarial Attack Models 
+
+Both attacks construct an additive perturbation δ injected into the transmitted signal Tx, constrained by ∥δ∥∞ ≤ ϵ, that maximizes the end-to-end semantic loss Lsem (Tx + δ).FGSM [5] computes the perturbation in a single gradient step: 
+
+δFGSM = ϵ · sign( ∇Tx Lsem ) . (10) PGD [6] refines the perturbation over T projected steps, initialized from δ0 ∼ U [−ϵ, ϵ ]:
+
+δt+1 = Π ϵ(δt + α · sign( ∇Tx Lsem (Tx + δt))) , (11) where Πϵ projects onto the ℓ∞-ball of radius ϵ, α = ϵ/T is the step size, and T =10 .
+
+B. DeepSC Architecture 
+
+All models share the same base DeepSC architecture: a 4-layer transformer with dmodel =128 and 8 attention heads, trained on Europarl-v7 English text (maximum sequence length 30). Training uses Rayleigh fading channels; we ad-ditionally evaluate on AWGN. To ensure a fair comparison, 
+
+neither SignDeepSC nor SemRECT is trained with adversarial perturbations ; adversarial training (AdvTrain) uses PGD-10 at ϵ=0 .1 during training, following standard mixed adver-sarial training [9]. All models are then evaluated at the stronger ϵ=0 .7 to assess out-of-distribution robustness. Each experiment is repeated over three independent Monte Carlo seeds; results report mean ± standard deviation. The signature is transmitted at SNR sig =20 dB (trained at 18 dB). Channel encoders compress to dc=16 , the signature unpacker uses 
+
+N =8 tokens, bg =2 .0, dHash stride ∆=4 with Nbits =16 , and 
+
+pdrop is annealed from 0.7 to 0.1. 
+
+C. Baselines 
+
+We compare SignDeepSC against three baselines:  
+
+> •
+
+DeepSC [3]: The undefended base model.  
+
+> •
+
+AdvTrain [5], [9]: The base DeepSC model fine-tuned with mixed adversarial training, L = (1 −α)Lclean +αLadv ,with α=0 .5 and 10-step PGD perturbations at ϵ=0 .1. 
+
+> •
+
+SemRECT [11]: A GAN-based calibration defense in which the receiver fuses the GAN reconstruction with corrupted features via a simple calibrator MLP. SemRECT solves, per sentence: 
+
+z∗ = arg min 
+
+> z
+
+Lsem (G(z)) + λ Lcal (z), (12) where G is the GAN generator and Lcal is the calibrator loss. Our SemRECT implementation follows [11], with hyperpa-rameters tuned for our dataset, and assumes a simple MLP calibrator, as the original work does not specify the exact architecture. 
+
+D. Overhead Analysis 
+
+SignDeepSC adds three lightweight components to the base DeepSC transceiver: (i) a two-layer signature generator, (ii) a dedicated signature channel codec, and (iii) one cross-attention block with gated fusion per decoder layer, totaling approximately 967K trainable parameters (9% of the 10.58M base). After channel encoding ( dc dimensions), the main data occupies L × dc channel uses, and the signature adds only dc,corresponding to a 3.3% bandwidth overhead for the typical 
+
+L=30 setting. The signature summarizes L × dmodel features TABLE I: AWGN channel, SNR = 12 dB, ϵ = 0 .7. All models trained on Rayleigh only. Mean over 3 seeds; std < 0.003 for all entries.             
+
+> Clean FGSM PGD Model BLEU Sim BLEU Sim BLEU Sim DeepSC 0.739 0.875 0.070 0.537 0.033 0.510 AdvTrain 0.659 0.850 0.184 0.645 0.093 0.614 SemRECT 0.764 0.869 0.200 0.562 0.145 0.532 SignDeepSC 0.833 0.918 0.278 0.654 0.278 0.659
+
+into a single dsig -dimensional vector, while cross-attention selectively repairs corrupted dimensions. In contrast to Sem-RECT, which reconstructs corrupted features via a GAN-scale generator requiring per-sentence gradient optimization, Sign-DeepSC replaces GAN-based reconstruction with attention conditioning [13] at a single forward pass. V. R ESULTS AND ANALYSIS 
+
+We evaluate performance using the bilingual evaluation un-derstudy (BLEU-4) score for grammatical accuracy and a bidi-rectional encoder representations from transformers (BERT)-based sentence similarity (Sim) metric for semantic fidelity. Unless otherwise noted, adversarial evaluations use ϵ = 0 .7
+
+over a Rayleigh fading channel. 
+
+Comparison with baselines: Figure 2 shows performance across SNR for the Rayleigh channel. At SNR = 12 dB (3-seed Monte Carlo means), DeepSC collapses under attack (FGSM BLEU = 0.058). AdvTrain recovers partially but in-curs a 13% clean penalty ( 0.682 →0.591 ), and PGD BLEU reaches only 0.084. SemRECT achieves slightly higher FGSM BLEU (0.169 vs. 0.155) but lower similarity (0.541 vs. 0.624): its GAN recovers some n-grams (i.e., short word sequences) but fuses them poorly, while AdvTrain outputs more coherent sentences. SignDeepSC leads across all metrics without adversarial training (FGSM BLEU = 0.233 ±0.011 ,Sim = 0.631 ±0.005 ; PGD BLEU = 0.237 ±0.005 ). Because the original encoder is frozen and the signature acts as additive side information, robustness improves without constraining the main feature path, resulting in no clean-channel penalty. 
+
+Signature channel sensitivity: Fig. 3 sweeps SNR sig from 0 to 20 dB at a main SNR of 12 dB (Rayleigh, no adversarial perturbation). The hash match rises sharply from 54% at 0 dB to ≥94% above 10 dB; BLEU and similarity follow the same trend, confirming that a moderate-quality side channel suffices. 
+
+Cross-channel generalization: All models are trained on Rayleigh fading only. Table I reports performance on AWGN at SNR = 12 dB, ϵ = 0 .7. SignDeepSC leads across all six metrics without any clean-accuracy penalty. All models im-prove relative to Rayleigh fading, confirming cross-channel generalization without retraining. 
+
+Component ablation : In Table II, ablated variants are ob-tained by removing the named component(s) from the trained SignDeepSC model, without retraining; this isolates each component’s learned contribution rather than the capacity of an architecture trained without it. The memory-replacement curriculum ( pdrop annealed from 0.7) trains the decoder to rely TABLE II: Component ablation at SNR = 12 dB, Rayleigh fading, ϵ=0 .7           
+
+> Clean FGSM PGD Configuration BLEU Sim BLEU Sim BLEU Sim No Signature 0.004 0.456 0.000 0.414 0.000 0.412 No Repair (Sig+Scr) 0.004 0.457 0.001 0.426 0.002 0.431 No Scrambler (Sig+Rep) 0.795 0.901 0.250 0.641 0.226 0.634 Full SignDeepSC 0.778 0.893 0.375 0.711 0.537 0.783
+
+TABLE III: Joint attack: Main ϵ=0 .7, varying ϵsig , Rayleigh fading at 12 dB.                          
+
+> FGSM PGD
+> ϵsig BLEU-4 Sim BLEU-4 Sim 0.0 0.244 0.638 0.238 0.639 0.1 0.259 0.653 0.050 0.553 0.3 0.244 0.641 0.048 0.549 0.5 0.226 0.627 0.046 0.541 0.7 0.228 0.626 0.042 0.530
+
+heavily on the signature-conditioned repair path, so removing it post hoc, rather than retraining without it, collapses BLEU even absent an attack; removing the signature also breaks descrambling. 
+
+Signature channel attack analysis: We now relax the side-channel assumption to quantify resilience under compromise. 
+
+max  
+
+> δm,δs
+
+Lsem 
+
+ Tx+δm, Ts+δs
+
+ s.t. ∥δm∥∞≤ϵ, ∥δs∥∞≤ϵsig ,
+
+(13) where Ts is the transmitted signature signal. For FGSM, both perturbations are computed in a single gradient step; for PGD, both are iteratively refined following (11). Table III fixes ϵ=0 .7
+
+on the main channel and sweeps ϵsig .FGSM on the signature reduces BLEU by only 7%, confirming robustness to weak side-channel interference. A white-box PGD attack degrades performance more sharply (0.238 →0.050), but it requires access to the signature channel itself; because the signature is low-bandwidth, that channel can be protected efficiently using standard measures such as hopping or encryption. VI. C ONCLUSION 
+
+We proposed SignDeepSC, which leverages a compact semantic signature and cross-attention conditioning to de-fend semantic communication against physical-layer MitM attacks. Unlike adversarial training or GAN-based reconstruc-tion, SignDeepSC requires no adversarial examples during training and operates with a single forward pass at inference. Experiments on Rayleigh fading and AWGN channels demon-strate consistent gains over all baselines under both clean and adversarial conditions. These gains hold primarily when the low-bandwidth signature channel is well protected. REFERENCES [1] Zhijin Qin, Xiaoming Tao, Jianhua Lu, Wen Tong, and Geoffrey Ye Li, “Semantic communications: Principles and challenges,” 2022. [2] T. M. Getu, G. Kaddoum, and M. Bennis, “Semantic communication: A survey on research landscape, challenges, and future directions,”       
+
+> Proceedings of the IEEE , vol. 112, no. 11, pp. 1649–1685, 2024. 036912 15 18
+> 0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+
+SNR (dB) 
+
+> BLEU-4
+
+Clean – BLEU-4       
+
+> 036912 15 18
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+
+SNR (dB) 
+
+> Similarity
+
+Clean – Similarity       
+
+> 036912 15 18
+> 0
+> 0.1
+> 0.2
+> 0.3
+
+SNR (dB) 
+
+> BLEU-4
+
+Under Attack – BLEU-4       
+
+> 036912 15 18
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+
+SNR (dB) 
+
+> Similarity
+
+Under Attack – Similarity      
+
+> DeepSC AdvTrain SemRECT SignDeepSC FGSM PGD
+
+Fig. 2: Rayleigh channel performance vs. SNR, ϵ = 0.7. Top: clean-channel; bottom: under attack (solid = FGSM, dashed = PGD).      
+
+> 0610 16 18 20
+> 0
+> 0.5
+> 1
+
+SNR sig (dB) 
+
+> Score
+> Hash Match
+> BLEU-4
+> BERT Sim
+
+Fig. 3: Signature channel sensitivity at main SNR = 12 dB, Rayleigh fading. Dashed line: training point (SNR sig =18 dB). 
+
+[3] Huiqiang Xie, Zhijin Qin, Geoffrey Ye Li, and Biing-Hwang Juang, “Deep learning enabled semantic communication systems,” IEEE Transactions on Signal Processing , vol. 69, pp. 2663–2675, 2021. [4] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, Ł. Kaiser, and I. Polosukhin, “Attention is all you need,” in Advances in Neural Information Processing Systems , 2017, pp. 5998–6008. [5] I. J. Goodfellow, J. Shlens, and C. Szegedy, “Explaining and harnessing adversarial examples,” in International Conference on Learning Repre-sentations (ICLR) , 2015. [6] A. Madry, A. Makelov, L. Schmidt, D. Tsipras, and A. Vladu, “Towards deep learning models resistant to adversarial attacks,” in International Conference on Learning Representations (ICLR) , 2018. [7] M. Sadeghi and E. G. Larsson, “Physical adversarial attacks against end-to-end autoencoder communication systems,” IEEE Communications Letters , vol. 23, no. 5, pp. 847–850, 2019. [8] S. Guo, Y. Wang, N. Zhang, Z. Su, T. H. Luan, Z. Tian, and X. (Sherman) Shen, “A survey on semantic communication networks: Architecture, security, and privacy,” IEEE Communications Surveys & Tutorials , 2024. [9] G. Nan, Z. Li, J. Zhai, Q. Cui, G. Chen, X. Du, X. Zhang, X. Tao, and Z. Han, “Physical-layer adversarial robustness for deep learning-based semantic communications,” IEEE Journal on Selected Areas in Communications , vol. 41, no. 8, pp. 2456–2472, 2023. [10] X. Peng, Z. Qin, X. Tao, J. Lu, and L. Hanzo, “A robust semantic text communication system,” IEEE Transactions on Wireless Communica-tions , vol. 23, no. 9, pp. 11372–11385, 2024. [11] X. Liu et al., “SemProtector: A unified framework for semantic protection in deep learning-based semantic communication systems,” 
+
+IEEE Communications Magazine , vol. 61, no. 11, pp. 56–62, 2023. [12] A. Jaegle, F. Gimeno, A. Brock, A. Zisserman, O. Vinyals, and J. Carreira, “Perceiver: General perception with iterative attention,” in 
+
+International Conference on Machine Learning (ICML) , 2021. [13] R. Rombach, A. Blattmann, D. Lorenz, P. Esser, and B. Ommer, “High-resolution image synthesis with latent diffusion models,” in IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , 2022, pp. 10684–10695. [14] F. Yang, H. Yang, J. Fu, H. Lu, and B. Guo, “Learning texture trans-former network for image super-resolution,” in IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , 2020, pp. 5791– 5800. [15] F. Chen, L. Xiang, H. Sun, H. V. Cheng, and K. Shen, “Shuffling for semantic secrecy,” IEEE Transactions on Information Forensics and Security , vol. 20, pp. 5240–5255, 2025. [16] Anish Athalye, Nicholas Carlini, and David Wagner, “Obfuscated gradients give a false sense of security: Circumventing defenses to adversarial examples,” in International Conference on Machine Learning (ICML) , 2018, pp. 274–283. [17] K. Cho, B. van Merri¨ enboer, C. Gulcehre, D. Bahdanau, F. Bougares, H. Schwenk, and Y. Bengio, “Learning phrase representations using RNN encoder-decoder for statistical machine translation,” in Conference on Empirical Methods in Natural Language Processing (EMNLP) , 2014, pp. 1724–1734.

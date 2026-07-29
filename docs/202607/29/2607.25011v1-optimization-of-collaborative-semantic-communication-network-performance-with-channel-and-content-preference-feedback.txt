@@ -1,0 +1,1722 @@
+Title: Optimization of Collaborative Semantic Communication Network Performance with Channel and Content Preference Feedback
+
+URL Source: https://arxiv.org/pdf/2607.25011v1
+
+Published Time: Wed, 29 Jul 2026 00:11:34 GMT
+
+Number of Pages: 14
+
+Markdown Content:
+> 1
+
+# Optimization of Collaborative Semantic Communication Network Performance with Channel and Content Preference Feedback 
+
+## Defeng Zhou, Dongyu Wei, Graduate Student Member, IEEE, Siyao Li, Mingzhe Chen, Senior Member, IEEE 
+
+Abstract —Semantic communications is attracting attention due to its ability to transmit data meaning rather than raw bits. However, existing semantic communication frameworks treat and transmit all image regions with equal importance, which is not practical for real-world applications which may prioritize different content in an image. To address this issue, we propose a novel semantic communication framework that enables a transmitter to use limited channel and content feedback to prioritize the transmission of important image regions. In particular, in the proposed framework, a base station (BS) divides each image into sub-images, extracts their semantic information, and transmits them to users according to their preferences. The users will reconstruct the image based on the received sub-images and cooperatively decide when to send channel state information (CSI) or content-preference feedback under dynamic channels and limited resources. We formulate an optimization problem to minimize the semantic-weighted mean square error between the original image and the regenerated image by optimizing sub-channel allocation, users’ power allocation, and feedback selection. To address this problem, a value decomposition actor-critic (AC) with dynamic neighborhood construction (VDAC-DNC) scheme is proposed. The proposed method combines AC with value decomposition networks to allow the BS to approximate discrete actions by a continuous action distribution, thus reducing the output dimension and improving training efficiency. The introduced DNC method further improves training efficiency by constructing a small discrete neighboring action space to search for an action with the maximum Q value, thus avoiding traversing the large discrete action space. Simulation results show that the proposed VDAC-DNC scheme can improve the performance by up to 5.04% and 18.55% compared to the standard multi-agent QAC method and the proposed method without feedback transmission. 
+
+Index Terms —Semantic communication, image transmission, content preference feedback, actor-critic. 
+
+I. I NTRODUCTION 
+
+The integration of communication and artificial intelligence (AI) is moving wireless communications beyond bit-level transmission toward meaning-level exchange [1], [2]. In this paradigm, semantic communication (SC) has emerged as a key technique, enabling transmitters to extract and transmit the “meaning” of data rather than raw bits, thereby allowing receivers to reconstruct the data or infer task outputs (e.g., classification labels [3], answers [4]) with significant reduced 
+
+Defeng Zhou, Dongyu Wei, and Mingzhe Chen are with the Department of Electrical and Computer Engineering, University of Miami, Coral Gables, FL, 33146, USA (e-mail: {defengzhou, dongyu.wei, mingzhe.chen}@miami.edu) Mingzhe Chen is also with the Frost Institute for Data Science and Computing, University of Miami, Coral Gables, FL 33146 USA. Siyao Li is with the Department of Electrical Engineering and Computer Science, Embry-Riddle Aeronautical University, Daytona Beach, FL 32114, USA (email: lis14@erau.edu) 
+
+latency and resource consumption [5]. However, deploying SC techniques over wireless networks faces several challenges including: 1) data meaning extraction and representation, 2) semantic information allocation in dynamic wireless networks, and 3) content feedback-assisted semantic communication method design. 
+
+A. Related Works 
+
+Recently, several works in [6]–[10] have studied the opti-mization of image transmission in different wireless networks. In [6], the authors designed a deep joint source-channel coding (JSCC) scheme that adapts its compression rate to channel conditions by training a policy network to select features from the image that need to transmit. The author in [7] investigated an end-to-end JSCC design by unifying the coding rate reduction maximization and the mean square error (MSE) minimization for image recovery and classification simultaneously. The au-thor in [8] proposed probabilistic graph-based method for image transmission, enabling semantic information to be compressed and transmitted more accurately while reducing communication energy consumption. The authors in [9] introduced a simple code-mask–based JSCC that adjusts the compression rate to meet a target image quality (e.g., peak signal to noise ratio) under different wireless networks. In [10], the authors employ Swin Transformer to extract semantic information of image and scaled the latent representation according to channel state information (CSI), enhancing the ability of the model to deal with various channel conditions. However, the works in [6]– [10] treat all image regions with equal importance, which is not practical for real-world users who prioritize different content (e.g., a “car” content may be more semantically relevant than the “sky” in a traffic scenario). Without accounting for content preference, transmitters may waste bandwidth on irrelevant background features while important regions suffer from distortion. To address this problem and further improve transmission reliability, feedback mechanisms are essential. The benefit of CSI feedback in downlink transmission has also been studied in capacity region [11] and stability region [12]. The authors in [13] and [14] integrated channel feedback into semantic image transmission. In particular, the work in [13] used CSI feedback to adjust the compression rate of each image. The authors in [14] sent the decoder’s current estimation regarding to the source image to the transmitter so as to update the encoder and mitigate the impact of channel noise on end-to-end reconstruction quality. The authors in [15] simply prioritized arXiv:2607.25011v1 [cs.NI] 27 Jul 2026 2
+
+the foreground of the image and transmitted it while masking less informative background. The authors in [16] divided image regions into two parts: regions of interest (ROI) and regions of non-interest (RONI), and designed an SC neural network that can preserve more information to transmit the ROI regions with high quality while transmitting RONI with data compression. The authors in [17] considered a collaborative inference between the transmitter and receiver, and investigated the use of inference results of the receiver to optimize quantization bit-width and computation frequencies of the transmitter, so as to improve inference efficiency. However, current works in [13]– [17] did not consider how dynamic wireless channels and user data preference affect semantic image transmission. Specifically, with imperfect CSI, the transmitter may overestimate a poor channel thus resulting in packet loss, or underestimate a good channel to waste bandwidth. Meanwhile, without data preference information, important image components may be scheduled on poor channels while less important regions are protected, which may increase semantic distortion and reduce task accuracy. Hence, when considering both dynamic wireless channels and user data preference, users must trade off between sending CSI to inform the base station (BS) about the status of wireless channels as well as sending content preference information to request important content. A number of existing works have investigated reinforcement learning (RL) for optimizing semantic communication perfor-mance. The authors in [18] proposed a deep reinforcement learning driven joint position and power optimization algorithm to maximize the semantic data transmission throughput. In [19], an attention-based RL algorithm was developed to analyze the relationship between the original data and its semantic information. However, these works [18], [19] do not consider the cooperation among different agents. Consequently, each agent’s performance will be affected by the actions of other agents, thus reducing the transmission performance achieved by RL. To address the performance degradation caused by the lack of collaboration among different agents, the authors in [20] proposed a value decomposition-based deep Q-learning scheme multi-agent RL (MARL) to minimize the average transmission latency. The authors in [21] utilized a multi-agent deep deterministic policy gradient (MADDPG)-based MARL to dynamically allocate channels and power for transmission. Nonetheless, these RL algorithms in [20], [21] struggle to scale to large discrete action spaces since they must evaluate and explore a huge number of actions [22]. 
+
+B. Contributions 
+
+The main contribution of our work is a novel channel and content preference feedback enabled SC framework that enables multiple users to use limited channel and content feedback for efficient and accurate image data transmission. The key contributions include:  
+
+> •
+
+We consider a novel channel and content preference feedback enabled SC framework in which a BS transmits the images to a set of users while users cooperatively transmit the feedback to the BS for further efficient and accurate image data transmission. In particular, the BS first divides the images into several sub-images according to image content and allocates these sub-images to different sub-channels and sends them to each user using SC techniques. After receiving the sub-images, users may transmit the CSI feedback or content preference feedback to assist the BS in subsequent sub-image transmission. Considering limited power for each user and the limited uplink bandwidth, users must cooperate to transmit the feedback under the required latency. To minimize the semantic-weighted MSE between the original images and the images regenerated by users, we formulate an optimization problem aiming to minimize MSE while satisfying the feedback transmission latency requirements of users by optimizing the BS’s sub-image allocation, user power allocation and feedback selection.  
+
+> •
+
+To solve the optimization problem, a value decomposition-based actor-critic with dynamic neighborhood construction (VDAC-DNC) method is proposed, which enables the BS to allocate the sub-channel and users feedback selection and power allocation cooperatively. Different from the standard value decomposition-based networks (VDN) [23], the proposed method combines actor-critic with VDN, which allows the BS to approximate the discrete actions by a continuous action distribution, thus reducing the output dimension and improving RL training efficiency.  
+
+> •
+
+To further improve the training efficiency, the introduced DNC method finds a better discrete action from the continuous action per RL iteration. In particular, the DNC method constructs a small discrete neighboring action space to search for an action with the maximum Q value, thus avoiding traversing the large discrete action space. In particular, the DNC uses a continuous action produced by a continuous policy, which is easier to optimize than a complex discrete policy over large discrete action spaces, to construct a small discrete neighboring action space. Then, DNC searches for an action with the maximum 
+
+Q value from the small neighboring action space, thus avoiding traversing the large discrete action space. Simulation results show that the proposed VDAC-DNC scheme can improve the performance by up to 5.04%, 12.43%, and 18.55% compared to the standard multi-agent QAC (MAQAC) method [24], independent Q method, and the proposed method without CSI and content preference feedback information. Meanwhile, the proposed method with DNC achieves a 2.9x-5.3x speedup over the proposed method without DNC while maintaining performance. The rest of this paper is organized as follows. The pro-posed channel and content preference feedback enabled SC framework and problem formulation are described in Sec-tion II. The proposed VDAC-DNC scheme for optimizing sub-image allocation, power allocation and feedback selection is introduced in Section III. In Section IV, we analyze the convergence, implementation and complexity of the proposed scheme. Numerical simulation results are shown and analyzed in Section V. Finally, Section VI concludes this paper. 3 
+
+> Fig. 1. Channel and preference feedback enabled semantic communication framework
+
+II. S YSTEM MODEL AND PROBLEM FORMULATION 
+
+We consider a channel and preference feedback enabled SC system where a BS sends images to a set V of v users using SC techniques, as illustrated in Fig. 1. In particular, to send an image to a user, the BS divides the image into several sub-images according to image content. For example, the BS will extract "palm", "sky" and "water" from the original image and generate three sub-images. Then, the BS uses a variational autoencoder (VAE) based semantic encoder [25] to encode sub-images according to the downstream applications (e.g., image classification or object detection) of the receiver. Hereinafter, we define the output of the semantic encoder as the semantic information of the sub-image. The BS will allocate sub-image semantic information to different sub-channels and send them to the receiver over time-varying wireless channels. At the receiver, a semantic decoder is used to reconstruct sub-images. Then, the receiver merges the sub-images to regenerate the original image. Based on the regenerated image, the receiver will send CSI (i.e., the representation of successfully received sub-images) or content preference feedback (i.e., the importance of different sub-image categories) to the BS such that the BS can optimize sub-image allocation and feedback selection to improve semantic transmission performance. The designed framework can be used for applications that need to transmit images such as autonomous driving, traffic monitoring, remote inspection, and sensing. Next, we first introduce the methods used for semantic information extraction. Then we introduce the semantic information transmission model and image reconstruction. Finally, we formulate the optimization problem. 
+
+A. Semantic Information Extraction 
+
+Semantic information extraction includes three key steps: 1) sub-image extraction, 2) semantic information generation, and 3) sub-image compression, which will be introduced in detail as follows. 
+
+1) Sub-image Extraction: We use the method in [26] to divide an image into several sub-images according to image objects. Compared to other sub-image extraction methods (e.g., sliding-window convolutional neural network (CNN) [27] and fixed-grid vision transformer (ViT) [28]), the method from [26] can identify important and meaningful pixels, achieving large receptive fields for sub-image extraction. Here, we can use any other semantic segmentation methods, which will not affect our designed semantic communication framework. Let 
+
+Ik,v ∈ RH×W ×C be an original image k that the BS needs to transmit to a user v with H, W and C being the height, width, and the number of color channels of the image. Then, the set of sub-images that are extracted from image Ik,v using the model [26] is Mk,v = {m1 
+
+> k,v
+
+, m2 
+
+> k,v
+
+, . . . , mJk,v  
+
+> k,v
+
+} where 
+
+Jk,v is the number of sub-images in image Ik,v which varies according to the image Ik,v , mjk,v is sub-image j in image 
+
+Ik,v .
+
+2) Semantic Information Generation: A VAE is used to generate semantic information. Although the size of the VAE input is not required to be fixed, the height and width of the input must be divisible by the VAE’s downsampling factor (typically 8 or 16). However, the size of the sub-images is different which depends on the objects in the sub-images. For simplicity, we unify the size of the sub-images such that we can use one VAE model to process various sub-images and generate semantic information. To this end, we use a padding method that changes the size of the sub-image to the size of the original image by adding zeros around each sub-image. Then, the semantic information of padded sub-image fmjk,v is 
+
+xjk,v = f E 
+
+> θ
+
+(fmjk,v ), (1) where f E 
+
+> θ
+
+(·) is the semantic encoder used to generate the semantic information of sub-image with θ being the encoder parameters. Here, the encoder can be applied for all users. 
+
+3) Sub-image Compression: Since fmjk,v was processed by a padding method, a large number of zero-valued pixels exist. Hence, we need to use a compression method to further reduce the redundancy in the sparse semantic information xjk,v . Here, we propose to use the algorithm in [16] to compress the semantic information xjk,v of each padded sub-image fmjk,v .Let f C(·) be the data compression function. The compressed semantic information is ˆxjk,v = f C(xjk,v ). Here, we can also consider other compression methods, which do not affect the designed semantic data transmission methods. 
+
+B. Transmission Model 
+
+Next, we introduce 1) the downlink transmission of sub-images from the BS to users, and 2) the uplink transmission of feedback from users to the BS. 
+
+1) Downlink Sub-image Transmission: We assume that the BS has a total of N V channels and each user can use N
+
+sub-channels for sub-image transmission. Let Lv be a set of sub-channels that the BS uses to serve user v. These sub-channels have different channel conditions, and hence, they have different data rates and packet error rates. The downlink channel capacity of the BS transmitting semantic information to user v over sub-channel n at time slot t is 
+
+RD 
+
+> n,v
+
+(t) = 
+
+
+
+log 2 1 + P DhD 
+
+> n,v
+
+(t)
+
+ID 
+
+> n,v
+
++ N0
+
+!
+
+, with updated CSI ,
+
+log 2
+
+
+
+1 − P Dd−2
+
+> v
+
+ID 
+
+> n,v
+
++ N0
+
+ln(1 − ξ)
+
+
+
+, otherwise ,
+
+(2) 4
+
+where P D is the transmit power of the BS, ID 
+
+> n,v
+
+is the interference caused by BSs that are located in other service areas and use sub-channel n, N0 is the noise power spectral density, and hD 
+
+> n,v
+
+(t) = γD 
+
+> n
+
+d−2 
+
+> v
+
+is the channel gain of sub-channel n in time slot t between the BS and user v with 
+
+γD 
+
+> n
+
+∼ exp( λ = 1) being the Rayleigh fading parameters of sub-channel n and dv being the distance between the BS and user 
+
+v, ξ is the outage probability. From (2) , we see that when the BS does not have the updated CSI, the downlink transmission rate follows the standard outage-capacity formulation [29]. In particular, the BS does not have updated CSI in two cases: 1) the user does not transmit CSI feedback, or 2) the user transmitted a CSI feedback but the receiver did not receive it within the feedback delay constraint. 
+
+2) Uplink Feedback Transmission: Here, we assume users can obtain the perfect CSI via pilot-assisted channel estimation. Thus, the data rate of user v transmitting feedback to the BS at time slot t is 
+
+RU 
+
+> v
+
+(t) = Bg(t) log 2(1 + g(t)pU 
+
+> v
+
+(t)γUd−2
+
+> v
+
+BN 0
+
+), (3) where pU 
+
+> v
+
+(t) is the transmit power of user v at time slot t, g(t)
+
+is the number of users that want to transmit feedback to the BS, 
+
+B is the total uplink bandwidth, N0 is the noise power spectral density, and γU is the uplink Rayleigh fading parameter. 
+
+C. Image Reconstruction 
+
+Image reconstruction includes the following three key steps: 1) Data decompression, 2) sub-image regeneration, and 3) sub-image combination, which will be introduced in detail as follows. 
+
+1) Data Decompression: Once the compressed data is received, the user restores it back to its original form for sub-image generation. Here, we apply the restoration algorithm in [16]. 
+
+2) Sub-image Regeneration: A semantic decoder of each user v is used to regenerate the corresponding sub-image 
+
+sjk,v . Since user v may not be able to receive all the sub-images due to channel packet errors, we define ηk,v (t) = [ηk1,v (t), η k2,v (t), . . . , η kJ,v (t)] as a vector to represent whether the sub-images are received by user v. In particular, 
+
+ηkj,v = 1 implies that semantic information ˆxjk,v is received by user v, and ηkj,v = 0, otherwise. The sub-channel allocation vector of compressed semantic information for user v is αk,v (t) = [αk1,v (t), . . . , αkj,v (t), . . . , αkJ,v (t)] 
+
+with αkj,v (t) = [ α1 
+
+> kj,v
+
+(t), . . . , α Lv 
+
+> kj,v
+
+(t)] being a sub-image allocation vector for sub-image j in image k of user v. Here, we assume that one sub-image cannot be split and transmitted over several sub-channels within the same time slot. The regenerated sub-image sjk,v (αkj,v (t), η kj,v (t)) at user v is 
+
+sjk,v (αkj,v (t), η kj,v (t)) = 
+
+
+
+sjk,v ,
+
+> N
+
+X
+
+> n=1
+
+αnkj,v (t) = 1 , η kj,v (t) = 1 ,
+
+0, else .
+
+(4) From (4), we see that user v can regenerate the original sub-image sjk,v when the BS uses a sub-channel to transmit the sub-image (i.e., PNn=1 αnkj,v (t) = 1 ) and user v successfully receives it (i.e., ηkj,v = 1 ). In particular, αnkj,v (t) = 1 implies that compressed semantic information ˆxjk is transmitted to user v over sub-channel n at time slot t, and αnkj,v (t) = 0 ,otherwise. 
+
+3) Sub-image Combination: Each User v combines the sub-images to regenerate the original image. Here, user v will consider the maximum value of the same pixels in different sub-images as the value of the pixel in the regenerated image. This image regeneration method can preserve sharp boundaries since it can reduce the impact of zero elements added by the zero-padding method on sub-image regeneration. The value 
+
+ˆik,p of pixel p of user v in the regenerated image Sk,v is 
+
+ˆikp,v = max {i1 
+
+> kp,v
+
+, i 2 
+
+> kp,v
+
+, . . . , i Jkp,v }. (5) 
+
+D. Feedback of Receiver 
+
+At each time slot, each user can 1) transmit either CSI feedback or content preference feedback to the transmitter, or 2) remain silent without sending any feedback. The content preference feedback transmitted by user v at time slot t is Dv (t) =[( u1,v (t), ω 1,v (t)) , (u2,v (t), ω 2,v (t)) , . . . , (uD,v (t), ω D,v (t))] ,where ud,v is the content that user v wants to receive and 
+
+ωd,v is the importance weight of content ud,v . Here, Dv (t)
+
+includes only the top D categories that user v wants to receive and user v cannot send all content category information to the BS due to limited power. The CSI feedback of user v is defined as a vector cv (t) = [ c1,v (t), c 2,v (t), . . . , c Lv ,v (t)] at time slot t. Here, cn,v (t) ∈ { 0, 1} indicates whether sub-image 
+
+sjk,v is successfully transmitted to user v over sub-channel 
+
+n in time slot t. Based on the CSI feedback, the BS can learn the channel conditions (e.g., the downlink channel gain 
+
+hD 
+
+> n,v
+
+(t) [30]) and the sub-images that have been received by user v. Let βD,v (t), β C,v (t) ∈ {0, 1} be the feedback selection indicators where βD,v (t) = 1 (e.g., βC,v (t) = 1 )implies that user v will transmit content preference feedback (CSI feedback) to the BS at time slot t. Otherwise, we have 
+
+βD,v (t) = 0 (e.g., βC,v (t) = 0 ). 
+
+E. Problem Formulation 
+
+Given the defined system model, our objective is to minimize the sum of the users’ semantic-weighted MSE between the original images and the images regenerated by the user. This minimization problem includes optimizing the sub-image allocation α = {α1(t), α2(t), . . . , αK (t)}t∈T , user power al-location p = {pU 
+
+> 1
+
+(t), p U 
+
+> 2
+
+(t), . . . , p U 
+
+> V
+
+(t)}t∈T and user feedback selection β = {βD,1(t), β C,1(t), . . . , β D,V (t), β C,V (t)}t∈T . We consider that the BS will transmit K images to each user over a time period that consists of a set T of KT time slots. Each image must be transmitted within T time slots. The optimization problem is formulated as 5
+
+min 
+
+> α,β,p
+
+X
+
+> v∈V
+
+X
+
+> k∈K
+
+X
+
+> j∈M k
+
+ωj,v (t) ∥mjk,v − sjk,v (αkj,v (t), η kj,v (t)) ∥22
+
+(6) s.t. αnkj,v (t) ∈ { 0, 1}, ∀n ∈ L v , ∀j ∈ M k,v , ∀k ∈ K , ∀v ∈ V ,
+
+(6a) 
+
+αnkj,v (t) = 0 , ∀t ∈ T \ T k, (6b) 
+
+X
+
+> n∈L v
+
+X
+
+> t∈T
+
+αnkj,v (t) ≤ 1, ∀j ∈ M k, ∀k ∈ K , ∀v ∈ V ,
+
+(6c) 
+
+X
+
+> j∈M k,v
+
+αnkj,v (t) ≤ 1, ∀n ∈ L v , ∀t ∈ T k, ∀v ∈ V , (6d) 
+
+βD,v (t) + βC,v (t) ≤ 1, ∀t ∈ T , ∀v ∈ V , (6e) 
+
+X
+
+> t∈T
+
+pUv (t) ≤ pmax , ∀v ∈ V , (6f) 
+
+Z(ˆ xjk,v )
+
+RD 
+
+> n,v
+
+(t) ≤ △ t, if αnkj,v (t) = 1 , (6g) 
+
+βD,v (t)Z(Dv (t)) + βC,v (t)Z(cv (t)) ≤ RU 
+
+> v
+
+(t) △ tf ,
+
+if βD,v (t) + βC,v (t) = 1 , (6h) where K is the set of K images that the BS must transmit to each user and Tk ≜ {t ∈ T : ( k − 1) T ≤ t ≤ kT }
+
+is the set of time slots for transmitting the image k, ∥ · ∥ 2
+
+denotes the ℓ2-norm, Z(ˆ xjk,v ) is the data size of semantic information ˆxjk,v , △t is the time duration of a time slot, △tf
+
+is the time duration of feedback transmission, and pmax is the available power of each user for feedback transmissions. Constraints (6a), (6b) and (6c) ensure that the BS can transmit each sub-image once in specific time slots no matter whether the user v correctly receives it. Constraint (6d) implies that the BS can use only one time slot to transmit one sub-image. Constraint (6e) enforces that each user v can only transmit one type of feedback to the BS per time slot. Constraint (6f) limits the power used for feedback transmission with pmax 
+
+being users total power budget. Constraints (6g) and (6h) are the requirements of each sub-image transmission and feedback transmission delay, respectively. The formulated problem in (6) is challenging to solve via traditional optimization methods due to the following reasons. First, from (6), we see that the objective function depends not only on the sub-image allocation vector α and power allocation vector p, but also on variables such as user feedback selection β, which cannot be expressed by explicit functions. Second, since users can transmit a limited number of feedback messages, a tradeoff exists between content preference feedback and CSI feedback transmission. Here, more content preference feedback transmissions enable the BS to obtain more content categories that users are interested in, while more CSI feedback transmission enables the BS to learn more channel information (e.g., hD 
+
+> n,v
+
+(t)) thus allocating appropriate content to each sub-channel. Third, due to limited energy, users cannot send feedback at each time slot and hence, the BS cannot know the real-time wireless environment and sub-image transmission status, which further complicates the optimization problem. Finally, users must cooperatively transmit feedback since the bandwidth used for feedback transmission is limited. If all users transmit feedback simultaneously, they may not have enough bandwidth to ensure feedback be transmitted to the BS within the required delay. III. P ROPOSED ALGORITHM 
+
+In this section, we introduce a VDAC-DNC algorithm to solve (6). Compared with existing MARL methods such as VDN [23] and MADDPG [24], the proposed approach combines the strengths of both value decomposition and actor–critic paradigms. Specifically, multi-agent Q-learning methods such as standard VDN achieve higher performance but with low training efficiency since they require extensive exploration and environment interactions, while multi-agent actor–critic methods such as MADDPG offer high training efficiency at the cost of reduced performance since they update the policy directly using gradient information and may easily get stuck in suboptimal solutions. Thus, the proposed method offers a reasonable trade-off between training efficiency and algorithm performance. Meanwhile, the proposed method is more effective in finding better actions in huge discrete action spaces since the designed method approximates the discrete action space using a continuous action and selects an action with the maximum Q value from the continuous action space. Next, we first introduce the components of the proposed VDAC-DNC method. Then, we show the training process of the VDAC-DNC. 
+
+A. Components of VDAC-DNC Method 
+
+The components of the proposed VDAC-DNC method are specified as follows: 
+
+Agent : The agents in the VDAC-DNC scheme are the BS and users. At each time slot, the BS determines sub-image transmission, and then users determine whether to transmit a feedback and which type of feedback to transmit, as well as the power used for feedback transmission. 
+
+BS States : The local state of the BS is used to describe the current observation of wireless environment and sub-images transmission status. The local state of the BS about user v is defined as 
+
+oB 
+
+> v,t
+
+= [ zv (t), ωv (t), cv (t), Rv (t)] , (7) where zv (t) = [ Z(ˆ x1 
+
+> k,v
+
+), Z (ˆ x2 
+
+> k,v
+
+), . . . , Z (ˆ xJk,v  
+
+> k,v
+
+)] is a vector of the data sizes of the sub-images in an original image transmitted to user v, ωv (t) = [ ω1,v (t), ω 2,v (t), . . . , ω Jk,v (t)] 
+
+is the importance weight of the sub-images at the BS, cv (t) is the CSI feedback, and Rv (t) = [ R1,v (t), R 2,v (t), . . . , R N,v (t)] 
+
+is the transmission rate of each channel. Thus, the total local state of the BS is oB,t = [oB,1,t , oB,2,t , . . . , oB,V,t ]. Note that the BS may not be able to receive the CSI and content preference feedback from the users at each time slot. Hence, when no feedback is received, ωv (t) and cv (t) retain their values from the previous time slot (e.g., ωv (t) = ωv (t − 1) ,when βD,v (t) = βC,v (t) = 0 ). 
+
+User States : The local state of user v is 
+
+oU 
+
+> v,t
+
+= [ˆ zv (t), ˆcv (t), p R 
+
+> v
+
+(t)] , (8) 6 
+
+> Fig. 2. The architecture of the proposed VDAC-DNC algorithm
+
+where ˆzv (t) = [ Z(s1 
+
+> k,v
+
+), Z (s2 
+
+> k,v
+
+), . . . , Z (sJk,v  
+
+> k,v
+
+)] is a vector of the data sizes of the received sub-images at user v, ˆcv (t) is the current CSI, pR 
+
+> v
+
+(t) is the remaining power of user v at time slot t. Hence, the joint state among all agents at time slot t is a vector ot = [ oB 
+
+> t
+
+, oU
+
+> 1,t
+
+, . . . , oU
+
+> v,t
+
+].
+
+BS Actions : The actions of the BS at each step are sub-image allocation for each user. We define an action of the BS for user v at time slot t as aB 
+
+> v,t
+
+= [ δ1,v (t), δ 2,v (t), . . . , δ N,v (t)] 
+
+with δn,v (t) ∈ { 0, J k,v } being the index of the sub-image transmitted to user v and assigned to sub-channel n at time slot t.
+
+User Actions : An action of each user includes the feedback selection and power allocation. We define an action of the agent user v at time slot t as aU,v,t = [ βD,v (t), β C,v (t), p U 
+
+> v
+
+(t)] . Here, to guarantee that the selected actions meet the constraints (6b) – (6f), we use an action mask algorithm [31] to remove all infeasible actions. The joint action vector of the BS and all users is at = [ aB
+
+> 1,t
+
+, . . . , aB
+
+> V,t
+
+aU
+
+> 1,t
+
+, . . . , aU
+
+> V,t
+
+].
+
+Reward : The proposed VDAC-DNC will maximize this reward, thus finding the optimal solution for the problem in (6). Therefore, the reward is 
+
+r(ot, at) = X
+
+> v∈V
+
+DB 
+
+> k,v
+
+− DA 
+
+> k,v
+
+− κReR 
+
+> t
+
+− κFeF 
+
+> t
+
+, (9) where 
+
+DB 
+
+> k,v
+
+= X
+
+> j∈M k,v
+
+ωj,v (t)∥mjk,v − sjk,v (αkj,v (t), η kj,v (t)) ∥22,
+
+(10) is the semantic-weighted MSE of all sub-images before taking action at. The second term DA 
+
+> k,v
+
+is the semantic-weighted MSE of all sub-images after taking action at. The third term eR 
+
+> t
+
+= P
+
+> v∈V
+
+P
+
+> n
+
+P 
+
+> k,j
+
+1(αnkj,v (t) Z(ˆ xjk,v ) 
+
+> Rn(t)
+
+> △t)
+
+is the number of sub-image transmissions whose de-lay exceeds the threshold. The final term eF 
+
+> t
+
+=P
+
+> v∈V
+
+P
+
+> n
+
+P 
+
+> k,j
+
+1(( βD,v (t) + βC,v (t)) τv > △tf ) is the num-ber of feedback transmissions whose delay exceeds the thresh-old, κR and κF are weight parameters that control the weight penalty of sub-image transmission delay in (6g) and feedback transmission delay (6h) , respectively. Note that, we cannot directly use the negative weighted MSE as the reward since it will encourage the agents to transmit all the sub-images as soon as possible to minimize the MSE, which may violate the delay constraints (6g) and (6h) 
+
+BS Actor Networks : The actor network of BS πϕB (ˆ aB
+
+> v,t
+
+|oB
+
+> v,t
+
+)
+
+generates an action ˆaB 
+
+> v,t
+
+based on the current BS state oB
+
+> v,t
+
+.Here, the action output by the actor network is different from the action defined in aB
+
+> v,t
+
+. This is because the output of the actor network is a continuous action probability distribution and the action selected by the actor may not be in the discrete action space defined in A. For example, if we use one Gaussian distribution to approximate the continuous action probability distribution, the output of the actor network is a vector [μ, σ ]
+
+where μ is the mean and σ is the variance. Then, the action ˆaB
+
+> v,t
+
+is sampled by this continuous Gaussian distribution (i.e., ˆaB 
+
+> v,t
+
+∼N (μ, diag( σ2)) ). Hereinafter, we call the action selected by the actor as continuous action and the action defined in aB
+
+> v,t
+
+as discrete action. The continuous action ˆaB 
+
+> v,t
+
+will be used to find a discrete action aB 
+
+> v,t
+
+by using the DNC method, which will be introduced in Section III-B . Note that ˆaB 
+
+> v,t
+
+∈ RN is a continuous action that is used to construct the actual discrete action aB
+
+> v,t
+
+.
+
+User Actor Networks : The actor network of user v
+
+πϕU 
+
+> v
+
+(aU
+
+> v,t
+
+|oU
+
+> v,t
+
+) generates an action aU 
+
+> v,t
+
+based on the current user v state oU
+
+> v,t
+
+. Since the DNC method can only process discrete action, as well as the action space of the user is small, we do not use the DNC method to process user actions. 
+
+The Critic Networks of the BS : The critic network of the BS is a three multi-layer perceptrons (MLPs) that approximate a local Q function QψB (oB
+
+> v,t
+
+, aB
+
+> v,t
+
+) to find a discrete action aB
+
+> v,t
+
+from the continuous action ˆaB 
+
+> v,t
+
+and then estimate the expected 7
+
+Algorithm 1 Dynamic Neighborhood Construction 
+
+Initialize: y, ϵ, cβ , ¯aB 
+
+> v,t
+
+← round (ˆ aB
+
+> v,t
+
+), ¯aB⋆v,t ← ¯aB 
+
+> t
+
+, Y = ∅ 
+
+> 1:
+
+while y > 0, or ϵ > 0 do  
+
+> 2:
+
+Find neighbors A to ¯aB 
+
+> v,t
+
+with Pij  
+
+> 3:
+
+Get Q-values for all neighbors in A 
+
+> 4:
+
+Obtain set Y′ with y-best neighbors, Y ← Y ∪ Y ′ 
+
+> 5:
+
+y1 ← Y ′, with y1 = arg max y∈Y ′ QψB (oB
+
+> v,t
+
+, y) 
+
+> 6:
+
+if QψB (oB
+
+> v,t
+
+, y1) > Q ψB (oB
+
+> v,t
+
+, ¯aB,t )) then  
+
+> 7:
+
+Accept y1 ∈ Y ′, ¯aB 
+
+> v,t
+
+← y1 
+
+> 8:
+
+if QψB (oB
+
+> v,t
+
+, y1) > Q ψB (oB
+
+> v,t
+
+, ¯aB⋆v,t ) then  
+
+> 9:
+
+¯aB⋆v,t ← y1 
+
+> 10:
+
+end if  
+
+> 11:
+
+else if rand() < exp[ −(QψB (oB
+
+> v,t
+
+, y1) − QψB (oB
+
+> v,t
+
+, y1)) /ϵ )] 
+
+then  
+
+> 12:
+
+Accept y1 ∈ Y ′, ¯aB 
+
+> v,t
+
+← y1, ϵ ← ϵ − cβ 
+
+> 13:
+
+else  
+
+> 14:
+
+Reject y1 ∈ Y ′, ¯aB 
+
+> v,t
+
+← yrand ∈ Y  
+
+> 15:
+
+end if  
+
+> 16:
+
+y ← ⌈ y − ck ⌉ 
+
+> 17:
+
+end while  
+
+> 18:
+
+Return ¯aB⋆v,t 
+
+cumulative reward from the given state oB 
+
+> v,t
+
+and action aB
+
+> v,t
+
+,where ψB are the parameter vectors of the MLPs. 
+
+The Critic Networks of users : The critic network of a user is also MLPs that approximates a local Q function 
+
+QψU 
+
+> v
+
+(oU
+
+> v,t
+
+, aU
+
+> v,t
+
+) to estimate the expected cumulative reward from the given state oU 
+
+> v,t
+
+and action aU
+
+> v,t
+
+, where ψU 
+
+> v
+
+are the parameter vectors of the MLPs. 
+
+Global Critic Networks : The global critic network Q function 
+
+QG(ot, at) is used to estimate the total rewards under a joint state ot and a joint action at of all agents. Here we use the critic network of the BS and users to approximate a global Q
+
+function in two different methods. First, we can summarize the 
+
+Q functions of all agents to approximate the global Q function as done in VDN method [23]: 
+
+QG(ot, at) = X
+
+> v
+
+QψB (oB
+
+> v,t
+
+, aB
+
+> v,t
+
+) + QψU 
+
+> v
+
+(oU
+
+> v,t
+
+, aU
+
+> v,t
+
+). (11) Second, we can use a MLP model with parameters Γ Φ to aggregate local Q functions of all agents as done in QMIX [32]. Hence, the global Q function QG(ot, at) is 
+
+QG(ot, at) = Γ Φ(QψB , Q ψU 
+
+> 1
+
+, . . . , Q ψU 
+
+> v
+
+). (12) 
+
+B. Training of the VDAC-DNC 
+
+Next, we introduce the entire training process of the proposed VDAC-DNC algorithm to solve problem (6). We first introduce the use of DNC method to select the BS discrete action aB
+
+> v,t
+
+that can achieve the highest Q value among the neighbors of the continuous action ˆaB 
+
+> v,t
+
+generated by the BS actor network. Since the DNC method can only process discrete action, as well as the action space of the user is small, thus we do not apply the DNC method to process the user action. Then, we explain the loss function of the VDAC-DNC scheme and the training process. 
+
+1) Discrete action selection: The procedure of using the DNC method to find a discrete action is summarized as follows: 
+
+Algorithm 2 VDAC-DNC for semantic-weighted MSE mini-mization 
+
+Initialize: Local Q function QψB of BS and QψU 
+
+> v
+
+of each user v,parameters Φ of Γ Φ. 
+
+> 1:
+
+for each episode do  
+
+> 2:
+
+for each user v do  
+
+> 3:
+
+BS observes the local state oB 
+
+> v,t
+> 4:
+
+Generate a continuous action ˆaB 
+
+> v,t
+
+← πϕB (oB
+
+> v,t
+
+) using the BS actor network.  
+
+> 5:
+
+¯aB 
+
+> v,t
+
+← ˆaB
+
+> v,t
+
+, ¯aB⋆v,t ← DNC (¯ aB
+
+> v,t
+
+) 
+
+> 6:
+
+Calculate local QψB (oB
+
+> v,t
+
+, aB
+
+> v,t
+
+) 
+
+> 7:
+
+end for  
+
+> 8:
+
+for each user v = 1 , 2, . . . , V do  
+
+> 9:
+
+User v observes the local state oU 
+
+> v,t
+> 10:
+
+Select an action aU,v,t using the user actor network.  
+
+> 11:
+
+Calculate local QψU 
+
+> v
+
+(oU
+
+> v,t
+
+, aU
+
+> v,t
+
+) 
+
+> 12:
+
+end for  
+
+> 13:
+
+Calculate the loss Lc(ψU 
+
+> v
+
+, ψB, Φ) 
+
+> 14:
+
+The BS updates its actor network using (19) and updates its critic network using (17)  
+
+> 15:
+
+for each user v do  
+
+> 16:
+
+Update the local actor network using (20) and update the critic network using (18)  
+
+> 17:
+
+end for  
+
+> 18:
+
+Update the hypernetwork using (21)  
+
+> 19:
+
+end for 
+
+Step 1 : The BS uses the continuous action ˆaB 
+
+> v,t
+
+to generate a discrete action ¯aB 
+
+> v,t
+
+by rounding each element in ˆaB 
+
+> v,t
+
+to its closest discrete value, which is expressed as 
+
+¯aB 
+
+> v,t
+
+=
+
+
+
+ˆaB 
+
+> v,t
+
++ 12
+
+
+
+, (13) where ⌊⌋ is the floor function. 
+
+Step 2 : The BS searches the neighboring actions of ¯aB
+
+> v,t
+
+to find a better discrete action. In particular, we first define a perturbation matrix P = ( Pij )i=1 ,...,U ; j=1 ,..., 2lU ∈ RU ×2lU ,where U is the action dimension and l is the range of neighboring actions we will search for each action. Its first 
+
+lU columns represent the positive search of the discrete action 
+
+¯aB
+
+> v,t
+
+. In particular, for each column, one element of the discrete action will be increased by step size ϵ. The last lU columns of the matrix represent negative movements of the discrete action 
+
+¯aB
+
+> v,t
+
+. In particular, if l = 1 , the matrix P is 
+
+P =
+
+
+
+ϵ 0 · · · 0 −ϵ 0 · · · 00 ϵ · · · 0 0 −ϵ · · · 0
+
+... ... . . . ... ... ... . . . ...
+
+0 0 · · · ϵ 0 0 · · · −ϵ
+
+ . (14) Let ¯A = [¯ aB
+
+> v,t
+
+, ¯aB
+
+> v,t
+
+, . . . , ¯aB
+
+> v,t
+
+] ∈ ZU ×2lU be a matrix that consists of 2lU action ¯aB
+
+> v,t
+
+. Then, 2lU neighboring actions of 
+
+¯aB 
+
+> v,t
+
+are represented by 
+
+A = ¯A + P = [¯ aB
+
+> v,t, 1
+
+, ¯aB
+
+> v,t, 2
+
+, . . . , ¯aB 
+
+> v,t, 2lU
+
+]. (15) From (15) , we see that each neighboring action in A only has one element that is different from ¯aB
+
+> v,t
+
+, which guarantees that the action search will only move in one direction per step. 
+
+Step 3 : We utilize the critic to obtain Q-values for neighbor-ing actions in A. Let Y be the initial overall action set. Among 8
+
+these neighbors, we select the y actions with the largest Q-values and sort them in descending order, forming an ordered action subset Y′. We then add Y′ to Y. From Y′, we select action y1, which has the highest Q-value in Y′.
+
+Step 4: We use an iterative simulated annealing (SA)-based [33] search scheme to explore the neighborhoods in 
+
+A and find the action aB⋆v,t that can achieve the highest Q
+
+value. SA is a probabilistic search method which performs worse actions instead of performing the best actions in a specific probability. In particular, throughout the search process, we reduce ϵ by adjusting the cooling parameter cβ , thus escaping local optima and becoming more robust than greedy search. In particular, if the Q-value of y1 ∈ Y ′ exceeds the Q-value of the base action ¯aB
+
+> v,t
+
+, we accept y1 as new discrete action ¯aB
+
+> v,t
+
+. If not, we still accept it with probability exp [−(QψB (oB
+
+> v,t
+
+, ¯aB
+
+> v,t
+
+) − QψB (oB
+
+> v,t
+
+, y1)) /ϵ ].Steps 2-4 are repeated until the algorithm reaches the predefined number of iterations. Finally, we obtain the action 
+
+¯aB⋆v,t with the highest Q-value. Then the BS combines actions 
+
+¯aB⋆v,t and uses action ¯a⋆ 
+
+> B,t
+
+to interact with the user. The specific process of DNC algorithm is summarized in Algorithm 1. 
+
+2) Critic network and actor network update: Next, we introduce the update of the local critic, the actor networks, and the MLP used to aggregate local Q functions.  
+
+> •
+
+Local Critic Network Update : The local critic network at a user or the BS is updated by minimizing the temporal difference (TD) error, which is defined as 
+
+Lc(ψU 
+
+> v
+
+, ψB, Φ) = 
+
+E[rt(ot, at) + γQ G(ot+1 , at+1 ) − QG(ot, at)] . (16) Given (16), the parameters of local critic network is updated by a stochastic gradient descent (SGD) method as follows: 
+
+ψB ←− ψB − λc∇ψB
+
+12 L2 
+
+> c
+
+(ψU 
+
+> v
+
+, ψB, Φ), (17) 
+
+ψU 
+
+> v
+
+←− ψU 
+
+> v
+
+− λc∇ψU
+
+> v
+
+12 L2 
+
+> c
+
+(ψU 
+
+> v
+
+, ψB, Φ), (18) where λc is the learning rate, ∇ψB Lc(ψB) and 
+
+∇ψU 
+
+> v
+
+Lc(ψU 
+
+> v
+
+) are the gradients of the critic networks of the BS and users.  
+
+> •
+
+Actor Update : The actor network parameters of both BS and the users are updated using policy gradient ascent, as follows: 
+
+ϕB ← ϕB + λa Lc
+
+X
+
+> v∈V
+
+∇ϕB log πB 
+
+> ϕB
+
+(ˆ aB
+
+> v,t
+
+|oB
+
+> v,t
+
+), (19) 
+
+ϕU 
+
+> v
+
+← ϕU 
+
+> v
+
++ λa Lc ∇ϕU 
+
+> v
+
+log πU
+
+> ϕU
+> v
+
+(aU
+
+> v,t
+
+|oU
+
+> v,t
+
+), (20) where λa is the learning rate, and ∇ϕB log πϕB (ˆ at|ot) and 
+
+∇ϕU 
+
+> v
+
+log πU
+
+> ϕU
+> v
+
+are the gradients of the actor networks of the BS and users.  
+
+> •
+
+MLP Update : The parameters of the MLP used to approximate the global Q function is also updated using gradient ascent, as follows: 
+
+Φ ← Φ − λh∇ΦLc(ψU 
+
+> v
+
+, ψB, Φ), (21) where λh is the learning rate. IV. C ONVERGENCE , I MPLEMENTATION , AND COMPLEXITY 
+
+ANALYSIS 
+
+Next, we analyze the convergence, implementation, commu-nication overhead, and complexity of the proposed VDAC-DNC method. 
+
+A. Convergence Analysis 
+
+To analyze the convergence of the proposed VDAC-DNC al-gorithm, we first define θ =  ϕB, {ϕU 
+
+> v
+
+}v∈V 
+
+ as the parameters of the BS and users. The joint policy factorizes as 
+
+πθ (at|ot) = Y
+
+> v∈V
+
+πB 
+
+> ϕB
+
+(aB
+
+> v,t
+
+|oB
+
+> v,t
+
+)πU
+
+> ϕU
+> v
+
+(aU
+
+> v,t
+
+|oU
+
+> v,t
+
+), (22) The global action-value function under policy πθ is denoted by Qπθ (o, a) and is approximated by the value-decomposition critic QG(ot, at). We consider the discounted return objective 
+
+J(θ) = Eπθ
+
+h ∞X
+
+> t=0
+
+γtr(ot, at)
+
+i
+
+, (23) where γ is the discount factor that weights future rewards. Then, the convergence of the designed method is analyzed in the following lemma. 
+
+Lemma 1. If (i) E[QG(ot, at)] = Qπθ (o, a), (ii) learning rate sequences {λa,k } and {λc,k } satisfy the Robbins–Monro con-ditions: P 
+
+> k
+
+λa,k = P 
+
+> k
+
+λc,k = ∞, P 
+
+> k
+
+λ2 
+
+> a,k
+
+< ∞, P 
+
+> k
+
+λ2 
+
+> c,k
+
+<
+
+∞, λ a,k /λ c,k → 0, and (iii) the update of the proposed MARL can be considered as the update of a single-agent actor–critic policy-gradient update, our proposed VDAC-DNC algorithm can converge to a locally optimal policy [34]. Proof. To prove the convergence of the proposed VDAC-DNC algorithm, we need to prove that the proposed VDAC-DNC algorithm satisfies conditions (i), (ii), and (iii). First, the error introduced by the Q function approximation decreases as the neural networks are trained over time. Meanwhile, the value decomposition method is used to generate the global Q
+
+value, ensuring that the difference between the actual global Q-function and its approximated value remains bounded. Thus, the proposed VDAC-DNC algorithm satisfies condition (i) when the algorithm converges. Note that the DNC module will not affect the convergence of the designed method since the DNC aims to find a better action from the original action space instead of creating new actions. Next, we prove that the proposed method meets condition (ii). Here, the designed method can meet condition (ii) via adjusting the value of the learning rate λak and λck . For example, let 
+
+λak = a/ (k + 1) α and λck = c/ (k + 1) β with 1/2 < β < α ≤
+
+1. Then, the first and second conditions in (ii) can be satisfied as 
+
+> ∞
+
+X
+
+> k=0
+
+λa,k = a
+
+> ∞
+
+X
+
+> k=0
+
+(k + 1) −α = ∞, when α ≤ 1, (24) 
+
+> ∞
+
+X
+
+> k=0
+
+λ2 
+
+> a,k
+
+= a2
+
+> ∞
+
+X
+
+> k=0
+
+(k + 1) −2α < ∞, when α > 12 , (25) 9
+
+With regards to the third condition in (ii), since 12 < β ≤ 1,we have 
+
+λa,k 
+
+λc,k 
+
+= ac (k + 1) β−α → 0, when α > β. (26) Thus, the proposed VDAC-DNC algorithm can satisfy con-dition (ii) by setting specific learning rates for the actor and critic networks. To prove that the proposed method meets condition (iii), we need to rewrite the expected gradient as a standard single-agent actor-critic policy gradient. Given (23) and the policy-gradient theorem for discounted Markov decision processes (MDPs) [35], [36], we have 
+
+∇θ J(θ) = Eπθ
+
+h X
+
+> i∈{ B}∪V
+
+∇ϕi log πϕi (ai,t |oi,t ) Qπθ (ot, at)
+
+i
+
+,
+
+(27) where ϕi denotes the local actor parameters of agent i (BS or user). Then, the expected gradient of J(θ) can be written as 
+
+∇θ J(θ) = Eπθ
+
+h
+
+∇ϕi log Y
+
+> i∈{ B}∪V
+
+πϕi (ai,t |oi,t ) Qπθ (ot, at)
+
+i
+
+.
+
+(28) By using the factorization (22), the (28) can be written as 
+
+∇θ J(θ) = Eπθ
+
+h
+
+∇θ log πθ (at|ot) Qπθ (ot, at)
+
+i
+
+. (29) From (29) , we see that the expected gradient can be considered as the update of a single-agent actor-critic policy. Consequently, the proposed VDAC-DNC algorithm satisfies condition (iii). This completes the proof. Our simulation result in Section V also demonstrates that the proposed VDAC-DNC algorithm effectively converges. 
+
+B. Implementation Analysis 
+
+The implementation of the VDAC-DNC scheme for image semantic transmission consists of an offline training stage and an online implementation stage. In the offline training stage, the BS first allocates the sub-channels for each user using the designed DNC method as shown in Algorithm 1 and sends the sub-images to users. Then it requires the 1) sub-image transmission status of each user, 2) CSI and the transmission rate of each channel to calculate local QψB (oB
+
+> v,t
+
+, aB
+
+> v,t
+
+) for training its critic network. Once users receive the sub-images sent by the BS, each user requires 1) the current CSI, 2) the received signal, and 3) the current remaining power budget to calculate the local Q values for training its critic network. Then, each user transmits the local QψU 
+
+> v
+
+(oU
+
+> v,t
+
+, aU
+
+> v,t
+
+) to the BS for the calculation of the global Q function QG(ot, at). In particular, the BS aggregates local Q values QψU 
+
+> v
+
+(oU
+
+> v,t
+
+, aU
+
+> v,t
+
+)
+
+of all users and the local QψB (oB
+
+> v,t
+
+, aB
+
+> v,t
+
+) of the BS using (11) or (12) . Based on the state and action information, as well as the global Q value, the parameters of the critic network and actor network of the BS and users are updated according to (17) – (20) . Note that, in the training procedure of the proposed method, we update only the actor and critic networks. We do not need to train DNC since it is an action-search module and does not contain trainable neural network parameters. In the online stage, since the designed method is trained by an offline training method, it does not need any data to update the neural network models, which significantly reduces the implementation complexity. The designed method can be deployed in practical scenarios since 1) the proposed framework explicitly considers practical wireless constraints and 2) the information required by the proposed method can be easily obtained in practical systems. 
+
+C. Complexity Analysis 
+
+The computational complexity of the proposed VDAC-DNC scheme consists of three main components: 1) the training of actor network, critic network, 2) the DNC process and 3) the training of global Q function at the BS. First, we analyze the complexity of training the actor and critic network. Let N B
+
+> Q
+
+, N U
+
+> Q
+
+, N B 
+
+> π
+
+, N U 
+
+> π
+
+be the numbers of parameters of the actor and critic networks. Then, due to the parallel training across the BS and the users, the complexity of training the actor and critic networks per iteration is O  max 
+
+n
+
+N B 
+
+> π
+
++ N B
+
+> Q
+
+, N U 
+
+> Q
+
++ N U
+
+> π
+
+o , where max {·} implies that the training complexity of the actor and critic networks depends on the training complexity N B 
+
+> π
+
++ N B 
+
+> Q
+
+and the training complexity N U 
+
+> Q
+
++ N U 
+
+> π
+
+at a user [37], [38]. Then we analyze the computational complexity of the DNC process. As shown in Algorithm 1, the BS checks the Q-values of neighboring actions using its critic networks in each iteration. Thus, the complexity of the DNC per iteration is O  N B
+
+> Q
+
+. Let 
+
+y0 and ϵ0 be the initial values of y and ϵ in Algorithm 1, and let ck and cβ be the corresponding decrement steps. Then the total number of DNC iterations is bounded by [39] 
+
+KD ≤ max 
+
+ y0
+
+ck
+
+
+
+,
+
+ ϵ0
+
+cβ
+
+ 
+
+, (30) where ⌈·⌉ is the ceiling function. Consequently, the complexity of the DNC process at an RL iteration is O KDN B
+
+> Q
+
+.With regards to the training of the global Q function, if we use (11) to approximate the global Q function, the computational complexity is O(V ) since we only need to summarize the Q functions of all agents. On the other hand, if we use (12) to approximate the global Q function, the computational complexity of the global Q function depends on the MLP architecture. Let N M 
+
+> Q
+
+be the number of parameters in the MLP. The training complexity of the global Q function is O(N M 
+
+> Q
+
+).Given the aforementioned analysis results and assuming we use (12) to approximate the global Q function, the overall complexity of VDAC-DNC per iteration is 
+
+O
+
+
+
+KDN B 
+
+> Q
+
++ max N B 
+
+> π
+
++ N B
+
+> Q
+
+, N U 
+
+> Q
+
++ N U 
+
+> π
+
++ N M
+
+> Q
+
+
+
+. (31) V. S IMULATION RESULTS 
+
+For our simulations, we consider a network consisting of one BS and V = 15 users. The distance between each user and the BS is randomly selected within the range of [8 , 50] m, and the downlink interference ID 
+
+> n,v
+
+is randomly selected within the range of [10 −9, 10 −8] W. Other parameters are summarized in Table I. To validate the performance of our proposed scheme, we consider three benchmarks: 1) VDAC (w/o DNC) that 10                               
+
+> TABLE I SIMULATION PARAMETER [42].
+> Parameters Values Parameters Values
+> B1.8×10 5Hz N01×10 −9W
+> PD1W N6
+> N010 −9Wξ0.2
+> T6l10
+> V15 ε1
+> D4pmax 5W
+> Fig. 3. Convergence of the considered algorithm
+
+optimizes sub-image allocation and feedback selection using the designed RL method but does not use DNC to find better actions per iteration [32], 2) a DNC based MAQAC algorithm that consists of a centralized critic and decentralized actors [40], and 3) DNC-based independent Q algorithm in which each user utilizes a deep Q network (DQN) to optimize its transmit power and feedback selection without considering the actions of other users [41]. Both the proposed VDAC-DNC and VDAC (w/o DNC) methods use a MLP to approximate the global Q function [32]. Baseline 1) is used to show the benefits achieved by the designed DNC. Baseline 2) is used to compare value-decomposition training with a centralized critic compared to a distributed critic. Baseline 3) is used to show the benefit of collaborative MARL over independent trained agents. Fig. 3 shows the convergence of the considered algorithms during the training process. The shaded area represents half of the standard deviation of the accumulated training reward. From Fig. 3, we see that as the number of training episodes increases, the rewards of all considered schemes increase first and then stabilize. In particular, VDAC-DNC improves the reward by up to 5.04% and 18.55% compared to the MAQAC and independent Q when the number of episodes is 14000. The 5.04% gain stems from the fact that the proposed method used a MLP to approximate the global function using local Q functions of the users and BS, while the MAQAC uses a high-dimensional centralized critic to approximate a global Q function, causing overfitting. The 18.55% gain stems from the fact that the proposed method approximates a global Q function to update the local Q function of each agent, thus allowing the users and the BS to collaboratively select feedback and sub-image transmission to maximize their team reward in (9) instead of their individual rewards. Fig. 4 shows how the accumulated rewards resulting from the       
+
+> Fig. 4. Accumulated reward versus the number of users 4812 16 20
+> Number of users
+> 0
+> 1
+> 2
+> 3
+> 4
+> Convergence time (×10 4 s)
+> VDAC w/o DNC
+> VDAC-DNC
+> Fig. 5. Convergence time with and without DNC under different user settings
+
+considered methods at convergence vary when the number of users ranges from 4 to 20. In this figure, we see that the rewards of all the schemes increase as the number of users increases, since the number of images to be transmitted increases. Fig. 4 also shows that the gap in terms of the reward between the proposed VDAC-DNC scheme and the MAQAC increases as the number of users increases. This is because our designed method uses a MLP to nonlinearly approximate the global Q function using the local Q function of the BS and users, which provides a structured and scalable approximation that remains effective as the number of users grows. In contrast, the MAQAC scheme relies on a high-dimensional centralized critic taking into account the states and actions of all the agents to directly approximate the global Q-function. As a result, this critic becomes harder to train and more prone to overfitting as the number of users increases. Fig. 4 also shows that the proposed VDAC-DNC scheme can enhance the performance by up to 16.57% compared to the independent Q scheme when the number of users is 20. The 16.57% gain stems from the fact that the proposed method allows users to coordinate their feedback transmission, preventing a large number of users from sending feedback in the same time slot thus reducing feedback transmission speed. Fig. 5 shows the convergence time of the proposed scheme with DNC and without DNC under different user settings. From this figure, we see that the convergence time of both schemes increases as the number of users increases. This is because the joint action space grows significantly with the number of users, requiring the MARL to spend more time for exploration 11               
+
+> Fig. 6. Number of feedback transmitted over an episode TABLE II COMPARISON BETWEEN THE PROPOSED METHOD AND ONE SHOT TRANSMISSION .Method Packet Loss Rate Weighted MSE Transmission time One shot transmission (1 W) 1.0 1.0 –Proposed method (1 W) 0.18 0.44 2.43 s One shot transmission (3 W) 0.92 0.92 1.38 s
+> Proposed method (3 W) 0.14 0.40 1.70 s
+
+and convergence towards optimal actions. Fig. 5 also shows that the proposed scheme with DNC improves the speed of convergence by up to 4.16x compared to the proposed scheme without DNC when the number of users is 16. This is because DNC selects an action with the maximum Q value from the small sized constructed neighboring action space instead of exploring all the actions. In Fig. 6, we show how the number of feedback messages transmitted by 8 users at each time slot varies in an episode. From this figure, we see that the proposed method transmits around 5 feedback messages per time slot, and the variance of the number of transmitted feedback messages over 6 time slots is 0.14. In contrast, the independent Q scheme unreliably transmits either 8 feedback messages or 3 feedback messages with a variance of 3.33, which may either increase feedback transmission delay or waste feedback transmission opportunity. This is because the proposed method enables the users to collaboratively determine when to transmit their feedback messages thus optimizing the number of feedback messages that should be transmitted under a limited bandwidth channel and meeting the feedback transmission delay requirements. In contrast, under independent Q-learning, users transmit feedback independently without accounting for others’ actions. Table II shows the gains (i.e., packet loss rate, weighted MSE, transmission time) achieved by the proposed method compared to the one shot transmission method where the transmitter directly transmits the entire image without receiving feedback under different downlink power levels. From Table II, we see that the proposed method improves the packet loss rate by up to 82.1% and the weighted MSE by up to 66.4% compared to one shot transmission when the downlink power is 1 W. These gains are achieved by the fact that the proposed method uses CSI and content preference feedback to optimize sub-image transmission and sub-channel allocation. Moreover, since the packet loss rate of one shot transmission is 1 (i.e., all the image transmitted are lost), we cannot calculate its transmission time when the downlink power is 1 W. Table II also shows that the one shot transmission method reduces the transmission time by up to 19.03% compared to the proposed method when the downlink power is 3 W. This is because one shot transmission sends the whole image at once, while the proposed method transmits the image sequentially with feedback, which introduces additional transmission time for feedback and sequential sub-image transmission. However, the proposed method can improve the packet loss rate and weighted MSE by up to 84.4% and 55.9% compared to one shot transmission. In Fig. 7, we show the visualization of the sub-image and feedback transmission during an image transmission. In the figure, each × beside the sub-image implies that the sub-image is not received by the user due to poor channel conditions, whereas each ✓ represents that the sub-image is successfully delivered to the user. The CSI feedback with a ✓ at a given time step indicates that one sub-image is successfully received by the user at that step. For content-preference feedback, each user sends the semantic weights of the top-4 most important sub-images that are (i) still missing at the user side and (ii) have not been sent before. This continues until all eligible content importance weights have been sent. For example, at step 5 of the VDAC-DNC method, all content importance weights have been sent to the transmitter. Hence, no additional content importance weights needs to transmit. In this simulation, CSI distributions are varied every three time slots. From the figure, we see that the proposed method enables the BS to obtain the CSI at steps 1 and 4 to maintain a high data rate for sub-image transmission. Fig. 7 also shows that, at step 2, the CSI feedback in the independent Q scheme is not transmitted to the BS due to the delay constraint. This is because the uplink bandwidth for feedback transmission is limited, and users in the independent Q scheme do not coordinate their feedback transmission, causing a large number of users to send feedback simultaneously. From Fig. 7, we also see that under the proposed VDAC-DNC, after the BS receives content-preference feedback at step 2, it schedules transmissions more efficiently at step 3 by sending the second important book 
+
+together with a less important shelf .In Fig. 8, we show how the types of feedback transmitted by the users affect the accumulated reward. In this figure, we compare the proposed VDAC-DNC method with: i) the proposed method in which the users only send content preference feedback to the BS, ii) the proposed method in which the users only send CSI feedback to the BS, and iii) the proposed method in which the users remain silent and will not send any feedback to the BS. From Fig. 8, we see that the proposed VDAC-DNC method can improve the reward by up to 8.3%, 7.1%, and 13.1% compared to the considered schemes (i), (ii), and (iii). The 8.3% gain stems from the fact that the proposed method can send CSI feedback to the BS, allowing the BS to learn the channel status thus improving sub-image transmission rate. The 7.1% gain stems from the content preference feedback transmission allowing the BS to prioritize important sub-images. The 13.1% gain is achieved 12   
+
+> Fig. 7. Visualization of sub-images and feedback messages transmission in each step during an episode
+> Fig. 8. Convergence of the designed methods with different types of feedback
+
+by the joint CSI and content preference feedback transmission. Fig. 9 shows how the accumulated reward changes as range 
+
+l of neighboring actions for DNC varies. In this figure, we see that the gap in terms of the accumulated reward between the proposed method and the independent Q scheme increases as l increases from 1 to 4. This is because, as l increases, the neighboring action space increases. The critic of the proposed method, which is trained using global information, can still select neighboring actions that increase the team reward, thus leading to a mild performance decrease. In contrast, the independent Q scheme relies on a locally trained critic and selects the neighboring actions that increase the individual reward but may decrease the team reward. This problem becomes worse as the neighboring action space increases. Fig. 9 also shows that the proposed method with l = 2 improves the accumulated reward by up to 4.79% and 1.78% compared to the designed method with l = 0 and 4. The 4.79% gain stems from the fact that the designed method with l = 2 can explore neighboring actions to help the BS find a better discrete action (i.e., a better sub-image allocation policy) than the initially chosen discrete action ¯aB
+
+> v,t
+
+. The 1.78% gain stems from the      
+
+> Fig. 9. Accumulated reward versus the DNC search range 20% 40% 60% 80%
+> Low-power user distribution (%)
+> 17
+> 18
+> 19
+> 20
+> 21
+> 22
+> 23
+> Accumulated reward
+> VDAC-DNC
+> Independent Q
+> No feedback
+> Fig. 10. The impact of device heterogeneity on the proposed framework
+
+fact that when l = 4 , the BS must traverse a large number of neighboring actions and it may select a neighboring action whose Q-value is overestimated by the critic networks, thus decreasing the accumulated reward. In Fig. 10, we show how the accumulated reward is affected by the power budget of devices. Here, some devices have higher feedback power budgets (e.g., pU 
+
+> v
+
+= 1 W and pmax = 6 W) and 13 
+
+the remaining devices have lower feedback power budgets (e.g., 
+
+pU 
+
+> v
+
+= 0 .001 W and pmax = 0 .006 W). In this figure, all users have the same CSI conditions such that we do not consider the impact of CSI. From Fig. 10, we see that as the number of users with lower feedback power budgets increases from 20% to 80%, the reward of the proposed method increases by up to 11.84%. This is because the devices with high power budgets can transmit feedback more frequently than the devices with low power budgets, thus providing more channel status and user preference information to assist the BS in optimizing the sub-image transmission. Fig. 10 also shows that the reward gap between the proposed method and the independent Q method increases as the power budget of the devices increases. This is because our designed method allows users to coordinate their feedback transmission when users have sufficient power budgets. VI. C ONCLUSION 
+
+In this paper, we have proposed a novel channel and content preference feedback enabled SC framework in which a BS transmits the images to a set of users while users cooperatively transmit the feedback to the BS for more efficient and accurate image data transmission. This image transmission problem has been formulated as an optimization problem, whose goal is to minimize the semantic-weighted MSE between the original image and the regenerated image via optimizing sub-channel allocation of the BS, power allocation and feedback selection of users. To address this problem, we have designed a VDAC-DNC scheme that introduces actor-critic to VDN, offering higher training efficiency compared to the standard VDN. In addition, the proposed method with the DNC module is more effective in finding better actions in large discrete action spaces. In particular, the DNC uses a continuous action produced by a continuous policy, which is easier to optimize than a complex discrete policy over large discrete action spaces, to construct a small discrete neighboring action space. Then, DNC searches for an action with the maximum Q value from the small neighboring action space, thus avoiding traversing the large discrete action space. Simulation results have shown that the proposed VDAC-DNC scheme significantly outperforms the baselines with regard to the quality of reconstructed images and convergence time. REFERENCES [1] C. Chaccour, W. Saad, M. Debbah, Z. Han, and H. Poor, “Less data, more knowledge: Building next-generation semantic communication networks,” 
+
+IEEE Commun. Surv. Tutor. , vol. 27, no. 1, pp. 37–76, Feb. 2025. [2] Y. Liu, H. Du, D. Niyato, J. Kang, Z. Xiong, S. Mao, P. Zhang, and X. Shen, “Cross-modal generative semantic communications for mobile aigc: Joint semantic encoding and prompt engineering,” IEEE Trans. Mob. Comput. , vol. 23, no. 12, pp. 14871–14888, Aug. 2024. [3] Y. Sagduyu, S. Ulukus, and A. Yener, “Task-oriented communications for nextg: End-to-end deep learning and AI security aspects,” IEEE Wireless Commun. , vol. 30, no. 3, pp. 52–60, Jun. 2023. [4] H. Xie, Z. Qin, and G. Li, “Task-oriented multi-user semantic communications for VQA,” IEEE Wireless Commun. Lett. , vol. 11, no. 3, pp. 553–557, Mar. 2022. [5] T. M. Getu, G. Kaddoum, and M. Bennis, “Semantic communication: A survey on research landscape, challenges, and future directions,” Proc. IEEE , vol. 112, no. 11, pp. 1649–1685, Nov. 2024. [6] M. Yang and H. Kim, “Deep joint source-channel coding for wireless image transmission with adaptive rate control,” in Proc. IEEE Int. Conf. Acoust., Speech, Signal Process. (ICASSP) , Singapore, May 2022, pp. 5193–5197. [7] Z. Lyu, G. Zhu, J. Xu, B. Ai, and S. Cui, “Semantic communications for image recovery and classification via deep joint source and channel coding,” IEEE Trans. Wireless Commun. , vol. 23, no. 8, pp. 8388–8404, Jan. 2024. [8] J. Dai, J. Li, Z. Zhao, Z. Yang, Z. Zhang, and M. Shikh-Bahaei, “Energy efficient multi-modal probabilistic semantic communication (PSCom),” 
+
+IEEE Trans. Green Commun. Netw. , vol. 9, no. 4, pp. 1951–1963, Dec. 2025. [9] W. Zhang, H. Zhang, H. Ma, H. Shao, N. Wang, and V. Leung, “Predictive and adaptive deep coding for wireless image transmission in semantic communication,” IEEE Trans. Wireless Commun. , vol. 22, no. 8, pp. 5486–5501, Aug. 2023. [10] K. Yang, S. Wang, J. Dai, K. Tan, K. Niu, and P. Zhang, “WITT: A wireless image transmission transformer for semantic communications,” in Proc. IEEE Int. Conf. Acoust. Speech Signal Process. (ICASSP) ,Rhodes Island, Greece, Jun. 2023, pp. 1–5. [11] S. Li, D. Tuninetti, and N. Devroye, “On the capacity region of the layered packet erasure broadcast channel with feedback,” in Proc. IEEE Int. Conf. Commun. (ICC) , Shanghai, China, May 2019, pp. 1–6. [12] S. Li, H. Seferoglu, D. Tuninetti, and N. Devroye, “On the stability region of the layered packet erasure broadcast channel with output feedback,” in Proc. IEEE Inf. Theory Workshop (ITW) , Visby, Sweden, Aug. 2019, pp. 1–5. [13] G. Zhang, Q. Hu, Y. Cai, and G. Yu, “SCAN: Semantic communication with adaptive channel feedback,” IEEE Trans. Cogn. Commun. Netw. ,vol. 10, no. 5, pp. 1759–1773, Oct. 2024. [14] H. Wu, Y. Shao, E. Ozfatura, K. Mikolajczyk, and D. Gündüz, “Transformer-aided wireless image transmission with channel feedback,” 
+
+IEEE Trans. Wireless Commun. , vol. 23, no. 9, pp. 11904–11919, Sep. 2024. [15] J. Ding, P. Jiang, C. Wen, and S. Jin, “Adaptive wireless image semantic transmission: Design, simulation, and prototype validation,” 2024, [Online]. Available: https://arxiv.org/abs/2410.17536. [16] J. Wu, C. Wu, Y. Lin, T. Yoshinaga, L. Zhong, X. Chen, and Y. Ji, “Semantic segmentation-based semantic communication system for image transmission,” Digit. Commun. Netw. , vol. 10, no. 3, pp. 519–527, Jun. 2024. [17] Z. Lyu, M. Xiao, M. Skoglund, M. Debbah, and H. V. Poor, “Quantization-aware collaborative inference for large embodied ai models,” 2026, [Online]. Available: https://arxiv.org/abs/2602.13052. [18] R. Xu, G. Li, Z. Yang, J. Kang, X. Zhang, and J. Li, “Covert UAV data transmission via semantic communication: A DRL-driven joint position and power optimization method,” in Proc. Int. Conf. Commun. China (ICCC) , Hangzhou, China, Aug. 2024, pp. 66–71. [19] Y. Wang, M. Chen, T. Luo, W. Saad, D. Niyato, H. V. Poor, and S. Cui, “Performance optimization for semantic communications: An attention-based reinforcement learning approach,” IEEE J. Select. Areas Commun. ,vol. 40, no. 9, pp. 2598–2613, Feb. 2022. [20] W. Zhang, Y. Wang, M. Chen, T. Luo, and D. Niyato, “Optimization of image transmission in cooperative semantic communication networks,” 
+
+IEEE Trans. Wireless Commun. , vol. 23, no. 2, pp. 861–873, Feb. 2024. [21] W. Zhang, Q. Wu, P. Fan, K. Wang, N. Cheng, W. Chen, and K. B. Letaief, “Semantic-aware resource management for C-V2X platooning via multi-agent reinforcement learning,” 2025, [Online]. Available: https://arxiv.org/abs/2411.04672. [22] G. Dulac-Arnold et al., “Challenges of real-world reinforcement learning: definitions, benchmarks and analysis,” Mach. Learn. , vol. 110, no. 9, pp. 2419–2468, Sep. 2021. [23] P. Sunehag et al., “Value-decomposition networks for cooperative multi-agent learning based on team reward,” in Proc. Int. Conf. Auton. Agents Multiagent Syst. , Stockholm, Sweden, Jul. 2018, pp. 2085–2087. [24] R. Lowe, Y. Wu, A. Tamar, J. Harb, P. Abbeel, and I. Mordatch, “Multi-agent actor-critic for mixed cooperative-competitive environments,” in 
+
+Proc. Neural Inf. Process. Syst. (NIPS) , Long Beach, CA, USA, Dec. 2017, pp. 6382–6393. [25] R. Rombach, A. Blattmann, D. Lorenz, P. Esser, and B. Ommer, “High-resolution image synthesis with latent diffusion models,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR) , New Orleans, LA, USA, Jun. 2022, pp. 10684–10695. [26] W. Wang et al., “InternImage: Exploring large-scale vision foundation models with deformable convolutions,” 2023, [Online]. Available: https://arxiv.org/abs/2211.05778. 14 
+
+[27] X. Ding, X. Zhang, J. Han, and G. Ding, “Scaling up your kernels to 31×31: Revisiting large kernel design in CNNs,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR) , New Orleans, LA, USA, Jun. 2022, pp. 11953–11965. [28] Z. Liu, Y. Lin, Y. Cao, H. Hu, Y. Wei, Z. Zhang, S. Lin, and B. Guo, “Swin Transformer: Hierarchical vision transformer using shifted windows,” in 
+
+Proc. IEEE/CVF Int. Conf. Comput. Vis. (ICCV) , Montreal, QC, Canada, Oct. 2021, pp. 9992–10002. [29] D. Tse and P. Viswanath, Fundamentals of Wireless Communication ,Cambridge University Press, 2005. [30] M. Yazid, D. Aissani, L. Bouallouche-Medjkoune, N. Amrouche, and B. Kamel, “Modeling and enhancement of the IEEE 802.11 RTS/CTS scheme in an error-prone channel,” Form. Asp. Comput. , Jan. 2015. [31] S. Huang and S. Ontañón, “A closer look at invalid action masking in policy gradient algorithms,” in Proc. Int. FLAIRS Conf. , Jensen Beach, FL, USA, May 2022. [32] T. Rashid et al., “Monotonic value function factorisation for deep multi-agent reinforcement learning,” J. Mach. Learn. Res. , vol. 21, no. 178, pp. 1–51, 2020. [33] M. Kochenderfer and T. Wheeler, Algorithms for Optimization , MIT Press, Cambridge, MA, USA, 2019. [34] J. Foerster, G. Farquhar, T. Afouras, N. Nardelli, and S. Whiteson, “Counterfactual multi-agent policy gradients,” in Proc. AAAI Conf. Artif. Intell. , New Orleans, Louisiana, USA, Apr. 2018, vol. 32. [35] R. S Sutton, D. A McAllester, S. P Singh, and Y. Mansour, “Policy gradient methods for reinforcement learning with function approximation,” in Proc. Adv. Neural Inf. Process. Syst. , Cambridge, MA, USA, Nov. 1999, pp. 1057–1063. [36] D. Zhou, L. Li, S. Gong, B. Gu, G. Chen, and D. Niyato, “Learning adaptive jamming and beamforming for hybrid IRS-assisted secure NOMA transmissions,” IEEE Trans. Commun. , vol. 73, no. 11, pp. 12235–12247, Nov. 2025. [37] X. Xu, H. Xu, D. Wei, W. Saad, M. Bennis, and M. Chen, “Transformer-based collaborative reinforcement learning for fluid antenna system (FAS)-enabled 3D UAV positioning,” IEEE J. Select. Areas Commun. ,vol. 44, pp. 1128–1143, 2026. [38] D. Wei, X. Xu, Y. Liu, H. V. Poor, and M. Chen, “Optimizing model splitting and device task assignment for deceptive signal-assisted private multi-hop split learning,” IEEE J. Select. Areas Commun. , vol. 44, pp. 1512–1528, 2026. [39] D. Bertsimas and J. N. Tsitsiklis, “Simulated annealing,” Statist. Sci. ,vol. 8, no. 1, pp. 10–15, Feb. 1993. [40] R. Lowe, Y. Wu, A. Tamar, J. Harb, P. Abbeel, and I. Mordatch, “Multi-agent actor-critic for mixed cooperative-competitive environments,” in 
+
+Proc. Adv. Neural Inf. Process. Syst. (NIPS) , Long Beach, CA, USA, Dec. 2017, vol. 30, pp. 6382–6393. [41] M. Tan, “Multi-agent reinforcement learning: Independent vs. cooperative agents,” in Proc. Int. Conf. Mach. Learn. (ICML) , Amherst, MA, USA, Jun. 1993, pp. 330–337. [42] L. Yan et al., “Resource allocation for semantic-aware net-works,” arXiv preprint arXiv:2201.06023 , 2022, [Online]. Available: https://arxiv.org/abs/2201.06023.

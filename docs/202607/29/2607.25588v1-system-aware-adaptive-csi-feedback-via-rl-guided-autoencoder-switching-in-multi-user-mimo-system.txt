@@ -1,0 +1,984 @@
+Title: System-Aware Adaptive CSI Feedback via RL-Guided Autoencoder Switching in Multi-User MIMO System
+
+URL Source: https://arxiv.org/pdf/2607.25588v1
+
+Published Time: Wed, 29 Jul 2026 00:51:21 GMT
+
+Number of Pages: 15
+
+Markdown Content:
+> 1
+
+# System-Aware Adaptive CSI Feedback via RL-Guided Autoencoder Switching in Multi-User MIMO Systems 
+
+Maryam Ansarifard , Mohit K. Sharma, George Exarchakos , Kishor C. Joshi 
+
+Abstract —This paper proposes a system-aware adaptive chan-nel state information (CSI) feedback framework for massive multiple-input multiple-output (mMIMO) systems, aiming to dynamically optimize the trade-off between reconstruction fidelity and signaling overhead. While deep learning-based autoencoders (AEs) have enabled significant CSI compression, conventional fixed-ratio schemes fail to adapt effectively to non-stationary channel conditions. To address this limitation, we develop a rein-forcement learning (RL)-driven control framework that operates over a bank of pretrained multi-rate AEs, each corresponding to a distinct compression ratio (CR). At each time step, a centralized RL agent selects the most suitable CR for each user based on observed channel conditions and system performance indicators. Distinct from conventional mean squared error (MSE)-centric designs, we introduce a system-aware reward formulation that jointly accounts for spectral efficiency via signal-to-interference-plus-noise ratio (SINR), feedback overhead constraints, and the computational cost of model adaptation. Simulation results on high-dimensional delay-domain CSI datasets demonstrate that the proposed RL-guided framework effectively balances the overhead–accuracy tradeoff and adapts to dynamic channel envi-ronments. The proposed method improves spectral efficiency and feedback efficiency compared with fixed compression schemes and adaptive baselines, while maintaining a modest computa-tional and memory footprint. Averaged over different numbers of users and across all considered baselines, the proposed RL framework reduces the CSI feedback cost by more than 53 .4% ,improves the average downlink sum rate by 53 .64% , and reduces the NMSE by 22 .38% . These results demonstrate its ability to achieve a more efficient rate–accuracy–feedback tradeoff under dynamic wireless conditions. 
+
+Index Terms —Multi-user massive MIMO, reinforcement learn-ing, channel state information, CSI compression. 
+
+I. I NTRODUCTION 
+
+# MASSIVE multiple-input multiple-output (mMIMO) has emerged as a fundamental technology for 5G-Advanced and 6G networks, offering substantial gains in spectral effi-ciency and spatial multiplexing. To fully realize these benefits, particularly beamforming and multi-user interference nulling, the base station (BS) requires accurate downlink channel state information (CSI). In practical frequency-division duplexing (FDD) systems, the acquisition of downlink CSI starts at 
+
+M. Ansarifard, G. Exarchakos, and K. C. Joshi are with the Department of Electrical Engineering, Eindhoven University of Technology, Eindhoven, The Netherlands. E-mails: ( {M.Ansarifard, G.Exarchakos, K.C.Joshi }@tue.nl). M. K. Sharma is with the Directed Energy Research Center, Technology Innovation Institute, Abu Dhabi, UAE. E-mail: Mohit.Sharma@tii.ae. 
+
+the user equipment (UE) through pilot-based channel esti-mation [1]. Since uplink and downlink operate over differ-ent frequency bands in FDD, channel reciprocity cannot be directly exploited at the BS. Therefore, the BS periodically (or on demand) transmits reference signals, called channel state information reference signals (CSI-RS), across time and frequency resources. Using these known pilot symbols, each UE estimates the downlink channel over the occupied OFDM subcarriers. These estimates capture the spatial-frequency characteristics of the propagation environment, including path loss, multipath fading, and scattering effects. Once the channel is estimated, the UE must convey this information back to the BS to enable precoding and beamforming. However, directly feeding back the full CSI matrix is infeasible in large-scale MIMO systems due to the enormous dimensionality of the channel representation. This challenge becomes more pronounced as the number of antennas, subcarriers, and users increases, leading to significant feedback overhead that limits system scalability. Traditional CSI feedback methods, including codebook-based quantization [2], [3], compressive sensing [4], and low-rank modeling [5], [6], provide partial relief by exploiting structural properties of the channel such as sparsity or spatial correlation. However, these approaches often rely on hand-crafted models and linear assumptions that struggle to capture the highly complex and non-linear characteristics of wire-less propagation environments. Furthermore, their performance typically degrades under dynamic channel conditions, and some methods incur substantial computational overhead or reconstruction latency, limiting their practical deployment in large-scale systems. In addition, these techniques often require careful parameter tuning and prior knowledge of channel statistics, which may not be readily available or may vary significantly across different scenarios and frequency bands. As a result, their robustness and generalization capability remain limited, particularly in heterogeneous networks with diverse user mobility patterns and propagation conditions. Moreover, the trade-off between feedback compression and reconstruction accuracy is difficult to balance, as aggressive compression can lead to significant information loss, ultimately degrading beamforming and system performance. These lim-itations highlight the need for more flexible and data-driven approaches that can efficiently learn compact representations arXiv:2607.25588v1 [cs.IT] 28 Jul 2026 2
+
+of CSI while adapting to complex and time-varying wireless environments. Recent research has increasingly explored data-driven ap-proaches, particularly machine learning (ML) techniques, for CSI compression and reconstruction. Unlike model-driven methods, ML-based approaches can learn implicit channel representations directly from data without relying on rigid analytical assumptions. Among these techniques, deep learning (DL)-based autoencoders (AEs) have emerged as a promising solution for CSI feedback in mMIMO systems [7]–[10]. These architectures consist of an encoder network deployed at the UE and a decoder network located at the BS. The encoder compresses the high-dimensional CSI matrix into a compact latent representation, which is then transmitted through the feedback link, while the decoder reconstructs the CSI at the BS. By jointly optimizing both networks in an end-to-end manner, AE-based frameworks can effectively capture complex spatial–frequency channel correlations and achieve signifi-cantly higher compression efficiency compared to conventional approaches. Despite their success, nearly all existing AE-based schemes operate with a fixed compression ratio (CR) determined offline. This static-ratio approach is fundamentally flawed given the non-stationary nature of 6G environments. A fixed CR cannot adapt to varying channel realizations, fluctuations in signal-to-noise ratio (SNR), or changing application-specific accu-racy requirements, often resulting in either wasted feedback resources or insufficient CSI fidelity. In practical 6G scenarios, user mobility, scattering evolution, and blockages cause rapid CSI dynamics. While a user might initially be assigned a specific CR based on long-term features, channel distribution drift can quickly render that ratio suboptimal. In practice, a user’s CSI requirements evolved based on local scattering, mobility-induced Doppler shifts, and sudden blockages (LoS to NLoS transitions). Utilizing a high compression level (e.g., 
+
+1/32 ) during low-SNR conditions may result in beamforming misalignment, while a low compression level (e.g., 1/4) during stable periods wastes valuable feedback bits. Furthermore, as the channel distribution drifts, the pre-trained AE weights inevitably become obsolete. While periodic fine-tuning can mitigate this issue, performing frequent gradient-based updates at the UE introduces significant computational and energy overhead, as training requires not only forward inference but also backpropagation and gradient storage, which are considerably more demanding in terms of processing power and memory. This is particularly challenging for resource-constrained user equipment, where power consumption and latency are critical concerns. In addition, frequent updates may destabilize the latent space, leading to inconsistencies between the encoder at the UE and the decoder at the BS, and thereby degrading reconstruction accuracy. To address these limitations, we move beyond conven-tional CSI reconstruction objectives and propose a system-aware adaptive feedback framework that explicitly considers network-level performance and resource constraints. Instead of optimizing CSI compression solely for reconstruction ac-curacy, our approach dynamically adapts the feedback pro-cess based on the current channel conditions and system requirements. We formulate the CSI feedback control problem as a Markov decision process (MDP), where a centralized reinforcement learning (RL) agent orchestrates the feedback strategy across users. At each decision step, the agent observes the system state, which captures key indicators of channel quality, feedback cost, and reconstruction performance, includ-ing the normalized mean squared error (NMSE), defined as the normalized distortion between the original CSI and the reconstructed CSI at the BS, and selects a pretrained AE from a multi-rate AE bank, which effectively results in choosing a specific CR. The selected AE is used for encoding the CSI into latent space, which is then used at the BS for reconstruction using the corresponding decoder. Through this formulation, the RL agent learns to balance three inherently conflicting objectives: maximizing spectral efficiency through accurate CSI reconstruction (e.g., higher downlink sum-rate), minimizing feedback overhead on the uplink control channel, and limiting the computational burden associated with model adaptation at the UE. By jointly opti-mizing these objectives, the proposed framework enables the network to allocate feedback resources more efficiently while maintaining reliable beamforming performance under dynamic channel conditions. Compared with static-ratio AE-based schemes, the proposed approach provides adaptive and context-aware CSI feedback, allowing the system to react to channel distribution shifts, variations in SNR, and evolving propagation environments. As a result, the framework improves overall system efficiency while avoiding unnecessary feedback transmissions and exces-sive model retraining, making it particularly suitable for highly dynamic 6G scenarios. 
+
+A. Related Works 
+
+Table I provides an overview of representative CSI feed-back and compression methods reported in the literature and compares them with the proposed framework. Early learning-based CSI compression methods employ convolutional or fully connected AEs to exploit spatial–frequency correlations in OFDM MIMO channels. CsiNet [11] and its variants [12], [13] demonstrate strong reconstruction performance at fixed compression ratios, while later works extend to attention modules, temporal correlation learning, and transformer-based latent representations [14]–[19]. Although high compression ratios reduce overhead, they also amplify distortion, motivating ratio-adaptive approaches. Prior studies comparing model-based codebook approaches with data-driven CSI compression methods, including convolutional and transformer-based mod-els, report average throughput gains of approximately 5%–15% in low-feedback-overhead scenarios. As the feedback overhead increases, the gain decreases to around 3%–9% in medium-overhead settings [20]. Several studies introduce heuristic or supervised methods to assign different CSI compression ratios across users or time. 3
+
+For instance, the deep AE-based CSI compression framework in [21] shows that runtime complexity is largely independent of the compression ratio, making adaptive compression feasible. However, compression ratios are selected offline and remain static during deployment, which limits robustness under chan-nel distribution drift caused by user mobility or environmental changes. Similarly, [22] proposes an adaptive DNN-based CSI feedback scheme that selects the CR via a classification block and improves NMSE under more realistic clustered delay line (CDL) channel models. While this method adapts CRs, the adaptation is rule-based, without explicitly considering system-level performance metrics such as throughput loss or feedback overhead trade-offs over time. User-driven adaptive feedback approaches, such as the nested-dropout and vector-quantization-based scheme in [23], enable variable-length CSI feedback using a shared codebook. These methods efficiently accommodate heterogeneous user requirements and outperform fixed-rate baselines under vary-ing feedback budgets. However, they do not address distri-bution drift nor update the encoder/decoder representations over time. Likewise, PFnet with adaptive compression in [24] dynamically adjusts compression ratios based on SNR and focuses on pilot compression rather than CSI compression. While this reduces overhead and improves NMSE, adaptation decisions rely on instantaneous channel quality indicators and remain myopic, without learning temporal adaptation policies or accounting for computational retraining costs. Exploiting side information to guide adaptive feedback is also being considered in literature. For example, [25] leverages user location correlation to reduce feedback overhead and im-prove MU-MIMO throughput. Although Location-based CSI feedback compression (LFC) scales well with the number of users, it relies on explicit location information and prede-fined grouping strategies, limiting applicability in dynamic or privacy-constrained environments. Cross-layer adaptive feedback compression in [26] dynami-cally adjusts CSI compression intensity using practical metrics extracted from packet preambles and demonstrates strong experimental performance. However, this relies on handcrafted adaptation metrics and does not leverage learned CSI repre-sentations or online model refinement. 
+
+B. Our contribution 
+
+We consider a closed-loop CSI feedback framework in which the BS hosts the RL agent and a bank of pretrained autoencoder decoders, while the corresponding encoders are available at the UEs. At each transmission interval, the BS selects the operating CR based on the observed network state and communicates the corresponding encoder index to the UE through lightweight control signaling. The UE compresses its CSI using the selected encoder and feeds the compressed representation back to the BS for reconstruction and downlink transmission. Within this setting, the main contributions of this work are summarized as follows:  
+
+> •
+
+We propose a drift-resilient CSI compression frame-work for multi-user MIMO systems based on RL-guided switching among pretrained autoencoders with different compression ratios. The proposed framework adapts CSI feedback to changing channel conditions without requir-ing online retraining or fine-tuning during deployment.  
+
+> •
+
+We formulate adaptive CSI compression as a sequential decision-making problem and develop a Dueling-DQN-based controller that dynamically selects the operating CR according to the observed network state, including reconstruction quality, SINR, and feedback conditions.  
+
+> •
+
+We design a system-aware reward function that jointly accounts for CSI reconstruction distortion, feedback over-head, switching cost, and achievable downlink sum rate. Consequently, the proposed framework optimizes CSI compression from a system-level perspective rather than focusing solely on reconstruction accuracy.  
+
+> •
+
+We conduct extensive simulations under diverse channel scenarios and user densities. The results demonstrate that the proposed framework consistently outperforms rule-based, supervised-learning, and fixed-CR baselines in terms of reconstruction quality, adaptation robustness, communication performance, and long-term reward. To the best of our knowledge, no existing work explicitly enables an RL agent to dynamically select among pretrained autoencoders with different CRs in a multi-user MIMO CSI compression framework. The proposed framework enables autonomous and context-aware CSI feedback adaptation under dynamic channel conditions. This provides a scalable step toward “Agentic AI” in the physical layer, where communi-cation systems can intelligently optimize feedback strategies in response to evolving wireless environments and network requirements. 
+
+C. Paper Organization 
+
+The rest of this paper is organized as follows. The system model is presented in Section II. In Section III, the problem formulation and the solution to the problem are provided. The evaluation setup and performance analysis are presented in Sections IV and V, respectively, and Section VI concludes the paper. 
+
+Notations: Scalars are denoted by lowercase italic letters (e.g., x), vectors by bold lowercase letters (e.g., x), and ma-trices by bold uppercase letters (e.g., H). The sets of real and complex numbers are represented by R and C, respectively. For a matrix A, AT , AH , and A−1 denote the transpose, Hermitian transpose (conjugate transpose), and inverse of A,respectively. The notation ∥x∥2 represents the Euclidean norm of vector x. The operator | · | denotes the absolute value of a scalar or the magnitude of a complex number. A circularly symmetric complex Gaussian random variable with mean μ
+
+and variance σ2 is denoted by CN (μ, σ 2). The expectation operator is denoted by E[·]. Finally, (·)∗ denotes the complex conjugate, and I{·} represents the indicator function, which equals 1 when its condition is true and 0 otherwise. 4
+
+TABLE I COMPARISON OF REPRESENTATIVE CSI FEEDBACK AND COMPRESSION APPROACHES .
+
+Method Adaptation Capabilities Optimization Objectives Deployment Adaptive Online Drift System MU Compression Adaptation Aware Aware Support 
+
+CsiNet/ CsiNet+ / CsiNet-DNN [11]–[13] × × × × △
+
+Transformer-based CSI feedback [14], [16]–[19] × × × × △
+
+Adaptive DNN CSI feedback [22] ✓ △ × × △
+
+Runtime-adaptive AE compression [21] ✓ △ × × △
+
+Nested Dropout / VQ methods [23] ✓ ✓ × × ✓
+
+PFNet [24] ✓ ✓ × △ △
+
+Location-based and cross-layer methods [25], [26] ✓ ✓ △ ✓ ✓
+
+Proposed Method ✓ ✓ ✓ ✓ ✓
+
+✓: supported; △: partially supported; ×: not supported. CSI 
+
+Preprocessing 
+
+Flattening (real and imaginary 
+
+components) 
+
+CSI Input (real/Imag) 
+
+Base Station 
+
+RL Agent 
+
+User #1 
+
+Pretrained AE Bank (Encoders)     
+
+> CR = 1/4 ( L 1)CR = 1/8 ( L 2)CR = 1/16 ( L 3)CR = 1/32 ( L 4)
+
+Latent Vector (L i)
+
+Compressed 
+
+CSI 
+
+Pretrained AE Bank (Decoders)     
+
+> CR = 1/4 ( L 1)CR = 1/8 ( L 2)CR = 1/16 ( L 3)CR = 1/32 ( L 4)
+
+Observe State 
+
+Previous CR 
+
+NMSE 
+
+Average channel correlation 
+
+Feedback headroom 
+
+Select Action (CR Selection) 
+
+Select AE/CR index 
+
+Performs model switching 
+
+Reward Calculation 
+
+Sum-rate (throughput) 
+
+NMSE 
+
+Feedback overhead 
+
+Switching cost 
+
+> Selected decoder
+> (matching CR)
+> RL-selected encoder (CR = 1/8)
+
+State, Reward 
+
+Reconstructed CSI User #1 
+
+Pretrained AE Bank (Decoders)     
+
+> CR = 1/4 ( L 1)CR = 1/8 ( L 2)CR = 1/16 ( L 3)CR = 1/32 ( L 4)
+> Selected decoder
+> (matching CR)
+
+Reconstructed CSI User #K 
+
+CSI 
+
+Preprocessing 
+
+Flattening (real and imaginary 
+
+components) 
+
+CSI Input (real/Imag) 
+
+User #K 
+
+Pretrained AE Bank (Encoders)     
+
+> CR = 1/4 ( L 1)CR = 1/8 ( L 2)CR = 1/16 ( L 3)CR = 1/32 ( L 4)
+
+Latent Vector (L i)
+
+> RL-selected encoder (CR = 1/16)
+
+Compressed 
+
+CSI 
+
+Action (selected CR / AE index) sent to users 
+
+Encoder (UE side) 
+
+Decoder (BS side) 
+
+Latent Vector (L i)Latent vector (dimension  Li)
+
+Data flow (CSI feedback) 
+
+Control flow (RL action) 
+
+Information flow (State, Reward) 
+
+Key Features 
+
+> Multiple pretrained AEs per user for different compression ratios (CRs)
+> RL agent selects the most suitable CR for each user
+> Only switching is performed; AE parameters remain frozen
+> Matching decoder is activated at the BS according to the selected CR
+
+Fig. 1. System architecture and workflow of the proposed adaptive CSI compression framework. 
+
+II. S YSTEM MODEL 
+
+We consider a downlink multi-user MIMO (MU-MIMO) orthogonal frequency division multiplexing (OFDM) system where the BS is equipped with Nt transmit antennas 1 and serves K mobile single-antenna users over ˜Ns OFDM subcar-riers across T time slots. In practical systems, the UE estimates the downlink channel using pilot signals transmitted from the BS [27]. Let xn[t] ∈ CNt denote the pilot symbol vector transmitted by the BS on the nth subcarrier at time slot t.The received signal at user k can then be expressed as 
+
+yk,n [t] = hHk,n [t]xn[t] + zk,n [t], (1) where hk,n [t] ∈ CNt denotes the downlink channel vector between the BS and user k on the nth subcarrier at time 
+
+1The term antenna in this paper refers to an antenna port, which can be mapped to multiple physical antennas. 
+
+slot t, and zk,n [t] ∼ CN (0 , σ 2) represents the additive white Gaussian noise (AWGN). The downlink spatial-frequency channel matrix of user k at time slot t is denoted as 
+
+˜Hk[t] = 
+
+
+
+hHk, 1[t]
+
+hHk, 2[t]
+
+...
+
+hHk, ˜Ns
+
+[t]
+
+ ∈ C ˜Ns×Nt . (2) By applying a two-dimensional discrete Fourier transform (2D-DFT), the channel can be represented in the angular-delay domain as 
+
+H = Fd ˜H F H
+
+a , (3) where Fd ∈ C ˜Ns× ˜Ns and Fa ∈ CNt×Nt denote the nor-malized DFT matrices in the delay and angular domains, 5
+
+respectively. Their (m, n )-th entries are given by 
+
+[Fd]m,n = 1
+
+p ˜Ns
+
+e−j 2πmn  
+
+> ˜Ns
+
+, m, n = 0 , . . . , ˜Ns − 1, (4) 
+
+[Fa]m,n = 1
+
+√Nt
+
+e−j 2πmn Nt , m, n = 0 , . . . , N t − 1.
+
+The transformation concentrates most of the channel energy into a limited number of angular-delay components, thereby providing a sparse representation that is well suited for CSI compression. Due to the limited delay spread of multipath propagation, the energy of H in the delay domain is predominantly con-centrated in its first Nτ ≤ eNs rows, while the remaining rows contain negligible values. Exploiting this sparsity, only the first 
+
+Nτ delay-domain rows are retained to form a truncated channel matrix. With a slight abuse of notation, we denote the resulting truncated matrix by H ∈ CNτ ×Nt . The symbol Ns is used later to denote the number of retained/evaluated subcarriers over which per-subcarrier quantities such as SINR k,n and Wn
+
+are defined. Furthermore, to facilitate real-valued processing, the real and imaginary parts of H are concatenated, yielding a real-valued representation H ∈ R2Ns×Nt .
+
+A. Autoencoder-Based CSI Compression 
+
+At the BS, pre-trained autoencoder models are used to com-press and reconstruct CSI for each user. Each user transmits a compressed CSI latent vector: 
+
+zk[t] = fenc (Hk[t]; rCR  
+
+> k
+
+[t]) , (5) where fenc (·) is the encoder network, and rCR  
+
+> k
+
+[t] ∈ R =
+
+{1/4, 1/8, 1/16 , 1/32 } is the CR selected for user k in slot 
+
+t. The decoder reconstructs the CSI as: 
+
+bHk[t] = fdec (zk[t]) . (6) The CSI reconstruction quality for each user is measured using the NMSE: NMSE k[t] = ∥Hk[t] − bHk[t]∥22
+
+∥Hk[t]∥22
+
+. (7) The number of feedback bits required to transmit zk[t]
+
+scales inversely with the selected compression ratio: 
+
+Bk[t] ∝ 1
+
+rCR  
+
+> k
+
+[t] . (8) 
+
+B. Precoding and SINR Calculation 1) Precoding: To evaluate the MU-MIMO system perfor-mance, we compute the SINR by applying the precoders de-signed from the reconstructed CSI to the ground-truth channel 
+
+hk,n . The total transmit power Ptx is divided equally among the K users, such that the power per user is p = Ptx /K . The receiver noise is modeled as AWGN with power σ2.The BS employs a linear precoding matrix Wn =[w1,n , . . . , wK,n ] ∈ CNt×K for each subcarrier n. The unnor-malized precoding vectors vk,n are determined based on the chosen strategy. We employ zero-forcing (ZF) to mitigate inter-user interference by inverting the estimated channel matrix 
+
+bHn = [ bhT
+
+> 1,n
+
+, . . . , bhTK,n ]T ∈ CK×Nt . The unnormalized matrix 
+
+Vn is given by: 
+
+Vn = bHHn
+
+ bHn bHHn
+
+−1
+
+. (9) Each precoding vector is normalized to unit norm to main-tain strict power allocation: 
+
+wk,n = vk,n 
+
+∥vk,n ∥ . (10) 
+
+2) SINR Calculation: The instantaneous SINR for user k on subcarrier n captures the degradation caused by the mismatch between the estimated precoder wk,n and the true channel 
+
+hk,n :
+
+SINR k,n = p |hk,n wk,n |2
+
+P 
+
+> k′̸=k
+
+p |hk,n wk′,n |2 + σ2 . (11) The average SINR for user k over the Ns retained subcar-riers is defined as: 
+
+SINR k = 1
+
+NsNsX
+
+> n=1
+
+SINR k,n . (12) Based on the variables defined in this section, the adap-tive CSI feedback problem can be interpreted as selecting, at each time slot t, the compression ratio rCR  
+
+> k
+
+[t] and the corresponding pretrained AE for each user k. This decision affects the reconstructed CSI, the reconstruction distortion, the feedback overhead, and ultimately the achieved SINR k[t]
+
+after precoding. Since these quantities evolve over time due to channel variations, user mobility, and multi-user interference, the problem naturally forms a sequential decision-making process. Therefore, it can be modeled as an MDP, and an RL-based approach is suitable for learning a policy that dynamically selects the appropriate pretrained AE under time-varying communication and feedback conditions. III. R EINFORCEMENT LEARNING FORMULATION FOR 
+
+PRETRAINED AE S WITCHING 
+
+RL agent is employed to jointly determine the appro-priate CR and the corresponding pretrained AE selection for each user. The environment is inherently stochastic due to channel variations, user mobility, multi-user interference, and time-varying propagation conditions. These dynamics are naturally captured within the MDP framework, where the agent observes a compact state representation that reflects both communication-level metrics (e.g., SINR and channel correlation) and CSI reconstruction indicators (e.g., NMSE and feedback budget conditions). Based on the observed state, the agent selects an action corresponding to one of the available pretrained multi-rate AEs, thereby enabling adaptive CSI compression through intelligent AE switching. A key advantage of RL lies in its ability to learn long-term trade-offs between competing objectives. Frequent AE updates improve reconstruction quality but incur computational cost, 6
+
+whereas higher compression reduces feedback overhead at the expense of CSI accuracy. By optimizing a cumulative reward that integrates throughput, distortion, feedback cost, and adaptation overhead, the agent learns communication-aware policies that balance these factors over time. Moreover, the multi-user setting introduces coupling through shared feedback constraints. Rather than solving a combinatorial optimization problem, this coupling is incorpo-rated into the reward design, enabling coordinated and scalable decision-making across users. The proposed formulation is detailed next through the definition of the state space, action space, and reward function. 
+
+1) State Space: At each time slot t and for each user k, the agent observes the state vector: 
+
+sk[t] = rCR  
+
+> k
+
+[t − 1] , NMSE k[t − 1] , SINR k[t], ¯ρk[t − 1] ,
+
+(13) 
+
+bk[t],
+
+where:  
+
+> •
+
+rCR  
+
+> k
+
+[t−1] denotes the CR selected for user k in the previ-ous time slot, which also determines the active pretrained AE used for CSI compression and reconstruction,  
+
+> •
+
+NMSE k[t − 1] is the reconstruction distortion from the previous time slot,  
+
+> •
+
+¯ρk[t−1] denotes the average channel correlation between user k and the remaining co-scheduled users from the previous time slot, defined as 
+
+¯ρk[t − 1] = 1
+
+K − 1
+
+> K
+
+X 
+
+> j=1
+> j̸=k
+
+hH 
+
+> k
+
+[t − 1] hj [t − 1] 
+
+∥hk[t − 1] ∥2 ∥hj [t − 1] ∥2
+
+, (14) where hk[t − 1] denotes the estimated channel vector of user k of previous time slot.  
+
+> •
+
+bk[t] represents the remaining feedback budget headroom available to user k, accounting for the feedback overhead consumed by other users. This state representation is deliberately low-dimensional and normalized, allowing efficient learning while preserving the key dependencies between channel dynamics, multi-user interference, and feedback resource allocation. Although the internal weights of the autoencoder and the optimizer states are not explicitly included in the state representation, their effect is implicitly reflected through the observed reconstruction distortion. As a result, the state transition dynamics exhibit stochasticity due to neural network adaptation and numerical non-determinism, which is naturally modeled within a stochas-tic MDP framework. 
+
+2) Action Space: At each decision step, the RL agent selects an action: 
+
+ak[t] ∈ { 0, 1, . . . , |R| − 1}, (15) where each action corresponds to selecting one of the available pretrained autoencoders associated with a specific compression ratio in the predefined set 
+
+R =
+
+ 14 , 18 , 116 , 132 
+
+
+
+.
+
+More specifically, action ak[t] = i activates the pretrained AE corresponding to compression ratio Ri for user k at time slot 
+
+t. Thus, the RL agent determines how aggressively the CSI should be compressed at each time slot based on the observed communication and reconstruction conditions. 
+
+3) Reward Function Design: In line with 3GPP practice [28], the impact of CSI reconstruction quality is evaluated through its effect on downlink communication performance. Nevertheless, CSI reconstruction distortion and post-precoding SINR provide complementary information. NMSE measures the fidelity of the reconstructed CSI, whereas SINR captures the downstream effect of the reconstructed CSI on multi-user precoding, interference suppression, and spectral efficiency. Since the mapping from CSI distortion to SINR is nonlinear and depends on channel geometry, user correlation, and the spatial structure of the reconstruction error, the two metrics are not redundant. The reward function is therefore designed to be system-aware, jointly balancing downlink throughput, CSI reconstruction fidelity, feedback overhead, and CR switching cost. At each time slot t, the per-user reward for user k is defined as 
+
+rk[t] = δ log 2
+
+ 1 + SINR k[t] − α log  1 + NMSE k[t] (16) 
+
+− β 1
+
+rCR  
+
+> k
+
+[t] − csw I{rCR  
+
+> k
+
+[t]̸ = rCR  
+
+> k
+
+[t − 1] },
+
+where δ, α, β, and csw are positive weighting coefficients. The first term represents the achievable downlink rate ob-tained from the post-processing SINR, thereby encouraging actions that improve system throughput. The second term penalizes poor CSI reconstruction quality through the NMSE, using a logarithmic scaling to prevent excessive sensitivity to outliers. The third term accounts for feedback overhead, where 1/r CR  
+
+> k
+
+[t] is proportional to the number of feedback bits transmitted. The final term imposes a fixed cost when the agent triggers a CR change and switching to the autoencoder pretrained on the chosen CR. To enforce a system-level feedback constraint in the multi-user setting, an additional penalty is applied when the total feedback overhead exceeds a predefined budget. Let 
+
+B[t] = 
+
+> K
+
+X
+
+> k=1
+
+1
+
+rCR  
+
+> k
+
+[t] , (17) denote the aggregate feedback cost at time slot t, and Bmax be the maximum allowable budget. If B(t) > B max , a uniform penalty is subtracted from each user’s reward: 
+
+rk[t] ← rk[t] − η B[t] − Bmax 
+
+K , (18) where η > 0 controls the severity of the budget violation penalty. By choosing the right coefficients, we encourage the RL agent to learn communication-aware optimization rather than compression constraint avoidance. 7
+
+4) Optimization Objective: The RL agent is trained to maximize the expected discounted sum of rewards over a finite horizon: 
+
+max  
+
+> π
+
+Eπ
+
+" ∞X
+
+> t=0
+
+γtKX
+
+> k=1
+
+rk[t]
+
+#
+
+, (19) where π denotes the control policy and γ ∈ (0 , 1) is the discount factor. Unlike myopic compression-ratio selection schemes that optimize only the immediate reconstruction qual-ity, the proposed formulation accounts for the long-term conse-quences of each compression decision. Through the discounted return objective, the RL agent learns to balance the immediate benefits of aggressive CSI compression against the potential degradation in future communication performance caused by reconstruction errors and inappropriate compression choices. This property is particularly important in dynamic wireless environments, where channel statistics evolve over time due to user mobility and scenario transitions. Since the state representation incorporates historical reconstruction quality, SINR, and inter-user correlation information, the agent can identify emerging changes in the channel conditions and proac-tively adjust the selected CR before significant performance degradation occurs. Consequently, the learned policy does not simply react to channel drift after it happens, but instead develops compression strategies that remain effective across varying channel conditions. Furthermore, the inclusion of switching and feedback-overhead penalties prevents unnecessary CR fluctuations while still allowing adaptation when channel conditions change significantly. As a result, the proposed RL framework achieves a favorable balance between CSI reconstruction quality, feed-back efficiency, and communication performance, leading to robust operation under non-stationary multi-user MIMO envi-ronments. IV. E XPERIMENTAL SETUP & T RAINING 
+
+A. Dataset 
+
+We consider a dataset generated through a time-domain simulation of a multi-user massive MIMO system compliant with 5G NR specifications at 3.5 GHz using the MATLAB 5G Toolbox. The simulation models an outdoor cellular environ-ment with K = 2 , 4, 6, 8 mobile users served by a base station equipped with a uniform planar array (UPA) of Nt = 64 
+
+antennas. Users move in a two-dimensional plane with time-varying velocities, and their positions are updated every slot of duration 0.5 ms. The OFDM configuration employs 52 
+
+resource blocks with a subcarrier spacing of 30 kHz, yielding 
+
+˜Ns = 624 subcarriers. The channel impulse response (CIR) truncation length is de-termined from the average power delay profile of the generated channels. Since most of the channel energy is concentrated within the first 50 –60 delay taps, the CIR is truncated to 64 
+
+taps to reduce dimensionality while preserving the dominant multipath components. To capture diverse propagation conditions, three CDL chan-nel families are instantiated for each user: CDL-A, CDL-C, and CDL-E, representing progressively more challenging propagation environments with different delay spreads and scattering characteristics. Perfect frequency-domain CSI is computed at every slot by combining time-varying path gains with the fixed path-delay filters extracted from the CDL channel objects. The proposed dataset considers globally synchronized sce-nario transitions, where all users undergo the same high-level environmental change at the same time. This setting does not imply that users experience identical channel realizations; rather, it models a common propagation-regime shift across the network, while preserving user-specific differences in channel gains, mobility, fading realizations, SNR, and spatial corre-lation. Such common-mode transitions can occur in practical scenarios involving collective user mobility, e.g., passengers in a vehicle or train, network-wide environmental changes, large obstacles affecting a shared propagation region, or coordinated movement through different propagation zones. Under these conditions, the dominant propagation characteristics observed by multiple users may change in a correlated manner, leading to simultaneous transitions between regimes such as LoS, NLoS, and blockage. The propagation process evolves through three distinct regimes:  
+
+> •
+
+Scenario 1 (easy regime): highly correlated and low-rank channels favoring aggressive CSI compression,  
+
+> •
+
+Scenario 2 (moderate regime): intermediate scattering conditions with moderate spatial diversity,  
+
+> •
+
+Scenario 3 (hard regime): highly frequency-selective and distorted channels requiring lower compression. The propagation process evolves through three distinct regimes corresponding to different channel conditions. Specifi-cally, CDL-A represents the LoS (easy) regime, CDL-C repre-sents the NLoS (moderate) regime, and CDL-E represents the blockage-dominated (hard) regime. Throughout the remainder of the paper, we refer to these regimes using the physical labels LoS, NLoS, and Blockage for clarity. The generated dataset is stored as a five-dimensional ten-sor containing the frequency-domain CSI across subcarri-ers, antennas, users, and time slots, together with per-slot SNR values, user mobility information, scenario labels, and dynamic feedback-budget annotations. The complete dataset spans 8,000 time slots and captures realistic temporal correla-tions in both small-scale and large-scale fading. For training and evaluation, 70% of the dataset is used for training, while the remaining 30% is reserved for testing. The source code for reproducing the experiments is available on GitHub [29]. 
+
+B. CSI Normalization before feeding into Autoencoder 
+
+The CSI feedback AE operates on real-valued inputs ob-tained by separating the complex delay-domain channel coef-ficients into their real and imaginary components, concatenated 8
+
+into a single vector of dimension 2 × Nt × Ns. Normalization of this input vector is essential for stable and effective AE training. The delay-domain transformation via IFFT scales channel coefficients to magnitudes on the order of 10 −7, far below the operating range of Tanh activation functions used throughout the encoder and decoder. Without normalization, activations saturate in the linear region near zero, gradients vanish during backpropagation, and the AE fails to learn a meaningful compressed representation. Furthermore, the MSE reconstruction loss treats all features equally only when they share a common scale; unnormalized inputs cause the loss to be dominated by high-variance features while low-energy components are effectively ignored. A key challenge in this system is that the K users experience statistically heterogeneous channel conditions, differing in path loss, multipath structure, and scenario exposure (LoS, NLoS, and blockage), making a single global normalization across all users inappropriate. Instead, we adopt a per-user normalization scheme, where each user k maintains its own normalization statistics μk and σk. Rather than feature-wise normalization, which would independently scale each delay tap and destroy the physically meaningful power delay profile, we apply scalar normalization: a single mean and standard deviation computed across all elements of the flattened real/imaginary vector. This preserves the relative energy distribution across delay taps, a structure that reflects the dominant multipath components, while bringing the overall input magnitude to a range suitable for neural network processing. Further implementation details are provided in Appendix A. 
+
+C. Autoencoder design 
+
+Each user is associated with a lightweight AE that maps the flattened real and imaginary components of the CSI matrix to a lower-dimensional latent representation and reconstructs it at the BS. The AE architecture is dynamically constructed based on the desired latent dimension L, which corresponds to a selected CR. Specifically, the encoder is composed of a sequence of fully connected layers that progressively reduce the feature dimension by a factor of two until reaching the target latent dimension. Each intermediate layer is followed by Layer Normalization and a ReLU activation to stabilize training and improve generalization. The decoder mirrors this structure in reverse, expanding the latent representation back to the original input dimension using fully connected layers with ReLU activations, except for the final output layer, which remains linear. To ensure stable and reliable operation, a set of AEs is pre-trained offline, each corresponding to a predefined CR. During pretraining, each AE is optimized independently using MSE loss over normalized CSI samples from the training dataset. This results in a bank of CR-specific models that provide consistent reconstruction performance and well-defined action outcomes for the RL agent. During adaptive operation, the environment maintains K
+
+independent AE banks (one per user), where each bank con-tains a small number of pretrained models corresponding to the available CR levels. At each time step, the RL agent selects a CR for each user, and the corresponding pretrained AE is activated for encoding and reconstruction. This design avoids the need for dynamically changing network architectures or transferring weights across different latent dimensions, thereby preserving stability in the learning process. During online operation, AE parameters remain frozen. Adaptation is achieved by switching the active pretrained AE according to the RL-selected compression ratio. 
+
+D. Double DQN agent 
+
+We adopt a value-based deep RL approach using a Double DQN with a dueling network architecture. The dueling archi-tecture decomposes the state–action value function as 
+
+Q(s, a ; θ) = V (s; θv )+ A(s, a ; θa) − 1
+
+|A| 
+
+X
+
+> a′
+
+A(s, a ′; θa)
+
+!
+
+,
+
+(20) where V (s; θv ) denotes the state-value function , representing the overall quality of state s, and A(s, a ; θa) denotes the 
+
+advantage function , which measures the relative importance of action a compared to other actions in state s. The parameters 
+
+θv and θa correspond to the value and advantage streams of the dueling network, respectively, and A denotes the action space. This decomposition improves representation learning and sample efficiency by disentangling state evaluation from action preference. Experience replay is employed to decorrelate training sam-ples, and a target network is periodically updated to stabilize learning. During training, actions are selected using an ϵ-greedy exploration policy with exponentially decaying ϵ, while inference uses a fully greedy policy. 
+
+E. Training Procedure 
+
+The overall training procedure is summarized in Algo-rithm 1, where the AE is first pretrained over the training dataset, using normalized CSI to accelerate convergence. Sub-sequently, the RL agent interacts with the environment over the time series of CSI samples, selecting compression ratios for each user and receiving corresponding rewards. Switching to the pre-trained AE is triggered dynamically by the agent’s actions. The training is conducted over multiple epochs, with the RL agent updating via mini-batch gradient descent on sampled transitions. Although the proposed framework forms a closed-loop interaction between the UE and the BS, it does not incur continuous bidirectional learning traffic. The uplink transmission corresponds to standard CSI feedback using com-pressed representations, while the downlink signaling consists of low-rate control commands that update the compression configuration. The RL training and reward computation are performed entirely at the BS and do not require over-the-air learning parameter exchange. 91 2 3 4 5 6 7 8 9 10  
+
+> Training epoch
+> -0.5 00.5 11.5 22.5
+> Average training reward
+> K=2 K=4 K=6 K=8
+> Fig. 2. Average training reward across training epochs for different number of users.
+
+V. P ERFORMANCE ANALYSIS 
+
+This section analyzes the performance of the proposed adaptive CSI compression framework based on joint RL and autoencoder design. We evaluate both the learning behavior during training and the generalization capability during eval-uation on unseen CSI realizations. 
+
+A. Training Performance and Policy Adaptation 1) Training Convergence and Scalability: Fig. 2 illustrates the evolution of the average training reward for different num-bers of users. Across all configurations, the reward increases rapidly during the initial training epochs, indicating that the RL agent quickly learns effective CR switching policies from the observed network state. After approximately four to five epochs, the reward converges and remains stable, suggesting that the policy has reached a near-stationary operating point. An important observation is that the convergence behavior remains consistent across different network sizes. Although all configurations exhibit a similar learning trend, the achievable reward decreases as the number of users increases. This behavior is expected because larger multi-user systems im-pose stricter feedback-resource constraints and create a more challenging optimization problem. Specifically, the RL agent must balance CSI reconstruction quality, feedback overhead, switching cost, and communication performance across alarger set of users, resulting in a lower average reward despite successful policy convergence. The fastest reward growth is observed during the first few training epochs, demonstrating that the proposed state representation provides sufficient information for efficient pol-icy learning. The subsequent plateau indicates that additional training primarily refines the learned policy rather than pro-ducing substantial performance gains. Moreover, the relatively smooth convergence across all user configurations suggests that the proposed Dueling-DQN framework remains stable as the system dimension increases and does not require user-specific retraining. 
+
+Algorithm 1 Adaptive CSI Compression with Double DQN and Pretrained AE Bank 
+
+Require: CSI dataset H, pretrained AE bank {AE (r)}r∈R ,dueling Q-network parameters θ, target network parame-ters θ−, learning rate αlr , discount factor γ, compression-ratio set R, number of users K, number of time slots T 
+
+> 1:
+
+Initialize Q-network with parameters θ 
+
+> 2:
+
+Initialize target network θ− ← θ 
+
+> 3:
+
+Initialize replay buffer D 
+
+> 4:
+
+Initialize normalization statistics μk[0] , σ k[0] for all users  
+
+> 5:
+
+Initialize active AE for each user: AE k ← AE (r0) 
+
+> 6:
+
+for time slot t = 1 to T do  
+
+> 7:
+
+for each user k = 1 to K do  
+
+> 8:
+
+Hk,t ← CSI sample for user k at time t 
+
+> 9:
+
+xk,t ← flattened real-imaginary CSI representation of Hk,t  
+
+> 10:
+
+Compute instantaneous statistics ˆμk[t], ˆσk[t] 
+
+> 11:
+
+Update normalization statistics: 
+
+μk[t] ← (1 − αm[t]) μk[t − 1] + αm[t]ˆ μk[t]
+
+σk[t] ← (1 − αm[t]) σk[t − 1] + αm[t]ˆ σk[t] 
+
+> 12:
+
+Normalize input: 
+
+˜xk,t ← xk,t − μk[t]
+
+σk[t] 
+
+> 13:
+
+Observe state sk,t as in (13)  
+
+> 14:
+
+Select action ak,t ∈ R using an ϵ-greedy policy  
+
+> 15:
+
+Select the pretrained AE corresponding to the chosen CR: AE k ← AE (ak,t ) 
+
+> 16:
+
+Encode and reconstruct: 
+
+˜zk,t , ˜ˆxk,t ← AE k(˜ xk,t ) 
+
+> 17:
+
+Denormalize reconstruction: 
+
+ˆxk,t ← σk[t]˜ˆxk,t + μk[t] 
+
+> 18:
+
+Compute reconstruction error: 
+
+ek,t = NMSE(ˆ xk,t , x k,t ) 
+
+> 19:
+
+Compute reward rk,t as in (16)  
+
+> 20:
+
+Observe next state sk,t +1  
+
+> 21:
+
+Store transition (sk,t , a k,t , r k,t , s k,t +1 ) in D 
+
+> 22:
+
+end for  
+
+> 23:
+
+if |D| ≥ B then  
+
+> 24:
+
+Sample mini-batch B ⊂ D  
+
+> 25:
+
+for each transition (s, a, r, s ′) ∈ B do  
+
+> 26:
+
+a∗ ← arg max a′ Q(s′, a ′; θ) 
+
+> 27:
+
+y ← r + γQ (s′, a ∗; θ−) 
+
+> 28:
+
+L(θ) ← (y − Q(s, a ; θ)) 2 
+
+> 29:
+
+end for  
+
+> 30:
+
+Update Q-network: 
+
+θ ← θ − αlr ∇θ L(θ) 
+
+> 31:
+
+end if  
+
+> 32:
+
+Periodically update target network parameters θ− ← θ 
+
+> 33:
+
+end for 10 0.02 0.02 0.02 0.94 0.02 0.05 0.82 0.11 0.03 0.93 0.02 0.02       
+
+> 1/4 1/8 1/16 1/32
+> Action: Compression Ratio
+> LoS NLoS Blockage
+> Scenario
+> 00.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1
+> Selection Probability
+> Fig. 3. Compression ratio selection probability per scenario for K= 4 users. Each row corresponds to a channel scenario (LoS, NLoS, Blockage), and each column represents an action (compression levels).
+
+2) Scenario-Aware Action Policy: Fig. 3 shows the com-pression ratio selection probability of the trained RL policy under different propagation scenarios. The policy learns dis-tinct switching behavior across scenarios. In the LoS case, the agent predominantly selects the strongest compression level, CR = 1 /32 , with probability 0.94. This indicates that when the channel is more structured and easier to reconstruct, the policy reduces feedback overhead aggressively. For the NLoS scenario, the policy mainly selects CR =1/16 , with probability 0.82, while occasionally selecting CR 
+
+= 1 /32 . This reflects a more conservative tradeoff between reconstruction accuracy and feedback reduction under less favorable channel conditions. In blockage conditions, the policy selects CR = 1 /8 with probability 0.93, showing that the agent increases the feedback dimension when channel reconstruction becomes more chal-lenging. Therefore, the learned policy adapts the compression ratio according to scenario difficulty: stronger compression is used in LoS, moderate compression in NLoS, and weaker compression in blockage. 
+
+B. Baselines 1) Rule-Based Baseline: To provide a non-learning base-line, we design an Adaptive Threshold Heuristic (ATH) con-troller that exploits the same state information available to the RL agent (13). ATH makes per-user decisions based on reconstruction quality, channel conditions, and temporal stability, without relying on data-driven learning. Algorithm 2 describes the proposed baseline. For each user 
+
+k at time slot t, ATH maintains a smoothed reconstruction error 
+
+NMSE k[t] and its temporal variation ∆NMSE k[t], enabling decision-making under channel drift. The compression mode 
+
+mk[t] ∈ { LR , MR , HR } is first selected based on the instan-taneous SINR k[t]. Specifically, high-SINR links ( SINR k[t] >θH ) are assigned high compression (HR), moderate-SNR links (θM < SINR k[t] ≤ θH ) use medium compression (MR), and low-SINR links default to low compression (LR) to preserve reconstruction fidelity. To prevent severe performance degra-dation, ATH enforces a safety override: if the instantaneous 
+
+Algorithm 2 ATH Rule-Based CSI Compression  
+
+> 1:
+
+for each user k at time t do  
+
+> 2:
+
+Update NMSE k[t] and ∆NMSE k[t] 
+
+> 3:
+
+if SINR k[t] > θ H then  
+
+> 4:
+
+mk[t] ← HR  
+
+> 5:
+
+else if SINR k[t] > θ M then  
+
+> 6:
+
+mk[t] ← MR  
+
+> 7:
+
+else  
+
+> 8:
+
+mk[t] ← LR  
+
+> 9:
+
+end if  
+
+> 10:
+
+if NMSE k[t] > θ N and mk[t]̸ = HR then  
+
+> 11:
+
+mk[t] ← HR  
+
+> 12:
+
+end if  
+
+> 13:
+
+if ∆NMSE k[t] > θ ∆ for Tf slots then  
+
+> 14:
+
+mk[t] ← more conservative mode  
+
+> 15:
+
+end if  
+
+> 16:
+
+end for 
+
+reconstruction error NMSE k[t] exceeds a predefined threshold 
+
+θN , the compression mode is immediately relaxed to HR unless already selected. Furthermore, sustained channel drift is detected by monitoring ∆NMSE k[t]. When ∆NMSE k[t]
+
+remains above the threshold θ∆ for Tf consecutive slots, ATH treats the channel as unstable and switches to a more conservative compression mode to preserve reconstruction quality. 
+
+2) Adaptive DNN-based CSI Feedback Baseline: The adap-tive DNN-based CSI feedback framework proposed in [22] serves as the ideal benchmark to our proposed method. While it optimizes for local MSE, it remains ”environmentally blind” to inter-user dynamics. By selecting this as a baseline, which we refer to as local-adaptive DNN (LAD) baseline, we can explicitly demonstrate the advantages of a system-level RL policy over a user-level greedy adaptive policy. By utilizing this baseline, we aim to illustrate that even a high-accuracy, DNN-based adaptive feedback system can suffer from perfor-mance degradation in multi-user interference scenarios if it lacks the global coordination and multi-objective optimization provided by our proposed framework.The LAD baseline is implemented as a learned local adaptive DNN-based CSI feedback scheme. For each candidate CR, a separate AE is trained, and an offline CR classifier is trained using labels obtained from the CR that provides the lowest reconstruction NMSE on the training data. During testing, the classifier predicts the CR for each user based on the current local CSI, and the corresponding pretrained AE is used for CSI reconstruction. Therefore, LAD approximates a local NMSE-driven CR selection rule, but it does not perform an exhaustive per-slot search over all CRs and does not explicitly optimize feedback overhead, SINR, or downlink sum rate. 
+
+3) Fixed baselines: For reference, several fixed CR base-lines are also included in the comparison. These baselines use a single predefined CR throughout the entire transmission process and therefore do not perform any adaptive switch-ing according to the channel condition. Specifically, fixed CR = 1/4, CR = 1/8, CR = 1/16 , and CR = 1/32 11                                         
+
+> TABLE II MAIN HYPERPARAMETERS USED FOR RL TRAINING AND REWARD EVALUATION .Parameter Symbol Value Rate weight δ0.45
+> NMSE penalty weight α2.4
+> Feedback-cost weight β0.20
+> Switching penalty csw 0.005
+> Budget-mismatch penalty η6.0
+> Bits per latent element q10
+> Candidate CRs R{1/4,1/8,1/16 ,1/32 }
+> Discount factor γ0.95
+> Initial exploration rate ϵ00.8
+> Minimum exploration rate ϵmin 0.01
+> Exploration decay –0.9998
+> Learning rate –10 −4
+> Replay buffer size –2×10 5
+> Mini-batch size –256
+> Target-network update interval –1000 steps
+
+configurations are evaluated. Each fixed baseline employs the corresponding pretrained autoencoder associated with its selected CR and keeps this configuration unchanged during all transmission slots. Consequently, these methods represent static CSI feedback strategies with different operating points on the reconstruction-versus-feedback-overhead tradeoff curve. Lower compression levels (e.g., CR = 1 /4) preserve more CSI information and generally achieve better reconstruction quality, but at the expense of significantly larger feedback payloads. In contrast, higher compression levels (e.g., CR 
+
+= 1/32 ) greatly reduce the feedback overhead but suffer from increased reconstruction distortion under challenging propagation conditions. Since these baselines cannot adapt the CR according to the instantaneous channel scenario, their per-formance becomes highly sensitive to environmental changes. The fixed baselines therefore provide useful reference points for evaluating whether the proposed RL framework can learn an effective scenario-aware compression policy that dynami-cally balances CSI reconstruction quality and communication efficiency. The reward coefficients in Table II were selected using a validation set and then kept fixed for all reported experiments. The coefficients were chosen to balance the numerical scales of the physical metrics in the reward, so that the rate term, NMSE penalty, feedback-cost penalty, and switching penalty all contribute to the learned policy. No test-set information was used for selecting these values. 
+
+C. Evaluation Performance 
+
+All methods are evaluated under identical channel real-izations, CSI samples, and physical-layer processing. The reconstructed CSI produced by each method is passed to the same ZF precoder, and the SINR, downlink sum rate, NMSE, CSI feedback cost, and reward are computed using the same formulations. Therefore, the observed differences are caused by the compression-ratio selection policy and the corresponding pretrained AE used for CSI reconstruction. The discussion below emphasizes physical communication and feedback metrics, namely downlink sum rate, NMSE, CSI feedback cost, and recovery behavior after scenario transitions. The reward is reported as a secondary aggregate metric, since it combines these quantities according to the RL training objective. 
+
+1) Downlink Sum Rate versus CSI Feedback: Fig. 4 shows the tradeoff between downlink sum rate and CSI feedback cost for K = 4 UEs. The CSI feedback cost represents the amount of compressed CSI information transmitted from the users to the BS. The total CSI feedback cost at slot t is defined in (17), and the average CSI feedback cost over an evaluation interval containing T transmission slots is computed as 
+
+¯B = 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+B[t]. (21) The fixed-CR baselines form the expected static rate– feedback tradeoff. A larger latent representation, such as CR= 1/4, preserves more CSI information and can improve the quality of the reconstructed channel used for ZF precoding, but it also requires larger CSI feedback overhead. In contrast, more aggressive compression reduces the feedback payload but degrades the reconstructed CSI, which can reduce the downlink sum rate. These static baselines therefore represent fixed operating points on the rate–feedback curve. The proposed RL framework achieves a more favorable operating point by dynamically switching among pretrained compression-specific AEs according to the observed channel and network conditions. Instead of committing to one fixed compression level, the RL policy can select a more accurate AE when CSI fidelity is important and a more compressed representation when feedback reduction is more beneficial. Compared with the high-rate fixed baseline CR= 1/4, for 
+
+K = 4 users, the proposed RL framework reduces the average CSI feedback cost from 4 to 1.7, corresponding to a 57 .5% 
+
+feedback-cost reduction, while also increasing the average downlink sum rate from 5.3 to 5.6 bps /Hz , corresponding to a 5.66% sum-rate improvement. Compared with ATH, RL reduces the average feedback cost by 55 .84% and improves the average downlink sum rate by 5.66% . Compared with LAD, which corresponds to the adaptive DNN implementation, RL reduces the average feedback cost by 57 .5% and improves the average downlink sum rate by 124% . These results show that the proposed method improves the physical rate–feedback tradeoff, rather than only optimizing the scalar reward. It is also observed that LAD incurs a relatively high feed-back cost but does not obtain a corresponding gain in downlink sum rate. This is because LAD is a local reconstruction-driven adaptive baseline: its CR selection is based on a clas-sifier trained from NMSE-oriented labels, without explicitly considering the effect of the reconstructed CSI on multi-user ZF precoding, inter-user interference, or final downlink rate. Therefore, a larger latent representation or lower local reconstruction error does not necessarily translate into bet-ter communication performance. This behavior motivates the proposed communication-aware RL formulation, where the 12 0 0.5 1 1.5 2 2.5 3 3.5 4 4.5     
+
+> Average CSI Feedback Cost
+> 2.5 33.5 44.5 55.5 6
+> Average Downlink Sum Rate (bps/Hz)  RL (Proposed) ATH LAD Fixed CR=1/4 Fixed CR=1/8 Fixed CR=1/16 Fixed CR=1/32
+> Fixed-CR RL (Proposed) ATH LAD
+> Fig. 4. Downlink sum rate and CSI feedback cost tradeoff for K= 4 users.
+
+compression decision is learned from the joint effect of CSI accuracy, feedback cost, and communication performance. 
+
+2) Scalability with the Number of Users: Fig. 5 evaluates the scalability of the proposed framework as the number of users increases. The comparison is reported in terms of average NMSE, average downlink sum rate, and average reward. The NMSE and sum rate directly measure CSI reconstruction quality and physical-layer communication performance, while the reward is interpreted as a secondary scalar utility that summarizes the weighted tradeoff among rate, reconstruction quality, feedback overhead, and switching behavior. Fig. 5a shows the average NMSE. As the number of users increases, the reconstruction task becomes more challenging because the system must maintain accurate CSI representations for a larger multi-user environment under limited feedback resources. The proposed RL framework achieves the lowest NMSE across the considered user configurations by adaptively selecting among compression-specific pretrained AEs based on the observed system state. Fig. 5b shows the corresponding average downlink sum rate. This metric is particularly important because it reflects the final effect of CSI compression on physical-layer communication performance after precoding. As the number of users increases, imperfect CSI reconstruction has a stronger impact on ZF precoding and interference suppression, which reduces the achievable rate. The proposed RL framework maintains the highest sum rate across the evaluated user configurations, showing that its compression decisions preserve the CSI in-formation most relevant to downlink transmission. Fig. 5c reports the average reward. Since the RL agent is trained to optimize this scalar objective, the reward is not used as the sole evidence of superiority. Instead, it is interpreted together with the physical metrics in Figs. 5a and 5b. The reward combines downlink rate, reconstruction NMSE, feedback cost, and switching cost; therefore, a method can obtain a relatively high reward by strongly reducing CSI feedback overhead even if its NMSE or sum rate is worse. This explains why some aggressive fixed-CR baselines, especially CR= 1/16 and CR= 1/32 , approach the proposed RL framework in average reward as the number of users increases. These fixed schemes use small latent representations and do not incur switching penalties, which improves their scalar reward under the selected utility weights. However, this should not be interpreted as comparable communication performance, since the same fixed schemes exhibit worse NMSE and lower downlink sum rate. Overall, the proposed RL framework provides a more balanced operating point, achieving lower reconstruction distortion and higher downlink sum rate while the reward trend serves only as an aggregate confirmation of the rate–accuracy–overhead tradeoff. 
+
+3) Scenario Transitions: Fig. 6 evaluates the adaptation capability of the compared methods around channel-scenario transitions. The horizontal axis represents the number of transmission slots relative to the transition instant, where zero denotes the time at which the propagation condition changes. The transition analysis is reported using a single evaluation window around the transition. The same trained policies and the same evaluation trajectory are used for all methods; the window length only determines the portion of the trajectory shown in the plot and does not affect the decisions made by any algorithm. The main quantities of interest are the immediate post-transition degradation and the recovery time. These metrics indicate how strongly each method is affected by the propa-gation change and how quickly it restores its communication– feedback operating point. The transition metric is interpreted as an aggregate summary of the underlying physical behavior, including downlink rate, NMSE, feedback cost, and switching cost. Fig. 6a shows the transition behavior over the 200-slot window. The proposed RL framework shows smaller degrada-tion after the transition and stabilizes more rapidly than the baselines. This indicates that the learned policy can adjust the selected pretrained AE when the propagation condition changes, thereby limiting reconstruction degradation and pre-serving the downlink communication performance without requiring online retraining or fine-tuning. The adaptive baselines respond differently to scenario changes. ATH relies on manually designed thresholds, so its decisions can become temporarily mismatched to the new channel statistics after a transition. This can cause larger transient degradation before the controller stabilizes. LAD uses a learned classifier and can therefore show smoother behavior than a purely threshold-based method, but its decision rule remains local and reconstruction-oriented. Since LAD does not explicitly optimize the long-term communication–feedback tradeoff, it does not reach the same post-transition operating level as the RL policy. The fixed-CR baselines provide useful reference points because their compression configuration remains unchanged throughout the transmission process. Therefore, they cannot 13 2 4 6 8
+
+> Number of Users
+> 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1
+> Average NMSE
+> RL (Proposed) ATH LAD Fixed 4-CR Fixed 8-CR Fixed 16-CR Fixed 32-CR
+
+(a) 2 4 6 8 
+
+> Number of Users
+> 00.5 11.5 22.5 3
+> Average Sum-Rate
+> RL (Proposed) ATH LAD Fixed 4-CR Fixed 8-CR Fixed 16-CR Fixed 32-CR
+
+(b) 2 4 6 8 
+
+> Number of Users
+> -20 -15 -10 -5 05
+> Average Reward
+> RL (Proposed) ATH LAD Fixed 4-CR Fixed 8-CR Fixed 16-CR Fixed 32-CR
+
+(c) 
+
+Fig. 5. Performance comparison versus the number of users. (a) Average NMSE, (b) average downlink sum rate, and (c) average scalar reward utility. The reward summarizes the weighted rate–accuracy–feedback tradeoff and is not interpreted alone as a physical-layer performance metric. TABLE III AVERAGE QUANTITATIVE GAINS OF THE PROPOSED RL FRAMEWORK OVER K = {2, 4, 6, 8} USERS .Metric Average gain of RL Feedback-cost reduction over ATH 51 .62% 
+
+Feedback-cost reduction over LAD 53 .08% 
+
+Feedback-cost reduction over Fixed CR= 1/4 55 .50% 
+
+Average sum-rate gain over ATH 9.24% 
+
+Average sum-rate gain over LAD 139 .40% 
+
+Average sum-rate gain over best fixed-CR baseline 12 .28% 
+
+NMSE reduction over ATH 33 .21% 
+
+NMSE reduction over LAD 11 .96% 
+
+NMSE reduction over best fixed-CR baseline 21 .97% 
+
+actively adapt the CSI feedback dimension after a propagation change. A conservative fixed CR may preserve CSI quality but pays a constant feedback cost, while an aggressive fixed CR saves feedback but can suffer from larger reconstruction error when the channel becomes more difficult. If the fixed-CR curves become stable toward the end of the time horizon, this stability should be interpreted as the channel entering a new steady regime rather than active adaptation by the baseline. Fig. 6b quantifies the immediate degradation after the sce-nario transition relative to the pre-transition operating level. A smaller degradation means that the method is less sensitive to abrupt changes in propagation conditions. The proposed RL framework achieves one of the smallest drops, showing that its AE-switching policy is more robust to scenario changes than static compression and hand-crafted adaptation. Fig. 6c measures the number of transmission slots required to recover close to the pre-transition operating level. The proposed RL framework recovers within a short number of slots in temporal window, while ATH and several fixed-CR baselines require longer recovery periods. This result highlights an important physical advantage of the proposed method: it not only improves the average operating point, but also reduces the time needed to restore performance after channel changes. 
+
+D. Complexity 
+
+While RL is often associated with high computational complexity, the proposed framework decouples the resource-intensive learning phase from real-time operation. As summa-rized in Table IV, we categorize the RL system’s footprint into three distinct operational states: the RL training network, the online RL policy, and the RL full pipeline. The RL training network utilizes a Dueling DQN architec-ture ( ≈ 200 k parameters) to learn the optimal control logic. However, this complexity is strictly confined to the offline phase. During online deployment, the agent transitions into a lightweight inference mode. By executing only a single forward pass of the multilayer perceptron (MLP)-based feature extractor and advantage head, the agent selects a compression action in just ≈ 50 .12 μs per user. This decision latency represents a negligible overhead, less than 5% of the typical 
+
+1 ms CSI update interval, ensuring that the added intelligence does not bottleneck the physical layer. The RL full pipeline entry accounts for the total system latency measured in our simulation environment. While the raw reconstruction time in a software-based implementation reaches ≈ 250 ms , this process is highly parallelizable in dedicated BS hardware. The critical metric for real-time con-trol is the RL decision latency ( 50 .12 μs), which ensures that the intelligence required to adapt the CSI compression ratio occurs well within the 1 ms transmission time interval (TTI) constraint for real-time FDD MIMO systems. In contrast to the ATH baseline, which relies on rigid rule-based selection, or the LAD baseline, which requires maintaining multiple specialized AEs ( ≈ 4–8M parameters), our RL approach provides a scalable and memory-efficient solution. It achieves a superior balance: it is nearly as fast as simple rule-based logic while providing the environment-adaptive intelligence required to navigate the trade-off between feedback bit-budgets and reconstruction accuracy as channel conditions drift. Although maintaining multiple AEs per user introduces additional memory requirements, the overall storage overhead remains modest. The number of CR levels is small (e.g., 3–5 ), and each AE has a compact fully connected architecture with a limited number of parameters. Consequently, the total memory footprint scales linearly with the number of CRs and remains 14 -50 0 50 100 150 200 
+
+> Steps Relative to Scenario Change
+> -18 -16 -14 -12 -10 -8 -6 -4 -2 024
+> Average Reward
+> RL (Proposed) ATH LAD Fixed 4-CR Fixed 8-CR Fixed 16-CR Fixed 32-CR
+
+(a) RL (Proposed) ATH LAD Fixed 4-CR Fixed 8-CR Fixed 16-CR Fixed 32-CR 012345 
+
+> Drop from Pre-Change Baseline
+
+(b) RL (Proposed) ATH LAD Fixed 4-CR Fixed 8-CR Fixed 16-CR Fixed 32-CR 020 40 60 80 100 120  
+
+> Steps to Recover Near Pre-Change Reward
+
+(c) 
+
+Fig. 6. Scenario-transition adaptation performance of the proposed RL framework and baseline methods for K = 4 users using a 200-slot transition window. (a) Evolution of the aggregate transition metric around the scenario change, where slot zero denotes the transition instant. (b) Immediate post-transition degradation relative to the pre-transition operating level. (c) Recovery time measured as the number of slots required to return close to the pre-transition operating level. TABLE IV COMPARISON OF CSI FEEDBACK METHODS IN TERMS OF ONLINE MODULES , MODEL SIZE , AND INFERENCE LATENCY . D ECISION LATENCY REFERS TO COMPRESSION SELECTION OVERHEAD , WHILE TOTAL LATENCY INCLUDES FULL CSI RECONSTRUCTION FOR ALL USERS .
+
+Method Online module Params Latency Real Time 
+
+Fixed CR AE enc–dec ∼1–2M 116.91 ms (total) ✓
+
+ATH baseline Rule-based selection – 1.8 μs (decision) ✓
+
+LAD baseline [22] Multiple AEs ∼4–8M 917.79 μs (total) ✓
+
++ threshold logic (incl. selection) 
+
+RL (Ours) MLP policy (Inference mode) ∼40k 50.12 μs (decision) ✓
+
+RL (full pipeline) Policy + AE enc–dec ∼40k + 1–2M 250.08 ms (total) ✓
+
+RL training network Dueling DQN (Policy + Target Network) ∼200k 245 μs Offline 
+
+on the order of a few megabytes, which is negligible for modern base station hardware. Moreover, all models are stored at the BS, where memory and computational resources are significantly less constrained than at the user equipment. This design therefore provides a practical and scalable solution that balances memory usage, stability, and adaptive performance. VI. C ONCLUSION 
+
+This paper proposed a system-aware adaptive CSI com-pression framework for multi-user MIMO systems based on RL-guided switching among pretrained autoencoders. Unlike conventional adaptive CSI feedback approaches that rely on static compression strategies or online network adaptation, the proposed framework dynamically selects among multiple compression-specific pretrained autoencoders according to the observed channel and network conditions. This enables fast adaptation without online AE fine-tuning, thereby reducing computational complexity and improving practical feasibility. The proposed architecture jointly considers CSI reconstruc-tion quality, feedback overhead, switching cost, and achievable downlink sum rate through sequential decision-making. The RL agent learns a scenario-aware compression strategy capable of adapting to changing propagation conditions, including LoS, NLoS, and blockage scenarios. Experimental results demon-strated that the proposed framework improves the physical communication–feedback tradeoff compared with rule-based, supervised, and fixed compression-ratio baselines. The results further showed that the proposed RL-guided switching framework achieves faster recovery after scenario transitions while maintaining stable long-term performance under non-stationary wireless environments. In addition, the learned policy provides a favorable rate–feedback tradeoff by dynamically balancing CSI fidelity and feedback efficiency ac-cording to the instantaneous channel condition. The advantage of the proposed method remains consistent as the number of users grows, highlighting its scalability for dense multi-user MIMO systems. APPENDIX AONLINE CSI N ORMALIZATION DETAILS 
+
+To handle the temporal non-stationarity introduced by smooth channel drift across scenarios, we further adopt an online adaptive normalization strategy. Static normalization statistics computed on training data become mismatched when the channel conditions evolve at test time. We therefore maintain a running estimate of μk and σk for each user using exponential moving average (EMA) updates: 
+
+(μk[t] = (1 − αm[t]) μk[t − 1] + αm[t]ˆ μk[t],σk[t] = (1 − αm[t]) σk[t − 1] + αm[t]ˆ σk[t], (22) where ˆσk[t] is the instantaneous standard deviation of the current CSI sample and αm[t] is an adaptive momentum coefficient. To ensure rapid adaptation at the beginning of 15 
+
+each episode, where the mismatch between initialized statistics and current channel conditions is largest, we use a decaying momentum schedule: 
+
+αm[t] = max 
+
+
+
+αm
+
+> min
+
+, 1
+
+t + 1 
+
+
+
+. (23) This sets αm[0] = 1 .0, so the normalizer fully adopts the statistics of the first observed sample, and decays toward a stable floor αm 
+
+> min
+
+= 0 .01 after approximately 100 time slots. This design ensures that the normalizer converges quickly at episode onset while remaining stable and drift-tracking during long rollouts. The same online statistics are used consistently for both the forward normalization passed to the autoencoder and the inverse denormalization applied to the reconstructed output before SINR computation, ensuring no scale mismatch is introduced between the compressed feedback and the phys-ical channel estimate used at the base station. ACKNOWLEDGMENT 
+
+This work is funded by the Dutch National Growth Fund project “6G Future Network Services (FNS)” and Eindhoven Hendrik Casimir Institute (EHCI), Netherlands. REFERENCES [1] Z. Wei, B. Li, Y. Chen, S. Wu, C. Zhao, Z. Li, K. Guo, and B. Liu, “Efficient massive mimo csi estimation with pilot power allocation,” 
+
+IEEE Transactions on Communications , vol. 73, no. 12, pp. 14 990– 15 003, 2025. [2] Q. Ziao and Y. Haifan, “A review of codebooks for CSI feedback in 5G new radio and beyond,” China Communications , vol. 22, no. 2, pp. 112–127, 2025. [3] L. Su´ arez, R. Kovalchukov, E. Visotsky, and F. Tosato, “3gpp release 18 mimo enhancements: Channel state information for higher speed scenarios,” in 2023 15th International Congress on Ultra Modern Telecommunications and Control Systems and Workshops (ICUMT) .IEEE, 2023, pp. 250–256. [4] A. Sharma, “Compressive sensing,” International Journal of Engineering Technologies and Management Research , vol. 5, pp. 249–259, 05 2020. [5] Z. Wei, H. Li, H. Liu, B. Li, and C. Zhao, “Randomized low-rank approximation based massive MIMO CSI compression,” IEEE Commu-nications Letters , vol. 25, no. 6, pp. 2004–2008, 2021. [6] Z. He, J. Wang, P. Feng, J. Ning, and T. Yang, “A low-rank approach of MIMO optimization for edge smart ports,” in 2024 IEEE 99th Vehicular Technology Conference (VTC2024-Spring) . IEEE, 2024, pp. 1–5. [7] Y. Wang, Y. Zhang, J. Sun, G. Gui, T. Ohtsuki, and F. Adachi, “A novel compression CSI feedback based on deep learning for FDD massive MIMO systems,” in 2021 IEEE Wireless Communications and Networking Conference (WCNC) , 2021, pp. 1–5. [8] S. Jeong, H. Ju, S. Kim, and B. Shim, “Automated environment-aware channel feedback for 6g massive mimo systems,” in 2023 IEEE Globecom Workshops (GC Wkshps) , 2023, pp. 44–49. [9] J. Guo, C.-K. Wen, S. Jin, and G. Y. Li, “Overview of deep learning-based CSI feedback in massive mimo systems,” IEEE Transactions on Communications , vol. 70, no. 12, pp. 8017–8045, 2022. [10] Y. Cui, J. Guo, Z. Cao, H. Tang, C.-K. Wen, S. Jin, X. Wang, and X. Hou, “Lightweight neural network with knowledge distillation for CSI feedback,” IEEE Transactions on Communications , vol. 72, no. 8, pp. 4917–4929, 2024. [11] C.-K. Wen, W.-T. Shih, and S. Jin, “Deep learning for massive MIMO CSI feedback,” IEEE Wireless Commun. Lett. , vol. 7, no. 5, pp. 748–751, 2018. [12] J. Guo, C.-K. Wen, S. Jin, and G. Y. Li, “Convolutional neural network-based multiple-rate compressive sensing for massive MIMO CSI feed-back: Design, simulation, and analysis,” IEEE Transactions on Wireless Communications , vol. 19, no. 4, pp. 2827–2840, 2020. [13] Y. Zhang, X. Zhang, and Y. Liu, “Deep learning based CSI compression and quantization with high compression ratios in FDD massive MIMO systems,” IEEE Wireless Commun. Lett. , vol. 10, no. 10, pp. 2101–2105, 2021. [14] X. Bi, S. Li, C. Yu, and Y. Zhang, “A novel approach using convolutional transformer for massive mimo csi feedback,” IEEE Wireless Commun. Lett. , vol. 11, no. 5, pp. 1017–1021, 2022. [15] M. Ansarifard, M. Rahmani, M. K. Sharma, K. C. Joshi, G. Exarchakos, and A. Burr, “CSI compression beyond latents: End-to-end hybrid attention-CNN networks with entropy regularization,” arXiv preprint arXiv:2509.08776 , 2025. [16] Q. Cai, C. Dong, and K. Niu, “Attention model for massive MIMO CSI compression feedback and recovery,” in 2019 IEEE Wireless Communi-cations and Networking Conference (WCNC) . IEEE, 2019, pp. 1–5. [17] Y. Cui, A. Guo, and C. Song, “Transnet: Full attention network for CSI feedback in FDD massive MIMO system,” IEEE Wireless Commun. Lett. , vol. 11, no. 5, pp. 903–907, 2022. [18] K. Lou, H. Ji, and X. Wu, “Attention-infused autoencoder for massive MIMO CSI compression,” in 2025 IEEE WCNC . IEEE, 2025, pp. 1–6. [19] J. Ma, R. Li, L. Xia, N. Hu, T. Liu, and J. Dai, “A shifted window attention-based lightweight model for massive MIMO CSI feedback,” 
+
+IEEE Wireless Communications Letters , pp. 1–1, 2026. [20] J. Chen, W. J. Hillery, K. R. Mestav, C. Nuzman, I. Saniee, and Y. Xing, “CSI compression for massive MIMO: Model-based or data-driven?” 
+
+IEEE Wireless Communications , vol. 32, no. 1, pp. 22–27, 2025. [21] F. B. Mismar and A. ¨ O. Kaya, “Adaptive compression of massive MIMO channel state information with deep learning,” IEEE Networking Letters ,vol. 6, no. 4, pp. 267–271, 2024. [22] J. Gao, M. Bouazizi, T. Ohtsuki, and G. Gui, “Adaptive DNN-based CSI feedback with quantization for FDD massive MIMO systems,” in 2022 IEEE 96th Vehicular Technology Conference (VTC2022-Fall) , 2022, pp. 1–5. [23] V. Rizzello, M. Nerini, M. Joham, B. Clerckx, and W. Utschick, “User-driven adaptive CSI feedback with ordered vector quantization,” IEEE Wireless Communications Letters , vol. 12, no. 11, pp. 1956–1960, 2023. [24] H. Mohameed, V. G. Biradar, K. Murugan, S. Subramaniam, and T. Koilraj, “Joint channel estimation and feedback in multiple-input multiple-output systems by using pilot feedback network with adaptive compression scheme,” in 2025 3rd International Conference on Inte-grated Circuits and Communication Systems (ICICACS) , 2025, pp. 1–7. [25] J. Fang, L. Wang, Z. Qin, J. Liu, and B. Lu, “LFC: Adaptive location-based CSI feedback compression for MU-MIMO networks,” in 2017 International Smart Cities Conference (ISC2) , 2017, pp. 1–5. [26] X. Xie, X. Zhang, and K. Sundaresan, “Adaptive feedback compression for MIMO networks,” in Proceedings of the 19th Annual International Conference on Mobile Computing & Networking , ser. MobiCom ’13. New York, NY, USA: Association for Computing Machinery, 2013, p. 477–488. [Online]. Available: https://doi.org/10.1145/2500423.2500446 [27] A. Gebre, J. Shaikh, T. Kebede, and F. Z. Gelete, “Comparative per-formance analysis of channel estimation techniques for massive mimo system,” in 2021 IEEE Indian Conference on Antennas and Propagation (InCAP) . IEEE, 2021, pp. 236–239. [28] 3GPP, “TR 38.843 V18.0.0: Study on Artificial Intelligence (AI)/Machine Learning (ML) for NR Air Interface,” 3rd Generation Partnership Project (3GPP), Technical Report TR 38.843 V18.0.0, Jan. 2024. [29] M. Ansarifard, “RL-guided autoencoder switching for CSI feedback in MU-MIMO systems,” https://github.com/Maryam-Ansarifard96/RL Guided Adaptive CSI Compression, 2026, code repository for the paper ”Dynamic Compression-Ratio Control Using RL-Guided Autoen-coder Switching for CSI Feedback in Multi-User MIMO Systems”.
