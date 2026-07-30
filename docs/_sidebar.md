@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-07-30 <!--dpr-date:20260730-->
+    * 精读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202607/30/2607.22891v1-adakan-a-dual-branch-adaptive-kolmogorov-arnold-network-for-medical-image-segmentation" data-sidebar-item="{&quot;title&quot;: &quot;AdaKAN: A dual-branch adaptive Kolmogorov-Arnold network for medical image segmentation&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2607.22891v1-adakan-a-dual-branch-adaptive-kolmogorov-arnold-network-for-medical-image-segmentation&quot;, &quot;score&quot;: &quot;8.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;channel-nn&quot;}], &quot;evidence&quot;: &quot;提出AdaKAN双分支自适应Kolmogorov-Arnold网络用于医学图像分割&quot;}">AdaKAN: A dual-branch adaptive Kolmogorov-Arnold network for medical image segmentation</a>
   * 2026-07-29 <!--dpr-date:20260729-->
     * 精读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202607/29/2607.24876v1-low-latency-generative-semantic-communication-via-channel-realization-flow-matching" data-sidebar-item="{&quot;title&quot;: &quot;Low-Latency Generative Semantic Communication via Channel-Realization Flow Matching&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2607.24876v1-low-latency-generative-semantic-communication-via-channel-realization-flow-matching&quot;, &quot;score&quot;: &quot;9.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;channel-nn&quot;}], &quot;evidence&quot;: &quot;提出用于生成式语义通信的新型流匹配接收机&quot;}">Low-Latency Generative Semantic Communication via Channel-Realization Flow Matching</a>
