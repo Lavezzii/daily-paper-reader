@@ -1,0 +1,956 @@
+Title: Learned Blockwise Port Activation for Real Time Beamforming in Fluid Antenna Arrays
+
+URL Source: https://arxiv.org/pdf/2607.25365v1
+
+Published Time: Wed, 29 Jul 2026 00:36:41 GMT
+
+Number of Pages: 10
+
+Markdown Content:
+> 1
+
+# Learned Blockwise Port Activation for Real Time Beamforming in Fluid Antenna Arrays 
+
+Yuanhui Wu, Zhentian Zhang, Hanjiang Hong, Hao Jiang, Senior Member, IEEE ,Zaichen Zhang, Senior Member, IEEE , Kai-Kit Wong, Fellow, IEEE , Yin Xu Senior Member, IEEE ,and Wenjun Zhang, Fellow, IEEE ,
+
+Abstract —Fluid antenna arrays (FAAs), support multiuser downlink transmission by activating a subset of reconfigurable ports. The activation mask jointly determines the effective chan-nel and the sparse radiating aperture, which requires a balance among sum rate, sidelobe suppression, hardware constraints, and online complexity. Channel driven selection can cluster active ports and increase sidelobes, whereas sidelobe oriented synthesis is typically channel independent and can sacrifice sum rate. This paper proposes learned blockwise port activation (L-BPA), for real time sidelobe aware FAA downlink beamforming. L-BPA activates a fixed number of ports in each aperture block, which supports grouped switching hardware and limits port clustering. A lightweight convolutional network scores ports using multiuser channel features, port coordinates, and user power statistics. Training combines blockwise straight through masks with adifferentiable peak sidelobe level (PSLL), surrogate. During inference, learned scores are combined with multiscale geometric repulsion, followed by regularized zero forcing precoding over the reduced effective channel. L-BPA reduces the average PSLL by 3.26 dB relative to uniform sparse activation while achieving a slightly higher sum rate. It also reduces the PSLL by 8.13 dB and 10.10 dB relative to greedy and gain based selection, respectively, without iterative online search. 
+
+Index Terms —Fluid antenna array, geometry diversity, port activation, sparse array, multiuser downlink, regularized zero forcing, sidelobe suppression. 
+
+I. I NTRODUCTION 
+
+Fluid antenna systems (FASs) have emerged as flexible antenna architectures in which active radiating elements can be repositioned or selected within a finite physical aperture [1], [2]. This antenna level spatial reconfigurability provides a design dimension beyond conventional architectures with 
+
+Yuanhui Wu is with the College of Artificial Intelligence, Nanjing Univer-sity of Information Science and Technology, 210044, P. R. China (e-mails: 202412621447@nuist.edu.cn). Zhentian Zhang is with The Hong Kong Polytechnic University, Hong Kong SAR, China. (e-mail: zhentianzhangzzt@gmail.com). H. Jiang is with the School of Cyber Science and Engineering, Southeast University, Nanjing 210096, P. R. China (e-mail: jiang.hao@seu.edu.cn). Zaichen Zhang is with the National Mobile Communications Research Laboratory, Frontiers Science Center for Mobile Information Communica-tion and Security, Southeast University, Nanjing, 210096, China and also with the Purple Mountain Laboratories, Nanjing 211111, China (e-mail: zczhang@seu.edu.cn). Kai-Kit Wong and Hanjiang Hong are with the Department of Elec-tronic and Electrical Engineering, University College London, Torring-ton Place, WC1E 7JE, United Kingdom (e-mail: {kai-kit.wong, han-jiang.hong }@ucl.ac.uk). Yin Xu and Wenjun Zhang are with the Cooperative Medianet Innovation Center (CMIC), Shanghai Jiao Tong University, Shanghai, China (e-mail: 
+
+{xuyin, zhangwenjun }@sjtu.edu.cn). Corresponding Author: Hao Jiang 
+
+fixed antenna locations. Early FAS studies primarily exploited spatial channel variations within the available aperture, com-monly termed fading diversity [3]–[17]. By selecting favorable antenna positions, fading diversity can improve signal strength and transmission reliability while mitigating interference. Fluid antenna arrays (FAAs) extend this concept by jointly configuring multiple active radiating positions [18], [19]. Be-yond channel fluctuations, the selected port positions deter-mine the effective aperture, spatial sampling pattern, interele-ment spacings, and array manifold. These properties directly govern the radiation pattern and spatial frequency response. This controllable spatial capability is termed geometry diver-sity . Unlike fading diversity, which arises from the random propagation environment, geometry diversity is determined by the configurable spatial structure of the array. It can therefore be predicted, optimized, and adapted to the communication and radiation objectives. Appropriate port activation enables an FAA to reshape its radiation characteristics and improve beamforming gain, direc-tivity control, and sidelobe suppression [20]–[22]. It can also enable the exploitation of mutual coupling effects [22]–[24]. These capabilities can reduce the dependence on additional radio frequency chains, phase shifters, and delay elements used in conventional beamforming architectures. However, practical FAAs operate within a finite aperture, where performance de-pends on the interaction among aperture size, port placement, spatial sampling, and sidelobe behavior [18], [19]. FAA port activation is therefore a geometry-aware array design problem rather than only a channel selection problem .In multiuser downlink transmission, the binary activation mask determines the effective channel matrix used by the pre-coder. The same mask also defines the sparse physical aperture that radiates the downlink signals. Each activation decision consequently affects two coupled quantities: the regularized zero forcing (RZF), sum rate and the sidelobe characteristics of the sparse aperture. Channel gain and rate driven selectors can exploit instantaneous channel state information and identify ports that are favorable for multiuser transmission. However, they can concentrate active ports in spatially favorable re-gions. This clustering reduces the effective aperture and can increase the peak sidelobe level (PSLL). In contrast, sparse array synthesis methods can generate well distributed port configurations with lower PSLL. These methods are usually channel independent and can exclude ports that are important for channel gain and multiuser spatial separation. The tradeoff becomes more challenging in Internet of arXiv:2607.25365v1 [cs.IT] 28 Jul 2026 2
+
+Things oriented FAA downlink systems. The transmitter must generate a binary activation mask at the channel time scale, satisfy a strict active port budget, and remain compatible with grouped switching hardware. Exhaustive subset search is infeasible when candidate ports form a dense planar grid. Iteratively evaluating RZF precoders over many candidate masks also introduces excessive online complexity. Antenna selection has been widely studied to reduce the number of radio frequency chains in conventional multiple input multiple output systems [28]. FAS port selection has also been investigated for identifying favorable fluid antenna positions from limited channel observations [27]. More recent studies have considered joint port selection and beamforming [29], [30], finite aperture FAA geometry design [18], [19], PSLL suppression for planar sparse FAAs [21], and channel acquisition over dense FAS ports [32], [33]. However, these studies do not directly provide a real time and hardware compatible activation strategy that is simultaneously channel adaptive and sidelobe aware for multiuser FAA downlink precoding. This paper addresses this gap by proposing learned block-wise port activation (L-BPA). The proposed design follows a hybrid learning and deterministic selection framework. In-stead of directly generating an unconstrained binary mask, a lightweight neural network assigns importance scores to candidate ports using multiuser channel features. A determin-istic blockwise selector then enforces the active port budget and grouped switching constraints. During training, block-wise straight through masks align the optimization objective with the discrete inference constraint. A differentiable PSLL surrogate discourages activation patterns with high sidelobes. During inference, a multiscale geometry aware rule combines learned channel scores with local repulsion among nearby ports. The resulting feasible port set is directly applied to a reduced dimensional RZF precoder without iterative online search. 
+
+A. Contributions 
+
+The main contributions are summarized as follows.  
+
+> •
+
+The multiuser FAA downlink design is formulated as a 
+
+block-wise sparse port activation problem subject to a strict active-port budget, where the block-wise structure significantly alleviates the computational complexity of the underlying NP-hard activation problem. Each acti-vation mask is evaluated using both RZF sum rate and broadside PSLL, which explicitly captures the tradeoff between communication performance and sidelobe sup-pression.  
+
+> •
+
+L-BPA combines lightweight channel aware port scoring with constrained discrete selection. Blockwise straight through masks and a differentiable PSLL surrogate are used during training. A multiscale geometry aware se-lector is used during inference to limit port clustering without iterative RZF search.  
+
+> •
+
+Extensive simulations compare L-BPA with full port, structured sparse, channel driven, greedy, and PSLL ori-ented baselines. The evaluation includes sum rate distri-butions, beam patterns, port layouts, activation tradeoffs, generalization without retraining, ablation studies, and online complexity. The remainder of this paper is organized as follows. Sec-tion II presents the system model and performance metrics. Section III describes L-BPA and analyzes its online complex-ity. Section IV presents the simulation setup and numerical results. Section V concludes the paper. notation: Scalars, vectors, matrices, and sets are denoted by italic, boldface lowercase, boldface uppercase, and calligraphic letters, respec-tively. The superscripts (·)T and (·)H denote transpose and Hermitian transpose. Moreover, ∥·∥ 0, ∥·∥ , and ∥·∥ F denote the 
+
+ℓ0, Euclidean, and Frobenius norms, respectively. E[·] denotes expectation and R and C denote the real and complex fields. II. S YSTEM MODEL AND PROBLEM FORMULATION 
+
+A. FAA Downlink Model 
+
+Consider an FAA access point serving K single-antenna users in the downlink. The FAA contains N = NxNy
+
+candidate ports over a rectangular aperture. The normalized position of port n is pn = [ xn, y n]T , where coordinates are measured in wavelengths. At one scheduling interval, only M
+
+ports are activated. The activation vector is 
+
+s = [ s1, . . . , s N ]T ∈ { 0, 1}N , ∥s∥0 = M. (1) Let S = {n : sn = 1 } be the selected port set. The full-aperture channel of user k is hk ∈ CN . Each path is mapped to a direction-cosine pair (uk,ℓ , v k,ℓ ) and quantized onto a finite visible angular grid. Let (uq
+
+> k,ℓ
+
+, v q
+
+> k,ℓ
+
+) = 
+
+Q(uk,ℓ , v k,ℓ ) denote the nearest point on a Nu × Nv grid over [−1, 1] 2 satisfying (uq
+
+> k,ℓ
+
+)2 + ( vq
+
+> k,ℓ
+
+)2 ≤ 1. The finite-port channel is generated as 
+
+hk,n =
+
+> Lk
+
+X
+
+> ℓ=1
+
+αk,ℓ exp 
+
+
+
+j2π(xnuq 
+
+> k,ℓ
+
++ ynvq
+
+> k,ℓ
+
+)
+
+
+
+, (2) where αk,ℓ is the complex path gain. The discrete angular response is used only to generate finite-port CSI. L-BPA operates on the resulting multi-user CSI tensor and does not require path parameters. After channel generation, each user’s port-domain channel is root mean square (RMS)-normalized over the aperture, so the reported behavior reflects spatial port selection rather than large-scale path-loss imbalance. The selected effective channel is 
+
+HS = h1[S]T ; . . . ; hK [S]T  ∈ CK×M . (3) 
+
+B. RZF Beamforming Objective 
+
+For a given selected set S, the base station computes the regularized zero-forcing (RZF) precoder [34] 
+
+PS = HH
+
+> S
+
+ HS HH 
+
+> S
+
++ ηrzf IK
+
+−1 , (4) followed by total-power normalization. Let ePS be the normal-ized precoder satisfying ∥ ePS ∥2 
+
+> F
+
+= 1 and 
+
+GS = HS ePS (5) 3Uk 
+
+> Planar FAA Candidate Ports
+> U1
+> U2
+
+# ⋯  
+
+> Channel Feature Tensor
+> Conv+GN+SiLU
+> Conv+GN+SiLU
+> Conv+GN+SiLU
+> Conv -GN -SiLU Scorer
+> Block -wise Hard
+> Mask
+> Gumbel -softmax
+> Relaxed Mask
+> 1
+> 0
+> Channel Feature Tensor
+> Conv+GN+SiLU
+> Conv+GN+SiLU
+> Conv+GN+SiLU
+> trained scorer
+> Multi -scale Geometry -
+> aware Selector
+> Block -wise ST Mask
+> Hard  forward  / soft  backward
+> -RZF Sum -rate
+> Differentiable
+> PSLL Surrogate
+> Cardinality
+> regularization
+> Binary
+> regularization
+
+Training Loss 
+
+backpropagation 
+
+Offline Training Pipeline 
+
+Online inference pipeline  
+
+> Port Scores Feasible
+> Binary Mask
+> U1
+> U2
+> Uk
+
+# ⋯
+
+Multi -User FAA Downlink 
+
+> Uk
+> Port Scores
+> Train
+> Frozen
+> Selected Active Ports
+> Low -dimensional RZF
+> Precoder
+> Multi -user
+> Downlink
+> Beams
+
+Fig. 1. Overall workflow of the proposed L-BPA method. The left panel corresponds to the multi-user FAA downlink model in Section II, where a dense planar candidate-port set is used to serve multiple users with a limited active-port budget. The upper branch shows the offline training procedure: the full-aperture CSI is converted into the channel feature tensor and processed by the Conv–GN–SiLU scorer in Section III-B, and the resulting logits are converted into block-wise straight-through masks in Section III-C. The training objective combines the RZF sum-rate, differentiable PSLL surrogate, cardinality regularization, and binary regularization. The lower branch shows online inference: the trained scorer is frozen, port scores are generated for a new CSI realization, the multi-scale geometry-aware selector in Section III-D produces a feasible binary mask, and low-dimensional RZF precoding is then applied on the selected ports. 
+
+be the effective user coupling matrix. At desired SNR ρ, the SINR of user k is 
+
+γk(s) = ρ|[GS ]k,k |2
+
+1 + ρ P  
+
+> j̸=k
+
+|[GS ]k,j |2 , (6) and the downlink sum-rate is 
+
+R(s) = 
+
+> K
+
+X
+
+> k=1
+
+log 2(1 + γk(s)) . (7) The communication-driven activation problem is 
+
+max  
+
+> s
+
+R(s) (8) s.t. s ∈ { 0, 1}N , ∥s∥0 = M. (9) The feasible set has combinatorial size and direct subset search is infeasible for dense FAA grids. 
+
+C. Broadside PSLL Metric 
+
+Sparse activation also changes the physical aperture distri-bution. To quantify sidelobe behavior, we evaluate the equal-amplitude broadside array factor 
+
+AF s(u, v ) = 
+
+> N
+
+X
+
+> n=1
+
+sn exp ( j2π(xnu + ynv)) . (10) The normalized beam power is |AF s(u, v )|2/M 2. Let Ax
+
+and Ay denote the aperture side lengths in wavelengths. The sidelobe region used in the experiments is 
+
+Gsl = {(u, v ) : u2 + v2 ≤ 1, |u| ≥ A−1 
+
+> x
+
+or |v| ≥ A−1 
+
+> y
+
+}. (11) This excludes the broadside guard rectangle determined by the aperture dimensions. The PSLL is the maximum normalized beam power over Gsl . This equal-amplitude PSLL is not the RZF communication objective; it is a geometry proxy for sparse-aperture sidelobes. The actual user beams after RZF depend on data-stream weights and user channels, whereas this metric isolates the sidelobe tendency introduced by the selected port layout itself. The rate–PSLL conflict can be written explicitly by defining 
+
+Psl (s) = max 
+
+> (u,v )∈G sl
+
+|AF s(u, v )|
+
+P 
+
+> n
+
+sn
+
+. (12) A channel-only selector tends to solve (9), which may place many ports in a high-gain local region and increase Psl (s).A pattern-only sparse synthesis instead solves a channel-independent problem such as min s Psl (s), which can waste ports from the viewpoint of the instantaneous multi-user channel. The desired sparse FAA operating point is therefore the constrained bi-objective problem 
+
+max  
+
+> s
+
+R(s) (13) s.t. s ∈ { 0, 1}N , ∥s∥0 = M, Psl (s) ≤ P0, (14) or, equivalently, a scalarized form R(s)−λsl [Psl (s)−P0]+. L-BPA follows this scalarized view: the neural scorer learns the channel-dependent rate term, the block constraint restricts the feasible hardware set, the differentiable PSLL surrogate pro-vides gradients for the sidelobe constraint during training, and 4
+
+the inference-stage repulsion discourages local port clustering before the final binary mask is passed to RZF. III. P ROPOSED LEARNED BLOCK -WISE PORT ACTIVATION 
+
+Fig. 1 summarizes the correspondence between the system model, offline training, and online inference. L-BPA con-sists of four modules: the block-wise hardware constraint in Section III-A, the channel feature tensor and Conv–GN– SiLU scorer in Section III-B, the block-wise straight-through training mask in Section III-C, and the multi-scale geometry-aware inference rule in Section III-D. 
+
+A. Block-Wise Hardware Constraint 
+
+The FAA aperture is divided into Bx × By blocks. Let Bb
+
+be the port index set in block b, and let mb be the number of ports activated in each block. The feasible set becomes 
+
+X
+
+> n∈B b
+
+sn = mb, b = 1 , . . . , B xBy , (15) with M = BxBy mb. This constraint matches block-level switch control and prevents all selected ports from collapsing into a small high-gain area. 
+
+B. Channel Feature Tensor and Neural Scorer 
+
+For each realization, the input to the neural scorer is a full-aperture tensor. Let ¯hn = K−1 P 
+
+> k
+
+hk,n , dn =(K−1 P 
+
+> k
+
+|hk,n − ¯hn|2)1/2, pu 
+
+> n
+
+= K−1 P 
+
+> k
+
+|hk,n |2, and qn =
+
+|¯hn|2/(1 + d2
+
+> n
+
+). The nonconstant port statistics used by the implemented feature tensor are summarized as 
+
+˜xn = N  [cTn , rTn , uTn ]T  , (16) where cn = [ xn, y n]T ,
+
+rn = [ ℜ¯hn, ℑ¯hn, |¯hn|, d n, |¯hn|2, d 2
+
+> n
+
+,qn, log( qn + ϵ), ∠¯hn]T ,
+
+un = [ pu
+
+> n
+
+, std k(|hk,n |2)] T .
+
+(17) The operator N (·) denotes per-realization feature standard-ization over the aperture. In the implementation, the real dispersion proxy dn is stored in the same real–imaginary– magnitude template as complex channel features; after this template expansion and the two user-power statistics in un, the actual input tensor has 15 channels. This bookkeeping does not introduce an additional selection rule. Stacking the expanded port features over the Nx × Ny grid gives X ∈ R15 ×Nx×Ny .A lightweight convolutional scorer maps X to port logits. With ϕ(·) denoting SiLU and GN( ·) denoting group normal-ization [37], its backbone is 
+
+F(l) = ϕ
+
+
+
+GN 
+
+
+
+W(l) ∗ F(l−1)  
+
+, l = 1 , 2, 3, (18) where F(0) = X and ∗ denotes a 3 × 3 convolution. A 1 × 1
+
+convolution gives raw logits ˜z. The final scoring rule is 
+
+z = fθ (X) = aθ vec 
+
+
+
+Wh ∗ F(3) 
+
++ bθ q ∈ RN , (19) where q = [q1, . . . , q N ]T is the normalized analytic-score channel and aθ , b θ are learned scalar adapter parameters. The network therefore acts only as a channel-aware scorer; the final binary mask is generated by an explicit feasible selector. 
+
+C. Block-Wise Straight-Through Training 
+
+Training uses the same block-wise selection structure as inference. For block b, a soft top-mb mask is formed from logits zb = {zn : n ∈ B b} using a Gumbel-softmax relaxation [36], 
+
+asoft  
+
+> b
+
+= clip 
+
+
+
+mb softmax 
+
+ zb + gb
+
+τ
+
+
+
+, 0, 1
+
+
+
+, (20) where gb is Gumbel noise and τ is the temperature. The hard block mask is ahard  
+
+> b
+
+= TopM( zb, m b). Following the straight-through gradient estimator [35], the block mask is 
+
+ab = ahard  
+
+> b
+
++ asoft  
+
+> b
+
+− stopgrad( asoft  
+
+> b
+
+). (21) Concatenating all block masks gives a forward mask that exactly satisfies (15). The selected channel used in the differentiable RZF backend is Ha = H diag( a)/pP  
+
+> n
+
+an + ϵ. To make sidelobe suppres-sion part of learning rather than only a post-processing crite-rion, we also use a differentiable broadside PSLL surrogate. Let Gsl denote the visible u–v samples outside the broadside mainlobe guard region. For a training mask a, define 
+
+bPsl (a) = 1
+
+β log X
+
+> (u,v )∈G sl
+
+exp 
+
+
+
+β |AF a(u, v )|
+
+P 
+
+> n
+
+an + ϵ
+
+
+
+, (22) where β controls the smooth maximum. A larger β makes the log-sum-exp closer to the maximum but can concentrate gradients on a few grid samples. The sidelobe penalty is 
+
+Lpsll = softplus 20 log 10 ( bPsl + ϵ) − Γpsll 
+
+2
+
+!
+
+, (23) where Γpsll is the target sidelobe level in dB. The training loss is 
+
+L(θ) = −Eρtr [R(a)] + λpsll Lpsll + λcLcard + λbLbin , (24) where Lcard penalizes deviation of the soft-mask mass from 
+
+M , and Lbin discourages ambiguous soft activations. The surrogate is used only for training; all numerical PSLL results are computed from the final binary mask using (11). Thus, any continuous-mask approximation error affects learning gradients but not the reported PSLL values. During training, the SNR can be randomly perturbed as ρtr ,dB ∼ U (ρ0,dB −
+
+∆SNR , ρ 0,dB + ∆ SNR ) to avoid fitting the scorer to a single operating SNR. 
+
+D. Multi-Scale Geometry-Aware Inference 
+
+At inference, L-BPA does not use raw block-wise top-
+
+mb. Within each block, ports are selected sequentially using learned logits and a multi-scale spatial repulsion. Suppose S(t)
+
+> b
+
+is the set already selected in block b. For a candidate port 
+
+n ∈ B b, define 
+
+Dt(n) = X
+
+> i∈S (t)
+> b
+
+
+
+exp 
+
+
+
+− ∥pn − pi∥2
+
+2σ21
+
+
+
+(25) 
+
++ ρg exp 
+
+
+
+− ∥pn − pi∥2
+
+2σ22
+
+  
+
+. (26) 5
+
+Algorithm 1 Proposed L-BPA Training and Online Inference                                                                                                       
+
+> Require: Training channels {H(i)}, positions {pn}, blocks {B b}, budgets
+> {mb}, trained scorer fθfor inference
+> Ensure: Feasible active set Sand RZF precoder ePS
+> 1: Offline training
+> 2: for each mini-batch of channel realizations do
+> 3: Build Xby (16), draw ρtr , and compute z=fθ(X).4: for each block bdo
+> 5: Form asoft
+> band ahard
+> b= TopM( zb, m b).6: Set ab=ahard
+> b+asoft
+> b−sg( asoft
+> b).7: end for
+> 8: Concatenate a, compute R(a)and Lpsll , and update θby (24). 9: end for
+> 10: Online inference for a new CSI realization
+> 11: Build X, compute z=fθ(X), and normalize it to ¯z.12: for each block bdo
+> 13: Initialize Sb=∅.14: for t= 1 to mbdo
+> 15: Compute Dt(n)for all n∈ B b\ S bby (26). 16: Select n⋆= arg max n∈B b\S b(¯ zn−μgDt(n)) .17: Update Sb← S b∪ { n⋆}.18: end for
+> 19: end for
+> 20: Set S=∪bSband compute ePSfrom HSusing (4). 21: Return Sand ePS.
+
+The next selected port is 
+
+n⋆ = arg max 
+
+> n∈B b\S (t)
+> b
+
+(¯ zn − μg Dt(n)) , (27) where ¯zn is the normalized logit. The short scale σ1 suppresses local clustering, while the larger scale σ2 encourages spatial spreading inside each block. The process repeats until mb ports are selected from every block. The final mask is binary and exactly feasible. The online computation consists of one neural forward pass, block-wise vector updates, and one RZF computation on the selected K×M channel. Unlike Greedy selection, L-BPA does not repeatedly solve RZF for many candidate port additions during inference. 
+
+E. Online Complexity 
+
+The online L-BPA selector contains one neural forward pass and block-wise deterministic geometry selection. Let Cθ
+
+denote the forward-pass cost of the learned scorer. For block 
+
+b, let Nb and mb be the numbers of candidate and selected ports, respectively. The pairwise geometry kernel costs O(N 2 
+
+> b
+
+)
+
+and the sequential intra-block selection costs O(mbNb), so the online selection complexity is 
+
+O Cθ +
+
+> B
+
+X
+
+> b=1
+
+(N 2 
+
+> b
+
++ mbNb)
+
+!
+
+. (28) After the active set is obtained, the common RZF backend on HS ∈ CK×M requires forming a K × K Gram matrix and solving a regularized linear system, with dominant cost 
+
+O(M K 2 +K3). This backend is shared by all communication-oriented methods in the simulations and is therefore separated from the L-BPA selection cost. IV. S IMULATION SETUP AND NUMERICAL RESULTS 
+
+A. Simulation Setup 
+
+The FAA has Nx = 50 and Ny = 25 candidate ports over a 5λ × 2.5λ aperture, giving N = 1250 . The main                                     
+
+> TABLE I MAIN 500-SAMPLE PERFORMANCE AT 10 DB. T HE 5%-ILE RATE IS THE EMPIRICAL LOWER -TAIL SUM -RATE OVER TEST CHANNELS . B OLD VALUES MARK THE FULL -PORT RATE REFERENCE ,THE BEST SPARSE -METHOD RATE ,AND THE LOWEST PSLL. Method Avg. rate 5%-ile rate Avg. PSLL (bit/s/Hz) (bit/s/Hz) (dB)
+> Full-port 129.06 115.26 -13.21
+> L-BPA 98.06 84.90 -15.64
+> Uniform 97.48 83.86 -12.38
+> Random 95.54 82.09 -12.31
+> Greedy 87.60 72.70 -7.51
+> PSLL-CGA 94.81 81.64 -20.80
+> PSLL-IGA 95.02 82.18 -21.42 Gain-based 77.77 61.29 -5.54
+
+sparse configuration activates M = 300 ports, i.e., 24% of the candidate ports. The downlink serves K = 16 users. The channel generator follows a UMi setting at 3.5 GHz with BS height 10 m and UE height 1.5 m. For each user, the large-scale link distance is independently drawn from 50– 150 m. The model uses 5 clusters and 12 rays per cluster. Therefore Lk = 60 for NLoS users and Lk = 61 when LoS is present. Cluster powers are exponentially distributed and normalized, NLoS ray phases are uniform over [0 , 2π), LoS users follow a Rician component with K-factor drawn from a normal distribution in dB with mean 7 dB and standard deviation 4 dB, and shadowing/blockage are drawn before the per-user RMS normalization described in Section II. This distance range is far beyond the Rayleigh distance of the 5λ
+
+aperture, so the far-field steering response in (2) is used. The direction-cosine quantization uses Nu = 50 and Nv = 25 
+
+grid points. The dataset contains 1200 training, 200 validation, and 500 test channel realizations. The neural scorer is trained for 60 epochs with AdamW [38], learning rate 10 −4, weight decay 10 −5, batch size 8, hidden width 48, and Gumbel temperature 0.6. The RZF regularization is fixed at ηrzf = 0 .1
+
+for all compared methods, so the study isolates port activation rather than tuning the precoder backend. In the geometry-aware selector, σ1 and σ2 are the short- and medium-range repulsion widths, ρg controls the second-scale weight, and 
+
+μg controls the global edge-dispersion term; their values are 
+
+σ1 = 0 .20 λ, σ2 = 0 .35 λ, ρg = 0 .5, and μg = 0 .15 . The PSLL surrogate uses weight λpsll = 1 .2, target Γpsll = −15 
+
+dB, log-sum-exp sharpness β = 80 , and a 51 × 51 training grid; reported PSLL values are recomputed on hard binary masks using a denser 121 × 121 grid. The comparison includes the following methods.  
+
+> •
+
+Full-port : all 1250 ports are activated. It is an upper reference in port count, not a sparse method.  
+
+> •
+
+L-BPA : the proposed block-wise learned and geometry-aware activation method.  
+
+> •
+
+Uniform : a fixed rectangular sub-grid uniform sparse activation pattern.  
+
+> •
+
+Random : M ports are drawn uniformly at random.  
+
+> •
+
+Gain-based : the M ports with the largest aggregate multi-user channel power P 
+
+> k
+
+|hk,n |2 are selected. This is a norm-based low-complexity antenna/port selection baseline. 6Full-port 
+
+L-BPA 
+
+Uniform 
+
+Random 
+
+PSLL-IGA 
+
+PSLL-CGA 
+
+Greedy 
+
+Gain-based 
+
+40 
+
+60 
+
+80 
+
+100 
+
+120 
+
+140        
+
+> Sum-rate [bit/s/Hz]
+> 129.1
+> 98.1 97.5 95.5 95.0 94.8
+> 87.6
+> 77.8
+> Fig. 2. RZF sum-rate box plots over 500 test channels at 10 dB. Boxes show the interquartile range, center lines show medians, whiskers show the non-outlier range, and overlaid points show individual channel realizations. All sparse methods use M= 300 active ports.
+
+−1.00 −0.75 −0.50 −0.25 0.00 0.25 0.50 0.75 1.00 
+
+u cut at v = 0 
+
+−40 
+
+−30 
+
+−20 
+
+−10 
+
+0
+
+> Normalized beam power [dB]
+
+(a) 
+
+−1.00 −0.75 −0.50 −0.25 0.00 0.25 0.50 0.75 1.00 
+
+v cut at u = 0 
+
+(b)           
+
+> Uniform
+> Greedy
+> Gain-based
+> PSLL-IGA
+> PSLL-CGA
+> Random
+> Full-port
+> L-BPA
+> Fig. 3. Normalized broadside beam-power cuts for a representative test sample: (a) cut along the uaxis with v= 0 ; (b) cut along the vaxis with u= 0 .Curves are computed from equal-amplitude array factors and normalized to their visible-region maxima.
+> •
+
+Greedy : a communication-only greedy selector. Candi-date ports are prefiltered by aggregate channel power, and ports are sequentially added to maximize the RZF sum-rate.  
+
+> •
+
+PSLL-CGA and PSLL-IGA : genetic-algorithm sparse-array baselines [21] that optimize broadside PSLL and do not use instantaneous multi-user channel utility. All sparse methods use the same active-port budget when compared at M = 300 . All communication metrics are computed using the same RZF backend. 
+
+B. Rate Distribution 
+
+The 500-sample test results at 10 dB are summarized in Ta-ble I. Full-port gives the highest rate because it uses all ports. Among the sparse methods, L-BPA obtains 98.06 bit/s/Hz average sum-rate, higher than Uniform, Random, Greedy, PSLL-CGA, PSLL-IGA, and Gain-based in this evaluation. Its 5th-percentile rate is also the largest among the sparse methods. The PSLL values reveal the intended compromise: PSLL-only baselines have the lowest PSLL but sacrifice multi-user rate, whereas Greedy and Gain-based retain channel adaptivity at the cost of poor sidelobes. L-BPA improves the Uniform PSLL by 3.26 dB while preserving a slightly higher average rate. Fig. 2 shows the complete sum-rate distribution behind Table I. The L-BPA median and lower whisker are above Uniform and Random, so the rate gain is not caused by a small number of favorable channel realizations. The Greedy curve has lower lower-tail rate than L-BPA because the greedy search uses a restricted high-gain candidate pool and does not impose aperture coverage. Gain-based selection has the weakest distribution: it repeatedly selects ports with similar spatial responses, which reduces effective channel diversity 7−1.0     
+
+> −0.5
+> 0.0
+> 0.5
+> 1.0
+> v
+> Full-port
+> SR=134.07, PSLL=-13.2 dB
+> L-BPA
+> SR=102.83, PSLL=-15.6 dB
+> Uniform
+> SR=102.00, PSLL=-12.4 dB
+> Greedy
+> SR=88.79, PSLL=-8.0 dB
+> −1.0 −0.5 0.0 0.5 1.0
+
+u    
+
+> −1.0
+> −0.5
+> 0.0
+> 0.5
+> 1.0
+> v
+> Gain-based
+> SR=73.72, PSLL=-7.2 dB
+> −1.0 −0.5 0.0 0.5 1.0
+
+u    
+
+> PSLL-IGA
+> SR=99.69, PSLL=-21.4 dB
+> −1.0 −0.5 0.0 0.5 1.0
+
+u    
+
+> PSLL-CGA
+> SR=99.14, PSLL=-20.8 dB
+> −1.0 −0.5 0.0 0.5 1.0
+
+u
+
+> Random
+> SR=100.34, PSLL=-11.5 dB
+> −40
+> −35
+> −30
+> −25
+> −20
+> −15
+> −10
+> −5
+> 0
+> Normalized beam power [dB]
+
+Fig. 4. Two-dimensional normalized broadside beam-power maps for the same sample as Fig. 3. Each subfigure corresponds to one activation method; the circular support is the visible direction-cosine region u2 + v2 ≤ 1, and the color scale is clipped to [−40 , 0] dB. −1 
+
+> 0
+> 1
+> y/λ
+
+Full-port (1250) L-BPA (300) Uniform (300) Greedy (300)   
+
+> −2 02
+
+x/λ
+
+> −1
+> 0
+> 1
+> y/λ
+
+Gain-based (300)   
+
+> −2 02
+
+x/λ
+
+PSLL-IGA (300)   
+
+> −2 02
+
+x/λ
+
+PSLL-CGA (300)   
+
+> −2 02
+
+x/λ
+
+Random (300) 
+
+Fig. 5. Active-port layouts for the representative sample used in Figs. 3 and 4. Each dot is an activated port on the 5λ × 2.5λ aperture. The number in parentheses is the active-port count. 
+
+after RZF even though the selected ports have large channel norms. 
+
+C. Beam Pattern and Port Distribution 
+
+Fig. 3 compares one-dimensional cuts through the broadside pattern along v = 0 and u = 0 . Full-port provides the smooth reference aperture, while L-BPA follows it more closely than Greedy and Gain-based outside the mainlobe guard region. The large peaks of Greedy and Gain-based in both cuts are the visible consequence of clustered port selections. PSLL-CGA and PSLL-IGA give the lowest cuts because they optimize the equal-amplitude pattern directly; however, their masks are not conditioned on the instantaneous multi-user channel, which explains the rate loss in Table I. For the same selected channel realization, Fig. 4 presents the two-dimensional pattern over the visible direction-cosine disk u2 + v2 ≤ 1. The white area is outside the physical visible region, not a zero-power region. Full-port has a reg-ular broadside mainlobe and structured sidelobes. Gain-based and Greedy produce fragmented high-power sidelobe regions away from broadside because their active ports are spatially concentrated. L-BPA reduces these fragmented sidelobes while 850 150 300 450 600 1250 
+
+Number of active ports 
+
+20 
+
+40 
+
+60 
+
+80 
+
+100 
+
+120 
+
+> Average sum-rate [bit/s/Hz]
+
+(a) 
+
+> Full-port
+> L-BPA
+> Greedy
+> Uniform
+> PSLL-IGA
+> PSLL-CGA
+> Random
+> Gain-based
+
+50 150 300 450 600 1250 
+
+Number of active ports 
+
+−22.5 
+
+−20.0 
+
+−17.5 
+
+−15.0 
+
+−12.5 
+
+−10.0 
+
+−7.5 
+
+−5.0 
+
+−2.5 
+
+> PSLL [dB]
+
+(b) 
+
+Fig. 6. Active-port tradeoff between average RZF sum-rate and equal-amplitude PSLL over 200 test samples. Each marker corresponds to one active-port budget; the rightmost common endpoint is the full-port case with all 1250 ports activated. −5 0 5 10 15 20 25 30 
+
+Desired SNR [dB] 
+
+50 
+
+100 
+
+150 
+
+200 
+
+> Average sum-rate [bit/s/Hz]
+
+(a) 
+
+6 15 30 45 
+
+Azimuth angular spread [deg] 
+
+80 
+
+90 
+
+100 
+
+110 
+
+120 
+
+130 
+
+(b) 
+
+20 45 90 150 
+
+User sector width [deg] 
+
+80 
+
+100 
+
+120 
+
+(c) 
+
+−5 0 5 10 15 20 25 30 
+
+Desired SNR [dB] 
+
+−20 
+
+−15 
+
+−10 
+
+−5 
+
+> Average PSLL [dB]
+
+(d) 
+
+6 15 30 45 
+
+Azimuth angular spread [deg] 
+
+−20 
+
+−15 
+
+−10 
+
+−5 
+
+(e) 
+
+20 45 90 150 
+
+User sector width [deg] 
+
+−20 
+
+−15 
+
+−10 
+
+−5 
+
+(f)      
+
+> Full-port L-BPA Uniform Gain-based PSLL-IGA Random
+
+Fig. 7. No-retraining generalization with M = 300 active ports. (a) Average RZF sum-rate versus desired SNR. (b) Average RZF sum-rate versus azimuth angular spread. (c) Average RZF sum-rate versus user angular-sector width. (d) Average PSLL versus desired SNR. (e) Average PSLL versus azimuth angular spread. (f) Average PSLL versus user angular-sector width, where a smaller sector means more correlated user directions. 
+
+remaining less pattern-regular than the purely PSLL-driven masks, which is consistent with its role as a communication-aware compromise. The port layouts in Fig. 5 explain the pattern behavior. Uniform forms a regular sparse grid, so it avoids severe clustering but cannot react to the channel. Random is dispersed on average but has no deterministic coverage guarantee for a given channel. Gain-based and Greedy concentrate many se-9                                 
+
+> TABLE II COMPONENT ABLATION ON THE SAME K= 16 ,M= 300
+> DISTANCE -RANDOMIZED TEST SET AS TABLE I. Variant Rate 5%-ile PSLL 95%-ile b/s/Hz b/s/Hz dB dB
+> Random 95.54 82.09 -12.31 -10.66
+> Uniform 97.48 83.86 -12.38 -12.38
+> w/o learning 94.18 80.46 -11.42 -9.14
+> w/o geom. loss 98.29 84.68 -12.15 -10.86
+> Full L-BPA 98.06 84.90 -15.64 -14.93
+
+lected ports in high-gain regions, which shortens the effective aperture and causes the sidelobes seen in Fig. 4. The PSLL-oriented masks show a stronger tendency to occupy aperture edges and corners, because enlarging the effective aperture helps suppress broadside sidelobes for an equal-amplitude sparse array. L-BPA exhibits a milder version of this boundary-aware behavior: the block-wise constraint maintains aperture coverage, while the learned CSI scores prevent the selection from becoming a purely edge-dominated pattern. 
+
+D. Active-Port Tradeoff 
+
+Fig. 6 traces the same active-port sweep from two com-plementary views. Fig. 6(a) reports the average RZF sum-rate versus the number of activated ports, while Fig. 6(b) reports the corresponding equal-amplitude PSLL; a desirable method should move upward in Fig. 6(a) without moving upward in Fig. 6(b). In the low- and medium-port regimes, Greedy and Gain-based selection recover rate by choosing strong channel samples, but their PSLL is high because the selected ports are spatially clustered. Uniform and Random give better aperture dispersion but do not exploit instantaneous CSI. L-BPA stays close to the high-rate sparse methods in Fig. 6(a) while keeping a substantially lower PSLL than the communication-only selectors in Fig. 6(b). At M = 1250 , all masks become the full-port aperture, so all curves meet at the same endpoint. 
+
+E. Generalization Without Retraining 
+
+No-retraining generalization is evaluated in Fig. 7. The figure uses a 2 × 3 layout: the top row reports average RZF sum-rate, the bottom row reports average PSLL, and the three columns sweep desired SNR, azimuth angular spread, and user angular-sector width, respectively. In Fig. 7(a), the desired SNR is changed only at evaluation. L-BPA follows the mono-tone rate increase of Full-port and Uniform, which indicates that the SNR perturbation used in training does not overfit the selector to a single operating SNR. In Fig. 7(b), increasing the azimuth angular spread creates richer multipath directions; the L-BPA rate changes mildly, showing weak sensitivity to this scattering mismatch. In Fig. 7(c), reducing the user angular-sector width makes user channels more correlated, so the sum-rate decreases for all communication methods. L-BPA cannot remove this fundamental multi-user correlation penalty, but it remains competitive among the sparse methods. Figs. 7(d)–(f) report the corresponding PSLL behavior. In Fig. 7(d), PSLL is nearly flat across SNR because it is determined mainly by the selected geometry rather than the RZF power scale. In Fig. 7(e), L-BPA keeps a lower PSLL than Uniform and Gain-based over the angular-spread sweep, indicating that the learned geometric regularization is not tied to one nominal spread value. In Fig. 7(f), narrower user sectors change the communication channel correlation but do not strongly affect the equal-amplitude sparse-aperture PSLL. PSLL-IGA remains the strongest sidelobe-only method in these panels, but it gives up channel adaptivity and therefore does not dominate the rate plots in Figs. 7(a)–(c). 
+
+F. Ablation Study 
+
+The component ablation results in Table II use the same distance-randomized K = 16 , M = 300 test set as Table I. Replacing L-BPA with fixed Uniform or Random activation removes CSI-dependent learning; Uniform remains a strong geometry-only baseline, but its PSLL is worse than L-BPA. The w/o learning variant removes the neural scorer and uses the explicit multi-user channel-power score P 
+
+> k
+
+|hk,n |2 with the same block-wise geometry selector. Its rate and PSLL both degrade, showing that the learned score is not merely reproducing a norm-based rule. The w/o geom. loss variant removes the training-stage geometric PSLL surrogate while keeping the learned scorer, block-wise mask, and inference rule unchanged. It gives the largest average rate, but the average PSLL degrades from −15 .64 dB to −12 .15 dB and the 95%-ile PSLL becomes close to Random. Full L-BPA is therefore emphasized as the intended operating point: it preserves a high lower-tail rate while substantially improving sidelobe robustness. 
+
+G. Discussion 
+
+These results should not be interpreted as a sparse learned method outperforming full-port activation in sum-rate. Full-port remains the upper reference because it exposes the largest channel dimension to RZF. The relevant claim is different: with 24% of the ports activated, L-BPA reaches 98.06 bit/s/Hz average sum-rate, corresponding to about 76.0% of the full-port reference, while giving the strongest sparse lower-tail rate in Table I. Compared with Uniform, L-BPA improves average PSLL by 3.26 dB and increases the average rate slightly. Compared with Greedy and Gain-based selection, L-BPA reduces average PSLL by 8.13 dB and 10.10 dB, respectively, while also increasing the average rate by 10.46 and 20.28 bit/s/Hz. PSLL-IGA and PSLL-CGA give excellent sidelobe suppression, but they are static pattern-synthesis baselines after offline genetic optimization and do not adapt their mask to the instantaneous multi-user channel. L-BPA therefore occupies the intended operating point: it is channel-adaptive like Greedy, maintains substantially better sidelobes, and avoids online combinatorial search. V. C ONCLUSION 
+
+This paper proposed L-BPA scheme for real-time sidelobe-aware multiuser FAA downlink beamforming. L-BPA inte-grates channel-aware port scoring, deterministic block-wise 10 
+
+constrained activation, and multi-scale geometry-aware selec-tion to jointly balance sum rate and sidelobe suppression under a strict active-port budget. Straight-through block masks and a differentiable PSLL surrogate enable end-to-end training while preserving the discrete grouped switching constraints required at inference. The selected ports are combined with RZF precoding without iterative online search. Numerical results showed that L-BPA improves the average PSLL by 3.26 dB over uniform sparse activation while achieving a slightly higher sum rate. It further provides PSLL improvements of 8.13 dB and 10.10 dB over greedy and gain-based selection, respectively. These results demonstrate that channel awareness and ge-ometric diversity can jointly improve radiation-pattern qual-ity, communication performance, hardware compatibility, and online efficiency. Future work will consider wideband beam-squint effects and joint activation-precoding learning under imperfect CSI. REFERENCES [1] K. K. Wong, et al. , “Performance limits of fluid antenna systems,” IEEE Commun. Lett. , vol. 24, no. 11, pp. 2469–2472, Nov. 2020. [2] K. K. Wong, et al. , “Fluid antenna systems,” IEEE Trans. Wireless Commun. , vol. 20, no. 3, pp. 1950–1962, Mar. 2021. [3] Z. Zhang, K. K. Wong, H. Jiang, C. Masouros, and C.-B. Chae, “Cram´ er–Rao bounds for activity detection in conventional and fluid antenna systems,” IEEE Wireless Commun. Lett. , vol. 15, pp. 3059– 3063, 2026. [4] Z. Zhang, et al. , “On fundamental limits of slow-fluid antenna multiple access for unsourced random access,” IEEE Wireless Commun. Lett. ,vol. 14, no. 11, pp. 3455–3459, Nov. 2025. [5] Z. Zhang, K. K. Wong, J. Dang, Z. Zhang, and C.-B. Chae, “On fundamental limits for fluid antenna-assisted integrated sensing and communications for unsourced random access,” IEEE J. Sel. Areas Commun. , vol. 44, pp. 136–149, 2026. [6] T. Wu, et al. , “Fluid antenna systems enabling 6G: Principles, applica-tions, and research directions,” IEEE Wireless Commun. , early access, 2025, doi: 10.1109/MWC.2025.3629597. [7] H. Hong et al. , “Fluid antenna system-assisted self-interference cancel-lation for in-band full duplex communications,” IEEE Trans. Wireless Commun. , vol. 25, pp. 7476-7489, 2026. [8] T. Wu, et al. , “Scalable fluid antenna systems: A new paradigm for array signal processing,” IEEE J. Sel. Topics Signal Process. , vol. 20, no. 3, pp. 389–406, Apr. 2026. [9] H. Hong et al. , “FAS meets OFDM: Enabling wideband 5G NR,” IEEE Trans. Commun. , vol. 73, no. 11, pp. 12884–12898, Nov. 2025. [10] H. Hong et al. , “Downlink OFDM-FAMA in 5G-NR systems,” IEEE Trans. Wireless Commun. , vol. 24, no. 12, pp. 10116–10132, Dec. 2025. [11] H. Hong, K. -K. Wong, K. -F. Tong, H. Shin and Y. Zhang, “Coded fluid antenna multiple access over fast fading channels,” IEEE Wireless Commun. Lett. , vol. 14, no. 4, pp. 1249–1253, April 2025. [12] T. Wu, et al. , “Reimagining wireless connectivity: The FAS-RIS synergy for 6G smart cities,” IEEE Commun. Mag. , early access, 2025, doi: 10.1109/MCOM.001.2500802. [13] T. Wu, et al. , “Fluid antennas meet intelligent surfaces: Security analysis of NOMA systems under hardware impairments,” IEEE Trans. Cogn. Commun. Netw. , vol. 12, pp. 7775–7788, 2026. [14] T. Wu, et al. , “Variable block-correlation modeling and optimization for secrecy analysis in fluid antenna systems,” IEEE Trans. Wireless Commun. , vol. 25, pp. 15069–15085, 2026. [15] H. Hong et al. , “Fluid antenna multiple access for 6G: A holistic review,” 
+
+IEEE Open J. Commun. Soc. , vol. 7, pp. 2607–2633, 2026. [16] H. Hong et al. , “A contemporary survey on fluid antenna systems: fundamentals and networking perspectives,” IEEE Trans. Netw. Sci. Eng. , vol. 13, pp. 2305–2328, 2026. [17] T. Wu, et al. , “Scalable fluid antenna systems: A new paradigm for array signal processing,” IEEE J. Sel. Topics Signal Process. , vol. 20, no. 3, pp. 389–406, Apr. 2026. [18] Z. Zhang, et al. , “Finite-aperture planar fluid antenna array,” arXiv preprint , arXiv:2605.22040, 2026. [19] Z. Zhang, et al. , “Finite-aperture fluid antenna array design: Analysis and algorithm,” IEEE Wireless Commun. Lett. , vol. 15, pp. 3199–3203, 2026. [20] J. Xu, et al. , “Fluid antenna-enhanced flexible beamforming,” in Proc. IEEE Wireless Commun. Netw. Conf. (WCNC) , Kuala Lumpur, Malaysia, Apr. 2026. [21] H. Liang, et al. , “Peak sidelobe suppression in planar fluid antenna array,” arXiv:2606.31149, 2026. [22] Z. Zhang, et al. , “Electromagnetic-aware fluid antenna array ,” preprint, 
+
+arXiv:2607.21375, 2026. [23] P. Ram´ ırez-Espinosa, et al. , “Metasurface-based fluid antennas: From electromagnetics to communications model,” arXiv preprint ,arXiv:2507.17982, 2025. [24] P. Ram´ ırez-Espinosa, et al. , “Implementing fluid antennas in the beamspace: Performance evaluation and codebook design,” arXiv preprint , arXiv:2605.13286, 2026. [25] K.-K. Wong and K.-F. Tong, “Fluid antenna multiple access,” IEEE Transactions on Wireless Communications , vol. 21, no. 7, pp. 4801– 4815, Jul. 2022. [26] K.-K. Wong, W. K. New, X. Hao, K.-F. Tong, and C.-B. Chae, “Fluid antenna system–Part I: Preliminaries,” IEEE Communications Letters ,vol. 27, no. 8, pp. 1919–1923, Aug. 2023. [27] Z. Chai, K.-K. Wong, K.-F. Tong, Y. Chen, and Y. Zhang, “Port selection for fluid antenna systems,” IEEE Communications Letters , vol. 26, no. 5, pp. 1180–1184, May 2022. [28] S. Sanayei and A. Nosratinia, “Antenna selection in MIMO systems,” 
+
+IEEE Communications Magazine , vol. 42, no. 10, pp. 68–73, Oct. 2004. [29] L. Zhang, H. Yang, Y. Zhao, and J. Hu, “Joint port selection and beamforming design for fluid antenna assisted integrated data and energy transfer,” IEEE Wireless Communications Letters , vol. 13, no. 7, pp. 1833–1837, Jul. 2024. [30] S. Chen, Z. Zhang, H. Jiang, K.-K. Wong, A. Li, and F. R. Ghadi, “Near-field beamforming and port selection for fluid antenna systems,” 
+
+IEEE Communications Letters , early access, 2026. [31] Z. Zhang, K.-K. Wong, D. Morales-Jimenez, H. Jiang, P. Ramirez-Espinosa, C.-B. Chae, and C. Masouros, “Finite-blocklength fluid an-tenna systems with spatial block-correlation channel model,” IEEE Wireless Communications Letters , vol. 15, pp. 1911–1915, 2026. [32] Z. Zhang, J. Dang, D. Morales-Jimenez, H. Jiang, Z. Zhang, C. Ma-souros, and C.-B. Chae, “Joint activity detection and channel estimation for fluid antenna system exploiting geographical and angular informa-tion,” arXiv:2512.15342, 2025. [33] Z. Zhang, K.-K. Wong, K. Meng, D. Morales-Jimenez, H. Jiang, C. Masouros, H. Shin, and Z. Zhang, “Geometry-structured channel recon-struction for fluid antenna systems: Theoretical bounds and Bayesian inference,” arXiv:2606.04001, 2026. [34] S. Wagner, R. Couillet, M. Debbah, and D. T. M. Slock, “Large system analysis of linear precoding in correlated MISO broadcast channels under limited feedback,” IEEE Transactions on Information Theory , vol. 58, no. 7, pp. 4509–4537, Jul. 2012. [35] Y. Bengio, N. L´ eonard, and A. Courville, “Estimating or propagat-ing gradients through stochastic neurons for conditional computation,” arXiv:1308.3432, 2013. [36] E. Jang, S. Gu, and B. Poole, “Categorical reparameterization with Gumbel-Softmax,” in Proc. International Conference on Learning Rep-resentations (ICLR) , 2017. [37] Y. Wu and K. He, “Group normalization,” in Proc. European Conference on Computer Vision (ECCV) , 2018, pp. 3–19. [38] I. Loshchilov and F. Hutter, “Decoupled weight decay regularization,” in Proc. International Conference on Learning Representations (ICLR) ,2019.

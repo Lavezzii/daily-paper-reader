@@ -1,0 +1,405 @@
+Title: Radar-Aided Near-Field Beam Prediction via Beam Map Learning for XL-MIMO V2I Communications
+
+URL Source: https://arxiv.org/pdf/2607.27643v1
+
+Published Time: Fri, 31 Jul 2026 00:27:28 GMT
+
+Number of Pages: 5
+
+Markdown Content:
+> IEEE XXXX, VOL. XX, NO. XX 1
+
+# Radar-Aided Near-Field Beam Prediction via Beam Map Learning for XL-MIMO V2I Communications 
+
+Jiali Nie, Student Member, IEEE, Yu Han, Member, IEEE, Yuanhao Cui, Member, IEEE, Xiaojie Li, Student Member, IEEE, Shi Jin, Fellow, IEEE, and Chao-Kai Wen, Fellow, IEEE 
+
+Abstract —Near-field beam training in extremely large-scale multiple-input multiple-output (XL-MIMO) vehicle-to-infrastructure (V2I) systems incurs high overhead due to large range-angle codebooks and rapid channel variation. This paper proposes a passive radar-aided framework for near-field beam prediction based on radar-to-beam map learning. By exploiting the spatial correlation between radar observations and communi-cation signals, the proposed method maps radar Bartlett spectra to communication beam maps using a lightweight encoder-decoder convolutional neural network. Gaussian soft supervision is further introduced to preserve beam-space continuity. Simula-tions on a synchronized Sionna ray tracing radar-communication dataset show that the proposed method consistently improves Top-k accuracy, distance-based accuracy, beam loss, and spectral efficiency. 
+
+Index Terms —XL-MIMO, near-field, ISAC, V2I communica-tions, radar-aided beam prediction. 
+
+I. I NTRODUCTION 
+
+Future vehicle-to-infrastructure (V2I) communication sys-tems require high-rate and low-latency links for connected and automated vehicles. To provide sufficient link budget at high carrier frequencies, large-scale and extremely large-scale multiple-input multiple-output (XL-MIMO) arrays are expected to be deployed at roadside units (RSUs) [1]. Such ar-rays provide highly directional beams and large beamforming gains, but also make beam training increasingly challenging. As the array aperture increases, vehicles within practical V2I ranges may lie in the radiating near-field region, where the beam response becomes dependent on both angle and range [2]. Therefore, near-field beam selection requires search-ing over a large range-azimuth-elevation codebook, which is prohibitive for highly dynamic V2I links with frequent beam updates [3]. Integrated sensing and communications (ISAC) provides a promising paradigm for reducing beam training overhead by exploiting environmental sensing information [4]. Existing 
+
+Received xxx; revised xxx; accepted xx. Date of publication xx. This work was supported in part by the xxxx. The work of Jiali Nie was supported in part by the SEU Innovation Capability Enhancement Plan for Doctoral Students CXJH SEU 26104. The code for this paper is available at https://github.com/ fly-winder/Radar2BeamMap-NF (Corresponding author: Yu Han; Shi Jin.) Jiali Nie, Yu Han, Xiaojie Li, and Shi Jin are with the School of Information Science and Engineering, Southeast University, Nanjing, China (e-mail: {niejl, hanyu, xiaojieli, jinshi }@seu.edu.cn). Yuanhao Cui is with the School of Information and Communication Engineering, Beijing University of Posts and Telecommunications, Beijing, China (e-mail: cuiyuanhao@bupt.edu.cn). Chao-Kai Wen is with the Institute of Communications Engineer-ing, National Sun Yat-sen University, Kaohsiung, Taiwan (e-mail: chaokai.wen@mail.nsysu.edu.tw). 
+
+sensing-aided beam prediction studies have used LiDAR point clouds, visual images, and location information to infer candi-date beam directions [5]–[7]. These methods demonstrate the potential of multimodal sensing for beam management, but they mainly rely on geometric cues or dominant LoS-related features, and their robustness may degrade under dynamic blockage or NLoS propagation. Radar sensing is attractive for V2I beam management since automotive radars provide high-resolution range and angular information about vehicles and scatterers [8]. Existing radar-aided methods reduce beam search overhead using target esti-mates, covariance matrices, angular spectra, or deep learning-based mappings from radar observations to mmWave/sub-THz beam indices [9], [10]. Passive radar at the RSU has also been exploited to configure V2I links by intercept-ing automotive radar signals [11], while low-dimensional radar spatial features have been mapped to communication beam representations [12]. Nevertheless, most existing meth-ods assume far-field propagation with uniform linear arrays or low-dimensional angular codebooks. In XL-MIMO V2I systems, the large array aperture makes the beam response range-angle dependent, requiring beam training over a three-dimensional range-azimuth-elevation codebook. This greatly increases training overhead, while high vehicle mobility fur-ther aggravates beam misalignment. In addition, hard beam-index classification ignores beam-space continuity, and its robustness under dynamic blockage and corner NLoS prop-agation remains insufficiently studied. In this paper, we propose a radar-aided near-field beam prediction framework based on radar-to-beam map learning. Instead of directly predicting a hard beam index, the proposed method maps radar Bartlett spectra to communication angu-lar beam maps using a lightweight encoder-decoder CNN. A Gaussian soft label and a neighborhood-weighted mean squared error (MSE) loss are designed to preserve beam-space continuity. Experiments on a synchronized Sionna RT-based radar-communication dataset covering LoS, dynamic blockage, and corner NLoS scenarios demonstrate superior beam prediction and communication performance. II. S YSTEM MODEL 
+
+We consider a V2I downlink system, as shown in Fig. 1, where an ISAC-enabled roadside XL-MIMO base station (BS) serves a highly mobile vehicle. The roadside BS is equipped with a large-scale uniform planar array (UPA) operating in the upper 6 GHz (U6G) band for wireless communication, to-arXiv:2607.27643v1 [eess.SP] 30 Jul 2026 IEEE XXXX, VOL. XX, NO. XX 2Communication UPA Radar Paths Comm Paths  
+
+> 𝜃
+> 𝜙
+> Target Vehicle Passive Radar UPA
+> Fig. 1. System model of the passive radar-aided XL-MIMO V2I communi-cations.
+
+gether with a passive sensing array for intercepting frequency-modulated continuous-wave (FMCW) signals transmitted by the onboard automotive radar. The ego vehicle is equipped with a single communication antenna and an FMCW radar, which are spatially separated. 
+
+A. Communication Model 
+
+Consider a V2I downlink where the roadside BS employs a UPA with Nc = Nc,v Nc,h elements on the y-z plane at height 
+
+H. The array center is pBS = [0 , 0, H ]T , and the (m, n )-th element has position ¯pm,n , where m = 0 , . . . , N c,v − 1
+
+and n = 0 , . . . , N c,h − 1. For a point located at spherical coordinates (r, θ, ϕ ) where r, θ, and ϕ denote the range, azimuth angle, and elevation angle, respectively, the direction vector is 
+
+u(θ, ϕ ) = [cos ϕ cos θ, cos ϕ sin θ, sin ϕ]T . (1) Due to the large XL-MIMO aperture, the vehicle may lie in the radiating near-field region. The spherical-wave near-field steering vector aNF (r, θ, ϕ ) ∈ CNc×1 is 
+
+[aNF (r, θ, ϕ )] m,n = 1
+
+√Nc
+
+e−j 2πλc (∥ru(θ,ϕ )−¯pm,n ∥− r), (2) where λc is the communication wavelength. For a wideband OFDM system with K subcarriers and subcarrier spacing ∆f ,the near-field channel at the k-th subcarrier is modeled as 
+
+hk,t =
+
+> Lt
+
+X
+
+> ℓ=1
+
+αℓ,t ej2πν ℓ,t te−j2πk ∆f τ ℓ,t aNF (rℓ,t , θ ℓ,t , ϕ ℓ,t ), (3) where Lt is the number of communication paths at time t,
+
+αℓ,t , τℓ,t , νℓ,t , and (rℓ,t , θ ℓ,t , ϕ ℓ,t ) denote the complex gain, delay, Doppler shift, and range-azimuth-elevation parameters of the ℓ-th communication path at time t, respectively. Given a near-field beamforming vector w ∈ CNc×1, the received SNR at the k-th subcarrier is 
+
+γk,t (w) = 
+
+Pt hHk,t w 2
+
+σ2
+
+> n
+
+, (4) where Pt is the transmit power and σ2 
+
+> n
+
+is the noise power. The beamforming vector is selected from a predefined near-field codebook to provide sufficient array gain for the highly directional V2I link. 
+
+B. Radar Model 
+
+To provide environmental priors for V2I networking, a passive sensing array with Nr = Nr,v Nr,h antenna elements is deployed at the roadside BS to intercept onboard automo-tive radar signals. For simplicity, only the target vehicle is considered as the opportunistic radar transmitter. The array is placed on the y-z plane with inter-element spacing dr = λr /2,where λr is the radar wavelength. The vehicle radar operates at millimeter wave and transmits FMCW chirps. During one chirp duration Tp, the transmitted signal is 
+
+sr (tc) = pPr ej2π  
+
+> 
+> frtc+βt 2
+> c
+> 2
+> 
+> +jψ
+
+, tc ∈ [0 , T p], (5) where Pr is the radar transmit power, fr is the starting frequency, β = Br /T p is the chirp rate, Br is the sweep bandwidth, and ψ is the initial phase. The received radar signal at the roadside BS is modeled as 
+
+yr (tc) = 
+
+> Lr
+
+X
+
+> ℓ=1
+
+αr,ℓ ar (θr,ℓ , ϕ r,ℓ )sr (tc − τr,ℓ ) + nr (tc), (6) where Lr denotes the number of radar-visible paths associated with a subset of the communication channel. Moreover, αr,ℓ ,
+
+τr,ℓ , and ar (θr,ℓ , ϕ r,ℓ ) denote the complex gain, delay, and radar steering vector of the ℓ-th radar path, respectively. Since the radar aperture is small relative to the target range, 
+
+ar (θ, ϕ ) ∈ CNr ×1 follows the far-field plane-wave assump-tion. Following existing passive FMCW radar processing, syn-chronization and dechirping are assumed to have been com-pleted. After sampling, Ns fast-time samples per chirp and 
+
+Nd chirps per coherent processing interval (CPI) are collected into a radar cube: 
+
+Xr ∈ CNd×Nr ×Ns , (7) where the three dimensions correspond to chirps, radar anten-nas, and fast-time samples, respectively. 
+
+C. Problem Formulation 
+
+The roadside BS serves the vehicle using a predefined near-field codebook, which jointly discretizes range, azimuth, and elevation to account for spherical wavefronts: 
+
+W = {w(rq , θ i, ϕ j ) | q = 1 , . . . , N ρ,i = 1 , . . . , N θ , j = 1 , . . . , N ϕ}, (8) where w(rq , θ i, ϕ j ) is a near-field steering vector focused on a range-azimuth-elevation grid point, and Nρ, Nθ , and 
+
+Nϕ denote the codebook sizes along the three dimensions. Specifically, the range grid is uniformly sampled in the inverse-range domain, i.e., 1/r q is uniformly distributed over [1 /r max , 1/r min ]. The azimuth and elevation grids are uniformly sampled in the spatial-frequency domains sin θ
+
+and sin ϕ, respectively, with θi ∈ [θmin , θ max ] and ϕj ∈
+
+[ϕmin , ϕ max ]. The optimal codeword is obtained by maximiz-ing the average beamforming gain over all subcarriers: 
+
+(q⋆t , i ⋆t , j ⋆t ) = arg max 
+
+> q,i,j
+
+1
+
+K
+
+> K−1
+
+X
+
+> k=0
+
+hHk,t w(rq , θ i, ϕ j ) 2 . (9) IEEE XXXX, VOL. XX, NO. XX 360 40 20 0 20 40 60        
+
+> Azimuth [deg]
+> 20
+> 15
+> 10
+> 5
+> 0
+> 5
+> 10
+> 15
+> 20
+> Elevation [deg]
+> (a) Radar Bartlett Spectrum
+> 60 40 20 020 40 60
+> Azimuth [deg]
+> 20
+> 15
+> 10
+> 5
+> 0
+> 5
+> 10
+> 15
+> 20
+> Elevation [deg]
+> (b) Communication Beam Power Map
+> 30
+> 25
+> 20
+> 15
+> 10
+> 5
+> Relative power [dB]
+> 70
+> 60
+> 50
+> 40
+> 30
+> 20
+> 10
+> Relative power [dB]
+> Fig. 2. Radar-communication spatial correlation in V2I scenarios
+
+The exhaustive search in (9) provides the ground-truth near-field beam index for supervised learning, but its codebook size |W| = NρNθ Nϕ leads to prohibitive training overhead in high-mobility XL-MIMO V2I systems. To reduce this overhead, we exploit radar observations to infer the near-field beam index. Although radar and commu-nication links share common structures and scatterers, mis-matches in carrier frequency, array aperture, antenna location, and propagation response prevent direct geometric conversion from radar observations to the optimal communication beam. We therefore formulate radar-aided near-field beam selection as a learning-based spatial mapping problem: 
+
+(ˆ q, ˆi, ˆj) = GΘ(Xr), (10) where GΘ(·) maps the radar observation Xr to the predicted near-field beam index, so that w(rˆq , θ ˆi, ϕ ˆj ) approaches the exhaustive-search codeword in (9). The detailed radar-to-beam mapping is presented in Section III. III. P ROPOSED RADAR -AIDED NEAR -F IELD BEAM 
+
+PREDICTION METHOD 
+
+A. Motivation and Framework Overview 
+
+From the radar cube, we construct T spatial snapshots stacked in Sr and estimate the radar covariance matrix as 
+
+Rr = 1
+
+T SrSH 
+
+> r
+
+. (11) The radar angular representation is then obtained using the Bartlett spectrum 
+
+Pr(θ, ϕ ) = aH 
+
+> r
+
+(θ, ϕ )Rrar(θ, ϕ ). (12) As illustrated in Fig. 2, although Pr(θ, ϕ ) and the commu-nication beam power map exhibit similar dominant angular structures, their peaks are not always aligned due to radar-communication mismatch. This motivates a learning-based radar-to-beam mapping instead of direct geometric projection. For the considered array, the Rayleigh distance is about 90 
+
+m, indicating non-negligible near-field effects. Since the con-sidered XL-MIMO beam response is more sensitive to angular mismatch than to small range deviations under the adopted deployment geometry, we use radar ranging to determine the range index and learn only the angular beam map. For each training sample, the ground-truth near-field code-word (q⋆, i ⋆, j ⋆) is obtained by exhaustive search. Since the proposed network predicts the angular beam map, only (i⋆, j ⋆)
+
+is used for supervision. A one-hot label can represent the optimal angular beam, but it ignores the physical continuity of the angular codebook, where adjacent narrow beams often correspond to neighboring directions and similar beamform-ing gains. To exploit this continuity, we construct a two-dimensional Gaussian soft beam map centered at the optimal angular indices: 
+
+Yi,j = exp 
+
+
+
+− (i − i⋆)2 + ( j − j⋆)2
+
+2σ2
+
+> b
+
+
+
+, (13) where σb controls the spatial spread over the angular code-book. The beam map reaches its maximum at (i⋆, j ⋆) and smoothly decays for neighboring beams. This encoding con-verts hard beam-index classification into structured beam map regression, better matching codebook beam selection with strong spatial correlation among adjacent beams. As shown in Fig. 3, the radar Bartlett spectrum Pr is fed into a neural network to predict the angular beam map: 
+
+ˆY = fΘ(Pr), ˆY ∈ [0 , 1] Nθ ×Nϕ , (14) where fΘ(·) denotes the beam map prediction network. The angular indices (ˆ i, ˆj) are obtained from the beam map peak and combined with the radar-estimated range index ˆq for final near-field beam selection. 
+
+B. Lightweight Beam Prediction Framework 
+
+We adopt a lightweight U-Net-style encoder-decoder CNN to learn the radar-to-beam map from the radar Bartlett spec-trum Pr to the communication beam map ˆY. As shown in Fig. 3, the network consists of an encoder, a bottleneck, and a decoder. The encoder uses two convolutional stages with max-pooling to extract multi-scale spatial features, where each stage contains two 3 × 3 convolutional layers followed by batch normalization and ReLU activation. The bottleneck captures high-level spatial representations, while the decoder upsamples the features using transposed convolutions and skip connections to preserve fine angular structures. A final 
+
+1 × 1 convolutional layer with sigmoid activation produces the predicted beam map. The network is trained to minimize the discrepancy between the predicted beam map ˆY and the soft label Y. Since most beam map entries are close to zero, standard mean squared error may under-emphasize the optimal-beam neighborhood. We therefore adopt a neighborhood-weighted mean squared error loss: 
+
+L = 1
+
+Nθ NϕNθX
+
+> i=1
+> Nϕ
+
+X
+
+> j=1
+
+(1 + λY i,j )
+
+ ˆYi,j − Yi,j 
+
+2
+
+, (15) where λ controls the emphasis on the optimal-beam neighbor-hood. This weighting encourages a sharper response around the optimal beam while retaining smooth supervision for adjacent beams. After training, the angular indices (ˆ i, ˆj) are obtained from the beam map peak and combined with the radar-estimated range index ˆq to select the final near-field IEEE XXXX, VOL. XX, NO. XX 4Peak Detection Predicted angular indices    
+
+> (𝑖 ,𝑗 )
+> Angular Soft Beam Map Label
+> Ground- truth near- field codeword Neighborhood- weighted MSE Loss
+> Predicted Radar Angular Beam Map
+> Near- field BeamIndex
+> Conv Block Conv Block Max Pool Max Pool UpConv UpConv Conv Block conv Block Conv Sigmoid Bottleneck Encoder Decoder
+> Lightweight U- Net - style Encoder - Decoder CNN
+> Bartlett Spectrum Radar Cube
+> Soft Beam Map Label
+> Range Estimation Range index
+> 𝑞
+> Range (m)
+
+Fig. 3. Overall framework of the proposed radar-to-beam map learning method. TABLE I SIMULATION AND TRAINING PARAMETERS 
+
+Parameter Value Parameter Value 
+
+Comm. carrier 7 GHz Radar carrier 77 GHz Comm. bandwidth 20 MHz Radar bandwidth 200 MHz OFDM subcarriers K = 128 Radar SNR 0 dB Comm. array 16 × 64 UPA Radar array 4 × 8 UPA Roadside BS height 10 m Road config. Six-lane 
+
+[rmin , r max ] 20 , 100 m Nρ × Nθ × Nϕ 16 × 128 × 32 [θmin , θ max ] [−60 ◦, 60 ◦] [ϕmin , ϕ max ] [−20 ◦, 20 ◦]
+
+Optimizer Adam Learning rate 10 −3
+
+Batch size 128 Epochs 100 
+
+Soft label variance σ2 
+
+> b
+
+= 1 Loss weight λ = 4 
+
+beam (ˆ q, ˆi, ˆj). Thus, the proposed method avoids exhaustive scanning of the full three-dimensional near-field codebook by decomposing beam selection into radar-assisted range indexing and learned angular beam map prediction. IV. E XPERIMENTAL SETUP AND RESULT ANALYSIS 
+
+A. Experimental Setup 
+
+We evaluate the proposed method on a Sionna ray-tracing-based synchronized radar-communication dataset with 20 ur-ban scenarios and a frame interval of 100 ms. The dataset covers LoS, dynamic blockage, and corner NLoS V2I con-ditions, and records the radar cube, OFDM channel, near-field beam label, Top-5 beams, received powers, and LoS indicator for each frame. The dataset description is available at https://fly-winder.github.io/SenseComm/. For cross-scenario evaluation, samples from 17 scenarios are split into training and validation sets with an 80% : 20% ratio, while three Shanghai scenarios with 2004 samples are used only for testing. The network is implemented in PyTorch and trained with Adam. Key simulation and training parameters are listed in Table I. 
+
+B. Result Analysis 
+
+We evaluate beam prediction using Top-k angular accuracy and distance-based accuracy (DBA), which checks whether the predicted angular beam index lies within a beam-index neighborhood of the ground truth [13]. Let (i⋆, j ⋆) and (ˆ i, ˆj)
+
+denote the ground-truth and predicted angular beam indices, respectively. DBA is defined as 
+
+DBA = 1
+
+N
+
+> N
+
+X
+
+> n=1
+
+I
+
+q 
+
+(ˆ in − i⋆n)2 + (ˆ jn − j⋆n)2 ≤ ∆
+
+
+
+, (16) where I(·) is the indicator function and ∆ = 5 in our experiments. Communication performance is further measured by the average beam loss (AvgL), median beam loss (MedL), and normalized spectral efficiency (SE). The proposed beam map learning method is compared with two ablation variants and two representative baselines: Pro-posed w/o weighted MSE , which removes the neighborhood-weighted MSE loss; Proposed w/o soft label , which uses one-hot beam labels; CNN-based beam classification , which for-mulates angular beam prediction as a multi-class classification problem and directly predicts the optimal angular beam index; and Radar-assisted beam selection , which estimates the dominant radar range-angle response and selects the nearest communication beam. Fig. 4 illustrates the Top-k accuracy across different scenar-ios, where the proposed framework consistently outperforms all baselines. The radar-assisted baseline yields poor accuracy due to severe physical mismatches in heterogeneous arrays. In the challenging corner NLoS scenario, the conventional CNN classification also suffers a severe performance collapse from overfitting. Conversely, by combining soft angular labels and the neighborhood-weighted MSE loss, the proposed method preserves physical spatial continuity, yielding consistent gains over the baselines. Table II evaluates the framework’s robustness across dif-ferent mobility conditions. The proposed method consistently achieves the highest accuracy and lowest beam loss. Notably, performance remains stable across vehicle speeds, with the overall median loss of 0.202 dB. This suggests that the learned radar-communication spatial correlation is robust to vehicular dynamics across the evaluated V2I mobility profiles. Fig. 5 shows the CDF of the normalized SE, defined as the ratio between the average SE achieved by the predicted beam and that achieved by the exhaustive-search optimal beam. The proposed method achieves the highest SE and IEEE XXXX, VOL. XX, NO. XX 5Top-1 Top-3 Top-5      
+
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Accuracy (%)  0.68
+> 0.92 0.95
+> 0.52
+> 0.84
+> 0.92
+> 0.49
+> 0.83
+> 0.92
+> 0.50
+> 0.72
+> 0.80
+> 0.24
+> 0.53
+> 0.77
+> (a) Single Vehicle Scenario
+> Top-1 Top-3 Top-5
+> 0.66
+> 0.91
+> 0.96
+> 0.52
+> 0.85
+> 0.93
+> 0.48
+> 0.84
+> 0.92
+> 0.50
+> 0.71
+> 0.78
+> 0.22
+> 0.53
+> 0.77
+> (b) Dynamic Blockage Scenario
+> Top-1 Top-3 Top-5
+> 0.27
+> 0.49
+> 0.56
+> 0.23
+> 0.46
+> 0.54
+> 0.24
+> 0.46
+> 0.56
+> 0.18
+> 0.31
+> 0.39
+> 0.12
+> 0.30
+> 0.42
+> (c) Corner Scenario
+> Proposed beam map learning
+> Proposed w/o weighted MSE
+> Proposed w/o soft label
+> CNN-based Beam Classification
+> Radar-Assisted Beam Selection
+
+Fig. 4. Top-k beam prediction accuracy under different scenarios. TABLE II BEAM PREDICTION PERFORMANCE UNDER DIFFERENT VEHICLE MOBILITY CONDITIONS .
+
+Speed Metric Proposed w/o wMSE w/o soft CNN cls. Radar sel. 
+
+< 15 m/s Top-1 ↑ 0.543 0.448 0.399 0.429 0.212 DBA ↑ 0.766 0.733 0.724 0.642 0.638 AvgL (dB) ↓ 2.444 2.715 2.794 7.240 3.622 MedL (dB) ↓ 0.200 0.345 0.474 0.789 0.991 
+
+≥ 15 m/s Top-1 ↑ 0.520 0.386 0.404 0.342 0.174 DBA ↑ 0.805 0.766 0.763 0.614 0.675 AvgL (dB) ↓ 1.726 1.984 2.262 7.899 3.206 MedL (dB) ↓ 0.207 0.360 0.361 1.528 0.813 Overall Top-1 ↑ 0.533 0.423 0.401 0.394 0.197 DBA ↑ 0.782 0.747 0.740 0.631 0.653 AvgL (dB) ↓ 2.156 2.422 2.581 7.504 3.455 MedL (dB) ↓ 0.202 0.355 0.432 1.063 0.913 0.0 0.2 0.4 0.6 0.8 1.0 
+
+Normalized SE 
+
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> CDF
+> Proposed beam map learning
+> Proposed w/o weighted MSE
+> Proposed w/o soft label
+> CNN-based Beam Classification
+> Radar-Assisted Beam Selection
+> Random Beam Selection
+
+Fig. 5. CDF of the SE achieved by different beam prediction methods. 
+
+approaches the optimal-beam performance for most samples. The ablation curves show that soft angular encoding provides the primary improvement, while neighborhood-weighted MSE yields further refinement. In contrast, the CNN classification struggles with hard label assignment errors, and pure radar-assisted selection is limited by geometric offsets. These results indicate that regressing a continuous beam map is more effective than discrete index matching in this setting. V. C ONCLUSION 
+
+This paper proposed a radar-aided near-field beam pre-diction framework for XL-MIMO V2I communications. The proposed method learns a radar-to-beam map from radar Bartlett spectra to communication angular beam map using Gaussian soft supervision and a lightweight encoder-decoder CNN. Evaluations on a synchronized Sionna RT-based radar-communication dataset demonstrate that the proposed method improves beam prediction accuracy and communication per-formance compared with hard beam classification and radar-assisted beam selection for XL-MIMO near-field V2I systems. REFERENCES [1] Z. Wang, J. Zhang, H. Du, D. Niyato, S. Cui, B. Ai, M. Debbah, K. B. Letaief, and H. V. Poor, “A tutorial on extremely large-scale MIMO for 6G: Fundamentals, signal processing, and applications,” IEEE Commun. Surv. Tutorials , vol. 26, no. 3, pp. 1560–1605, Thirdquarter 2024. [2] M. Cui, Z. Wu, Y. Lu, X. Wei, and L. Dai, “Near-field MIMO communications for 6G: Fundamentals, challenges, potentials, and future directions,” IEEE Commun. Mag. , vol. 61, no. 1, pp. 40–46, Jan. 2023. [3] J. Nie, Y. Cui, Z. Yang, W. Yuan, and X. Jing, “Near-field beam training for extremely large-scale MIMO based on deep learning,” IEEE Trans. Mob. Comput. , vol. 24, no. 1, pp. 352–362, Jan. 2025. [4] F. Liu, Y. Cui, C. Masouros, J. Xu, T. X. Han, Y. C. Eldar, and S. Buzzi, “Integrated sensing and communications: Toward dual-functional wire-less networks for 6G and beyond,” IEEE J. Sel. Areas Commun. , vol. 40, no. 6, pp. 1728–1767, Jun. 2022. [5] Y. Cui, J. Nie, X. Cao, T. Yu, J. Zou, J. Mu, and X. Jing, “Sensing-assisted high reliable communication: A Transformer-based beamform-ing approach,” IEEE J. Sel. Top. Signal Process. , vol. 18, no. 5, pp. 782–795, Jul. 2024. [6] S. Jiang, G. Charan, and A. Alkhateeb, “LiDAR aided future beam prediction in real-world millimeter wave V2I communications,” IEEE Wireless Commun. Lett. , vol. 12, no. 2, pp. 212–216, Feb. 2023. [7] G. Charan and A. Alkhateeb, “Sensing-aided 6G drone communications: Real-world datasets and demonstration,” IEEE Open J. Commun. Soc. ,vol. 6, pp. 8745–8774, Sep. 2025. [8] F. Liu, W. Yuan, C. Masouros, and J. Yuan, “Radar-assisted predictive beamforming for vehicular links: Communication served by sensing,” 
+
+IEEE Trans. Wireless Commun. , vol. 19, no. 11, pp. 7704–7719, Nov. 2020. [9] U. Demirhan and A. Alkhateeb, “Radar aided 6G beam prediction: Deep learning algorithms and real-world demonstration,” in 2022 IEEE Wireless Communications and Networking Conference (WCNC) , Apr. 2022, pp. 2655–2660. [10] ——, “Radar-aided beam prediction and tracking: Will it work in the real world?” IEEE Trans. Commun. , vol. 74, pp. 4336–4352, 2026. [11] A. Ali, N. Gonz´ alez-Prelcic, and A. Ghosh, “Passive radar at the roadside unit to configure millimeter wave vehicle-to-infrastructure links,” IEEE Trans. Veh. Technol. , vol. 69, no. 12, pp. 14 903–14 917, Dec. 2020. [12] A. Graff, Y. Chen, N. Gonz´ alez-Prelcic, and T. Shimizu, “Deep learning-based link configuration for radar-aided multiuser mmwave vehicle-to-infrastructure communication,” IEEE Trans. Veh. Technol. , vol. 72, no. 6, pp. 7454–7468, Jun. 2023. [13] G. Charan, U. Demirhan, J. Morais, A. Behboodi, H. Pezeshki, and A. Alkhateeb, “Multi-modal beam prediction challenge 2022: Towards generalization,” arXiv preprint arXiv:2209.07519 , 2022.

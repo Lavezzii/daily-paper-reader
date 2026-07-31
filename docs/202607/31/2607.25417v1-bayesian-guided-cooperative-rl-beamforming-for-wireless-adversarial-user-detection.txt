@@ -1,0 +1,575 @@
+Title: Bayesian-Guided Cooperative RL Beamforming for Wireless Adversarial User Detection
+
+URL Source: https://arxiv.org/pdf/2607.25417v1
+
+Published Time: Wed, 29 Jul 2026 00:40:03 GMT
+
+Number of Pages: 22
+
+Markdown Content:
+> Received: Accepted: Published:
+> Citation: Geranmayeh, P.; Günlü, O. Bayesian-Guided Cooperative Reinforcement Learning Beamforming for Adversarial User Detection in Wireless Networks. Entropy 2026 ,1, 0. https://doi.org/
+> Copyright: © 2026 by the authors. Submitted to Entropy for possible open access publication under the terms and conditions of the Creative Commons Attri- bution (CC BY) license (https://creativecommons.org/ licenses/by/4.0/).
+
+Article 
+
+# Bayesian-Guided Cooperative RL Beamforming for Wireless Adversarial User Detection 
+
+Parmida Geranmayeh 1, ∗ and Onur Günlü 1,2  
+
+> 1
+
+Lehrstuhl für Nachrichtentechnik, Technische Universität Dortmund, 44227 Dortmund, Germany; {parmida.geranmayeh, onur.guenlue}@tu-dortmund.de  
+
+> 2
+
+Information Theory and Security Laboratory (ITSL), Linköping University, 581 83 Linköping, Sweden 
+
+* Correspondence: parmida.geranmayeh@tu-dortmund.de.  
+
+> †
+
+This paper is an extended version of our submitted conference paper in [1]. 
+
+Abstract: In next-generation wireless networks, communication systems are expected to go beyond simple data transmission and simultaneously provide high data rates, efficiency, and security. This requirement has motivated the extensive adoption of machine learning methods to develop intelligent and real-time network management frameworks, enabling the system to continuously monitor and react to channel variations and user behavior while maintaining efficient information delivery. In this context, the integration of machine learning with beamforming enables adaptive and data-driven beam direction selection, improving both the efficiency and security of wireless links. In this work, a 3GPP-based system model is first implemented under a no-attacker scenario, and an exhaustive search is employed as a reference to identify the best beamforming configurations. The proposed framework is then evaluated in the presence of an attacker and under different network scalability conditions. We demonstrate that the reinforcement learning-based approaches, namely Q-learning and SARSA (State-Action-Reward-State-Action), consistently outper-form random selection in terms of total channel capacity, attacker detection accuracy, and performance stability. Among the evaluated reinforcement learning methods, Q-learning achieves the best overall trade-off between detection accuracy and computational efficiency. Our results indicate that the proposed framework provides a stable, scalable, and effec-tive solution for joint beamforming and security-aware decision-making in dynamic and adversarial wireless environments. 
+
+Keywords: Beamforming, game theory, integrated sensing and communication (ISAC), reinforcement learning, 6G security. 
+
+# 1. Introduction 
+
+In recent years, the integration of sensing and communication has emerged as one of the most promising paradigms for future wireless networks, attracting attention from both academia and industry [ 2, 3]. By combining sensing and communication functionalities within a unified infrastructure, Integrated Sensing and Communication (ISAC) is widely regarded as a key enabling technology for sixth-generation (6G) networks [ 4]. Extensive research has focused on waveform design, resource allocation, beamforming, and system performance optimization within this paradigm [ 5, 6]. Among these technologies, beam-forming plays a fundamental role in improving communication performance by directing signal energy toward intended users while suppressing adversarial interference [ 7 – 9]. Con-sequently, a wide range of beamforming techniques has been proposed to enhance the efficiency of next-generation wireless systems. For example, Ihsan et al. [ 10 ] integrated 
+
+Version July 29, 2026 submitted to Entropy https://doi.org/10.3390/e1010000 arXiv:2607.25417v1 [cs.IT] 28 Jul 2026 Version July 29, 2026 submitted to Entropy 2 of 22 
+
+Intelligent Reflective Surfaces (IRS) with non-orthogonal multiple access (NOMA)-based beamforming to jointly optimize beamforming and power allocation for improved en-ergy efficiency. Jiang et al. [ 11 ] proposed a complementary-beam initialization strategy to achieve more uniform spatial coverage, while Qi et al. [ 12 ] developed an Unmanned Aerial Vehicle (UAV)-assisted IRS architecture for Internet-of-Things (IoT) applications, demonstrating the effectiveness of beamforming in extending communication range and enhancing backscatter communication performance. As wireless networks continue to increase in scale and complexity, beamforming has increasingly been incorporated into digital twin frameworks to support more accurate network modeling and optimization [ 9]. The effectiveness of such frameworks, however, largely depends on the accuracy of the underlying wireless channel model. Consequently, ray tracing has become a key technique for channel modeling and wave propagation analysis [ 3, 13 , 14 ]. By accurately modeling propagation paths, reflections, refractions, and diffractions, ray tracing provides realistic channel information that improves beamforming optimization and network performance, making it a valuable component of digital twin-enabled wireless systems [9]. The importance of realistic propagation modeling has been demonstrated in numerous studies. Ji et al. [ 13 ] proposed an advanced propagation prediction method for ultra-high frequency (UHF) environments using irregular spatial partitioning to improve modeling accuracy. Hsiao et al. [ 14 ] investigated millimeter-wave (mmWave) propagation under both line-of-sight (LOS) and non-line-of-sight (NLOS) conditions. A comprehensive survey presented in [ 15 ] reviewed ray-tracing algorithms and their applications in wireless channel modeling, while Tiberi et al. [ 16 ] analyzed ultra-wideband channel characteristics through ray-tracing simulations. These studies confirm that accurate propagation modeling is indis-pensable for the design, evaluation, and optimization of future wireless communication systems. Besides channel propagation, antenna characteristics also play an essential role in beamforming performance [ 6,7 ]. Radiation patterns, antenna gain, polarization, and fre-quency response directly influence how electromagnetic energy propagates through the wireless environment and is received by users. Therefore, realistic antenna modeling complements ray-tracing-based channel characterization and contributes to more accurate beamforming optimization. To efficiently optimize beamforming in dynamic wireless environments, reinforcement learning (RL) has emerged as a powerful alternative to exhaustive search methods [ 17 ]. Unlike exhaustive search, whose computational complexity increases rapidly with network size, RL continuously interacts with the environment to learn adaptive beam selection policies while maintaining computational efficiency. This online learning capability makes RL particularly suitable for highly dynamic communication scenarios in which channel conditions change over time. Furthermore, deep RL (DRL) has been successfully applied to resource allocation and network optimization problems in modern communication systems experiencing rapidly increasing traffic demands [18]. While communication efficiency remains a primary objective, ensuring network se-curity has become equally important in next-generation wireless systems [ 19 –22 ]. Game-theoretic approaches have therefore been widely employed to model strategic interactions between legitimate users and malicious entities under uncertainty. Lei et al. [ 23 ] introduced a Markov game framework with incomplete information in which attack and defense strate-gies evolve dynamically. Jiang et al. [ 24 ] proposed a multi-stage signaling game for Moving Target Defense (MTD), whereas Teófilo et al. [ 25 ] illustrated the importance of adaptive decision-making in uncertain communication environments. These studies demonstrate Version July 29, 2026 submitted to Entropy 3 of 22 
+
+that game theory provides an effective framework for modeling attacker–defender interac-tions in complex wireless networks. Moreover, security challenges become even more critical in covert communication scenarios, where interference, noise, and jamming simultaneously affect communication reliability and detectability [ 26 ]. In addition to intentional jamming, fading, multipath propagation, and temporal channel variations introduce random fluctuations in signal am-plitude and phase, making the distinction between legitimate and malicious transmissions considerably more difficult [ 27 ]. Consequently, traditional analytical approaches often struggle to cope with such highly dynamic environments. To address these challenges, data-driven techniques have attracted increasing atten-tion. Machine learning methods provide powerful tools for modeling the nonlinear and time-varying behavior of wireless channels, frequently outperforming conventional ana-lytical techniques in complex environments [ 28 ]. Recent research has therefore focused on integrating machine learning, RL, and game-theoretic concepts. Ren et al. [ 29 ] pro-posed a hybrid framework combining incomplete-information games with DRL to derive Bayesian Nash equilibrium strategies for UAV networks. Yao et al. [ 30 ] introduced a Bayesian Q-learning approach for cyber defense in cyber-physical systems. Similarly, [31] presented a secure ISAC framework that combines Stackelberg game theory and DRL to jointly optimize security, sensing performance, and energy efficiency. With the increasing density of spectrum access in 5G New Radio (NR) systems, Bayesian inference has also emerged as an effective tool for detecting jamming and subtle interference patterns [ 32 ]. Furthermore, trust-based detection mechanisms employing active learning and Bayesian classifiers have demonstrated promising capabilities for identifying malicious behaviors in wireless communication networks [33]. Despite recent advances, existing studies have largely investigated beamforming opti-mization, channel modeling, security mechanisms, and Bayesian-based attacker detection independently. To address this gap, this work proposes an integrated framework that combines ray-tracing-based channel modeling, game-theoretic receiver (RX) association, RL-based beamforming, and Bayesian belief updating for secure beam management. By jointly integrating these techniques, the proposed framework improves total channel capac-ity, significantly enhances attacker detection accuracy, and provides a robust and scalable solution for intelligent and security-aware beamforming in dynamic wireless environments. 
+
+1.1. Main Contributions 
+
+The main contributions of this work are summarized as follows: • A comprehensive intelligent framework is proposed for secure beamforming in 5G mmWave networks by integrating 3GPP TR 38.901-based channel modeling, deter-ministic ray tracing, Bayesian-guided RL, and game-theoretic user association within a unified decision-making architecture. The Bayesian belief idea is related to [ 1]. How-ever, [ 1] infers a single attacker from variations in the aggregate network capacity, whereas the present work forms link-specific evidence, supports multiple attackers, and incorporates the resulting beliefs into cooperative transmitter beam selection, enabling more accurate attacker localization and improved detection performance. • A scalable Bayesian-guided cooperative RL framework is developed and evaluated under multiple network configurations with different RX densities (with RX antenna numbers ∈ { 4, 6, 8 }) and varying numbers of malicious users, whereas [ 1 ] considers only a single 2-TX/4-RX, single-attacker configuration. • A cooperative beamforming strategy is introduced, in which two transmitters (TXs) jointly determine their beamforming decisions instead of operating independently. Version July 29, 2026 submitted to Entropy 4 of 22 
+
+This cooperative decision-making is shown to improve the coordination between TXs and enhance both communication performance and attacker mitigation. • An exhaustive search-based beamforming benchmark is introduced to determine the best beam steering angles for all TXs and RXs under the baseline scenario. The proposed framework identifies and reports the best cooperative beam configurations for all network nodes, providing a reliable reference for evaluating the learning-based methods. • The RL framework is substantially extended through a comprehensive comparison of Q-learning, State-Action-Reward-State-Action (SARSA), and random beam selection. The results demonstrate the superiority of RL over random beam selection in terms of throughput, attacker detection accuracy, convergence behavior, and computational efficiency, while also showing that Q-learning consistently outperforms SARSA. • Extensive Monte Carlo simulations are conducted for NRX ∈ { 4, 6, 8 } to evaluate the empirical performance of the proposed framework under different network sizes and adversarial conditions. 
+
+1.2. Paper Organization 
+
+In Section 2, the system model and simulation setup are presented, including the 3GPP Urban Micro-cellular (UMi) scenario, the considered geometric configuration (i.e., Dortmund urban environment in Germany with TX and RX placement), the beamforming formulation, and exhaustive search for beamforming for all antennas. Section 3 presents the implementation framework, including the RL formulations and the Bayesian-based utility function employed for attacker detection. Section 4 provides a comprehensive performance evaluation and comparison of the proposed approaches. Finally, Section 5 summarizes the main conclusions of the study and outlines potential directions for future work. 
+
+# 2. System Model and Network Architecture 
+
+Consider a 5G NR wireless communication system operating in the mmWave fre-quency band. The network follows a 3GPP-inspired UMi-type deployment. The numbers of TXs and RXs are fixed as NTX = 2 and NRX ∈ { 4, 6, 8 }, while their locations are sampled uniformly within the considered deployment area, equivalently corresponding to a PPP conditioned on the specified numbers of nodes. To evaluate the proposed framework under adversarial conditions, one or two RX-associated user nodes are randomly designated as malicious users (attackers), i.e., NAttacker ∈ { 1, 2 }. Uniform rectangular array (URA) antennas are employed to enable directional beamforming and MIMO operation. A 4 × 8URA, i.e., 32 antenna elements, is considered on the TX side, and a 2 × 2 URA, i.e., 4 antenna elements, is considered on the RX side. The carrier frequency is set to fc = 28 GHz , which lies in the 5G NR FR2 range, and the system operates over a bandwidth of B = 400 MHz. The network geometry is designed such that the height of the Base Stations (BS) ranges between 8 and 23 meters randomly, and the height of the User Equipments (UE) is randomly determined between 1.2 and 2 meters. Based on standard constraints, the minimum allowable distance from a user to the nearest base station is set to 10 meters, and the Inter-Site Distance (ISD) is configured to be 200 meters. The communication links between nodes may experience either line-of-sight (LOS) or non-line-of-sight (NLOS) propagation conditions. The probability that a link between a TX and an RX is in the LOS state at a three-dimensional distance d is determined according to the 3GPP TR 38.901 UMi model as 
+
+PLOS (d) = min 
+
+ 18 
+
+d , 1 
+
+
+
+1 − exp − d
+
+> 36
+
+
+
++ exp − d 
+
+> 36
+
+. (1) Version July 29, 2026 submitted to Entropy 5 of 22 
+
+If the link is in the LOS state, the signal propagates over a direct and unobstructed path. Otherwise, the link is considered to be in the NLOS state, where the received signal is formed through reflections, diffractions, and scattering from surrounding objects. Accordingly, the large-scale path loss is computed using the corresponding 3GPP TR 38.901 UMi path-loss model [34]: 
+
+PL LOS (d) = 32.4 + 21 log 10 (d) + 20 log 10 ( fc), (2) 
+
+PL NLOS (d) = 32.4 + 31.9 log 10 (d) + 20 log 10 ( fc). (3) where fc denotes the carrier frequency and is set to 28 GHz . The larger distance-dependent coefficient in the NLOS model reflects the additional attenuation caused by buildings and other urban obstructions, resulting in more severe propagation loss under blocked transmission conditions. 
+
+2.1. Spatial Topology and Node Deployment 
+
+To accurately model the spatial distribution of the nodes, a PPP with a specified density is utilized. After generating the random positions of TXs and RXs in a two-dimensional Cartesian space bounded by the interval [−150, 150 ] meters, the network coordinates are mapped onto geographical coordinates (latitude and longitude) based on the reference point 
+
+(51.5139 ◦N, 7.4653 ◦E) corresponding to Dortmund Downtown. This mapping aligns the setup with real-world urban telecommunication maps extracted from the OpenStreetMap (OSM) database. The three-dimensional position of the nodes in meters within the Cartesian simulation structure is formulated as follows and applied to the network geometry matrix: 
+
+pTX, i = [ xTX, i, yTX, i, zTX, i]T , i ∈ { 1, 2 }, (4) 
+
+pRX, j = [ xRX, j, yRX, j, zRX, j]T , j ∈ { 1, . . . , NRX } (5) Table 1 presents the node coordinates for a representative network realization, and the corresponding geometric configuration is illustrated in Figure 1. To improve visual clarity, Figure 1(a) illustrates the beamforming patterns of the two TXs toward two representative RXs. Figure 1(b) presents the locations of all TXs and RXs within the considered deployment area with all ray-tracing propagation paths.  
+
+> Table 1. Three-dimensional coordinates of the network nodes.
+
+Node Height (m) Latitude ( ◦) Longitude ( ◦)
+
+TX1 9.6815 51.512563 7.463546 TX2 12.6455 51.515124 7.465976 RX1 1.2863 51.513811 7.463668 RX2 1.4439 51.514514 7.463356 RX3 1.5096 51.513119 7.465642 RX4 1.7802 51.513637 7.463765 RX5 1.9954 51.515053 7.463836 RX6 1.7769 51.512653 7.464935 RX7 1.2875 51.515169 7.464115 RX8 1.5010 51.512890 7.464137 
+
+2.2. Ray-Tracing and Deterministic Channel Model 
+
+To provide a realistic representation of mmWave propagation, a deterministic channel model based on the Ray-Tracing Shooting and Bouncing Rays (SBR) algorithm is employed. Version July 29, 2026 submitted to Entropy 6 of 22  
+
+> Figure 1. Ray-tracing environment and network topology for 2 TXs and 8 RXs.
+
+Unlike simplified statistical channel models, the adopted approach explicitly accounts for the physical propagation environment, including building geometry, urban obstacles, and realistic concrete material properties. For each TX–RX link, the wireless channel is represented by a multipath Channel Impulse Response (CIR). The ray-tracing simulation considers at most one reflection and one diffraction for each propagation path. The channel parameters extracted from each propagation ray include the path loss PL k, propagation phase ϕk, Angle of Departure (AoD), and Angle of Arrival (AoA) in both the azimuth and elevation domains. The network geometry, deployment assumptions, and LOS/NLOS conditions follow the standard 3GPP TR 38.901 UMi specification. Accordingly, the corresponding 3GPP LOS probability and path-loss expressions are presented as a reference propagation model. However, in the proposed simulations, the actual path loss is obtained directly from the SBR ray-tracing engine rather than being computed using the analytical 3GPP path-loss equations. Consequently, the 3GPP path-loss model serves only as a reference for comparison, whereas all performance evaluations are conducted using the ray-tracing-derived channel parameters. 
+
+2.3. Spatially Correlated Shadow Fading Model 
+
+Shadow fading (or slow fading) represents the slow variations in received power caused by large environmental obstacles. In this system, the shadowing effect is modeled as a spatially correlated Gaussian random field, which is added to the path loss on a dB scale. The standard deviation of this log-normal distribution is set to σshadow = 7 dB , and its environmental correlation distance is dcorr = 50 m . The structure of the correlated field is generated by applying a two-dimensional convolution over an independent and identically distributed (i.i.d.) Gaussian matrix using an exponential correlation kernel based on the relative physical distance grid step dx such that [35] 
+
+K(∆x) = exp 
+
+
+
+− |∆x| · dx dcorr 
+
+
+
+. (6) The spatial filtering kernel is normalized such that ∑ K = 1. Moreover, the shadowing attenuation for the link between TX i and RX j is extracted via a two-dimensional interpola-Version July 29, 2026 submitted to Entropy 7 of 22 
+
+tion of the field values at the respective positions and is applied as the sum of shadowing effects at both ends of the link (i.e., sij = sTX, i + sRX, j). 
+
+2.4. Directional Antenna and Discrete Beamforming Model 
+
+To compensate for the severe path loss at the 28 GHz frequency band, all TXs and RXs are equipped with microstrip patch directional antenna arrays. The antenna radiation char-acteristics are incorporated into the simulation environment through a pre-computed beam pattern dataset ( AntennaPattern.mat ), which was generated offline using the adopted antenna array model and stores the angle-dependent radiation responses of the antenna array. The beamforming and positioning framework is based on a discrete angular code-book. Specifically, the beam steering directions are uniformly quantized over the interval 
+
+[−60 ◦, 60 ◦] with a step size of 5 ◦, resulting in Nangle = 25 discrete beam directions for each antenna, defined as: 
+
+A = {− 60 ◦, −55 ◦, . . . , 0 ◦, . . . , 55 ◦, 60 ◦}. (7) Furthermore, the inter-element spacing for the URA antenna structures is set to half of the carrier wavelength. Beam steering is achieved using array steering vectors, which define phase shifts across antenna elements such that constructive interference is formed in the desired direction while suppressing radiation in other directions. Accordingly, the beamforming weight vector is defined as: 
+
+w = a( f , θ), (8) where a( f , θ) denotes the steering vector corresponding to frequency f and angle θ.After determining the beamforming weight vector, the array radiation pattern for each steering direction is obtained by applying these weights to the antenna elements, generating the corresponding directional beam. The effective communication link is then characterized by incorporating beamforming at both TX and RX sides. Specifically, the effective channel gain is computed as: 
+
+G = wH 
+
+> r
+
+Hw t
+
+> 2
+
+, (9) where H represents the channel matrix, wt is the transmit beamforming vector, and 
+
+wr is the receive beamforming vector. This formulation captures the degree of alignment between the TX–RX beam directions and the underlying multipath channel structure. Figure 2 illustrates the resulting TX beam pattern. 
+
+2.5. Game-Theoretic Node Assignment Mechanism 
+
+The association and assignment of RXs to TXs during the network initialization phase are modeled as a non-cooperative game with stochastic best-response dynamics. In this framework, each RX sequentially updates its association decision based on instantaneous effective link gains, interference conditions, and load-dependent congestion effects. The proposed mechanism does not assume centralized coordination and operates in a fully distributed manner. The utility function for RX j when associated with TX i is defined as: 
+
+Uj(i) = log 2(1 + SINR j) − β log (Ni + 1), (10) where Ni represents the number of RXs currently associated with TX i, introducing a congestion-aware penalty term to mitigate load imbalance. The parameter β = 0.8 controls Version July 29, 2026 submitted to Entropy 8 of 22  
+
+> Figure 2. The digitized antenna radiation pattern.
+
+the impact of this load balancing effect. The effective link gain is computed using a ray-tracing-based channel model combined with spatial shadow fading and antenna pattern responses, and is used to evaluate the instantaneous SINR during each association update. User association decisions are updated iteratively using a Softmax-based probabilistic best-response rule with temperature parameter τ = 0.7, given by: 
+
+Pj(i) = exp (Uj(i)/τ)
+
+∑NTX  
+
+> m=1
+
+exp (Uj(m)/τ) . (11) The association process is executed over a finite number of iterations (up to 15 iter-ations), leading to a stable and stationary association configuration under the adopted stochastic response dynamics. All hyperparameters employed in the proposed framework, including the game-theoretic, Bayesian, and RL parameters, were determined experimen-tally based on extensive preliminary simulations. 
+
+2.6. Interference, Attacker, and SINR Model 
+
+The thermal noise power spectral density is given by kB TdBm = −174 dBm/Hz .Considering the system bandwidth B = 400 MHz and the RX noise figure NF UE = 13 dB ,the total noise power is computed as [36] 
+
+NdBm = kB TdBm + 10 log 10 (B) + NF UE s.t. NW = 10 NdBm −30 10 , (12) where B is expressed in Hz when calculating the noise power. The signal-to-interference-plus-noise ratio (SINR) for user j, associated with TX C(j),is defined as SINR j = Psignal 
+
+Pinterference + Pnoise 
+
+, (13) where Psignal , Pinterference and Pnoise denote, respectively. Psignal is the received power of the desired link, Pinterference is the sum of the received powers from all interfering transmitters, and Pnoise is the receiver thermal noise power. Moreover, the channel capacity per user and total channel capacity are computed as 
+
+Cj = B log 2(1 + SINR j), CTotal =
+
+> NRX
+
+# ∑
+
+> j=1
+
+Cj. (14) Version July 29, 2026 submitted to Entropy 9 of 22 
+
+# 3. PROPOSED METHODOLOGY 
+
+We next present the proposed intelligent beamforming framework, adaptive decision-making procedure, and threat management method within the considered mmWave net-work. The objective of this phase extends beyond simple beam angle selection; it aims to jointly optimize network capacity, mitigate interference, detect malicious users, counter jamming attacks, and continuously adapt to dynamic radio environments. The proposed framework combines RL and Bayesian inference within a unified beamforming architecture. This enables the learning agent to continuously adapt its decisions according to both the wireless channel conditions and the estimated likelihood of users being malicious. At the beginning of each scenario, the positions of TXs and RXs are initialized, as described above, and spatially correlated shadow fading effects are extracted from a pre-generated shadow map. Subsequently, a single-run ray tracing procedure is performed for all TX-RX links, and the resulting channel parameters, including path loss, phase, AoA, and AoD, are stored. This precomputation significantly reduces computational complexity during the learning process, as it eliminates the need to repeatedly execute ray tracing within the RL loops. After constructing the communication environment, each RX is associated with a TX using a game-theoretic allocation mechanism. This mapping considers link quality, interference levels, and network load, thereby establishing the initial communication structure for subsequent decision-making. In each Monte Carlo realization, a subset of RXs is randomly selected as malicious nodes (i.e., attackers). These nodes degrade network performance by introducing inter-ference and disrupting normal communication. Since the identities of the attackers are unknown to the learning agent, the system must iteratively infer the probability of each node being malicious based solely on observed network performance. To model this uncertainty, a Bayesian belief vector is defined as 
+
+b = [ b1, b2, . . . , bNRX ]T , 0 ≤ bi ≤ 1, i = 1, . . . , NRX . (15) Here, bi denotes the marginal posterior probability, or equivalently the normalized suspi-cion score used by the algorithm, that RX i is malicious. The entries of b are not constrained to sum to one because several attackers may be present simultaneously. In the final de-tection step, the NAttacker RXs with the largest belief values are selected as the estimated attacker set. At each iteration, the most probable malicious node is identified as 
+
+i∗ = arg max  
+
+> i
+
+bi. (16) To avoid over-sensitivity to single-step decisions, the belief values are mapped to a discrete confidence level, and the system state is defined as 
+
+s = ( i∗, L), (17) where L denotes the Bayesian confidence level, which serves as the primary input to the RL algorithm. In this framework, the action space corresponds to the simultaneous selection of beamforming angles for two TXs: 
+
+A = ATX1 × ATX2 . (18) where each set contains 25 discrete angular values, and each action defines a pair of beam directions for cooperative TX beamforming. For every joint TX action, the corre-sponding RX beam angles are determined using the implemented suspicion-guided RX beam selection procedure. Consequently, the RX beam angles are conditionally determined Version July 29, 2026 submitted to Entropy 10 of 22 
+
+by the selected joint TX action and are not additional variables in the tabular RL action space. Many conventional value-based RL approaches employ an ε-greedy exploration strat-egy, in which exploratory actions are selected uniformly at random. Although this mecha-nism promotes broad action-space coverage, it can spend many learning iterations on beam-forming configurations that are unlikely to improve communication quality, particularly in dynamic wireless environments with malicious users. To improve exploration efficiency, the proposed framework incorporates Bayesian inference into the decision-making process by estimating the posterior probability that each RX is malicious based on previously observed communication outcomes. These probabilistic beliefs are included in the RL state representation and further used to guide exploration toward beamforming candidates with lower estimated security risk. Specifically, the agent follows a Bayesian-guided ε-greedy policy. During training, the agent explores the action space with probability ε, which gradually decays over time. Unlike standard ε-greedy exploration, however, exploratory actions are not selected uniformly at random; instead, they are sampled according to a bias determined by the Bayesian belief vector, channel conditions, and the current network state. As a result, exploration is directed toward beamforming configurations that are more likely to provide secure and efficient communication while still allowing the agent to discover improved transmission strategies. After selecting the beamforming action, the capacity of each link and the total channel capacity are computed as in (14) . This quantity is then used to construct the reward function for the RL agent. In this study, the Q-learning algorithm is employed as an off-policy RL method. In this approach, the agent estimates future returns assuming the optimal action is taken, independent of the current policy behavior. The Q-function update rule is given by 
+
+Q(s, a) ← Q(s, a) + α
+
+
+
+r + γ max  
+
+> a′
+
+Q(s′, a′) − Q(s, a)
+
+
+
+. (19) where s denotes the current state, a is the action selected in state s, s′ represents the next state reached after executing action a, a′ denotes a candidate action in the next state 
+
+s′, α is the learning rate, γ is the discount factor, and r is the immediate reward. The term max a′ Q(s′, a′) represents the greedy estimated optimal future value. This formulation enables convergence toward an optimal greedy policy even when an ε-greedy strategy is used during training. As a result, Q-learning typically exhibits faster convergence toward high-capacity regions, although it may be more sensitive in noisy or adversarial environments. In contrast, SARSA operates as an on-policy learning algorithm, where the Q-value update depends on the action actually selected by the current policy rather than the optimal one. Its update rule is expressed as 
+
+Q(s, a) ← Q(s, a) + αr + γQ(s′, a′) − Q(s, a). (20) where a′ is the action selected under the ε-greedy policy in the next state. The key distinction between Q-learning and SARSA lies in their treatment of exploration: Q-learning learns independently of the behavior policy, whereas SARSA incorporates the effects of exploration into the learning process. Consequently, SARSA tends to be more conservative and stable in uncertain or adversarial environments, albeit with slower convergence to optimal performance. The multi-objective reward function is defined as, 
+
+R = Refficiency + Rdrop + Rrisk . (21) Version July 29, 2026 submitted to Entropy 11 of 22 
+
+where R is the total reward, Refficiency promotes capacity enhancement, Rdrop penal-izes performance degradation caused by jamming, and Rrisk imposes a security penalty proportional to the probability of malicious nodes. This structure enables the agent to jointly balance efficiency and security. SARSA is selected as the benchmark because it represents the standard on-policy RL approach, complementing the off-policy nature of Q-learning. Double Q-learning is not considered since it mainly addresses the overestimation bias of conventional Q-learning by maintaining two Q-tables, resulting in higher computational complexity. In the con-sidered beamforming problem, Q-learning exhibited stable convergence, making Double Q-learning unnecessary. Moreover, a random baseline is considered, where user association and beamforming angles are selected uniformly at random. In these comparative scenarios, where users are randomly assigned and beamforming is performed without learning or Bayesian inference, system performance in terms of capacity and attacker detection is evaluated against the proposed framework. This comparison provides a rigorous assess-ment of the contribution of RL and Bayesian reasoning to simultaneous improvements in both network efficiency and security. The implementation procedure of the proposed framework is summarized in Algorithm 1. The pseudocode illustrates the interaction be-tween the game-theoretic user association mechanism, Bayesian belief updating, RL-based beam selection, reward computation, and attacker detection throughout each Monte Carlo realization. 
+
+Algorithm 1 Evidence-Guided Cooperative RL Beamforming for Wireless Adversarial User Detection  
+
+> 1:
+
+Input: Network topology, ray-tracing environment, spatially correlated shadow map, discrete beam codebook A, and RL parameters  
+
+> 2:
+
+Initialize the network with NTX = 2 and NRX ∈ { 4, 6, 8 } 
+
+> 3:
+
+Generate the TX and RX locations within the considered deployment area  
+
+> 4:
+
+Extract the spatially correlated shadow-fading values for the TX and RX locations  
+
+> 5:
+
+Perform ray tracing for all TX–RX links  
+
+> 6:
+
+Store the path loss PL k, propagation phase ϕk, AoD, and AoA of all propagation rays  
+
+> 7:
+
+Associate each RX with a TX using the game-theoretic association mechanism  
+
+> 8:
+
+Define the discrete beam codebook as 
+
+A = {− 60 ◦, −55 ◦, . . . , 55 ◦, 60 ◦} 
+
+> 9:
+
+Define the cooperative TX action space as 
+
+A = ATX1 × ATX2  
+
+> 10:
+
+for each Monte Carlo realization do  
+
+> 11:
+
+Randomly select NAttacker ∈ { 1, 2 } malicious RX nodes  
+
+> 12:
+
+Initialize the Bayesian belief vector as 
+
+b = [ b1, b2, . . . , bNRX ]T 
+
+> 13:
+
+Initialize the belief values  
+
+> 14:
+
+Initialize the Q-table  
+
+> 15:
+
+Initialize the exploration probability ε 
+
+> 16:
+
+for each learning iteration do  
+
+> 17:
+
+Identify the RX with the largest belief value: 
+
+i∗ = arg max  
+
+> i
+
+biVersion July 29, 2026 submitted to Entropy 12 of 22 18: Map the belief value of RX i∗ to the Bayesian confidence level L 
+
+> 19:
+
+Construct the RL state as 
+
+s = ( i∗, L) 
+
+> 20:
+
+if Q-learning is used then  
+
+> 21:
+
+Select a joint TX beamforming action a using the Bayesian-guided ε-greedy policy  
+
+> 22:
+
+else if SARSA is used then  
+
+> 23:
+
+Select a joint TX beamforming action a using the Bayesian-guided ε-greedy policy  
+
+> 24:
+
+end if  
+
+> 25:
+
+Apply the selected cooperative TX beamforming action  
+
+> 26:
+
+Determine the corresponding RX beamforming angles  
+
+> 27:
+
+Compute the effective channel gain as 
+
+G = wH 
+
+> r
+
+Hw t 
+
+> 2
+> 28:
+
+Compute the SINR of each RX: SINR j = Psignal 
+
+Pinterference + Pnoise  
+
+> 29:
+
+Compute the capacity of each RX: 
+
+Cj = B log 2
+
+ 1 + SINR j
+
+ 
+
+> 30:
+
+Compute the total channel capacity: 
+
+CTotal =
+
+> NRX
+
+# ∑
+
+> j=1
+
+Cj 
+
+> 31:
+
+Observe the communication performance of each RX  
+
+> 32:
+
+Update the Bayesian belief values according to the observed communication outcomes  
+
+> 33:
+
+Identify the next most probable malicious RX: 
+
+i∗′ = arg max  
+
+> i
+
+bi 
+
+> 34:
+
+Determine the next Bayesian confidence level L′ 
+
+> 35:
+
+Construct the next state as 
+
+s′ = ( i∗′ , L′) 
+
+> 36:
+
+Compute the multi-objective reward: 
+
+R = Refficiency + Rdrop + Rrisk  
+
+> 37:
+
+if Q-learning is used then  
+
+> 38:
+
+Update the Q-value according to 
+
+Q(s, a) ← Q(s, a) + α
+
+
+
+R + γ max  
+
+> a′
+
+Q(s′, a′) − Q(s, a)
+
+ 
+
+> 39:
+
+else if SARSA is used then Version July 29, 2026 submitted to Entropy 13 of 22 40: Select the next action a′ using the ε-greedy policy  
+
+> 41:
+
+Update the Q-value according to 
+
+Q(s, a) ← Q(s, a) + αR + γQ(s′, a′) − Q(s, a) 
+
+> 42:
+
+end if  
+
+> 43:
+
+Set 
+
+s ← s′ 
+
+> 44:
+
+Gradually decrease ε 
+
+> 45:
+
+Record the total channel capacity, belief values, and selected beamforming angles  
+
+> 46:
+
+end for  
+
+> 47:
+
+Estimate the attacker set as the NAttacker RXs with the largest final belief values  
+
+> 48:
+
+Compute the attacker-detection performance  
+
+> 49:
+
+Record the best cooperative TX beamforming angles and the corresponding RX beamforming angles  
+
+> 50:
+
+Record the total channel capacity and execution time  
+
+> 51:
+
+end for  
+
+> 52:
+
+Compute the mean performance over all Monte Carlo realizations  
+
+> 53:
+
+Output: Best cooperative TX beamforming angles, corresponding RX beamforming angles, mean total channel capacity, attacker-detection performance, execution time, and final belief values The hyperparameters of the proposed framework were determined empirically through preliminary simulation experiments to balance learning stability, convergence speed, and exploration. Specifically, the game-theoretic user association uses a load-balancing coefficient of β = 0.8 and a Softmax temperature of τ = 0.7, providing an effective trade-off between utility maximization and association diversity. For the RL algorithms, the initial exploration probability was set to ϵ = 0.3 and gradually decayed to a minimum value of 0.05. The learning rate and discount factor were chosen as α = 0.2 and 
+
+γ = 0.9, respectively, to ensure stable learning while maintaining sufficient adaptability to the dynamic wireless environment. Furthermore, the Bayesian evidence accumulation factor was set to ρ = 0.85 to smooth belief updates while preserving responsiveness to newly observed evidence. These hyperparameter values were kept fixed for all simulation scenarios. 
+
+# 4. Simulation Results and Discussions 
+
+In this section, we first implement the 3GPP-based system model and evaluate its performance in the presence of interference but without any attacker in the network. The results show that the maximum achievable channel capacity for the 2-TX and 4-RX configuration is 2.36 Gbps, while it is 8.13 Gbps for the 2-TX and 6-RX case, and 15.64 Gbps for the 2-TX and 8-RX setup. These results correspond to the baseline 3GPP channel model without the ray-tracing-based beamforming optimization. Next, the proposed deterministic ray-tracing channel model together with directional beamforming is considered. Next, an exhaustive search is performed under beamforming conditions to determine the best antenna steering angles that maximize the total channel capacity. For the baseline network configuration consisting of two TXs and four RXs, the exhaustive search eval-uates all possible beamforming combinations and identifies the best combination. The maximum total channel capacity is approximately 2.41 Gbps, obtained with beam steering angles of 5 ◦ and 55 ◦ for TX1 and TX2, respectively. The corresponding best beam steering angles for RX1 to RX4 are −35 ◦, +35 ◦, −35 ◦, and −35 ◦. These beamforming angles are subsequently used as the reference solution for evaluating the proposed learning-based Version July 29, 2026 submitted to Entropy 14 of 22  
+
+> Figure 3. Network topologies with different RX densities and randomly deployed attacker nodes.
+
+framework. As the number of RXs increases, however, the search space grows exponentially. For the scenarios with two TXs and six RXs, the exhaustive search requires evaluating 25 8 possible beamforming combinations, while the search space further increases to 25 10 
+
+combinations for the scenario with two TXs and eight RXs. Such exponential growth results in prohibitive computational complexity, making exhaustive search impractical for larger network deployments and motivating the use of the proposed Bayesian-guided RL approach. In the next step, we investigate the performance of the Bayesian Belief method and Q-learning in detecting one or two attackers and determining the best beamforming angles in the presence of attackers. The obtained results are compared with those of the SARSA algorithm and a random baseline, in which the attacker nodes are randomly selected. Figure 3 illustrates the spatial distribution of TX, legitimate RX, and attacker nodes for the three evaluated scenarios. The left subfigure corresponds to a scenario with NRX = 4, consisting of 3 legitimate RXs and 1 attacker. The middle subfigure corresponds to a scenario with NRX = 6, consisting of 4 legitimate RXs and 2 attackers. The right subfigure corresponds to a scenario with NRX = 8, consisting of 6 legitimate RXs and 2 attackers. To evaluate the robustness of the proposed framework, the attacker identities are randomly selected in each simulation run. Figure 4 presents the results obtained from the Bayesian Belief system simulation for detecting and tracking malicious nodes (attackers) across three scenarios with varying levels of complexity. These results demonstrate the effectiveness, robustness, and scalability of the proposed approach. In this figure, the vertical axis represents the posterior belief that each node is malicious, denoted as P(Attacker ), while the horizontal axis indicates the number of iterations. As illustrated by Figure 4, Algorithm 1 consistently converges toward a clear separation between malicious and legitimate nodes in all scenarios. Specifically, the belief values associated with attacker nodes gradually increase and stabilize at least above approximately 0.7, reaching values close to 0.9 in some cases, particularly in the low-complexity scenario. In contrast, the belief assigned to legitimate nodes rapidly decreases and remains close to zero, typically below 0.05. This behavior confirms that the Bayesian update mechanism, driven by the discrepancy between predicted and observed channel capacity, effectively enhances the discrimination between normal and abnormal network behavior. A comparison across scenarios further reveals that convergence is faster and smoother in the first case (3 RXs and 1 attacker), which can be attributed to lower interference levels and a reduced state space. Under these conditions, the observations are less noisy, allowing the belief update process to stabilize more quickly. However, in the second and third Version July 29, 2026 submitted to Entropy 15 of 22  
+
+> Figure 4. Bayesian belief evolution for attacker node detection under different network densities.
+
+scenarios (4 and 6 RXs with 2 attackers), the increased network density introduces higher levels of interference and observation uncertainty. This leads to slower initial convergence and slightly higher variance in the steady-state region. Despite the increased complexity, the algorithm remains capable of correctly identifying malicious nodes with satisfactory accuracy. Even in the most challenging scenario, the belief values for attacker nodes remain stable (approximately 0.65 to 0.85) without exhibiting instability or divergence. This indicates that the proposed Bayesian framework maintains its robustness as the network size increases. These results indicate that the proposed Bayesian framework consistently maintains reliable attacker discrimination across all considered network scenarios. Despite the in-creased interference and larger state space in denser deployments, the posterior beliefs converge to stable values that clearly distinguish malicious nodes from legitimate users. This behavior demonstrates the robustness of the Bayesian inference mechanism and its ability to maintain stable detection performance as network complexity increases. Moreover, Figure 5 illustrates the attacker-detection performance of the proposed framework over the learning iterations, highlighting its convergence behavior and effec-tiveness in identifying malicious RX nodes. In this figure, the vertical axis represents the attacker detection performance (in percentage), while the horizontal axis corresponds to simulation iterations. The curves corresponding to all three scenarios demonstrate stable learning behavior under different network densities, with the attacker-detection perfor-mance progressively improving over the learning iterations and eventually approaching 100%. This trend indicates the effectiveness of the proposed framework for the considered simulation scenarios. A comparative analysis of the scenarios shows that the convergence speed depends on both the total number of RXs and the number of attackers. In Scenario 1, with NRX = 4and one attacker, the smaller network size and lower level of interference result in the fastest convergence, with the attacker-detection performance approaching 100% before approximately 500 iterations. Scenario 2, with NRX = 6 and two attackers, converges more gradually and reaches a stable high attacker-detection performance around iteration 1000. Scenario 3, with NRX = 8 and two attackers, has the same number of attackers as Scenario 2 but a larger network and more legitimate RXs. Therefore, its slower initial convergence should be interpreted as an empirical consequence of the larger and more interference-prone network realization rather than a larger attacker fraction. Nevertheless, the learning process exhibits stable convergence throughout the simulation. After approximately 1500 iterations, the attacker-detection performance continues to improve, eventually exceeding 98%. These results demonstrate the effectiveness of the proposed framework for the considered network configurations. Version July 29, 2026 submitted to Entropy 16 of 22  
+
+> Figure 5. Attacker detection performance for different network densities.
+
+Regarding the relationship between Figures 4 and 5, the main distinction lies in the perspective of evaluation. Figure 4 provides an internal, probabilistic view of the system behavior, showing the Bayesian belief evolution for each node (i.e., how the system up-dates its confidence about whether a node is malicious or normal at each iteration). This representation naturally exhibits fluctuations due to noisy observations and continuous probabilistic updates. In contrast, Figure 5 presents a higher-level, aggregated perfor-mance metric, combining the overall decision outcome (based on Bayesian inference and Q-learning) into a single accuracy measure. While Figure 4 reflects the internal decision dynamics and uncertainty of the model, Figure 5 demonstrates the final external perfor-mance, showing that despite internal fluctuations, the system consistently achieves highly stable and near-optimal classification accuracy. Therefore, the gradual convergence of the Bayesian posterior beliefs shown in Figure 4 directly translates into the increasing detection accuracy observed in Figure 5. Next, Figure 6 compares the performance of the proposed RL framework under adver-sarial conditions using three decision-making strategies, namely Q-learning, SARSA, and a random baseline. The reported results are averaged over 20 independent Monte Carlo real-izations, while the error bars represent the corresponding standard deviations, illustrating the consistency of each method across different network realizations. The comparison is conducted in terms of throughput, attacker detection accuracy, and computational complex-ity for three network sizes, namely NRX ∈ { 4, 6, 8 }. As shown in the left subplot, both RL algorithms achieve progressively higher throughput as the number of RXs increases. This behavior is primarily attributed to the larger number of simultaneously served communica-tion links together with the ability of the learning-based beamforming strategy to efficiently exploit the additional spatial degrees of freedom, thereby increasing the overall network capacity despite the stronger interference in denser deployments. Among the evaluated methods, Q-learning consistently achieves the highest throughput, reaching approximately 2.0 × 10 9, 2.86 × 10 9, and 3.42 × 10 9 bps for NRX = 4, 6, and 8, respectively. SARSA fol-lows a similar trend with slightly lower average capacities of approximately 1.97 × 10 9,2.85 × 10 9, and 3.31 × 10 9 bps. In contrast, the random baseline provides considerably lower throughput, fluctuating around 1.9 × 10 9 bps without exhibiting a consistent scalability trend. The relatively small standard deviations indicate that both learning-based methods maintain stable throughput performance across different Monte Carlo realizations. Since 
+
+CTotal represents the sum capacity over all RXs, the observed increase with NRX should Version July 29, 2026 submitted to Entropy 17 of 22  
+
+> Table 2. Joint TX beam angles selected by Q-learning and SARSA and the corresponding RX beam angles.
+
+NRX Algorithm TX 1 TX 2 Corresponding RX Beam Angles ( ◦)
+
+4 Q-learning 60 -40 60, −45, −40, −10 SARSA 60 50 60, −60, 5, −30 6 Q-learning 60 -60 60, 35, 40, −10, 5, 60 SARSA 60 -60 60, 60, −25, −55, 45, 15 8 Q-learning 60 -60 60, −55, −45, −20, 50, −5, −25, 10 SARSA 60 -60 −60, −60, −30, −25, 50, −50, −30, −45 be interpreted as an increase in aggregate network throughput rather than necessarily an improvement in the average throughput achieved by each individual RX. The middle subplot presents the attacker detection performance. Both Q-learning and SARSA successfully detect nearly all attackers in the smallest network configuration, achieving detection accuracies close to 100%. As the number of RXs increases, the detec-tion task becomes more challenging because of the enlarged state-action space and the increased uncertainty introduced by simultaneous transmissions. Nevertheless, Q-learning consistently maintains higher detection accuracy than SARSA, achieving approximately 95% and 84% for NRX = 6 and 8, respectively, whereas SARSA achieves approximately 90% and 80%. By comparison, the random policy exhibits significantly poorer performance, providing detection accuracies of only about 20%, 40%, and 20% for the three network sizes. These results demonstrate that RL substantially improves the reliability of malicious-user identification compared with random decision making while maintaining relatively low performance variability. The computational complexity results, illustrated in the right subplot of Figure 6, show that the execution time of both RL algorithms increases with network size because of the growth of the state-action space and the additional Q-value update operations required during learning. Q-learning requires approximately 50, 62, and 88 seconds for 
+
+NRX = 4, 6, and 8, respectively, while SARSA requires approximately 53, 66, and 92 seconds. In contrast, the random baseline performs neither learning nor policy optimization and therefore maintains an execution time of only about 1-2 seconds for all scenarios. Although RL introduces additional computational overhead, the runtime increases moderately over the considered network sizes and is justified by the considerable improvements achieved in both throughput and attacker detection. Moreover, Q-learning consistently requires slightly less execution time than SARSA while simultaneously providing superior communication performance. Table 2 presents the optimal beamforming angles selected by the Q-learning and SARSA algorithms for the considered network configurations. For each scenario, the table reports the optimal beam directions selected for the two cooperative TXs together with the corresponding steering angles of all RXs. The receive angles associated with the detected attacker nodes are underlined for clarity. As the number of RXs increases, the selected beam directions change to accommodate the different network topology and propagation conditions. While both algorithms modify their beam configurations according to the communication environment, the solutions obtained by Q-learning generally lead to higher throughput and more reliable attacker detection than those produced by SARSA. These results indicate that Q-learning offers the most favorable balance between throughput, attacker detection accuracy, and computational complexity among the evalu-ated methods. Although both RL algorithms substantially outperform the random baseline, Version July 29, 2026 submitted to Entropy 18 of 22  
+
+> Figure 6. Performance comparison of Q-learning, SARSA, and Random policy (20 Monte Carlo runs).
+
+Q-learning consistently provides higher throughput, better detection performance, and slightly lower computational cost. These observations confirm that integrating RL into the beamforming process significantly improves both communication efficiency and network security under adversarial wireless environments. 
+
+# 5. Conclusion 
+
+In this study, a hybrid intelligent framework combining RL and Bayesian inference was developed for secure and adaptive beamforming in mmWave networks operating under dynamic and adversarial conditions. The objective of the proposed framework was to enhance beam steering decisions, improve aggregate network capacity, mitigate attacker-induced performance degradation, and identify malicious nodes in a multi-RX wireless environment. In the initial stage, a 3GPP-inspired system model was implemented and evaluated under a no-attacker scenario. The results indicated that the aggregate channel capacity increases with the number of RXs in the considered configurations, as expected from the summation over a larger number of links. An exhaustive search was then conducted for the baseline configuration to identify reference beamforming configurations. The framework was subsequently evaluated in the presence of attackers and under different network scalability settings. Based on 20 independent Monte Carlo simulations, the RL-based methods outperform the random baseline in terms of aggregate channel capacity and attacker detection performance in the considered scenarios, at the cost of higher runtime. Among the evaluated methods, Q-learning achieves the highest total channel capacity and attacker detection accuracy while requiring slightly less runtime than SARSA. The beamforming results show that both Q-learning and SARSA identify stable beam configurations, although the selected angles need not coincide because the two algorithms update their action values under different policies. The results support the effectiveness of the proposed Bayesian-guided RL framework for joint beamforming and attacker-aware decision-making in the considered mmWave network scenarios. As future work, the framework can be extended toward a unified learning-based optimization model that jointly addresses attacker detection, beamforming design, and power allocation. In this context, incorporating power control transforms the problem into an energy-aware optimization task, where transmission power is dynamically adapted alongside beam direction selection. In addition, deep RL methods may be investigated to handle larger state spaces and continuous action variables, which could further improve system performance in terms of capacity, robustness, and energy efficiency.    
+
+> Author Contributions: All authors participated in the conceptualization, methodology, mathematical analysis, and project management. PG participated in writing the original draft, and OG participated in reviewing and editing the original draft. Version July 29, 2026 submitted to Entropy 19 of 22
+
+Funding: The work of OG was partially supported by the ZENITH Research and Leadership Ca-reer Development Fund under Grant ID23.01, EU COST Action 6G-PHYSEC, Swedish Foundation for Strategic Research (SSF) under Grant ID24-0087, and German Federal Ministry of Research, Technology and Space (BMFTR) 6GEM+ Research Hub under the Grants 16KIS2412 and 16KISS005. 
+
+Institutional Review Board Statement: Not applicable. 
+
+Informed Consent Statement: Not applicable. 
+
+Data Availability Statement: Not applicable. 
+
+Acknowledgments: During the preparation of this manuscript, the authors used OpenAI ChatGPT 5.5 for the purposes of assisting with minor language editing of the authors’ own text. The authors have reviewed and edited the output and take full responsibility for the content of this publication. 
+
+Conflicts of Interest: The authors declare no conflicts of interest. 
+
+# Abbreviations 
+
+The following abbreviations are used in this manuscript: 3GPP 3rd Generation Partnership Project 5G NR 5th Generation New Radio 6G 6th Generation (networks) AoA Angle of Arrival AoD Angle of Departure BS Base Station(s) CIR Channel Impulse Response DRL Deep Reinforcement Learning FR2 Frequency Range 2 ISAC Integrated Sensing and Communication ISD Inter-Site Distance IRS Intelligent Reflective Surface(s) IoT Internet of Things LOS Line of Sight ML Machine Learning mmWave millimeter Wave MTD Moving Target Defense NF_UE Noise Figure of User Equipment NLOS Non-Line of Sight NOMA Non-Orthogonal Multiple Access OSM OpenStreetMap PPP Poisson Point Process QoS Quality of Service RL Reinforcement Learning RX Receiver SARSA State–Action–Reward–State–Action SBR Shooting and Bouncing Rays SINR Signal-to-Interference-plus-Noise Ratio TR 38.901 Technical Report 38.901 (3GPP channel model standard) TX Transmitter UAV Unmanned Aerial Vehicle UE User Equipment UHF Ultra High Frequency UMi Urban Micro-cellular (scenario) Version July 29, 2026 submitted to Entropy 20 of 22 
+
+# References 
+
+1. Geranmayeh, P.; Günlü, O. 6G Sensing Security: Distributed Game-Theoretic RL for Urban Beamforming and Attacker Detection. 
+
+IEEE Conference on Integrated Sensing and Communications (ISAC) 2026 . submitted. 2. Ding, C.; Wang, I.; Ho, H. Digital-twin-enabled city-model-aware deep learning for dynamic channel estimation in urban vehicular environments. IEEE Trans. Green Commun. Netw. 2022 , 6, 1604–1612. 3. Geok, T.K.; Hossain, F.; Liew, C.P. A comprehensive review of efficient ray-tracing techniques for wireless communication. Int. J. Commun. Antenna Propag. (IRECAP) 2018 , 8.4. Qaisar, M.U.F.; et al. The Role of ISAC in 6G Networks: Enabling Next-Generation Wireless Systems. IEEE Transactions on Network Science and Engineering 2026 , 13 , 7825–7861. 5. Sheen, B.; Yang, J.; Feng, X.; Chowdhury, M. A digital twin for reconfigurable intelligent surface assisted wireless communication. 
+
+arXiv 2020 , abs/2009.00454 .6. Jalali, J.; Khalili, A.; Rezaei, A.; Famaey, J.; Saad, W. Power-efficient antenna switching and beamforming design for multi-user SWIPT with non-linear energy harvesting. In Proceedings of the Proceedings of the IEEE 20th Consumer Communications & Networking Conference (CCNC), 2023. 7. Bakhtiar, A.K.; Haitham, K.A. A novel beamforming technique using MmWave antenna arrays for 5G wireless communication networks. Digital Signal Processing 2023 , 136 , 103917. 8. Chary, M.K.; Krishna, C.H.V.; Krishna, D.R. Accurate channel estimation and hybrid beamforming using artificial intelligence for massive MIMO 5G systems. AEU - Int. J. Electron. Commun. 2024 .9. Geranmayeh, P.; Sedunova, E.; Grass, E. Efficient beam selection for increased overall wireless network capacity. In Recent Advances in Communication Networks and Embedded Systems (ICCNT) ; Springer: Cham, Switzerland, 2022. 10. Ihsan, A.; Chen, W.; Asif, M.; Khan, W.U.; Wu, Q.; Li, J. Energy-efficient IRS-aided NOMA beamforming for 6G wireless communications. IEEE Trans. Green Commun. Netw. 2022 .11. Jiang, W.; Schotten, H.D. Initial access for millimeter-wave and terahertz communications with hybrid beamforming. In Proceedings of the Proceedings of the IEEE International Conference on Communications (ICC), 2022. 12. Qi, F.; Li, W.; Yu, P.; Feng, L.; Zhou, F. Deep learning-based backcom multiple beamforming for 6G UAV IoT networks. EURASIP J. Wirel. Commun. Netw. 2021 .13. Ji, Z.; Li, B.H.; Wang, H.X.; Chen, H.Y.; Sarkar, T.K. Efficient ray-tracing methods for propagation prediction for indoor wireless communications. IEEE Antennas Propag. Mag. 2021 , 43 , 41–49. 14. Hsiao, A.Y.; Yang, C.F.; Wang, T.S.; Lin, I.; Liao, W.J. Ray-tracing simulations for millimeter wave propagation in 5G wireless communications. IEEE Int. Symp. Antennas Propag. 2017 .15. Yun, Z.; Iskander, M.F. Ray-tracing for radio propagation modeling: principles and applications. IEEE Access 2015 , 3, 1089–1100. 16. Tiberi, G.; Bertini, S.; Malik, W.K.; Monorchio, A.; Edwards, D.J.; Man, G. Analysis of realistic ultrawideband indoor communica-tion channels by using an efficient ray-tracing based method. IEEE Trans. Antennas Propag. 2009 , 57 , 777–785. 17. Geranmayeh, P.; Grass, E. Optimization of Beamforming and Transmit Power Using DQN and Comparison With Traditional Techniques. IEEE Access 2025 , 13 , 94275–94285. 18. Vivekanand, C.V.; Talele, G.; Jaishanthi, B.; Gopalan, S.H.; Maheswari, K.; Maheswari, B.U. Deep reinforcement learning for resource allocation in wireless communication systems. In Proceedings of the Proceedings of the 9th International Conference on Science, Technology, Engineering and Mathematics (ICONSTEM), 2024. 19. Günlü, O.; Bloch, M.R.; Schaefer, R.F.; Yener, A. Secure Integrated Sensing and Communication. IEEE Journal on Selected Areas in Information Theory 2023 , 4, 40–53. 20. Bloch, M.; et al. An Overview of Information-Theoretic Security and Privacy: Metrics, Limits and Applications. IEEE Journal on Selected Areas in Information Theory (JSAIT) 2021 , 2, 5–22. 21. Zhou, Y.; Devroye, N.; Günlü, O. Feedback Lunch: Learned Feedback Codes for Secure Communications. In Proceedings of the Proceedings of the 2026 ACM Workshop on Wireless Security and Machine Learning (WiseML ’26), Saarbrücken, Germany, 2026; pp. 1–6. 22. Welling, T.; Günlü, O.; Yener, A. Secure Integrated Sensing and Communication: Information Theory Offers Insights. arXiv preprint arXiv:2605.08106 2026 .23. Lei, C.; Zhang, H.Q.; Wan, L.M.; Liu, L.; Ma, D.H. Incomplete information Markov game theoretic approach to strategy generation for moving target defense. Comput. Commun. 2018 , 116 , 184–199. 24. Jiang, L.; Hengwei, Z.; Wang, J. Optimal decision-making method of moving target defense based on multi-stage Markov signal game. J. Electron. 2021 , 49 , 527–535. 25. Teófilo, L.F.; Passos, N.; Reis, L.P.; Cardoso, H.L. Adapting strategies to opponent models in incomplete information games: A reinforcement learning approach for poker. In Proceedings of the Proceedings of the International Conference on Autonomous and Intelligent Systems, 2012, pp. 220–227. Version July 29, 2026 submitted to Entropy 21 of 22 
+
+26. Yu, F.; Qian, L.; Zhang, H.; Wang, X. Covert communication assisted by friendly jammer with jamming-monitoring channel uncertainty. In Proceedings of the Proceedings of the 9th International Conference on Mechanical and Electronics Engineering (ICMEE), 2023, pp. 43–48. 27. Esmaili, E.; Hajizadeh, R.; Forouzesh, M. Machine learning based detection of covert communications under jamming interference. 
+
+Sci. Rep. 2026 , 16 .28. Elsadig, M.A.; Gafar, A. Covert channel detection: machine learning approaches. IEEE Access 2022 , 10 , 38391–38405. 29. Ren, Z.; Zhang, D.; Tang, S.; Xiong, W.; Yang, S.H. Cooperative maneuver decision making for multi-UAV air combat based on incomplete information dynamic game. Defence Technol. 2023 , 27 , 308–317. 30. Yao, P.; Jiang, Z.; Yan, B.; Yang, Q.; Wang, W. Bayesian and stochastic game joint approach for cross-layer optimal defensive decision-making in industrial cyber-physical systems. Inf. Sci. 2024 , 662 , 120216–120251. 31. Mamaghani, M.T.; Zhou, X.; Yang, N.; Swindlehurst, A.L. Securing integrated sensing and communication against a mobile adversary: A Stackelberg game with deep reinforcement learning. IEEE J. Sel. Areas Commun. 2026 , 44 , 942–958. 32. Jere, S.; Wang, Y.; Aryendu, I.; Dayekh, S.; Liu, L. Bayesian Inference-assisted Machine Learning for Near Real-Time Jamming Detection and Classification in 5G New Radio (NR). arXiv 2023 , abs/2304.13660 .33. Huang, F.; Li, Q.; Zhao, J. Trust Management Model of VANETs Based on Machine Learning and Active Detection Technology. In Proceedings of the Proceedings of the IEEE/CIC International Conference on Communications in China (ICCC) Workshops, 2022, pp. 412–416. 34. ITU-R. Guidelines for Evaluation of Radio Interface Technologies for IMT-Advanced. Technical Report M.2135-1, Geneva, Switzerland, 2009. 35. Gudmundson, M. Correlation Model for Shadow Fading in Mobile Radio Systems. Electronics Letters 1991 , 27 , 2145–2146. 36. ETSI. 5G; Study on Channel Model for Frequencies from 0.5 to 100 GHz. 3GPP TR 38.901 Version 16.1.0, Release 16, European Telecommunications Standards Institute (ETSI), 2020. 
+
+# Short Biography of Authors 
+
+Parmida Geranmayeh received the B.Sc. degree in Computer Engineering (Software Engineering) and the M.Sc. degree in Information Technology Engineering from the Iran University of Science and Technology (IUST), Tehran, Iran, in 2018 and 2020, respectively. She received the Dr.-Ing. degree in Computer Engineering from Humboldt University of Berlin, Germany, in 2025. She is currently a Postdoctoral Researcher with the Department of Communications Engineering (Nachrichtentechnik), Technical University of Dortmund, Germany. Her research interests include machine learning, reinforcement learning, optimization, beamforming, and 5G/6G wireless communication systems. She serves as a reviewer for several international journals, including Physical Communication (Elsevier), 
+
+Scientific Reports (Springer Nature), and the International Journal of Communication Systems (Wiley). She served as a Session Chair at the IEEE-APS Topical Conference on Antennas and Propagation in Wireless Communications in 2024 and received the Best Presenter Award at the IEEE International Conference on Artificial Intelligence for Sustainable Innovation (AI-SI 2025). Version July 29, 2026 submitted to Entropy 22 of 22 
+
+Onur Günlü received the B.Sc. degree (Highest Distinction) in Electrical and Electronics Engineering from Bilkent University, Turkey in 2011; M.Sc. (Highest Distinction) and Dr.-Ing. (Ph.D. equivalent) degrees in Communications Engineering both from the Technical University of Munich (TUM), Germany in 2013 and 2018, respectively. He was a Working Student in the Communication Systems division of Intel Mobile Communications (IMC), now Apple Inc., in Munich, Germany during November 2012 - March 2013. Onur worked as a Research and Teaching Assistant at TUM Chair of Communications Engineering (LNT) between February 2014 - May 2019. As a Visiting Researcher, among more than twenty Research Stays at Top Universities and Companies, he was at TU Eindhoven, Netherlands during February 2018 - March 2018. Onur was a Visiting Research Group Leader at Georgia Institute of Technology, Atlanta, USA during February 2022 - March 2022. He was also a Visiting Professor at TU Dresden, Germany during February 2023 - March 2023. Following Research Associate and Group Leader positions at TUM, TU Berlin, and the University of Siegen, he joined Linköping University in October 2022 as an ELLIIT Assistant Professor and obtained tenure as an Associate Professor leading the Information Theory and Security Laboratory (ITSL) in August 2024. He became a Swedish Docent (Dr.-habil.) of Information Theory in December 2023 and an IEEE Senior Member in July 2024. Since September 2025, Onur has been a Tenured Full Professor leading the Lehrstuhl für Nachrichtentechnik (Institute of Communications Engineering ) at TU Dortmund (TUDO), Germany and a Guest Professor at Linköping University, Sweden. He has received the 2026 IEEE Communications Society & Information Theory Society - Joint Best Paper Award, 2025 IEEE Information Theory Society – Joy Thomas Tutorial Paper Award, the 2023 ZENITH Research and Career Development Award, 2021 IEEE Transactions on Communications - Exemplary Reviewer Award, and the prestigious 2021 VDE Information Technology Society (ITG) Johann-Philipp-Reis Award. His research interests include distributed function computation, information-theoretic privacy and security, coding theory, 6G integrated sensing and communication (ISAC), and private learning. Among his publications is the book Key Agreement with Physical Unclonable Functions and Biometric Identifiers (Dr. Hut Verlag, 2019). He serves as Associate Editor for IEEE JOURNAL ON SELECTED AREAS IN COMMUNICATIONS, IEEE TRANSACTIONS ON COMMUNICATIONS, and ENTROPY Journal, and was recently an Associate Editor of EURASIP JOURNAL ON WIRELESS COMMUNICATIONS AND NETWORKING and a Guest Editor of IEEE JOURNAL ON SELECTED AREAS IN INFORMATION THEORY. He also serves as a Working Group Leader for EU COST Action 6G-PHYSEC on Intelligent and Resilient Systems and as an Elected Member of the IEEE Signal Processing Society - Information Theory and Forensics (IFS) Technical Committee (TC). 
+
+Disclaimer/Publisher’s Note: The statements, opinions and data contained in all publications are solely those of the individual author(s) and contributor(s) and not of MDPI and/or the editor(s). MDPI and/or the editor(s) disclaim responsibility for any injury to people or property resulting from any ideas, methods, instructions or products referred to in the content.

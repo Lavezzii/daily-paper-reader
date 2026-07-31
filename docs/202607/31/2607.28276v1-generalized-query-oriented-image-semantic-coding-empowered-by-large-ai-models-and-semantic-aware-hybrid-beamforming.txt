@@ -1,0 +1,1809 @@
+Title: Generalized Query-Oriented Image Semantic Coding Empowered by Large AI Models and Semantic-Aware Hybrid Beamforming
+
+URL Source: https://arxiv.org/pdf/2607.28276v1
+
+Published Time: Fri, 31 Jul 2026 01:25:33 GMT
+
+Number of Pages: 17
+
+Markdown Content:
+> 1
+
+# Generalized Query-Oriented Image Semantic Coding Empowered by Large AI Models and Semantic-Aware Hybrid Beamforming 
+
+Sin-Yu Huang, Graduate Student Member, IEEE , and Vincent W.S. Wong, Fellow, IEEE 
+
+Abstract —Semantic communication is an emerging paradigm that can preserve the meaning of data during transmission. However, human users are often interested in specific semantic content based on their intent, and users’ intent is often not considered in current semantic coding design. Moreover, most of the existing semantic models are fine-tuned using specific datasets, which limits their generalization capability. Further-more, how to prioritize semantically important features in large-scale multiple-input multiple-output orthogonal frequency-division multiplexing (MIMO-OFDM) systems remains largely unexplored. To address the aforementioned challenges, in this paper, we propose a generalized query-oriented image semantic coding (QO-ISC) framework. In the proposed framework, the transmitter extracts features which are relevant to the user’s query and the receiver reconstructs an image based on those fea-tures. We use a pretrained large artificial intelligence (AI) model (LAM) to enhance general feature representations. We develop a semantic-aware hybrid beamforming (SA-HBF) algorithm to prioritize semantically important features for large-scale MIMO-OFDM system. When evaluated on unseen object categories within the dataset, simulation results show that our proposed generalized QO-ISC framework achieves better performance than the traditional codec and two state-of-the-art semantic coding schemes. 
+
+Index Terms —Semantic communication, query-oriented im-age semantic coding, large artificial intelligence (AI) mod-els (LAMs), semantic-aware hybrid beamforming (SA-HBF), large-scale multiple-input multiple-output orthogonal frequency-division multiplexing (MIMO-OFDM). 
+
+I. I NTRODUCTION 
+
+The advent of intelligent applications, such as autonomous vehicles, augmented reality/virtual reality (AR/VR), and re-mote surgery, has significantly increased the demand for wireless communication systems capable of delivering high data rates with ultra-reliable and low-latency performance. To support these applications, the sixth-generation (6G) wireless networks are anticipated to transition from traditional data-oriented communication paradigm to semantic communication 
+
+Manuscript received on Jan. 13, 2026; revised on May 4, 2026 and Jul. 23, 2026; accepted on Jul. 26, 2026. This work was supported in part by the Natural Sciences and Engineering Research Council of Canada and the Digital Research Alliance of Canada (alliancecan.ca). This paper has been published in part in the Proceedings of IEEE Global Communications Conference (GLOBECOM) , Dec. 2025 [1]. The editor coordinating the review of this paper and approving it for publication was Dongfang Xu. (Corresponding author: Vincent W.S. Wong) S.-Y. Huang and V. W.S. Wong are with the Department of Electrical and Computer Engineering, The University of British Columbia, Vancouver, BC, V6T 1Z4, Canada (e-mail: {syhuang, vincentw }@ece.ubc.ca). Color versions of one or more of the figures in this paper are available online at https://ieeexplore.ieee.org. 
+
+paradigm [2]. In conventional data-oriented communication, the goal is to accurately reproduce the original message at the receiver with each data bit having equal importance. However, data bits do not uniformly contribute to the conveyed content. Some data bits carry critical semantic meanings, while others are less important. Semantic communication addresses this issue by minimizing the semantic error between the recovered data and the source data, rather than bit-level errors [3]. For example, DeepSC [4] is a deep learning-based semantic communication framework that extracts and transmits the semantic features from textual data. Instead of minimizing the mean square error (MSE), DeepSC evaluates the recovered message based on BERTScore [5], which is measured by the Bidirectional Encoder Representations from Transformers (BERT) [6]. Results showed that DeepSC achieves more reliable transmissions in terms of sentence similarity when compared with traditional coding schemes, such as Huffman coding and turbo coding, particularly under low signal-to-noise ratio (SNR) scenarios. Despite the advantages of semantic coding, there are po-tential challenges that limit its integration in future applica-tions. First, recent semantic communication research focuses on extracting the overall semantic features from the source, rather than prioritizing features that are more relevant to the receiver’s intent [7]–[9]. In these studies, the general features are extracted from the source data and reconstructed at the re-ceiver. The aforementioned works do not consider the fact that not all semantic components have the same importance from the receiver’s perspective. In [10], a semantic coding scheme is proposed to jointly optimize the quality of reconstruction and task-oriented performance. In addition to extracting the general features, those features which are related to a specific task are prioritized. However, the tasks considered in [10], such as detection, segmentation and classification, are all machine-centric and do not fully reflect human-centric communication scenarios, where the intent is often complex and dynamic. For example, consider an image of a horse on a grassy ranch with some kids nearby, as illustrated in Fig. 1. A rancher may ask the question: “Where is my horse?”, focusing on the animal rather than any humans in the scene. On the other hand, the parents who bring their kids to the ranch may ask the question: “Are my kids in the farm?”, shifting the attention to the kids. This example illustrates that the importance of semantic con-tent in the ranch scene is highly dependent on the user’s intent. This dependency is crucial in human-centric applications such as remote surveillance, where users’ intent shift dynamically arXiv:2607.28276v1 [cs.IT] 30 Jul 2026 2
+
+> Fig. 1: An example image to show that the importance of semantic components is dynamic and dependent on the user’s intent.
+
+across different situations. Thus, there is a need for semantic coding frameworks that can dynamically prioritize the content relevant to the user’s intent when reconstructing the source data. Second, to minimize the semantic distortion due to wire-less transmissions, some recent works in semantic coding have proposed resource allocation algorithms which can pri-oritize semantically important features [11]. For example, high-importance features can either be mapped to subcarri-ers with better channel conditions in orthogonal frequency-division multiplexing (OFDM) [12], or be assigned to stronger spatial channels in multiple-input multiple-output (MIMO) systems using singular value decomposition (SVD)-based pre-coding [7]. Although these approaches are effective in small-scale MIMO systems, they may not be effective in large-scale MIMO systems [13]. This is because in large-scale MIMO systems, fully digital precoding is impractical due to high hardware cost and power consumption. To overcome this limitation, hybrid beamforming (HBF), which combines low-dimensional digital precoding with high-dimensional ana-log beamforming, is widely adopted [14]. Moreover, large-scale MIMO is typically combined with OFDM to combat frequency-selective fading [15]. Despite its importance, the design of HBF schemes that can dynamically prioritize se-mantically important features in large-scale MIMO-OFDM systems remains an open challenge. Third, traditional semantic coding approaches, such as DeepSC [4] and DeepJSCC [16], are trained end-to-end on specific datasets, which can lead to overfitting and degraded performance when evaluated on unseen data distribution. This limitation hinders the scalability of semantic coding in real-world applications. While modern large artificial intelligence (AI) models (LAMs), such as ChatGPT, Claude, and Gemini, have demonstrated exceptional zero-shot reasoning capabilities in both vision and language processing tasks, leveraging their inherent strengths to overcome the fundamental challenges in traditional semantic coding remains an important open prob-lem. Some studies (e.g., [8], [17]–[20]) have leveraged LAMs in semantic coding. For example, the works in [17] and [19] utilized pretrained BERT [6] and Bootstrapped Language-Image Pretraining (BLIP) models [21] as semantic encoders to generate features for text and image data, respectively. Some works have further integrated LAMs into semantic coding with user’s query. In [20], a large language model (LLM) is used to generate answers and select key semantic elements from images based on user’s query. However, the proposed framework in [20] fine-tuned the LLM on the training dataset to improve the performance. Although fine-tuning can enhance the system performance, it can compromise its generalization ability on unseen objects since the model may overfit to the training distribution and lose the broad representations learned during pretraining. In real-world applications, the input data are diverse and may include previously unseen objects, making generalization a critical challenge for semantic coding. In our previous work [18], we explored the zero-shot capability of semantic coding for text transmission, where the semantic content is more explicit and simple. A joint cross-layer design for image semantic coding that can preserve the generalization capability of LAMs and consider the user’s intent in large-scale MIMO-OFDM is more promising for future applications but remains largely unexplored. Based on the aforementioned observations, in this paper, we propose a system-level framework aiming to jointly address the following questions: Q1: When transmitting semantically rich content, how to integrate user’s intent in semantic coding? 
+
+Q2: How to design a hybrid beamforming scheme that can prioritize semantically important features in large-scale MIMO-OFDM systems? 
+
+Q3: How to improve the generalization capability of tradi-tional semantic coding on unseen object categories? 
+
+The main contributions of this paper are as follows:  
+
+> •
+
+We propose a generalized query-oriented image seman-tic coding (QO-ISC) framework and integrate it with a semantic-aware hybrid beamforming (SA-HBF) algo-rithm, which prioritizes the semantic features related to the user’s intent in a large-scale MIMO-OFDM system. To incorporate the user’s intent, the transmitter receives a text query from the user before transmission. We use Contrastive Language-Image Pre-training (CLIP) [22], which is a pretrained LAM, to improve generalization and extract features representations from both the query and the input image. These features are aligned, partitioned into segments, and quantized by a segment-wise code-book. Moreover, we develop an SA-HBF algorithm that trains a weight module to evaluate the importance of the features. The output weight matrix is then used to design the hybrid beamformer for the transmission of features in large-scale MIMO-OFDM system. The receiver of QO-ISC reconstructs the image based on the received features.  
+
+> •
+
+To train the proposed QO-ISC, we develop a three-stage optimization framework. We first introduce a user-intent relevance loss that uses a pretrained Large Language-and-Vision Assistant (LLaVA) model [23] to evaluate the relevance between the generated image and the original image for a given text query. In Stage I, the total loss in-cludes the user-intent relevance loss, ℓ1 loss, quantization loss, and adversarial training [24]. This stage addresses question Q1 by enforcing the model to preserve query-3
+
+> Fig. 2: The system model of the proposed generalized QO-ISC framework. The gray numbered circles denote the sequential steps of the communication and processing workflow.
+
+related features, and question Q3 by aligning the learned semantic embeddings with the generalizable represen-tations from the frozen CLIP model. Stage II focuses on designing the SA-HBF algorithm that is related to question Q2. We develop a weighting mechanism in SA-HBF and formulate a contextual bandit problem. In each round of the contextual bandit problem, the output weight matrix is used to design the hybrid beamformer via a weighted minimum mean square error (WMMSE) algo-rithm. This algorithm prioritizes subcarriers which carry important features over wireless channel. In Stage III, the entire communication framework is jointly fine-tuned to further enhance the end-to-end semantic reconstruction performance.  
+
+> •
+
+For performance evaluation, we train our proposed gen-eralized QO-ISC framework on the subset of visual question answering (VQA) dataset [25] and perform zero-shot evaluation on the subset only containing unseen objects. We compare the answers generated by BLIP-2 [21] between the reconstructed and original images with the same query. For open-ended questions, we use BERTScore [5] to evaluate the similarity of both answers. For all other question types, we use the exact match. Results show that our framework demonstrates superior robustness in preserving query-related features, even in low SNR scenario. When the SNR is equal to 
+
+−25 dB, our proposed generalized QO-ISC framework outperforms the variant using equal weight in SA-HBF by 4.8% and the version without query alignment by 9% in terms of answer match rate. When compared with the state-of-the-art query-based image semantic coding approach [20], our proposed framework achieves an 8% gain. It also demonstrates a 30% improvement over the state-of-the-art joint source-channel coding (JSCC) codec, SwinJSCC [26]. This paper is organized as follows. Section II presents the system model, including the generalized QO-ISC framework and the SA-HBF design. Section III presents the problem for-mulation and a three-stage optimization framework. Section IV describes the training procedures for the encoder, decoder, and codebook. Section V describes the design and optimization of the SA-HBF. Section VI evaluates the performance of the proposed generalized QO-ISC framework through simulations. Conclusions are given in Section VII. The WMMSE hybrid beamforming algorithm is presented in the Appendix. 
+
+Notations: We use boldface lowercase letters to denote vectors, boldface uppercase letters to denote matrices, and calligraphic letters to represent sets. The transpose, Hermitian transpose, inverse, and vectorization of matrix X are denoted by XT , XH , X−1, and vec( X), respectively. The ith row of matrix X is denoted by xi, and the (i, j )th element by 
+
+[X]ij . CN (μ, Σ) denotes the complex Gaussian distribution, where μ and Σ are the mean vector and covariance matrix, respectively. The ℓ1-norm, ℓ2-norm, and Frobenius norm are denoted by ‖ · ‖ 1, ‖ · ‖ 2, and ‖ · ‖ F , respectively. The expectation operator is represented by E[·], ⊙ denotes element-wise multiplication, and the dot product between vectors a and 
+
+b is denoted by 〈a, b〉.II. S YSTEM MODEL 
+
+Our proposed generalized QO-ISC framework is illustrated in Fig. 2. It consists of a transmitter and a receiver equipped with Nt and Nr antennas, respectively. The transmitter ob-tains an image from a visual sensor. Before transmission, the user provides a text query that specifies the intended semantic content (e.g., a horse) to the transmitter based on general knowledge of the scene, such as the layout of the area or the typical presence of certain people or objects. While the user has general knowledge of the environment, the query narrows the focus onto specific semantic elements. Our proposed framework prioritizes those specific elements during transmission. We assume reliable transmission of the text query 1. The transmitter then takes both the image and the text query as input. It extracts visual features from the input image and text features from the query. These features are aligned together to obtain semantic features which are 
+
+> 1Reliable transmission is feasible because the text query is substantially smaller in size than the image features. It can be transmitted over a dedi-cated control channel prior to image transmission. By using channel coding (e.g., [27]), the query can be transmitted in a reliable manner. 4
+
+relevant to the user’s intent. Since different features do not contribute equally to the final result, a weight module is used to assign different importance weight to the features. The features are then quantized using a segment-wise codebook. The SA-HBF algorithm prioritizes the transmission of features which have higher importance weight. At the receiver, the decoder reconstructs the image from the received features. The goal of the generalized QO-ISC framework is to reconstruct the image while prioritizing the semantic content relevant to the user’s intent, as indicated by the query. Specifically, in the transmitter, we leverage CLIP [22], which is an LAM pretrained on extensive image-text pairs, to extract the features from the text query and the input image. Let xT denote the input text query. Let XI ∈ RC×H×W denote the input image, where C, H, and W are the number of chan-nels, the dimensions along the height and width directions, respectively. The text query is processed by the CLIP text transformer to extract the text feature matrix XT ∈ RNT×D,where NT is the number of text embeddings and D is the embedding dimension. The image is processed by the CLIP visual transformer, which consists of M transformer layers. For each layer m ∈ M = {1, 2, . . . , M }, the output feature matrix is denoted by Xm 
+
+> I
+
+∈ RNI×D, where NI is the number of image embeddings. Inspired by skip connections in U-Net [28], we forward the features from different encoder layers to the decoder in order to preserve the spatial details for better reconstruction. However, transmitting the features from all transformer layers can incur a large transmission overhead. Thus, we only select a subset of transformer layers indexed by MS = {m1, . . . , m MS } ⊆ M , where MS = |M S| ≤ M .Only the feature matrices Xm 
+
+> I
+
+, for m ∈ M S, are processed in the subsequent transmission pipeline. Note that all transformer layers in the CLIP visual and text transformers are kept frozen to preserve the pretrained model’s generalization ability. To extract the image features relevant to the user’s intent, we align the text and image features by projecting both modalities into a shared embedding space using a multilayer perceptron (MLP). The projected image and text feature matrices are given by: 
+
+˜Xm 
+
+> I
+
+= Pm 
+
+> I
+
+(Xm 
+
+> I
+
+; θm
+
+> P, I
+
+) ∈ RNI×D, m ∈ M S, (1) 
+
+˜XT = PT(XT; θP, T ) ∈ RNT×D, (2) where Pm 
+
+> I
+
+(·; θm
+
+> P, I
+
+) and PT(·; θP, T ) are the projection functions for the mth selected image features and text features with parameter sets θm 
+
+> P, I
+
+and θP, T , respectively. Each projected image feature matrix ˜Xm 
+
+> I
+
+is paired with the projected text feature matrix ˜XT. They are processed by Feature-wise Linear Modulation (FiLM) [29] to align the two modalities. Specif-ically, ˜XT is passed through two MLPs to generate the scale matrix ˜Xm 
+
+> T,sc
+
+∈ RNI×D and shift matrix ˜Xm 
+
+> T,sh
+
+∈ RNI×D:
+
+˜Xm 
+
+> T,sc
+
+= Em 
+
+> sc
+
+( ˜XT; θm 
+
+> sc
+
+), ˜Xm 
+
+> T,sh
+
+= Em 
+
+> sh
+
+( ˜XT; θm 
+
+> sh
+
+), (3) where Em 
+
+> sc
+
+(·; θm 
+
+> sc
+
+) and Em 
+
+> sh
+
+(·; θm 
+
+> sh
+
+) denote the MLP networks for scale matrix and shift matrix, respectively, and θm 
+
+> sc
+
+and 
+
+θm 
+
+> sh
+
+denote their learnable parameter sets. The aligned feature matrix ˜Xm 
+
+> align
+
+∈ RNI×D is given by 
+
+˜Xm 
+
+> align
+
+= ˜Xm 
+
+> T,sc
+
+⊙ ˜Xm 
+
+> I
+
++ ˜Xm
+
+> T,sh
+
+, m ∈ M S. (4) Note that equation (4) performs an affine transformation to the image features. If the semantic features of the input image are not related to the query, then the emphasis on query-related features will be weakened, and the aligned features will remain close to the original image representation ˜Xm 
+
+> I
+
+, m ∈ M S.To further compress the features, we apply vector quan-tization to convert each embedding vector in matrix ˜Xm
+
+> align
+
+into a sequence of discrete integers [30]. We partition each embedding vector into multiple segments and quantize each segment independently using its own set of codewords. For an embedding vector with dimension D, we partition it into 
+
+L segments, where each segment has length NL = D 
+
+> L
+
+. We assume D is divisible by L, so that the embedding vector can be partitioned into segments of equal length. The lth codebook 
+
+Cl = {cli ∈ R1×NL
+
+}Ncw  
+
+> i=1
+
+consists of a set of codewords cli,where Ncw is the number of codewords. For the aligned feature matrix ˜Xm 
+
+> align
+
+∈ RNI×D , we obtain the quantized feature matrix 
+
+¯Xm 
+
+> align
+
+by using the segment-wise vector quantization function 
+
+Qseg (·; C), where C = {cli | i = 1 , . . . , N cw , l = 1 , . . . , L } is the set of all codebooks. We have 
+
+¯Xm 
+
+> align
+
+= Qseg ( ˜Xm
+
+> align
+
+; C) ∈ { 1, . . . , N cw }NI×L, m ∈ M S. (5) The segment-wise vector quantization partitions each row feature vector ˜xm 
+
+> align
+
+∈ R1×D in the aligned feature matrix 
+
+˜Xm 
+
+> align
+
+into L segments of length NL, and assigns each segment to its nearest codeword in codebook Cl. The operation of function Qseg ( ˜Xm
+
+> align
+
+; C) is as follows. For each row index 
+
+n ∈ { 1, . . . , N I} and segment index l ∈ { 1, . . . , L }, we extract the lth segment from the nth row vector of ˜Xm 
+
+> align
+
+as 
+
+un,l = ([ ˜Xm
+
+> align
+
+]n, (l−1) NL +1 , [ ˜Xm
+
+> align
+
+]n, (l−1) NL+2 ,. . . , [ ˜Xm
+
+> align
+
+]n, (l−1) NL+NL
+
+) ∈ R1×NL . (6) We obtain the quantized matrix ¯Xm
+
+> align
+
+, where each quantized index is given by 
+
+[ ¯Xm
+
+> align
+
+] 
+
+> n,l
+
+= arg min 
+
+> i∈{ 1,...,N cw }
+
+∥∥un,l − cli
+
+∥∥22 ,n ∈ { 1, . . . , N I}, l ∈ { 1, . . . , L } . (7) As illustrated in Fig. 3, we horizontally concatenate the quantized feature matrices { ¯Xm
+
+> align
+
+}m∈M S after quantization to construct the matrix ¯ZX, which is given by 
+
+¯ZX =
+
+[ ¯Xm1 
+
+> align
+
+¯Xm2 
+
+> align
+
+· · · ¯XmMS
+
+> align
+
+]
+
+∈ { 1, . . . , N cw }NI×(MS L).
+
+(8) The matrix ¯ZX is then passed through channel coding and modulation processes in physical layer. The resulting complex-valued transmit signal is denoted by ¯Zt ∈ CNI×(MS L)×NP ,where NP represents the number of modulated symbols per feature element after channel coding and modulation. To prepare the signal for transmission over a large-scale MIMO-OFDM system, we reshape the modulated tensor ¯Zt according to the time-frequency structure of the physical layer. In the OFDM framework, the system operates over K subcarriers, with NS data streams transmitted per subcarrier. We segment 
+
+¯Zt into B transmission blocks, where each block is shaped to span a full K × NS time-frequency grid. Each transmission 5
+
+Fig. 3: The weighting process, segment-wise quantization process, and the hybrid beamformer in the generalized QO-ISC framework. As an example, we consider MS = 3 feature matrices, each with dimensions NI = 6 and D = 4 . With a segment length of NL = 2 , each row of the feature matrix is partitioned into L = D/N L = 2 segments. Before transmission, the features are concatenated and reshaped into B = 3 
+
+transmission blocks. Each transmission block is mapped to K = 12 subcarriers and NS = 2 data symbols per subcarrier. 
+
+block is transmitted sequentially using SA-HBF. We reshape the modulated feature tensor ¯Zt into ¯ZT ∈ CB×K×NS , and transmit each block ¯ZT,b ∈ CK×NS in sequence. Since each feature has different contributions to the final reconstruction, we employ a weight module to evaluate the importance weight of features for each subcarrier within a transmission block. The weight module takes the concatena-tion of feature matrices before quantization as input, which is defined as 
+
+˜ZX =
+
+[ ˜Xm1 
+
+> align
+
+˜Xm2 
+
+> align
+
+· · · ˜XmMS
+
+> align
+
+]
+
+∈ RNI×(MS D). (9) To evaluate the relative importance of features across subcar-riers, we reshape the feature matrix ˜ZX into ˜ZT ∈ RB×(KN L).For the features in transmission block b, the weight module takes the row vector ˜zT,b ∈ R1×(KN L) of ˜ZT as input and outputs a weight vector 
+
+wb = W(˜zT,b ; ψW) ∈ R1×K , b = 1 , . . . , B, (10) where W(·; ψW) denotes the function of the weight module with parameter set ψW. The weight vector wb ∈ R1×K assigns relative importance to each of the K subcarriers in transmis-sion block b. Each element wb,k ∈ [0 , 1] in weight vector wb
+
+satisfies the normalization condition ∑Kk=1 wb,k = 1 . After collecting all the weights for each transmission block, the resulting weight matrix W ∈ RB×K is used in the subsequent design of SA-HBF algorithm to prioritize subcarriers carrying important features during transmission. For the features in transmission block ¯ZT,b ∈ CK×NS , the data symbols corresponding to subcarrier k ∈ K = {1, . . . , K }
+
+are denoted by sk ∈ CNS . As illustrated in Fig. 3, these data symbols are first processed by a low-dimensional digital precoder VD[k] ∈ CNRF ×NS , where NRF is the number of radio frequency (RF) chains. The precoded signals are then passed through NRF K-point inverse fast Fourier transforms (IFFTs) to convert them from the frequency domain to the time domain. Since practical MIMO-OFDM systems have a limited number of RF chains, we assume NRF ≪ min( Nt, N r). To mitigate inter-symbol interference (ISI), a cyclic prefix (CP) is inserted to the time-domain signals after the IFFTs. Finally, an analog precoder VA ∈ CNt ×NRF maps the signals onto the large-scale MIMO antenna array for transmission. With hybrid digital and analog precoding, the transmitted signal at subcarrier k, which is denoted by zk ∈ CNt , can be expressed as 
+
+zk = V[k]sk, k ∈ K , (11) where V[k]= VAVD[k] is the hybrid precoder at subcarrier k.The transmitted signals propagate through a wireless chan-nel. The received signal ˆzk ∈ CNr at subcarrier k is given by 
+
+ˆzk = H[k]zk + nk, k ∈ K , (12) where H[k] ∈ CNr×Nt is the channel matrix and nk ∼CN (0, σ 2INr ) is the noise with zero mean and covariance 
+
+σ2INr . Specifically, the channel is modeled as a geometry-based multipath fading channel with NC clusters and NR rays per cluster. The channel response at subcarrier k is given by 
+
+H[k] = 
+
+√ NtNr
+
+NCNR
+
+> NC
+
+∑
+
+> c=1
+> NR
+
+∑
+
+> r=1
+
+αc,r ar (θr
+
+> c,r
+
+) at(θt
+
+> c,r
+
+)H , (13) where αc,r ∼ CN (0 , 1) is the complex path gain of the rth ray in the cth cluster. The normalized antenna array response vectors at the receiver and transmitter are respectively given by 
+
+ar (θr 
+
+> c,r
+
+) = 1
+
+√Nr
+
+[1 ejπ sin θr 
+
+> c,r
+
+· · · ejπ (Nr−1) sin θr
+
+> c,r
+
+]T ,
+
+(14) 
+
+at(θt 
+
+> c,r
+
+) = 1
+
+√Nt
+
+[
+
+1 ejπ sin θt 
+
+> c,r
+
+· · · ejπ (Nt −1) sin θt
+
+> c,r
+
+]T
+
+,
+
+(15) where θr 
+
+> c,r
+
+and θt 
+
+> c,r
+
+denote the angle of arrival (AoA) and angle of departure (AoD), respectively, for the rth ray in the 
+
+cth cluster. At the receiver, signals from all subcarriers are first pro-cessed by an analog combiner QA ∈ CNr×NRF and then passed through NRF RF chains. After removing the cyclic prefix, 
+
+NRF K-point fast Fourier transforms (FFTs) are applied to convert the signals back to the frequency domain. Then, a low-dimensional digital combiner QD[k] ∈ CNRF ×NS is applied to each subcarrier k. The processed signal at subcarrier k is given by 
+
+ˆsk = Q[k]H H[k]zk + Q[k]H nk, (16) where Q[k] = QAQD[k] represents the hybrid combiner at subcarrier k. The received data streams ˆsk across all subcarri-ers are aggregated into the feature matrix ¯ZR,b ∈ CK×NS for the bth transmission block. After processing all B transmission blocks, we stack the reconstructed feature matrices to form 
+
+¯ZR ∈ CB×K×NS . It is then reshaped to ¯Zr ∈ CNI×(MS L)×NP .6
+
+After demodulation and channel decoding, we obtain the feature matrix ¯ZY ∈ { 1, . . . , N cw }NI×(MS L). We partition the feature matrix ¯ZY along the horizontal axis to obtain the recovered embeddings 
+
+¯ZY =
+
+[ ¯Ym1 
+
+> align
+
+¯Ym2 
+
+> align
+
+· · · ¯YmMS
+
+> align
+
+]
+
+∈ { 1, . . . , N cw }NI×(MSL),
+
+(17) where each matrix ¯Ym 
+
+> align
+
+∈ {1, . . . , N cw }NI×L. Then, the segment-wise reconstruction function Q−1 
+
+> seg
+
+(·; C) is applied to each quantized feature matrix ¯Ym
+
+> align
+
+. This function reverses the quantization process by mapping each quantized element into its corresponding codeword in the codebook. Let the element in the nth row and lth column of matrix ¯Ym 
+
+> align
+
+be denoted by ¯ymn,l ∈ { 1, . . . , N cw }. The reconstructed embedding matrix, denoted by ˜Ym 
+
+> align
+
+= Q−1( ¯Ym
+
+> align
+
+; C), is given by 
+
+˜Ym 
+
+> align
+
+=
+
+
+
+c1¯ym 
+
+> 1,1
+
+c2¯ym 
+
+> 1,2
+
+· · · cL
+
+> ¯ym
+> 1,L
+
+c1¯ym 
+
+> 2,1
+
+c2¯ym 
+
+> 2,2
+
+· · · cL
+
+> ¯ym
+> 2,L
+
+... ... . . . ...
+
+c1¯ymNI,1 c2¯ymNI,2 · · · cL
+
+> ¯ymNI,L
+
+ ∈ RNI×D , (18) where cl 
+
+> ¯ymn,l
+
+∈ R1×NL is the codeword associated with index 
+
+¯ymn,l from the lth codebook Cl = {cli ∈ R1×NL }Ncw 
+
+> i=1
+
+.After obtaining the reconstructed embeddings ˜Ym 
+
+> align
+
+for all 
+
+m ∈ MS, each matrix is reshaped into a spatial feature tensor ˜Ym 
+
+> S
+
+∈ R ˜H× ˜W ×D , where ˜H ˜W = NI. These spatial feature matrices are then passed through a decoder composed of N convolution layers, indexed by n ∈ N = {1, . . . , N }.Each convolutional layer is represented by function Dn(·; φn
+
+> D
+
+),parameterized by φn
+
+> D
+
+, and produces an output tensor ˜Yn ∈
+
+R ˜Hn × ˜Wn ×D, where the spatial dimensions ˜Hn and ˜Wn are progressively increased in each layer. Each convolutional block consists of two standard convolution layers and a transposed convolution to perform spatial upsampling, where each stan-dard convolution layer is followed by instance normalization and a leaky rectified linear unit (ReLU) activation. The number of output channels is equal to D for all layers. The decoder processes the embeddings in reverse order, starting from the reconstructed feature matrix of the final transformer layer’s output ˜YmMS 
+
+> S
+
+. For n = 1 , the feature tensor ˜YmMS 
+
+> S
+
+is passed directly to the first convolutional layer. For n > 1, the output from the previous layer ˜Yn−1 is fused with the upsampled ver-sion of the corresponding reconstructed embedding, defined as 
+
+˜YmMS −n+1  
+
+> up
+
+= Un( ˜YmMS −n+1  
+
+> S
+
+; φn
+
+> U
+
+), where Un(·; φn
+
+> U
+
+) denotes a learnable upsampling module. This upsampled tensor is then fused with the output ˜Yn−1 via a feature fusion MLP, defined as ˜Yn−1 
+
+> fused
+
+= Fn
+
+( ˜YmMS −n+1  
+
+> up
+
+, ˜Yn−1; φn
+
+> F
+
+)
+
+where Fn(·, ·; φn 
+
+> F
+
+)
+
+merges the aligned features and intermediate output. The fused tensor ˜Yn−1 
+
+> fused
+
+is then passed to the nth convolutional layer 
+
+˜Yn =
+
+
+
+Dn
+
+( ˜YmMS 
+
+> S
+
+; φn
+
+> D
+
+)
+
+, n = 1 ,
+
+Dn
+
+( ˜Yn−1 
+
+> fused
+
+; φn
+
+> D
+
+)
+
+, n ∈ N \ { 1}.
+
+(19) In our work, the number of convolution layers N is equal to the number of selected indices MS so that each transmitted feature can combine with the convolution output. The final 
+
+Fig. 4: The user-intent relevance loss derived from pretrained LLaVA. 
+
+decoded embeddings ˜YN pass through the final convolution head, generating the reconstructed image Y. Note that all the trainable parameters in the encoder are included in the parame-ter set θ = {θm
+
+> P, I
+
+, θP, T , θm
+
+> E,sc
+
+, θm
+
+> E,sh
+
+}m∈M S and all the trainable parameters in the decoder are included in the parameter set 
+
+φ = {φn
+
+> U
+
+, φn 
+
+> F
+
+, φn
+
+> D
+
+}n∈N .III. P ROBLEM FORMULATION 
+
+The proposed generalized QO-ISC framework reconstructs the source image while prioritizing the semantic features relevant to the user’s intent, where the intent is specified by a text query. To evaluate whether the reconstructed image preserves the intended semantics, we compare it with the original image under the same query. We define the user-intent relevance loss Luser , which computes the cosine similarity between the feature representations of the reconstructed and original images extracted by the pretrained LAM. To assess semantic alignment, both the original image XI and the recon-structed image Y are paired with the same text query xT and processed separately through a pretrained LAM. The images are processed through the visual encoder Fv(·) and projection matrix Pv to obtain HX = PvFv(XI) and HY = PvFv(Y).The text query is tokenized into HT, and is concatenated with the image embeddings to form the multimodal sequences 
+
+HMX = [ HX, HT] and HMY = [ HY, HT], which are input to the language model. The output hidden states are denoted by ˜HMX = [ ˜HX, ˜HT] and ˜HMY = [ ˜HY, ˜HT]. The user-intent relevance loss is defined as the cosine distance between the corresponding image tokens: 
+
+Luser (XI, Y; xT) = 1 − 1
+
+Ni
+
+> Ni
+
+∑
+
+> i=1
+
+〈˜hMX,i , ˜hMY,i 〉
+
+‖˜hMX,i ‖2‖˜hMY,i ‖2
+
+, (20) where ˜hMX,i and ˜hMY,i denote the ith token embedding vector from ˜HMX and ˜HMY , respectively, and Ni denotes the total number of token embedding vectors. The lower value of 
+
+Luser means that the reconstructed image produces a similar semantic representation as the original image when paired with the same prompt, indicating that it preserves the alignment with the user’s query. Note that we do not compare the answer from the reconstructed image to the ground-truth answer since 7
+
+this would conflate the reconstruction errors made by the pretrained LAM, making it difficult to clearly evaluate how well the semantics are preserved.To distinguish the user-intent relevance loss Luser derived from different LAMs, we append the model name to the term and add the model name as a superscript to the notation. For example, the user-intent relevance loss (LLaVA) , denoted as LLLaVA user , indicates that LLaVA [23] is used as the pretrained LAM to generate the multimodal embeddings ˜HMX and ˜HMY . In training, we employ LLaVA to compute the user-intent relevance loss. In addition to user-intent relevance loss, the visual quality of the reconstructed image is also important for image semantic coding. To improve the visual quality, we incorporate the ℓ1
+
+loss and adversarial loss [24] into the training objective of QO-ISC. The ℓ1 loss, defined as L1(XI, Y) = ‖XI − Y‖1,improves the pixel-level fidelity between the source and recon-structed images, and preserves low-level visual details such as edges and structural content. The adversarial loss improves the perceptual realism of the reconstructed images. In adversarial training, a lightweight discriminator Ddis (·; ψdis ) with param-eter set ψdis is trained to distinguish real images from the generated ones. The generator, which is our model, is trained to produce outputs that are indistinguishable from real images. The adversarial loss function for the generator is defined as 
+
+Lgen (Y) = −E[log Ddis (Y; ψdis )] , which optimizes the gener-ator toward producing images that are indistinguishable from real samples. Additionally, the segment-wise codebook C in-troduces a quantization loss. Let ˜cl = arg min c∈C l ‖umn,l − c‖22
+
+denote the nearest codeword in the lth segment. Let umn,l 
+
+denote the lth segment of the nth row vector in matrix ˜Xm
+
+> align
+
+.The quantization loss is defined as 
+
+Lquant = ∑
+
+> m∈M S
+> NI
+
+∑
+
+> n=1
+> L
+
+∑
+
+> l=1
+
+( ∥∥sg [umn,l ] − ˜cl∥∥22
+
++ γ ∥∥umn,l − sg [˜ cl]∥∥22
+
+)
+
+, (21) where sg [·] denotes the stop-gradient operator and γ is a tun-able parameter. Since the codeword selection function in (5) is non-differentiable, the stop-gradient operator ensures separate updates to the encoder and codebook during backpropagation. We aim to train the proposed QO-ISC framework by mini-mizing the total loss Ltotal , which is defined as 
+
+Ltotal (XI, Y; xT) = L1(XI, Y) + λuser LLLaVA user (XI, Y; xT)+ λgen Lgen (Y) + λquant Lquant , (22) where λuser , λgen , and λquant are positive tunable parameters. Based on Ltotal , we jointly optimize the trainable parameters in the encoder θ, decoder φ, weight module ψW, codebook 
+
+C, hybrid precoding and combining matrices VA and QA, and tensors VD and QD. The optimization problem is formulated as follows: minimize         
+
+> θ,φ,ψW,C,
+> VA,VD,QA,QD
+
+Ltotal (XI, Y; xT) (23a) subject to ‖V[k]‖2 
+
+> F
+
+≤ P, k = 1 , . . . , K, (23b) 
+
+|[VA]ij |2 = 1 , i = 1 , . . . , N t,j = 1 , . . . , N RF , (23c) 
+
+|[QA]ml |2 = 1 , m = 1 , . . . , N r,l = 1 , . . . , N RF . (23d) Constraint (23b) enforces the transmit power limit P . Since the analog precoder VA and analog combiner QA are implemented using phase shifters, which can only adjust the phases of the input signals, they are subject to the constant modulus constraints in (23c) and (23d). Problem (23) is a nonconvex op-timization problem with coupled deep learning parameter sets 
+
+{θ, φ, C} and constant modulus constraints (23c) and (23d), making it challenging to directly obtain an optimal solution. Similar to other recent works (e.g., [10], [31]), we develop a multi-stage approach to obtain the solution. 
+
+Stage I: Encoder, Decoder, and Codebook Training. In the first stage, the encoder, decoder, and codebook are opti-mized to minimize the total loss Ltotal . To isolate the training of the encoder, decoder, and codebook, the weight module, hybrid precoding and combining matrices are deactivated. The data streams are transmitted independently with equal weight and without spatial processing. This setting allows the semantic encoder and decoder to learn quantized embeddings before integrating the beamforming components. 
+
+Stage II: Semantic-Aware Hybrid Beamforming Design. 
+
+This stage focuses on optimizing the weight module and hy-brid precoding and combining matrices in SA-HBF algorithm. During this stage, the parameters of the encoder θ, decoder φ,and codebook C trained in Stage I are kept frozen. We formu-late a contextual bandit problem [32], where an agent assigns importance weight to each subcarrier based on the features to be transmitted using that subcarrier. For each weight matrix produced by the weight module, we propose an WMMSE HBF algorithm that optimizes the hybrid beamforming matrices to prioritize subcarriers with higher weight. This stage reduces the distortion in semantic embeddings learned in Stage I. 
+
+Stage III: Joint Fine-Tuning of All Modules. This stage involves jointly optimizing all the trainable parameters and hybrid beamforming matrices to minimize the total loss Ltotal .IV. E NCODER , D ECODER , AND CODEBOOK TRAINING 
+
+In this section, we describe the training process in Stage I, where the encoder, decoder, and codebook are optimized. To ensure training stability, we adopt a two-phase training algorithm for the encoder and decoder in this stage. In the first phase, the model is trained without adversarial training, allowing it to first learn the semantic alignment based solely on the ℓ1 loss, user-intent relevance loss (LLaVA), and quan-tization loss. The loss function is given by 
+
+Lphase-I (XI, Y; xT) = L1(XI, Y) + λuser LLLaVA user (XI, Y; xT)+ λquant Lquant . (24) 8
+
+Algorithm 1 Three-Stage Training Algorithm for Proposed Generalized QO-ISC  
+
+> 1:
+
+Input: Training dataset of image–text pairs (XI, xT); number of epochs N1, N2, N3 for Stages I–III; learning rates ηgen , ηdis ;regularization weights λuser , λ gen , λ quant ; scaling factor γ. 
+
+> 2:
+
+Stage I: Encoder, Decoder, and Codebook Training  
+
+> 3:
+
+Freeze the parameters of pretrained CLIP in the encoder.  
+
+> 4:
+
+Deactivate the weight module and hybrid beamforming.  
+
+> 5:
+
+Use Algorithm 2 to train the parameters θ, φ, C, the encoder, decoder, and codebook, respectively.  
+
+> 6:
+
+Stage II: Semantic-Aware Hybrid Beamforming Design  
+
+> 7:
+
+Load θ, φ, C trained in Stage I and freeze.  
+
+> 8:
+
+Activate the weight module and hybrid beamforming.  
+
+> 9:
+
+Use Algorithm 3 to train the SA-HBF.  
+
+> 10:
+
+Stage III: Joint Fine-Tuning of All Modules  
+
+> 11:
+
+Load θ, φ, C, ψW, VA, VD, QA, QD trained in Stages I and II and unfreeze.  
+
+> 12:
+
+for i ← 1 to N3 do  
+
+> 13:
+
+Sample image–text pairs (XI, xT) from training dataset.  
+
+> 14:
+
+Compute the total loss Ltotal (XI, Y; xT) from (22).  
+
+> 15:
+
+Update parameters θ, φ, C, ψW, VA, VD, QA, QD by gradient descent.  
+
+> 16:
+
+end for  
+
+> 17:
+
+Output: Optimized model parameters: {θ∗, φ∗, ψ∗
+
+> W
+
+}, the code-book C∗, the hybrid beamforming matrices V∗
+
+> A
+
+, V∗
+
+> D
+
+, Q∗ 
+
+> A
+
+and Q∗
+
+> D
+
+.
+
+This phase enables the model to learn semantic reconstruction from discrete features, even though the resulting images may lack visual sharpness. After the model has converged and learned a reliable representation space, adversarial training is introduced to improve the perceptual quality and realism of the reconstructed images. In Phase II, the overall loss function is 
+
+Lphase-II (XI, Y; xT) = Lphase-I (XI, Y; xT) + λgen Lgen (Y).
+
+(25) After updating the generator, the discriminator is trained using the following loss function: 
+
+Ldis (XI, Y) = −E[log Ddis (XI; ψdis )] 
+
+− E[log(1 − D dis (Y; ψdis ))] , (26) where the first term encourages high confidence for real images XI, and the second term penalizes for assigning high confidence to the reconstructed output Y. In Phase II, the training process alternates between our model and the discrim-inator. First, we update our model and keep the discriminator to be fixed. Then, we update the discriminator while keeping our model fixed. This two-phase algorithm enables quantized transmission while preserving both the reconstruction fidelity and semantic alignment with the user’s intent. The complete training procedure of Stage I is summarized in Algorithm 2. V. S EMANTIC -A WARE HYBRID BEAMFORMING DESIGN 
+
+In this section, we describe the optimization procedure in Stage II, which trains the weight module to assign impor-tance weights to subcarriers in the same transmission block and utilizes these weights to design the hybrid beamforming matrices. The objective of the weight module is to assign higher weights to subcarriers that transmit features which are more important in order to reduce the total loss Ltotal . That is, the hybrid beamforming module allocates more resources 
+
+Algorithm 2 Stage I: Proposed Two-phase Training Algorithm  
+
+> 1:
+
+Input: Image data and text query in the training datasets; number of epochs for the first and second phases, N1 and N2;learning rate for our model and the discriminator ηgen and ηdis ;regularization weights λuser , λgen , λquant and γ. 
+
+> 2:
+
+Phase I:  
+
+> 3:
+
+for i = 1 to N1 do  
+
+> 4:
+
+Load input image XI and query xT from the dataset.  
+
+> 5:
+
+Sample the channel response H and noise n. 
+
+> 6:
+
+Perform forward propagation.  
+
+> 7:
+
+Calculate the loss Lphase-I (XI, Y; xT) based on (24).  
+
+> 8:
+
+Update parameters {θ, φ} and codewords in C by Lphase-I . 
+
+> 9:
+
+end for  
+
+> 10:
+
+Phase II:  
+
+> 11:
+
+Load parameter sets {θ, φ, C} trained in the first phase.  
+
+> 12:
+
+for i = 1 to N2 do  
+
+> 13:
+
+Load input image XI and query xT from the dataset.  
+
+> 14:
+
+Sample the channel response H and noise n. 
+
+> 15:
+
+Perform forward propagation.  
+
+> 16:
+
+Calculate the loss Lphase-II (XI, Y; xT) based on (25).  
+
+> 17:
+
+Update parameters {θ, φ} and codewords in C by Lphase-II . 
+
+> 18:
+
+Perform forward propagation on discriminator.  
+
+> 19:
+
+Calculate the loss Ldis (XI, Y) based on (26).  
+
+> 20:
+
+Update the discriminator parameters ψdis by Ldis (XI, Y). 
+
+> 21:
+
+end for  
+
+> 22:
+
+Output : The optimized parameters {θ∗, φ∗} and codebook 
+
+C∗ := {cli 
+
+> ∗
+
+| i = 1 , . . . , N cw , l = 1 , . . . , L }.
+
+Fig. 5: The contextual bandit framework for semantic-aware weight assignment. 
+
+to those features which are more important. We formulate the weighting mechanism as a contextual bandit problem. Based on the weight matrix given by the weight module in each round, we propose the WMMSE HBF algorithm to determine the hybrid beamforming matrices. When the weight module is being trained, the encoder, decoder, and codebook are fixed using parameters obtained from Stage I. 
+
+A. Contextual Bandit Formulation for SA-HBF 
+
+Contextual bandit [32] is a type of reinforcement learning algorithm. In particular, an agent observes the context, selects an action, and receives a reward based on the outcome of the selected action in each round. The goal is to learn a policy that minimizes the regret function over multiple rounds. Each round is modeled as an independent decision-making instance. As depicted in Fig. 5, we treat the transmission of an image as a single round in the contextual bandit problem. In each round t, the input image X(t) 
+
+> I
+
+and text query x(t) 
+
+> T
+
+are passed through the encoder to produce semantic features ˜Z(t) 
+
+> T
+
+. The 9
+
+feature matrix ˜Z(t) 
+
+> T
+
+serves as the context in round t. In the contextual bandit framework, we denote the context as c(t).The weight module then serves as an agent in the contextual bandit framework. It processes the feature matrix ˜Z(t) 
+
+> T
+
+in a row by row manner. For each transmission block b, it takes the bth row vector ˜z(t) 
+
+> T,b
+
+as input and outputs the corresponding weight vector w(t) 
+
+> b
+
+, as shown in equation (10). After all B
+
+transmission blocks have been processed, the resulting weight vectors are stacked to form the weight matrix W(t). This matrix represents the action in round t, denoted as a(t), and is sampled according to the policy πψW , which is parameterized by ψW. That is, the action corresponds to the weight matrix 
+
+W(t) in QO-ISC. This weight matrix serves as the input for the WMMSE algorithm to design the HBF matrices. Subsequently, the semantic features are transmitted over the wireless channel. Upon reception, the receiver reconstructs the image Y(t) and generates a reward r(t), defined as the negative value of total loss: r(t) = −L total (X(t) 
+
+> I
+
+, Y(t); x(t) 
+
+> T
+
+).Within this contextual bandit framework, the encoder, decoder, codebooks, and the physical wireless channel constitute the environment. We define a context space X which includes all the possible contexts that the agent can observe from the environment as well as an action space A that includes all the possible weight matrices produced by the weight module. The contextual bandit problem runs over T rounds. The policy 
+
+π : X → A maps each context c ∈ X to an action a ∈ A .The agent’s goal is to learn a policy that minimizes the regret over T rounds, where the regret is defined as 
+
+R(T ) = 
+
+> T
+
+∑
+
+> t=1
+
+[ r(t)∗(c(t), a(t)) − r(t)(c(t), a(t))], (27) where r(t)∗ is the reward of the optimal policy in round t, and 
+
+r(t) is the reward of the current policy. A lower regret indicates that the learned policy performs closer to the optimal one. In bandit problems, the agent makes a sequence of deci-sions. The main challenge lies in the exploration-exploitation dilemma. One of the widely used methods that can balance the exploration and exploitation tradeoff in bandit problems is the Thompson sampling method [33]. In each round, Thompson sampling maintains a posterior distribution over the policy parameters and samples from this distribution to select an action. The posterior distribution is then updated after the reward from the action is observed. Since the weight vector wb = [ wb, 1 · · · wb,K ] ∈ R1×K
+
+lies in the K-dimensional probability simplex, i.e. wb,k ∈
+
+[0 , 1] and ∑Kk=1 wb,k = 1 , we model it using a Dirichlet distribution [34]. The Dirichlet distribution is parameterized by a vector of positive concentration parameters α(t) =(α(t)1 , . . . , α (t) 
+
+> K
+
+) ∈ RK
+
+> ++
+
+. We adopt a neural network to model the posterior over weight vectors by generating the parameters of a Dirichlet distribution conditioned on the input context, similar to variational methods used in Bayesian deep bandits [35]. Specifically, as illustrated in Fig. 5, the weight module observes the feature matrix ˜Z(t) 
+
+> T
+
+from the environment. Each row of the feature matrix is passed through a series of fully connected layers, each followed by a ReLU activation function. To ensure that the concentration parameters α(t)
+
+Algorithm 3 Stage II: Contextual Bandit-based SA-HBF Algorithm  
+
+> 1:
+
+Input: Image data and text query in the training datasets; the number of rounds T ; the learning rate ηW for the weight module.  
+
+> 2:
+
+Randomly Initialize the weight module ψW. 
+
+> 3:
+
+for t = 1 to T do  
+
+> 4:
+
+Load input image X(t) 
+
+> I
+
+and text query x(t) 
+
+> T
+
+from the dataset.  
+
+> 5:
+
+Sample the channel response H and noise n. 
+
+> 6:
+
+Perform forward pass to obtain the context c(t) := ˜Z(t) 
+
+> T
+
+. 
+
+> 7:
+
+Pass row vector ˜z(t) 
+
+> T,b
+
+of ˜Z(t) 
+
+> T
+
+through the weight module to generate Dirichlet parameters α(t). 
+
+> 8:
+
+Sample the weight vector w(t) 
+
+> b
+
+from the Dirichlet distribution.  
+
+> 9:
+
+Stack them to obtain action a(t) := W(t). 
+
+> 10:
+
+for b = 1 to B do  
+
+> 11:
+
+Given weight vector w(t) 
+
+> b
+
+, obtain the optimal hybrid pre-coder V∗
+
+> A
+
+, V∗ 
+
+> D
+
+and hybrid combiner Q∗
+
+> A
+
+, Q∗ 
+
+> D
+
+from Algorithm 4.  
+
+> 12:
+
+Transmit the quantized feature matrix ¯ZT,b for bth trans-mission block through the wireless channel.  
+
+> 13:
+
+end for  
+
+> 14:
+
+Stack the received data symbol to form ¯ZY and reconstruct the image Y(t) at the receiver.  
+
+> 15:
+
+Calculate the reward r(t) := −L total (X(t) 
+
+> I
+
+, Y(t); x(t) 
+
+> T
+
+). 
+
+> 16:
+
+Update the weight module parameters ψW by using gradient ascent based on the gradient in (30).  
+
+> 17:
+
+end for  
+
+> 18:
+
+Output : The optimized policy π∗ 
+
+> ψW
+
+.
+
+are strictly positive, we apply a softplus activation function at the output layer. The resulting vector α(t) parameterizes the Dirichlet distribution, from which we sample the weight vector w(t) 
+
+> b
+
+∼ Dir( α(t)). The sampled action w(t) 
+
+> b
+
+is stacked to obtain the matrix W(t) which is used to compute the hybrid beamforming matrices. The receiver reconstructs the image. The reward r(t) is then computed based on the reconstructed image and the original image. Based on the reward r(t), we update the policy parameters πψW using the policy gradient method [36]. Specifically, we maximize the expected reward 
+
+J(πψW ) = Ec∼X Ea∼πψW (·| c) [r(c, a)] . (28) The gradient of this objective can be written as 
+
+∇ψW J(πψW ) = Ec, a
+
+[r(c, a)∇ψW log πψW (a | c)]. (29) We estimate the gradient in (29) using a stochastic sample in each round, which is expressed as 
+
+∇ψW J(πψW ) ≈ r(t)(c(t), a(t))∇ψW log πψW (a(t) | c(t)).
+
+(30) This gradient is used to update ψW via stochastic gradient as-cent. The algorithm of Stage II is summarized in Algorithm 3. 
+
+B. WMMSE Hybrid Beamforming Algorithm 
+
+In each round t of the contextual bandit problem, the weight module outputs a weight matrix W, which consists of weight vectors wb = [ wb, 1 · · · wb,K ] corresponding to each transmission block b = 1 , . . . , B . The weight vector wb is used to compute the hybrid beamforming matrices. For a given weight vector wb for transmission block b, we formulate the 10 
+
+following WMMSE problem to minimize the distortion of data symbols minimize       
+
+> VA,VD,QA,QD,β
+> K
+
+∑
+
+> k=1
+
+wb,k E
+
+[∥∥β−1 
+
+> k
+
+ˆsk − sk
+
+∥∥2]
+
+(31) subject to constraints (23b) , (23c) , and (23d) ,
+
+where βk is a normalizing factor in subcarrier k. βk is introduced in [37] in order to decouple the hybrid precoding and combining subproblems, account for noise, and simplify the transmit power constraint. We define the vector of these normalizing factors across all subcarriers as β = [ β1, . . . , β K ].To solve the WMMSE problem in (31), we extend the HBF MMSE formulation in [37]. When the weights are the same, i.e. wb,k = 1 /K for all k, the formulation reduces to that of [37]. However, when the weights are not the same, two key distinctions arise: 1) Per-subcarrier weight allocation: Each subcarrier is as-signed a different weight, allowing the system to adap-tively allocate more transmission resources to those sub-carriers carrying features that are semantically important. 2) Contextual bandit-based weight update: The weights are optimized through a contextual bandit framework, using the negative value of the total loss −L total as the reward. Problem (31) is solved by alternating optimization, where the hybrid combiners QD and QA are fixed at first. We optimize the hybrid precoders VD and VA. We then fix the hybrid precoders VD and VA as constants while optimizing the hybrid combiners QD and QA. This alternating minimization strategy is repeated until convergence. The detailed process is described in the Appendix. 
+
+Remark 1: In our proposed QO-ISC framework, the se-mantic importance weights W serve as a cross-layer bridge between semantic coding and the physical layer. Unlike tradi-tional hybrid beamforming, which assigns the weight based on physical layer metrics such as channel quality to maximize the sum rate, our proposed QO-ISC framework leverages semantic importance to design the hybrid beamforming matrices. 
+
+C. Computational and Training Overhead 
+
+The training procedure has three stages. In Stage I, we train the encoder, decoder, and codebook while keeping the CLIP backbone to be frozen. Since only the projection MLPs, FiLM layers, convolutional decoder, and codebooks are being updated, the number of trainable parameters is much smaller than that of CLIP and the cost is comparable to a learned image codec with a frozen backbone. In Stage II, we train only the weight module, with the semantic encoder, decoder, and codebook remain fixed. This involves processing the feature matrix ˜ZT with a fully connected network in each round. The computational cost per round for the weight module scales as 
+
+O(BKN L). Stage III fine-tunes these small modules, while the CLIP backbone remains fixed, resulting in a complexity similar to Stage I. In WMMSE-based hybrid beamforming algorithm, given a fixed weight vector wb for transmission block b, it alternates between precoder and combiner updates. The complexity per iteration is O(K(NtN 2RF NS + NrN 2RF )).
+
+VI. P ERFORMANCE EVALUATION 
+
+In this section, we evaluate the performance of the proposed QO-ISC framework and compare it with several baseline models. The QO-ISC framework employs the pretrained CLIP ViT-B/16 2 model with a patch size of 16 and a projection dimension of D = 512 . In the encoder, we select the transformer layers MS = {3, 6, 9, 11 } from a total of M = 12 
+
+layers to capture a multi-scale semantic representation from low-level details to high-level abstractions. Consequently, the decoder utilizes N = 4 convolutional layers. Each feature vector is partitioned into segments of length NL = 64 , leading to L = D 
+
+> NL
+
+= 8 segments per vector. Each segment is quantized using a codebook containing Ncw = 64 codewords. The parameters λuser , λgen , λquant and γ are set to 1.5, 0.5, 0.5, and 1.2, respectively. We use low density parity check (LDPC) codes with rate 1/2 and 8-ary phase shift keying modulation. We utilize nanoLLaVA 3 to determine the user-intent relevance loss (LLaVA) LLLaVA user . For the SA-HBF con-figuration, the numbers of transmit and receive antennas are set to Nt = Nr = 64 , respectively. We consider NRF = 2 
+
+RF chains, K = 64 subcarriers, and NS = 2 data streams per subcarrier. In the channel model, we assume there are 
+
+NC = 5 clusters and NR = 10 rays per cluster. The angles of arrival and departure, θr 
+
+> c,r
+
+and θt 
+
+> c,r
+
+, are generated according to the Laplacian distribution, where the mean cluster angles are uniformly distributed in [0 , 2π]. The generalized QO-ISC framework is trained on the VQA dataset [25]. We compare its performance with the following baseline models:  
+
+> •
+
+QO-ISC-Uniform: This model uses the same architec-ture as QO-ISC but all features have the uniform weight in SA-HBF.  
+
+> •
+
+QO-ISC-Uniform without (w/o) query alignment (QA): This model adopts the same architecture as QO-ISC but does not include the weight module and feature alignment with text query. It assigns the same weight to all subcarriers and does not consider user-intent relevance loss in training.  
+
+> •
+
+SwinJSCC-large [26]: This is a state-of-the-art JSCC codec built on the Swin Transformer backbone and does not incorporate any query-based alignment mechanisms or pretrained parameters.  
+
+> •
+
+Query-based image semantic coding [20] : This model transmits the answer generated by an LLM along with a compressed image to the receiver, and employs a pretrained diffusion model to reconstruct the image based on the generated answer and the compressed image.  
+
+> •
+
+Traditional image coding (JPEG2000) [38]: As a con-ventional baseline, JPEG2000 is used to compress and reconstruct images at the pixel level, without considering semantic relevance. Since the proposed QO-ISC framework is optimized by using 
+
+LLLaVA user based on LLaVA, comparing its performance with other baselines through the same model may lead to biased results. Thus, we utilize BLIP-2 [21] as an independent evaluator which is not used in any part of our training pipeline.     
+
+> 2Model available at https://github.com/openai/CLIP
+> 3Model available at https://huggingface.co/qnguyen3/nanoLLaVA 11
+> Fig. 6: Visualization of the images reconstructed by our proposed QO-ISC and baseline methods with the SNR sets to −22 dB. The text below each image shows the answer generated by the BLIP-2 model to the query “Does the cat have a collar?”. The italicized text, Match!
+> or Not Match! , explicitly indicates whether BLIP-2’s answer aligns with the ground truth answer.
+
+Specifically, we use BLIP-2 to generate answers from both the original and reconstructed images under the same query. The prompt provided to BLIP-2 is “Question: {question }
+
+Answer:”, where {question } denotes the text query. For a given image and prompt, we use greedy decoding [39] to generate a deterministic answer. We separate the questions into different question types, where question types are iden-tified by keyword rules applied to the question text. Each generated answer is normalized by converting it to lowercase, removing punctuation and articles, and collapsing whitespace. The comparison is then performed on each question type. For counting questions, the numerical values extracted from the two answers are compared. For color, location, and yes/no questions, the corresponding keywords are extracted from the two answers based on a predefined term list. The answers are considered to be a match if the two answers share at least one common term. For open-ended questions that do not fall into these categories, we assess the semantic similarity between the two answers using the BERTScore [5], which measures the similarity of two texts by comparing their token embeddings derived from a pretrained BERT [6] model. To evaluate the semantic consistency across all question types, we also use the answer match rate as a metric. This metric averages a binary match indicator for counting, color, location, and yes/no questions, together with the BERTScore for open-ended questions. While predicting the same answer does not necessarily mean the model has the same confidence, we further introduce the loss function LBLIP-2 user to quantify how well the reconstructed image preserves the query-relevant semantic content. Similar to LLLaVA user in (20), LBLIP-2 user is defined as the cosine distance between the multimodal embeddings of the original and re-constructed images conditioned on the same query. The only difference with LLLaVA user is that the multimodal embeddings are extracted by the frozen BLIP-2 model. A lower LBLIP-2 user 
+
+indicates better preservation of the query-relevant semantic content in the reconstructed image. The reported performance metrics are averaged across the results generated from various channel realizations. 
+
+A. Performance Comparison 
+
+We evaluate the generalization capability of the proposed QO-ISC framework. We train our proposed QO-ISC on a sub-set of the VQA dataset by excluding animal-related samples and perform zero-shot evaluation on a subset containing only animal-related samples. Fig. 6 shows the reconstructed images generated by QO-ISC and baseline models with the SNR sets to −22 dB. Compared with the baselines, QO-ISC better preserves semantic features related to the user’s prompt, as it extracts features related to the text query, which is the cat’s collar, and prioritizes them during wireless transmission. When using uniform weight in the SA-HBF, critical features are no longer prioritized during transmission, which makes the cat’s collar slightly blurry. The query-based image semantic coding in [20] leverages the answer generated by LLM to guide the diffusion model at the decoder. Although the reconstructed image depicts a collar on the cat, it differs significantly from the one in the original image because the diffusion model hallucinates the details based on the generated answer. Models with uniform weight and without query alignment overlook the query-related features and instead preserve the general content such as the cat, rather than user-intent content such as the collar. SwinJSCC overfits the training distribution and 12    
+
+> -25 -20 -15 -10 SNR (dB)
+> 010 20 30 40 50 60 70 80 90 100
+> Answer match rate (%)
+> QO-ISC
+> QO-ISC-Uniform
+> Query-based image semantic coding
+> QO-ISC-Uniform w/o QA
+> SwinJSCC
+> JPEG2000
+
+(a)    
+
+> -25 -20 -15 -10 SNR (dB)
+> 0.1 0.15 0.2 0.25 0.3 0.35 0.4
+> QO-ISC
+> QO-ISC-Uniform
+> Query-based image semantic coding
+> QO-ISC-Uniform w/o QA
+> SwinJSCC
+
+(b)    
+
+> -25 -20 -15 -10 SNR (dB)
+> 010 20 30 40 50 60 70 80 90 100
+> Answer match rate (%)
+> QO-ISC
+> QO-ISC-Uniform
+> Query-based image semantic coding
+> QO-ISC-Uniform w/o QA
+> SwinJSCC
+> JPEG2000
+
+(c)    
+
+> -25 -20 -15 -10 SNR (dB)
+> 0.1 0.15 0.2 0.25 0.3 0.35 0.4
+> SwinJSCC
+> QO-ISC-Uniform w/o QA
+> Query-based image semantic coding
+> QO-ISC-Uniform
+> QO-ISC
+
+(d) 
+
+Fig. 7: The answer match rate and user-intent relevance loss (BLIP-2) 
+
+LBLIP-2 user versus the SNR. (a) and (b) show the results for training on the non-animal subset and testing on the animal subset. (c) and (d) show the results for training on the non-human subset and testing on the human subset. 
+
+fails to generalize to unseen animal dataset because it lacks the mechanism to prioritize query-specific features and the frozen LAM pretrained backbone to improve generalization. JPEG2000 exhibits severe visual artifacts under low SNR because its pixel-wise compressed bitstream is corrupted. Simulation results in Figs. 7(a) and (b) show the answer match rate and the user-intent relevance loss (BLIP-2) LBLIP-2 user 
+
+versus the SNR. Our proposed generalized QO-ISC achieves the lowest LBLIP-2 user when the SNR is between −25 dB and 
+
+−10 dB. At high SNR, our proposed generalized QO-ISC performs similarly to the QO-ISC-Uniform, QO-ISC-Uniform without QA, and query-based image semantic coding baselines in terms of answer match rate. This occurs because most data can reliably be transmitted, leading the models to transmit all image details regardless of their query relevance. Since JPEG2000 transmits pixel-level information, the image can almost be perfectly reconstructed at high SNR. However, its performance degrades significantly at low SNR. At low SNR, the effectiveness of the proposed generalized QO-ISC becomes apparent. Specifically, at an SNR of −25 dB, by employing the importance weighting mechanism in the SA-HBF module, our framework prevents severe degradation and improves the answer match rate by 4.8%. Furthermore, by incorporating query alignment, the model prioritizes features relevant to the user’s intent, yielding a 9% improvement in answer match rate compared to QO-ISC-Uniform without QA. When compared to the query-based semantic coding baseline [20], our method achieves an 8% gain. When evaluating the answer match rate of SwinJSCC, the performance is improved by 7.6% at SNR = −10 dB and 30% at SNR = −25 dB due to the use of the frozen LAM. We also evaluate the generalization performance in Figs. 7(c) and (d), where the models are trained on a subset excluding the human-related samples and are tested         
+
+> -26 -24 -22 -20 -18 -16 -14 -12 -10 SNR (dB)
+> 10 -6
+> 10 -5
+> 10 -4
+> 10 -3
+> 10 -2
+> 10 -1
+> 10 0
+> Symbol error rate
+
+Fig. 8: Symbol error rate versus the SNR.    
+
+> -25 -20 -15 -10 SNR (dB)
+> 0.1 0.15 0.2 0.25 0.3 0.35 0.4
+
+(a)         
+
+> 00.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08
+> 0.12 0.14 0.16 0.18 0.2 0.22
+
+(b) 
+
+Fig. 9: The user-intent relevance loss (BLIP-2) LBLIP-2 user versus (a) SNR and (b) channel estimation error variance σ2 
+
+> e
+
+.
+
+on a subset containing only the human-related samples. Our proposed generalized QO-ISC framework demonstrates better generalization capability. 
+
+B. Impact of Number of Antennas and SA-HBF 
+
+Fig. 8 illustrates the impact of the number of antennas. The symbol error rate decreases when the number of trans-mit and receive antennas increases, which demonstrates the benefits of larger MIMO configurations. Fig. 9(a) shows the weighting mechanism on the user-intent relevance loss (BLIP-2) LBLIP-2 user under different SNRs. Here, we introduce two addi-tional baselines, QO-ISC-Random and QO-ISC-PA . QO-ISC-Random uses the same architecture as QO-ISC but all features have the random weight in SA-HBF. QO-ISC-PA determines hybrid beamforming matrices using the conventional MMSE HBF algorithm [37] and exploits the semantic importance weights to allocate the transmit power across subcarriers in the digital precoding. Since per-subcarrier power allocation is infeasible under constraint (23b), we relax constraint (23b) to a total power constraint of KP for QO-ISC-PA. Its total transmit power for all subcarriers is the same as that of the proposed SA-HBF. Among the weighting mechanisms under constraint (23b), the user-intent relevance loss LBLIP-2 user of QO-ISC consistently outperforms the QO-ISC using uniform weight or random weight. This highlights the effectiveness of the proposed contextual-bandit weighting mechanism in SA-HBF, which prioritizes query-relevant features and mitigates semantic distortion during transmission. When Nt = Nr = 64 
+
+and the SNR = −25 dB, the proposed QO-ISC achieves the user-intent relevance loss LBLIP-2 user of 0.19, while QO-ISC-13            
+
+> (a) (b)
+> (c) (d)
+> Fig. 10: (a) Visualization of the original image. Visualization of the reconstructed images for (b) λuser = 0 .0, (c) λuser = 1 .0, and (d)
+> λuser = 1 .5, under the query “Does the cat have a collar?” at SNR
+> =−22 dB with λgen = 0 .5.
+
+PA achieves 0.185. This is because the learned weights are concentrated on a small number of subcarriers, and power al-location directly increases the received SNR of the prioritized subcarriers, whereas the analog beamformer is shared by all subcarriers and its weighted steering provides a smaller gain. This result still shows that the learned semantic weights are effective under both the beamforming and the power allocation mechanisms. Fig. 9(b) shows the impact of imperfect CSI on the proposed SA-HBF. The estimated channel is modeled by the statistical CSI error model, given by ˆH[k] = H[k] + E[k],where E[k] denotes the channel estimation error matrix with 
+
+vec( E[k]) ∼ CN (0, σ 2 
+
+> e
+
+INt Nr
+
+) and σ2 
+
+> e
+
+denotes the variance of the channel estimation error. The hybrid beamforming matrices are computed based on the estimated channel, while the transmission is performed over the true channel. The performance of the proposed QO-ISC degrades gracefully as σ2 
+
+> e
+
+increases. The degradation is small at SNR = −25 
+
+dB, since the noise dominates the CSI estimation error. The degradation is more noticeable at SNR = −10 dB, since the beamforming mismatch caused by the estimation error dominates the performance. Moreover, QO-ISC achieves a lower LBLIP-2 user than QO-ISC-Uniform for all evaluated values of 
+
+σ2 
+
+> e
+
+. This shows that the gain of the proposed semantic-aware weighting is preserved under imperfect CSI, and the results under perfect CSI represent upper-bound results. 
+
+C. Impact of User-intent Relevance Loss 
+
+The parameter λuser in equation (22) is a weighting coef-ficient used during the training phase to control the tradeoff       
+
+> 00.5 11.5
+> 0.1 0.15 0.2 0.25
+> Fig. 11: The user-intent relevance loss (BLIP-2) LBLIP-2 user versus the tunable parameter λuser .
+
+between the user-intent relevance loss and other objectives, such as the ℓ1 loss and the adversarial loss. Specifically, the user-intent relevance loss focuses on preserving local semantic details aligned with the query, whereas other loss functions such as ℓ1 and adversarial losses aim to maintain the global structural fidelity and perceptual realism of the reconstructed image. Increasing the value of λuser encourages the model to prioritize the specific regions related to the user intent. In Fig. 10, the user query is “Does the cat have a collar?”, making the cat’s collar the query-relevant semantic element. We set λgen to be 0.5 in these experiments and vary λuser 
+
+from 0.0 to 1.5. When λuser = 0 in Fig. 10(b), the user-intent relevance loss (LLaVA) is disabled in training and the query-specific features are not prioritized, causing the collar details to be very blurred. As λuser increases to 1.0 in Fig. 10(c), the collar details become more apparent as the model places more emphasis on the query relevant region. When λuser = 1 .5
+
+in Fig. 10(d), the model further prioritizes the collar region, leading to better reconstruction of the query-relevant semantic content. To quantify this behavior, we conduct simulations and determine LBLIP-2 user using different values λuser . As shown in Fig. 11, LBLIP-2 user decreases monotonically as λuser increases from 0.0 to 1.5 under different SNR conditions, confirming that a larger λuser steers the model toward prioritizing the user’s intent. Furthermore, the effect of λuser is more significant at SNR = −22 dB than at SNR = −10 dB. This is because at low SNR, the corresponding lower channel capacity limits the amount of information that can be reliably delivered to the receiver. Under this constraint, the training objective with a larger λuser provides higher incentive for the encoder to concentrate its coding capacity on query-relevant semantic content. At high SNR, the channel capacity is sufficient to provide reliable transmission of both query-relevant and query-irrelevant features, so the reconstruction quality becomes less sensitive to λuser .
+
+D. Impact of Query Type 
+
+Fig. 12 presents the answer match rate across five ques-tion types for the baseline semantic coding schemes. The SNR is set to −10 dB. Our proposed QO-ISC achieves the highest performance across most categories. Notably, QO-ISC has the highest answer rate in the “Location” and “Open-ended” questions. Removing the weighting mechanism slightly 14 
+
+> Answer match rate (%)
+
+Fig. 12: The answer match rate versus different types of questions.    
+
+> -25 -20 -15 -10 SNR (dB)
+> 00.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1SSIM
+> QO-ISC
+> Query-based image semantic coding
+
+(a)    
+
+> -25 -20 -15 -10 SNR (dB)
+> 010 20 30 40 50 60 70 80 FID
+> QO-ISC
+> Query-based image semantic coding
+
+(b) 
+
+Fig. 13: (a) SSIM and (b) FID versus the SNR. Higher SSIM indicates better performance, while lower FID indicates better performance. 
+
+degrades the performance across all the questions, with a particularly noticeable drop in “Color” questions. The query-based semantic coding baseline achieves competitive results in “Color” questions since the provided answer helps guide the diffusion model, but falls short in “Counting” questions. Overall, QO-ISC can effectively handle different question types. 
+
+E. Impact of Adversarial Training 
+
+We use the structural similarity index measure (SSIM) and Fr´ echet inception distance (FID) to evaluate the visual quality of the reconstructed images, as shown in Figs. 13(a) and (b), respectively. SSIM measures the structural fidelity relative to the ground truth, while FID evaluates the semantic similarity by comparing the feature distributions between real and generated images. In these figures, we only compare our proposed QO-ISC against query-based image semantic coding, since SwinJSCC suffers from generalization issues and JPEG2000 fails to reconstruct images at low SNR levels. Since the query-based image semantic coding baseline uses a diffusion model to iteratively refine the output, it achieves a higher SSIM and a lower FID compared to QO-ISC. This performance gap stems from the pretrained knowledge of the diffusion model, which leverages the iterative denoise process to create high-fidelity textures and sharp details. However, as demonstrated in our previous results, although the baseline produces more general reconstructions, our proposed QO-ISC provides a higher answer match rate, indicating that our framework can effectively preserve the specific semantic features required to fulfill the user’s intent.    
+
+> -25 -20 -15 -10 SNR (dB)
+> 0.05 0.1 0.15 0.2 0.25 0.3 0.35
+
+Fig. 14: The user-intent relevance loss (BLIP-2) LBLIP-2 user versus the SNR under different feature vector segment length NL.TABLE I: COMPARISON OF TRANSMITTED SYMBOLS , M ODEL 
+
+PARAMETERS , AND COMPUTATIONAL COMPLEXITY PER IMAGE 
+
+Models QO-ISC 
+
+Query-based image semantic coding 
+
+SwinJSCC-large 
+
+JPEG 2000 
+
+Number of Transmitted Symbols 
+
+61,952 15,860 495,616 82,603 
+
+Number of Total Parameters 
+
+165.5M 9.1B 52.1M N/A 
+
+Number of Trainable Parameters 
+
+15.88M 722M 52.07M N/A 
+
+GFLOPs 115.8 4,945 319.5 N/A 
+
+F. Impact of Vector Quantization 
+
+Recall from Section II that we partitioned each embedding vector into multiple segments and quantized each segment using a set of codewords. Fig. 14 illustrates the impact of the feature vector segment length NL on the user-intent relevance loss (BLIP-2) LBLIP-2 user under different SNR levels. A shorter segment length divides the feature vector into smaller segments, resulting in lower user-intent relevance loss 
+
+LBLIP-2 user and more robust performance, since changes in a single segment affect only part of the feature vector. Although shorter segments can reduce LBLIP-2 user , they increase the number of transmitted symbols. Specifically, each embedding vector of dimension D is partitioned into L = D/N L segments. Since each segment is mapped to a specific codeword index for transmission, the total number of transmitted symbols is directly proportional to L. This creates a trade-off where decreasing NL leads to a higher number of segments L. Thus, it enhances the performance of the system. Although this finer partitioning can reduce LBLIP-2 user , it increases the communication overhead. 
+
+G. Analysis of the Number of Transmitted Symbols and Model Computational Complexity 
+
+As shown in Table I, we compare the number of transmitted symbols, number of model parameters, and computational complexity of QO-ISC against the baselines. The proposed QO-ISC transmits only 61,952 symbols per image, which is 25% fewer than JPEG2000 and 8× fewer than SwinJSCC-large. This reduction is achieved because SwinJSCC relies on 15 
+
+floating-point feature transmission, whereas QO-ISC employs discrete vector quantization. The query-based image semantic coding [20] has the lowest number of transmitted symbols because it transmits a highly compressed image along with a text description. However, it relies on a diffusion-based decoder to reconstruct the image from the text description, which can lead to hallucinations as shown in the visualization results in Fig. 6. Regarding the model size, although QO-ISC has 165M parameters, most of these parameters belong to the frozen CLIP backbone and only 9.6% of the total parameters are trainable. Furthermore, despite having more total parameters than SwinJSCC-large, QO-ISC requires fewer GFLOPs because CLIP ViT-B/16 processes only 484 tokens per image using a patch size of 16, compared to 30,976 spatial positions processed by SwinJSCC using a patch size of 2. The query-based image semantic coding baseline incurs the highest GFLOPs due to its reliance on a 7B-parameter LLM and a 50-step diffusion decoder. In summary, QO-ISC achieves the balance across all three dimensions. It transmits fewer symbols than both JPEG2000 and SwinJSCC, requires fewer GFLOPs than SwinJSCC despite more total parameters, and limits its training overhead to only 15.88M trainable parameters through a frozen CLIP backbone. We further report the online computational overhead. The semantic encoder, weight module, and decoder are executed on an NVIDIA T4 GPU, with average runtimes of 10.1 ms, 0.1 ms, and 4.3 ms per image, respectively. The WMMSE hybrid beamforming algorithm is executed on two AMD EPYC 7302 CPUs with a runtime of approximately 3 sec per image. This step is the bottleneck of the online processing, because each iteration involves matrix inversions and the manifold optimization. Since the weight matrix depends on the transmitted features, the hybrid beamforming matrices are recomputed for each image and query pair. VII. CONCLUSION 
+
+In this paper, we proposed a generalized QO-ISC framework for large-scale MIMO-OFDM system. To enhance generaliza-tion, we incorporated a pretrained LAM to extract the image and text features. To capture user’s intent, we aligned the image features with text features for image reconstruction. To prioritize semantically important features in a large-scale MIMO-OFDM system, we developed the SA-HBF algorithm. Zero-shot experiments demonstrated that our proposed gen-eralized QO-ISC framework outperforms the state-of-the-art JSCC codec, SwinJSCC, by 7.6% in terms of the answer match rate by using a pretrained LAM backbone. In low SNR region, incorporating text alignment provides a 9% gain, while employing importance weighting in the SA-HBF improves the performance by 4.8%. Our QO-ISC framework also outper-forms the state-of-the-art query-based image semantic coding method by 8%. For the future work, we plan to extend the proposed framework to multiuser scenario, which is more practical for deployment. APPENDIX 
+
+Following the formulation in [37], the digital precoder 
+
+VD[k] can be expressed as βkVU[k], where VU[k] denotes the digital precoding matrix without normalization. Substituting (16) into the MSE term in (31), the WMMSE hybrid precoding problem can be formulated as: minimize     
+
+> VA,VU,β
+> K
+
+∑
+
+> k=1
+
+wb,k tr 
+
+( ˙HH [k]VAVU[k]VH 
+
+> U
+
+[k]VH 
+
+> A
+
+˙H[k]
+
+− ˙HH [k]VAVU[k] − VH 
+
+> U
+
+[k]VH 
+
+> A
+
+˙H[k]+ σ2β−2 
+
+> k
+
+QH [k]Q[k] + INs
+
+)
+
+(32a) subject to tr (VAVU[k]VH 
+
+> U
+
+[k]VH
+
+> A
+
+) ≤ β−2 
+
+> k
+
+P, k ∈ K ,
+
+(32b) constraint (23c) ,
+
+where ˙H[k] = HH [k]QAQD[k] is the effective channel matrix that incorporates the fixed combiners. For a fixed analog precoder VA, the power is fully utilized when βk =√P (tr( VAVU[k]VH 
+
+> U
+
+[k]VH 
+
+> A
+
+))−1/2. By applying the Karush-Kuhn-Tucker (KKT) conditions, the closed-form solution of the digital precoder VU[k] can be derived as 
+
+VU[k] = wb,k 
+
+(
+
+VH 
+
+> A
+
+˙H[k] ˙HH [k] VA
+
++ σ2
+
+P tr( QH [k]Q[k]) VH 
+
+> A
+
+VA
+
+)−1
+
+VH 
+
+> A
+
+˙H[k]. (33) Substituting the optimal VU[k] and βk into the MSE term in (32a), the MSE for subcarrier k can be expressed as: 
+
+Jk(VA) , tr 
+
+((
+
+INs + P
+
+σ2 tr( QH [k]Q[k]) ˙HH [k]VA
+
+× (VH 
+
+> A
+
+VA
+
+)−1 VH 
+
+> A
+
+˙H[k]
+
+)−1)
+
+. (34) The optimization of the analog precoder VA corresponds to the following WMMSE problem: minimize 
+
+> VA
+> K
+
+∑
+
+> k=1
+
+wb,k Jk (VA) (35) subject to constraint (23c) .
+
+Since each entry of the analog precoder matrix VA lies on the complex unit circle, problem (35) can be solved by the manifold optimization (MO) approach. The Euclidean gradient is projected onto the tangent space and is updated using the Armijo-Goldstein line search. The iterate is retracted back to the manifold to preserve the modulus constraint. After optimizing the hybrid precoder, we proceed to opti-mize the hybrid digital and analog combiners QD[k] and QA
+
+with the fixed precoding matrices and normalizing factor βk.Similar to the precoding problem, we include the weight vector 
+
+wb from the contextual bandit into the hybrid combining algorithm. Substituting (16) into the MSE term in (31), the hybrid combining problem can be formulated as: minimize  
+
+> QA,QD
+> K
+
+∑
+
+> k=1
+
+wb,k tr 
+
+(
+
+QH [k] ¨H[k] ¨HH [k]Q[k]
+
+− QH [k] ¨H[k] − ¨HH [k]Q[k]+ σ2β−2 
+
+> k
+
+QH [k]Q[k] + INs
+
+)
+
+subject to constraint (23d) ,
+
+(36) 16 
+
+Algorithm 4 WMMSE Hybrid Beamforming Algorithm 
+
+1: Input: The channel response H; the power limit P ; the noise variance σ2; the weight vector wb for transmission block b; the number of iterations NHBF .
+
+2: Randomly initialize hybrid precoder matrices VA, VD, and hybrid combiner matrices QA, QD.
+
+3: for i ← 1 to NHBF do 
+
+4: I. Optimize Hybrid Precoder 
+
+5: Keep the hybrid combiner matrices QA and QD to be fixed. 
+
+6: Update the unnormalized digital precoder VU[k] by (33) and normalizing factor βk := √P (tr( VAVU[k]VH 
+
+> U
+
+[k]VH 
+
+> A
+
+))−1/2
+
+for k = 1 , . . . , K .
+
+7: Solve the analog precoder VA problem in (35) via MO. 
+
+8: Update the digital precoder VD[k] := βk VU[k].
+
+9: II. Optimize Hybrid Combiner 
+
+10: Keep the hybrid precoder matrices VA and VD to be fixed. 
+
+11: Update the digital combiner QD[k] by (37) for k ∈ K .
+
+12: Solve the analog combiner QA problem in (39) via MO. 
+
+13: end for 
+
+14: Output : The optimized hybrid beamforming matrices 
+
+{V∗
+
+> A
+
+, V∗
+
+> D
+
+, Q∗
+
+> A
+
+, Q∗
+
+> D
+
+}.
+
+where ¨H[k] = H[k]VAVD[k] is the effective channel matrix that incorporates the fixed precoders. The analog combiner is fixed. By differentiating the weighted MSE function (36) with respect to QD[k], we derive the optimal QD[k] as: 
+
+QD[k] = wb,k 
+
+(
+
+QH 
+
+> A
+
+¨H[k] ¨HH [k] QA
+
++ σ2β−2 
+
+> k
+
+QH 
+
+> A
+
+QA VH 
+
+> A
+
+VA
+
+)−1
+
+VH 
+
+> A
+
+¨H[k]. (37) By substituting the optimal QD[k] into the objective func-tion (36), we can express the MSE as follows: 
+
+Gk(QA) , tr 
+
+((
+
+INs + 1
+
+σ2β−2
+
+> k
+
+¨HH [k]QA
+
+(QH 
+
+> A
+
+QA
+
+)−1
+
+× QH 
+
+> A
+
+¨H[k]
+
+)−1)
+
+. (38) The optimization of the analog combiner QA corresponds to the following WMMSE problem: minimize 
+
+> QA
+> K
+
+∑
+
+> k=1
+
+wb,k Gk (QA) (39) subject to constraint (23d) .
+
+Problem (39) is similar to the analog precoding problem (35). Therefore, we can apply the same MO-based algorithm to ob-tain QA. By alternately solving the precoding and combining subproblems, we iteratively update the beamforming matrices to minimize the semantic-aware weighted MSE. The WMMSE hybrid beamforming algorithm is shown in Algorithm 4. REFERENCES [1] S.-Y. Huang and V. W.S. Wong, “Generalized user-oriented image semantic coding empowered by large vision-language model.” in Proc. of IEEE Global Communications Conference (GLOBECOM) , Taipei, Taiwan, Dec. 2025. [2] T. M. Getu, G. Kaddoum, and M. Bennis, “Semantic communication: A survey on research landscape, challenges, and future directions,” Proc. of the IEEE , vol. 112, no. 11, pp. 1649–1685, Nov. 2024. [3] D. G¨ und¨ uz, Z. Qin, I. E. Aguerri, H. S. Dhillon, Z. Yang, A. Yener, K. K. Wong, and C.-B. Chae, “Beyond transmitting bits: Context, seman-tics, and task-oriented communications,” IEEE J. Sel. Areas Commun. ,vol. 41, no. 1, pp. 5–41, Jan. 2023. [4] H. Xie, Z. Qin, G. Y. Li, and B.-H. Juang, “Deep learning enabled semantic communication systems,” IEEE Trans. Signal Process. , vol. 69, pp. 2663–2675, Apr. 2021. [5] T. Zhang, V. Kishore, F. Wu, K. Q. Weinberger, and Y. Artzi, “BERTScore: Evaluating text generation with BERT,” in Proc. of Int’l Conf. on Learning Representations (ICLR) , May 2020. [6] J. Devlin, M.-W. Chang, K. Lee, and K. Toutanova, “BERT: Pre-training of deep bidirectional transformers for language understanding,” in Proc. of North American Chapter of the Association for Computational Linguistics (NAACL-HLT) , Minneapolis, MN, Jun. 2019. [7] Z. Weng, Z. Qin, H. Xie, X. Tao, and K. B. Letaief, “Semantic MIMO systems for speech-to-text transmission,” IEEE Trans. Wireless Commun. , vol. 23, no. 12, pp. 18697–18710, Dec. 2024. [8] C. Xu, M. B. Mashhadi, Y. Ma, R. Tafazolli, and J. Wang, “Gen-erative semantic communications with foundation models: Perception-error analysis and semantic-aware power allocation,” IEEE J. Sel. Areas Commun. , vol. 43, no. 7, pp. 2493–2505, Jul. 2025. [9] X. Peng, Z. Qin, X. Tao, J. Lu, and K. B. Letaief, “A robust image semantic communication system with multi-scale vision transformer,” 
+
+IEEE J. Sel. Areas Commun. , vol. 43, no. 4, pp. 1278–1291, Apr. 2025. [10] D. Huang, F. Gao, X. Tao, Q. Du, and J. Lu, “Toward semantic communications: Deep learning-based image semantic coding,” IEEE J. Sel. Areas Commun. , vol. 41, no. 1, pp. 55–71, Jan. 2023. [11] J. Park, Y. Oh, J. Park, and Y.-S. Jeon, “Importance-aware semantic communication in MIMO-OFDM systems using vision transformer,” 
+
+IEEE Trans. Wireless Commun. , vol. 25, pp. 13494–13510, Mar. 2026. [12] C. Liu, C. Guo, Y. Yang, W. Ni, and T. Q. S. Quek, “OFDM-based digital semantic communication with importance awareness,” IEEE Trans. Commun. , vol. 72, no. 10, pp. 6301–6315, Oct. 2024. [13] Z. Wang, J. Zhang, H. Du, D. Niyato, S. Cui, B. Ai, M. Debbah, K. B. Letaief, and H. V. Poor, “A tutorial on extremely large-scale MIMO for 6G: Fundamentals, signal processing, and applications,” IEEE Commun. Surveys & Tuts. , vol. 26, no. 3, pp. 1560–1605, third quarter 2024. [14] A. F. Molisch, V. V. Ratnam, S. Han, Z. Li, S. L. H. Nguyen, L. Li, and K. Haneda, “Hybrid beamforming for massive MIMO: A survey,” 
+
+IEEE Commun. Mag. , vol. 55, no. 9, pp. 134–141, Sep. 2017. [15] F. Sohrabi and W. Yu, “Hybrid analog and digital beamforming for mmWave OFDM large-scale antenna arrays,” IEEE J. Sel. Areas Com-mun. , vol. 35, no. 7, pp. 1432–1443, Jul. 2017. [16] E. Bourtsoulatze, D. B. Kurka, and D. G¨ und¨ uz, “Deep joint source-channel coding for wireless image transmission,” IEEE Trans. Cogn. Commun. Netw. , vol. 5, no. 3, pp. 567–579, Sep. 2019. [17] S. Guo, Y. Wang, J. Ye, A. Zhang, P. Zhang, and K. Xu, “Semantic importance-aware communications with semantic correction using large language models,” IEEE Trans. Mach. Learning Commun. Netw. , vol. 3, pp. 232–245, Jan. 2025. [18] S.-Y. Huang, R. Liao, and V. W.S. Wong, “Leveraging MoE-based large language model for zero-shot multi-task semantic communication,” in 
+
+Proc. of IEEE Int. Conf. Commun. (ICC) , Montreal, Canada, Jun. 2025. [19] F. Jiang, C. Tang, L. Dong, K. Wang, K. Yang, and C. Pan, “Visual language model-based cross-modal semantic communication systems,” 
+
+IEEE Trans. Wireless Commun. , vol. 24, no. 5, pp. 3937–3948, May 2025. [20] W. Chen, W. Xu, H. Chen, X. Zhang, Z. Qin, Y. Zhang, and Z. Han, “Semantic communication based on large language model for underwa-ter image transmission,” IEEE Trans. Mobile Comput. , vol. 25, no. 2, pp. 2060–2075, Feb. 2026. [21] J. Li, D. Li, C. Xiong, and S. Hoi, “BLIP: Bootstrapping language-image pre-training for unified vision-language understanding and generation,” in Proc. of Int’l Conf. on Machine Learning (ICML) , Baltimore, MD, Jul. 2022. [22] A. Radford et al. , “Learning transferable visual models from natural language supervision,” in Proc. of Int’l Conf. on Machine Learning (ICML) , Jul. 2021. [23] H. Liu, C. Li, Q. Wu, and Y. J. Lee, “Visual instruction tuning,” in 
+
+Proc. of Adv. Neural Inf. Process. Syst. (NeurIPS) , New Orleans, LA, Dec. 2023. [24] I. J. Goodfellow et al. , “Generative adversarial nets,” in Proc. of Adv. Neural Inf. Process. Syst. (NIPS) , Montreal, Canada, Dec. 2014. [25] S. Antol, A. Agrawal, J. Lu, M. Mitchell, D. Batra, C. L. Zitnick, and D. Parikh, “VQA: Visual question answering,” in Prof. of Int’l Conf. Comput. Vis. (ICCV) , Santiago, Chile, Dec. 2015. 17 
+
+[26] K. Yang, S. Wang, J. Dai, X. Qin, K. Niu, and P. Zhang, “SwinJSCC: Taming Swin transformer for deep joint source-channel coding,” IEEE Trans. Cognitive Commun. and Netw. , vol. 11, no. 1, pp. 90–104, Feb. 2025. [27] 3rd Generation Partnership Project (3GPP), “Multiplexing and channel coding.” TS 36.212, v19.3.0, Mar. 2026. [28] O. Ronneberger, P. Fischer, and T. Brox, “U-Net: Convolutional net-works for biomedical image segmentation,” in Proc. of Medical Image Computing and Computer-Assisted Intervention (MICCAI) , Munich, Germany, Oct. 2015. [29] V. Dumoulin, E. Perez, N. Schucher, F. Strub, H. d. Vries, A. Courville, and Y. Bengio, “Feature-wise transformations,” Distill , Jul. 2018. [30] A. van den Oord, O. Vinyals, and k. Kavukcuoglu, “Neural discrete representation learning,” in Proc. of Adv. Neural Inf. Process. Syst. , Long Beach, CA, Dec. 2017. [31] M. Zhang, G. Zhu, R. Jin, X. Chen, Q. Shi, C. Zhong, and K. Huang, “Beamforming design for semantic-bit coexisting communication sys-tem,” IEEE J. Sel. Areas Commun. , vol. 43, no. 4, pp. 1262–1277, Apr. 2025. [32] T. Lattimore and C. Szepesv´ ari, Bandit Algorithms . Cambridge Univer-sity Press, 2020. [33] S. Agrawal and N. Goyal, “Thompson sampling for contextual bandits with linear payoffs,” in Proc. of Int’l Conf. on Machine Learning (ICML) , Atlanta, GA, Jun. 2013. [34] S. Kotz, N. Balakrishnan, and N. L. Johnson, Continuous Multivariate Distributions: Models and Applications . Wiley, 2000. [35] C. Riquelme, G. Tucker, and J. Snoek, “Deep Bayesian bandits show-down: An empirical comparison of Bayesian deep networks for Thomp-son sampling,” in Proc. of Int’l Conf. on Learning Representations (ICLR) , Vancouver, Canada, May 2018. [36] R. J. Williams, “Simple statistical gradient-following algorithms for con-nectionist reinforcement learning,” Machine Learning , vol. 8, pp. 229– 256, May 1992. [37] T. Lin, J. Cong, Y. Zhu, J. Zhang, and K. B. Letaief, “Hybrid beam-forming for millimeter wave systems using the MMSE criterion,” IEEE Trans. Commun. , vol. 67, no. 5, pp. 3693–3708, May 2019. [38] ISO/IEC 15444-1, “Information Technology - JPEG 2000 Image Coding System Part 1: Core Coding System,” 5th edition, Nov. 2024. [39] A. Holtzman, J. Buys, L. Du, M. Forbes, and Y. Choi, “The curious case of neural text degeneration,” in Proc. of Int’l Conf. on Learning Representations (ICLR) , Virtual, Apr. 2020. 
+
+Sin-Yu Huang (Graduate Student Member, IEEE) received the B.S. degree in electrical engineering and the M.S. degree in computer and communication engineering from National Cheng Kung University, Tainan, Taiwan, in 2021 and 2022, respectively. From 2022 to 2023, she was a Research Assistant with the Research Center for Information Technol-ogy Innovation, Academia Sinica, Taipei, Taiwan. She is currently pursuing the Ph.D. degree with the Department of Electrical and Computer Engineering, The University of British Columbia (UBC), Vancou-ver, BC, Canada. Her research interests include semantic communications, task-oriented communications, large AI models for wireless networks, and agentic AI for 6G systems. She is a recipient of the President’s Academic Excellence Initiative Ph.D. Award from UBC. She has served as a TPC Member and Session Chair of the IEEE ICC 2026. 
+
+Vincent W.S. Wong (S’94, M’00, SM’07, F’16) received the B.Sc. degree from the University of Manitoba, Canada, in 1994, the M.A.Sc. degree from the University of Waterloo, Canada, in 1996, and the Ph.D. degree from the University of British Columbia (UBC), Vancouver, Canada, in 2000. From 2000 to 2001, he worked as a systems engi-neer at PMC-Sierra Inc. (now Microchip Technology Inc.). He joined the Department of Electrical and Computer Engineering at UBC in 2002 and is cur-rently a Professor and UBC Distinguished University Scholar. His research areas include protocol design, optimization, and resource management of communication networks, with applications to 5G/6G wireless networks, Internet of things, mobile edge computing, smart grid, and energy systems. Dr. Wong is the Editor-in-Chief of the IEEE Transactions on Wireless Communications . He has served as an Area Editor of the IEEE Transactions on Communications and IEEE Open Journal of the Communications Society ,an Associate Editor of the IEEE Transactions on Mobile Computing and IEEE Transactions on Vehicular Technology , and a Guest Editor of the IEEE Journal on Selected Areas in Communications , IEEE Internet of Things Journal , and 
+
+IEEE Wireless Communications . Dr. Wong is the TPC Vice-Chair of IEEE GLOBECOM 2027, Publicity Co-Chair of IEEE VTC2027-Spring , and Area Chair of IEEE INFOCOM 2027. He has served as the General Co-Chair of 
+
+IEEE INFOCOM 2024; Tutorial Co-Chair of IEEE GLOBECOM 2018; Tech-nical Program Co-Chair of IEEE VTC 2020 -Fall and IEEE SmartGridComm 
+
+2014; and Symposium Co-Chair of IEEE ICC ’18, IEEE SmartGridComm 
+
+(’13, ’17) and IEEE GLOBECOM ’13. He received the 2022 Best Paper Award from IEEE Transactions on Mobile Computing and Best Paper Awards at the IEEE ICC 2022 and IEEE GLOBECOM 2020. He has served as the Chair of the IEEE Vancouver Joint Communications Chapter and IEEE Communications Society Emerging Technical Sub-Committee on Smart Grid Communications. He was an IEEE Communications Society Distinguished Lecturer from 2019 to 2020 and is an IEEE Vehicular Technology Society Distinguished Lecturer for the term of 2023 −2026. Dr. Wong is a Fellow of the IEEE, Canadian Academy of Engineering, and the Engineering Institute of Canada.

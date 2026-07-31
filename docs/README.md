@@ -6,24 +6,38 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-30
-- 运行时间：2026-07-30 21:43:15 UTC
+- 最新运行日期：2026-07-31
+- 运行时间：2026-07-31 21:38:21 UTC
 - 运行状态：成功
-- 本次总论文数：1
-- 精读区：1
-- 速读区：0
+- 本次总论文数：6
+- 精读区：2
+- 速读区：4
 
 ### 今日简报（AI）
-今日精读一篇高分论文，提出基于双重自适应KAN网络的医学图像分割新方法。研究亮点在于将Kolmogorov-Arnold网络与双分支架构结合，显著提升了分割精度与泛化能力。建议读者重点关注该方法在细粒度边界分割上的表现，未来可尝试与其他骨干网络对比验证。
-- 详情：[/202607/30/README](/202607/30/README)
+今日聚焦6篇论文，精读2篇：神经网络辅助CLEAN提升低信噪比信道建模精度，以及雷达辅助近场波束预测赋能XL-MIMO车联网通信。最值得关注的是低信噪比下的信道建模新思路，以及近场波束预测对高频段移动通信的显著价值。建议普通读者优先关注这两篇精读成果，速读内容可作为扩展了解。
+- 详情：[/202607/31/README](/202607/31/README)
 
 ### 精读区论文标签
-1. [AdaKAN: A dual-branch adaptive Kolmogorov-Arnold network for medical image segmentation](/202607/30/2607.22891v1-adakan-a-dual-branch-adaptive-kolmogorov-arnold-network-for-medical-image-segmentation)  
+1. [Neural Network-Assisted CLEAN for Channel Modeling in Low-SNR Regimes](/202607/31/2607.27450v1-neural-network-assisted-clean-for-channel-modeling-in-low-snr-regimes)  
+   标签：评分：9.0/10、query:channel-nn
+   evidence：面向低信噪比信道建模的神经网络辅助CLEAN多径参数估计
+2. [Radar-Aided Near-Field Beam Prediction via Beam Map Learning for XL-MIMO V2I Communications](/202607/31/2607.27643v1-radar-aided-near-field-beam-prediction-via-beam-map-learning-for-xl-mimo-v2i-communications)  
    标签：评分：8.0/10、query:channel-nn
-   evidence：提出AdaKAN双分支自适应Kolmogorov-Arnold网络用于医学图像分割
+   evidence：用于V2I通信近场波束预测的轻量编码器-解码器卷积神经网络
 
 ### 速读区论文标签
-- 本次无速读推荐。
+1. [Bayesian-Guided Cooperative RL Beamforming for Wireless Adversarial User Detection](/202607/31/2607.25417v1-bayesian-guided-cooperative-rl-beamforming-for-wireless-adversarial-user-detection)  
+   标签：评分：7.0/10、query:channel-nn
+   evidence：将机器学习与协作强化学习用于无线通信系统中的波束成形
+2. [Generalized Neural Operator for Parametric and Boundary-Value Problems](/202607/31/2607.21932v1-generalized-neural-operator-for-parametric-and-boundary-value-problems)  
+   标签：评分：6.0/10、query:channel-nn
+   evidence：提出面向参数化PDE的广义神经算子，融合数据驱动与物理约束，可迁移到通信信道建模
+3. [Learned Blockwise Port Activation for Real Time Beamforming in Fluid Antenna Arrays](/202607/31/2607.25365v1-learned-blockwise-port-activation-for-real-time-beamforming-in-fluid-antenna-arrays)  
+   标签：评分：6.0/10、query:channel-nn
+   evidence：学习式分块端口激活用于实时波束成形
+4. [Generalized Query-Oriented Image Semantic Coding Empowered by Large AI Models and Semantic-Aware Hybrid Beamforming](/202607/31/2607.28276v1-generalized-query-oriented-image-semantic-coding-empowered-by-large-ai-models-and-semantic-aware-hybrid-beamforming)  
+   标签：评分：6.0/10、query:channel-nn
+   evidence：深度学习与语义通信在MIMO-OFDM中的结合应用
 
 
 <div class="dpr-home-promo-card">
