@@ -1,0 +1,54 @@
+{
+  "label": "2026-08-01",
+  "date": "2026-08-01",
+  "generated_at": "2026-08-01T21:28:03",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202608/01/2607.23337v1-neural-operator-discovery-from-heterogeneous-trajectories",
+      "section": "quick",
+      "title_en": "Neural operator discovery from heterogeneous trajectories",
+      "authors": "Zituo Chen, Qiaofeng Li, Jiaxin Hu, Sili Deng",
+      "date": "2026-07-25",
+      "pdf": "https://arxiv.org/pdf/2607.23337v1",
+      "score": "7.0",
+      "evidence": "提出一种带因子化隐变量的新神经算子架构，可从未知参数条件下学习系统模型，适用于信道这类动力学建模。",
+      "tldr": "神经算子学习通常需要物理参数、几何等显式条件变量，但真实系统中这些量常不可观测。本文提出神经算子发现（NOD），从异构轨迹中联合学习共享神经算子与系统特定低维表示，利用因子化预测、轨迹解耦采样和自动维度选择。在多个动力学系统上，学到的潜在维度准确捕捉系统变化固有维度，潜在结构平滑、近似可逆且与底层因素对齐。该表示支持对新系统的零样本外推和稳定长时预测，为无显式因子监督的算子学习建立了可解释范式。",
+      "tags": "query:channel-nn",
+      "abstract_en": "Neural operators provide data-driven mappings for modeling dynamical systems. Extending them to families of systems typically requires explicit conditioning variables such as physical parameters, geometries, or boundary conditions. In many real-world settings, these quantities are unobserved. Here, we formulate neural operator discovery (NOD) as the problem of learning both shared solution operators and system-specific variation directly from heterogeneous trajectories without access to labeled governing factors. We introduce a factorized latent-conditioning formulation that jointly learns a neural operator and a low-dimensional latent representation through factorized prediction, trajectory-decoupled sampling, and dimension selection. Across diverse systems, the learned latent representation captures the intrinsic dimensionality of system variation and organizes system instances in a smooth and approximately invertible latent structure aligned with the underlying governing factors. This organization enables generalization to previously unseen system instances, including zero-shot extrapolation across regimes and stable long-horizon prediction. These results establish an interpretable paradigm for operator learning in the absence of explicit factor supervision.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/01/2607.22805v1-orchnas-orchestrated-neural-architecture-search-service-for-personalised-federated-edge-intelligence",
+      "section": "quick",
+      "title_en": "OrchNAS: Orchestrated Neural Architecture Search Service for Personalised Federated Edge Intelligence",
+      "authors": "Keya Patel, Sajib Mistry, Sheik Mohammad Mostakim Fattah, Aneesh Krishna",
+      "date": "2026-07-24",
+      "pdf": "https://arxiv.org/pdf/2607.22805v1",
+      "score": "6.0",
+      "evidence": "面向资源约束边缘模型的神经架构搜索方法",
+      "tldr": "针对联邦边缘环境中异构设备的能量与资源约束及个性化需求，提出OrchNAS框架。其通过服务端NAS服务编排架构搜索，利用能量感知全局搜索学习紧凑表示，结合渐进贪心剪枝实现个性化子网选择，并采用原始-对偶优化严格限制能量预算。实验在真实和基准数据集上验证了有效性，实现了资源约束下服务自适应模型的自动设计。",
+      "tags": "query:channel-nn",
+      "abstract_en": "We propose OrchNAS, an energy-aware, personalised, federated edge intelligence framework that leverages a Neural Architecture Search Service to automatically design service-adaptive models for heterogeneous edge environments. The framework orchestrates the architecture search process on a server-side NAS service, enabling edge services to derive personalised architectures under device-level energy, computation, and memory constraints. We introduce an energy-aware global architecture search mechanism that learns a compact global representation across heterogeneous services. We develop an energy-efficient architecture selection mechanism that enables each service to derive a personalised subnet that satisfies its resource constraints via a progressive, greedy, energy-aware pruning strategy. We propose an energy-efficient personalised model optimisation scheme that updates service-adaptive parameters while preserving global representations, where a primal-dual optimisation mechanism enforces strict energy budgets during architecture adaptation. Experiments on real-world and benchmark datasets demonstrate the effectiveness of the proposed approach.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/01/2607.28418v1-wide-boosting-adaptive-llm-inference-via-token-level-dynamic-width-pruning",
+      "section": "quick",
+      "title_en": "WIDE: Boosting Adaptive LLM Inference via Token-level Dynamic Width Pruning",
+      "authors": "Haozhe Hu, Hao Wu, Peiran Yin, Chao Han, Yunpu Ma, Xiaoyu Shen",
+      "date": "2026-07-30",
+      "pdf": "https://arxiv.org/pdf/2607.28418v1",
+      "score": "6.0",
+      "evidence": "提出端到端可微的词元级动态宽度剪枝，提升大模型推理效率；属于可迁移的高效神经网络设计方法。",
+      "tldr": "大模型剪枝中，静态结构化剪枝硬件友好但精度损失大，现有动态稀疏方法多限于粗粒度且加速有限。WIDE提出端到端可微的token级动态宽度剪枝，让每个token动态选择注意力头组和FFN通道组，粒度更细。通过两阶段训练和剪枝-内核协同设计，在50%稀疏度下性能提升55.1%，解码加速达4.95倍，兼顾精度与效率。",
+      "tags": "query:channel-nn",
+      "abstract_en": "Pruning is a promising approach for improving the efficiency of LLMs. Existing static structured pruning methods are hardware-friendly and can deliver practical throughput gains, but their input-agnostic computation allocation often causes substantial accuracy degradation under aggressive sparsity. Recent dynamic sparsity methods improve quality retention by adapting computation to individual inputs, yet they remain largely limited to coarse-grained structural decisions and their practical acceleration under real-world inference scenarios remains challenging. To address these challenges, we present WIDE, the first end-to-end differentiable token-level dynamic width pruning framework designed for both prefill and decode scenarios. WIDE enables fine-grained computation allocation by allowing each token to dynamically select attention-head groups and FFN-channel groups, extending dynamic pruning beyond layer-level decisions to neuron-block-level granularity. Through a two-stage training pipeline, WIDE learns effective token-wise sparse execution patterns and achieves substantially better quality retention than existing approaches. To make such fine-grained dynamic pruning practical, we further propose a pruning--kernel co-design framework that decomposes dynamic sparsity acceleration into mask reordering, hardware-agnostic block-level skipping, and hardware-dependent intra-block skipping, enabling efficient execution across different granularities. At 50% sparsity, WIDE provides 55.1% performance boost when compared to the state-of-the-art dynamic depth pruning under calibration-only settings. Under prefill and decoding inference workloads, WIDE achieves close-to-theoretical kernel-level speedups of up to 1.98x for prefill and 4.95x for decoding, as well as 1.68x and 1.55x end-to-end acceleration. Our code is available at https://github.com/EIT-NLP/LLM-Pruning/tree/main/WIDE.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

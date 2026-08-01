@@ -6,38 +6,32 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-31
-- 运行时间：2026-07-31 21:38:21 UTC
+- 最新运行日期：2026-08-01
+- 运行时间：2026-08-01 21:27:59 UTC
 - 运行状态：成功
-- 本次总论文数：6
-- 精读区：2
-- 速读区：4
+- 本次总论文数：3
+- 精读区：0
+- 速读区：3
 
 ### 今日简报（AI）
-今日聚焦6篇论文，精读2篇：神经网络辅助CLEAN提升低信噪比信道建模精度，以及雷达辅助近场波束预测赋能XL-MIMO车联网通信。最值得关注的是低信噪比下的信道建模新思路，以及近场波束预测对高频段移动通信的显著价值。建议普通读者优先关注这两篇精读成果，速读内容可作为扩展了解。
-- 详情：[/202607/31/README](/202607/31/README)
+今日速读3篇论文，暂无精读，覆盖神经算子、联邦边缘AI与LLM剪枝。  
+最值得关注的是《Neural operator discovery》（7.0分），另两篇LLM动态剪枝与联邦NAS方向可作拓展。  
+建议优先浏览高分论文摘要，后续再针对兴趣方向安排精读。
+- 详情：[/202608/01/README](/202608/01/README)
 
 ### 精读区论文标签
-1. [Neural Network-Assisted CLEAN for Channel Modeling in Low-SNR Regimes](/202607/31/2607.27450v1-neural-network-assisted-clean-for-channel-modeling-in-low-snr-regimes)  
-   标签：评分：9.0/10、query:channel-nn
-   evidence：面向低信噪比信道建模的神经网络辅助CLEAN多径参数估计
-2. [Radar-Aided Near-Field Beam Prediction via Beam Map Learning for XL-MIMO V2I Communications](/202607/31/2607.27643v1-radar-aided-near-field-beam-prediction-via-beam-map-learning-for-xl-mimo-v2i-communications)  
-   标签：评分：8.0/10、query:channel-nn
-   evidence：用于V2I通信近场波束预测的轻量编码器-解码器卷积神经网络
+- 本次无精读推荐。
 
 ### 速读区论文标签
-1. [Bayesian-Guided Cooperative RL Beamforming for Wireless Adversarial User Detection](/202607/31/2607.25417v1-bayesian-guided-cooperative-rl-beamforming-for-wireless-adversarial-user-detection)  
+1. [Neural operator discovery from heterogeneous trajectories](/202608/01/2607.23337v1-neural-operator-discovery-from-heterogeneous-trajectories)  
    标签：评分：7.0/10、query:channel-nn
-   evidence：将机器学习与协作强化学习用于无线通信系统中的波束成形
-2. [Generalized Neural Operator for Parametric and Boundary-Value Problems](/202607/31/2607.21932v1-generalized-neural-operator-for-parametric-and-boundary-value-problems)  
+   evidence：提出一种带因子化隐变量的新神经算子架构，可从未知参数条件下学习系统模型，适用于信道这类动力学建模。
+2. [OrchNAS: Orchestrated Neural Architecture Search Service for Personalised Federated Edge Intelligence](/202608/01/2607.22805v1-orchnas-orchestrated-neural-architecture-search-service-for-personalised-federated-edge-intelligence)  
    标签：评分：6.0/10、query:channel-nn
-   evidence：提出面向参数化PDE的广义神经算子，融合数据驱动与物理约束，可迁移到通信信道建模
-3. [Learned Blockwise Port Activation for Real Time Beamforming in Fluid Antenna Arrays](/202607/31/2607.25365v1-learned-blockwise-port-activation-for-real-time-beamforming-in-fluid-antenna-arrays)  
+   evidence：面向资源约束边缘模型的神经架构搜索方法
+3. [WIDE: Boosting Adaptive LLM Inference via Token-level Dynamic Width Pruning](/202608/01/2607.28418v1-wide-boosting-adaptive-llm-inference-via-token-level-dynamic-width-pruning)  
    标签：评分：6.0/10、query:channel-nn
-   evidence：学习式分块端口激活用于实时波束成形
-4. [Generalized Query-Oriented Image Semantic Coding Empowered by Large AI Models and Semantic-Aware Hybrid Beamforming](/202607/31/2607.28276v1-generalized-query-oriented-image-semantic-coding-empowered-by-large-ai-models-and-semantic-aware-hybrid-beamforming)  
-   标签：评分：6.0/10、query:channel-nn
-   evidence：深度学习与语义通信在MIMO-OFDM中的结合应用
+   evidence：提出端到端可微的词元级动态宽度剪枝，提升大模型推理效率；属于可迁移的高效神经网络设计方法。
 
 
 <div class="dpr-home-promo-card">
