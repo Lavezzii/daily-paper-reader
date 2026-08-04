@@ -1,0 +1,694 @@
+Title: A Geometry-based Stochastic Wireless Channel Model using Generative Neural Networks
+
+URL Source: https://arxiv.org/pdf/2608.01840v1
+
+Published Time: Tue, 04 Aug 2026 02:27:44 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+> 1
+
+# A Geometry-based Stochastic Wireless Channel Model using Generative Neural Networks 
+
+Seongjoon Kang (email: sk8053@nyu.edu) 
+
+Abstract —Due to the high complexity of geometry-deterministic wireless channel modeling and the difficulty in its implementation, geometry-based stochastic channel modeling (GBSM) approaches have been used to evaluate system performance of wireless communications. This paper introduces a new method to model a GBSM by training agenerative neural network using images formed by channel parameters. Toward this end, we process the data of channel parameters in the form of images and train the generative neural networks where the convolutional layers are mainly employed to capture correlation among multipath components. Through a case study, we demonstrate that the use of channel images facilitates the training of the generative model and ensures that the model learns the correlations among multipath components. We show that the outputs of the generative model faithfully represent the joint distributions of the original data, and that the trained model reliably interpolates across held-out conditions not used during training, demonstrating its practical value as a data-efficient alternative to directly resampling the ray-tracing database. Furthermore, to corroborate applicability of the trained model, we run simple system-level simulations and show the results obtained from the trained model closely match those from the ray-tracing data. Therefore, the proposed model is expected to ease the burden of GBSM implementations with general wireless conditions and capture the statistical joint distributions of the original channel data. 
+
+Index Terms —generative AI - based channel modeling, gener-ative neural networks, ray-tracing, channel images, GBSM, GAN 
+
+I. INTRODUCTION The goal of communication channel modeling is to facilitate link- and system-level simulations in which the performance of the wireless system is assessed. The 3rd Generation Part-nership Project ( 3GPP) proposes different types of stochastic channel model depending on wireless systems such as aerial and satellite communications for benchmarking [1]–[3]. The statistical channel models proposed by 3GPP aim at general scenarios such as urban micro- and rural regions and do not take into account geometry-specific scenarios. To consider an underlying geometry, deterministic models, such as using ray-tracing simulation, have been proposed on the basis of fundamental electromagnetic wave propagation theory. In particular, Wireless Insite [4] has been known to be fairly accurate compared to real-world measurements, as shown in [5], [6]. However, due to the high computational and implementation cost of deterministic models, geometry-based stochastic channel modeling (GBSM) is proposed [7], which models channel parameters through statistical distributions of predefined local scatterers in certain environments. GBSMs simplify the ray-tracing rules without specific infor-mation of local scatterers. Thus, GBSMs can offer more flexi-bility and convenience to implement and perform simulations in various scenarios due to their stochastic characteristics. In [8], the first GBSM was proposed by developing probabilistic distributions of channel parameters, and in [9]–[11], two-ring scattering models are employed using wave propagation rules in random scatterers. In [12], [13], the clustered models are proposed for parameterized channel modeling. In addition, several efforts have been made to model GBSMs using real measurement data [14]–[16]. However, prior efforts for parameterization of GBSMs still require the high complexities of implementation and do not generalize the modeling under any wireless condition. Thus, it is essential to explore ways to reduce the implementation burden of GBSMs and ensure almost the same modeling accuracy as ray-tracing modeling. As proposed in [17], data obtained from the ray-tracing simulation can be used to fit the parameters of the GBSMs and guarantee good modeling accuracy. In efforts to build data-driven GBSMs, generative neural networks are used [18]–[23]. For example, the au-thors of [20] propose the conditional variational autoencoder (CVAE) to capture the channel parameter statistics. This work requires two-step procedures—link state classifier and VAE— to stochastically generate channel parameters, which still re-quire higher implementation complexity. Furthermore, this effort is based on only fully connected (FC) neural networks, and thus does not consider the correlation between multipath components, i.e., the joint distribution of all the multipath components. In particular, training CVAE is challenging due to the posterior collapse problem [24], where the latent variable is ignored and the model degenerates into a standard autoen-coder, thereby losing the ability to generate diverse channel realization. Following the same implementation procedures and relying solely on FC neural networks, [21] proposes a cluster-based generative model built upon Wasserstein genera-tive adversarial networks with gradient penalty (WGAN-GP). However, generating channel parameters at the cluster level leads to significant limitations in simulation accuracy. This is because wideband channels are characterized by finer time resolution, which necessitates modeling a larger number of resolvable multipath components than cluster-level generation can reliably capture. Therefore, it is desirable to simplify and generalize the implementation of GBSMs using a generative model to capture not only the statistics of the parameters of multipath channels, 
+
+> 0000–0000/00$00.00 © 2026 IEEE arXiv:2608.01840v1 [eess.SP] 3 Aug 2026 2
+
+such as pathloss and propagation delay, but also correlations 
+
+between them. Toward this end, the contributions of this work are as follows.  
+
+> •
+
+We propose a novel data-to-image mapping that con-verts wireless channel parameters into channel images ,enabling generative models to be trained with two-dimensional convolutional neural networks (2D CNNs). By exploiting the texture bias of CNNs, the proposed channel images allow the model to capture the joint dis-tribution of multipath components , which prior FC-based generative channel models [20], [21] fail to reproduce.  
+
+> •
+
+Through a case study based on ray-tracing data of a dense urban area, we validate the statistical fidelity of the proposed model in terms of the EM distance, the distributions of individual channel parameters, and the correlations among multipath components. In particu-lar, comparisons with the FC-based baselines [20], [21] demonstrate that the proposed model reproduces the correlation structure of the original data, and further exhibits statistical interpolation capability under unseen 2D distance conditions.  
+
+> •
+
+We corroborate the applicability of the proposed model to link- and system-level evaluations by comparing drop-based simulation results with those obtained from the ray-tracing channels. The close agreement between the SNR distributions of the two channel models confirms that the proposed model can replace costly ray-tracing simulations for site-specific performance analysis. This paper is organized as follows. Section II describes the general wireless channel modeling and the consequential required channel parameters, which motivates this work. Sec-tion III sets forth ways to process channel data, and Section IV presents a conditional generative model for GBSMs. To verify our proposed modeling method, Sections V and VI introduce a case study and explain the training of the model. Then, in Section VII, the performance of the trained model is assessed considering various evaluation metrics. Lastly, Section VIII discusses the application of the proposed model in the aspect of the performance of system-level simulation, and Section IX concludes this work. II. GENERAL WIRELESS CHANNEL MODELING In current 5G and future 6G communications, multiple-in multiple-out (MIMO) systems between transmitter (TX) and receiver (RX) have become common; thus, the wireless channels of MIMO systems are of paramount importance. In most cases, MIMO channels are modeled with their spatial signatures [25], [26]. Denoting the number of antennas of TX and RX as 𝑛 tx and 𝑛 rx , MIMO channel matrix 𝑯 ∈ C𝑛 rx ×𝑛 tx 
+
+between the TX and RX is described as follows: 
+
+𝑯 (𝑡 ) =
+
+> 𝑁
+
+’
+
+> 𝑘 =1
+
+√
+
+𝑝 −1 
+
+> 𝑘
+
+𝐹 tx (𝜃 tx  
+
+> 𝑘
+
+, 𝜙 tx  
+
+> 𝑘
+
+)𝐹 rx (𝜃 rx  
+
+> 𝑘
+
+, 𝜙 rx  
+
+> 𝑘
+
+)𝑒 𝜓 𝑘 𝑖 
+
+𝒆 rx (𝜃 rx  
+
+> 𝑘
+
+, 𝜙 rx  
+
+> 𝑘
+
+)𝒆 Htx (𝜃 tx  
+
+> 𝑘
+
+, 𝜙 tx  
+
+> 𝑘
+
+)𝛿 (𝑡 − 𝜏 𝑘 ) (1) where 𝑡 is the measured time after transmission, 𝑁 is the total number of resolvable multipaths, for 𝑘 th path, 𝑝 𝑘 is pathloss, 
+
+𝐹 tx (· , ·) and 𝐹 rx (· , ·) are antenna element gains for TX and RX, 
+
+𝜓 𝑘 is arrival phase, 𝛿 is Dirac delta function, 𝜏 𝑘 is propagation delay, 𝜙 tx  
+
+> 𝑘
+
+and 𝜃 tx  
+
+> 𝑘
+
+are azimuth and zenith angles of departure (AOD and ZOD), 𝜙 rx  
+
+> 𝑘
+
+and 𝜃 rx  
+
+> 𝑘
+
+are azimuth and zenith angles of arrival (AOA and ZOA), and 𝒆 tx (· , ·) ∈ C𝑛 tx ×1 and 𝒆 rx (· , ·) ∈ 
+
+C𝑛 rx ×1 are the spatial signatures from antenna arrays of TX and RX. By taking the Fourier transform of Eq. 1, the channel frequency response 𝑯 ( 𝑓 ) for a MIMO system can be derived, which is essential to model channels of orthogonal frequency division multiplexing (OFDM) over all available carrier fre-quencies. When ignoring the mutual coupling effect between the antenna elements, Eq. 1 is sufficient to describe all the channel coefficients between two antenna arrays of TX and RX. However, to stochastically build MIMO channels we should stochastically obtain all the necessary parameters in Eq. 1. Thus, a stochastic model is required to generate all the parameters in Eq. 1 such as pathloss and arrival and departure angles. To this end, we employ generative neural networks to probabilistically obtain all the essential parameters in Eq. 1 under a certain condition. III. CHANNEL DATA PROCESSING In this section, we discuss how to process the raw data of channel parameters before training a generative model. 
+
+A. Channel Parameters From Ray-Tracing Simulation 
+
+Since measuring realistic wireless channels in any region is challenging, we rely on the simulation and obtain the data from it. The parameters of the wireless channel for a specific region can be obtained from commercial ray tracer , Wireless Insite [27]. For each wireless link, we consider all possible propagation path parameters, which are the resultant outputs from ray-tracing simulator. With those parameters, we can model any wireless channel. Specifically, for each link consisting of 𝑁 paths between a TX and an RX, the channel parameter matrix 𝑫 ∈ 𝑹 8× 𝑁 
+
+obtained from the ray-tracing simulator is represented below. 
+
+𝑫 =
+
+©≠≠≠≠≠≠≠≠≠≠≠´
+
+𝑝 1 𝑝 2 . . . 𝑝 𝑁 
+
+𝜏 1 𝜏 2 . . . 𝜏 𝑁 
+
+𝜙 tx 1 𝜙 tx 2 . . . 𝜙 tx 
+
+> 𝑁
+
+𝜃 tx 1 𝜃 tx 2 . . . 𝜃 tx 
+
+> 𝑁
+
+𝜙 rx 1 𝜙 rx 2 . . . 𝜙 rx 
+
+> 𝑁
+
+𝜃 rx 1 𝜃 rx 2 . . . 𝜃 rx 
+
+> 𝑁
+
+𝜓 1 𝜓 2 . . . 𝜓 𝑁 
+
+𝑙 1 𝑙 1 . . . 𝑙 1
+
+™ÆÆÆÆÆÆÆÆÆÆÆ¨
+
+(2) where 𝑙 1 is the link state of the first arrival path. Here link state indicates the state of communication link between TX and RX, which is normally classified as three states: line-of-sight (LOS), non-line-of-sight (NLOS), and outage. Note that we only need the link state of the first arrival path since the other paths are NLOS paths. The single-matrix representation for all channel parameters on one link is useful in building channel images. The LOS path components, which constitute the first column of 𝑫 , are determined mathematically as follows: 
+
+𝑝 1 = 20 log 10 (dist 3d ) + 20 log 10 ( 𝑓 𝑐 ) − 147 .55 (3a) 3
+
+𝜏 1 = dist 3d 
+
+𝑐 (3b) 
+
+𝜙 tx 1 = arctan 𝑦 tx − 𝑦 rx 
+
+𝑥 tx − 𝑥 rx 
+
+(3c) 
+
+𝜙 rx 1 = 𝜙 tx 1 − 180 (3d) 
+
+𝜃 tx 1 = arctan dist 2d 
+
+𝑧 rx − 𝑧 tx 
+
+(3e) 
+
+𝜃 rx 1 = 180 − 𝜃 tx 1 (3f) 
+
+𝜓 1 = ( 𝑓 𝑐 · 𝜏 1) mod 360 (3g) where dist 3d is 3D distance between TX and RX, 𝑓 𝑐 is the carrier frequency, 𝑐 is the speed of light, ( 𝑥 tx , 𝑦 tx ) and ( 𝑥 rx ,
+
+𝑦 rx ) are the 2D coordinates of the TX and the RX. 
+
+B. Data Normalization 
+
+In order to train a generative neural network, the raw data obtained from the ray-tracing simulation are normalized by employing Min-Max scaling to make the range of all elements of the data matrix 𝑫 𝑖 ∈ 𝑹 fall between -1 and 1. This data pre-processing is commonly employed to reduce variance. Suppose that the 𝑀 TX-RX links are simulated in ray-tracing simulation. Since each link has a different number of paths, the corresponding data matrices may have different data shapes. To ensure that the size of the data matrix is consistent across all links, we introduce virtual paths when the number of paths is smaller than the maximum value of 25. Except for the pathloss feature, the virtual values of the feature data 𝒅 𝑖 
+
+are sampled from the uniform distribution 𝑈 (min 𝒅 i, max 𝒅 i).For the pathloss feature, we deliberately select virtual values exceeding 180 dB —e.g., sampled from 𝑈 (180 , 200 )—as these values serve as the marker distinguishing virtual paths from real ones. Before Min-Max scaling for the raw data, we take into account the following data processing technique for some features.  
+
+> •
+
+Pathloss: Since we assume that the TX and RX locations are known, we normalize the pathloss values per path by the free space pathloss (FSPL) using Eq. 3a 
+
+˜𝒑 = 𝒑 − 𝐹𝑆𝑃𝐿 (dist 3d ) 
+
+> •
+
+Delay: Similarly, the delay values are normalized by the LOS delay using Eq. 3b 
+
+˜𝝉 = 𝝉 − dist 3d 
+
+𝑐 
+
+Considering that delay values are relatively small com-pared to other feature data, we multiply them by asufficiently large scalar value— 10 7. 
+
+> •
+
+Link state: The link state values of the first arrival path are sampled from uniform distributions, which are 𝑈 (1−𝜖, 1)
+
+for LOS and 𝑈 (− 1, −1 + 𝜖 ) for NLOS, respectively, for a small value 𝜖 (0 < 𝜖 ≪ 1). We do not consider angles relative to the LOS directions because this processing might not be invertible under certain conditions. For example, when the conditional variables are the 2D distance between a TX and RX and the height of an RX, the AOD and AOA are not recoverable from angles relative to the LOS direction. Denoting the total data tensor as 𝑫 total =
+
+{𝑫 1, 𝑫 2, . . . , 𝑫 𝑀 } ∈ 𝑹 𝑀 ×8×25 , the Min-Max scaling for each feature data is given as follows: 
+
+ˆ𝒅 𝑖 = (2 × 𝒅 𝑖 − max 𝒅 𝑖 − min 𝒅 𝑖 )
+
+max 𝒅 𝑖 − min 𝒅 𝑖 
+
+𝒅 𝑖 = 𝑫 total :,𝑖, :
+
+Note that all the pre-processing for raw data must be invertible, since we need the reverse process to reconstruct data from the output of a generative model. 
+
+C. Data-To-Image Mapping 
+
+Following data pre-processing, we generate channel images for each wireless link between TX and RX. The formation of images is instrumental in capturing correlations between multipath components by employing 2D CNN. Unlike nat-ural images, wireless channel data inherently lack macro-level geometric shapes or continuous contours. When a two-dimensional convolutional kernel is applied directly to the raw 
+
+8 × 25 channel matrix, heterogeneous channel parameters are inevitably mixed within a single receptive field, preventing the network from learning discriminative channel parame-ters. Thus, we propose duplication-based preprocessing by enlarging each element into a homogeneous block, ensuring that the initial convolutional operations are confined within identical physical parameters, as illustrated in Fig. 1. This duplication-based transformation introduces spatially repetitive patterns consistent with the textural features where CNNs are inherently biased to learn [28]. By exploiting this texture bias, the network can more effectively capture discriminative channel features, improving the overall performance of the generative model. Specifically, we duplicate each element of the data matrix 
+
+𝑫 𝑖 ∈ R8×25 by 2 times horizontally, 8 times vertically, so that the size of the resulting matrix becomes ˜𝑫 𝑖 ∈ R64 ×50 .
+
+𝑫 𝑖 ∈ R8×25 → ˜𝑫 𝑖  
+
+> image
+
+∈ R64 ×50 
+
+(a) 25 paths (b) 13 paths 
+
+Fig. 1: Images for different number of multipaths are generated by duplicating each element of the pre-processed channel matrix horizontally and vertically. 4
+
+Fig. 1 illustrates the process of generating images from the original data matrices for two different multipath scenarios. As shown in Fig. 1(b), when the number of multipaths is 13 
+
+(< 25 ), the virtual values are filled to make the size of the data matrix consistent. Note that the virtual paths are introduced solely for training purposes, to equalize the dimension of the data matrices, and are discarded after data generation based on the pathloss threshold of 180 dB . The virtual values are ran-domly sampled, rather than set to constants, because constant padding would create large uniform regions without textural variation, preventing the network from exploiting the texture bias of CNNs. In addition, we duplicate the image channel by 
+
+3 times, and thus the final image size is ˜𝑫 𝑖  
+
+> image
+
+∈ R3×64 ×50 
+
+IV. DESIGN OF CONDITIONAL GENERATIVE MODEL The objective of the proposed GBSM is to capture channel statistics for a specific region that corresponds to certain conditions, such as RX heights, distances between TX and RX, and carrier frequencies. Therefore, we need to design a generative model that can conditionally output the channel parameters. There exist various types of generative models such as VAE and diffusion model, but in this work we employ Wasserstein generative adversarial networks (WGAN) [29]. 
+
+A. Overview Of WGAN-GP 
+
+Generative adversarial networks (GANs) [30] have been a popular generative model for many years, but face several challenges, such as training instability and mode collapse. For this reason, WGANs were introduced to resolve the issues of traditional GANs [29]. Unlike the KL divergence, which suffers from vanishing gradients when the two distributions have disjoint supports, WGAN adopts the Wasserstein-1 dis-tance, also known as the Earth Mover (EM) distance, to ensure smoother and more informative gradients throughout training. The EM distance is made tractable via the Kantorovich-Rubinstein duality [31], which yields 
+
+𝑊 (P𝑟 , P𝜽 ) = sup    
+
+> ∥𝑓 ∥𝐿 ≤1
+
+E𝒙 ∼P𝑟 [ 𝑓 (𝒙 )] − E𝒙 ∼P𝜽 [ 𝑓 (𝒙 )] (4) where 𝜽 denotes the parameters of generator, P𝑟 and P𝜃 are the distributions of real data and outputs from generator, and the supremum is over all the 1-Lipschitz functions 𝑓 , ∥ 𝑓 ∥𝐿 ≤ 1.Therefore, the loss of critic is defined as 
+
+𝐿 𝐶  
+
+> 𝝓
+
+= − (E𝒙 ∼P𝑟 
+
+[ 𝑓 𝝓 (𝒙 )] − E𝒛 ∼ 𝑝 (𝒛 )
+
+[ 𝑓 𝝓 (𝑔 𝜽 (𝒛 )) ] ) (5) where 𝝓 indicates the parameters of the critic that we should train, 𝑓 𝝓 is the critic function having parameter 𝝓 , and 𝒛 
+
+is a latent variable following standard normal distribution. Theorem 3 in [29] shows that the optimal parameter 𝜽 for the generator satisfying Eq. 5 can be found by 
+
+∇𝜽 𝑊 (P𝑟 , P𝜽 ) = −E𝒛 ∼ 𝑝 (𝒛 )
+
+[∇𝜽 𝑓 𝝓 (𝑔 𝜽 (𝒛 )) ] (6) where 𝑔 𝜽 is generator function having parameter 𝜽 . Thus, the loss of generator is simply defined as 
+
+𝐿 𝐺  
+
+> 𝜽
+
+= −E𝒛 ∼ 𝑝 (𝒛 )
+
+[ 𝑓 𝝓 (𝑔 𝜽 (𝒛 )) ] (7) The authors in [32] propose one more condition to find the optimal critic 𝑓 𝝓 using the fact that the gradient norm of 𝑓 𝝓 at 
+
+Fig. 2: WGAN-GP with general wireless conditions the interpolated point between the generated and the real data samples is equal to one. Accordingly, the new critic loss with an appended gradient penalty term is defined as follows 
+
+𝐿 𝐶  
+
+> 𝝓
+
+= − (E𝒙 ∼P𝑟 
+
+[ 𝑓 𝝓 (𝒙 )] − E𝒛 ∼ 𝑝 (𝒛 )
+
+[ 𝑓 𝝓 (𝑔 𝜽 (𝒛 )) ] ) 
+
++ 𝜆 E 
+
+> ˆ𝒙 ∼Pˆ𝒙
+
+[(
+
+∇ ˆ𝒙 𝑓 𝝓 ( ˆ𝒙 ) 2 − 1
+
+)2]
+
+(8) where ˆ𝒙 = 𝑡 𝒙 + ( 1 − 𝑡 )𝑔 𝜽 (𝒛 ) for 0 ≤ 𝑡 ≤ 1. We will reduce the loss values given by Eq. 7 and Eq. 8 to find the optimal parameters 𝜽 and 𝝓 of the generator and critic in WGAN. 
+
+B. Structure of Conditional WGAN-GP 
+
+To conditionally generate channel parameters, we concate-nate conditional information to the inputs of the generator and critic using fully connected (FC) networks. Fig. 2 describes the structure of WGAN-GP with general wireless conditions, such as 2D distances, heights, carrier frequencies, and network environments, which can be embedded in both the generator and the critic, respectively, through FCs. As we mentioned earlier, we can increase the conditional variables with the functions of the original conditions. Table I summarizes the structure of the convolutional layers consisting of generator and critic, respectively. The latent variable 𝒛 and the embedded conditional variables serve as the input for the generator, whereas the critic’s input consists of the real image, the generated image, and embedded conditional variables. As an activation function between the convolutional layers, the LeakyReLU function is used after some normal-ization process. All detailed implementations are available at [33]. TABLE I: Architectures of Generator and Critic                                                                                                
+
+> Generator 𝐺 (𝒛 )
+> Kernel size Resample Output shape Channels
+> 𝒛 --25 -Conv [3×3]Up 3×3512
+> Conv [6×4]Up 8×6256
+> Conv [4×4]Up 16 ×12 128
+> Conv [4×5]Up 32 ×25 64
+> Conv [4×4]Up 64 ×50 3
+> Critic 𝐶 (𝒙 , 𝐺 (𝒛 ) )
+> Conv [3×3]Down 32 ×25 64
+> Conv [4×4]Down 16 ×12 128
+> Conv [4×4]Down 8×6256
+> Conv [4×4]Down 4×3512
+> Conv [5×4]Down 1×115
+
+V. CASE STUDY AND RAY-TRACING SIMULATION In this section, we discuss the case study on GSBM with conditional constraints and explain the corresponding ray-tracing simulation to obtain the wireless channel parameters in the given region. Note that the main assumption throughout this work is that the TX and RX locations are known. 
+
+A. Case Study: Varying RX Heights and 2D Distances 
+
+As a case study, we want to capture the statistical distri-bution of local scatterers at different 2D distances between TXs and RXs. In addition, we take into account different RX heights with the carrier frequency fixed. Thus, the learning process of the statistical distribution of the data matrix 𝑫 can be described as follows: 
+
+𝑃 (𝑫 |dist 2d , h) = 𝑃 (𝑇 · 𝐺 (dist 2d , h)) (9) where 𝐺 is conditional generative model—WGAN-GP in our work, and 𝑇 is an operator to perform image-to-data mapping process, i.e., the process from outputs of the model to the original data matrix 𝑫 . The correlations between the elements of the matrix 𝑫 are captured through the data-to-image mapping process and convolutional operations. We can add more conditional variables as functions of 2D distance dist 2d and height h, e.g., 3D distances and zenith angles. In this study, the five discrete RX heights, 1.6 m , 30 m ,
+
+60 m , 90 m , and 120 m , are considered as the conditions of terrestrial and aerial channels simultaneously. Note that 2Ddistance values obtained from all pairs of TX and RX are 
+
+continuous in the range of the network area. 
+
+B. Ray-Tracing Simulation 
+
+To obtain channel parameters for the case study, we run a ray-tracing simulation on Herald Square in New York City, which can be considered a typical dense urban area. The carrier frequency of 12 GHz is chosen in the upper mid-band, known for its potential as a promising spectrum for future networks [34]–[36]. All electrical properties, including permeability and conductivity, at 12 GHz are specified for each material following the standard values specified in the International Telecommunication Union (ITU) [37], [38]. 
+
+Fig. 3: Herald Square in New York City for ray-tracing simulation. ( 1120 m × 510 m ). The green rectangles represent TXs, and the yellow rectangles are RXs. Fig. 3 shows the area, Herald Square in New York City, for the ray-tracing simulation where TXs are placed on top of buildings and RXs are dropped on the outdoor street randomly. In Fig. 3, different colors indicate different materials. For example, gray is concrete, light blue is glass, and brown is brick. To capture transmitted rays in all directions, TXs and RXs are equipped with single isotropic antennas. In this simulation, we deploy 79 TXs on top of buildings and 1526 
+
+outdoor RXs for five different heights: 1.6, 30, 60, 90, 120 m .Thus, in total 79 ×5×1526 = 602 , 770 links are obtained, which can be used to model integrated aerial-terrestrial wireless channels. VI. MODEL TRAINING AND DATA RECONSTRUCTION We confirmed that within 20 epochs of training, the channel images generated from the model become similar to the original ones. The hyperparameters for training are listed in Table II. Fig. 4 shows that the negative critic loss during model training converges to zero. Considering the meaning of critic loss by Eq. 8, we observe that the generator minimizes the EM distance 𝑊 (P𝒓 , P𝜽 ) as the loss converges. Thus, we stopped training the model when the negative critic loss is close to 0.After training the model, the output matrices ˜𝑫 image ∈
+
+R3×64 ×50 of WGAN-GP are processed to recover the original range of values, following reversely all the steps described in Section III. The detailed data reconstruction procedures are followings:  
+
+> •
+
+First, the size of the output matrices should be reduced using an appropriate sampling method. 
+
+˜𝑫 image ∈ R3×64 ×50 → ˜𝑫 ∈ R8×25 
+
+TABLE II: Hyper-parameters to train WGAN-GP            
+
+> Generator Critic
+> Input image size [64, 50 ,3] Learning rate 10 −4
+> Optimizer Adam ( 𝛽 1=0.5,𝛽 2=0.9)Epochs 20 Batch size 256
+
+Fig. 4: The negative critic loss of the proposed model 6
+
+(a) (b) (c) (d) (e) 
+
+Fig. 5: CDFs of pathloss for (a) 1.6 m , (b) 30 m , (c) 60 m , (d) 90 m , and (e) 120 m 
+
+(a) (b) (c) (d) (e) 
+
+Fig. 6: CDFs of propagation delay for (a) 1.6 m , (b) 30 m , (c) 60 m , (d) 90 m , and (e) 120 m 
+
+In this work, we simply sample the first element of the repeated area: [ ˜𝑫 ]𝑖, 𝑗 = [ ˜𝑫 image 
+
+]  
+
+> 0,8×𝑖, 2×𝑗
+
+where 
+
+𝑖 = 0, 1, · · · , 7 and 𝑗 = 0, 1 · · · , 24 . 
+
+> •
+
+After reducing the size of the model outputs, all elements are recovered by inverse Min-Max scaling. In particular, to recover pathloss and delay values, FSPL and minimum delay values computed using Eq. 3a and Eq. 3b are added to pathloss and delay values after applying the inverse Min-Max scaling.  
+
+> •
+
+To determine the state of the link, we take the average of the last row of the output matrix ˜𝑫 ∈ R8×25 . If the average value of the last row is positive, the link state is classified as LOS; otherwise, it is classified as NLOS.  
+
+> •
+
+Since the LOS path is geometrically determined, all channel parameters of the first arrival path must be deter-ministic , whereas the trained model produces inherently stochastic outputs. Therefore, whenever the link state in 
+
+˜𝑫 indicates LOS, the first column of ˜𝑫 is replaced by the deterministic values obtained from Eq. 3a–3g based on the TX and RX coordinates, consistent with standard channel modeling methodologies such as 3GPP TR 38.901 [1].  
+
+> •
+
+Finally, virtual paths are identified and removed when the pathloss values exceed the outage pathloss threshold (180 dB ). In this way, the proposed model stochastically generates a varying number of multipath components conditioned on the input parameters. VII. EVALUATION ON TRAINED MODEL In this section, we evaluate the channel statistics captured by the WGAN-GP by comparing its outputs with the original data. TABLE III: EM Distance                                           
+
+> RX height 𝒑 𝝉 𝝓 tx 𝜽 tx 𝝓 rx 𝜽 rx 𝝍
+> 1.6 m 0.015 0.008 0.018 0.013 0.015 0.006 0.010 30 m 0.017 0.013 0.019 0.012 0.017 0.006 0.009 60 m 0.020 0.016 0.024 0.017 0.022 0.013 0.007 90 m 0.015 0.010 0.024 0.018 0.020 0.010 0.007 120 m 0.016 0.011 0.026 0.016 0.024 0.012 0.008
+
+A. EM Distance Evaluation 
+
+Since the value range of each parameter differs, a direct comparison of the EM distances across parameters would be misleading. To ensure a fair comparison, the EM distance is computed in the normalized domain, i.e., between the model outputs before the data reconstruction process and the original data after normalization, where all parameter values lie within [− 1, 1]. Table III summarizes the EM distance results. Given that the maximum possible EM distance is 2 in the normalized domain, the measured values are negligible, which implies that the proposed model sufficiently captures the underlying distribution of the original data. While the EM distance quantitatively confirms the overall fidelity, it does not reveal the distributional characteristics of individual channel parameters. The following subsections thus complement this quantitative assessment with visual comparisons of each pa-rameter, including CDF and heatmap analyses. 
+
+B. Pathloss and Delay Distributions 
+
+Fig. 5 shows CDFs of pathloss on all paths over all links. We observe that the CDFs drawn by the data from the model align well with the CDFs from the original data. In particular, the conditionality by heights holds, as we observe 7
+
+(a) (b) (c) (d) (e) 
+
+Fig. 7: Link state probability (LOS and outage) for (a) 1.6 m , (b) 30 m , (c) 60 m , (d) 90 m , and (e) 120 m 
+
+Fig. 8: Link state probability by RX height and 2D distance that the probability of pathloss > 160 dB decreases for higher altitudes. This tendency can be mainly explained by the higher probability of achieving LOS at higher altitudes. Similarly, as shown in Fig. 6, we observe that two CDFs (model and data) of propagation delays on all paths of all links are well matched. In addition, we see the different conditional distributions at each height, as the probability of 𝜏 < 1𝜇𝑠 
+
+decreases at higher altitudes. This is mainly because, in dense urban areas, the NLOS propagation paths are dominant when the RX heights are lower. 
+
+C. Link State Probabilities 
+
+Fig. 7 shows the probabilities of LOS and link failure at different 2D distances. We define a link outage if all pathloss values of a multipath are greater than 180 dB . As expected, due to the increase in the visibility of RXs at higher altitudes, the probability of LOS is higher at higher altitudes, whereas the probability of outage is lower. In Fig. 7, we can confirm the relationship between the probability of LOS and the RX height. In addition, we see that the link state probabilities (LOS and outage) at each height ob-tained from our model are well matched with the probabilities calculated with the original data. This result indicates that the trained model effectively captures both conditional constraints: 2D distances and heights. Furthermore, Fig. 8 shows the probability of LOS for all 2D distances and RX heights. Although we only used five discrete values of the RX heights, we can observe that the model shows the probable trend of LOS probability over all RX heights. This result implies that the trained model performs the statistical interpolation with respect to the RX heights. 
+
+D. Distributions of Arrival and Departure Angles 
+
+To examine the angular distributions from the trained model, we take into account the angles relative to the LOS directions. 
+
+(a) 
+
+(b) 
+
+Fig. 9: PDFs of relative (a) ZOD and (b) ZOA over 2D distances In this case, we can only evaluate the statistics of the ZOD and ZOA under the conditions of 2D distances and heights. We define a random variable, a relative angle to the LOS direction, simply by subtracting the ZOD and ZOA of the LOS, which can be computed using Eq. 3e and 3f. Consequently, the probability density function (PDF) for the relative angle of ZOD conditioned on 2D distance dist 2d and height h is described as follows: 
+
+𝑃 (𝜃 tx (dist 2d , h) − 𝜃 tx LOS (dist 2d , h)) 
+
+= 𝑃 
+
+(
+
+𝜃 tx (dist 2d , h) − arctan ( dist 2d 
+
+h )
+
+)
+
+(10) In the same way, we define the PDF of ZOAs relative to LOS direction using Eq. 3f. Fig. 9 depicts the PDFs of ZOA and ZOD as heatmaps obtained from the original data and outputs of our model at different RX heights. Each column in the heatmaps represents the PDF calculated at the corresponding 2D distance. On the one hand, as the 2D distances increase, we observe that ZOA and ZOD have less angular spread as a result of less scattering at a far distance. On the other hand, since the local scattering increases at a closer distance, we see a large variation of the relative angles until 200 m of the 2D distance. 8
+
+Fig. 10: CDFs of AOA, AOD and arrival phase Specifically, local scattering occurs mostly in downward di-rections at close distances. Accordingly, Fig. 9(a) and Fig. 9(b) illustrate the following interesting results:  
+
+> •
+
+On the TX side, we can easily confirm that the LOS ZOD decreases as the RX height increases. As shown in Fig. 9(a), at 1.6 m altitude, we observe a higher probabil-ity at negative relative angles (LOS ZODs > ZODs). On the contrary, at 120 m altitude, positive relative angles (ZODs > LOS ZODs) have a higher probability as the LOS ZODs decrease.  
+
+> •
+
+On the RX side, as opposed to the TX case, the LOS ZOA increases as the RX height increases. Therefore, in Fig. 9(b), the positive relative angles (ZOAs > LOS ZOAs) have higher probabilities at 1.6 m altitude, while at 
+
+120 m altitude, the probability of negative relative angles (LOS ZOAs > ZOAs) is higher. Since the conditional variables are 2D distances and heights, azimuth angles (AOA, AOD) and arrival phases follow the 
+
+uniform distribution. Note that for AOA and AOD statistics, Eq. 10 is not applicable due to the limited conditions and, therefore, it is not possible to show heatmaps of PDFs such as Fig. 9(a) and Fig. 9(b). In other words, to calculate LOS azimuth angles, Eq. 3c is not applicable due to 
+
+𝑃 (𝜙 tx |dist 2d , h) ≠ 𝑃 (𝜙 tx |dx , dy , h)
+
+where dx = xrx − xtx and dy = yrx − ytx .As shown in Fig. 10, the distributions of AOA, AOD, and arrival phase follow uniform distribution at each height owing to the use of the 2D distance conditionality. 
+
+E. Distributions of Root Mean Square Values 
+
+To quantify the characteristics of multipath channels, we briefly discuss the root mean square (RMS) spread for the delay, azimuth, and zenith angles, which represents the degree of sparsity or richness of the multipath channels. According to [39], the general RMS spread values for a multipath feature 
+
+𝒅 are calculated as follows: 
+
+𝑑 𝑟 𝑚𝑠 =
+
+√ Õ𝑘 (𝑑 𝑘 − 𝑑 𝑚 )2 𝑃 𝑘 
+
+Õ𝑘 𝑃 𝑘 
+
+, 𝑑 𝑚 =
+
+’
+
+> 𝑘
+
+𝑑 𝑘 𝑃 𝑘 
+
+Õ𝑘 𝑃 𝑘 
+
+where 𝑃 𝑘 is path gain, 𝑑 𝑘 is a channel parameter such as excess delay , arrival and departure angles at kth path. RMS values are instrumental metrics in dense urban environments where there are many local scatterers. We consider the RMS values of delay, AOA, AOD, ZOA, and ZOD when the RX height is 
+
+1.6 m , as at lower altitudes rich scattering can occur. The statistical distributions of the RMS values are shown in Fig. 11 as CDF for AOA, AOD, ZOA, ZOD and delay. As shown, we observe that the distributions are very closely aligned with those of the original data. These results imply that the WGAN-GP statistically captures the multipath char-acteristics that reflect rich or sparse scattering. 
+
+F. Correlation among Multipath Components 
+
+Capturing the correlations between different multipath com-ponents is significant since all the components of a commu-nication link are strongly correlated. However, for simplicity in the analysis and due to the space limit, we only consider the correlations between the second-strongest path components 
+
+𝒖 = [ 𝑝 2, 𝜏 2, 𝜙 tx 2 , 𝜃 tx 2 , 𝜙 rx 2 , 𝜃 rx 2 , 𝜓 2].The normalized correlation matrix, known as Pearson’s correlation matrix, 𝑹 ∈ R7×7 for a second-strongest path can be defined as follows: 
+
+𝑹 𝑖 𝑗 =
+
+Õ𝑛 𝑘 =1
+
+(𝒖 𝑖,𝑘 − ¯𝒖 𝑖 
+
+) ( 𝒖 𝑗,𝑘 − ¯𝒖 𝑗 
+
+)√Õ𝑛 𝑘 =1
+
+(𝒖 𝑖,𝑘 − ¯𝒖 𝑖 
+
+)2
+
+√Õ𝑛 𝑘 =1
+
+(𝒖 𝑗,𝑘 − ¯𝒖 𝑗 
+
+)2
+
+where 𝑛 is the number of samples, and the bar symbol ¯
+
+indicates the average value over the sampled data. As baseline schemes, we train the WGAN-GP with FC net-works and the CVAE [20] with the same data to demonstrate the benefits of employing CNNs in the proposed model. Fig. 12 shows the heatmaps of the correlation matrices 𝑹 computed from the original data and the outputs of the generative models—Conv. WGAN-GP, FC WGAN-GP, and CVAE [20]— when the 2D distance and the RX height are fixed at 150 m 
+
+(a) (b) (c) (d) (e) 
+
+Fig. 11: RMS CDFs for (a) delay, (b) AOA, (c) AOD, (d) ZOA, and (e) ZOD 9
+
+Fig. 12: Correlation matrices from data and generative models 2D distance [m]      
+
+> 0100 200 300 400 500
+> CMD
+> 0
+> 0.02
+> 0.04
+> 0.06
+> 0.08
+> 0.1
+> 0.12
+> 0.14
+> 0.16
+> 0.18
+> 0.2
+> Conv. WGAN-GP
+> FC WGAN-GP
+> CVAE [20]
+
+Fig. 13: CMDs between the original data and three generative models: Conv. WGAN-GP, FC WGAN-GP, and the CVAE in [20] and 120 m , respectively. Note that the CVAE [20] considers only six channel parameters, excluding the phase 𝜓 2, which accounts for the blank entries in its correlation matrix. Fig. 12 visually confirms that the correlation matrix gen-erated by the proposed model is more similar to that of the original data than those of the baseline schemes, which implies that employing convolutional neural networks is essential for capturing the correlation between multipath components. In particular, the FC WGAN-GP and the CVAE [20] largely fail to reproduce the correlation structure of the original data, confirming the limitation of FC-based architectures. In addition, the correlation matrix distance (CMD) between two different correlation matrices can be quantified as de-scribed in [40], [41]. 
+
+CMD ( 𝑹 1, 𝑹 2) = 1 − trace ( 𝑹 1 𝑹 2)∥ 𝑹 1 ∥F ∥ 𝑹 2 ∥F
+
+∈ [ 0, 1]
+
+where ∥ · ∥ 𝐹 denotes Frobenius norm. CMD becomes close to zero when 𝑹 1 and 𝑹 2 are very similar. We compute and compare the CMD between the original data and the outputs of each generative model, denoted as CMD FC , CMD Conv , and 
+
+CMD CVAE for the FC WGAN-GP, the Conv. WGAN-GP, and the CVAE [20], respectively. As shown in Fig. 13, the FC WGAN-GP and the CVAE [20] result in higher CMD values than the Conv. WGAN-GP over the entire distance range. In particular, when the TX and the RX are located at close distances, i.e., within 200 m , the gap between CMD Conv and the other two metrics becomes most pronounced. Given that a TX and an RX are frequently associated at close distances in practical deployments, this result emphasizes the significance of constructing channel images and employing convolutional layers, which enable the generative model to faithfully reproduce the joint distribution of the original data. 
+
+G. Interpolation Capability on Unseen Conditions 
+
+The last evaluation step is whether the trained model per-forms data synthesis well for conditional inputs that are not included in the training data. In particular, we want to check how the trained model performs the statistical interpolation with respect to the 2D distance dist 2d , since there are only five conditions of RX heights. To assess the interpolation capability of the trained model, the dataset is partitioned into training and held-out sets based on the 2D distance conditions, rather than through random splitting. Specifically, to account for the non-uniform distribution of the 2D distance conditions, the training and held-out sets are constructed from bins defined at the empirical quantiles of the 2D distance conditions, ensuring that each bin contains an equal number of links. Let S = {dist (1) 
+
+> 2d
+
+, . . . , dist ( 𝑀 ) 
+
+> 2d
+
+}, with |S| = 𝑀 , denote the set of 2D distances of all links. We place the bin boundaries at the empirical quantiles of S such that every bin contains the same number of links. Let 𝐹 denote the CDF of S. The bin boundaries are given by 
+
+𝑏 𝑖 = 𝐹 −1
+
+( 𝑖 𝑁 
+
+)
+
+, 𝑖 = 0, 1, . . . , 𝑁 
+
+and the 𝑖 -th bin is defined as 
+
+B𝑖 = {dist 2d ∈ S | 𝑏 𝑖 −1 ≤ dist 2d < 𝑏 𝑖 } , 𝑖 = 1, . . . , 𝑁 
+
+where the upper boundary of the last bin B𝑁 is closed so that it includes max S. By construction, each bin contains 𝑀 /𝑁 
+
+links. Within each bin, the 2D distance conditions are further partitioned according to a split ratio 𝑝 ∈ ( 0, 1). For the 𝑖 -th bin, the intra-bin split boundary is defined as the 𝑝 -quantile of the bin, i.e., 
+
+𝑐 𝑖 = 𝐹 −1
+
+( 𝑖 − 1 + 𝑝 𝑁 
+
+)
+
+, 𝑖 = 1, . . . , 𝑁 
+
+so that the training and held-out sets are given by 10 2 4 8 16 
+
+Number of bins N
+
+1
+
+1.1 
+
+1.2 
+
+1.3 
+
+1.4 
+
+1.5 
+
+1.6 
+
+1.7 
+
+1.8 
+
+1.9 
+
+2
+
+> Normalized EM distance
+> EM( p)/EM( p=1)
+
+p = 0.25 
+
+p = 0.5 
+
+p = 0.75 
+
+Fig. 14: Normalized EM distances vs. number of bins 𝑁 for different values of 𝑝 
+
+Strain (𝑁, 𝑝 ) =
+
+> 𝑁
+
+ÿ
+
+> 𝑖 =1
+
+{dist 2d ∈ S | 𝑏 𝑖 −1 ≤ dist 2d < 𝑐 𝑖 } ,
+
+Sheld −out (𝑁, 𝑝 ) =
+
+> 𝑁
+
+ÿ
+
+> 𝑖 =1
+
+{dist 2d ∈ S | 𝑐 𝑖 ≤ dist 2d < 𝑏 𝑖 } .
+
+This equal-mass partition guarantees that the training set contains exactly a fraction 𝑝 of all links, i.e., |S train | = 𝑝𝑀 ,independently of 𝑁 . The model is trained only on the data whose 2D distances belong to Strain , and is evaluated on the data whose 2D distances belong to Sheld −out .The EM distances are normalized by the EM distance obtained at 𝑝 = 1, corresponding to the case in which the model is trained on the entire dataset. Fig. 14 shows the normalized EM distance versus the number of bins 𝑁 
+
+for different split ratios 𝑝 . Although the same amount of training data is used across different values of 𝑁 for a fixed 
+
+𝑝 , we observe that the normalized EM distance decreases as 𝑁 increases, indicating that a finer partitioning of the 2D distance range improves interpolation performance even without additional training data. Specifically, when the split ratio is large (e.g., 𝑝 = 0.75 )but the number of bins is small, the normalized EM distance remains relatively high, indicating limited interpolation capa-bility despite the larger amount of training data. In contrast, when the split ratio is small (e.g., 𝑝 = 0.25 ) but the number of bins is large, a comparably low normalized EM distance is achieved. Notably, at 𝑁 = 16 , the model trained with 
+
+𝑝 = 0.25 achieves a normalized EM distance of 1.4, matching that obtained with 𝑝 = 0.75 at 𝑁 = 2, despite using only one-third of the training data. This result suggests that the granularity of the distance partitioning, rather than the amount of training data alone, plays a critical role in achieving good interpolation performance under limited data conditions. This finding indicates that the proposed model reliably synthesizes channels under held-out 2D distance conditions, provided that sufficient granularity of the condition split is ensured, thereby supporting its practical value as a data-efficient alternative to directly resampling the ray-tracing database. VIII. APPLICATION OF PROPOSED MODEL In this section, we validate the applicability of our model by comparing the simulation results obtained from two different channel models: the deterministic channel model, which was built from ray-tracing data, and our proposed channel model. 
+
+A. Simulation Settings 
+
+We consider the coverage of UEs in the dense urban area Herald Square in New York City, when changing the density of BSs. This evaluation is similar to the previous drop-based simulation work carried out in [42]. We set up the same simulation parameters as in [42], and the detailed parameters are listed in Table IV. BSs are deployed according to a homogeneous Poisson point process with a given average intersite distance (ISD), and UEs are dropped at random in the given network area. Each UE is associated with one BS that provides the maximum signal-to-noise ratio (SNR). The frequency-selective MIMO channel for uplink (UE → BS) 𝑯 ( 𝑓 ) ∈ C64 ×2 between BS and UE is built taking the Fourier transform of Eq. 1. We simply assume optimal beamforming vectors in BSs and UEs: maximum right and left singular vectors of 𝑯 ( 𝑓 ). To eliminate the effect of multipath fading, i.e., frequency-selective fading, for each UE we take the average SNR over available carrier frequencies 𝑓 .SNR = 𝑃 𝑡 𝑥 E 𝑓 
+
+[|𝒘 H 
+
+> 𝑟
+
+( 𝑓 )𝑯 ( 𝑓 )𝒘 𝑡 ( 𝑓 )| 2]
+
+𝑃 𝑁 
+
+(11) where 𝑃 𝑡 𝑥 , 𝒘 𝑟 ∈ C64 ×1, and 𝒘 𝑡 ∈ C2×1 are beamforming vectors for BSs and UEs, and 𝑃 𝑁 is noise power. 
+
+B. Simulation Results 
+
+With the same simulation settings, the SNR value per UE is calculated for two different channel models: 1) our proposed channel model and 2) the channel based on ray-tracing data. Fig. 15 shows simulation results as the SNR CDFs for different channel models when changing ISDs. When ISDs are 200 m 
+
+and 300 m , we observe that the CDFs from the two channel TABLE IV: Simulation parameters.                           
+
+> Parameter Value
+> Area (m 2)1120 ×510
+> ISD (m) 200 ,300
+> Height of UEs (m)1.6
+> Bandwidth (MHz) 200
+> Frequency (GHz) 12
+> UE noise figure (dB) 7
+> UE TX power (dBm) 23
+> BS antenna configuration 8×8URA UE antenna configuration 2×1ULA Number of BS sectors 3Antenna tilt angle of BSs −12 ◦
+> Vertical half-power beamwidth ( 𝜃 3dB )65 ◦
+> Horizontal half-power beamwidth ( 𝜙 3dB )65 ◦
+> Field pattern of antenna element 3GPP TR 37.840 [43] 11
+
+Fig. 15: Comparison of SNR distributions with different ISD values models are almost aligned. The small gaps between CDFs of the same ISDs are due to the lack of randomization of the ray-tracing channel. In other words, since the amount of ray-tracing data is limited, considering all possible deployments of BSs is im-possible, while our proposed model makes it possible. The simulation results corroborate that our proposed model is sufficient to analyze the system performance, such as coverage and interference, for any given specific area. IX. CONCLUSION AND FUTURE WORK Developing a theoretical GBSM that accurately captures all statistical characteristics of local scatterers is both highly challenging and computationally expensive. To address this challenge, this work proposes a simplified approach for con-structing a GBSM under specific wireless propagation condi-tions by employing generative neural networks; in particular, the well-known WGAN-GP is adopted. We propose a data-to-image mapping that converts all channel parameters into 
+
+channel images , thereby reducing the complexity of WGAN-GP training and implementation. After training the proposed model, we confirm that the statistics of all channel parameters generated by the WGAN-GP, including the correlations be-tween multipath components, faithfully match the distributions of the original data. In addition, we demonstrate the applicabil-ity of the proposed model through a drop-based system-level simulation. Consequently, given wireless channel data corresponding to any geometry or a specific site, the proposed data-to-image mapping can be combined with other generative models for GBSM construction; depending on the required modeling accuracy and the affordable implementation complexity, the CVAE or diffusion models can also be employed. Moreover, while this work validates the proposed framework on a single urban scenario at one carrier frequency, the mapping itself is agnostic to the propagation environment. Accordingly, a com-prehensive comparison across generative model families, to-gether with extended validation over held-out receiver heights, multiple carrier frequencies, diverse environmental scenarios, and different ray-tracing configurations, remains an important direction for future work. REFERENCES 
+
+[1] 3rd Generation Partnership Project (3GPP), “Study on channel model for frequencies from 0.5 to 100 ghz,” 3GPP TR 38.901 , vol. 17.1.0, Jan. 2024, release 17. [2] 3GPP, “TR 36.777, 3rd generation partnership project; technical speci-fication group radio access network; study on enhanced lte support for aerial vehicles,” 2017. [3] ——, “TR 38.811,3rd generation partnership project; technical specifi-cation group radio access network; study on new radio (nr) to support non-terrestrial networks,” 2020. [4] “Remcom,” available on-line at https://www.remcom.com/ .[5] Y. de Jong, R. Chaharmir, S. Raut, D. McLachlan, M. Zhang, G. Bedrosian, M. Schmiedekamp, J. DeLancey, and R. S. Belmonte, “Ray-optical modeling of wireless coverage enhancement using engi-neered electromagnetic surfaces: Experimental verification at 28 ghz,” in 2023 53rd European Microwave Conference (EuMC) . IEEE, 2023, pp. 702–705. [6] Phil Vigneron, “Millimetre Waves:Modelling and Simulation to Engineer for Coverage,” August 2017. [Online]. Available: https: //its .ntia .gov/media/66446/vigneron_isart2017 .pdf [7] X. Yin and X. Cheng, Propagation channel characterization, parameter estimation, and modeling for wireless communications . John Wiley & Sons, 2016. [8] A. S. Akki and F. Haber, “A statistical model of mobile-to-mobile land communication channel,” IEEE transactions on vehicular technology ,vol. 35, no. 1, pp. 2–7, 1986. [9] M. Patzold, B. O. Hogstad, and N. Youssef, “Modeling, analysis, and simulation of mimo mobile-to-mobile fading channels,” IEEE Transac-tions on Wireless Communications , vol. 7, no. 2, pp. 510–520, 2008. [10] X. Cheng, C.-X. Wang, D. I. Laurenson, S. Salous, and A. V. Vasilakos, “An adaptive geometry-based stochastic model for non-isotropic mimo mobile-to-mobile channels,” IEEE transactions on wireless communica-tions , vol. 8, no. 9, pp. 4824–4835, 2009. [11] A. G. Zajic and G. L. Stuber, “Space-time correlated mobile-to-mobile channels: Modelling and simulation,” IEEE Transactions on Vehicular Technology , vol. 57, no. 2, pp. 715–726, 2008. [12] J. W. Wallace and M. A. Jensen, “Statistical characteristics of measured mimo wireless channel data and comparison to conventional models,” in IEEE 54th Vehicular Technology Conference. VTC Fall 2001. Pro-ceedings (Cat. No. 01CH37211) , vol. 2. IEEE, 2001, pp. 1078–1082. [13] K.-H. Li, M. A. Ingram, and A. Van Nguyen, “Impact of clustering in statistical indoor propagation models on link capacity,” IEEE Transac-tions on Communications , vol. 50, no. 4, pp. 521–523, 2002. [14] L. Zhou, F. Luan, S. Zhou, A. F. Molisch, and F. Tufvesson, “Geometry-based stochastic channel model for high-speed railway communications,” 
+
+IEEE Transactions on Vehicular Technology , vol. 68, no. 5, pp. 4353– 4366, 2019. [15] J. Karedal, F. Tufvesson, N. Czink, A. Paier, C. Dumard, T. Zemen, C. F. Mecklenbrauker, and A. F. Molisch, “A geometry-based stochastic mimo model for vehicle-to-vehicle communications,” IEEE transactions on wireless communications , vol. 8, no. 7, pp. 3646–3657, 2009. [16] A. Roivainen, C. F. Dias, N. Tervo, V. Hovinen, M. Sonkki, and M. Latva-aho, “Geometry-based stochastic channel model for two-story lobby environment at 10 ghz,” IEEE transactions on antennas and propagation , vol. 64, no. 9, pp. 3990–4003, 2016. [17] J. Yang, B. Ai, K. Guan, D. He, X. Lin, B. Hui, J. Kim, and A. Hrovat, “A geometry-based stochastic channel model for the millimeter-wave band in a 3gpp high-speed train scenario,” IEEE Transactions on Vehicular Technology , vol. 67, no. 5, pp. 3853–3865, 2018. [18] Y. Yang, Y. Li, W. Zhang, F. Qin, P. Zhu, and C.-X. Wang, “Generative-adversarial-network-based wireless channel modeling: Challenges and opportunities,” IEEE Communications Magazine , vol. 57, no. 3, pp. 22– 27, 2019. [19] T. Orekondy, A. Behboodi, and J. B. Soriaga, “Mimo-gan: Generative mimo channel modeling,” in ICC 2022-IEEE International Conference on Communications . IEEE, 2022, pp. 5322–5328. [20] W. Xia, S. Rangan, M. Mezzavilla, A. Lozano, G. Geraci, V. Semkin, and G. Loianno, “Generative neural network channel modeling for millimeter-wave uav communication,” IEEE Transactions on Wireless Communications , 2022. 12 
+
+[21] Y. Hu, M. Yin, W. Xia, S. Rangan, and M. Mezzavilla, “Multi-frequency channel modeling for millimeter wave and thz wireless communication via generative adversarial networks,” in 2022 56th Asilomar Conference on Signals, Systems, and Computers . IEEE, 2022, pp. 670–676. [22] H. Xiao, W. Tian, W. Liu, and J. Shen, “Channelgan: Deep learning-based channel modeling and generating,” IEEE Wireless Communica-tions Letters , vol. 11, no. 3, pp. 650–654, 2022. [23] S. Seyedsalehi, V. Pourahmadi, H. Sheikhzadeh, and A. H. G. Foumani, “Propagation channel modeling by deep learning techniques,” arXiv preprint arXiv:1908.06767 , 2019. [24] A. D. McCarthy, X. Li, J. Gu, and N. Dong, “Addressing posterior collapse with mutual information for improved variational neural ma-chine translation,” in Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics , 2020, pp. 8512–8525. [25] D. Tse and P. Viswanath, Fundamentals of wireless communication .Cambridge university press, 2005. [26] R. W. Heath Jr. and A. Lozano, Foundations of MIMO Communication .Cambridge University Press, 2018. [27] “Remcomm [online],” https://www .remcom .com, online; accessed 28 November 2022. [28] R. Geirhos, P. Rubisch, C. Michaelis, M. Bethge, F. A. Wichmann, and W. Brendel, “Imagenet-trained cnns are biased towards texture; in-creasing shape bias improves accuracy and robustness,” in International conference on learning representations , 2018. [29] M. Arjovsky, S. Chintala, and L. Bottou, “Wasserstein generative ad-versarial networks,” in International conference on machine learning .PMLR, 2017, pp. 214–223. [30] I. Goodfellow, J. Pouget-Abadie, M. Mirza, B. Xu, D. Warde-Farley, S. Ozair, A. Courville, and Y. Bengio, “Generative adversarial nets,” 
+
+Advances in neural information processing systems , vol. 27, 2014. [31] C. Villani et al. , Optimal transport: old and new . Springer, 2009, vol. 338. [32] I. Gulrajani, F. Ahmed, M. Arjovsky, V. Dumoulin, and A. C. Courville, “Improved training of wasserstein gans,” Advances in neural information processing systems , vol. 30, 2017. [33] “Geometry-based stochastic wireless channel mod-eling GitHub repository,” available on-line at 
+
+https://github.com/sk8053/GeoStochasticChanModel .[34] FCC Technical Advisory Council, “FCC seeks comment on maximizing efficient use of 12 GHz band,” January 2021. [Online]. Available: https://www .fcc .gov/document/fcc-seeks-comment-maximizing-efficient-use-12-ghz-band [35] ——, “6G working group position paper,” August 2023. [Online]. Available: https://www .fcc .gov/sites/default/files/ Consolidated_6G_Paper_FCCTAC23_Final_for_Web .pdf [36] S. Kang, M. Mezzavilla, S. Rangan, A. Madanayake, S. B. Venkatakrish-nan, G. Hellbourg, M. Ghosh, H. Rahmani, and A. Dhananjay, “Cellular wireless networks in the upper mid-band,” IEEE Open Journal of the Communications Society , 2024. [37] ITU-R, “Electrical characteristics of the surface of the earth,” Geneva, Sep. 2021. [38] ——, “Effects of building materials and structures on radiowave prop-agation above about 100 mhz,” Geneva, Sep. 2021. [39] ITU-R P.1407-6, “Multipath propagation and parameterization of its characteristics,” Jun 2017. [40] M. Herdin, N. Czink, H. Ozcelik, and E. Bonek, “Correlation matrix distance, a meaningful measure for evaluation of non-stationary mimo channels,” in 2005 IEEE 61st Vehicular Technology Conference , vol. 1. IEEE, 2005, pp. 136–140. [41] A. Giuliani, R. Nikbakht, G. Geraci, S. Kang, A. Lozano, and S. Rangan, “Spatially consistent air-to-ground channel modeling via generative neural networks,” IEEE Wireless Communications Letters , 2024. [42] S. Kang, M. Mezzavilla, A. Lozano, G. Geraci, W. Xia, S. Rangan, V. Semkin, and G. Loianno, “Millimeter-wave uav coverage in ur-ban environments,” in 2021 IEEE Global Communications Conference (GLOBECOM) . IEEE, 2021, pp. 1–6. [43] 3GPP, “Study of Radio Frequency (RF) and Electromagnetic Compati-bility (EMC) requirements for Active Antenna Array System (AAS) base station,” TS 37.840.

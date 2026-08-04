@@ -1,0 +1,119 @@
+Title: A Comparative Analysis of MLP and Kolmogorov-Arnold Networks (KAN) for Faster-than-Nyquist (FTN) Signaling Detection
+
+URL Source: https://arxiv.org/pdf/2608.02062v1
+
+Published Time: Tue, 04 Aug 2026 02:49:11 GMT
+
+Number of Pages: 4
+
+Markdown Content:
+# A Comparative Analysis of MLP and Kolmogorov-Arnold Networks (KAN) for Faster-than-Nyquist (FTN) Signaling Detection 
+
+Sude Ertan, Osman Tokluoglu, Enver Çavu¸ s
+
+Department of Electrical and Electronics Engineering, Ankara Yıldırım Beyazıt University, Ankara, Turkey E-mail: suddertan@gmail.com, otokluoglu@aybu.edu.tr, ecavus@aybu.edu.tr 
+
+Abstract —Faster-than-Nyquist signaling improves spectral ef-ficiency by deliberately introducing inter-symbol interference. Classical sequence detectors such as BCJR can approach optimal performance, but their computational cost grows rapidly with channel memory. This paper investigates data-driven FTN BPSK detection under AWGN through a direct comparison between multilayer perceptrons and Kolmogorov Arnold Networks. Alarge-scale Monte Carlo dataset containing nearly four million labeled windows is generated for a time-packing factor of zero point eight and signal-to-noise ratio values from seven to ten decibels. The best MLP obtained from width sweeping uses hidden width thirty two, whereas the selected KAN uses hidden width four with spline grid size five. At ten decibels, the MLP produces a bit error rate of one point three times ten to the minus four, while the KAN reaches seven times ten to the minus six. This corresponds to an eighteen point six times lower bit error rate while using only one eighth of the MLP hidden width. The results show that KAN provides a more effective and more parameter-efficient neural decision model than the MLP baseline for FTN BPSK detection. 
+
+Keywords —KAN, MLP, FTN signaling, BPSK detection, BCJR, neural receiver, parameter efficiency. 
+
+I. INTRODUCTION 
+
+Faster-than-Nyquist signaling is a classical approach for increasing spectral efficiency without increasing the occupied bandwidth [1], [3]. By transmitting symbols faster than the Nyquist interval, FTN deliberately creates deterministic inter-symbol interference and transforms symbol-by-symbol detec-tion into a structured sequence-estimation problem. Although this spectral compression can significantly increase trans-mission efficiency, the resulting detection problem becomes considerably more difficult because each observation depends on multiple neighboring symbols. The classical sequence detector BCJR can achieve near-optimal performance for FTN [2]. However, the practical use of such solutions is limited by computational complexity that scales unfavorably with the effective channel memory. For real-time receivers or hardware-constrained platforms, this situation motivates learned detectors that can approximate nonlinear FTN decision regions with lower complexity. Recent studies have shown that recurrent neural-network architectures such as GRU can exploit the temporal structure in FTN sequences and achieve BER performance close to BCJR in certain regimes [6]. This study centers on a direct comparison between MLP and KAN for FTN-BPSK detection. Although MLPs constitute attractive baselines because of their simple implementations, they often require wide hidden layers to represent the fine-grained nonlinear boundaries created by ISI. Kolmogorov-Arnold Networks offer a different inductive bias: by placing nonlinearity on edges rather than at nodes, they assign a learnable spline function to each connection [4]. This edge-based parameterization is particularly attractive for structured local interactions in communication channels. In the literature, FTN detection is often addressed either with classical detectors or with a single neural-network family. In contrast, this study presents a direct and systematic compar-ison between KAN and MLP under the same dataset, the same window representation, and the same evaluation conditions. In this respect, the study goes beyond merely proposing a neural-network receiver and seeks to answer which representation models FTN decision boundaries more efficiently. The contributions of this study are as follows: i) the creation of a large-scale FTN-BPSK dataset for τ = 0.8
+
+and an SNR range of 7–10 dB, ii) a systematic KAN–MLP comparison on a 65-sample received window, iii) evaluation of BER performance against the FTN hard-decision baseline and the BCJR reference, and iv) demonstration that KAN provides a significant BER advantage over MLP with a much smaller hidden representation. II. SYSTEM MODEL 
+
+For BPSK, the transmitted symbol sequence is 
+
+xk ∈ {− 1, +1 } (1) In FTN signaling, the symbol interval is compressed as 
+
+TFTN = τ T, 0 < τ < 1 (2) where T is the Nyquist symbol interval, and τ = 0 .8 is selected in this study. As a result, the signaling rate increases by a factor of 1/τ = 1 .25 , corresponding to a 25 percent gain in symbol rate compared with Nyquist signaling. The continuous-time transmitted waveform is 
+
+s(t) = X
+
+> k
+
+xkg(t − kT FTN ) (3) 
+
+979-8-3195-1046-4/26/$31.00 ©2026 IEEE arXiv:2608.02062v1 [eess.SP] 3 Aug 2026 Figure 1: FTN-BPSK transmission and neural-network-based detection chain. Transmitter: BPSK mapping, FTN pulse shap-ing, and AWGN channel. Receiver: 65-sample window, MLP or KAN, and hard decision. where g(t) denotes the shaping pulse. After the addition of AWGN, the received signal is 
+
+r(t) = s(t) + n(t) (4) where n(t) is zero-mean Gaussian noise. The corresponding discrete observation model can be written as 
+
+rk = X
+
+> i
+
+hk−ixi + nk (5) where hk is the effective discrete FTN pulse response. Since 
+
+hk extends over multiple symbol intervals, the target decision depends not only on the central observation but also on a neighborhood of received samples. To expose this local structure, each detector operates on the length-65 vector 
+
+rk = [ rk−32 , . . . , r k, . . . , r k+32 ]T (6) and estimates the center symbol as 
+
+ˆxk = sign( fθ (rk)) (7) Figure 1 shows the overall FTN-BPSK transmission and neural-network-based detection chain for τ = 0 .8.III. KAN AND MLP D ETECTOR ARCHITECTURES :COMPARATIVE ANALYSIS 
+
+A. MLP Detector 
+
+The MLP detector consists of a dense input-to-hidden linear transformation, ReLU activation, and a scalar output layer. The nonlinear representation is concentrated in shared node activations. The width sweep conducted over the set 
+
+{8, 16 , 32 , 64 , 128 , 256 } identified width 32 as the strongest validation configuration. Therefore, the w32 model is used as the best MLP baseline throughout the paper. The input dimension of 65 results from the 65-sample received-window representation defined in Equation (6). The number of param-eters is 
+
+PMLP = 65 × 32 + 32 + 32 × 1 + 1 = 2145 (8) as follows. The need for wide hidden layers in the MLP to represent the fine-grained decision boundaries of ISI constitutes an im-portant limitation in terms of parameter efficiency. Increasing the layer width for better BER often exhibits linear or sublinear parameter-performance scaling. 
+
+B. KAN Detector 
+
+KANs approximate multivariate functions through super-positions of learnable univariate transformations [4]. Unlike the MLP, nonlinearity is located on the edges rather than at the nodes. The jth output is 
+
+yj = X
+
+> i
+
+ϕij (xi) (9) where each edge function ϕij (·) is parameterized by a B-spline expansion: 
+
+ϕij (x) = X
+
+> m
+
+cijm Bm(x) (10) Two KAN configurations were examined within the sweep: 
+
+w4_g5 and w8_g3. The detector selected for the main compar-ison is the compact w4_g5 model, which uses a hidden-layer width of 4 and a spline grid size of G = 5 . This choice pri-oritizes representational compactness while preserving strong BER performance. The total number of trainable parameters is approximately 
+
+PKAN ≈ (65 × 4 + 4 × 1) × (G + k) + bias ≈ 3920 (11) was taken as follows. 
+
+C. Structural Difference and Parameter Efficiency 
+
+The compared MLP- and KAN-based detector architectures are given in Figure 2; in the MLP, nonlinearity is represented in node activations, whereas in the KAN it is represented in edge functions.Each 65-sample received vector is a noisy superposition of neighboring symbols shaped by the FTN pulse response. The corresponding decision boundary is nonlinear, locally structured, and strongly coupled among nearby obser-vations depending on the ISI level, SNR, and τ value. While the MLP approximates this boundary through compositions of affine transformations and shared node activations, the edge-based spline functions of KAN can model the effect of each input component independently and capture the ISI pattern in a more targeted manner. To measure parameter efficiency, 
+
+η = BER improvement parameter increase (12) the following metric can be defined. While the raw parameter increase is approximately 1.83 ×, the BER improvement at 10 dB is 18 .6×. Therefore, 
+
+η = 18 .61.83 ≈ 10 .2 (13) is obtained. Thus, KAN provides approximately 10 times more BER improvement per unit parameter increase than MLP. This superlinear gain is a direct reflection of KAN’s structural alignment with the FTN channel structure. IV. EXPERIMENTAL SETUP 
+
+A large-scale FTN-BPSK dataset generated using the Monte Carlo method under AWGN was used in all experi-ments. Table I summarizes the configuration. Binary Cross-Entropy loss and the Adam optimizer were used for both MLP and KAN. The MLP width sweep was conducted over the Figure 2: Compared neural-network detector architectures. The MLP is shown on the left and the KAN on the right. In the MLP, nonlinearity is located at the nodes, whereas in the KAN it is located on the edges. TABLE I: E XPERIMENTAL SETUP                      
+
+> Parameter Value
+> Modulation BPSK Channel AWGN FTN factor τ= 0 .8
+> Rate increase 1/τ = 1 .25
+> Window length 65 samples SNR values 7, 8, 9, 10 dB Total windows 3,999,936 Training / Validation / Test 2,799,955 / 599,990 / 599,991 Best MLP Width 32, P= 2145
+> Selected KAN w4_g5,P≈3920
+> Reference detector BCJR Loss function Binary Cross-Entropy Optimizer Adam
+
+TABLE II: BER C OMPARISON ACROSS SNR V ALUES                                                     
+
+> SNR (dB) FTN Baseline Best MLP Selected KAN BCJR Ref.
+> 72.5×10 −23.2×10 −31.4×10 −31.0×10 −3
+> 82.1×10 −21.2×10 −34.5×10 −42.5×10 −4
+> 91.6×10 −24.0×10 −41.5×10 −46.0×10 −5
+> 10 1.1×10 −21.3×10 −47.0×10 −67.0×10 −6
+
+entire set {8, 16 , 32 , 64 , 128 , 256 }, and validation BER was used as the criterion for each configuration. Two configurations (w4_g5 and w8_g3) were examined for KAN, and w4_g5 was selected by jointly considering validation BER and parameter efficiency. All models were evaluated using the same data split, the same SNR values, and the same input representation, and the comparison was carried out under fully controlled conditions. V. RESULTS AND DISCUSSION 
+
+Table II and Figure 3 compare the FTN hard-decision baseline, the best MLP, the selected KAN, and the BCJR reference. The first observation is that both learned detec-tors provide significant improvement over the hard-decision baseline. The more critical result is that the selected KAN consistently outperforms the best MLP at all SNR values. The improvement ratios achieved by KAN over MLP across the SNR values are as follows: approximately 2.3× at 7 dB, approximately 2.7× at 8 dB, approximately 2.7× at 9 dB, and 18 .6× at 10 dB. In particular, at 10 dB, the selected KAN reaches the BER value of the BCJR reference (7 .0 × 10 −6).This means that near-optimal detection is approached without incurring sequence-estimation complexity. TABLE III: MODEL COMPLEXITY AND PERFORMANCE (10 dB )                  
+
+> Model Hidden Width Param. Count BER @10 dB Improv.
+> Best MLP ( w32 )32 2145 1.3×10 −41×
+> Selected KAN ( w4_g5)4(1 /8×)≈3920 7.0×10 −618 .6×
+
+Figure 3: BER-SNR curves: FTN hard-decision baseline, best MLP, selected KAN, and BCJR reference. KAN outperforms MLP at all SNR points and reaches BCJR at 10 dB. Table III clearly demonstrates the superiority of KAN: with only an approximately 1.83 × increase in the raw parameter count, the BER improvement at 10 dB reaches 18 .6×. This pronounced mismatch between parameter increase and perfor-mance gain is strong evidence that the KAN representation is better aligned with the FTN detection function. It is noteworthy that the difference between KAN and MLP becomes more pronounced as SNR increases. At low SNR, both models encounter similar limiting factors in the noise-dominated region. However, while the MLP approaches saturation at high SNR, the continued decrease in KAN’s BER indicates that KAN models the FTN decision boundaries more completely. This behavior shows that KAN’s spline-based edge functions are much more effective than the fixed-width hidden layer of the MLP in capturing the fine details of the decision boundary in the high-SNR regime. These findings are also naturally related to practical re-ceiver design. In communication hardware, memory footprint, inference latency, and arithmetic cost are critically important. A detector capable of extracting higher performance from a much smaller hidden representation is attractive for embedded or resource-constrained applications. This supports KAN as a strong neural-network alternative to dense MLP baselines for FTN detection. VI. CONCLUSION 
+
+Within the scope of this study, an innovative deep-learning-based approach was developed to solve the complex inter-symbol interference (ISI) problem introduced by the Faster-than-Nyquist (FTN) signaling technique, which is used to in-crease spectral efficiency in communication systems. A direct performance and efficiency analysis between the conventional Multilayer Perceptron (MLP) architecture and the recently introduced Kolmogorov-Arnold Networks (KAN) was system-atically conducted on a massive dataset of approximately four million samples. The obtained experimental results clearly reveal that the "edge-based spline" functional structure of the KAN architecture provides not only a quantitative but also a qualitative and fundamental superiority over the MLP baseline in modeling nonlinear decision boundaries in communication channels. Particularly from the perspective of parameter and repre-sentation efficiency, the ability of the KAN architecture to form a much more compact and meaningful feature space with a hidden-layer width as low as only one eighth ( 1/8) of that required by the MLP is one of the most striking findings of the study. Despite the limited increase in the raw parameter count ( ∼ 1.83 ×), the 18 .6× improvement in bit error rate (BER) obtained at an SNR value of 10 dB is a concrete indicator of KAN’s high structural compatibility with the FTN signal structure and its capacity to learn complex mathematical functions. In terms of performance superiority, the KAN-based detector not only consistently outperformed the MLP by a clear margin in all signal-to-noise ratio (SNR) regimes, but also fully reached the complex BCJR reference performance, which theoretically provides the best results in the high-SNR region, at ( 7.0 × 10 −6). This achievement proves that KAN can converge to the optimal solution through a directly data-driven approach without requiring computationally expensive conventional sequence-estimation algorithms. When scalability and stability dynamics were examined, it was observed that MLP models tend to reach performance saturation as SNR increases, whereas the error curve of KAN exhibits a much steeper decline and offers superior flexibility in capturing the fine details of decision boundaries. This flexibility stems from the ability of spline-based learnable ac-tivation functions to represent uncertainties and noise regimes in communication systems much more precisely than classical node structures with fixed activations. Consequently, this re-search has contributed to the scientific literature by showing that the KAN architecture offers an overwhelming advantage over classical deep-learning methodologies in communication problems such as FTN detection, where parameter sensitivity and energy efficiency are critically important. In our future work, it is planned to focus on the noise immunity of the developed architecture in multipath fading channels and its inference costs on real-time hardware plat-forms. Particularly in low-power embedded receiver designs, the high parameter efficiency provided by KAN is expected to play a critical role in minimizing hardware complexity and translating spectral-efficiency gains into practical applications. In addition, investigating the generalization capacity of the KAN architecture under different time-packing factors ( τ ) and higher-order modulation techniques stands out as an important research direction for next-generation communication stan-dards. ACKNOWLEDGMENT 
+
+This work was supported by the Scientific and Technologi-cal Research Council of Turkey (TÜB˙ ITAK) under Project No. 122E236. REFERENCES [1] J. E. Mazo, “Faster-Than-Nyquist Signaling,” Bell System Technical Journal , vol. 54, no. 8, pp. 1451–1462, 1975. [2] L. R. Bahl, J. Cocke, F. Jelinek, and J. Raviv, “Optimal Decoding of Linear Codes for Minimizing Symbol Error Rate,” IEEE Transactions on Information Theory , vol. 20, no. 2, pp. 284–287, 1974. [3] J. B. Anderson, F. Rusek, and V. Owall, “Faster-Than-Nyquist Signaling,”

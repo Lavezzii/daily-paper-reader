@@ -1,0 +1,1069 @@
+Title: Temporal Channel Estimation for Generalized CSI Feedback
+
+URL Source: https://arxiv.org/pdf/2608.01713v1
+
+Published Time: Tue, 04 Aug 2026 02:16:09 GMT
+
+Number of Pages: 37
+
+Markdown Content:
+1
+
+# Temporal Channel Estimation for Generalized CSI Feedback 
+
+Minwoo Kim, Hyeonsu Lyu, Sehyun Ryu, Sojeong Park and Hyun Jong Yang, Senior Member, IEEE 
+
+Abstract 
+
+Efficient Channel State Information (CSI) feedback is indispensable for frequency division duplex (FDD) massive multiple-input multiple-output (MIMO) systems. Existing compressed sensing (CS) algorithms exploit delay-domain sparsity but suffer from prohibitive iterative latency and discrete grid mismatch. Conversely, deep learning (DL) approaches achieve rapid inference but lack spatial scalability and domain adaptability, failing to generalize to unseen propagation environments, and demand compu-tationally heavy encoders and decoder. In this paper, we propose TAP, a Tap-Assisted Parametric CSI Compression. TAP is a one-shot neural framework that unifies the speed of DL with the mathematical interpretability of CS. TAP replaces iterative pursuit with a lightweight 1D neural network that extracts dominant continuous propagation delays from temporal channel sequences via a differentiable sub-grid interpolation operator. TAP achieves true architecture independence, enabling zero-shot generalization across diverse array geometries and unseen propagation environments. Furthermore, TAP yields a completely decoder-free payload, allowing the BS to reconstruct the channel via a simple inverse fast Fourier transform (IFFT). Extensive evaluations across five 3GPP environments demonstrate that TAP achieves a 3.13 to 12.22 dB channel frequency response normalized mean square error (CFR-NMSE) 
+
+This paper was produced by the IEEE Publication Technology Group. They are in Piscataway, NJ. Manuscript received April 19, 2021; revised August 16, 2021. 
+
+(Corresponding author: Hyun Jong Yang.) 
+
+M. Kim, S. Ryu and S. Park are with the Department of Electrical Engineering, Pohang University of Science and Technology (POSTECH), Pohang 37673, South Korea (email: mwkim0210@postech.ac.kr; sh.ryu@postech.ac.kr). H. Lyu and H. J. Yang are with the Institute of New Media and Communications, Seoul 08826, South Korea (e-mail: hs.lyu@snu.ac.kr, hjyang@snu.ac.kr H. J. Yang is with the Dept. of Electrical and Computer Engineering, Seoul National University, Seoul 08826, South Korea (email: hjyang@snu.ac.kr). arXiv:2608.01713v1 [eess.SP] 3 Aug 2026 2
+
+> improvement over CsiNet while shrinking the model footprint by 660 times to under 1 MB. Operating with sub-millisecond latencies, TAP accelerates inference by 2700 times over classical iterative OMP, providing a scalable and deployment-ready solution for next-generation networks.
+> Index Terms
+> Channel State Information (CSI) feedback, compressed sensing, orthogonal matching pursuit, deep learning, zero-shot domain adaptation, channel estimation
+
+I. I NTRODUCTION 
+
+Massive multiple-input multiple-output (MIMO) technologies are fundamental to achieving the high spectral efficiencies demanded by 5G and 6G networks. In frequency division duplex (FDD) systems, the base station (BS) requires accurate downlink channel state information (CSI) to perform spatial multiplexing and precoding [1]. The user equipment (UE) must estimate the downlink channel frequency response (CFR), compress it, and feed it back over a rate-limited uplink control channel. As BS antenna counts scale to hundreds of elements, the dimensionality of the full CFR grows proportionally with the product of transmit antennas and subcarriers. Efficient CSI compression is therefore indispensable for the practical deployment of FDD massive MIMO. Two broad paradigms have been studied to address this feedback bottleneck. Classical com-pressed sensing (CS) algorithms such as orthogonal matching pursuit (OMP), LASSO, and TVAL3 exploit the physical delay-domain sparsity of wireless channels to recover the CSI from a small number of measurements [2]–[7]. However, their performance depends critically on the sparsity assumption, which is often only approximately satisfied in practical propagation environments, motivating the development of data-driven deep learning (DL) approaches [8]. DL-based approaches treat CSI matrices as images and learn end-to-end encoder-to-decoder mappings, with architectures such as CsiNet [9] achieving high compression ratios (CRs) by operating on truncated delay-angular domain representations. In communication standards, 3GPP Type-1 and Type-2 codebooks offer a third, lightweight alternative but typically plateau at high normalized mean square error (NMSE) [10]. However, these existing approaches suffer from a few fundamental limitations that prevent their practical deployment. First, CS-based methods are computationally prohibitive for real-time 3
+
+applications. Recovering time-domain channel using standard OMP requires iterative large-scale inverse fast Fourier transforms (IFFTs), spatial correlations, and least squares (LS) projections, resulting in large runtimes, exceeding the sub-millisecond latency budget of 5G New Radio (NR). Second, although many DL-based methods achieve the latency constraint, they lack both spatial scalability and cross-domain generalization as their architectures are hard-wired to fixed antenna dimensions Therefore, any change in BS array geometry requires redesigning and retraining the network. Moreover, because their learned latent spaces implicitly encode the propagation statistics of the training environment, models trained in one scenario (e.g., an indoor factory) suffer severe degradation in another (e.g., an outdoor macrocell). The dense convolutional or fully connected layers in these models also scale with the antenna count, producing model footprints of hundreds of megabytes (MBs) that are impractical for memory- and power-constrained UEs. No existing methodology simultaneously satisfies the four requirements of a practical CSI compressor: (i) sub-millisecond inference latency, (ii) a sub-megabyte model footprint, (iii) high compression fidelity across diverse propagation environments, and (iv) zero-shot generalization to unseen deployments and arbitrary antenna geometries. The root cause of this gap is that DL methods discard the underlying physical channel structure, while CS methods fail to leverage temporal priors to accelerate inference. A hybrid framework that embeds physical sparse-recovery structure into a lightweight neural pipeline is therefore needed to satisfy all four constraints. Existing DL-based CSI Compression …Indoor Only Outdoor Only Factory Only     
+
+> DL Model A
+> DL Model B
+> DL Model C
+> BS BS
+> BS
+> Proposed
+> Environment Domain Adaptability Antenna Geometry Scalability
+> BS BS BS
+> Indoor Outdoor Factory ……Deploy Frozen
+> BS
+> One Domain One Array
+> TAP Model Training
+
+Fig. 1. Comparison of previous DL-based CSI compression methods and the proposed TAP pipeline. 
+
+To bridge this gap, this paper proposes TAP : a Tap-Assisted Parametric CSI Compression, a lightweight, one-shot neural framework featuring antenna scalability and domain adaptability. To the best of the authors’ knowledge, TAP is the first framework to simultaneously satisfy 4
+
+the four requirements of a practical CSI compressor. By unifying physical sparsity with neural efficiency, TAP achieves favorable trade-offs across compression quality, speed, compactness, and generalizability. We have illustrated the difference between previous approaches and TAP in Fig. 1. The main contributions are as follows:  
+
+> •
+
+One-Shot Neural Delay Estimation: We introduce DelayNet that predicts dominant prop-agation delays simultaneously from a temporal window of historical CFR sequences. This replaces the computationally expensive iterative atom selection of classical OMP with a single forward pass.  
+
+> •
+
+Differentiable Sub-Grid Delay Extraction: We propose a symmetric linear power-weighted center-of-mass extractor to estimate continuous, fractional delays from discrete network outputs. This differentiable operator eliminates the dictionary mismatch problem inherent to discrete-grid OMP and enables the entire pipeline to be trained end-to-end.  
+
+> •
+
+Antenna-Independent Architecture: By employing depthwise separable convolutions with antenna-averaging in the delay predictor, the proposed framework keeps the number of model parameters constant regardless of the BS antenna array size. This structural design enables zero-shot generalization across diverse antenna geometries.  
+
+> •
+
+Zero-Shot Cross-Domain Adaptation: We demonstrate that TAP can generalize across entirely different propagation environments without any retraining, effectively decoupling the model from environment-specific statistics.  
+
+> •
+
+Decoder-Free BS Reconstruction: Unlike existing deep learning-based feedback schemes that require executing complex neural decoders at the base station, TAP physically structures the feedback payload such that the BS can reconstruct the full CSI matrix using only a simple matrix multiplication equivalent to an inverse Fourier transform. This eliminates BS-side neural inference overhead and deployment complexity.  
+
+> •
+
+Comprehensive Evaluation: Extensive evaluations across five 3GPP environments—including both ray-traced (Sionna RT and DeepMIMO) and stochastic (Clustered Delay Line, CDL) datasets—demonstrate that TAP achieves a 12 to 22 dB CFR NMSE improvement over CsiNet architecture while utilizing a 660 times smaller model size of under 1 MB. TAP accelerates inference by 2700 times compared to iterative OMP. 5
+
+II. R ELATED WORKS 
+
+Prior work on CSI compression generally falls into DL-based and CS-based paradigms. While each approach shows good performance along specific axes, existing methods fail to unify inference speed, reconstruction accuracy, model compactness, and zero-shot generalization. 
+
+A. Deep Learning-Based CSI Feedback 
+
+The DL-based CSI feedback literature has progressively improved reconstruction quality through architectural innovations. The CsiNet architecture demonstrated that a lightweight convolutional autoencoder could compress truncated delay-angle CSI matrices and achieve competitive re-construction performance [9]. Successive frameworks have enhanced fidelity by incorporating multi-resolution architectures [11], long short-term memory (LSTM) networks for temporal fusion [12], and attention mechanisms [13]–[15]. Parametric channel modeling methods have mapped heavy networks directly to physical propagation parameters [16], while model-driven deep unfolding architectures unrolled iterative solvers to neural layers [17]. Data-driven line-spectrum frameworks have explored extracting continuous frequencies from multi-sinusoidal mixtures [18], though these lack the multi-dimensional scalability required for massive MIMO. Despite the progress in reconstruction quality, DL-based approaches suffer from three limita-tions that prevent universal deployment. First, their architectures are hard-wired to fixed spatial dimensions: the fully connected or convolutional layers are coupled to specific antenna layouts and subcarrier groupings, so any change in the BS antenna geometry requires a full redesign and retraining. Second, the learned latent spaces implicitly encode the propagation statistics of the training environment, leading to severe performance degradation when deployed in unseen scenarios. Third, the dense layers scale with the antenna count, resulting in model footprints that can reach hundreds of megabytes, which are impractical for memory- and power-constrained UE. 
+
+B. CS-Based CSI Feedback 
+
+Classical CS algorithms, including OMP, LASSO, and TVAL3, have been extensively investi-gated for CSI compression [2]–[6]. These approaches leverage the physical property that wireless channels are inherently sparse in the delay domain, using measurement matrices and recovery 6
+
+algorithms to reconstruct the channel from few observations [1], [19], [20]. Advanced variants further exploit spatial correlation across multiple antennas via joint-sparsity OMP and Bayesian CS approaches [21], [22], while other frameworks integrate both spatially common sparsity and temporal channel correlation to enable closed-loop sparsity-adaptive tracking [23]. However, CS-based methods face two structural limitations. First, the iterative algorithms (e.g., OMP, LASSO) scale poorly with dictionary size and the number of resolvable paths, producing latencies on the order of seconds per feedback instance, which is three to four orders of magnitude beyond the sub-millisecond budget of 5G NR [24]. Second, standard discrete dictionaries assume that physical propagation delays align with predefined grid points. When true delays fall between these grid points, the resulting basis mismatch degrades both support detection and amplitude recovery accuracy. These computational and structural constraints prevent CS methods from meeting real-time deployment requirements. 
+
+C. Domain Adaptation and Generalization 
+
+The practical deployment challenge of environment mismatch has motivated extensive domain-adaptation research in CSI feedback [25]. When a DL model trained in one environment is evaluated in another, the mismatch in propagation statistics degrades performance [26]. To mit-igate this, researchers have proposed transfer learning via fine-tuning [25], [27], model-agnostic meta-learning [28], domain adaptation with limited target data [29], and domain-adversarial training [30]. Localized reconstruction frameworks bypass heavy network retraining by allowing the UE to rebuild a sparse linear codebook using fresh CSI samples gathered over a short post-shift interval [31]. Recent research has introduced physics-based distribution alignment to bypass the need for target-domain data entirely, enabling zero-shot generalization in completely unseen environments [32]. Despite their effectiveness, most of these approaches share a common requirement: access to target-domain data, whether through online modification phases, fine-tuning procedures, or post-shift observation windows. Because downlink channel estimation is executed exclusively at the UE, post-shift target-domain CSI is natively available only at the receiver. Unless fresh target-domain parameters are explicitly fed back to the BS, the network-side decoder cannot re-align to the shifted environment. True zero-shot generalization—maintaining high fidelity in 7
+
+unseen environments without any retraining or adaptation windows—remains a key challenge for DL-based CSI compression. 
+
+D. Spatially-Scalable CSI Feedback 
+
+Real-world BS deployments utilize diverse antenna configurations, such as 1 × 32 uniform linear arrays (ULAs) or 8 × 8 and 16 × 4 uniform planar arrays (UPAs). However, many existing CSI compression studies lack spatial scalability, as the array shape is embedded in the CSI data dimensions, making pretrained models unusable under new array configurations. Existing partial solutions include antenna subset selection, dimension-agnostic pooling, and modular per-antenna encoders [33], [34]. Recently, coordinate-aware foundation models that map antenna indices to physical 3D coordinates have enabled zero-shot scale extrapolation [35]. While these approaches handle dynamic configurations, they still couple the downstream network’s processing complexity, token length, or operational floating-point operations (FLOPs) to the underlying array dimensions. A model designed for a 4 × 4 array, for instance, incurs substantially different computational costs when deployed on a 16 × 8 array. Developing a truly architecture-independent framework with constant parameter counts and computational costs across varying antenna array sizes remains an open challenge for scalable CSI feedback. III. S YSTEM MODEL 
+
+We consider a single-cell FDD massive MIMO system, wherein a BS serves single-antenna UEs via orthogonal frequency division multiplexing (OFDM). The BS is equipped with an 
+
+Nr × Nc UPA, where Nr and Nc denote the number of antenna rows and columns, respectively. Each element may support P polarizations, yielding a total of Nant = P N rNc transmit antenna ports. Throughout this work, we primarily consider the dual-polarized configuration ( P = 2 ), which is standard in 3GPP deployments, though single-polarized ( P = 1 ) datasets are also evaluated. The total available operational bandwidth is divided into Nsc OFDM subcarriers. In this FDD architecture, uplink and downlink transmissions operate on distinct frequency bands, precluding the exploitation of channel reciprocity. To enable spatial multiplexing and precoding at the BS, the UE must estimate the downlink CFR across all Nant antennas and Nsc subcarriers, 8
+
+compress this high-dimensional matrix, and feed it back to the BS over a rate-limited uplink control channel. The downlink CFR for the n-th subcarrier ( n = 0 , 1, . . . , N sc −1) and the m-th antenna element can be modeled as a superposition of L distinct multipath propagation components. Specifically, the complex channel gain H[n, m ] ∈ C is formulated as: 
+
+H[n, m ] = 
+
+> L
+
+X
+
+> l=1
+
+αl,m e−j2πf nτl , (1) where αl,m ∈ C denotes the complex spatial amplitude of the l-th path as observed at the m-th antenna element, τl is the physical propagation delay of the l-th path, and fn is the frequency of the n-th subcarrier. Stacking these responses across all subcarriers and antennas yields the full CFR matrix H ∈ CNsc ×Nant . A key physical property of this formulation is that while the complex gains {αl,m } vary across antenna elements due to array geometry and polarization, the propagation delays {τl} are similar across all antennas. This structural characteristic indicates that the CFR matrix H exhibits joint sparsity: it is intrinsically sparse in the delay domain but dense in the spatial domain. In this work, we assume the UE is located in the far-field (Fraunhofer) region of the base station array. Under this standard planar wavefront assumption, the physical propagation delay for a given multipath cluster is shared uniformly across all antenna elements (i.e., joint-spatial sparsity). While the wavefront arrives at individual elements at marginally different absolute times, this microscopic difference is entirely absorbed as a linear spatial phase shift (Angle of Arrival) by the local complex amplitude αm at each antenna. Consequently, the dictionary matrix consisting of possible delays is constructed purely in the frequency-delay domain, allowing the subsequent LS solver to evaluate the spatial dimensions independently. By applying an IFFT along the frequency axis of the CFR, the channel can be represented in the delay domain as the channel impulse response (CIR). Because the channel energy is concentrated at the discrete physical propagation delays {τl}, the resulting CIR is highly sparse. The number of significant multipath taps, denoted as K, is typically much smaller than the total number of subcarriers ( K ≪ Nsc ). This delay-domain sparsity can be leveraged to reduce the amount of information that needs to be fed back to the BS [23]. 9
+
+Under typical UE mobility scenarios, the macroscopic parameters of the propagation environ-ment, especially the delay profile, evolve smoothly over consecutive OFDM slots [23]. While the instantaneous complex phases of the spatial amplitudes fluctuate rapidly due to small-scale fading, the underlying physical delays {τl} exhibit strong temporal correlation. This enables the use of a temporal window comprising W previously estimated CFR snapshots to provide prior information regarding the delay support of the current channel realization. In FDD massive MIMO systems, the BS periodically transmits orthogonal Channel State Information Reference Signals (CSI-RS) to facilitate downlink channel estimation at the UE [10]. Let Xp ∈ CNant ×τp denote the orthogonal pilot matrix transmitted over τp symbol durations (where 
+
+τp ≥ Nant ), designed such that XpXHp = P INant , where P is the pilot transmission power. At the 
+
+n-th subcarrier, the received signal block yTn ∈ C1×τp at a single-antenna UE is expressed as: 
+
+yTn = hTn Xp + zTn , (2) where hn ∈ CNant ×1 is the true downlink channel vector for subcarrier n, and zn ∼ CN (0, σ 2 
+
+> z
+
+Iτp )
+
+represents the additive white Gaussian noise (AWGN) at the receiver. To decouple the spatial channel components, the UE applies a standard LS estimator by correlating the received signal with the known pilot matrix. The estimated channel vector for the n-th subcarrier is obtained as: 
+
+bhTn = 1
+
+P yTn XHp = hTn + ezTn , (3) where ezTn = 1 
+
+> P
+
+zTn XHp is the effective estimation noise. By stacking the estimated vectors across all Nsc subcarriers, we obtain the full observed CFR matrix fed into the compression framework: 
+
+Hobs = H + N, (4) where H ∈ CN sc ×Nant is the ground-truth CFR matrix, and N ∈ CNsc ×Nant is the aggregated equivalent estimation noise matrix. By aggregating the effective estimation noise vectors ezTn , the equivalent estimation noise matrix can be explicitly expressed in terms of the received over-the-air noise and the pilot matrix as: 
+
+N = 1
+
+P ZX pH , (5) where Z ∈ CN sc ×τp is the aggregate AWGN matrix at the receiver, whose n-th row corresponds to the noise vector zTn experienced at subcarrier n. Because the pilot matrix Xp is orthogo-10 
+
+nal, the linear transformation 1 
+
+> P
+
+(·)XHp projects the raw receiver noise into the spatial antenna domain, directly dictating the input CSI-RS signal-to-noise ratio (SNR). This SNR, defined as SNR CSI-RS = ∥H∥2 
+
+> F
+
+/∥N∥2 
+
+> F
+
+, determines the quality of the initial channel estimate available to the compressor. In the ideal case where estimation noise is completely absent, the compressor operates directly on the true physical channel H.The fundamental objective of the CSI feedback problem is to design an efficient compression and reconstruction pipeline. Let the UE possess the estimated downlink CFR matrix H (or Hobs 
+
+under noisy conditions) along with a historical window of previous CFRs. The UE utilizes an encoder E(·) to map the full-dimensional CFR into a compressed latent representation z = E(H),where the dimension of z, denoted as M , satisfies M ≪ P N sc Nant . The compressed vector z is then transmitted over the uplink channel. At the BS, a decoder D(·) reconstructs the approximated CFR ˆH = D(z). The efficacy of the proposed feedback system is evaluated by CR = MP N sc Nant ,and the frequency-domain CFR Normalized Mean Square Error (NMSE), or CFR-NMSE in short. CFR-NMSE is defined as NMSE = 10 log 10 
+
+|H − ˆH|F 2
+
+|H|F 2
+
+!
+
+. (6) An important distinction arises between this metric and those utilized in recent literature. The majority of prior DL-based works operate on a truncated delay-angular domain patch extracted from the full channel matrix, reporting the NMSE computed solely over this cropped represen-tation (hereafter, patch NMSE). Because truncation inherently discards signal energy outside the selected patch, patch NMSE systematically understates the true reconstruction error. In contrast, our adopted CFR-NMSE quantifies the reconstruction fidelity over the complete CFR matrix H ∈ CN sc ×N ant , providing a much more comprehensive measure of compression fidelity. Therefore, the overarching goal of our framework is to design an encoding and decoding architecture that minimizes the full CFR-NMSE subject to a target CR, while ensuring the encoding process remains computationally tractable for the UE. IV. OMP-BASED CIR R ECOVERY 
+
+The standard OMP algorithm recovers the sparse CIR by iteratively building a support set of the most dominant propagation delays. At each iteration, the algorithm correlates the current residual 11 
+
+Algorithm 1 OMP Algorithm for CIR Estimation 
+
+Require: Received CFR h, Dictionary Φ, Max paths K, Threshold ϵ, Oversampling factor S 
+
+> 1:
+
+r0 ← h ▷ Initialize residual  
+
+> 2:
+
+Λ0 ← ∅ ▷ Initialize set of selected indices  
+
+> 3:
+
+i ← 1 
+
+> 4:
+
+while i ≤ K and || ri−1|| 22 > ϵ do  
+
+> 5:
+
+c ← SN sc · IFFT (¯ ri−1) ▷ Calculate correlation  
+
+> 6:
+
+k ← arg max j
+
+PNsym  
+
+> n=1
+
+|cj,n |2 ▷ Find atom with maximum energy  
+
+> 7:
+
+Λi ← Λi−1 ∪ { k} ▷ Update support set  
+
+> 8:
+
+Φi ← Φ[: , Λi] ▷ Construct active dictionary  
+
+> 9:
+
+xi ← (ΦHi Φi + λI)−1ΦHi h ▷ Least squares  
+
+> 10:
+
+ˆhi ← Φixi ▷ Projected signal  
+
+> 11:
+
+ri ← h − ˆhi ▷ Update orthogonal residual  
+
+> 12:
+
+i ← i + 1  
+
+> 13:
+
+end while  
+
+> 14:
+
+return Sparse gains x and selected delays Λ
+
+signal with a predefined discrete delay dictionary, selects the dictionary atom that exhibits the highest correlation energy, and orthogonalizes the residual by performing a LS projection of the received CFR onto the active support set. As outlined in Algorithm 1, this greedy pursuit process repeats until K sparse taps are extracted or the residual energy falls below a predetermined threshold. Despite its accuracy, the computational complexity of the iterative OMP procedure scales prohibitively with the number of estimated paths [36], [37]. At the i-th iteration, the algorithm re-quires evaluating the correlation across the entire oversampled dictionary, typically implemented via an Nsc -point IFFT with cost O(SN sc log( SN sc )) , where S is the oversampling factor. The orthogonalization step requires solving an increasingly large system of equations, demanding 
+
+O(i2Nsc ) floating-point operations. For massive MIMO systems requiring the estimation of tens of multipath components, this compounded complexity becomes prohibitive. As shown 12 3 6 9 12 15 18   
+
+> Number of Estimated Paths K
+> 40
+> 30
+> 20
+> 10
+> Average NMSE [dB]
+> 400
+> 600
+> 800
+> 1000
+> 1200
+> 1400
+> 1600
+> Execution Time [ms]
+> NMSE
+> Latency
+> Fig. 2. NMSE and latency of OMP-based CSI compression under different number of estimated taps.
+
+in Fig. 2, executing standard OMP to recover K = 10 paths requires approximately 1000 ms of processing time per feedback instance. Notably, this latency was recorded within a high-performance simulation environment (AMD Ryzen Threadripper 7970X, dual NVIDIA RTX 6000 Ada GPUs, 256 GB RAM) utilizing heavily vectorized, multi-threaded CPU algebraic backends. Even with this computational advantage, OMP exceeds the sub-millisecond latency budget of 5G NR by over three orders of magnitude. This indicates that execution on power-and memory-constrained UE hardware would be completely prohibitive. 
+
+A. Challenges of One-Shot OMP 
+
+A computationally cheaper alternative to this iterative pursuit would be a “one-shot” approach: performing a single IFFT on the CFR and selecting the K highest magnitude peaks in the result-ing delay-domain signal. However, this approach fails catastrophically due to two fundamental phenomena: spectral leakage and mutual coherence. 
+
+1) Spectral Leakage Problem: In any real-world digital communication system, the contin-uous physical CFR is only observed over a finite, strictly limited bandwidth B. The physical receiver hardware naturally imposes a rectangular band-pass filter, mathematically represented as rect (f /B ), where rect (·) equals 1 for [−1/2, 1/2] and 0 elsewhere. According to the convolution theorem of Fourier analysis, multiplication by a rectangular window in the frequency domain translates directly to convolution with a sinc function in the delay domain. 13 
+
+Consequently, a pristine physical multipath impulse (e.g., a Dirac delta function representing a pure reflection) is smeared into a heavily rippled, multi-tap discrete signal characterized by a broad main lobe and infinitely decaying side lobes. When a naive one-shot algorithm observes this filtered delay-domain profile, it lacks the mathematical mechanism to reliably distinguish between the genuine energy of a weaker, secondary physical path and the massive sinc-sidelobe generated by a highly dominant primary path. The traditional, iterative OMP algorithm natively resolves this ambiguity. Because the main lobe and side lobes are mathematically coupled, once iterative OMP identifies the strongest peak and computes its complex gain, the subsequent orthogonal projection step precisely sub-tracts the reconstructed frequency-domain signature of that path from the observed CFR. This inherently subtracts the exact mathematical cause of the time-domain sidelobes, leaving the newly updated residual clean of the primary tap’s interference. A one-shot approach, lacking this sequential interference cancellation, suffers from massive false-alarm rates, repeatedly and incorrectly identifying sidelobe ripples as active channel support. 
+
+2) Non-Orthogonal Atoms and Grid Mismatch: The second critical failure point for discrete one-shot estimation arises from the necessary discretization of the continuous physical delay space, known as grid mismatch [38]. Standard IFFT operations implicitly assume that true multipath delays align perfectly with the integer sampling bins of the discrete digital grid, spaced at intervals of 1/(SN sc ∆f ), where ∆f represents the subcarrier spacing. In physical reality, propagation delays take arbitrary, continuous fractional values. When a physical path delay falls between these bins, its energy bleeds into multiple adjacent grid points, destroying the fundamental sparsity assumption. To mitigate grid mismatch and capture these fractional delays with higher fidelity, the dictio-nary matrix Φ is heavily oversampled by a factor S > 1. However, oversampling fundamentally destroys the linear orthogonality between adjacent dictionary atoms. Assuming a system utilizing 
+
+Nsc subcarriers with a subcarrier spacing ∆f , the inner product between two dictionary atoms 14 
+
+a(τ1) and a(τ2) representing arbitrary delays τ1 and τ2 is strictly dictated by the Dirichlet kernel: 
+
+⟨a(τ1), a(τ2)⟩ =
+
+> Nsc −1
+
+X
+
+> k=0
+
+e−j2πk ∆f τ 1 (e−j2πk ∆f τ 2 )∗ (7) 
+
+= 1 − e−j2πN sc ∆f ∆τ
+
+1 − e−j2π∆f ∆τ . (8) For perfect orthogonality ( ⟨a(τ1), a(τ2)⟩ = 0 ), the physical delays must be separated by an exact integer multiple of the inverse system bandwidth B = Nsc ∆f , such that ∆τ = m/B 
+
+for any integer m. Because oversampling actively forces adjacent atoms to be separated by a distance much less than 1/B , the entire dictionary becomes highly coherent. In a one-shot estimation framework, the energy from a single true fractional path bleeds heavily into multiple adjacent, non-orthogonal atoms. A parallel peak-selection protocol will mistakenly identify this dense cluster of highly correlated atoms as multiple distinct physical paths, destroying the CR and generating an erroneous support set. While various off-grid optimization strategies such as alternating gradient descent, Newton refinement, or atomic norm soft thresholding have been proposed to iteratively push grid points toward the true fractional delays, these techniques introduce severe non-linear computational complexity that violates the stringent low-latency constraints of standard baseband processing. 
+
+B. Error Bound of Imperfect Delay Estimation 
+
+Here, we study how tap delay errors impact estimation performance. We also analyze the ability of LS estimation to mitigate tap estimation errors in wideband OFDM systems. We show that LS estimation cannot fully compensate for minor inaccuracies in estimated tap delays when calculating complex amplitudes. A complex LS amplitude estimate, denoted as ˆa = |ˆa|ejθ , applies a constant phase rotation ( θ)uniformly across all subcarriers. In contrast, a physical delay error ∆τ introduces a frequency-dependent phase rotation of −2πf k∆τ . This manifests as a linear phase ramp across the frequency band. Consequently, the LS estimator can only perfectly align the phase at the center frequency (f = 0 ). At the band edges, the phase mismatch grows linearly. The LS solver is mathematically incapable of altering the slope of the phase across subcarriers; it can only shift the intercept. Here, we rigorously bound the CSI reconstruction error caused by this phenomenon to demon-strate the necessity of high-precision delay extraction. 15 
+
+1) Reconstruction Error Bound for a Single Tap: Let Nsc denote the number of subcarrier frequencies, denoted as fk. Assume the true continuous CIR consists of a single tap with complex amplitude a and delay τ . The true CFR vector h ∈ CNsc is defined component-wise as: 
+
+[h]k = ae −j2πf k τ . (9) Let the estimated delay be ˆτ = τ + ∆ τ . The dictionary matrix ˆA for this single-tap estimation reduces to a single column vector ˆv, where: 
+
+[ˆv]k = e−j2πf k (τ +∆ τ ). (10) The LS reconstructed signal ˆh is the orthogonal projection of the true signal h onto the estimated basis vector ˆv:
+
+ˆh = ˆv(ˆvH ˆv)−1ˆvH h = Pˆvh, (11) where Pˆv is the orthogonal projection matrix. We define the residual error vector as e = h− ˆh =(I − Pˆv)h.Noting that the true signal can be factored as h = av (where v is the true basis vector), we can express v in terms of the estimated vector and the deviation between them: v = ˆv − ∆v.Substituting this into the error equation yields: 
+
+e = a(I − Pˆv)( ˆv − ∆v). (12) Since the projection operator annihilates ˆv, this simplifies to e = −a(I − Pˆv)∆ v. Taking the 
+
+ℓ2-norm, and using the property of orthogonal projectors that ∥I − Pˆv∥2 ≤ 1, we obtain: 
+
+∥e∥2 ≤ | a|| ∆v|2. (13) Next, we evaluate the geometric distance between the true and estimated basis vectors: 
+
+∥∆v∥22 =
+
+> Nsc
+
+X
+
+> k=1
+
+e−j2πf k τ − e−j2πf k (τ +∆ τ ) 2 (14) 
+
+=
+
+> Nsc
+
+X
+
+> k=1
+
+1 − e−j2πf k ∆τ 2 (15) 
+
+≤
+
+> Nsc
+
+X
+
+> k=1
+
+(−2πf k∆τ )2 (16) 
+
+= 4 π2∆τ 2
+
+> Nsc
+
+X
+
+> k=1
+
+f 2 
+
+> k
+
+. (17) 16 
+
+where we factored out the true phase term e−j2πf k τ in the second equality. The trigonometric identity |1 − ejx |2 = 4 sin 2(x/ 2) and the inequality 4 sin 2(x/ 2) ≤ x2 for x ∈ R, is then used to bound the distance. Defining the frequency spread energy as a constant Ef = PNsc  
+
+> k=1
+
+f 2 
+
+> k
+
+, we establish the absolute error energy bound: 
+
+∥e∥22 ≤ 4π2Ef |a|2∆τ 2. (18) Given that the total signal energy is ∥h∥22 = Nsc |a|2, the CFR-NMSE for a single tap is bounded by: CFR-NMSE ≤ 4π2Ef
+
+Nsc 
+
+∆τ 2. (19) This confirms that the CFR-NMSE grows quadratically with respect to the delay estimation error 
+
+∆τ , proving that LS regression is mathematically incapable of mitigating this error [39]. 
+
+2) Generalization to Multiple Taps: We generalize this bound for a true channel characterized by L taps, such that h = Aa , where A = [ v1, . . . , vL] and a ∈ CL. Let the estimated delays be 
+
+ˆτi = τi + ∆ τi, which form the estimated dictionary ˆA.The multi-tap error vector is e = ( I−P ˆA)Aa . Expressing the true dictionary as A = ˆA−∆A,where the i-th column of ∆A is ∆vi, we find: 
+
+e = −(I − P ˆA)∆ Aa . (20) Taking the norm and applying the triangle inequality yields: 
+
+∥e∥2 ≤ ∥ ∆Aa ∥2 ≤
+
+> L
+
+X
+
+> i=1
+
+|ai|∥ ∆vi∥2. (21) Substituting the single-column bound derived previously ( ∥∆vi∥2 ≤ 2π|∆τi|pEf ), we estab-lish the final multi-tap error energy bound: 
+
+∥e∥22 ≤ 4π2Ef
+
+> L
+
+X
+
+> i=1
+
+|ai|| ∆τi|
+
+!2
+
+. (22) 
+
+3) Implications for CSI Reconstruction: This derivation highlights two critical properties governing wideband sparse channel estimation:  
+
+> •
+
+Bandwidth Multiplier: The error bound is linearly scaled by the frequency spread energy 
+
+Ef = PNsc  
+
+> k=1
+
+f 2 
+
+> k
+
+. Consequently, as the OFDM bandwidth widens, the inability of the LS solver to compensate for ∆τ becomes exponentially more destructive. 17 Feedback Input     
+
+> •Apply Hamming window •Convert to delay domain
+> Processing ( -th step) Delay Extraction
+> Sub-grid Extractor
+> DelayNet
+> Dictionary Construction
+> Amplitude Matching UE-side Dictionary Reconstruction
+> CFR Reconstruction Output
+> BS-side
+
+Fig. 3. Pipeline of TAP.  
+
+> •
+
+Amplitude Weighting: The reconstruction error is weighted by the true tap amplitudes |ai|.A minuscule delay error ∆τ on a dominant line-of-sight (LoS) path will severely degrade the overall CFR-NMSE, regardless of the precision of the complex coefficient optimization. These fundamental limitations, namely prohibitive iterative complexity, vulnerability to spec-tral leakage, discrete dictionary mismatch, and the extreme sensitivity of the reconstruction error to delay precision, motivate the development of a neural one-shot estimation framework. A neural network can be trained on ray-traced data to denoise sidelobes and disambiguate closely spaced paths from temporal CFR sequences. Coupling such a network with a differentiable sub-grid extraction mechanism enables prediction of continuous, fractional delay positions in a single forward pass, bypassing both the iterative loops of classical algorithms and the resolution limits of discrete dictionaries. V. T EMPORAL CHANNEL ESTIMATION AND FEEDBACK 
+
+To address the limitations of classical iterative pursuit and rigid neural architectures, we propose TAP. As depicted in Fig. 3 and formalized in Algorithm 2, TAP is designed as a fully differentiable, one-shot computational pipeline comprising three cascaded stages: (i) temporal delay prediction, (ii) differentiable sub-grid extraction, and (iii) spatial amplitude estimation. By ensuring every stage permits backpropagation, the entire framework seamlessly bridges structural sparse recovery with deep learning, enabling end-to-end training using composite loss functions. 18 
+
+Algorithm 2 TAP Pipeline for MIMO CSI Compression 
+
+Require: Previous MIMO CFRs Hprev , Current (Target) CFR Htgt , Max paths K, Regularization 
+
+λ
+
+Ensure: Reconstructed Channel Frequency Response ˆH
+
+UE Side (Estimation, Compression & Feedback): Require: DelayNet fθ, Delay Extractor g 
+
+> 1:
+
+Hseq ← [Hprev , Htgt ] 
+
+> 2:
+
+Gseq ← IFFT (Hseq ) 
+
+> 3:
+
+p ← fθ(Gseq ) ▷ Generate delay heatmap  
+
+> 4:
+
+ˆτ ← g(p, K ) ▷ Extract delays  
+
+> 5:
+
+A ← exp( −j2πf ˆ τ T ) ▷ Construct dictionary  
+
+> 6:
+
+ˆX ← (AH A + λI)−1AH Htgt ▷ Compute amplitudes  
+
+> 7:
+
+ˆXnorm , s ← Normalize ( ˆX) 
+
+> 8:
+
+return Delays ˆτ , Amplitudes ˆXnorm , and Scale s
+
+BS Side (Channel Reconstruction):  
+
+> 9:
+
+ˆX ← s · ˆXnorm ▷ Restore physical amplitude scaling  
+
+> 10:
+
+A ← exp( −j2πf ˆ τ T ) ▷ Reconstruct dictionary matrix  
+
+> 11:
+
+ˆH ← A ˆ X ▷ Reconstruct full MIMO CFR  
+
+> 12:
+
+return Reconstructed CFR ˆH
+
+A. Temporal Input Representation 
+
+The input to the system leverages temporal channel coherence. Let Hseq = [ Ht−W +1 , . . . , Ht] ∈
+
+CW ×P ×Nr×Nc×Nsc represent a temporally windowed sequence of length W , encompassing the current and W − 1 historical CFR snapshots. Rather than processing the raw frequency-domain data, TAP applies a Hamming-windowed IFFT across the subcarrier axis at each time step t
+
+to produce a delay-domain tensor Gt. These are then concatenated to transform the sequence into the spatial-delay domain tensor Gseq ∈ CW ×P ×Nr×Nc×Nsc . This representation addresses the spectral leakage problem identified in the previous section: the Hamming window suppresses sinc-sidelobes, effectively eliminating phantom peaks. Stacking the sequence along the temporal 19 
+
+dimension provides motion-based disambiguation cues, allowing the neural network to distin-guish consistent, physically moving propagation paths from transient noise artifacts. 
+
+B. DelayNet Architecture 
+
+The core of the delay prediction engine is DelayNet, a 1D convolutional residual network that maps the high-dimensional spatial-delay-temporal input into a 1D probability heatmap over the discrete delay axis. DelayNet employs depthwise separable convolutions combined with an initial spatial-averaging layer. This design decouples the network’s parameters from the spatial dimensions of the input; the convolution weights do not scale with the number of BS antennas. The architecture utilizes grouped residual blocks with GroupNorm and GELU activations to ensure stable training dynamics independent of batch size. A sigmoid activation at the output layer produces a multi-label probability heatmap p ∈ [0 , 1] Nd , permitting the simultaneous detection of multiple dominant paths that share closely spaced delay bins. Here, Nd denotes the estimated heatmap length. The antenna-averaging and depthwise convolutional structures ensure that the DelayNet parameter count remains constant regardless of the Nr ×Nc antenna geometry deployed at the base station. 
+
+C. Differentiable Sub-Grid Delay Extraction 
+
+To overcome the discrete dictionary mismatch problem without resorting to computationally expensive dictionary oversampling, TAP utilizes a differentiable parabolic interpolation operator, denoted as g(p, K ), to extract K continuous, sub-grid delay values ˆτ = [ˆ τ1, . . . , ˆτK ]T from the discrete output heatmap p.For each of the top K local peaks identified at integer bin index i, the corresponding fractional sub-bin offset ∆i ∈ [−0.5, 0.5] is computed using the probability values of the peak pi and its immediate neighbors pi−1 and pi+1 . By fitting a parabola to these three points, the true vertex offset is analytically extracted as: 
+
+∆i = 12
+
+pi−1 − pi+1 
+
+pi−1 − 2pi + pi+1 
+
+. (23) The continuous physical delay is then obtained by scaling the fractional index by the time-domain sampling interval ∆t, such that ˆτk = ( i + ∆ i)∆ t.20 
+
+This mathematically continuous extraction allows the estimated delays to fall precisely between rigid grid points, successfully resolving off-grid multipath components. More importantly, this operator is fully differentiable with respect to the input probabilities. This differentiability pro-vides a transparent conduit for gradient flow, enabling the reconstruction error gradient originating from the downstream solver to backpropagate directly into DelayNet. 
+
+D. Spatial Amplitude Estimation 
+
+Given the extracted continuous delays ˆτ , the spatial amplitudes across all Nant antenna elements are recovered simultaneously using a standard regularized least squares solver, denoted as LS () .A continuous Fourier dictionary matrix A ∈ CNsc ×K is constructed exactly as A[n, k ] =exp( −j2πf n ˆτk). Exploiting the joint-spatial sparsity of the CFR, we solve for the complex spatial amplitudes ˆX ∈ CK×Nant :
+
+ˆX = ( AH A + λI)−1AH Htgt . (24) Because the continuous basis A is identical across all antennas, the generalized inverse only needs to be computed once per UE. While this solver is mathematically identical to the orthogo-nalization step in classical iterative OMP, executing it only once after a single-shot neural delay prediction dramatically reduces the computational burden. This operation consumes roughly 18 MFLOPs, providing exact spatial recovery without introducing any learned parameters. 
+
+E. Decoder-Free BS Reconstruction 
+
+Upon receiving the compressed feedback payload, the BS reconstructs the full-dimensional downlink CFR matrix. Crucially, unlike deep learning-based CSI feedback schemes that require deploying and executing a computationally heavy neural decoder at the base station, TAP offers a completely decoder-free reconstruction architecture. Because the feedback payload explicitly represents the physical channel parameters, the BS reconstructs the CFR simply by multiplying the spatial amplitudes by the Fourier dictionary matrix A, effectively applying an inverse Fourier transform: ˆHtgt = A ˆ X. This purely algebraic reconstruction entirely eliminates the need for maintaining environment-specific neural weights at the network side, drastically reducing BS-side inference latency and deployment overhead. 21 
+
+F. Composite Loss and End-to-End Training 
+
+The entire TAP pipeline is trained end-to-end utilizing a composite objective function that combines localized delay supervision with global reconstruction constraints. The loss is formu-lated as a weighted sum of a heatmap mean square error (MSE) loss, Lheatmap , and a CFR-NMSE loss, LCFR .To calculate Lheatmap , a ground-truth probability heatmap ptarget ∈ [0 , 1] Nd is dynamically gen-erated during training using the true physical delays τl and their corresponding linear amplitudes 
+
+αl extracted from the ray-tracing simulator. For each true path, a localized Gaussian distribution is placed at the exact fractional delay bin τl/∆t. The height of each Gaussian is scaled by the relative amplitude of the path, ensuring that the network prioritizes the most dominant propagation components. Mathematically, the target heatmap is constructed as: 
+
+ptarget  
+
+> i
+
+= min 
+
+> L
+
+X
+
+> l=1
+
+|αl|
+
+max j |αj |e 
+
+> 
+> −(i−τl/∆t)22σ2
+> 
+
+, 1.0
+
+!
+
+, (25) where σ controls the width of the Gaussian targets. The heatmap loss is then computed as 
+
+Lheatmap = ∥p − ptarget ∥22.This dual-loss methodology accelerates convergence: Lheatmap provides explicit, aggressive early-stage supervision for the delay extraction mechanism, preventing the gradients from van-ishing through the non-linear LS solver. Simultaneously, the end-to-end LCFR guarantees that the final spatial amplitudes and overall channel reconstruction are optimally tuned for maximum fidelity. VI. P ERFORMANCE EVALUATION 
+
+A. Simulation Setup 
+
+We evaluate the proposed TAP framework across five diverse propagation environments to test its performance and generalizability. Simulation settings are detailed in Table I. We use evaluation parameters aligned with the 3GPP Frequency Range 1 (FR1) standard, employing a 100 MHz bandwidth [40]. The datasets encompass two Sionna RT simulator data—Urban Macro-cell (UMa), and Indoor Factory (InF)—as well as two DeepMIMO datasets each representing Urban Microcell (UMi) and Indoor Hotspot (InH), and a 3GPP stochastic CDL-A channel model 22                                                                               
+
+> TABLE I SIMULATION SETTINGS FOR EVALUATION ENVIRONMENTS
+> Parameter Environments UMa InF CDL-A UMi InH ULA
+> UE velocity (m/s) 16.6 1.0 ––––Downlink frequency fc(GHz) 2.14 2.14 2.14 3.5 2.5 3.5 Subcarrier spacing (kHz) 60 60 60 60 60 30 Number of subcarriers Nsc 1620 1620 1620 1620 1620 1024 Number of BS antenna rows Nr888881Number of BS antenna columns Nc8888832 Antenna polarization P222111Oversample factor S44444–
+> Tmax (μs) 1.5 0.7 1.5 1.5 0.7 –Temporal window length ( W)99199–
+
+generated using Sionna-PHY [41]–[44]. These environments provide comprehensive coverage of indoor, outdoor, line-of-sight (LOS), and non-LOS conditions with varying delay spreads. 
+
+B. Baseline Methods 
+
+To benchmark the proposed TAP framework against the established state-of-the-art, we com-pare it against distinct baselines spanning four methodological categories: classical iterative CS algorithms (OMP, LASSO, and TVAL3), standardized codebook-based approaches (3GPP Type-1 and Type-2 codebooks) [10], and deep learning-based autoencoders (CsiNet-UPA and CsiNet-LSTM-UPA). The original CsiNet architecture was strictly constrained to 1 × 32 ULAs [9]. To provide a fair deep learning baseline for modern massive MIMO systems, we expanded CsiNet to operate on UPAs by adapting its fully connected bottleneck and convolutional layers to support 2D spatial dimensions, which we denote as CsiNet-UPA. Furthermore, to evaluate a learning-based baseline capable of exploiting temporal correlation, we similarly adapted the CsiNet-LSTM architecture to support UPA configurations, which we denote as CsiNet-LSTM-UPA [12]. To validate this expanded architecture and address potential skepticism regarding its effectiveness, we evaluate it on the original 1 × 32 ULA configuration. The results are listed in Table II, along with the TAP’s train dataset type. As shown in the Table, our CsiNet architecture implementation 23                           
+
+> TABLE II NMSE P ERFORMANCE COMPARISON ON 1×32 ULA A RCHITECTURE
+> Method CFR NMSE [dB]
+> P90 P95 Mean Proposed (UMa) -22.33 -21.68 -25.88 Proposed (InF) -35.05 -34.62 -37.01 Proposed (UMi) -30.77 -29.76 -32.82 Proposed (InH) -29.45 -28.77 -31.78 Proposed (CDL-A) -29.38 -28.57 -31.94 CsiNet-UPA -15.01 -14.85 -15.54
+
+achieves a mean CFR-NMSE of −15 .54 dB, which aligns with the performance reported in the original literature. We also note that TAP outperforms CsiNet architecture in terms of CFR-NMSE. Specifically, UMa-trained TAP model achieves mean NMSE of −25 .88 dB and InF-trained TAP model achieves −37 .01 dB on a 1 × 32 ULA architecture. This substantial 10 to 21 dB performance gap is consistent even at the 90th and 95th percentile worst-case thresholds, highlighting the fundamental superiority of combining physical structural extraction with neural precision over dense fully connected autoencoders. All methods are evaluated on identical, held-out test sets. The comparative performance is quantified using five primary metrics: mean NMSE in dB, 90th and 95th-percentile NMSE thresholds to assess worst-case reliability, CR, model footprint in MB, and average inference latency in milliseconds (ms) measured on standard UE hardware. 
+
+C. Patch NMSE vs. CFR-NMSE 
+
+To ensure a fair comparison, it is critical to clarify the distinction between the evaluation metrics used. Let the full spatial-frequency CFR matrix be H ∈ CNsc ×Nr×Nc . CsiNet operates on delay-angular domain data, generated by applying a unitary 2D transform F(·) such that the transformed channel is ˜H = F(H). To achieve compression, CsiNet truncates this matrix, retaining only a dense sub-matrix patch ˜Hp containing the dominant paths, while permanently discarding the out-of-patch high-delay energy ˜Hout .Let the neural network’s reconstruction error on the retained patch be ep = ˜Hp − ˆ˜Hp. The reconstructed delay-angular matrix is zero-padded to restore the original dimensions, yielding 24 
+
+ˆ˜Hpadded = [ ˆ˜Hp; 0]. The estimated CFR is then ˆH = F−1( ˆ˜Hpadded ). Because F is unitary, Parseval’s theorem guarantees that the Frobenius norm of the reconstruction error is preserved across domains: 
+
+∥H − ˆH∥2 
+
+> F
+
+= ∥ ˜H − ˆ˜Hpadded ∥2 
+
+> F
+
+(26) 
+
+=
+
+ ˜Hp − ˆ˜Hp
+
+˜Hout − 0
+
+
+
+> 2
+> F
+
+(27) 
+
+= ∥ep∥2 
+
+> F
+
++ ∥ ˜Hout ∥2 
+
+> F
+
+. (28) Most prior deep learning studies report the patch NMSE , computed strictly over the truncated sub-matrix as ∥ep∥2 
+
+> F
+
+/∥ ˜Hp∥2 
+
+> F
+
+. In contrast, the true CFR-NMSE must account for the permanently discarded out-of-patch energy: CFR-NMSE = ∥ep∥2 
+
+> F
+
++ ∥ ˜Hout ∥2
+
+> F
+
+∥ ˜Hp∥2 
+
+> F
+
++ ∥ ˜Hout ∥2
+
+> F
+
+. (29) Consequently, as long as the neural network is successfully learning ( ∥ep∥2 
+
+> F
+
+< ∥ ˜Hp∥2 
+
+> F
+
+) and truncation removes any non-zero energy ( ∥ ˜Hout ∥2 
+
+> F
+
+> 0), the true CFR-NMSE is strictly larger (i.e., worse) than the patch NMSE. In this work, all baselines are evaluated using the rigorous CFR-NMSE metric. 
+
+D. CIR Structure Analysis 
+
+Before evaluating reconstruction fidelity, we analyze the structural properties of the channel impulse responses across the datasets. We visualized the CIR in environments with completely different propagation properties in Fig. 4 As expected, the delays were longer in outdoor envi-ronments than in indoor environments. Furthermore, the number of significant paths required for high-fidelity reconstruction differs fundamentally depending on the environment. As demonstrated by the energy spread analysis in Fig. 5, indoor environments feature dense multipath scattering that spreads channel energy across numerous taps, necessitating a larger K value to capture 95% of the total channel energy [41]. In contrast, outdoor channels concentrate their energy into fewer, well-defined clusters, requiring a much smaller K. Mathematically, the required number of paths K is determined by the Power Delay Profile (PDP) energy threshold. Letting P (τ ) denote the expected power at delay τ , the 25 0.0 0.2 0.4 0.6 0.8 1.0 1.2 1.4   
+
+> Delay [ s]
+> 0
+> 1
+> 2
+> 3
+> 4
+> 5
+> Mean Amplitude
+> ×10 5
+> Original PDP Profile
+> OMP-Reconstructed CIR
+
+(a) 0.0 0.2 0.4 0.6 0.8 1.0 1.2 1.4    
+
+> Delay [ s]
+> 0.00
+> 0.25
+> 0.50
+> 0.75
+> 1.00
+> 1.25
+> 1.50
+> Mean Amplitude
+> ×10 3
+> Original PDP Profile
+> OMP-Reconstructed CIR
+
+(b) 
+
+Fig. 4. CIR plots of different environments: (a) Outdoor environment; (b) Indoor environment. 
+
+required number of discrete paths K to capture a fraction η (e.g., η = 0 .95 ) of the total channel energy is implicitly defined by: PKi=1 P (τi)
+
+P  
+
+> all j
+
+P (τj ) ≥ η, (30) where the delays {τi} are ordered in descending order of power, such that P (τi) ≥ P (τi+1 )
+
+for all i. Indoor environments typically exhibit a denser power delay profile P (τ ) due to rich multipath scattering within physically bounded spaces, causing the median channel to require a substantially larger path count K to capture 95% of the channel energy. Conversely, while outdoor UMa environments are sparser on average, they lack hard physical boundaries and thus exhibit a heavy-tailed delay spread driven by distant unconstrained reflectors, demanding high 
+
+K strictly to capture worst-case channels. Because the general base station deployment category (e.g., indoor versus outdoor) is known prior to operation, configuring an environment-appropriate maximum path count K does not compromise the architecture’s capacity to adapt to completely unseen environments in a zero-shot manner. 
+
+E. Reconstruction Quality 
+
+Fig. 6 illustrates the mean CFR-NMSE as a function of the number of estimated paths K.Across all environments, the reconstruction quality improves monotonically as K increases, eventually saturating at a point corresponding to the physical path count of the environment. At the optimal K for each dataset, the proposed TAP method achieves mean CFR-NMSE values ranging from −21 .2 dB in UMa and −29 .8 dB in InF to −35 .7 dB in CDL-A. 26 25 50 75 100 125 150 175 
+
+> Required Delay Bins for 95% Energy
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> CDF
+> UMa
+> InF
+
+Fig. 5. Cumulative distribution function (CDF) of the required number of delay bins to capture 95% of the total channel energy in indoor and outdoor environments. The energy spread dictates the required scaling of the structural components. 0% 20% 40% 60% 80% 100%      
+
+> Number of Estimated Paths K/Kmax (Normalized)
+> 35
+> 30
+> 25
+> 20
+> 15
+> 10
+> 5
+> 0
+> NMSE [dB]
+> UMa ( Kmax = 20 )
+> InF ( Kmax = 90 )
+> CDL-A ( Kmax = 40 )
+
+Fig. 6. NMSE distributions of the proposed method under different environments. 
+
+Beyond average performance, statistical robustness is critical for reliable communication links. The CFR-NMSE distribution histograms in Fig. 7 and the percentile data in Table III reveal highly concentrated error distributions. For instance, over 92% of samples in the UMa dataset achieve better than −10 dB CFR-NMSE, while the InF and CDL-A datasets show over 99.6% of samples surpassing this threshold. This confirms that TAP provides reliable per-sample reconstruction rather than just favorable average metrics. 
+
+F. Compression-Quality Pareto Efficiency 
+
+The trade-off between CR and reconstruction fidelity is the key metric for CSI feedback. The Pareto frontier analysis presented in Fig. 8 maps this trade-off for both UMa and InF environments. The proposed TAP framework strictly dominates the baseline methods, defining a 27 40 30 20 10 0
+
+> NMSE [dB]
+> 0
+> 20
+> 40
+> 60
+> 80
+> Number of Samples
+> Mean NMSE: -20.25 dB
+
+(a) 50 40 30 20 10  
+
+> NMSE [dB]
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 120
+> Number of Samples
+> Mean NMSE: -31.25 dB
+
+(b) 45.0 42.5 40.0 37.5 35.0 32.5 30.0 27.5 25.0  
+
+> NMSE [dB]
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 120
+> 140
+> 160
+> Number of Samples
+> Mean NMSE: -35.62 dB
+
+(c) 
+
+Fig. 7. NMSE distributions of the proposed method under different environments; (a) Outdoor environment; (b) Indoor environment; (c) CDL-A environment. TABLE III PERFORMANCE COMPARISON OF THE PROPOSED METHOD IN DIFFERENT ENVIRONMENTS 
+
+Environment CR -10 dB Prob. [%] CFR NMSE [dB] 
+
+P90 P95 Mean UMa 0.0124 92.71 -11.38 -8.29 -20.25 InF 0.0558 99.65 -20.31 -16.38 -31.25 UMi 0.0248 100.0 -27.07 -26.95 -50.71 InH 0.0248 100.0 -36.11 -36.09 -38.62 CDL-A 0.0248 100.0 -32.15 -31.15 -35.76 * P90 and P95 denote the 90th and 95th percentile NMSE thresholds, respectively. 
+
+new Pareto frontier. For example, in the outdoor UMa environment, the proposed model achieves an NMSE of -21.22 dB at a CR of 0.0124. Even when using a significantly smaller CR of 0.0012, the proposed model achieves an NMSE of -18.10 dB, which is still substantially lower than the CsiNet-UPA’s NMSE of -9.14 dB at a much larger CR of 0.0224. Furthermore, in the InF environment, although CsiNet-UPA requires a CR of 0.0105 to achieve an NMSE of -7.82 dB, the proposed method achieves a lower NMSE of -10.99 dB at a similar CR of 0.0112, and can further push the NMSE down to -20.08 dB at a CR of 0.0279. Overall, TAP consistently outperforms DL-based baselines across all evaluated scenarios, as summarized in Table IV. 28 0.00 0.01 0.02   
+
+> 30
+> 25
+> 20
+> 15
+> 10
+> 5
+> NMSE [dB]
+> 0.24 0.25 0.26
+> Proposed
+> Pareto Frontier
+> CsiNet-UPA
+> CsiNet-LSTM-UPA
+> LASSO
+> TVAL3
+> Codebook
+> Actual CR
+
+(a) 0.00 0.02 0.04 0.06    
+
+> 30
+> 25
+> 20
+> 15
+> 10
+> 5
+> 0
+> NMSE [dB]
+> 0.22 0.24 0.26
+> Proposed
+> Pareto Frontier
+> CsiNet-UPA
+> CsiNet-LSTM-UPA
+> LASSO
+> TVAL3
+> Codebook
+> Actual CR
+
+(b) 
+
+Fig. 8. Pareto efficiency graph of the proposed method under different environments; (a) UMa environment; (b) InF environment. UMa loader                     
+
+> InF loader
+> UMi loader
+> InH loader
+> CDL-A loader
+> Evaluation Dataset
+> UMa InF UMi InH CDL-A
+> Train Dataset
+> -19.92 -19.36 -19.07 -26.56 -45.93
+> -27.08 -23.92 -47.16 -77.76 -49.59
+> -30.96 -30.22 -35.61 -77.35 -56.27
+> -26.56 -27.18 -19.66 -38.48 -43.90
+> -22.12 -21.38 -15.64 -60.27 -35.72
+
+Fig. 9. Cross-domain zero-shot generalization performance matrix between different environments. 
+
+G. Cross-Domain Generalization 
+
+A major vulnerability of existing neural compressors is their inability to adapt to unseen environments. We evaluate zero-shot cross-environment transfer by training TAP on a single source dataset and evaluating it on the remaining four target datasets without fine-tuning. The resulting 5 × 5 CFR-NMSE matrix in Fig. 9 demonstrates strong generalization. For example, a model trained on the InF environment achieves −47 .16 dB CFR-NMSE on the outdoor UMi dataset, while a UMa-trained model yields −26 .56 dB on the InH dataset. This zero-shot transfer is enabled by TAP’s reliance on physical spatial-delay structure and inference-time time-of-flight alignment, which decouples the neural weights from environment-specific statistics. 29 4 6 8 10 12 14 16 
+
+Nc                                          
+
+> 4 6 8 10  12  14  16
+> Nr
+> 0.26 0.16 0.08 0.07 0.07 0.26 0.13
+> 0.11 0.17 0.05 0.01 0.01 0.08 -0.04
+> 0.17 0.13 0.00 0.01 0.01 0.06 -0.09
+> 0.16 0.18 0.02 0.01 0.02 -0.04 -0.14
+> 0.24 0.12 0.07 -0.03 -0.09 -0.06 -0.02
+> 0.04 0.11 0.06 0.13 -0.10 -0.10 -0.04
+> 0.04 -0.02 -0.02 -0.01 -0.21 -0.22 -0.05
+
+(a) 4 6 8 10 12 14 16 
+
+Nc                                           
+
+> 4 6 8 10  12  14  16
+> Nr
+> 3.09 2.82 2.20 -0.08 -0.66 -0.73 -1.57
+> 1.43 0.93 -0.49 -0.44 -1.03 -0.50 -1.06
+> 1.92 2.49 0.00 -0.49 -0.53 -0.70 -1.13
+> 2.31 2.01 -0.09 -0.46 -0.55 -0.30 -0.71
+> 0.86 1.06 2.79 0.82 0.61 -1.13 -1.02
+> 0.56 0.56 2.02 0.75 -0.54 -0.78 1.52
+> 1.19 1.48 -0.03 -0.56 0.15 -0.94 -0.30
+
+(b) 4 6 8 10 12 14 16 
+
+Nc                                           
+
+> 4 6 8 10  12  14  16
+> Nr
+> 0.17 0.04 -0.03 -0.00 0.05 0.14 0.13
+> 0.19 0.00 0.01 0.06 0.00 0.08 0.14
+> 0.15 0.09 0.00 0.10 0.08 0.09 0.18
+> 0.14 0.14 0.05 0.06 0.11 0.13 0.11
+> 0.20 0.23 0.13 0.14 0.14 0.17 0.16
+> 0.26 0.21 0.22 0.16 0.15 0.18 0.23
+> 0.37 0.21 0.22 0.25 0.19 0.21 0.28
+
+(c) 
+
+Fig. 10. Geometric scalability evaluation: NMSE performance across heterogeneous antenna array geometries; (a) Outdoor-trained model; (b) Indoor-trained model; (c) Sionna-PHY-trained model. 
+
+H. Antenna Geometry Scalability 
+
+TAP also exhibits zero-shot cross-antenna generalization. The depthwise separable convolu-tions and path-agnostic batch folding make the architecture independent of the BS antenna array dimensions. As shown in Fig. 10, a model trained on a specific UPA geometry can be deployed on unseen configurations (e.g., 4 × 16 , 16 × 4, or 1 × 32 arrays). Across all three primary training environments, the CFR-NMSE degradation when transferring to an unmatched geometry is less than 3 dB compared to the matched-geometry baseline, confirming spatial scalability. We also note that Table II also shows the generalization performance of TAP. All TAP models were trained in different environment and antenna configurations, but they all outperformed the CsiNet-UPA, which was trained using the ULA dataset. 
+
+I. Complexity Analysis 
+
+Real-time FDD CSI feedback mandates strict operational efficiency at the UE. As documented in Table IV, TAP achieves sub-millisecond inference latencies ( 0.45 to 0.60 ms) while consuming less than 1 MB of memory ( 0.45 to 0.99 MB) and operating at 0.03 to 0.15 GFLOPs. This represents a 2700 times acceleration over iterative OMP and a 6400 times acceleration over LASSO. Crucially, TAP provides massive memory savings over deep learning baselines. While the original CsiNet was designed with a relatively small memory footprint for ULAs with limited 30 
+
+TABLE IV COMPUTATION AND NMSE P ERFORMANCE COMPARISON OF EACH METHOD IN DIFFERENT ENVIRONMENTS (D EFAULT :UM A)                                                                     
+
+> Method (Environment) CR Model size [MB] Avg. Inf. Time [ms] Avg. GFLOPs Mean NMSE [dB]
+> Proposed (UMa) 0.0124 0.9921 0.6239 0.1527 -21.22 Proposed (InF) 0.0558 0.4504 0.4824 0.0325 -29.75 Proposed (CDL-A) 0.0248 0.9921 0.6433 0.0762 -35.57 Proposed (UMi) 0.0248 0.9921 0.6228 0.1527 -35.76 Proposed (InH) 0.0248 0.4504 0.4774 0.0325 -38.42 CsiNet-UPA (UMa) 0.0224 657.1579 0.7625 0.2634 -8.74 CsiNet-UPA (InF) 0.0105 144.5797 0.3614 0.0807 -2.99 CsiNet-UPA (CDL-A) 0.0071 66.1912 0.3656 0.0463 -15.39 OMP ( K= 10 )0.0024 N/A 630.15 N/A -31.16 LASSO (CR=0.25) 0.2500 N/A 88648.56 N/A -30.22 TVAL3 (CR=0.25) 0.2500 N/A 1301.37 N/A -1.59 3GPP Type-1 Codebook 0.00008 N/A 14.81 N/A -5.95 3GPP Type-2 Codebook 0.00016 N/A 23.95 N/A -8.47 * The inference time and the FLOPs include pre- and post-processing.
+
+subcarriers, extending its architecture to support UPAs and realistic wideband grids drastically inflates its size. Because the modified CsiNet-UPA relies on dense fully connected layers that scale quadratically with the spatial dimensions and retained delay patch sizes, its memory footprint reaches 657 .2 MB for the outdoor UMa environment and 144 .6 MB for the indoor InF environment. In contrast, TAP’s path-agnostic architecture keeps the model footprint under 
+
+1 MB across all scenarios. This represents up to a 660 times reduction in model size, making TAP uniquely suited for memory-constrained UE deployments without sacrificing CFR-NMSE performance. The speed of TAP stems from offloading the iterative search to a lightweight CNN, leaving only a single closed-form LS projection. The computational complexity of computing the complex amplitudes ˆX = ( AH A +λI)−1AH Htgt is dominated by matrix multiplications and the inversion of a small K × K matrix. For complex-valued matrices, constructing AH A requires 8K2Nsc 
+
+FLOPs, projecting the target AH Htgt requires 8KN sc Nant FLOPs, the complex matrix inversion takes approximately 16 3 K3 FLOPs, and the final multiplication takes 8K2Nant FLOPs. The total 31 5 0 5 10 15 20 25     
+
+> SNR (dB)
+> 5
+> 10
+> 15
+> 20
+> 25
+> Achievable Spectral Efficiency (bps/Hz)
+> 24.7 24.8 24.9 25.0 25.1
+> 25.2
+> 25.3
+> 25.4
+> 25.5
+> Perfect CSI
+> Proposed
+> CsiNet-UPA
+> CsiNet-LSTM-UPA
+> LASSO
+> Codebook
+> TVAL3
+
+Fig. 11. Downlink achievable spectral efficiency (bps/Hz) in the CDL-A environment using a linear precoder derived from the reconstructed CSI. 
+
+FLOP count for the algebraic recovery is FLOPs LS = 8  K2Nsc + KN sc Nant + 23 K3 + K2Nant 
+
+.For typical parameters (e.g., K = 20 , Nsc = 1620 , Nant = 64 ), this evaluates to approximately 
+
+18 MFLOPs. Including the DelayNet passes, the entire pipeline remains under 153 MFLOPs. 
+
+J. System-Level Spectral Efficiency 
+
+To evaluate the downstream impact of the proposed CSI compression framework, we map the reconstructed CSI to achievable spectral efficiency. Using the reconstructed CFRs to synthesize a linear spatial precoder at the base station, Fig. 11 plots the resulting single-user MIMO capacity. Compared to the theoretical upper bound of perfect CSI, TAP exhibits only marginal capacity degradation across the entire SNR regime, tightly tracking the optimal curve. In contrast, baselines such as CsiNet-UPA introduce capacity ceilings due to amplitude and phase distortion, translating their poor CFR-NMSE performance into throughput losses. This confirms that TAP provides reliable physical channel representations capable of supporting high-order modulation schemes. 
+
+K. Robustness to Payload Quantization 
+
+In practical communication systems, the continuous representations must be quantized into a finite bitstream before transmission. To evaluate the robustness of TAP against quantization noise, 32 2 4 6 8 10 12 16  
+
+> Bits per Latent Dimension
+> 35
+> 30
+> 25
+> 20
+> 15
+> 10
+> 5
+> 0
+> Reconstruction NMSE (dB)
+> Proposed
+> CsiNet-UPA
+> CsiNet-LSTM-UPA
+> LASSO
+> TVAL3
+> Fig. 12. Impact of payload quantization on reconstruction NMSE across different bit-widths for the CDL-A dataset. TAP demonstrates high robustness to harsh variable bit-width quantization compared to traditional baseline autoencoders.
+
+we apply a uniform scalar quantizer to the extracted spatial amplitudes across variable bit-widths. As illustrated in Fig. 12, TAP exhibits a steeper degradation slope compared to the CsiNet-UPA baseline as the bit-width decreases. However, this steepness is a mathematical consequence of TAP’s exceptionally low initial error floor. Because the total reconstruction error is bounded by the sum of the model’s inherent prediction error and the quantization noise, the baseline’s inherently high model error ( −17 .5 dB NMSE of LASSO and −15 .4 dB NMSE of CsiNet-UPA) masks the quantization noise at higher bit-widths, making its curve appear artificially robust. In contrast, TAP’s high-fidelity unquantized reconstruction (approximately −35 .4 dB) exposes the standard 6 dB-per-bit quantization degradation linearly. Despite this steeper slope, TAP strictly upper-bounds the baseline’s performance, maintaining lower absolute CFR-NMSE even at resolutions as low as 4 to 6 bits per dimension. 
+
+L. Robustness to CSI-RS Estimation Noise 
+
+In practical deployments, the downlink channel must be estimated at the UE using pilot signals such as CSI-RS, which introduces estimation noise. To evaluate the robustness of the proposed framework, we utilize the noisy observed CFR matrix Hobs as the input to the compressor. As shown in Fig. 13, the TAP architecture acts as an effective denoiser, preserving high reconstruc-tion quality even at low input CSI-RS SNRs. Notably, the two Sionna RT results (indoor and 33 0 5 10 15 20 25 30 
+
+> Input CSI-RS SNR (dB)
+> 20
+> 15
+> 10
+> 5
+> 0
+> Reconstruction NMSE (dB)  Proposed
+> CsiNet-UPA
+> CsiNet-LSTM-UPA
+> LASSO
+> TVAL3
+
+(a) 0 5 10 15 20 25 30  
+
+> Input CSI-RS SNR (dB)
+> 20
+> 15
+> 10
+> 5
+> 0
+> 5
+> Reconstruction NMSE (dB)  Proposed
+> CsiNet-UPA
+> CsiNet-LSTM-UPA
+> LASSO
+> TVAL3
+
+(b) 0 5 10 15 20 25 30  
+
+> Input CSI-RS SNR (dB)
+> 35
+> 30
+> 25
+> 20
+> 15
+> 10
+> 5
+> 0
+> Reconstruction NMSE (dB)  Proposed
+> CsiNet-UPA
+> CsiNet-LSTM-UPA
+> LASSO
+> TVAL3
+
+(c) 
+
+Fig. 13. Impact of CSI-RS estimation noise at the receiver. The reconstruction NMSE is evaluated against varying input CSI-RS SNRs for (a) UMa, (b) InF, and (c) CDL-A datasets. 
+
+outdoor) exhibit significantly less performance degradation compared to the CDL-A results. This enhanced robustness is attributed to two fundamental mechanisms: array averaging and temporal history. First, by processing the spatial array elements as input channels and collapsing the spatial dimensions to estimate shared delays, the network performs a massive spatial averaging operation. Independent thermal noise across the antennas cancels out, while the true physical delays add up constructively, drastically boosting the effective SNR. Second, the network aggregates a temporal context window of past CFRs, acting as a guided denoiser. Because estimation noise is highly random and uncorrelated over time, whereas physical scattering paths exhibit continuous, predictable trajectories, the 1D-CNN naturally separates temporally correlated signals from independent white noise. To isolate and confirm the impact of this temporal history, the CDL-A evaluation explicitly uses a temporal window length of 1. Serving as an ablation study, the steeper degradation of the CDL-A results in Fig. 13(c) demonstrates that while array averaging provides a robust baseline, the inclusion of temporal history data is a primary driver for the superior noise resilience observed in the Sionna RT environments. VII. D ISCUSSION : N EAR -F IELD XL-MIMO L IMITATIONS 
+
+To mathematically demonstrate why the current TAP framework is strictly bounded by the far-field assumption, we examine the phase relationship across the wideband spectrum. In a near-field XL-MIMO regime, the spherical wavefront causes the absolute time of arrival to vary 34 
+
+across the spatial array. For a given multipath component l, the true wideband channel at antenna element m and subcarrier k can be modeled as: 
+
+[hl,m ]k = αl,m exp ( −j2πf k(τl + ∆ τl,m )) (31) where τl is the reference arrival delay at the array center, and ∆τl,m represents the antenna-dependent delay variation caused by the spherical wavefront curvature. The TAP framework enforces joint-spatial sparsity by utilizing a DelayNet to extract a single, shared delay estimate ˆτl for the entire array. Consequently, the constructed dictionary basis vector 
+
+v(ˆ τl) ∈ CNsc is spatially invariant in the delay domain: 
+
+[v(ˆ τl)] k = e−j2πf k ˆτl (32) During the spatial reconstruction phase, the LS solver computes an independent complex amplitude for each antenna, denoted as ˆxl,m = |ˆxl,m |ejθ m . This yields the reconstructed channel: 
+
+[ˆhl,m ]k = |ˆxl,m | exp( jθ m) exp( −j2πf k ˆτl) (33) By isolating the phase terms from (31) and (33), and assuming perfect reference delay extraction ( ˆτl = τl), the residual phase error ϵm,k at subcarrier k evaluates to: 
+
+ϵm,k = −2πf k∆τl,m 
+
+| {z }
+
+> Near-Field Phase Ramp
+
+− θm
+
+|{z} 
+
+> LS Constant Phase
+
+(34) Equation (34) mathematically exposes the structural limitation of 1D spatial-delay dictionaries. Because the true near-field delay variation ∆τl,m is multiplied by the subcarrier frequency fk, it manifests as a frequency-dependent phase slope across the wideband spectrum. However, the LS solver is mathematically restricted to applying a single, frequency-independent phase rotation 
+
+θm. A scalar phase shift can only translate the phase response vertically; it cannot alter the slope. Therefore, while the LS solver can perfectly align the phase at a specific center frequency, the residual error ϵm,k will diverge linearly towards the band edges, leading to severe basis mismatch and spatial energy leakage. VIII. C ONCLUSION AND FUTURE WORK 
+
+This paper proposed TAP: Tap-Assisted Parametric CSI Compression, a one-shot neural frame-work for massive MIMO FDD CSI feedback. By replacing the iterative atom selection of classical 35 
+
+OMP with a lightweight CNN-based delay predictor and resolving spatial amplitudes via a closed-form least squares solver, TAP bridges the gap between deep learning and CS. Evaluations across five 3GPP propagation environments demonstrated that TAP achieves a 10.0 to 11.1 dB improvement in NMSE at the UMa environment and 3.13 to 12.22 dB improvement at the InF environment over the CsiNet family, while operating with a much smaller model footprint and largely accelerating inference compared to iterative OMP, meeting sub-millisecond deployment constraints. While TAP achieves high-fidelity compression in standard Massive MIMO deployments, its current mathematical structure is bounded by the far-field assumption. Extending the framework to near-field MIMO scenarios is necessary for next-generation communications. Furthermore, extending the TAP framework to millimeter-wave (FR2) channels, which impose additional constraints due to hybrid beamforming architectures, is a natural next step. Validating the zero-shot generalization capabilities on real-world, over-the-air channel measurements will be important for bridging the sim-to-real gap and accelerating the deployment of AI-driven FDD massive MIMO systems. REFERENCES 
+
+[1] W. Shen, L. Dai, Y. Shi, B. Shim, and Z. Wang, “Joint channel training and feedback for FDD massive MIMO systems,” 
+
+IEEE Trans. Veh. Technol. , vol. 65, no. 10, pp. 8762–8767, 2016. [2] Y. Pati, R. Rezaiifar, and P. Krishnaprasad, “Orthogonal matching pursuit: recursive function approximation with applications to wavelet decomposition,” in Proc. Asilomar Conf. Signal Syst. Comput. , 1993, pp. 40–44 vol.1. [3] J. A. Tropp and A. C. Gilbert, “Signal recovery from random measurements via orthogonal matching pursuit,” IEEE Trans. Inform. Theory , vol. 53, no. 12, pp. 4655–4666, 2007. [4] C. Qi, Y. Huang, S. Jin, and L. Wu, “Sparse channel estimation based on compressed sensing for massive MIMO systems,” in Proc. IEEE Int. Conf. Commun. (ICC) , 2015, pp. 4558–4563. [5] W. Huang, Y. Huang, W. Xu, and L. Yang, “Beam-blocked channel estimation for FDD massive MIMO with compressed feedback,” IEEE Access , vol. 5, pp. 11 791–11 804, 2017. [6] P. Liang, J. Fan, W. Shen, Z. Qin, and G. Y. Li, “Deep learning and compressive sensing-based CSI feedback in FDD massive MIMO systems,” IEEE Trans. Veh. Technol. , vol. 69, no. 8, pp. 9217–9222, 2020. [7] C. Li, W. Yin, H. Jiang, and Y. Zhang, “An efficient augmented lagrangian method with applications to total variation minimization,” Comput. Optim. Appl. , vol. 56, no. 3, pp. 507–530, December 2013. [8] Q. Yang, M. B. Mashhadi, and D. G¨ und¨ uz, “Deep convolutional compression for massive MIMO CSI feedback,” in Proc. IEEE Int. Workshop Mach. Learn. Signal Process (MLSP) , 2019, pp. 1–6. 36 
+
+[9] C.-K. Wen, W.-T. Shih, and S. Jin, “Deep learning for massive MIMO CSI feedback,” IEEE Wireless Commun. Lett. ,vol. 7, no. 5, pp. 748–751, 2018. [10] 3GPP, “NR; Physical layer procedures for data,” 3rd Generation Partnership Project (3GPP), Technical Specification (TS) 38.214, Jun. 2026, V19.4.0. [11] Z. Lu, J. Wang, and J. Song, “Multi-resolution CSI feedback with deep learning in massive MIMO system,” in Proc. IEEE Int. Conf. Commun. (ICC) , 2020, pp. 1–6. [12] T. Wang, C.-K. Wen, S. Jin, and G. Y. Li, “Deep learning-based CSI feedback approach for time-varying massive MIMO channels,” IEEE Wireless Commun. Lett. , vol. 8, no. 2, pp. 416–419, 2019. [13] Y. Xu, M. Yuan, and M.-O. Pun, “Transformer empowered csi feedback for massive MIMO systems,” in Proc. Wireless Opt. Commun. Conf. (WOCC) , 2021, pp. 157–161. [14] Y. Cui, A. Guo, and C. Song, “Transnet: Full attention network for CSI feedback in FDD massive MIMO system,” IEEE Wireless Commun. Lett. , vol. 11, no. 5, pp. 903–907, 2022. [15] Y. Liao and Y. Luo, “DD-transnet-based CSI feedback in imperfect channel estimation in MIMO-OTFS systems for V2I scenarios,” IEEE Trans. Intell. Transport. Syst. , vol. 26, no. 11, pp. 18 839–18 853, 2025. [16] H. Ju, S. Jeong, S. Kim, B. Lee, and B. Shim, “Transformer-assisted parametric CSI feedback for mmwave massive MIMO systems,” IEEE Trans. Wireless Commun. , vol. 23, no. 12, pp. 18 774–18 787, 2024. [17] K. Kang, Q. Hu, Y. Cai, G. Yu, J. Hoydis, and Y. C. Eldar, “Mixed-timescale deep-unfolding for joint channel estimation and hybrid beamforming,” IEEE J. Sel. Areas Commun. , vol. 40, no. 9, pp. 2510–2528, 2022. [18] G. Izacard, S. Mohan, and C. Fernandez-Granda, “Data-driven estimation of sinusoid frequencies,” in Proc. Advances Neural Inf. Process. Syst. (NeurIPS) , 2019. [19] J. W. Choi, B. Shim, Y. Ding, B. Rao, and D. I. Kim, “Compressed sensing for wireless communications: Useful tips and tricks,” IEEE Commun. Surveys Tuts. , vol. 19, no. 3, pp. 1527–1550, 2017. [20] P.-H. Kuo, H. T. Kung, and P.-A. Ting, “Compressive sensing based channel feedback protocols for spatially-correlated massive antenna arrays,” in Proc. IEEE Wireless Commun. Netw. Conf. (WCNC) , 2012, pp. 492–497. [21] R. G. Baraniuk, V. Cevher, M. F. Duarte, and C. Hegde, “Model-based compressive sensing,” IEEE Trans. Inform. Theory ,vol. 56, no. 4, pp. 1982–2001, 2010. [22] S. Ji, Y. Xue, and L. Carin, “Bayesian compressive sensing,” IEEE Trans. Signal Processing , vol. 56, no. 6, pp. 2346–2356, 2008. [23] Z. Gao, L. Dai, Z. Wang, and S. Chen, “Spatially common sparsity based adaptive channel estimation and feedback for FDD massive MIMO,” IEEE Trans. Signal Processing , vol. 63, no. 23, pp. 6169–6183, 2015. [24] X. He, H. Hou, T. Fang, W. Wang, and S. Jin, “Angle-delay domain hybrid model-driven and data-driven downlink CSI acquisition for FDD massive MIMO systems,” IEEE Trans. Veh. Technol. , vol. 74, no. 1, pp. 1788–1793, 2025. [25] J. Zeng, J. Sun, G. Gui, B. Adebisi, T. Ohtsuki, H. Gacanin, and H. Sari, “Downlink CSI feedback algorithm with deep transfer learning for FDD massive MIMO systems,” IEEE Trans. Cogn. Commun. Netw. , vol. 7, no. 4, pp. 1253–1265, 2021. [26] Y. Feng, C. Ye, R. Li, H. Pan, and D. Korpi, “DDA-Net: A discrepancy-based domain adaptation network for CSI feedback transferability,” in Proc. IEEE Int. Conf. Commun. (ICC) , 2023, pp. 4157–4162. [27] M. Sattari, D. G¨ und¨ uz, and T. Svensson, “Dynamically fine-tuned neural compressor for FDD massive MIMO CSI feedback,” in Proc. IEEE. Int. Workshop Signal Process. Artif. Intell. Wireless Commun. (SPAWC) , 2025, pp. 1–5. 37 
+
+[28] H. Xiao, W. Tian, W. Liu, Z. Zhang, Z. Shi, L. Guo, and J. Shen, “A knowledge-driven meta-learning method for CSI feedback,” in Proc. IEEE Int. Conf. Commun. (ICC) , 2023, pp. 4138–4143. [29] Z. Liu, L. Wang, L. Xu, and Z. Ding, “Deep learning for efficient CSI feedback in massive MIMO: Adapting to new environments and small datasets,” IEEE Trans. Wireless Commun. , vol. 23, no. 9, pp. 12 297–12 312, 2024. [30] J. Chen, X. Gu, H. Li, and Z. Liu, “Unsupervised adversarial domain adaptation for CSI feedback in codeword feature space,” in Proc. Int. Conf. Commun. Inf. Process. , 2026, p. 269–273. [31] H. Joo, S. Choi, S. Ryu, and H. J. Yang, “Compressed-CSI feedback with near real-time domain adaptation,” IEEE Trans. Commun. , pp. 1–1, 2026. [32] H. Wang, Z. Sun, S. Han, X. Wang, and Z. Wang, “Generalizable learning for massive MIMO CSI feedback in unseen environments,” IEEE Trans. Wireless Commun. , vol. 25, pp. 12 514–12 530, 2026. [33] S. Zhong, H. Feng, P. Zhang, J. Xu, H. Luo, J. Zhang, T. Yuan, and L. Huang, “Deep learning based antenna selection for MIMO SDR system,” Sensors , vol. 20, no. 23, 2020. [34] K. He, T. X. Vu, S. Chatzinotas, and B. Ottersten, “Learning-based joint channel prediction and antenna selection for massive MIMO with partial CSI,” in Proc. IEEE Globecom Workshops (GC Wkshps) , 2022, pp. 178–183. [35] C. Zhang, X. Lyu, C. Ren, S. Liu, and Q. Cui, “Towards CSI-native foundation models: A channel-adaptive roadmap for 6G,” 2026, arXiv:2606.20670 .[36] J. Du, Y. Yan, and X. Li, “A low-complexity orthogonal matching pursuit algorithm based on multi-scale multi-lag underwater acoustic channels,” in Proc. IEEE Int. Conf. Signal Process. Commun. Comput (ICSPCC) , 2024, pp. 1–6. [37] O. O. Oyerinde, A. Flizikowski, and T. Marciniak, “Remodelled and reduced complexity-OMP-based channel estimation schemes for intelligent reflecting surface-aided millimeter wave systems,” in Proc. Int. Conf. Signal Process. Commun. Syst. (ICSPCS) , 2023, pp. 1–5. [38] M.-C. Pali, S. Ruetz, and K. Schnass, “Average performance of OMP and thresholding under dictionary mismatch,” IEEE Signal Processing Lett. , vol. 29, pp. 1077–1081, 2022. [39] F. Xi, Y. Xiang, S. Chen, and A. Nehorai, “Gridless parameter estimation for one-bit MIMO radar with time-varying thresholds,” IEEE Trans. Signal Processing , vol. 68, pp. 1048–1063, 2020. [40] 3GPP, “NR; User Equipment (UE) radio transmission and reception; Part 1: Range 1 Standalone,” 3rd Generation Partnership Project (3GPP), Technical Specification (TS) 38.101-1, Jul. 2026, V20.0.0. [41] ——, “Study on channel model for frequencies from 0.5 to 100 GHz,” 3rd Generation Partnership Project (3GPP), Technical Report (TR) 38.901, Jun. 2026, V19.4.0. [42] J. Hoydis, F. A. Aoudia, S. Cammerer, M. Nimier-David, N. Binder, G. Marcus, and A. Keller, “Sionna RT: Differentiable ray tracing for radio propagation modeling,” 2023, arXiv:2303.11103 .[43] J. Hoydis, S. Cammerer, F. A. Aoudia, A. Vem, N. Binder, G. Marcus, and A. Keller, “Sionna: An open-source library for next-generation physical layer research,” 2023, arXiv:2203.11854 .[44] A. Alkhateeb, “DeepMIMO: A generic deep learning dataset for millimeter wave and massive MIMO applications,” 2019, 
+
+arXiv:1902.06435 .

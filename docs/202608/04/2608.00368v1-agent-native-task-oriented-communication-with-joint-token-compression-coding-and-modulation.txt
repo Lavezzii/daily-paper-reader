@@ -1,0 +1,382 @@
+Title: Agent-Native Task-Oriented Communication with Joint Token Compression Coding and Modulation
+
+URL Source: https://arxiv.org/pdf/2608.00368v1
+
+Published Time: Tue, 04 Aug 2026 00:20:05 GMT
+
+Number of Pages: 6
+
+Markdown Content:
+# Agent-Native Task-Oriented Communication with Joint Token Compression Coding and Modulation 
+
+Zhuoran Xiao ∗, Yihang Huang †,Tianyu Jiao §, Xiaohua Xu ‡, and Yin Xu §∗UNISOC (Shanghai) Technologies Co., Ltd. Shanghai, China 
+
+†Chongqing University of Posts and Telecommunications, Chongqing, China 
+
+‡Zhaotong University, Zhaotong, China 
+
+§Shanghai Jiao Tong University, Shanghai, China E-mail: Zhuoran.Xiao@unisoc.com 
+
+Abstract —As large foundation models empower agents to be-come pervasive across industries and emerge as central actors in intelligent systems, a fundamental rethinking of communication paradigms toward AI-native, agent-centric designs in the post-Shannon era becomes inevitable. One essential shift is that tokens, which are the minimal semantic units natively processed by large language models (LLMs), should replace bits as the fundamental unit of communication. However, existing works in the LLMs field assume lossless token transmission over high-speed wired links and largely neglect the air-interface overhead and channel distortions inherent in wireless environments, lacking a native design for wireless token communication systems. To bridge this gap, we propose an innovative design for a token transmitter-receiver architecture that facilitates task-oriented token trans-mission. Specifically, we propose JTCM (Joint Token Coding and Modulation), an AI-native semantic communication framework that jointly optimizes token representation, channel coding, and modulation to maximize downstream task performance directly. Correspondingly, we propose a two-stage training scheme. In the first stage, the token encoder–decoder pair is pre-trained to enable semantic-preserving compression and reconstruction. In the second stage, it is fine-tuned end-to-end with a multi-modal foundation model under specific downstream tasks to achieve task-aware optimization. Extensive experiments demonstrate that JTCM significantly reduces transmission overhead while enhanc-ing task accuracy and robustness compared to state-of-the-art baselines in bandwidth- and SNR-constrained wireless channels. 
+
+Index Terms —6G networks, agents, large language models, semantic communication, token communication. 
+
+I. I NTRODUCTION 
+
+The continuous advancement of large language models is catalyzing a fundamental shift across industries. LLM agents, which are powered by multi-modal perception, reasoning, memory, and decision-making capabilities, are increasingly becoming the primary actors in intelligent systems. Conse-quently, traditional communication paradigms, which are cen-tred on human-to-human or human-to-machine interaction, are shifting toward agent-to-agent communication. This transition calls for a new AI-native communication architecture, which diverges from conventional designs optimized for bit-level fidelity and instead aligns intrinsically with the semantic and task-oriented nature of intelligent agents. 
+
+Yihang Huang and Xiaohua Xu are co-corresponding authors. 
+
+The most essential principle underlying agent-centric com-munication is that tokens, which are the fundamental unit natively processed by LLMs, should serve as the basic unit of transmission. Tokens exhibit several intrinsic properties that fundamentally distinguish them from classical bits, necessitat-ing a rethinking of communication system design. First, tokens convey high-level semantic meaning rather than raw binary information. Thus, the primary objective of token transmis-sion is not exact reconstruction, but semantic interpretability. Second, the meaning of a token is not fixed but inherently contextual, shaped by factors such as the agent’s role, histor-ical interactions, and the dynamic environment. Third, tokens possess native robustness to noise and loss. Semantic integrity is often preserved even when certain tokens are dropped from a sequence or when channel distortions perturb their embedding vectors. These characteristics collectively imply that conventional systems transmitting raw data via bitstreams are fundamentally misaligned and highly inefficient for agent-centric communication scenarios. Several studies have begun exploring new paradigms of communication for meeting the requirements of semantic con-vey and task-oriented transmission. DeepJSCC [1] introduced a deep learning-based joint source-channel coding framework, which jointly optimizes source representation and channel transmission using neural networks. This paradigm has since been extended to multi-media scenarios, including image and video delivery over wireless channels [2]. Recognizing that full data reconstruction is often unnecessary for specific objec-tives, task-oriented semantic communication frameworks have emerged [3], aiming to transmit only the information essential for downstream task execution. Furthermore, [4] harnesses LLMs to perform semantic-aware compression of textual inputs, while [5] integrates LLMs with diffusion models to enable high-level semantic transmission of visual content, bypassing pixel-level fidelity. Despite the above-mentioned works having taken a step ahead of traditional communication architecture, they remain inefficient and fundamentally misaligned with the agent-centric vision. Conventional JSCC schemes prioritize percep-tual or pixel-level reconstruction fidelity, optimizing metrics such as PSNR that exhibit weak correlation with downstream arXiv:2608.00368v1 [eess.SP] 1 Aug 2026 … 
+
+> Image Projection  …
+> Position Embedding
+> Self-Attention
+> Feed-Forward
+> Layer-Norm Image Patches hN
+> Token Projection
+> …
+> JTCM Encoder Module
+> SNR
+> Task Intend
+> Image Tokens
+> Symbols
+
+Token Transmitter 
+
+> Image Encoder
+> Received Symbols
+> Task Description
+> JTCM Decoder Module
+> Reconstructed Tokens  …
+> Text Tokenizer
+> Embedding Layer  …
+> Llama Backbone
+> LoRA Adapter
+> Task Headers
+> Classification VQA Visual Actions
+> Reconstruction
+> …
+
+Token Receiver  
+
+> Applications
+> Position Embedding
+> Self-Attention
+> Feed-Forward
+> Layer-Norm
+> hNFig. 1. The system model of the proposed Token transmitter and receiver empowered agent communication.
+
+task performance. Meanwhile, emerging semantic communica-tion frameworks often treat semantic extraction and physical-layer transmission as decoupled stages. More critically, these approaches typically target a single task type or modality, lacking the generalization capability required for versatile agents. These limitations stem from their underlying design philosophy, which operates at the level of modality-specific signal compression, rather than leveraging tokens as the fun-damental units of communication. Consequently, none of these methods directly optimize an end-to-end pipeline from token modulation to task execution, nor do they exploit the intrinsic robustness, context dependence, and sparsity of multimodal tokens under realistic wireless channel constraints. As a result, they incur unnecessary transmission overhead and fail to achieve true integration of communication and computation. To bridge this gap, this paper proposes JTCM (Joint Token Coding and Modulation), an AI-native, task-oriented semantic communication framework tailored for agent-to-agent com-munication in wireless environments. Generally, we propose a token transmitter network that learns an end-to-end map-ping from multi-modal token sequences to non-uniformly dis-tributed constellation symbols for wireless transmission, and a token receiver that directly maps the distorted channel outputs to the final predictions of downstream tasks. We further introduce a two-stage training strategy that firstly pre-trains the transceiver for semantic-preserving token compression, then fine-tunes it jointly with a foundation model under specific downstream objectives. This design is grounded on three key principles. First, exploits the inherent redundancy and robust-ness of token-level semantics by co-designing compression, coding, and modulation within a unified pipeline. Second, the entire system is optimized directly for downstream task performance, rather than intermediate signal fidelity. Third, since multi-modal inputs are naturally aligned in the token space of foundation models, JTCM naturally supports diverse modalities and tasks without architectural reconfiguration. The remainder of this paper is structured as follows. Section II presents the system model and the task objective. The rationale behind the design of our network and training scheme is discussed in Section III. Section IV details the experimental setup and reports the results, providing a comparative evalua-tion of the proposed approach against existing state-of-the-art (SOTA) methods from multiple perspectives. Finally, Section V summarizes the main conclusions of this work. II. S YSTEM MODEL AND TASK DESCRIPTION 
+
+As illustrated in Fig. 1, this paper investigates an end-to-end communication system designed for semantic token trans-mission between two agents. Specifically, Agent-2, which is equipped with a token receiver, requires task-relevant informa-tion from Agent-1 to perform a downstream task successfully. Agent-1, which has access to the raw input, encodes this information into a compact sequence of semantic tokens and transmits them over a noisy wireless channel using a learned joint token coding and modulation scheme. The transmitted symbols are subject to channel distortions. Upon reception, Agent-2 decodes the corrupted token se-quence and uses it to generate the final task output. Crucially, both the encoder at Agent-1 and the decoder at Agent-2 are trained end-to-end to maximize downstream task performance, thereby enabling the system to prioritize semantically mean-ingful information over perceptual details. This design philos-ophy aligns with the principles of semantic communication, where the goal is reliable task execution rather than perfect data recovery. …
+
+> Multi-Modal
+> Tokens
+> CLS Token
+> RoPE
+
+…
+
+> Text Tokens
+
+……
+
+…     
+
+> Self-Attention SNR
+> Exp-1 Router
+> Gate
+> !"#!$%
+> &'
+> Exp-2 Exp-n …
+> Top k
+
+. 
+
+> Layer-Norm
+
+h
+
+…
+
+> Token Projection
+> Real to Complex
+> Transmitter Array
+> Receiver Array
+> Complex to Real
+> Token Projection
+
+…    
+
+> RoPE
+> Self-Attention
+> Exp-1 Exp-2 Exp-n …
+> SNR
+> Router
+> Gate
+> !"#!$%
+> &'
+
+.
+
+> Layer-Norm
+
+h()
+
+h(*
+
+> Reconstructed Multi-Modal Tokens
+
+…
+
+Scattering 
+
+Environment 
+
+> SE Layer
+
+…
+
+> LLaVA Backbone
+
+…
+
+> LLaVA Backbone SE Layer SE Layer SE Layer
+> Tasks Token
+
+…Multi-Modal Tokens 
+
+> Semantic Loss
+> Receiver
+> Array
+> Complex to Real
+> Token Projection
+
+…     
+
+> RoPE
+> Self -Attention
+> Exp -1Exp -2Exp -n…
+> SNR
+> Router
+> Gate
+> !"#!$% !"#!$%
+> &&'
+
+. 
+
+> Layer -Norm
+
+hh(*
+
+> Reconstructed
+> Multi -Modal Tokens
+
+…Fig. 2. The training process of the proposed JTCM modules. 
+
+III. M ODEL DESIGN AND LEARNING SCHEME 
+
+A. Model Design 
+
+This section describes the architecture of JTCM in the forward direction of information flow shown in Fig. 1 and Fig. 2. It is worth mentioning that we utilize images as the representation of multimodal input. In fact, all kinds of modalities follow the same process. 
+
+1) Token Transmitter: The token transmitter is tasked with converting raw multi-modal inputs into a compact, channel-adapted symbol stream that preserves task-relevant semantics. To minimize computational overhead on resource-constrained agents, the transmitter is deliberately kept lightweight and leverages pre-trained components wherever possible. Given an input image Ximg ∈ RH×W ×3, we employ a frozen, pretrained image encoder to map it into a sequence of vision tokens, which can be written as 
+
+V = enc image (Ximg ) ∈ RN ×d (1) where N is the number of tokens and d is the embedding dimension. This encoder has been trained via contrastive learning to align visual representations with textual embed-dings in a shared semantic space. Consequently, the resulting visual tokens are natively compatible with multi-modal large language models by being directly concatenated with text tokens and fed into the LLM backbone. Then, we prepend the task intention prompt Pintend to the image token sequence, forming the joint input 
+
+Zin = [ Pintention , V] ∈ R(M +N )×d (2) where M denotes the number of intention prompt tokens. The compression induced by JTCM can be viewed as a task-directed collapse. This prompt acts as a dynamic prefix that conditions the subsequent compression and modulation process on the downstream objective. The JTCM encoder fθ then maps Zin to a complex-valued symbol sequence 
+
+s = fθ (Zin ) ∈ CL. (3) In practice, fθ outputs a real-valued vector of length 2L, which is reshaped into L complex symbol sequence is then normal-ized to satisfy average power constraint E
+
+h
+
+|sl|2i
+
+= 1 , and mapped onto resource elements of a MIMO-OFDM waveform for over-the-air transmission. 
+
+2) Token Receiver: At the receiver side, the distorted sym-bols ˆs ∈ CL are obtained from the wireless channel. Then, they are first fed into the JTCM decoder module gϕ, which generates a sequence of semantic tokens with the same length as the original visual token sequence 
+
+ˆV = gϕ(ˆ s) ∈ RN ×d. (4) To enable task-aware reasoning, a detailed natural-language description of the downstream task is tokenized using the frozen tokenizer of the pre-trained LLM. The resulting text to-kens are then embedded via the LLM’s fixed input embedding layer to obtain the task prompt representation Ptask ∈ RM ′×d,where M ′ denotes the number of text tokens. The recovered visual tokens ˆV and the embedded task prompt Ptask are concatenated to form the joint input sequence 
+
+Zrec =
+
+h
+
+Ptask , ˆV
+
+i
+
+∈ R(M ′+N )×d. (5) The joint input sequence is subsequently passed through a LoRA-finetuned LLM backbone. Finally, the system supports two flexible output strategies depending on the application scenario. One is that the original language modeling head (LM head) of the LLM can be re-tained to generate free-form answers directly. The other is that the language modeling head is replaced by task-specific heads (e.g., a classifier for image recognition), enabling optimized performance on structured tasks. This design ensures that JTCM remains compatible with both open-ended and closed-set agent tasks, while maintaining end-to-end differentiability from channel output to final prediction during training. 
+
+3) JTCM Modules: As illustrated in Fig. 2, both the JTCM encoder and decoder are built upon symmetric Mixture-of-Experts (MoE) Transformer architectures. Specifically, within each Transformer block, the standard feed-forward network (FFN) is replaced by an MoE layer consisting of multiple expert sub-networks. Only the top-k experts are activated per token, with routing weights determined by a lightweight router gate. At the transmitter, the input sequence Zin is first augmented with a learnable CLS token zcls ∈ Rd at the end to globally aggregate semantic information across all tokens. To overcome the limitation of fixed positional encodings in dynamic wire-less scenarios, we employ RoPE (Rotary Position Embedding) throughout the encoder. The router gate network takes the instantaneous channel SNR γ as input and outputs gating weights w = Gate( γ) ∈
+
+Rnexpert , where nexpert is the number of experts. The network design enables the model to dynamically adapt its internal computation based on the scattering environments, enhancing robustness across a wide SNR range without requiring retrain-ing. The output CLS token embedding hcls from the final MoE layer is passed through a token projection head, which is a linear projection layer, to reproduce a real-valued vector of dimension 2L
+
+u = Proj tx (hcls ) ∈ R2L. (6) This vector is then reshaped into L complex symbols by pairing consecutive elements’ real and imaginary parts 
+
+sl = u2l−1 + j · u2l, l = 1 , . . . , L (7) At the receiver, the distorted complex symbols ˆs ∈ CL
+
+are first converted to a real vector v′ ∈ R2L by concate-nating real and imaginary parts v = [ Re (ˆs), Im (ˆs)] . This vector is projected back to the token space via a symmetric token projection head Proj rx (·), yielding an initial token sequence ˆZ(0) ∈ RN ×d that matches the length of the original multimodal input. RoPE is again applied, and the sequence is processed through the MoE-based decoder. Notably, the router gate shares the same architecture and parameters as the transmitter’s gate, using the estimated SNR γ to ensure consistent expert selection across the link. 
+
+B. Training Scheme 
+
+To ensure stable convergence and robust generalization across diverse channel conditions, we adopt a two-stage training strategy. We first pre-train the JTCM modules for semantic-preserving token compression under varying SNRs, followed by task-aware fine-tuning with highly efficient fine-tuning on the foundation model. This staged approach decou-ples representation learning from task optimization, signifi-cantly improving convergence of the training process. 
+
+1) Pre-Training of JTCM Modules: During the pre-training stage, both the original multi-modal input token sequence V
+
+and the reconstructed token sequence ˆV are concatenated with the intention prompt token Pintent and forms two sequence 
+
+Zin = [ Pintention , V] and ˆZ =
+
+h
+
+Pintention , ˆV
+
+i
+
+. Then, the two sequences are fed into the same frozen LLM backbone, which is identical to the one deployed at the token receiver. From this shared model, we select a subset of intermediate layers as Semantic Evaluation (SE) layers, denoted as L =
+
+{l1, l 2, . . . , l K }. The outputs of these layers are considered as semantic representations. For each SE layer lk ∈ L , we apply mean pooling over the token dimension of its hidden states to obtain a global semantic vector 
+
+h(k) = 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+M(lk )(Zin )t, ˆh(k) = 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+M(lk )(ˆZ)t, (8) where T = M +N is the total sequence length, and M(lk )(·)t
+
+denotes the hidden state of the t-th token at layer lk.We then compute the semantic cosine similarity (SeCS) for each layer as 
+
+SeCS (k) =
+
+D
+
+h(k), ˆh(k)
+
+E
+
+h(k) · ˆh(k)
+
+. (9) The overall semantic loss is defined as a weighted sum over all SE layers 
+
+Lsem =
+
+> K
+
+X
+
+> k=1
+
+ik(1 − SeCS (k)), (10) where ik ≥ 0 are manually defined weights. During the pre-training stage, the wireless channel is mod-eled as a differentiable surrogate, enabling efficient end-to-end optimization. The transmitted symbol sequence is corrupted by noise conditioned on the instantaneous SNR γ. To ensure stable gradient propagation, the noise is detached from the computational graph during backpropagation. Thus, gradients flow directly from the decoder input to the encoder output. This practice, widely adopted in deep joint source-channel coding [6], balances training stability with semantic robustness under stochastic distortions. 
+
+2) End-to-End Fine-Tuning with LLM Backbone: Building upon the semantically robust JTCM encoder and decoder mod-ules obtained from the pre-training stage, we proceed to a task-specific fine-tuning stage that jointly optimizes the receiver-side LLM and the JTCM modules in an end-to-end manner. Specifically, the LoRA (Low Rank Adaptation) method is used to train the LLM during this phase by equipping adapter modules into the query and value projections of every multi-head attention layer, making the training cost-efficient. Overall, this training scheme serves three purposes. First, it enables efficient adaptation to the target task without mod-ifying the original foundation model. Secondly, it refines the LLM’s ability to interpret the concatenated input of the recovered visual tokens ˆV and the detailed task description prompt Ptask , achieving more precise task-level alignment. Thirdly, it steers the model’s generation toward the required output format of the target downstream tasks. During training, the receiver processes the channel-distorted symbols through the JTCM decoder to obtain Zrec =h
+
+Ptask , ˆV
+
+i
+
+, which is fed into the LoRA-augmented LLM. The model then performs autoregressive next-token prediction, producing a sequence of output tokens  ˆt1, ˆt2, . . . , ˆtT . We compute the standard teacher-forced cross-entropy loss against the ground-truth answer token sequence {t1, t 2, . . . , t T }Ltask = −
+
+> T
+
+X 
+
+> τ=1
+
+log P (tτ | t<τ , Zrec ; Θ LoRA , ΘJTCM ), (11) where ΘLoRA denotes the LoRA parameters and ΘJTCM in-cludes both encoder and decoder weights. Crucially, gradients are backpropagated through the entire network, enabling the joint optimization of token compression, transmission, and task execution. IV. E XPERIMENTS 
+
+A. Experiments Settings and Dataset Generation 
+
+We adopt visual question answering as a representa-tive multi-modal downstream task to evaluate the proposed method. Specifically, as shown in Fig. 3, we select CLEVR and GQA as our training and evaluation datasets. These datasets are chosen for two main reasons. One is that both CLEVR and GQA feature programmatically generated questions ac-companied by rich scene graphs and metadata (e.g., object color, shape, spatial relationships). This enables controlled construction of task intent prompts, thereby aligning with the semantic abstraction capability targeted in our pre-training stage. The other is that both benchmarks emphasize com-positional reasoning and multi-step inference, making them ideal for evaluating task-oriented semantic communication systems that aim to preserve not just perceptual fidelity but also reasoning-ready semantic structure during transmission. To evaluate the practical deployability of our system under realistic propagation conditions, we generate a ray-tracing channel dataset using the NVIDIA Sionna framework with the Munich urban map, as shown in Fig. 4. We assume both transmitter and receiver are equipped with uniform linear arrays (ULAs) of 4 antennas each. The system operates over 16 orthogonal subcarriers, centered at 3.5GHz with a subcarrier spacing of 100 MHz. A total 10000 channel samples are collected for evaluation. Additive white Gaussian noise (AWGN) is added at the receiver side according to the target SNR. 
+
+B. Benchmarks 
+
+To comprehensively evaluate the proposed methods, we compare them against a diverse set of baselines that span traditional communication, deep joint source-channel coding, and emerging semantic communication paradigms.  
+
+> •
+
+Benchmark 1 : Images are first compresed using JPEG, then transmitted over 16QAM-modulated symbols. At the receiver, the image is reconstructed and fed into a frozen LLaVA-1.5-7B model for VQA.  
+
+> •
+
+Benchmark 2 : Reconstructing the original image using DeepJSCC with fixed latent feature dimension and using the reconstructed image as input to the LLaVA-1.5-7B model.    
+
+> (a) A sample image and questions from CLEVR.
+> (b) Examples from the GQA dataset for visual reasoning and compositional question answering. Fig. 3. Illustration of the datasets used in the experiment part.
+> Fig. 4. The 3D model of the scene used to collect channel samples.
+> •
+
+Benchmark 3 : The transmitter uses LLaVA-1.5-7B to generate a textual description of the image. The receiver directly uses this description with LLama2-7B-Instruct to answer the questions.  
+
+> •
+
+Benchmark 4 : The complete sequence of visual tokens (from ViT) and task prompt is passed to the receiver LLM without any channel distortion or bandwidth constraint. This serves as an upper bound on achievable task accu-racy. 
+
+C. Experimental Results 
+
+Fig. 5 illustrates the symbol compression ratios of various transmission schemes relative to the baseline. The baseline scheme transmits the raw RGB pixel bits of the original image using 16-QAM modulation. In Benchmark 2, the latent representation from a JSCC encoder is quantized with 8bits per dimension and transmitted via 16-QAM modulation. 10.90% 2.14% 0.76% 0.52%          
+
+> BM1 BM2 BM3 Proposed
+> 0246810 12
+> Compression Ratio (%) Fig. 5. Compression ratio relative to the original images. -10 -5 0510 15
+
+SNR (dB)      
+
+> 30 40 50 60 70 80
+> Accuracy (%)
+> BM1
+> BM2
+> Proposed
+> BM3
+> BM4
+> (a) CLEVR dataset -10 -5 0510 15
+
+SNR (dB)   
+
+> 20 30 40 50 60 70 80
+> Accuracy (%)
+> BM1
+> BM2
+> Proposed
+> BM3
+> BM4 (b) GQA dataset Fig. 6. The accuracy of downstream tasks across different methods with varying transmission SNR.
+
+Benchmark 3 encodes the textual description using UTF-8 and also employs 16-QAM modulation. Our proposed method requires only 2056 channel symbols. Experimental results demonstrate that the proposed semantic communication ap-proach significantly reduces over-the-air signaling overhead at the symbol level. Fig. 6 compares the downstream task accuracy of different methods across a range of SNR levels, revealing consistent trends on both datasets. Thanks to end-to-end training jointly optimized with the downstream tasks, the proposed method consistently outperforms all benchmarks at every SNR. In contrast, existing DeepJSCC approaches, which are primarily designed for raw image reconstruction, exhibit advantages only in low-SNR regimes. Benchmark 3, which relies on natu-ral language descriptions, performs poorly on both datasets, likely due to the inherent difficulty of precisely conveying image-related reasoning tasks through text alone. Although Benchmark 1, which transmits compressed images, achieves reasonable performance under clean conditions, it suffers significant degradation in the presence of channel distortion. These results highlight the effectiveness and robustness of the proposed semantic communication framework. Fig. 7 presents the performance of different methods under varying degrees of symbol loss. In the experiments, missing symbols in all benchmarks are replaced with the mean of the remaining symbols. Thanks to the structural properties of se-mantic tokens, the proposed method exhibits strong robustness to symbol loss, maintaining high task accuracy even when a non-negligible fraction of symbols is missing. In contrast, 0 20 40 60 80       
+
+> Symbol Loss Ratio (%)
+> 010 20 30 40 50 60 70 80
+> Accuracy (%)
+> BM1
+> BM2
+> Proposed
+> BM3
+> BM4
+> (a) CLEVR dataset 020 40 60 80
+> Symbol Loss Ratio (%)
+> 010 20 30 40 50 60 70 80
+> Accuracy (%)
+> BM1
+> BM2
+> Proposed
+> BM3
+> BM4 (b) GQA dataset Fig. 7. The accuracy of downstream tasks across different methods with varying symbol loss ratio.
+
+the scheme that transmits raw image pixels shows an almost linear degradation in performance as symbol loss increases, consistently underperforming our approach. Moreover, the DeepJSCC-based method suffers severe performance collapse under symbol loss, as its latent representations are highly sensitive to missing information. These results further con-firm the robustness of the proposed semantic communication framework against channel impairments. V. C ONCLUSIONS 
+
+This paper proposed a pioneering paradigm for agent-centric token communication. By unifying semantic extraction, chan-nel adaptation, and task execution into an end-to-end trainable pipeline, the proposed paradigm achieves efficient transmis-sion using compact, task-relevant semantic token symbols. The uniquely designed token transmitter and receiver operate in synergy, with the transmitter distilling multimodal inputs into a minimal set of task-optimized semantic symbols, and the re-ceiver utilizing a lightweight, task-aware large language model to generate structured responses directly from the distorted channel output. The experimental outcomes affirm the efficacy and robustness of the proposed methodology, paving the way for truly intelligent, task-oriented wireless agents. REFERENCES [1] J. Xu, T.-Y. Tung, B. Ai, W. Chen, Y. Sun, and D. G¨ und¨ uz, “Deep Joint Source-Channel Coding for Semantic Communications,” IEEE Commu-nications Magazine , vol. 61, no. 11, pp. 42–48, 2023. [2] S. Wang, J. Dai, Z. Liang, K. Niu, Z. Si, C. Dong, X. Qin, and P. Zhang, “Wireless Deep Video Semantic Transmission,” IEEE Journal on Selected Areas in Communications , vol. 41, no. 1, pp. 214–229, 2023. [3] Z. Weng, Z. Qin, and X. Tao, “Task-Oriented Semantic Communications for Speech Transmission,” in 2023 IEEE 98th Vehicular Technology Conference (VTC2023-Fall) , 2023, pp. 1–5. [4] Y. Wang, Z. Sun, J. Fan, and H. Ma, “On the Uses of Large Lan-guage Models to Design End-to-End Learning Semantic Communication,” in 2024 IEEE Wireless Communications and Networking Conference (WCNC) , 2024, pp. 1–6. [5] D. Cao, J. Wu, and A. K. Bashir, “Multimodal Large Language Models Driven Privacy-Preserving Wireless Semantic Communication in 6G,” in 2024 IEEE International Conference on Communications Workshops (ICC Workshops) , 2024, pp. 171–176. [6] M. Ding, J. Li, M. Ma, and X. Fan, “Snr-adaptive deep joint source-channel coding for wireless image transmission,” in ICASSP 2021 -2021 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , 2021, pp. 1555–1559.

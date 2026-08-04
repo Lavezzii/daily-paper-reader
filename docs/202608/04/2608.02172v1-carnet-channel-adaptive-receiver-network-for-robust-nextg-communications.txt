@@ -1,0 +1,423 @@
+Title: CARNet: Channel-Adaptive Receiver Network for Robust NextG Communications
+
+URL Source: https://arxiv.org/pdf/2608.02172v1
+
+Published Time: Tue, 04 Aug 2026 02:22:34 GMT
+
+Number of Pages: 5
+
+Markdown Content:
+> 1
+
+# CARNet: Channel-Adaptive Receiver Network for Robust NextG Communications 
+
+Chao Jiang, Zhuo Xu, and Yongli Yan 
+
+Abstract —Neural receivers have been recognized as a promis-ing paradigm for the next-generation (NextG) communications. However, due to the reliance on a static network optimized for specific channel conditions, their generalization capability across diverse scenarios remains a significant challenge. To address this issue, this paper proposes a novel channel-adaptive neural re-ceiver network (CARNet) based on the mixture-of-experts (MoE) framework. The proposed architecture employs multiple expert networks together with an efficient routing mechanism to enable signal detection in various scenarios. The experts are constructed via stacked ResNet blocks and specialize in robust signal detection within specific channel conditions, while the routing mechanism incorporates a lightweight representation learning module, which projects the coarse channel estimate into a low-dimensional latent embedding. The learned embedding characterizes task-relevant channel conditions and provides efficient guidance for accurate expert selection. Link-level simulation experiments demonstrate that the proposed CARNet achieves superior performance across diverse channel conditions. 
+
+Index Terms —Wireless communications, OFDM receiver, deep learning (DL), mixture of experts (MoE), and channel adaptation. 
+
+I. I NTRODUCTION 
+
+Integration of artificial intelligence (AI) into physical layer design has recently been envisioned as a promising paradigm shift for the next-generation (NextG) communications [1]. To accelerate this paradigm transition, the 3rd Generation Partner-ship Project (3GPP) has officially advanced the standardization of AI-native air interfaces in Release 20 framework [2]. Among numerous AI-native air interface approaches, neural receivers have emerged as a promising enabler for NextG ad-vanced receiver design. Unlike conventional modular receivers that rely on simplified channel assumptions and individually design channel estimation, equalization, and demapping mod-ules, neural receivers leverage deep neural networks to extract channel characteristics and jointly optimize these processing modules in a data-driven manner, demonstrating superior per-formances over traditional receivers in various scenarios [3]. Recent studies on neural receivers have investigated various architectures to enhance performances in practical communi-cation systems. Specifically, the authors in [4] propose a deep attention receiver network that directly processes time-domain waveforms to better capture channel characteristics and inter-symbol interference. The research [5] combines convolutional neural networks and bidirectional long short-term memory to extract both temporal and frequency domain features for im-proved detection performances. Moreover, to mitigate the non-
+
+> The authors are with the Department of Electronic Engineering and the State Key Laboratory of Space Network and Communications, Tsinghua University, Beijing 100084, China (e-mail: jiangc24@mails.tsinghua.edu.cn; xz23@mails.tsinghua.edu.cn; yanyongli@tsinghua.edu.cn).
+
+linear distortions in transmission systems, [6] proposes a time-frequency dual-branch architecture to recover distorted signals. To reduce pilot overhead and improve spectral efficiency, the authors in [7], [8] explore data transmission schemes without pilots or cyclic prefix. Meanwhile, an energy-efficient neural receiver based on spiking neural networks is developed in [9] with significantly reduced energy consumption. In addition to the above data-driven models, hybrid neural receiver archi-tectures are further proposed in [10], [11] by incorporating belief propagation and message passing into neural networks for enhanced interpretability and robustness. Despite the remarkable advancements of the aforementioned neural receivers, achieving robust generalization across diverse scenarios remains a critical challenge. Most existing schemes rely on a single set of fixed network parameters optimized for specific channel conditions. However, in practical communica-tion systems, user mobility and dynamic environment may lead to rapid variations in channel conditions. Such static network is insufficient to accommodate diverse scenarios and thus suffers from performance degradation, particularly when confronted with unknown channel conditions that significantly deviate from the training distributions [12]. Therefore, overcoming the limitations of the single static network architecture to enhance robust generalization, has emerged as a fundamental challenge. To overcome this issue, this paper introduces the advanced dynamic network architecture of the mixture-of-experts (MoE) incorporated with domain knowledge in wireless communica-tions, and proposes a channel-adaptive neural receiver network (CARNet) for improved robustness and generalization. Specif-ically, the main contributions can be summarized as follows:  
+
+> •
+
+We propose a channel-adaptive neural receiver architec-ture built upon the MoE framework, comprising a routing mechanism and multiple expert sub-networks. It enables dynamic expert selection and conditional computation to accommodate diverse channel conditions.  
+
+> •
+
+To enhance routing efficiency and robustness, we design a lightweight representation learning module that extracts a compact latent embedding from the high-dimensional coarse channel estimate. This embedding is learned in a task-oriented manner and preserves channel-dependent statistical variations that are informative for distinguish-ing channel conditions and selecting appropriate experts.  
+
+> •
+
+We conduct extensive link-level simulation experiments under various channel settings, including diverse channel models, signal-to-noise ratio (SNR) levels, delay spread, and Doppler shift. The simulation results demonstrate that the proposed scheme outperforms existing baselines and achieves superior generalization performances. arXiv:2608.02172v1 [cs.IT] 3 Aug 2026 2Neural  Receiver          
+
+> Receiver
+> Neural Network
+> Transmitter
+> Neural Network
+> Transport Block
+> Decoder
+> 3GPP TR 38.901
+> Channel
+> Information Bits
+> Reconstructed
+> Information Bits
+> LDPC
+> Encoder
+> CP
+> Removal
+> Rate
+> Matching Mapping DMRS
+> Insertion IFFT CP
+> Addition
+> FFT Demapping
+> Rate
+> Dematching
+> LDPC
+> De coder Equalization
+> Channel
+> Estimation
+> DMRS
+> Extraction
+> LDPC
+> De coder
+> Rate
+> Dematching Neural Network FFT CP
+> Removal
+> Decoded Bits
+> Fig. 1. Overall block diagram of the 5G NR transceiver system.
+
+II. S YSTEM MODEL 
+
+The block diagram of the 5G New Radio (NR) transceiver system is shown in Fig. 1. In this paper, we consider a single-user uplink transmission scenario, where a single-antenna user equipment (UE) transmits information bits to a base station (BS) configured with Nr receive antennas. 
+
+A. 5G NR Signal Transmission 
+
+As exhibited in Fig. 1, the information bits are first encoded via low-density parity-check (LDPC) codes. Following the rate matching procedure, the coded bits are mapped into complex-valued constellation symbols and then allocated onto the time-frequency resource grid, which comprises S OFDM symbols and F subcarriers. To facilitate uplink channel estimation at the receiver side, demodulation reference signals (DMRS) are inserted into the specifically assigned resource elements (REs). Finally, the frequency-domain OFDM symbols are converted into time-domain waveforms through the inverse fast Fourier transform (IFFT). Before transmission, a cyclic prefix (CP) is prepended to each OFDM symbol to mitigate inter-symbol interference (ISI) induced by multipath propagation. After propagating through multipath fading channels spec-ified by standard 3GPP TR 38.901, the CP is removed at the BS and the fast Fourier transform (FFT) is then performed to obtain the frequency-domain signals. The received signal at the i-th OFDM symbol ( i ∈ { 0, 1, · · · , S − 1}) and the j-th subcarrier ( j ∈ { 0, 1, · · · , F − 1}) can be given by 
+
+yi,j = hi,j xi,j + ni,j , (1) where xi,j ∈ C and yi,j ∈ CNr ×1 represent the transmitted and received symbols, respectively, hi,j ∈ CNr ×1 denotes the UE-BS channel matrix, and ni,j ∼ CN (0, σ 2
+
+> n
+
+INr ) is the additive white Gaussian noise (AWGN) with variance σ2
+
+> n
+
+.
+
+B. 5G NR Receiver Processing 
+
+Conventional 5G NR receiver processing chain is illustrated in Fig. 1. After the CP removal and the FFT modules, the receiver extracts the DMRS symbols (i.e., pilots) to acquire the channel estimate. According to (1), the least squares (LS) estimate can be computed as 
+
+ˆhi,j = yi,j p∗ 
+
+> i,j
+
+, (i, j ) ∈ P , (2) where pi,j represents the known normalized pilot symbols satisfying |pi,j |2 = 1 , and P denotes the index set of the REs allocated for pilots transmission. A two-dimensional time-frequency interpolation is subsequently applied to acquire the complete channel estimate over the resource grid. Based on the full channel estimate, the linear minimum mean square error (LMMSE) equalization is performed to reconstruct the transmitted symbols as 
+
+ˆxi,j =
+
+ˆhHi,j ˆhi,j + ˆ σ2
+
+> n
+
+I
+
+−1 ˆhHi,j yi,j , (i, j ) ∈ D , (3) where ˆσ2 
+
+> n
+
+denotes the noise variance estimate obtained during the LS channel estimation phase, and D is the index set of the REs carrying data symbols. Finally, the equalized symbols are converted into soft-bit information and passed to the LDPC decoder to recover the transmitted information bits. III. P ROPOSED CHANNEL -A DAPTIVE NEURAL RECEIVER 
+
+A. Overview of the MoE-Based Neural Receiver 
+
+Conventional neural receivers typically employ a deep neu-ral network to jointly optimize channel estimation, equaliza-tion, and demapping modules in Fig. 1. However, existing approaches generally rely on single static network trained over specific channel conditions, leading to degraded generalization capability when deployed in diverse or unseen scenarios. To overcome this limitation, this paper proposes a channel-adaptive neural receiver network based on the MoE frame-work, as illustrated in Fig. 2a. Instead of employing single shared network, the proposed receiver comprises a lightweight routing network represented by G(·), and a library of K spe-cialized homogeneous expert networks E = {E 1, E2, . . . , EK }.By leveraging a divide-and-conquer strategy, the receiver can dynamically select suitable experts according to the current channel condition and thereby enables adaptive signal process-ing across different scenarios. Mathematically, the final output, i.e., the log-likelihood ratios (LLRs), can be computed as the linear weighted combination of the outputs from the activated top-k experts LLRs = X  
+
+> i∈T k(XG)
+
+Gi(XG )Ei(XE ), (4) where XG and XE denote the input of the routing and expert networks, respectively, Tk(XG ) is the index set of the top-k ex-perts assigned with the highest weights by the routing network, 
+
+Ei(XE ) is the output of the i-th expert network, and Gi(XG )
+
+denotes the dynamic routing weight corresponding to the i-th expert, satisfying Gi(XG ) ≥ 0 and P   
+
+> i∈T k(XG)
+
+Gi(XG ) = 1 .3Latent Embedding 
+
+Encoder Efficient Routing Network     
+
+> LS Channel Estimate
+> Representation Learning Latent Embedding
+> Routing Weights Top-kExpert Selection Select kExperts
+
+Experts Library      
+
+> Expert 1 Expert 2 Expert 3 Expert 4 Expert K
+> LS Channel Estimate
+> Received Resource Grid
+
+Weighted Aggregation  Log-Likelihood Ratios (LLRs) 
+
+ResNet Blocks 
+
+> Conv2D
+> BatchNorm2D
+> ReLU
+> Conv2D
+> BatchNorm2D
+> ReLU
+
+Post-Processing 
+
+> Reshape
+> Pilot Removal
+> Output Conv2D
+> ReLU
+> Conv1D
+> BatchNorm1D
+> Linear Layer
+
+Pre-Processing 
+
+> Concatenate
+> Input Conv2D
+
+Decoder 
+
+> ReLU
+> ConvTranspose1D
+> BatchNorm1D
+> Linear Layer
+> Sampling
+> Linear Layer
+> Routing Weights
+> Mean
+> Variance
+
+(a) Mechanism of the proposed CARNet. Latent Embedding           
+
+> Encoder Efficient Routing Network
+> LS Channel Estimate
+> Representation Learning Latent Embedding
+> Routing Weights Top-kExpert Selection Select kExperts
+> Experts Library
+> Expert 1 Expert 2 Expert 3 Expert 4 Expert K
+> LS Channel Estimate
+> Received Resource Grid
+> Weighted Aggregation Log-Likelihood Ratios (LLRs)
+> ResNet Blocks
+> Conv2D
+> BatchNorm2D
+> ReLU
+> Conv2D
+> BatchNorm2D
+> ReLU
+> Post-Processing
+> Reshape
+> Pilot Removal
+> Output Conv2D
+> ReLU
+> Conv1D
+> BatchNorm1D
+> Linear Layer
+> Pre-Processing
+> Concatenate
+> Input Conv2D
+> Decoder
+> ReLU
+> ConvTranspose1D
+> BatchNorm1D
+> Linear Layer
+> Sampling
+> Linear Layer
+> Routing Weights
+> Mean
+> Variance
+
+(b) Detailed structure of the representation learning network. Latent Embedding           
+
+> Encoder Efficient Routing Network
+> LS Channel Estimate
+> Representation Learning Latent Embedding
+> Routing Weights Top-kExpert Selection Select kExperts
+> Experts Library
+> Expert 1 Expert 2 Expert 3 Expert 4 Expert K
+> LS Channel Estimate
+> Received Resource Grid
+> Weighted Aggregation Log-Likelihood Ratios (LLRs)
+> ResNet Blocks
+> Conv2D
+> BatchNorm2D
+> ReLU
+> Conv2D
+> BatchNorm2D
+> ReLU
+> Post-Processing
+> Reshape
+> Pilot Removal
+> Output Conv2D
+> ReLU
+> Conv1D
+> BatchNorm1D
+> Linear Layer
+> Pre-Processing
+> Concatenate
+> Input Conv2D
+> Decoder
+> ReLU
+> ConvTranspose1D
+> BatchNorm1D
+> Linear Layer
+> Sampling
+> Linear Layer
+> Routing Weights
+> Mean
+> Variance
+
+(c) Detailed structure of the expert network. Fig. 2. Overall architecture and detailed sub-network structures of the proposed CARNet. 
+
+B. Efficient Routing via Latent Representation 
+
+The primary objective of the routing network is to identify the current channel condition and then determine which expert networks should be activated. However, a generic data-driven routing strategy without integrating any delicate design may struggle to distinguish intrinsic propagation characteristics and generalize across diverse scenarios. Moreover, the correspond-ing routing decision may also be sensitive to noise levels and local estimate errors, leading to unstable expert selection. Different from typically adopted MoE architectures, where the routing decisions are generally inferred from raw or high-dimensional features, the proposed routing network incorpo-rates a representation learning module tailored to the structural properties of wireless channels. Specifically, although the channels are represented as a high-dimensional matrix whose size scales with the numbers of transceiving antennas, OFDM symbols, and subcarriers, its intrinsic variations can typically be dominated by a limited number of physical propagation factors, such as angles of arrival, angles of departure, path loss, delay spreads, and Doppler shifts. Additionally, due to the time-frequency-space coherence of the wireless channels, the channel coefficients of adjacent REs and receive antennas generally exhibit strong statistical correlations. Therefore, the channels are inherently redundant and can be characterized by a low-dimensional latent representation. Notably, this latent representation is not designed to explicitly estimate individual physical propagation parameters. Instead, it serves as a low-dimensional and task-oriented representation that preserves channel-dependent statistical patterns for expert selection. As illustrated in Fig. 2b, the proposed representation learn-ing network adopts variational autoencoder (VAE) structure to extract the latent representation from the LS channel estimate. The channel estimate at the pilot positions is first reshaped into a one-dimensional sequence and processed through multiple stacked one-dimensional convolutional blocks, where the num-ber of feature channels gradually increases while the length of feature maps progressively decreases. This hierarchical design can compresses redundant features while preserving sufficient learning capacity to capture multi-scale propagation patterns. The encoded feature maps are then flattened and projected into two latent statistics via a linear layer, namely the mean vector 
+
+μ ∈ RDz and the log-variance vector log σ2 ∈ RDz
+
+μ, log σ2 = Encoder (XG ), (5) where Dz denotes the dimension of the latent representation, μ
+
+characterizes the deterministic latent embedding of the current propagation condition, while log σ2 quantifies the uncertainty of the latent representation. These two latent statistics jointly parameterize the compact probabilistic representation of the current channel conditions. During training, the latent variable is generated through the reparameterization operation to maintain end-to-end differen-tiability, which can be formulated as 
+
+z = μ + ϵ ⊙ exp  log σ2/2 , (6) where z denotes the sampled latent representation, ⊙ is the element-wise product, and ϵ ∼ N (0, I) represents a random sampling from the standard Gaussian distribution. This sam-pling process encourages the encoder to describe the channel condition through a smooth probabilistic representation, thus the learned latent representation becomes less sensitive to local estimation errors and noise. The decoder, which is constructed as a symmetric counterpart of the encoder, is then employed to recover the input from z
+
+bXG = Decoder (z). (7) 4
+
+In the inference stage, the sampling module and the decoder are removed. The latent embedding is fed into a multilayer perceptron (MLP) to generate routing weights w ∈ RK as 
+
+w = Softmax 
+
+
+
+MLP  Cat [μ, log σ2]
+
+. (8) The routing network selects k experts with the largest weights and the weights are normalized over these activated experts. 
+
+C. Specialized Expert Networks 
+
+Upon receiving the routing weights from the well-designed routing network, the activated top-k experts perform the actual signal recovery. In the proposed CARNet, the expert library E
+
+consists of K structurally homogeneous neural networks with different parameters. This design can guarantee computational balance, while allowing each expert to implicitly specialize in distinct channel conditions identified by the routing network. As illustrated in Fig. 2c, each expert network is built upon a fully convolutional residual network (ResNet) backbone. The network takes two components as inputs: the received signal 
+
+Y ∈ CNr ×S×F and the interpolated LS channel estimate bH ∈
+
+CNr ×S×F . Notably, the latter provides a bootstrap for channel estimation and can facilitate training process. Each expert first employs a convolutional layer to project the received signal into a multi-scale feature space. The resulting feature maps are then processed by NB stacked ResNet blocks for deep feature extraction. Each block consists of two convolutional layers with batch normalization and nonlinear activation, together with a residual shortcut. Finally, an output convolutional layer integrates extracted features to bit-wise LLRs. After masking the output LLRs at the pilot positions, the remaining LLRs corresponding to the data REs are rearranged and flattened. Although all experts share a homogeneous architecture, they are encouraged to learn different signal processing behaviors through channel-adaptive routing. Since different latent repre-sentations activate different expert subsets, each expert tends to specialize in certain channel conditions. 
+
+D. Training Strategy 
+
+End-to-end joint training from scratch is highly unstable. It may suffer from the dilemma of expert collapse, where the routing network excessively favors a single expert, leaving the remaining experts unoptimized and the network degenerating back to a single-model receiver. To ensure stable training, we propose a two-stage training strategy tailored for the CARNet. In the first stage, the VAE-based routing network is pre-trained to achieve robust representation learning. The module is optimized by minimizing the evidence lower bound (ELBO), comprising reconstruction loss and KL-divergence 
+
+LG = E∥XG − ˆXG ∥2 +βE
+
+( DzX
+
+> d=1
+
+μ2 
+
+> d
+
++ σ2 
+
+> d
+
+− log σ2 
+
+> d
+
+− 12
+
+)
+
+(9) where β is the regularization factor, and E(·) is approximated by the average over the training batch. In the second stage, the pretrained encoder is incorporated into the routing network and jointly optimized with the expert networks. To preserve the channel representation learned dur-ing the first stage while adapting to the expert optimization, the encoder is fine-tuned with a much smaller learning rate than the expert networks. For the signal detection task of the experts, we aim to minimize the binary cross entropy loss 
+
+Ldet = −E
+
+h
+
+b log ˆ p(b = 1)+(1 −b) log  1− ˆp(b = 1) i
+
+, (10) where b represents the transmitted coded bits, and the esti-mated bit probability ˆp(b = 1) is obtained from the output LLRs through the Sigmoid function. To avoid expert collapse, we introduce an auxiliary load balancing loss denoted by 
+
+Lbal =
+
+> K
+
+X
+
+> i=1
+
+
+
+E(fi) − kK
+
+2
+
+, (11) where fi denotes the activation frequency of the i-th expert. Minimizing Lbal encourages more balanced expert utilization and ensures that all experts receive sufficient training samples. The overall loss for joint training during the second stage is 
+
+Ltotal = Ldet + αLbal , (12) where α denotes the weighting coefficient of load balancing. IV. P ERFORMANCE EVALUATION 
+
+A. Simulation Setup 
+
+In this paper, we leverage NVIDIA Sionna library [13], a typically adopted link-level simulation platform, to implement the 5G NR uplink transmission described in Section II. The communication system configuration is summarized in Table I.                    
+
+> TABLE I SIMULATION PARAMETERS
+> Parameter Value
+> Carrier frequency 3.5 GHz Number of subcarriers 256 Subcarrier spacing 15 kHz Number of OFDM symbols 14 (1 slot) Channel model CDL-A/B/C/D/E, UMi, UMa RMS delay spread 10 ns ∼300 ns UE speed 0m/s ∼35 m/s Number of BS antennas 2Number of bits per symbol 4 (16-QAM)
+
+Notably, the proposed CARNet is configured with K = 3 
+
+experts and each expert contains NB = 4 ResNet blocks. Each ResNet block comprising two Conv2D layers with 128 output channels and a 3 × 3 kernel size. The lightweight encoder of the representation learning module contains three Conv1D layers, where the output channels are set to 16, 32, and 64, with a kernel size of 3 and a stride of 2. In this work, the routing network activates top k = 1 expert for each input. For performance comparison, multiple baselines are consid-ered: 5G NR receiver LS-LMMSE that perfroms LS channel estimation and LMMSE equalization, DeepRx [3], CRNN-ResNet [5], and perfect CSI with LMMSE equalization. To verify the effectiveness of the representation learning module, the CARNet-Base removes this module and leverage a deep neural network to generate routing weights. To investigate the performances across diverse channel conditions, the simulation cover different channel models (CDL-B/C/D and UMa for training, with CDL-A/E and UMi as unseen scenarios), as well as varying SNR, delay spreads, and UE speeds in Table I. 50 1 2 3 4 5 6 
+
+> Eb=N0(dB)
+> 10!3
+> 10!2
+> 10!1
+> 100
+> BLER
+> LS-LMMSE
+> DeepRx
+> CRNN-ResNet
+> CARNet-Base
+> CARNet
+> Perfect CSI
+
+(a) CDL-C. 0 1 2 3 4 5 6  
+
+> Eb=N0(dB)
+> 10!3
+> 10!2
+> 10!1
+> 100
+> BLER
+> LS-LMMSE
+> DeepRx
+> CRNN-ResNet
+> CARNet-Base
+> CARNet
+> Perfect CSI
+
+(b) CDL-D. 0 1 2 3 4 5 6  
+
+> Eb=N0(dB)
+> 10!3
+> 10!2
+> 10!1
+> 100
+> BLER
+> LS-LMMSE
+> DeepRx
+> CRNN-ResNet
+> CARNet-Base
+> CARNet
+> Perfect CSI
+
+(c) UMi. Fig. 3. BLER performance versus Eb/N 0 under diverse channel conditions: (a) NLoS CDL-C, (b) LoS CDL-D ,and zero-shot generalization to (c) UMi. 
+
+B. Simulation Results 
+
+As illustrated in Fig. 3a and Fig. 3b, we first evaluate the block error rate (BLER) performance under CDL-C and CDL-D, which are included in the training dataset. The former represents a NLoS scenario with rich multipath propagation, while the latter is LoS-dominant environment. The proposed CARNet outperforms static neural receiver baselines, includ-ing DeepRx and CRNN-ResNet, and approaches the Perfect-CSI benchmark, indicating that CARNet can adapt to different channel conditions by dynamically selecting suitable experts. Furthermore, Fig. 3c evaluates the zero-shot generalization performance under the unseen UMi scenario. The proposed CARNet still achieves lower BLER than DeepRx and CRNN-ResNet. The performance gap becomes more significant in the high Eb/N 0 region, due to model mismatch and insuffi-cient adaptation to unseen propagation conditions. The results demonstrate that the proposed CARNet can maintain superior performance under unseen channel distributions. To verify the effectiveness of the proposed representation learning module, we additionally conduct an ablation study. As observed from Fig. 3, the CARNet consistently outperforms the CARNet-Base without the delicately designed represen-tation learning module. This indicates that directly inferring routing weights from data-driven features can be less effective for channel-adaptive expert selection. In contrast, the proposed representation learning module extracts a compact and task-oriented channel embedding, which provides more reliable guidance for accurate expert selection. 
+
+TABLE II COMPLEXITY COMPARISON 
+
+Neural Receiver Params (M) GFLOPs 
+
+DeepRx 1.196 4.158 CRNN-ResNet 1.273 5.461 CARNet-Base 3.931 4.637 CARNet 3.810 4.218 
+
+Table II compares the complexity of different neural re-ceivers, including the number of parameters and the floating-point operations (FLOPs) per slot. Although CARNet has more parameters due to the expert library, its GFLOPs remain mod-erate owing to sparse conditional computation. Therefore, the inference complexity of CARNet is close to DeepRx and lower than CRNN-ResNet. Moreover, compared with CARNet-Base, CARNet achieves reductions in both parameters and GFLOPs, indicating that the representation learning module provides a more computationally efficient routing mechanism. V. C ONCLUSION 
+
+This paper introduces a channel-adaptive neural receiver network (CARNet) for improved robustness and generaliza-tion. CARNet extracts task-oriented channel embeddings via a delicately designed representation learning module and dy-namically selects specialized experts for signal detection under current scenarios. Simulation results demonstrate that CARNet outperforms existing receivers across diverse conditions. REFERENCES [1] J. Hoydis, F. A. Aoudia, A. Valcarce, and H. Viswanathan, “Toward a 6G AI-native air interface,” IEEE Commun. Mag. , vol. 59, no. 5, pp. 76–81, May 2021. [2] X. Lin, “A tale of two mobile generations: 5G-Advanced and 6G in 3GPP Release 20,” IEEE Commun. Stand. Mag. , pp. 1–9, Oct. 2025. [3] M. Honkala, D. Korpi, and J. M. Huttunen, “DeepRx: Fully convolu-tional deep learning receiver,” IEEE Trans. Wireless Commun. , vol. 20, no. 6, pp. 3925–3940, Jun. 2021. [4] Z. Wu et al, “DARNet: Deep attention receiver network for 5G,” IEEE Commun. Lett. , vol. 30, pp. 572–576, 2026. [5] R. Mei, Z. Wang, and X. Chen, “CRNN-ResNet: Combined CRNN and ResNet networks for OFDM receivers,” IEEE Trans. Cogn. Commun. Netw. , vol. 10, no. 4, pp. 1294–1306, Aug. 2024. [6] Q. Jin, X. Li, R. Guo, and F. Liu, “DRNet: Deep learning-based dual-branch receiver for OFDM with nonlinear distortions,” IEEE Commun. Lett. , vol. 30, pp. 357–361, 2026. [7] J. Cheng, W. Chen, and B. Ai, “Adaptive end-to-end transceiver design for NextG pilot-free and CP-free wireless systems,” IEEE J. Sel. Areas Commun. , vol. 44, pp. 3055–3069, Feb. 2026. [8] X. Li, X. Zhou, Y. Cao, J. Zhang, C.-K. Wen, X. Li, and S. Jin, “Learning-aided iterative receiver for superimposed pilots: Design and experimental evaluation,” IEEE Trans. Wireless Commun. , vol. 25, pp. 13 864–13 880, Mar. 2026. [9] C. Jiang, Z. Xu, and Y. Yan, “Towards green 6G networks: An energy-efficient neural receiver for MIMO systems,” IEEE Trans. Veh. Technol. ,early access, Jul. 2026, doi: 10.1109/TVT.2026.3717959. [10] Z. Liu, N. Wu, D. He, W. Yuan, Y. Li, and T. Q. S. Quek, “GNN-assisted BiG-AMP: Joint channel estimation and data detection for massive MIMO receiver,” IEEE Trans. Wireless Commun. , vol. 24, no. 6, pp. 4631–4646, Jun. 2025. [11] Y. Yang, Z. Zhang, Z. Chen, Z. Yang, L. Liu, C. Huang, and M. Debbah, “A hybrid inference architecture incorporating neural network with belief propagation for AI receivers,” IEEE Trans. Wireless Commun. , vol. 24, no. 8, pp. 6365–6381, Aug. 2025. [12] N. Ye et al., “Artificial intelligence for wireless physical-layer technolo-gies (AI4PHY): A comprehensive survey,” IEEE Trans. Cogn. Commun. Netw. , vol. 10, no. 3, pp. 729–755, Jun. 2024. [13] J. Hoydis et al., “Sionna: An open-source library for next-generation physical layer research,” arXiv:2203.11854 , Mar. 2023.
