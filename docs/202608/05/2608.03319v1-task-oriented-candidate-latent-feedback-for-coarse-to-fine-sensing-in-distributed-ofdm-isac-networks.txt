@@ -1,0 +1,1392 @@
+Title: Task-Oriented Candidate-Latent Feedback for Coarse-to-Fine Sensing in Distributed OFDM-ISAC Networks
+
+URL Source: https://arxiv.org/pdf/2608.03319v1
+
+Published Time: Wed, 05 Aug 2026 00:44:14 GMT
+
+Number of Pages: 24
+
+Markdown Content:
+Received XX Month, XXXX; revised XX Month, XXXX; accepted XX Month, XXXX; Date of publication XX Month, XXXX; date of current version XX Month, XXXX. 
+
+> Digital Object Identifier 10.1109/TMLCN.2022.1234567
+
+# Task-Oriented Candidate-Latent Feedback for Coarse-to-Fine Sensing in Distributed OFDM-ISAC Networks 
+
+Shiv Shankar 1,2 Radha Krishna Ganti 1, J Klutto Milleth 2  
+
+> 1Indian Institute of Technology (IIT), Madras, Chennai India
+> 2Centre of Excellence in Wireless Technology (CEWiT), Chennai India Corresponding author: Shiv Shankar (e-mail: shivshankar@cewit.org.in). This work was funded in part by the Ministry of Electronics and Information Technology (MeitY), Government of India.
+
+ABSTRACT Future integrated sensing and communication (ISAC) architectures separate the sensing entity (SE) that acquires measurements from the sensing function (SF) that performs inference, creating a need for compact, task-oriented feedback on the SE–SF interface. Forwarding the raw channel frequency response (CFR) or full per-link delay–Doppler–azimuth–elevation (DDAE) tensor is prohibitively expensive, while peak-only reporting discards target-discriminative structure under clutter. We propose a learning-based coarse-to-fine sensing pipeline with candidate-latent feedback for single-target estimation. At the SE, a lightweight convolutional scorer produces a dense delay–Doppler proposal map from pilot-based OFDM channel estimates, and a learned encoder constructs K compact C-dimensional candidate tokens by fusing per-candidate azimuth– elevation patches, normalized position, and confidence cues. The latents are uniformly quantized post-training to b bits and transmitted under a finite budget Bfb = bKC + 18 K + 16 bits to the SF, which performs cross-candidate refinement, reranking, and joint four-parameter estimation. We characterize the (K, C, b ) design space and identify three operating points spanning payload range. On a ray-traced urban scene with static and dynamic clutter, these points achieve 96 .33 –98 .88% 
+
+detection at 107 –806 bytes per coherent processing interval, corresponding to compression ratios of 
+
+1.2–9.2 × 10 4 over the 8-bit DDAE magnitude tensor and reducing the SE–SF interface from multi-Gbit/s to sub-Mbit/s rates. Cross-scene evaluation on an independent campus-scale environment achieves 98 .79 –99 .50% detection and at-or-better angular accuracy without retraining, indicating that the learned representation captures target-relevant structure that transports across scenes of comparable or lower clutter density. Extension to the multi-target regime, quantization-aware training, and full multistatic fusion are identified as natural next steps. 
+
+INDEX TERMS Integrated sensing and communication (ISAC), distributed sensing, task-oriented feedback, learned latent representation, coarse-to-fine estimation. 
+
+I. INTRODUCTION 
+
+# INTEGRATED sensing and communication (ISAC) has emerged as a foundational capability for beyond-5G and sixth-generation (6G) wireless networks, en-abling communication infrastructure to simultaneously support high-rate data delivery and fine-grained envi-ronment awareness by sharing spectrum, hardware, and signaling resources [1]–[3]. By co-designing the sensing and communication functionalities rather than treating them as isolated subsystems, ISAC offers substantial gains in spectral efficiency, hardware economy, and operational synergy [4], [5]. These advantages have propelled ISAC to the forefront of 6G research agendas, with the International Telecommunication Union (ITU) identifying it as one of the six core usage scenarios for International Mobile Telecommunications 2030 (IMT-2030) [1], [6]. The growing consensus is that sensing should no longer be viewed as an add-on to communi- 
+
+> This work is licensed under a Creative Commons Attribution 4.0 License. For more information, see https://creativecommons.org/licenses/by/4.0/ VOLUME , 1arXiv:2608.03319v1 [eess.SP] 4 Aug 2026 Shiv Shankar et al.: Task-Oriented Candidate-Latent Feedback for Coarse-to-Fine Sensing in Distributed OFDM-ISAC Networks
+
+cation but rather as a native function of future wireless systems, tightly integrated into the network architecture from the outset [2], [7]. This architectural shift is particularly consequential for networked sensing, in which the entity that ac-quires sensing measurements and the function that performs the final inference need not be collocated. Dense cellular deployments, distributed radio nodes, and communication-native pilot structures can be leveraged not only for connectivity, but also for localization, tracking, imaging, and scene understanding across awide area [7]–[9]. In such settings, different base stations (gNBs), user equipment (UEs), or specialized sensing nodes may observe complementary views of the same target or environment, and the resulting measurements must be compressed and transported through the net-work before a final inference can be made. This in-herently distributed topology introduces a new design dimension that goes beyond traditional single-node radar signal processing: in addition to the estimation algorithm itself, the system must provide principled interfaces for transferring sensing information across the network under communication constraints [6]–[8]. Recent standardization activity further reinforces this distributed perspective. Within the Third Generation Partnership Project (3GPP), Release 19 introduced both the stage-1 study item TR 22.837 [10] and the stage-1 specification TS 22.137 [11] for integrated sensing and communication, defining the service-level requirements and reference scenarios for cellular ISAC. The ongo-ing Release 20 stage-2 architectural study TR 23.700-14 [12] is investigating function decomposition, service exposure, and end-to-end operational procedures, explic-itly distinguishing between a Sensing Entity (SE) that acquires and preprocesses measurements and a Sensing Function (SF) that executes the final sensing algorithm. In parallel, recent IEEE architectural discussions [7], [8] have argued that sensing should be treated as a networked function where radio nodes observe, prepro-cess, and exchange sensing information before inference is performed. This makes the ISAC design problem inherently two-sided: one side acquires and compresses the measurement, while the other side consumes a trans-ported representation to execute the downstream task. The central unresolved question is therefore not only how to sense, but also what intermediate representation should be transmitted across the network to enable accurate inference at the receiver under a finite feedback budget. At the same time, practical ISAC sensing is funda-mentally more difficult than the idealized settings often assumed in early studies. Real propagation environments contain strong static reflections from buildings and infrastructure, dynamic clutter from moving vehicles and pedestrians, and site-dependent multipath, all of which can overlap with the target response in delay, Doppler, and angle [13]–[15]. Recent channel-modeling and clutter-aware sensing studies have therefore argued that realistic ISAC pipelines must explicitly model the target–clutter superposition rather than rely on ideal-ized sparse-target assumptions [13], [16], particularly in communication-centric sensing tied to pilot-based OFDM/NR channel measurements [17], [18]. In such settings, forwarding the raw per-link measurement to a central node is prohibitively expensive in bandwidth, while reducing it to a few hard spectral peaks dis-cards target-discriminative structure needed for robust inference. This tension between feedback cost and infor-mation preservation motivates the search for compact, task-oriented sensing representations that retain target-specific structure under a finite feedback budget. 
+
+> A. Related Work
+
+A substantial body of work has established that communication-compatible OFDM and multiple-input multiple-output (MIMO) waveforms can support ac-curate joint estimation of target parameters without requiring a dedicated radar waveform [18], [19]. The dual-functional radar-communication (DFRC) paradigm has shown that carefully designed ISAC transmit sig-nals can achieve near-optimal radar estimation perfor-mance while simultaneously maintaining high-quality data delivery [5], [19]. Representative recent advances include joint angle–range–velocity estimation methods for MIMO-OFDM ISAC systems that exploit the full coherent processing interval and achieve significantly improved root-mean-squared error (RMSE) by jointly processing the received echoes across subcarriers, sym-bols, and antenna elements [20]. Radar-assisted pre-dictive beamforming approaches further demonstrate that sensing-derived state information can be fed back into the communication subsystem to enable proactive resource allocation for vehicular and high-mobility sce-narios [21], [22]. Importantly, practical clutter-aware ISAC sensing frameworks explicitly model the received channel as the superposition of dynamic target returns and environmen-tal clutter [14]. These methods typically rely on explicit filtering or subspace/spectrum-based processing—for ex-ample, mean-phasor cancellation for removing quasi-static environmental clutter followed by joint detection and angle/range/velocity estimation. More broadly, re-cent channel modeling studies have emphasized that realistic ISAC sensing must account not only for the target path, but also for static and dynamic background components, clutter radar cross section (RCS), and site-specific multipath, especially in communication-native deployments that inherit the structure of OFDM pilots and 3GPP-style channels [13], [16]. Taken together, this line of work has established that realistic ISAC  
+
+> 2VOLUME ,
+
+target estimation requires explicit attention to clutter, background structure, and communication-compatible signal models rather than relying on idealized sparse-target assumptions alone. In parallel, learning-based ISAC methods have begun to move beyond purely model-driven sensing pipelines by jointly learning signal detection and target estimation from communication-derived measurements [23], [24]. The two-stage SIMO-OFDM ISAC receiver of Hu et al. [23] combines learning-based symbol detection with subsequent target-parameter estimation, demonstrating that end-to-end training can mitigate error propagation across the detection and sensing stages. ISAC-NET [24] employs a model-driven deep unfolding architecture to jointly perform passive sensing and communication de-modulation, reporting significant sensing gains over con-ventional two-dimensional DFT-based processing. More broadly, the model-based deep learning paradigm has shown that physics-informed neural network architec-tures can achieve strong performance in wireless esti-mation tasks while retaining interpretability and con-vergence guarantees [25], [26]. These results collectively indicate that learning can improve robustness to demod-ulation errors and can exploit structured communication measurements more effectively than rigid hand-crafted pipelines. However, existing learning-based ISAC receivers are still largely centralized: the learned model is typically assumed to operate where the measurement is available, and the main design question is how to estimate the target parameters accurately from that measurement. They do not directly address the increasingly important distributed setting in which the sensing entity and the final inference function are separated and only a limited amount of sensing information can be conveyed across the network. In particular, prior ISAC estimation works do not yet provide a learned, task-oriented feedback representation that is rich enough to retain target-discriminative structure under clutter, yet compact enough to replace raw DDAE tensor or channel frequency response (CFR) forwarding. This missing representation layer is precisely the gap addressed in the present work. A closely related design philosophy has already ma-tured in massive-MIMO channel state information (CSI) feedback. CsiNet [27] demonstrated that an autoencoder-based encoder–decoder pair compresses downlink CSI into a small set of learned latent space at lower over-head and higher reconstruction quality than classical compressive sensing. CsiNet-LSTM [28] extends this to time-varying channels, DeepCMC [29] introduces fully convolutional distributed compression with variable-rate feedback and channel-adaptive quantization, and more recent designs [30], [31] learn the feedback representation jointly with the end task rather than via a fixed hand-crafted transform. The unifying insight is that what is fed back matters as much as how much: a learned latent that discards irrelevant channel structure while preserving task-critical features dramatically outperforms classical feedback at the same bit budget. A parallel paradigm shift is underway in seman-tic and task-oriented communications [32]–[34]. Moving beyond Shannon-theoretic bit-level reconstruction, this framework advocates transmitting representations that preserve the task utility of the source under bandwidth, delay, and robustness constraints [35], [36]. Task-oriented methods learn compact latent features optimized for a downstream objective (classification, decision, control, or retrieval) while discarding source details irrelevant to that objective [37]–[39]. Applied to distributed ISAC, this principle dictates that the SE should extract and transmit a latent representation capturing the target-relevant content of the observation rather than attempt-ing to reproduce the full measurement at the receiver. The preceding discussion identifies a clear gap: existing ISAC sensing methods—both model-based and learning-based—are designed for centralized operation and do not provide a learned feedback representation that can bridge the SE–SF split under a finite bit budget. At the same time, the CSI feedback and semantic com-munication literatures have demonstrated that learned, task-oriented latent representations can dramatically outperform hand-crafted feedback at the same overhead. Combining these insights, the goal of this work is to learn a feedback representation for ISAC sensing that is simultaneously (i) compact enough for limited-rate transport, (ii) specific enough to preserve target-related structure under clutter and background variation, and (iii) directly consumable by the downstream inference function without requiring reconstruction of the full mea-surement tensor. This representation-centric viewpoint, which is well-established in CSI compression [27], [29], [31] and increasingly central in semantic communica-tion [32]–[34], remains largely unexplored in ISAC target estimation. Concretely, to the best of our knowledge, no prior ISAC estimator—model-based or learning-based— jointly estimates delay, Doppler, azimuth, and elevation over a UPA in a bistatic ray-traced scene with static and dynamic clutter under a finite per-link feedback budget. Existing learning-based estimators address subsets of this problem: [23] estimates AoA and delay only; [24] estimates range and velocity with no angular output; [20], [40] estimate range/velocity/azimuth over ULAs without elevation; and the closest model-based work [14] handles angle/distance/velocity but assumes explicit static-clutter filtering and does not address feedback compression. More fundamentally, none of the above works adopts a decentralized SE–SF architecture in which a target-specific learned latent representation  
+
+> VOLUME , 3Shiv Shankar et al.: Task-Oriented Candidate-Latent Feedback for Coarse-to-Fine Sensing in Distributed OFDM-ISAC Networks
+
+is transmitted from the sensing entity to the sensing function; the present work targets exactly this regime. 
+
+B. Contributions 
+
+This paper proposes task-oriented candidate-latent feed-back for coarse-to-fine sensing in distributed OFDM-ISAC networks. In the considered SE–SF architecture, the sensing entity (SE) avoids forwarding the full delay– Doppler–azimuth–elevation (DDAE) tensor to the sens-ing function (SF). Instead, it generates a compact set of delay–Doppler candidates and encodes each candidate into a learned latent token that preserves task-relevant sensing information under a finite feedback budget. The SF then uses only the received candidate latents and indices to perform reranking and refined target-parameter estimation. The main contributions are as follows. 
+
+• Task-oriented candidate-latent feedback interface: We formulate a compact SE–SF feedback interface in which each delay–Doppler candidate is repre-sented by a learned latent token. Unlike raw DDAE forwarding or peak-only reporting, the proposed representation preserves target-discriminative angu-lar and delay–Doppler structure while substantially reducing the feedback payload. 
+
+• Finite-rate feedback model and operating-point de-sign: We introduce a quantized candidate-latent feedback model with bit-exact payload accounting, 
+
+Bfb = bKC +18 K +Bside , where K is the number of candidates, C is the latent dimension, and b is the number of quantization bits per latent component. This enables direct payload–accuracy tradeoff anal-ysis and systematic selection of compact operating points. 
+
+• Coarse-to-fine sensing architecture for distributed OFDM-ISAC: We develop an end-to-end estimator that first generates high-recall delay–Doppler pro-posals at the SE, constructs candidate tokens from angular patches, candidate coordinates, and confi-dence cues, and then performs set-based refinement, reranking, and four-parameter estimation at the SF. The design explicitly separates local measurement processing at the SE from downstream inference at the SF. 
+
+• Ray-traced validation under clutter and cross-scene testing: We evaluate the proposed framework on a realistic ray-traced urban ISAC dataset with static and dynamic clutter, benchmark it against classical peak-selection baselines, and study the effects of candidate count, latent dimension, quantization width, and architectural components. The selected operating points achieve high detection accuracy at payloads ranging from 107 to 806 bytes per sample, tolerate 6-bit post-training quantization AMF  
+
+> SE
+> Sensing Entities
+> (gNBs/UEs) Sensing Measurements
+> SF
+> (Sensing Algorithms)
+> Sensing Measurement Data Sensing Configuration
+> API NEF
+> AF
+> Sensing
+> (Service Consumer)
+> Sensing Request
+> FIGURE 1. High-level system architecture for distributed ISAC sensing, showing the SE–SF split with sensing measurement transport via the network exposure function (NEF).
+> FIGURE 2. Bistatic sensing geometry with TX and RX UPAs, a point target at po, and the associated delay, Doppler, AoD, and AoA parameters.
+
+with negligible degradation, and transfer without retraining to an unseen campus-scale scene. 
+
+C. Paper Organization 
+
+The rest of the paper is organized as follows. Section II presents the system model and sensing signal represen-tation. Section III develops the proposed coarse-to-fine estimator and candidate-latent feedback interface. Sec-tion IV presents the simulation setup. Section V reports the main results, including the comparison with classi-cal peak-selection baselines, the (K, C ) operating-point sweep at FP32, post-training quantization sensitivity, cross-scene validation on Scene-IITM, and component ablations. Section VI concludes the paper and outlines future work. 
+
+II. SYSTEM MODEL A. Geometry, Arrays, and Far-Field Assumption 
+
+Consider a multistatic (bistatic) ISAC network (Fig. 2) with transmitter (TX) at positions pt, receiver (RX) at positions pr , and point targets at po with radar cross section (RCS) ρo. The model allows monostatic operation as the special case pt = pr , but the numerical experiments focus on distributed (bistatic) deployments where TX and RX are physically separated.  
+
+> 4VOLUME ,
+
+Each TX employs an Nty × Ntz uniform planar array (UPA) lying in the yz -plane, with inter-element spacing 
+
+dant = λ/ 2, where λ is the carrier wavelength. Let Nt =
+
+Nty Ntz denote the number of TX elements. Similarly, each RX employs an Nry × Nrz UPA (also in its local yz -plane) with Nr = Nry Nrz elements. Each RX defines a local coordinate system (LCS) where the x-axis is normal (broadside) to the UPA, the z-axis aligns with the array’s top row, and the array lies in the yz -plane. Targets are placed uniformly at random within abounded 3-D region xmin < x < x max , ymin < y < ymax , and zmin < z < zmax . For each TX–target– RX propagation path, we assume a practical far-field condition: while the distance may not strictly exceed the Fraunhofer distance (on the order of 2D2max /λ with 
+
+Dmax = max {Dt, D r } the larger aperture), planar-wavefront and uniform spherical-spreading approxima-tions remain accurate. Hence, each path is modeled as a plane wave whose AoD/AoA is constant across the corresponding UPA. All TXs and RXs are assumed perfectly synchronized in time and frequency. 
+
+B. Target Motion and RCS 
+
+Target velocities are drawn uniformly in R3 subject to 
+
+‖vo‖ < v max . The target RCS (in dBsm) is modeled as 
+
+ρo, dBsm ∼ N (ρm, σ 2
+
+> ρ
+
+), and ρo = 10 ρo, dBsm /10 .
+
+C. Clustered Multipath Channel Model (TR 38.901) 
+
+We adopt the clustered delay-line structure of 3GPP TR 38.901 [41]. For a given TX/RX antenna pair 
+
+(ntx , n rx ), the continuous-time channel impulse response (CIR) is 
+
+hntx ,n rx (τ, t ) = 
+
+> Npath
+
+∑
+
+> η=1
+
+aη ej 2πλ ˆrT  
+
+> rx ,η dnrx
+
+ej 2πλ ˆrT 
+
+> tx ,η dntx
+
+× ej2πf d,η t δ(τ − τntx ,n rx ,η 
+
+),
+
+(1) where Npath is the number of paths, aη is the complex path gain, ˆrtx ,η and ˆrrx ,η are unit departure/arrival direction vectors (in the TX/RX LCS, respectively), dntx 
+
+and dnrx are the element position vectors, and τntx ,n rx ,η 
+
+and fd,η are the path delay and Doppler shift. 
+
+D. ISAC Channel Decomposition: Target + Background 
+
+We decompose the overall ISAC channel into a target-induced component and an environmental (background) component: 
+
+h(τ, t ) = ho(τ, t ) + hbg (τ, t ). (2) For a point target, the target component is constructed by convoluting TX →target and target →RX responses and scaling by the target RCS: 
+
+ho(τ, t ) = √ρo hto (τ, t ) ∗ hor (τ, t ). (3) In simulations, we use NVIDIA Sionna to generate CIRs via 3-D ray tracing for hbg (τ, t ), producing site-specific path parameters while preserving the cluster/ray structure of (1). 
+
+E. OFDM Representation 
+
+We consider an orthogonal frequency-division multiplex-ing (OFDM) system with Nsc subcarriers, subcarrier spacing ∆f , and L OFDM symbols. Let Tsym = 1 /∆f
+
+and tl = lT sym . The baseband channel frequency re-sponse (CFR) is 
+
+h[nsc , l ] = 
+
+∫ ∞−∞ 
+
+h(τ, t l) e−j2πn sc ∆f τ dτ, nsc = 0 , . . . , N sc −1, l = 0 , . . . , L −1.
+
+(4) The target contribution in frequency can be expressed as 
+
+ho[nsc , l ] = √ρo hto [nsc , l ] hor [nsc , l ]. (5) 
+
+F. Array Steering Vectors and Beamforming 
+
+For a UPA in the yz -plane with spacing dant = λ/ 2,index elements by (ny , n z ) with ny ∈ { 0, . . . , N y −1} and 
+
+nz ∈ { 0, . . . , N z −1}, and position vector dant,n y ,n z =[0 , n y dant , n z dant ]T in the array LCS. We parameterize a plane-wave direction by elevation– azimuth (θ, ϕ ) such that its direction cosines along y
+
+and z in the array LCS are uy (θ, ϕ ) = cos θ sin ϕ and 
+
+uz (θ, ϕ ) = sin θ. Then the (TX or RX) steering vector [a(θ, ϕ )] 
+
+> ny,n z
+
+can be written compactly as 
+
+exp 
+
+(
+
+j 2πλ
+
+(
+
+uy (θ, ϕ ) ny dant + uz (θ, ϕ ) nz dant 
+
+))
+
+. (6) TX beamforming uses a single spatial layer x[nsc , l ] ∈
+
+C1 shared across all TX elements with a (static or slowly updated) weight vector wt ∈ CNt normalized as ‖wt‖22 =
+
+Nt:
+
+˜x[nsc , l ] = wt x[nsc , l ]. (7) The effective TX array factor toward direction (ψ, ξ ) is 
+
+γ(ψ, ξ ) = aTt (ψ, ξ ) wt. (8) 
+
+G. Target Path: Bistatic Delay and Doppler 
+
+For a bistatic TX–target–RX geometry, the target round-trip delay is 
+
+τo = ‖po − pt‖ + ‖pr − po‖
+
+c , (9) and the bistatic Doppler shift is 
+
+fd = vT 
+
+> o
+
+ˆrto − vT 
+
+> o
+
+ˆror 
+
+λ ,
+
+ˆrto = po − pt
+
+‖po − pt‖ , ˆror = pr − po
+
+‖pr − po‖ .
+
+(10) Let (ψo, ξ o) denote the AoD from the TX toward the target and (θo, ϕ o) the AoA at the RX from the target (both in the corresponding LCSs). With overall target  
+
+> VOLUME , 5Shiv Shankar et al.: Task-Oriented Candidate-Latent Feedback for Coarse-to-Fine Sensing in Distributed OFDM-ISAC Networks
+
+path gain ao and TX factor γo = γ(ψo, ξ o), the target CFR at RX element (nry , n rz ) can be written as 
+
+Ho(nry , n rz , n sc , l ) = √ρo γo ao e−j2πn sc ∆f τ o ej2πf dlT sym 
+
+× exp 
+
+(
+
+j 2πλ
+
+(
+
+uy (θo, ϕ o) nry dant + uz (θo, ϕ o) nrz dant 
+
+))
+
+.
+
+(11) 
+
+a: Monostatic Special Case. 
+
+When pt = pr , the range, delay, and Doppler reduce to 
+
+R = ‖po − pr ‖, τ = 2Rc ,fd = 2 vT 
+
+> o
+
+ˆr
+
+λ , ˆr = po − pr
+
+R .
+
+(12) 
+
+H. Background Channel 
+
+The background component aggregates all reflections not deliberately produced by the target (e.g., buildings and ground). It is treated as structured interference during sensing and as a quasi-static channel for communication. Let there be Nbpath background paths. For the η-th background path with AoD (ψη , ξ η ) and AoA (θη , ϕ η ),delay τη , Doppler fd,η , and gain aη , the CFR at RX element (nry , n rz ) is 
+
+Hbg ,η (nry , n rz , n sc , l ) = aη γ(ψη , ξ η )
+
+× exp 
+
+(
+
+j 2πλ
+
+(
+
+uy (θη , ϕ η ) nry dant + uz (θη , ϕ η ) nrz dant 
+
+))
+
+× e−j2πn sc ∆f τ η ej2πf d,η lT sym .
+
+(13) The total background CFR is 
+
+Hbg (nry , n rz , n sc , l ) = 
+
+> Nbpath
+
+∑
+
+> η=1
+
+Hbg ,η (nry , n rz , n sc , l ). (14) The background includes both near-zero Doppler (static) and nonzero Doppler (moving clutter) components and occupies a single PRS port in the communication system. 
+
+I. Channel Tensor, Received Signal, and Pilot-Based LS Estimate 
+
+For a given TX–RX pair, stack across the RX array and OFDM time–frequency grid to form the channel tensor 
+
+H ∈ CNry ×Nrz ×Nsc ×L:
+
+H = Ho + Hbg . (15) The received signal tensor is 
+
+Y = H X + N, (16) where denotes elementwise multiplication over (nsc , l ),
+
+X is the transmitted resource grid (shared across RX antennas), and N is additive noise. During sensing snapshots, we set X = Xp, where Xp
+
+is a PRS-like pilot allocated on a resource-element (RE) Global OFDM symbol index        
+
+> 0510 15 20 25
+> Subcarrier index within 1 PRB (0..11)
+> 0
+> 2
+> 4
+> 6
+> 8
+> 10
+> TX1
+> FIGURE 3. Positioning-reference-signal (PRS) resource allocation: one PRS OFDM symbol every 8OFDM symbols within a single physical resource block (PRB).
+
+set Ω (cf. Fig. 3). Then, on PRS REs, the least-squares (LS) CFR estimate is 
+
+˜Hp(nry , n rz , n sc , l ) = Y(nry , n rz , n sc , l )
+
+Xp(nsc , l ) , (nsc , l ) ∈ Ω.
+
+(17) 
+
+J. DDAE Feature Tensor 
+
+For each TX–RX link, we first obtain CFR snapshots from pilot-based LS estimation. Instead of performing classical clutter suppression and CFAR/peak-picking as in model-based sensing pipeline, we treat the Delay– Doppler–Azimuth–Elevation (DDAE) transform as adeterministic feature front-end. The resulting 4-D tensor is converted to a log-power representation, quantized to 8-bit unsigned integers, and fed to a learned encoder. The encoder produces a compact latent code that is transmit-ted to the Sensing Function (SF) for downstream AI/ML inference. Let ˜H(ny , n z , n sc , l ) denote the complex CFR for an Nry × Nrz RX UPA over Nsc subcarriers and L
+
+OFDM symbols, with indices nsc ∈ { 0, . . . , N sc − 1}
+
+and l ∈ { 0, . . . , L − 1}. Under the far-field plane-wave assumption, each propagation component is approxi-mately separable across frequency (delay), slow-time (Doppler), and space (AoA), so a separable FFT/IFFT chain concentrates each path’s energy into a sparse neighborhood in a 4-D Fourier grid (delay, Doppler, azimuth, elevation). Delay transform: Although only Nsc = 3276 active subcarriers are populated, the delay transform is evalu-ated on an Nτ -point delay grid using zero-padding. In the experiments, Nτ = 4096 . Hence the delay-grid spacing is 
+
+∆del = 1
+
+Nτ ∆f ,
+
+whereas the nominal bandwidth-limited delay resolution is approximately 1/(Nsc ∆f ). For ∆f = 120 kHz and 
+
+Nτ = 4096 , this gives ∆del = 2.0345 ns/bin. dn ∈ 
+
+> 6VOLUME ,
+
+{0, . . . , N τ − 1}:
+
+HD (ny , n z , l, d n) = 1
+
+NτNτ −1∑
+
+> nsc =0
+
+˜H(ny , n z , n sc , l )
+
+× ej2πn sc dn/N τ . (18) Retain only the first D0 bins corresponding to the maxi-mum unambiguous range: HD, win = HD (: , :, :, d n < D 0).Doppler transform: apply a length-L FFT across OFDM symbols to obtain Doppler bins fn ∈{− L/ 2, . . . , L/ 2 − 1}:
+
+HDD (ny , n z , f n, d n) = 
+
+> L−1
+
+∑
+
+> l=0
+
+HD, win (ny , n z , l, d n)
+
+× e−j2πlf n/L . (19) Optionally retain a centered window of F0 Doppler bins around zero Doppler. Azimuth/elevation transforms: apply spatial FFTs across the y- and z-axes of the RX UPA are 
+
+HDDA (az n, n z , f n, d n) = 
+
+> Nry −1
+
+∑ 
+
+> ny=0
+
+HDD (ny , n z , f n, d n) e−j2πn y az n/N ry , (20) and HDDAE (az n, el n, f n, d n) =  
+
+> Nrz −1
+
+∑ 
+
+> nz=0
+
+HDDA (az n, n z , f n, d n) e−j2πn z el n/N rz . (21) The resulting tensor HDDAE ∈ CNry ×Nrz ×F0×D0 is the DDAE cube. In contrast to the earlier pipeline where quasi-static clutter was suppressed by mean subtraction across frequency and slow-time prior to the DDAE transform, we do not apply explicit clutter removal here. Our target environments include complex, time-varying multipath and moving interferers, for which fixed heuristics can remove useful structure and introduce arti-facts. Instead, clutter/background suppression is learned implicitly by the encoder operating on the raw DDAE magnitude features. We convert the complex DDAE cube to a real-valued feature tensor by log-power in dB: 
+
+P (a, e, v, d ) = 10 log 10 
+
+(
+
+|HDDAE (az n, el n, f n, d n)|2)
+
+,
+
+(22) .To reduce model complexity and storage, we uniformly quantize P (·) to an 8-bit unsigned tensor. Using a fixed dynamic range [Pmin , P max ] (in dB), we clip and map to 
+
+{0, . . . , 255 }:
+
+Q = uint8 
+
+(
+
+round 
+
+(
+
+255 · clip( P, P min , P max ) − Pmin 
+
+Pmax − Pmin 
+
+)) 
+
+.
+
+(23) The quantized tensor Q is the input to the learned encoder. The encoder outputs a compact latent represen-tation that is transmitted to the SF, where downstream AI/ML models perform detection/estimation. 
+
+III. Proposed Method 
+
+We take the quantized DDAE tensor Q defined in Sec. II as input. As shown in Fig. 4, the proposed pipeline comprises three stages that map cleanly onto the SE– SF split: (i) SE-side processing—candidate proposal and latent construction (Sec. A); (ii) a feedback interface— quantization, bit-budget accounting, and dequantization (Sec. B); and (iii) SF-side processing—set-based latent refinement, reranking, and four-parameter estimation from the received latents (Sec. C). The training objective is specified in Sec. D. 
+
+A. SE-Side Processing: Candidate Proposal and Latent Construction 
+
+All operations in this subsection execute at the sensing entity. The SE observes the DDAE tensor, generates a set of delay–Doppler candidate hypotheses, and encodes each into a compact latent vector for transmission. 
+
+1) Delay–Doppler Feature Descriptor 
+
+For each delay–Doppler bin (v, d ), we aggregate the angular response map Q:,:,v,d ∈ RA×E into two scalar statistics: the total power 
+
+Π( v, d ) = 
+
+> A
+
+∑
+
+> a=1
+> E
+
+∑
+
+> e=1
+
+Q(a, e, v, d ), (24) and the angular concentration (peakedness) 
+
+U (v, d ) = max  
+
+> a,e
+
+Q(a, e, v, d ) − 1
+
+AE 
+
+> A
+
+∑
+
+> a=1
+> E
+
+∑
+
+> e=1
+
+Q(a, e, v, d ).
+
+(25) Stacking yields the two-channel descriptor Z ∈ R2×V ×D
+
+with Z1 = Π and Z2 = U . The power channel highlights bins with significant energy integrated over angle, while the peakedness channel emphasizes bins whose energy is concentrated in a small angular region—a signature more consistent with a coherent target return than with diffuse clutter. Both are parameter-free reductions and incur negligible overhead. 
+
+2) Dense Delay–Doppler Scoring Network 
+
+The descriptor Z is mapped to a per-bin confidence map by a lightweight fully-convolutional network ϕθ (·).We apply Ls blocks of 3 × 3 convolution with group normalization and SiLU activation, preserving spatial resolution, followed by a 1 × 1 projection to a scalar confidence per bin: 
+
+H(ℓ) = SiLU 
+
+(
+
+GN 
+
+(
+
+Conv (ℓ)3×3
+
+(
+
+H(ℓ−1) 
+
+))) 
+
+, ℓ = 1 , . . . , L s,
+
+(26) 
+
+S = Conv 1×1
+
+(
+
+H(Ls)
+
+)
+
+∈ RV ×D , (27) with H(0) = Z. The output S provides unnormalized logits for all V ×D delay–Doppler bins and is supervised  
+
+> VOLUME , 7
+
+Shiv Shankar et al.: Task-Oriented Candidate-Latent Feedback for Coarse-to-Fine Sensing in Distributed OFDM-ISAC Networks Sensing Entity (SE)     
+
+> Q
+> A×E×V×D 8×8×128×1200
+> DD features
+> {v,d} =Σ a,e Q
+> {v,d}=max−mean → Z ∈ℝ 2×V×D
+> DD scorer
+> 3×Conv-GN-SiLU (2→32→64→64) +Conv1×1→S ∈ℝ V×D
+> Top-K
+> indices (v k,d k)
+> Candidate token construction (per candidate k, k=1..K)
+> extract AE patches (8×8) at each (v k,d k)
+> gAE
+> 8×8 AE patch Conv + spatial-softmax + 7 stats → e AE k∈ℝ C
+> gpos
+> v̄ k,d̄ k(normalized) MLP(2→C→C) → e pos k∈ℝ C
+> gsc
+> S(v k,d k)MLP(1→C→C) → e sc k∈ℝ C
+> Concat[3C] → g fuse : Linear(3C→2C) + SiLU + Dropout + Linear(2C→C) → t k∈ℝC
+> T=[t 1,..,t K]
+> ∈ℝ K×C
+> Quantize (b bits/comp)
+
+① Quantized latents {q k} and global scale γ 
+
+② Indices {(v k,d k)}                       
+
+> Sensing Function (SF)
+> Dequantize
+> Set Transformer
+> 1-layer MHSA (2 heads) + FFN(C→4C→C)
+> T̂ → T' ∈ℝ K×C
+> cross-candidate reasoning on K latents
+> Reranking
+> MLP(C→2C→1)→α k
+> wk= softmax(α k/)T'
+> consumes: T' konly (refined latents)
+> Delay / Doppler head
+> Offset: Δ k=½tanh(MLP off (T' k)) ∈[−½,½]² MLP off : Linear(C→2C)+SiLU+Linear(2C→2) Refined bins: d̃ k=d k+Δd k, ṽ k=v k+Δv k
+> = Σ k wk (d̃ k+d 0)·
+> = Σ k wk (ṽ k−v 0)·
+> consumes: T' k,indices (v k,d k),wk
+> Azimuth / Elevation head
+> zang = Σ kwkT' k(weighted-sum latent) MLP(C→8C→8C→4): (sin, cos) az,el
+> Normalize each pair to unit circle consumes: T' k,wk(indices not required)
+> T'
+> T'
+> wk
+> wk
+> Multi-task loss
+> ℒ= λ reg ℒreg () + λ ang ℒang ()
+> + λ map ℒmap (S) + λ rank ℒrank (w)
+
+ℒmap (cross-entropy on S) 
+
+> ℒrank
+
+FIGURE 4. End-to-end block diagram of the proposed coarse-to-fine ISAC sensing pipeline, showing SE-side candidate proposal and latent construction, the quantized feedback interface, and SF-side set refinement, reranking, and four-parameter estimation 
+
+via a cross-entropy loss (Sec. D) to promote high recall of the ground-truth bin. 
+
+3) Top-K Candidate Selection 
+
+We vectorize s = vec( S) ∈ RV D and select the index set IK = TopK( s, K ). Each flat index ik is mapped to two-dimensional coordinates via 
+
+vk =
+
+⌊ ik
+
+D
+
+⌋
+
+, dk = ik − vkD. (28) yielding the candidate set C = {(vk, d k, s ik )}K−1
+
+k=0 . Be-cause downstream modules at the SF cannot recover a hypothesis absent from C, the scorer is trained to prioritize recall at K. The value of K is selected empirically in Sec. V to balance end-to-end detection rate against the feedback payload. 
+
+4) Candidate Token Construction 
+
+For each candidate (vk, d k) ∈ C, we construct a C-dimensional latent that summarizes (i) the angular struc-ture at the candidate bin, (ii) the candidate position, and (iii) the candidate confidence. Specifically, we extract 
+
+• Angular patch: AE k = Q:,:,v k ,d k ∈ RA×E , the full azimuth–elevation response at the selected bin. 
+
+• Normalized position: ¯pk = [¯ vk, ¯dk]⊤ ∈ [−1, 1] 2, with 
+
+¯vk = 2 vk/(V − 1) − 1 and ¯dk = 2 dk/(D − 1) − 1.
+
+• Score: sk ∈ R, the confidence logit from the scoring network. Three lightweight encoders map these cues into acommon C-dimensional embedding space. 
+
+Angular encoder gAE (·)
+
+The A × E angular patch is first passed through a small convolutional block (two 3×3 Conv–GN–SiLU layers at hidden width h) and projected into a scalar per-pixel score map via a 1×1 convolution. A spatial softmax over the A×E grid converts this score map into a probability distribution p(a, e ) ≥ 0, ∑
+
+a,e p(a, e ) = 1 . From p we compute the expected angular coordinates and their spread on a fixed coordinate grid (y(a), z (e)) ∈ [−1, 1] 2
+
+aligned with the UPA axes, 
+
+¯y = ∑
+
+a,e 
+
+p(a, e ) y(a), ¯z = ∑
+
+a,e 
+
+p(a, e ) z(e), (29) 
+
+σ2
+
+y = ∑
+
+a,e 
+
+p(a, e ) ( y(a) − ¯y)2,σ2
+
+z = ∑
+
+a,e 
+
+p(a, e ) ( z(e) − ¯z)2. (30) Three scalar summaries of the raw patch—its peak value, mean, and standard deviation—are appended, producing 
+
+8 VOLUME , a seven-dimensional feature vector 
+
+f AE  
+
+> k
+
+= [¯y, ¯z, σ 2 
+
+> y
+
+, σ 2 
+
+> z
+
+, max AE k, AE k, σ (AE k)]⊤ ∈ R7,
+
+(31) which is mapped to RC by a two-layer multi-layer perceptron (MLP) with SiLU activation: 
+
+eAE  
+
+> k
+
+= gAE (AE k) = WAE 2 SiLU (WAE 1 f AE 
+
+> k
+
+) ∈ RC .
+
+(32) The spatial-softmax readout yields a differentiable sub-pixel estimate of the angular peak location, while the appended variance and intensity statistics carry information about peak sharpness and overall return strength. Together these cues are sufficient for the SF-side angle head to recover azimuth and elevation from the transmitted latent alone, without requiring the raw patch to cross the feedback interface. 
+
+> Position and score encoders
+
+The position encoder gpos (·) is a two-layer MLP that maps ¯pk ∈ R2 to RC ,
+
+epos  
+
+> k
+
+= Wpos 2 SiLU (Wpos 1 ¯pk
+
+), (33) providing the fusion network with differentiable access to the candidate’s normalized delay–Doppler coordinates. The score encoder gsc (·) is a two-layer MLP that maps 
+
+sk ∈ R to RC ,
+
+esc  
+
+> k
+
+= Wsc 2 SiLU (Wsc 1 sk
+
+), (34) exposing the proposal-stage confidence as an additional discriminative feature for candidate fusion. 
+
+> Fusion into a candidate token
+
+The three embeddings are concatenated into a 3C-dimensional vector and mapped to a C-dimensional candidate token by a two-layer MLP with dropout, 
+
+tk = Wfuse 2 Dropout 
+
+(
+
+SiLU (Wfuse 1 [eAE  
+
+> k
+
+; epos  
+
+> k
+
+; esc  
+
+> k
+
+]))
+
+,
+
+(35) with Wfuse 1 ∈ R2C×3C and Wfuse 2 ∈ RC×2C . Stack-ing {tk}Kk=1 yields the candidate latent matrix T =[t1, . . . , tK ]⊤ ∈ RK×C , which is the SE’s output. Remark (SE–SF boundary). At this point, the SE has completed all local computation. The candidate latent matrix T, the candidate indices {(vk, d k)}Kk=1 , and a single global scale parameter γq together constitute the information transmitted to the SF. No raw angular patch, raw DDAE slice, or channel-estimate tensor is forwarded; the SF must perform all downstream infer-ence from the transmitted latents and indices alone. The next subsection formalizes this feedback interface and its bit-budget accounting. 
+
+> B. SE–SF Feedback Interface: Quantization and Bit Budget 1) Bit Budget
+
+The feedback message comprises three components transmitted from the SE to the SF: (i) the quantized candidate latents {qk}Kk=1 ; (ii) the corresponding delay– Doppler candidate indices {(vk, d k)}Kk=1 ; and (iii) quan-tizer side information consisting of a global per-sample scale γq . With b bits per latent component, K candidates of dimension C, and a delay–Doppler grid of size V D ,the total feedback budget is 
+
+Bfb = KCb ︸ ︷︷ ︸ 
+
+> quantized latents
+
++ Kdlog 2(V D )e
+
+︸ ︷︷ ︸
+
+> candidate indices
+
++ Bside 
+
+︸ ︷︷ ︸ 
+
+> global scale
+
+,
+
+(36) where a single global scale parameter ( Bside = 16 bits in our implementation) is broadcast once per sample. Per-candidate scales would replace Bside by KB side but were not found beneficial in our experiments. Equation (36) enables direct payload–accuracy evaluation by sweeping 
+
+b at fixed (K, C ).For a delay–Doppler grid of size V × D = 128 × 1200 ,we have dlog 2(153 600) e = 18 bits per candidate index, so the feedback budget reduces to 
+
+Bfb = bKC + 18 K + 16 bits . (37) For the standard (STD) anchor (K, C, b ) = (8 , 64 , 6) used as a running example in this paper, the latent payload is 
+
+3,072 bits, the candidate-index overhead is 144 bits, and the global scale contributes 16 bits, totaling 3,232 bits or 
+
+404 bytes per sample. The same expression evaluated at the ultra-compact (UC) anchor (4 , 32 , 6) and the high-fidelity (HF) anchor (16 , 64 , 6) gives 107 B and 806 Bper sample, respectively. This accounting is bit-exact and underlies all payload numbers reported in Sec. V. Halving the candidate count K halves both the latent and the index contributions simultaneously, enabling aggressive low-bandwidth operating points, which we study in Sec. C. 
+
+> 2) Uniform Mid-Rise Quantizer and Dequantizer
+
+We employ a symmetric mid-rise uniform quantizer with 
+
+2b reconstruction levels and no level placed at zero. Given a clipping threshold γq > 0 and a bit budget b ≥ 1 per latent component, the step size is 
+
+∆q = γq
+
+2 b−1 , (38) and the 2b levels are placed symmetrically about the origin at 
+
+rq = (q + 12
+
+) ∆q , q ∈ Q b ≜ {− 2b−1, . . . , 2b−1 − 1}.
+
+(39) This assigns 2b−1 levels per sign and a uniform spacing 
+
+∆q between consecutive reconstruction values at every bit budget. We use ∆q here to distinguish the quantizer step from the Doppler-bin and delay-bin resolutions ∆dop 
+
+and ∆del used in Sec. C. For the lowest bit budgets, (39)  
+
+> VOLUME , 9Shiv Shankar et al.: Task-Oriented Candidate-Latent Feedback for Coarse-to-Fine Sensing in Distributed OFDM-ISAC Networks
+
+reduces to 
+
+b = 1 : rq ∈ {− 12 , + 12 }γq , ∆q = γq ,b = 2 : rq ∈ {− 34 , − 14 , + 14 , + 34 }γq , ∆q = γq /2,b = 3 : rq ∈ {± 18 , ± 38 , ± 58 , ± 78 }γq , ∆q = γq /4,
+
+and analogously for higher b. The 1-bit case coincides with scaled sign quantization, ˆt = γq 
+
+> 2
+
+sgn( t).
+
+Encoding (SE side) 
+
+Each latent component t ∈ R of tk is clipped to [−γq , γ q ]
+
+and mapped to its quantizer index by 
+
+q(t) = clip 
+
+(⌊ t
+
+> ∆q
+
+⌋
+
+, −2b−1, 2b−1 − 1
+
+)
+
+, (40) applied component-wise to obtain qk = q(tk) ∈ Q Cb .Under the bijection q 7 → q + 2 b−1 ∈ { 0, . . . , 2b − 1} used for transmission, each candidate latent occupies exactly 
+
+Cb bits. The clipping threshold is set per sample from the empirical dynamic range of the latent matrix, 
+
+γq = max  
+
+> 1≤k≤K, 1≤c≤C
+
+∣∣Tk,c 
+
+∣∣, (41) and transmitted as a 16-bit floating-point side-information parameter. 
+
+Decoding (SF side) 
+
+The SF reconstructs each component via (39) as 
+
+ˆt = (q + 12
+
+) ∆q , (42) yielding ̂ T = [ˆ t1, . . . , ˆtK ]⊤ ∈ RK×C . For unsaturated inputs, the worst-case reconstruction error is bounded by ∆q /2 = γq /2 b, which halves with each additional bit; saturation error is controlled by γq .
+
+Implementation and baselines 
+
+We also report two floating-point baselines in which each latent component is transmitted in FP32 (32 bits) or FP16 (16 bits). In our implementation, the quantizer– dequantizer pair (40)–(42) is inserted post-training dur-ing inference, so that the SF-side estimator operates on ̂ T with no change to the trained weights. This isolates the effect of feedback compression from training dynamics. The same interface supports quantization-aware training by treating (40) as the identity in the backward pass (straight-through estimator) when further robustness to very low bit budgets is required; exploring such quantization-aware variants is left to future work. 
+
+C. SF-Side Processing: Set Refinement, Reranking, and Estimation 
+
+All operations in this subsection execute at the sensing function using only the received quantities: the recon-structed latent matrix ̂ T = [ˆ t1, . . . , ˆtK ]⊤ ∈ RK×C and the candidate indices {(vk, d k)}Kk=1 . The SF first refines the candidate latents through a set-based attention block that allows cross-candidate reasoning, then computes a soft weighting over the refined hypotheses, and finally uses these weights for delay, Doppler, azimuth, and elevation estimation. 
+
+1) Set-Based Latent Refinement 
+
+The received candidates form an unordered set whose el-ements are coupled through the physical scene: multiple candidates may belong to the same target neighborhood, clutter responses may share characteristic angular signa-tures, and the relative confidences of nearby candidates carry joint information that a candidate-independent head cannot exploit. To capture these interactions, we pass ̂ T through a permutation-equivariant self-attention block fη (·),
+
+T′ = fη
+
+(̂ 
+
+T
+
+)
+
+∈ RK×C , (43) implemented as a single Transformer layer with multi-head self-attention (MHSA), pre-norm layer normaliza-tion (LN), and a position-wise feed-forward network (FFN) of expansion ratio four. We adopt the pre-norm convention, applying LN to each sublayer input with the residual added afterwards, which improves training stability without learning-rate warmup [42]. The block uses 2 attention heads (head dimension dh = C/ 2) and dropout p = 0 .1 applied to the attention weights and the FFN output. Concretely, 
+
+U =̂ T + MHSA 
+
+(
+
+LN( ̂ T)
+
+)
+
+, (44) 
+
+T′ = U + FFN(LN( U)) , (45) with 
+
+FFN( u) = Wff 4 SiLU (Wff 3 u) , (46) 
+
+Wff 3 ∈ R4C×C and Wff 4 ∈ RC×4C . No additional normalization is applied after the block; the output T′
+
+is passed directly to the reranker and estimation heads. 
+
+2) Candidate Reranking 
+
+The SF computes a soft weighting over the K refined candidates by mapping each to a scalar logit through a shared two-layer MLP rψ (·),
+
+αk = Wrr 6 SiLU( Wrr 5 t′
+
+> k
+
+) , k = 1 , . . . , K, (47) with Wrr 5 ∈ R2C×C and Wrr 6 ∈ R1×2C , and normalizing with a temperature-scaled softmax, 
+
+wk = exp( αk/β )
+
+∑Kj=1 exp( αj /β ) ,
+
+> K
+
+∑
+
+> k=1
+
+wk = 1 , w k ≥ 0, (48) where β > 0 is the temperature. The weights w =[w1, . . . , w K ]⊤ quantify the relative plausibility of each candidate conditioned on the refined latents and are shared across all downstream estimation heads. The ablation study in Sec. V- E shows that this reranking step is the single most important component of the SF: removing it causes the detection rate to drop by more  
+
+> 10 VOLUME ,
+
+than twenty percentage points, even though the ground-truth candidate remains in the Top-K set in over 99% 
+
+of cases. 
+
+> 3) Delay and Doppler Estimation
+
+Each candidate coordinate (vk, d k) is augmented with a learned sub-bin offset predicted from t′
+
+> k
+
+. An offset head 
+
+oη (·) produces a bounded refinement, 
+
+∆k =
+
+[∆vk
+
+∆dk
+
+]
+
+= 12 tanh (Woff 8 SiLU (Woff 7 t′
+
+> k
+
+)) , (49) with Woff 7 ∈ R2C×C , Woff 8 ∈ R2×2C , and ∆vk, ∆dk ∈
+
+[− 12 , 12 ]. The bounded refinement guarantees that each refined coordinate remains within its own bin cell, preventing candidates from crossing bin boundaries and avoiding multimodal ambiguity in the subsequent weighted sum. The refined coordinates are 
+
+˜vk = vk + ∆ vk, ˜dk = dk + ∆ dk. (50) Using the Doppler-bin resolution ∆dop (Hz/bin) and delay-bin resolution ∆del (s/bin), the corresponding physical values are 
+
+˜fd,k = (˜ vk − v0) ∆ dop , ˜τk = ( ˜dk + d0) ∆ del , (51) where v0 is the zero-Doppler bin index and d0 is the starting delay-bin offset of the retained window. The final delay and Doppler estimates are weighted sums over candidates, 
+
+˜fd =
+
+> K
+
+∑
+
+> k=1
+
+wk ˜fd,k , ˜τ =
+
+> K
+
+∑
+
+> k=1
+
+wk ˜τk. (52) When the weight distribution is sharp—as occurs at convergence, where the reranker typically places most of its mass on a single candidate—this behaves as soft selection of the most plausible hypothesis. For ambiguous scenes, it interpolates among nearby candidates in a differentiable manner. 
+
+> 4) Azimuth and Elevation Estimation
+
+Rather than reconstructing a focused angular map at the SF, we form a latent-level angular summary directly from the refined candidate representations, 
+
+zang =
+
+> K
+
+∑
+
+> k=1
+
+wk t′ 
+
+> k
+
+∈ RC . (53) The vector zang is a weighted fusion of the latents that survive reranking; because gAE was trained to preserve the spatial-softmax peak location and spread in the candidate latent, zang concentrates the target-relevant angular information available in the selected candidates into a single C-dimensional representation. An angle head hω (·), implemented as a three-layer MLP with hidden width 8C,
+
+hω (z) = Wang 11 SiLU( Wang 10 SiLU( Wang 9 z)) , (54) with Wang 9 ∈ R8C×C , Wang 10 ∈ R8C×8C , and Wang 11 ∈
+
+R4×8C , then predicts the sine and cosine components of both angles, 
+
+[˜ saz , ˜caz , ˜sel , ˜cel ] = hω (zang ). (55) The output pairs are individually normalized to the unit circle, [˜saz 
+
+˜caz 
+
+]
+
+← [˜ saz , ˜caz ]⊤
+
+√˜s2az + ˜ c2az + ϵ , (56) and analogously for elevation, ensuring that the pre-dictions lie on a valid angle manifold. The final angle estimates are recovered by 
+
+˜ϕ = atan2(˜ saz , ˜caz ), ˜θ = atan2(˜ sel , ˜cel ). (57) In this way, the SF performs angular estimation using only the refined candidate latents and their reranker weights, without requiring transmission of raw angular patches across the SE–SF interface. 
+
+> D. Training Objective
+
+The proposed network is trained end-to-end with amulti-task objective that combines four components: (i) continuous regression for delay and Doppler; (ii) an-gular supervision for azimuth and elevation; (iii) dense classification over the delay–Doppler grid to promote high-recall candidate proposal; and (iv) candidate-level reranking supervision when a near-ground-truth hypoth-esis is present in the Top-K set. Let the ground-truth target parameters be 
+
+(τ ⋆, f ⋆d , ϕ ⋆, θ ⋆), and let the final estimates produced by the SF-side pipeline be (˜ τ , ˜fd, ˜ϕ, ˜θ). Let S ∈ RV ×D
+
+denote the dense delay–Doppler logit map from the proposal network, and let α = [α1, . . . , α K ]⊤ and 
+
+w = [w1, . . . , w K ]⊤ denote the reranking logits and soft weights defined in the candidate-reranking step of Sec. C. To supervise the proposal stage, the continuous ground-truth pair (τ ⋆, f ⋆d ) is mapped to its discretized delay–Doppler bin (d⋆, v ⋆), and the corresponding flat-tened class index is 
+
+i⋆ = v⋆ D + d⋆. (58) The delay–Doppler regression loss is defined using a Smooth-ℓ1 penalty on normalized delay and Doppler errors, 
+
+Lreg = Smooth -ℓ1
+
+( ˜τ − τ ⋆
+
+sτ
+
+)
+
++ Smooth -ℓ1
+
+( ˜fd − f ⋆d
+
+sf
+
+)
+
+,
+
+(59) where sτ and sf are fixed scale factors used to balance the relative magnitudes of delay and Doppler errors in the combined loss. For azimuth and elevation, we avoid wrap-around discontinuities by supervising the sine/cosine outputs of the angle head rather than the angles directly. Let 
+
+u(ψ) = [sin ψ, cos ψ]⊤. (60)  
+
+> VOLUME , 11 Shiv Shankar et al.: Task-Oriented Candidate-Latent Feedback for Coarse-to-Fine Sensing in Distributed OFDM-ISAC Networks
+
+Using the predicted sine/cosine pairs from (55), the angular loss is 
+
+Lang =
+
+∥∥∥∥[˜saz 
+
+˜caz 
+
+]
+
+− u(ϕ⋆)
+
+∥∥∥∥
+
+> 22
+
++
+
+∥∥∥∥[˜sel 
+
+˜cel 
+
+]
+
+− u(θ⋆)
+
+∥∥∥∥
+
+> 22
+
+. (61) This formulation is smooth and naturally respects the periodicity of the angular variables. The dense proposal map is supervised with a cross-entropy loss over the vectorized delay–Doppler grid, 
+
+Lmap = CE(vec( S), i ⋆) , (62) which directly encourages the ground-truth delay– Doppler hypothesis to receive a high score and thereby improves the recall of the Top-K candidate set. To supervise the reranking module, we first associate the ground truth with the nearest retained candidate whenever the proposal stage places a sufficiently close hypothesis in the Top-K set. Let 
+
+δ2 
+
+> k
+
+= ( vk − v⋆)2 + ( dk − d⋆)2, k⋆ = arg min  
+
+> k
+
+δ2
+
+> k
+
+. (63) If δ2 
+
+> k⋆
+
+≤ τ 2near , where τnear is a fixed neighborhood threshold, the reranking loss is defined as 
+
+Lrank = CE( α, k ⋆). (64) Otherwise, the sample is excluded from reranking su-pervision, since none of the retained candidates is suffi-ciently close to the ground-truth bin. The total training objective is 
+
+L = λreg Lreg + λang Lang + λmap Lmap + λrank Lrank ,
+
+(65) where λreg , λang , λmap , and λrank control the rela-tive strengths of the regression, angular, proposal, and reranking terms. During training, the reranking weight 
+
+λrank is linearly warmed up from 0 to its target value 
+
+λmax rank over the initial epochs to stabilize optimization before the proposal stage becomes sufficiently reliable. Soft teacher forcing is used during early training by mixing the learned candidate weights with a near-ground-truth one-hot supervision when such a candidate exists; the mixing coefficient is annealed linearly from 
+
+1.0 at the start of training to 0.0 at the final epoch. All results reported in this paper are obtained using the fully learned inference pipeline at test time, without teacher forcing. 
+
+> IV. Simulation Setup A. Synthetic-scene deployment and dataset generation
+
+For evaluation, a synthetic urban scene of size 1000 m ×
+
+1000 m is created in Blender, as illustrated in Fig. 5. The environment contains roads, cars, and building blocks, with building heights up to 15 m . Both roads and buildings are assigned ITU concrete material properties. In addition, each road is modeled as a 6-lane road with 3 lanes in each direction, and hundreds of vehicles are randomly placed over the road network. Each vehicle is modeled as an object of size [xc, y c, z c] and assigned ITU-metal material properties. Their positions are sampled randomly along the road lanes, and their velocities are drawn randomly in the range [0 , 40] m /s. This scene is used to generate site-specific sensing data using ray tracing, so that the resulting channel parameters reflect deterministic reflections, urban clutter, and geometry-dependent propagation effects instead of purely statisti-cal sampling. The underlying propagation model follows 3GPP TR 38.901, while the actual path parameters are obtained from NVIDIA Sionna ray tracing. The sensing deployment is based on a rectangular layout with inter-site distance 500 m . In the first bistatic configuration shown in Fig. 5(a), the transmitter is placed at (250 , 250) m and the receiver is placed at 
+
+(250 , −250) m . To provide additional geometric diversity, a second transmitter location at (−250 , −250) m and a second receiver location at (−250 , 250) m are also used, leading to the four bistatic layouts shown in Fig. 5(a)– (d). TX and RX heights are fixed at 25 m . Across these layouts, the same urban scene is observed from different bistatic perspectives, which helps expose the model to different target signatures and propagation conditions rather than allowing it to overfit to a single fixed link geometry. In the horizontal plane, the target coordinates are sampled uniformly in [−240 , 240] m along both axes, rather than over the full [−250 , 250] m extent, so that a small standoff is maintained from the TX/RX node locations. Along the vertical dimension, the target height is sampled in the range [20 , 300] m . To ensure that every valid target’s bistatic delay falls within the re-tained processing window (Sec. II, with D = 1200 bins corresponding to bistatic ranges in [488 , 1221] m ), the sampling is additionally constrained to 
+
+‖po − pt‖ + ‖pr − po‖ ≤ 1220 m . (66) Candidate target positions exceeding this bistatic-range limit are rejected during dataset construction. This combined sampling region is consistent with the practical far-field assumption adopted in the system model and avoids near-collocated TX/RX-target cases. For each valid TX–target–RX geometry, the corresponding target and background channel parameters are computed using Sionna ray tracing over the same urban layout, and the resulting samples are used to form the synthetic dataset for training, validation, and testing. 
+
+> B. Common simulation, waveform, and preprocessing settings
+
+For each selected TX–RX geometry, the target and background channel parameters are generated using NVIDIA Sionna ray tracing under the 3GPP TR 38.901 propagation framework. The resulting channel impulse response is mapped to an NR/OFDM channel frequency  
+
+> 12 VOLUME , TX RX Target Object
+> 500 m
+> Cars
+> Buildings
+
+(a) TX RX Target Object (b) TX RX Target Object (c) TX RX Target Object (d) 
+
+> FIGURE 5. Synthetic urban scene (Scene-Synth) with four bistatic TX–RX configurations. Buildings, roads, and vehicles are generated in Blender; ray tracing is performed with NVIDIA Sionna. TX RX
+> 500 m
+
+(a) TX RX  
+
+> Target Object
+
+(b)   
+
+> FIGURE 6. Cross-scene validation environment (Scene-IITM): (a) IIT Madras campus layout imported from OpenStreetMap (© OpenStreetMap contributors, available under the Open Database License [43]); (b) TX–RX deployment with 500 m separation.
+
+response (CFR), and sensing snapshots are obtained from pilot-based least-squares channel estimation on PRS resources. The estimated CFR snapshots are then transformed into the DDAE representation described in Sec. II and converted to a quantized input tensor for the learning-based estimator. We use carrier frequency of 13 GHz , subcarrier spacing 
+
+120 kHz , and an overall bandwidth of approximately 
+
+400 MHz , corresponding to Nsc = 3276 active sub-carriers. One PRS OFDM symbol is used every 8
+
+OFDM symbols. The coherent processing interval spans 
+
+Lmax = 1024 OFDM symbols, which yields L = 128 
+
+sensing snapshots for Doppler processing. The receiver employs an 8 × 8 UPA with half-wavelength spacing, while the transmitter uses single-port transmission. After DDAE formation, we retain D = 1200 delay bins starting at offset d0 = 800 (≈ 1.63 μs) and V = 128 
+
+Doppler bins centered at v0 = 64 . The retained delay window corresponds to [1 .63 , 4.07] μs, or equivalently bistatic ranges of [488 , 1221] m , covering all bistatic delays produced by the target sampling region of Sec. IV-A under the bistatic-range constraint enforced there; no geometrically-valid target is cut off at either end of the retained window. The lower edge is placed just below the 
+
+> TABLE 1. Common waveform and preprocessing parameters used in all experiments.
+
+Parameter Value Carrier frequency fc 13 GHz Subcarrier spacing (SCS) 120 kHz Active subcarriers Nsc 3276 Delay FFT/grid length Nτ 4096 Overall bandwidth ≈ 400 MHz OFDM symbols in CPI Lmax 1024 ( ≈ 8.53 ms) PRS snapshot spacing 8 OFDM symbols PRS snapshots L 128 RX array size 8 × 8 UPA TX transmission single-port Retained delay bins D 1200 Retained Doppler bins V 128 Delay-bin offset d0 800 Doppler-bin center v0 64 Input tensor size A × E × V × D 8 × 8 × 128 × 1200 
+
+Input quantization 8-bit Delay-bin resolution ∆del ≈ 2.0345 ns/bin Doppler-bin resolution ∆dop ≈ 117 .2 Hz/bin 
+
+TX–RX LOS arrival ( ≈ 1.67 μs) to allow for sidelobe leakage near LOS. The final network input has size 
+
+A×E×V ×D = 8 ×8×128 ×1200 and is represented using 8-bit uniform quantization. The common waveform and preprocessing parameters are summarized in Table 1. Unlike a link-level study with a fixed nominal op-erating SNR, the present dataset does not admit asingle representative SNR value for the entire scene. For each TX–target–RX realization, the received target SNR depends on the specific bistatic geometry, propagation loss, ray-traced multipath/small-scale fading, and the randomly drawn target RCS. Since target locations are sampled over the deployment area and target RCS is gen-erated from the assumed statistical model, the received target signal quality varies substantially across samples.  
+
+> VOLUME , 13
+
+Shiv Shankar et al.: Task-Oriented Candidate-Latent Feedback for Coarse-to-Fine Sensing in Distributed OFDM-ISAC Networks 
+
+FIGURE 7. Per-link absolute-error CDFs at the STD operating point (K, C )=(8 , 64) on Scene-Synth, swept over post-training bit width 
+
+b ∈ { 16 , 8, 6, 4, 3, 2}. Delay and Doppler CDFs are quantization-invariant across the entire range, while angle errors are unaffected for b ≥ 6,exhibit P90/P99 inflation at b=4 , and collapse at b ≤ 3.
+
+FIGURE 8. Scene-Synth signal quality (24,000 link-instances). (a) Per-cell target channel-gain CDF, with/without RCS scaling. (b) Per-cell SCNR and SNR (pre-DDAE) and post-DDAE target SNR (after coherent integration over Rx array, subcarriers, and symbols). The SNR-to-post-DDAE gap ( ≈ 74 dB = 10 log 10 (Nr Nsc L)) is the coherent integration gain; the extra gain over the lower SCNR reflects clutter suppression from delay–Doppler–angle focusing. 
+
+Therefore, rather than reporting a single SNR number, Fig. 8(a) shows the empirical CDF of the per-link target channel gain at a single (Rx antenna , subcarrier ) cell, computed from the bistatic ray-tracing coefficients with and without RCS scaling, and Fig. 8(b) shows the corre-sponding per-cell SCNR, per-cell SNR, and post-DDAE   
+
+> 14 VOLUME , (a) (b)
+> FIGURE 9. Representative peak-normalized spectra from a Scene-Synth sample: (a) delay–Doppler spectrum; (b) azimuth–elevation spectrum at the target delay–Doppler cell. The yellow marker indicates the discretized ground-truth target bin on each grid.
+
+target SNR after coherent integration over Rx antennas, subcarriers, and OFDM symbols. The post-DDAE target SNR has median (P50) and 90th-percentile (P90) values of 55 .96 dB and 64 .65 dB, respectively, summarizing the typical and upper-range operating conditions induced by the considered deployment, propagation, and random target-RCS sampling. 
+
+C. Main model and training configuration 
+
+The trained model is evaluated at three named operating points that span a 7.5× payload range: UC (K, C, b )=(4 , 32 , 6) at 107 B per sample, STD (K, C, b )=(8 , 64 , 6) at 404 B, and HF (K, C, b )=(16 , 64 , 6) at 806 B. These anchors are selected from a wider (K, C, b )
+
+sweep over K ∈ {2, 4, 8, 16 , 32 , 64 , 128 , 256 , 512 },
+
+C ∈ { 4, 8, 16 , 32 , 64 , 128 }, and b ∈ { 32 , 16 , 8, 6, 4, 3, 2}.All anchors and the wider sweep use the same model architecture. The power +peakedness DD descriptor, the three-encoder candidate token ( gAE , gpos , gsc ), the single-layer Set Transformer, the candidate reranker, and the bounded sub-bin offset head described in Sec. III with the DD-context encoder removed on the basis of the ablation study of Sec. V-E. The dataset is split into 80% training, 10% validation, and 10% test subsets. Training is performed for 25 epochs with batch size 64 using the AdamW optimizer, initial learning rate 10 −3, and weight decay 10 −3. The dropout rate is set to 0.1 in the candidate-fusion MLP, the Set Transformer (attention weights and FFN output), the reranking MLP, and the angle-estimation head. During training, the reranking loss weight is linearly warmed up over the first 5 epochs to its full value. Soft teacher forcing is scheduled from 1.0 at the start of training to 0.0
+
+at the final epoch, with mixing coefficient αTF = 0 .9. The reported results correspond to the checkpoint selected by the best validation metric. 
+
+D. Evaluation protocol and metrics 
+
+All results are reported on the held-out Scene-Synth test split. Detection performance is summarized by detection rate and miss rate. Estimation accuracy is measured using absolute error ε and mean absolute error (MAE). For delay and Doppler, 
+
+ετ = |˜τ − τ |, εf d = | ˜fd − fd|, (67) with delay reported in ns and Doppler in Hz. For azimuth 
+
+ϕ and elevation θ, wrap-aware angular errors are used: 
+
+εϕ = | wrap [−π,π ]( ˜ϕ − ϕ)|, εθ = | wrap [−π,π ](˜θ − θ)|,
+
+(68) and the corresponding MAEs are reported in degrees. A test sample is declared detected if all four estimation errors satisfy fixed thresholds, 
+
+ετ ≤ τc, εf d ≤ fdc , εϕ ≤ ϕc, εθ ≤ θc,
+
+where (τc, f dc , ϕ c, θ c) = (50 ns , 200 Hz , 10 ◦, 10 ◦) are the detection thresholds used in evaluation. Detection rate and miss rate are computed over the full test set using this rule, whereas estimation errors are reported over detected link-instances only. Error distributions are summarized using percentile statistics. For an absolute error variable e, the median error P 50 is the 50th percentile, and P 90 satisfies 
+
+Pr( e ≤ P 90) = 0 .9,
+
+i.e., 90% of the evaluated samples have error not ex-ceeding P 90 . In the main, operating-point, and ablation  
+
+> VOLUME , 15 Shiv Shankar et al.: Task-Oriented Candidate-Latent Feedback for Coarse-to-Fine Sensing in Distributed OFDM-ISAC Networks
+
+tables, we report MAE and P 90 ; for the quantized-feedback results, we additionally report P 50 . For com-pact summary plots and selected operating-point com-parisons, we also use the angle-sum metric MAE ϕ +MAE θ .
+
+> E. Baselines and Quantized-Feedback Evaluation
+
+We compare the proposed learned estimator against a classical peak-selection baseline, including variants with and without static-clutter suppression. Static-clutter removal is important for the classical baseline, but even the filtered version remains substantially weaker than the learned approach in detection-oriented performance. We therefore use the filtered classical baseline as the main classical reference in the paper. For feedback-compression experiments, quantization is applied after training and during inference on the trained full-precision model. Specifically, latent quantization is inserted after candidate token construction and before reranking and aggregation at the SF, so that the receiver-side inference pipeline is unchanged except that it operates on reconstructed latents. The implementation uses a global per-sample scale by default, i.e., one Bside 
+
+for the full K × C latent matrix. Payload sweeps at fixed K and C are reported using the latent payload KCb . When the full feedback payload is needed, including the candidate-index overhead and one global scale parameter Bside ,
+
+Bfb = KCb + 18 K + Bside ,
+
+because the delay–Doppler grid has size V = 128 and 
+
+D = 1200 , so each candidate index requires 
+
+dlog 2(V D )e = dlog 2(128 × 1200) e = 18 
+
+bits. With one 16 -bit global scale ( Bside = 16 ), the STD anchor (K, C, b )=(8 , 64 , 6) has latent payload 3,072 bits, index overhead 144 bits, and scale 16 bits, totaling 
+
+3,232 bits or 404 bytes per sample. The same expression evaluated at UC and HF gives 107 B and 806 B per sample, respectively. This convention is important when interpreting the quantized-feedback tables and payload–accuracy plots in Sec. C: when K and C are fixed, showing latent payload alone is acceptable, provided the caption clearly states that index and scale overheads are constant and omitted. 
+
+> V. Results
+
+This section evaluates the proposed coarse-to-fine candidate-latent codec on the Scene-Synth held-out test split and reports four complementary findings: (i) the codec reduces the per-link SE–SF feedback to 107– 806 bytes per CPI across the three named anchors, corresponding to sub-Mbit/s interface rates and large reductions relative to raw CFR or DDAE-magnitude forwarding; (ii) the resulting accuracy is essentially insensitive to post-training latent quantization down to 
+
+b = 6 and degrades gracefully toward b = 4 subject to a latent-dimension condition; (iii) the trained model transfers to an independent campus-scale scene (Scene-IITM) without fine-tuning; and (iv) each architectural component contributes a measurable share of the gain. Throughout this section, three named operating points are used as anchors: 
+
+• UC (ultra-compact): (K, C, b ) = (4 , 32 , 6) , payload 
+
+107 B per sample, ∼91 ,900 × compression relative to the uncompressed 8-bit DDAE magnitude tensor; 
+
+• STD (standard): (K, C, b ) = (8 , 64 , 6) , payload 
+
+404 B per sample, ∼24 ,300 × compression; 
+
+• HF (high-fidelity): (K, C, b ) = (16 , 64 , 6) , payload 
+
+806 B per sample, ∼12 ,200 × compression. The three anchors are intentionally placed across a 7.5×
+
+payload range so that a downstream system designer can pick the operating point most consistent with its fronthaul budget; the paper does not commit to a single recommended point. The selection of these anchors from a wider (K, C, b ) design space is presented in Secs. B and C. 
+
+> A. Comparison with classical peak-selection baselines
+
+Table 2 reports the three named anchors alongside two classical peak-selection baselines on Scene-Synth. Without static-clutter handling, peak selection achieves only 0.27% detection with delay MAE 16 .89 ns and azimuth/elevation MAE 7.42 ◦/3.24 ◦. Adding static-clutter suppression lifts detection to 12 .17% at delay MAE 0.45 ns but leaves azimuth/elevation MAE above 
+
+3.5◦. By contrast, the three learned anchors reach 
+
+96 .33 /98 .17 /98 .88% detection at delay MAE ≤ 0.60 ns and azimuth/elevation MAE below 1.2◦. The Doppler results should be interpreted conditionally. The filtered peak-selection baseline gives a comparable Doppler MAE of 25 .83 Hz, but only over the small subset of samples it detects, with a joint detection rate of 12 .17% . In con-trast, the proposed UC, STD, and HF anchors maintain comparable Doppler MAE values of about 28 .5 Hz while increasing the joint detection rate to 96 .33 − 98 .88% .Fig. 9 provides the qualitative explanation for why classical peak selection cannot solve this task. The delay– Doppler spectrum in Fig. 9(a) is normalized by its max-imum amplitude, and the azimuth–elevation spectrum in Fig. 9(b), taken at the target delay–Doppler cell, is likewise normalized by its peak. The yellow marker indicates the discretized ground-truth bin. In this repre-sentative sample, the dominant spectral peak does not coincide with the target location, and the target return is not separable from clutter and interfering scatterers by simple thresholding. Static-clutter suppression removes only the dominant invariant features and is therefore necessary but not sufficient. The learned codec resolves both issues by reporting K candidate hypotheses jointly                   
+
+> 16 VOLUME , TABLE 2. Comparison of the proposed coarse-to-fine candidate-latent codec against classical peak-selection baselines on Scene-Synth. The proposed scheme is reported at three named operating points (UC, STD, HF) spanning payload range, each at the quantized latent width b=6 on the no-DD-context architecture. Detection rate is over the full test set ( 2,400 link-instances, all satisfying dt+dr≤1220 m); estimation errors are MAE and P90 over detected link-instances. The classical-baseline payload entry of 16 B corresponds to the four estimated parameters (τ, f d, ϕ, θ )
+> transmitted as 32 -bit floats.
+
+Method Payload (B) Det. (%) Delay ετ (ns) Doppler εf d (Hz) Azimuth εϕ (◦) Elevation εθ (◦)MAE P90 MAE P90 MAE P90 MAE P90 Classical peak-selection baselines Peak selection, no clutter removal 16 0.27 16.89 37.70 88.44 177.84 7.42 9.18 3.24 7.30 Peak selection, with static removal 16 12.17 0.45 0.84 25.83 50.28 4.03 7.80 3.51 6.70 Proposed candidate-latent, b = 6 
+
+UC (K, C ) = (4 , 32) 107 96.33 0.54 0.98 28.47 50.70 0.90 1.92 0.77 1.64 STD (K, C ) = (8 , 64) 404 98.17 0.57 0.99 28.54 50.88 1.05 2.24 0.84 1.73 HF (K, C ) = (16 , 64) 806 98.88 0.53 0.93 28.56 50.79 1.05 2.15 0.77 1.61      
+
+> TABLE 3. Per-link SE–SF feedback payload and required interface throughput for one CPI. The CPI duration is TCPI = 1024 /120 000 ≈
+> 8.53 ms.
+
+Feedback representation Payload Required rate (B/link/CPI) (per link) Raw complex CFR, 16-bit I + 16-bit Q 107 ,347 ,968 100 .6 Gbit/s DDAE magnitude, FP32 real 39 ,321 ,600 36 .86 Gbit/s DDAE magnitude, 8-bit real 9,830 ,400 9.216 Gbit/s UC: (K, C, b ) = (4 , 32 , 6) 107 0.100 Mbit/s STD: (K, C, b ) = (8 , 64 , 6) 404 0.379 Mbit/s HF: (K, C, b ) = (16 , 64 , 6) 806 0.756 Mbit/s 
+
+with a low-dimensional latent that summarizes their angular and contextual content, rather than committing to a single peak. At broadside, an 8 × 8 UPA has angular bin width 
+
+≈ 14 .3◦, giving a peak-only readout floor of W/ 4 ≈ 3.58 ◦
+
+under perfect bin selection. The proposed angular en-coder feeds a differentiable spatial-softmax estimate of the sub-bin peak location into the candidate latent, which the SF-side head decodes as (sin , cos) of the continuous angle. At the STD anchor this yields azimuth and elevation MAEs of 1.05 ◦ and 0.84 ◦ — roughly 3.4×
+
+and 4.2× below the broadside floor. Off-broadside bins are wider by 1/ cos θ, so the effective super-resolution factor over the target distribution is larger than these broadside values. Table 3 places the proposed candidate-latent feedback in the context of two direct-forwarding references. For-warding the raw complex CFR over one CPI requires 
+
+8×8×3276 ×128 complex samples per TX–RX link. With 16-bit in-phase and 16-bit quadrature components, this amounts to 107 .35 MB per link per CPI, or about 100 .6
+
+Gbit/s if the feedback must be delivered within the CPI. Even forwarding only the DDAE magnitude remains expensive: the retained 8 × 8 × 128 × 1200 DDAE grid requires 39 .32 MB as FP32 real values, or 9.83 MB as 8-bit magnitudes, corresponding to 36 .86 Gbit/s and 9.216 
+
+Gbit/s, respectively. In contrast, the UC, STD, and HF candidate-latent anchors require only 107, 404, and 806 bytes per link per CPI, reducing the required SE–SF throughput to sub-Mbit/s levels while preserving the detection and estimation performance reported above. 
+
+B. Operating-point sweep at FP32 latents 
+
+The proposed pipeline exposes three design variables that together determine the SE–SF feedback payload: the candidate count K, the latent dimension C, and the latent quantization bit width b. Their joint effect is captured by the bit-budget expression of (36), which for the considered delay–Doppler grid reduces to Bfb =
+
+bKC + 18 K + 16 bits. Anchor selection in this paper proceeds in two phases: a wide (K, C ) sweep at FP32 latents in this subsection, followed by a quantization sweep over b on the resulting shortlist in Sec. C. Table 4 reports end-to-end performance over a (K, C )
+
+grid spanning K ∈ { 2, 4, 8, 16 , 32 , 64 , 128 , 256 , 512 } and 
+
+C ∈ {4, 8, 16 , 32 , 64 , 128 }, for a total of 37 trained configurations under the no-DD-context architecture adopted in Sec. E. All entries are evaluated with FP32 latents and no post-training quantization, so the payload column reflects the latent contribution 32 KC bits plus the constant overhead 18 K + 16 bits. (i) Candidate-count ceiling. The detection rate is upper bounded by K alone, independent of C. At K = 2 
+
+the model ceilings near 92% across all evaluated C, at 
+
+K = 4 near 95 .5% , at K = 8 near 97 .5% . From K = 16 
+
+onward the detection rate stabilizes around 98 –98 .7% ,                                                                                                                                                                                                                                                                                                                 
+
+> VOLUME , 17 Shiv Shankar et al.: Task-Oriented Candidate-Latent Feedback for Coarse-to-Fine Sensing in Distributed OFDM-ISAC Networks TABLE 4. Operating-point sweep over Kand Con Scene-Synth at FP32 latents.
+> KCKC Pay. (B) Det (%)
+> ετ
+> (ns)
+> εf d
+> (Hz)
+> εϕ
+> (◦)
+> εθ
+> (◦)216 32 134 92.83 0.5 29.1 0.95 1.01 232 64 262 92.25 0.5 28.8 0.85 0.59 264 128 518 93.21 0.5 28.8 0.94 0.63 2128 256 1030 91.42 0.5 29.0 1.12 0.93 4832 139 95.00 0.5 28.9 1.17 0.92 416 64 267 95.88 0.6 29.1 0.95 0.97 432 128 523 96.25 0.5 28.5 0.80 0.67 464 256 1035 96.04 0.6 28.8 0.82 0.73 4128 512 2059 95.83 0.5 28.9 1.16 0.94 8432 148 96.83 0.7 28.8 1.53 1.38 8864 276 97.04 0.7 28.6 1.14 1.20 816 128 532 97.21 0.6 28.7 0.87 0.92 832 256 1044 97.71 0.6 28.6 1.19 1.01 864 512 2068 98.21 0.5 28.5 0.98 0.77 8128 1024 4116 97.58 0.5 28.6 1.00 0.91 16 464 294 97.25 0.8 28.6 1.52 1.54 16 8128 550 98.71 0.6 28.4 1.22 0.98 16 16 256 1062 98.54 0.5 28.7 0.99 0.91 16 32 512 2086 98.25 0.5 28.5 1.17 1.13 16 64 1024 4134 98.92 0.5 28.6 0.98 0.69 32 4128 586 97.29 0.6 28.6 1.36 1.20 32 8256 1098 97.67 0.6 28.7 1.15 0.99 32 16 512 2122 98.62 0.5 28.4 0.98 1.17 32 32 1024 4170 98.38 0.6 28.6 1.23 1.03 32 64 2048 8266 98.38 0.6 28.4 0.87 0.74 64 4256 1170 97.58 0.6 28.3 1.54 1.40 64 8512 2194 98.58 0.6 28.6 1.25 0.89 64 16 1024 4242 98.75 0.5 28.6 1.10 0.94 64 32 2048 8338 99.21 0.5 28.6 1.04 0.75 128 4512 2338 97.62 0.7 28.4 1.73 1.33 128 81024 4386 98.50 0.6 28.0 1.30 1.10 128 16 2048 8482 98.79 0.6 28.7 0.97 1.12 256 41024 4674 96.42 0.6 28.1 1.69 1.67 256 82048 8770 98.83 0.6 28.3 1.14 1.05 256 16 4096 16962 98.54 0.6 28.4 1.15 1.02 512 42048 9346 97.21 0.6 28.2 1.68 1.70 512 84096 17538 99.17 0.6 28.4 1.33 1.00
+
+and additional candidates yield diminishing returns at increasing candidate-index cost. (ii) Latent-dimension controls angular accuracy. For fixed K ≥ 8, azimuth and elevation MAEs improve as 
+
+C grows, while delay and Doppler MAEs are nearly 
+
+C-invariant. A per-link delay MAE of 0.5–0.7 ns and a Doppler MAE near 28 .5 Hz appear at essentially every grid point, set by the sub-bin estimator and the OFDM observation window, respectively. Angular accuracy, by contrast, depends on the codec’s ability to encode antenna-aperture structure, which is gated by C.The cleanest evidence is the (K=16 , C ) row of Table 4: azimuth MAE drops from 1.52 ◦ at C = 4 to 0.98 ◦ at 
+
+C = 64 while delay MAE stays within 0.3 ns. (iii) Index overhead at small C. The candidate-index contribution 18 K to the payload is linear in K and independent of C. At C = 4 this overhead is comparable to or larger than the latent budget, so doubling C from 
+
+4 to 8 doubles the latent capacity at much smaller payload cost than doubling K. The pair (K, C )=(16 , 32) 
+
+at 2,086 B FP32 and (K, C )=(32 , 16) at 2,122 B FP32 illustrate this: both encode the same KC = 512 latent footprint but with very different latent/index ratios; both reach ∼98% detection on Scene-Synth, confirming that for a fixed KC budget smaller K (larger C) is preferable. Tracing the (payload, detection) trade-off curve in Table 4, we select seven (K, C ) anchors spanning the relevant operating range: (4 , 16) , (4 , 32) , (8 , 32) , (8 , 64) ,
+
+(16 , 32) , (16 , 64) , and (64 , 32) . These cover candidate counts from K = 4 to K = 64 and latent dimensions from C = 16 to C = 64 , with FP32 payloads ranging from 267 B at (4 , 16) to 8,338 B at (64 , 32) and detection rates from 95 .88% to 99 .21% . This shortlist is carried into the quantization study of Sec. C. 
+
+C. Quantization sensitivity 
+
+Post-training quantization is applied at inference time on the trained FP32 model using a uniform mid-rise quantizer with one global per-sample scale, as specified in Sec. B. No retraining or fine-tuning is performed. Table 5 reports full per-parameter statistics (MAE, P 50 , P 90 ,
+
+P 99 ) at the seven (K, C ) shortlist anchors of Sec. B, at the named operating point b = 6 and at the aggressive stress point b = 4 .Free-quantization regime ( b ≥ 6). For every shortlist anchor, detection at b ∈ { 16 , 8, 6} is statistically indistin-guishable from FP32. At the STD anchor, the detection rate is 98 .17% at b = 6 versus 98 .21% at FP32 (a 0.04 pp difference), while azimuth MAE rises from 0.98 ◦ at FP32 to 1.05 ◦ at b = 6 and elevation MAE from 0.77 ◦ to 
+
+0.84 ◦. Across the shortlist, b = 8 is within 0.03 pp of FP32 detection, and b = 6 is within 0.10 pp. This is the practical statement of the operating-point choice: b = 6 
+
+extracts a ∼5.3× further payload reduction over FP32 latents at essentially zero accuracy cost. Stress regime (b = 4). At b = 4 the angle tails inflate visibly while delay and Doppler statistics remain unchanged. For the STD anchor, the azimuth P 99 rises from 5.15 ◦ at b = 6 to 6.97 ◦ at b = 4 and the elevation P 99 from 3.20 ◦ to 5.91 ◦, while detection stays            
+
+> 18 VOLUME , TABLE 5. Per-parameter estimation statistics at the seven shortlisted (K, C )anchors on Scene-Synth, reported at the named operating point (b=6 ) and under the aggressive quantization stress test ( b=4 ). Payload is the per-sample feedback budget Bfb =bKC + 18 K+ 16 bits. Detection rate is computed over the full test set ( 2,400 link-instances); per-parameter errors are MAE and 50/90/99th percentiles over detected link-instances only.
+
+K C Pay. (B) Det (%) Delay ετ (ns) Doppler εf d (Hz) Azimuth εϕ (◦) Elevation εθ (◦)MAE P50 P90 P99 MAE P50 P90 P99 MAE P50 P90 P99 MAE P50 P90 P99 Named operating point ( b = 6 )4 16 59 95.83 0.55 0.50 1.00 1.37 29.12 29.05 51.47 60.62 1.18 0.86 2.49 5.29 1.18 0.95 2.42 4.71 4 32 107 96.33 0.54 0.51 0.98 1.48 28.47 28.32 50.70 58.97 0.90 0.65 1.92 5.21 0.77 0.61 1.64 2.97 8 32 212 97.75 0.61 0.49 0.96 1.73 28.65 28.29 51.08 59.48 1.26 1.01 2.54 5.66 1.08 0.80 2.28 5.29 8 64 404 98.17 0.57 0.49 0.99 1.36 28.54 28.22 50.88 58.20 1.05 0.77 2.24 5.15 0.84 0.68 1.73 3.20 16 32 422 98.29 0.54 0.50 0.95 1.21 28.55 28.38 50.98 58.93 1.25 0.95 2.60 5.90 1.19 0.88 2.56 5.52 16 64 806 98.88 0.53 0.51 0.93 1.28 28.56 28.46 50.79 58.74 1.05 0.82 2.15 4.78 0.77 0.59 1.61 3.31 64 32 1682 99.21 0.52 0.50 0.92 1.16 28.54 28.59 51.16 57.90 1.17 0.94 2.33 5.07 0.92 0.73 1.88 4.40 Quantization stress test ( b = 4 )4 16 43 93.75 0.56 0.50 1.11 1.51 29.12 28.67 52.23 65.13 2.58 2.15 5.46 8.50 2.66 2.18 5.55 9.11 4 32 75 96.25 0.54 0.50 1.01 1.49 28.58 28.21 51.07 60.73 1.61 1.26 3.36 6.28 1.68 1.34 3.55 6.01 8 32 148 97.54 0.59 0.51 1.00 1.76 28.61 28.31 50.95 59.75 1.86 1.44 3.98 7.38 1.65 1.28 3.53 6.51 8 64 276 98.04 0.59 0.51 1.02 1.44 28.50 28.41 51.02 58.73 1.79 1.42 3.85 6.97 1.67 1.36 3.57 5.91 16 32 294 98.17 0.57 0.51 0.94 1.29 28.45 28.04 50.87 59.10 1.91 1.49 4.14 7.43 1.79 1.42 3.84 7.06 16 64 550 98.62 0.55 0.51 0.95 1.39 28.45 28.21 51.12 58.81 1.83 1.49 3.81 6.90 1.46 1.16 3.14 5.40 64 32 1170 98.29 0.52 0.49 0.93 1.20 28.56 28.38 51.25 58.73 2.25 1.86 4.71 7.89 2.32 1.82 5.05 8.44 
+
+at 98 .04% . The same monotone tail inflation appears at every shortlisted anchor in Table 5, and all seven anchors retain detection rates above 93 .7% at b = 4 , with the median and P 90 angular errors remaining below 2.2◦
+
+and 5.6◦ respectively. Cliff at b ≤ 3. Below b = 4 , detection collapses for every anchor. At the STD anchor, b = 3 gives 90 .9% 
+
+detection at 212 B and b = 2 gives 29 .8% at 148 B(Fig. 7); conditional-on-detection error metrics become unreliable in this regime. We therefore report b ≤ 3 only for completeness and identify b = 4 as the lower envelope of the operating range. Fig. 7 visualizes the full sweep b ∈ { 16 , 8, 6, 4, 3, 2}
+
+at the STD anchor as per-parameter CDFs over the 
+
+2,400 link instances. The delay and Doppler CDFs are quantization-invariant across the entire range, which makes the localization of quantization noise in the angular channels explicit. The azimuth and elevation CDFs cluster tightly for b ∈ { 16 , 8, 6}, separate at b = 4 ,and collapse at b ≤ 3; the inter-curve gap is largest in the P 90 –P 99 region. 
+
+Final anchor selection 
+
+We select three named anchors from the shortlist of Table 5, each defined by a single criterion at b=6 . UC 
+
+(K, C, b )=(4 , 32 , 6) at 107 B is the smallest payload at which the median angular error drops below 0.7◦ while detection remains above 95% ; it dominates the smaller 
+
+(4 , 16 , 6) at 59 B on every angular statistic at a modest payload premium. STD (K, C, b )=(8 , 64 , 6) at 404 Bis the smallest payload reaching the 98%+ detection plateau. HF (K, C, b )=(16 , 64 , 6) at 806 B is the highest-detection configuration within the sub-kilobyte envelope, reaching 98 .88% detection with the lowest azimuth P 99 
+
+in the shortlist ( 4.78 ◦) and a tight elevation P 99 of 3.31 ◦.
+
+D. Cross-scene generalization to Scene-IITM 
+
+To test whether the learned candidate-latent representa-tion generalizes beyond Scene-Synth, the trained model is evaluated on Scene-IITM, an independent campus-scale scene constructed from a 3-D IIT Madras layout (Fig. 6). The scene uses the same material assump-tions, waveform, PRS structure, array configuration, preprocessing pipeline, and the same trained model; only the building geometry, scatterer field, and TX–  
+
+> VOLUME , 19 Shiv Shankar et al.: Task-Oriented Candidate-Latent Feedback for Coarse-to-Fine Sensing in Distributed OFDM-ISAC Networks
+
+RX placement (separation 500 m, transmitter near the Central Library and receiver on the EE Department building) differ. No fine-tuning or scene-specific re-training is performed. The test set contains 993 link-instances, used in full as a held-out set. Table 6 reports the seven shortlist anchors at b = 6 
+
+jointly on Scene-Synth (in-scene) and Scene-IITM (cross-scene). Three observations emerge. (i) Detection is preserved or improves on the unseen scene. At each named anchor, the Scene-IITM detection rate is strictly greater than the corresponding Scene-Synth detection rate, by 2.46 pp (UC: 96 .33 → 98 .79% ), 
+
+1.33 pp (STD: 98 .17 → 99 .50% ), and 0.62 pp (HF: 
+
+98 .88 → 99 .50% ). The codec is not specialized to Scene-Synth’s clutter distribution. (ii) Angular accuracy improves on Scene-IITM. The Scene-IITM azimuth and elevation MAEs are lower than the corresponding Scene-Synth values at every named anchor. At STD, azimuth MAE drops from 1.05 ◦ to 
+
+0.90 ◦ and elevation MAE from 0.84 ◦ to 0.75 ◦. The tails contract more strongly: at HF, the Scene-Synth azimuth P 99 is 4.78 ◦, while the Scene-IITM azimuth 
+
+P 99 is 2.97 ◦; the corresponding elevation P 99 values are 
+
+3.31 ◦ and 2.64 ◦. The plausible cause is that the open-area campus layout exposes a sparser, less aggressive interfering-scatterer field than the dense urban Scene-Synth; the candidate-latent representation, having been trained to encode target-specific rather than scene-specific structure, benefits from the cleaner background at inference time. (iii) Delay and Doppler statistics are scene-invariant. For every shortlist anchor, the cross-scene delay MAE/ P 90 /P 99 values differ from the in-scene values by less than 0.15 ns, and the corresponding Doppler differences are within 2 Hz. These channels are limited by the OFDM resolution rather than by clutter geometry, so they are expected to be portable by construction; the data confirms it. The combined effect is that the headline compression claim of Sec. A extends to cross-scene operation un-changed: at 107 /404 /806 B per sample, the UC/STD/HF anchors reach 98 .79 /99 .50 /99 .50% detection on Scene-IITM with angular MAEs at or below 1.2◦.
+
+> E. Component ablations
+
+To attribute the observed gains to specific architectural choices, Table 7 reports a single-component ablation study at the reference configuration (K, C )=(256 , 8) 
+
+with FP32 latents. The seven ablation variants each modify exactly one element of the pipeline (a token encoder, the Set Transformer, the reranker, or the DD-context encoder) while keeping all other components at the proposed setting. Because every ablated component is per-token or per-set rather than (K, C )-capacity-dependent, the conclusions drawn here transfer directly to the UC, STD, and HF anchors of Table 2. Reranker is essential. Removing the reranker (so that the SF aggregates candidates with uniform weights) drops detection from 97 .62% to 75 .42% and inflates delay MAE from 0.54 ns to 2.84 ns. The proposal stage still returns the correct Top-K candidate set, but the SF can no longer extract the right hypothesis from it. This is large delta in the ablation and is consistent with the intended coarse-to-fine design: high proposal coverage is necessary but candidate-level reranking is what converts that coverage into accurate final estimation. Angular encoder gAE dominates among the token encoders. Removing gAE collapses detection to 15 .54% 
+
+and more than doubles the azimuth and elevation MAEs (to 4.62 ◦ and 4.41 ◦, i.e. 2.75 × and 2.55 × the reference values). Without it, the candidate token carries almost no angular information and the SF has no basis on which to estimate ϕ/θ. Removing the position encoder gpos or the score encoder gsc leaves detection within 0.3 pp of the reference; their contribution is concentrated in sub-bin delay refinement (position) and reranking calibration (score). Cross-candidate reasoning helps at sub-bin scale. Re-moving the single Set Transformer layer (so candidates are fed directly to the reranker without cross-candidate attention) preserves detection at 97 .38% but degrades delay MAE to 0.78 ns; angular MAEs and P 90 tails vary only within seed noise (e.g., P 90 azimuth shifts from 3.41 ◦ to 3.32 ◦). Doubling to two layers does not move any metric beyond seed variability, so a single layer is retained. Removing the DD-context encoder improves detec-tion. At the reference (K, C )=(256 , 8) point, the no-DD-context variant reaches 98 .83% detection versus 
+
+97 .62% for the full architecture. The DD-context encoder appears to add redundant capacity that the model uses inefficiently in single-target operation; the no-DD-context architecture is therefore adopted as the backbone for the (K, C ) sweep of Sec. B and for the UC, STD, HF anchors. The ablation table therefore supports the proposed pipeline as: power +peakedness DD descriptor, three-encoder candidate token ( gAE , gpos , gsc ), single-layer Set Transformer, candidate reranker, and bounded sub-bin offset head, with the DD-context encoder removed for single-target operation. 
+
+> F. Comparison with related ISAC estimators in the literature.
+
+We summarise reported estimation accuracy from ISAC works to position the proposed pipeline qualitatively. Quantitative cross-paper comparison of delay and Doppler errors is fundamentally constrained by geom-etry: in bistatic operation, delay maps to an ellipsoidal      
+
+> 20 VOLUME , TABLE 6. Per-parameter estimation statistics at the seven (K, C )anchors at the named operating point b= 6 , jointly on Scene-Synth (in-scene, 2,400 test link-instances) and Scene-IITM (cross-scene, 993 link-instances, trained only on Scene-Synth). Each anchor occupies two rows; the second row reports the cross-scene evaluation. Detection is over the full test set; per-parameter errors are MAE and 50/90/99-th percentiles over detected link-instances.
+
+K C Dataset Det (%) Delay ετ (ns) Doppler εf d (Hz) Azimuth εϕ (◦) Elevation εθ (◦)MAE P50 P90 P99 MAE P50 P90 P99 MAE P50 P90 P99 MAE P50 P90 P99 4 16 Synth 95.83 0.55 0.50 1.00 1.37 29.12 29.05 51.47 60.62 1.18 0.86 2.49 5.29 1.18 0.95 2.42 4.71 IITM 99.19 0.56 0.47 0.98 1.38 29.41 29.60 52.96 60.30 1.05 0.84 2.16 3.73 1.21 0.96 2.56 4.25 4 32 Synth 96.33 0.54 0.51 0.98 1.48 28.47 28.32 50.70 58.97 0.90 0.65 1.92 5.21 0.77 0.61 1.64 2.97 IITM 98.79 0.60 0.52 0.95 1.48 28.99 28.85 51.77 58.76 0.73 0.60 1.51 2.63 0.74 0.61 1.50 2.58 8 32 Synth 97.75 0.61 0.49 0.96 1.73 28.65 28.29 51.08 59.48 1.26 1.01 2.54 5.66 1.08 0.80 2.28 5.29 IITM 99.09 0.54 0.48 0.92 1.68 28.94 28.77 52.70 58.07 1.08 0.85 2.10 4.25 0.97 0.77 2.05 3.52 8 64 Synth 98.17 0.57 0.49 0.99 1.36 28.54 28.22 50.88 58.20 1.05 0.77 2.24 5.15 0.84 0.68 1.73 3.20 IITM 99.50 0.53 0.52 0.96 1.22 29.14 29.45 52.14 57.46 0.90 0.71 1.85 3.71 0.75 0.63 1.55 2.84 16 32 Synth 98.29 0.54 0.50 0.95 1.21 28.55 28.38 50.98 58.93 1.25 0.95 2.60 5.90 1.19 0.88 2.56 5.52 IITM 99.50 0.55 0.52 0.94 1.13 29.06 28.96 52.38 58.20 1.15 0.88 2.42 5.00 0.98 0.76 2.00 4.41 16 64 Synth 98.88 0.53 0.51 0.93 1.28 28.56 28.46 50.79 58.74 1.05 0.82 2.15 4.78 0.77 0.59 1.61 3.31 IITM 99.50 0.52 0.50 0.93 1.19 28.76 29.09 51.47 57.18 0.87 0.73 1.76 2.97 0.72 0.59 1.46 2.64 64 32 Synth 99.21 0.52 0.50 0.92 1.16 28.54 28.59 51.16 57.90 1.17 0.94 2.33 5.07 0.92 0.73 1.88 4.40 IITM 99.70 0.49 0.47 0.92 1.10 28.87 28.93 51.96 58.69 0.99 0.84 2.02 3.14 0.84 0.69 1.71 3.15         
+
+> TABLE 7. Component ablation study at the reference configuration (K, C ) = (256 ,8) with FP32 latents on Scene-Synth. Each row modifies a single component while keeping all others fixed. The ablated components (encoders, set transformer, reranker) operate on a per-token basis independent of Kand C, so the architectural conclusions drawn here carry over to all three named operating points (UC, STD, HF) of Table 2. Detection rate is over the full test set ( 2,400 link-instances); errors are MAE and P50/P90 over detected link-instances.
+
+Group Variant Det. (%) Delay ετ (ns) Doppler εf d (Hz) Azimuth εϕ (◦) Elevation εθ (◦)MAE P50 P90 MAE P50 P90 MAE P50 P90 MAE P50 P90 Reference Full architecture with DD-context 97.62 0.539 0.499 0.924 28.39 28.30 50.43 1.68 1.38 3.41 1.73 1.28 3.92 Reranking without reranker 75.42 2.843 1.175 4.925 32.78 29.78 57.21 1.47 1.12 3.03 1.27 0.91 2.92 Token encoders without angular encoder gAE 15.54 1.178 0.558 1.086 30.28 30.41 52.77 4.62 4.27 8.60 4.41 3.99 8.82 without position encoder gpos 97.88 0.693 0.500 0.920 28.85 28.75 51.21 1.18 0.79 2.65 1.00 0.75 2.16 without score encoder gsc 97.75 0.578 0.472 1.015 27.86 28.03 49.36 1.88 1.32 4.31 1.45 1.15 3.00 without DD-context encoder gDD 98.83 0.565 0.511 0.933 28.27 28.29 50.26 1.14 0.81 2.56 1.05 0.78 2.23 SF-side modules without Set Transformer ( 0 layers) 97.38 0.776 0.584 1.316 28.39 28.35 50.98 1.52 1.15 3.32 1.47 1.09 3.14 Set Transformer, 2 layers 97.83 0.701 0.501 0.948 28.37 28.43 51.26 1.60 1.29 3.28 1.53 1.22 3.15  
+
+> VOLUME , 21 Shiv Shankar et al.: Task-Oriented Candidate-Latent Feedback for Coarse-to-Fine Sensing in Distributed OFDM-ISAC Networks
+
+locus rather than a range and Doppler depends on the bistatic angle, so monostatic range/velocity error figures from the literature are not directly comparable to bistatic delay/Doppler errors without per-sample geometric reduction. We therefore restrict cross-paper comparison to angular accuracy and to qualitative scope of the estimation problem. Among learning-based ISAC estimators, Hu et al. [23] (STransformer + MUSIC, SIMO-OFDM, Nr =8 ULA, 64 subcarriers, static target) report an AoA error of approximately 0.1◦ at SNR ≥ 6 dB but estimate only AoA and time delay; neither Doppler nor elevation is addressed. ISAC-NET [24] (model-driven unfolding, single-antenna passive sensing) improves communication BER and range/velocity RMSE over a 2D-DFT baseline but estimates no angular parameter. Among recent classical 5G-NR-aligned estimators, the joint 3D-DFT method of Xiao et al. [20] ( 16 ×16 ULA, 512 subcarriers, CPI L=256 ) and the auto-paired super-resolution 3DJE of Hu et al. [40] estimate at most three parameters (range/velocity/azimuth) over ULA configurations and do not address elevation. Among model-based clutter-aware ISAC frameworks, the closest comparable work is Luo et al. [14], which performs joint angle/distance/velocity estimation under static ground clutter via explicit mean-phasor cancella-tion across OFDM symbols followed by angle–Doppler spectrum estimation and a MUSIC-based range/velocity stage. That work reports angular RMSE down to ∼ 0.01 ◦
+
+under monostatic 128-element TX/RX ULAs at 220 GHz, but does not estimate elevation, assumes explicit static-clutter filtering as a prerequisite, and is evaluated on a synthetic clutter model rather than ray-traced multipath. The proposed pipeline differs from [14] by handling clutter implicitly through the learned encoder operating directly on the raw DDAE magnitude features, by adding elevation as a fourth jointly estimated param-eter via UPA aperture, by operating in a bistatic ray-traced scene with both static and dynamic clutter, and by exposing the estimation problem to a finite SE–SF feedback budget that none of the above works addresses. As anticipated in Sec. I-A, no previously published ISAC estimator – whether learning-based or model-based – jointly estimates delay, Doppler, azimuth, and eleva-tion over a UPA in a multipath bistatic scene with static and dynamic clutter under a finite per-link feedback budget, which is the operating regime considered here. At the STD anchor with b=6 , the proposed pipeline achieves azimuth and elevation MAEs of 1.05 ◦ and 0.84 ◦
+
+respectively, which are in the same order as the sub-degree angular accuracies reported in [14], [20], [23], [40] despite the more demanding joint four-parameter, UPA, ray-traced bistatic, clutter setting and the finite feedback-budget constraint. 
+
+> G. Summary and limitations
+
+Three takeaways summarize the results of this section. First, the proposed candidate-latent codec reduces the per-link SE–SF feedback to only 107–806 bytes per CPI across the UC, STD, and HF anchors, while preserving 96.3–98.9% detection rate on Scene-Synth and 98.8– 99.5% on Scene-IITM, with delay MAE below 0.6 ns, Doppler MAE near 28.5 Hz, and angular MAEs be-low 1.2 ◦ across the three named anchors. For context, direct forwarding would require 107.35 MB per CPI for raw 16-bit-I/16-bit-Q CFR, 39.32 MB for FP32 DDAE magnitude, and 9.83 MB even for 8-bit DDAE magnitude. Second, the codec admits substantial post-training quantization: b = 6 is essentially free across all evaluated (K, C ) anchors, and b = 4 remains operational. Third, the trained representation is portable: it transfers to an independent campus-scale scene without retraining and in fact achieves tighter angle errors on the unseen scene than on the training distribution. Several limitations bound the scope of these conclu-sions and motivate future work. The codec is evaluated only in the single-target regime; multi-target settings introduce candidate-association ambiguity and require an extension of the reranker beyond the current single-target attention head. The quantization study is post-training; quantization-aware training, adaptive bit allo-cation across the (r, k ) axes, and entropy coding of the latent and candidate-index streams are not explored. Cross-scene generalization is demonstrated on a single OOD scene; broader generalization to dense urban, indoor, or larger-scale environments is not assessed. Finally, the SE–SF interface is studied in isolation: end-to-end multistatic fusion, fronthaul latency, scheduling, and joint communication–sensing resource allocation are outside the scope of this paper. These directions are discussed further in Sec. VI. 
+
+> VI. Conclusion
+
+We address the SE–SF feedback-interface problem in dis-tributed OFDM-ISAC sensing by introducing a coarse-to-fine candidate-latent codec. The SE proposes K
+
+delay–Doppler candidates and encodes each into a C-dimensional latent token; the quantized K × C latent matrix, the candidate indices, and one global scale together constitute the per-link feedback. The SF de-quantizes, applies cross-candidate refinement, reranks, and produces final estimates of delay, Doppler, azimuth, and elevation. Across the three named operating points, the trained codec reduces the per-link SE–SF feedback to only 107– 806 bytes per CPI, while maintaining 96.3–98.9% detec-tion on the Scene-Synth held-out test set. For context, di-rect forwarding would require 107.35 MB per CPI for raw 16-bit-I/16-bit-Q CFR, 39.32 MB for FP32 DDAE mag-nitude, and 9.83 MB even for 8-bit DDAE magnitude.  
+
+> 22 VOLUME ,
+
+The latent representation tolerates 6-bit post-training quantization at essentially no detection cost, and 4-bit at moderate angular-tail cost. Cross-scene evaluation on Scene-IITM, an independent campus-scale environment with no scene-specific fine-tuning, preserves detection (98 .8–99 .5% across the three anchors) and tightens the angular error distributions, indicating that the learned representation encodes target-specific rather than scene-specific structure. Component ablations attribute the gains to candidate-level reranking and the angular token encoder, with smaller but consistent contributions from position-encoded sub-bin refinement and cross-candidate reasoning via a single-layer Set Transformer. The framework as presented is restricted to single-target estimation, post-training quantization with one global scale, and a single in-scene/out-of-scene pair. Practically important extensions include multi-target association at the sensing fusion side, quantization-aware training and entropy coding of the candidate-latent stream, learned bit allocation across the candidate-index, latent, and side-information channels, and full multistatic fusion under fronthaul-latency and joint communication–sensing resource constraints. Embed-ding the proposed codec into such an end-to-end dis-tributed integrated sensing and communication system is the natural next step toward deployment. 
+
+REFERENCES 
+
+[1] F. Liu, Y. Cui, C. Masouros, J. Xu, T. X. Han, Y. C. Eldar, and S. Buzzi, “Integrated sensing and communications: Toward dual-functional wireless networks for 6g and beyond,” IEEE Journal on Selected Areas in Communications, vol. 40, no. 6, pp. 1728–1767, 2022. [2] J. A. Zhang, M. L. Rahman, K. Wu, X. Huang, Y. J. Guo, S. Chen, and J. Yuan, “Enabling joint communication and radar sensing in mobile networks—A survey,” IEEE Commun. Surveys Tuts., vol. 24, no. 1, pp. 306–345, 2022. [3] S. Lu, F. Liu, Y. Li, K. Zhang, H. Huang, J. Zou, X. Li, Y. Dong, F. Dong, J. Zhu, Y. Xiong, W. Yuan, Y. Cui, and L. Hanzo, “Integrated sensing and communications: Recent advances and ten open challenges,” IEEE Internet of Things Journal, vol. 11, no. 11, pp. 19 094–19 120, 2024. [4] Y. Cui, F. Liu, X. Jing, and J. Mu, “Integrating sensing and communications for ubiquitous IoT: Agile design, spectrum sharing, and tradeoffs,” IEEE Wireless Commun., vol. 28, no. 5, pp. 80–87, 2021. [5] F. Liu, C. Masouros, A. P. Petropulu, H. Griffiths, and L. Hanzo, “Joint radar and communication design: Appli-cations, state-of-the-art, and the road ahead,” IEEE Trans. Commun., vol. 68, no. 6, pp. 3834–3862, 2020. [6] H. Wymeersch, D. Shrestha, C. M. de Lima, V. Yajna-narayana, B. Richerzhagen, M. F. Keskin, K. Schindhelm, A. Ramirez, A. Wolfgang, M. F. de Guzmán, K. Haneda, T. Svensson, R. Baldemair, and S. Parkvall, “Integration of communication and sensing in 6G: A joint industrial and academic perspective,” IEEE J. Sel. Areas Commun., vol. 40, no. 6, pp. 1807–1820, 2022. [7] E. C. Strinati, G. C. Alexandropoulos, N. Amani, M. Croz-zoli, G. Madhusudan, S. Mekki, F. Rivet, V. Sciancalepore, P. Sehier, M. Stark, and H. Wymeersch, “Toward distributed and intelligent integrated sensing and communications for 6g networks,” IEEE Wireless Communications, vol. 32, no. 1, pp. 60–67, 2025. [8] Y. Cui, H. Ding, L. Zhao, and J. An, “Integrated sensing and communication: A network level perspective,” IEEE Wireless Communications, vol. 31, no. 1, pp. 103–109, 2024. [9] J. Li, X. Shao, F. Chen, S. Wan, C. Liu, Z. Wei, and D. W. K. Ng, “Networked integrated sensing and communications for 6G wireless systems,” IEEE Internet Things J., vol. 11, no. 22, pp. 36 553–36 575, 2024. [10] 3GPP, “Study on integrated sensing and communication,” 3rd Generation Partnership Project (3GPP), Tech. Rep. TR 22.837, 2024, release 19. [11] ——, “Integrated sensing and communication,” 3rd Genera-tion Partnership Project (3GPP), Tech. Rep. TS 22.137, 2025, release 19. [12] ——, “Study on stage 2 for integrated sensing and commu-nication,” 3rd Generation Partnership Project (3GPP), Tech. Rep. TR 23.700-14, 2025, release 20 draft / stage-2 study item. [13] Z. Wei, J. Jia, Y. Niu, L. Wang, H. Wu, H. Yang, and Z. Feng, “Integrated sensing and communication channel modeling: A survey,” IEEE Internet of Things Journal, vol. 12, no. 12, pp. 18 850–18 864, 2025. [14] H. Luo, Y. Wang, D. Luo, J. Zhao, H. Wu, S. Ma, and F. Gao, “Integrated sensing and communications in clutter environment,” IEEE Transactions on Wireless Communica-tions, vol. 23, no. 9, pp. 10 941–10 956, 2024. [15] W. Yang, Y. Chen, N. Cardona et al., “Integrated sensing and communication channel modeling and measurements: Requirements and methodologies toward 6G standardization,” IEEE Veh. Technol. Mag., vol. 19, no. 2, pp. 22–30, 2024. [16] Z. Zhang, R. He, B. Ai et al., “A general channel model for integrated sensing and communication scenarios,” IEEE Commun. Mag., vol. 60, no. 11, pp. 68–74, 2022. [17] K. Gao, H. Wang, H. Lv, and W. Liu, “Toward 5g nr high-precision indoor positioning via channel frequency response: A new paradigm and dataset generation method,” IEEE Journal on Selected Areas in Communications, vol. 40, no. 7, pp. 2233– 2247, 2022. [18] C. Sturm and W. Wiesbeck, “Waveform design and signal processing aspects for fusion of wireless communications and radar sensing,” Proc. IEEE, vol. 99, no. 7, pp. 1236–1259, 2011. [19] F. Liu, L. Zhou, C. Masouros, A. Li, W. Luo, and A. Petropulu, “Toward dual-functional radar-communication systems: Opti-mal waveform design,” IEEE Trans. Signal Process., vol. 66, no. 16, pp. 4264–4279, 2018. [20] Z. Xiao, R. Liu, M. Li, Q. Liu, and A. L. Swindlehurst, “A novel joint angle-range-velocity estimation method for mimo-ofdm isac systems,” IEEE Transactions on Signal Processing, vol. 72, pp. 3805–3818, 2024. [21] F. Liu, W. Yuan, C. Masouros, and J. Yuan, “Radar-assisted predictive beamforming for vehicular links: Communication served by sensing,” IEEE Trans. Wireless Commun., vol. 19, no. 11, pp. 7704–7719, 2020. [22] W. Yuan, F. Liu, C. Masouros, J. Yuan, D. W. K. Ng, and N. González-Prelcic, “Bayesian predictive beamforming for ve-hicular networks: A low-overhead joint radar-communication approach,” IEEE Trans. Wireless Commun., vol. 20, no. 3, pp. 1442–1456, 2021. [23] J. Hu, I. Valiulahi, and C. Masouros, “Isac receiver design: A learning-based two-stage joint data-and-target parameter estimation,” IEEE Wireless Communications Letters, vol. 13, no. 8, pp. 2105–2109, 2024. [24] W. Jiang, D. Ma, Z. Wei, Z. Feng, P. Zhang, and J. Peng, “Isac-net: Model-driven deep learning for integrated passive sensing and communication,” IEEE Transactions on Communications, vol. 72, no. 8, pp. 4692–4707, 2024. [25] N. Shlezinger, J. Whang, Y. C. Eldar, and A. G. Dimakis, “Model-based deep learning,” Proc. IEEE, vol. 111, no. 4, pp. 465–499, 2023. [26] T. O’Shea and J. Hoydis, “An introduction to deep learning for the physical layer,” IEEE Trans. Cogn. Commun. Netw., vol. 3, no. 4, pp. 563–575, 2017. [27] C.-K. Wen, W.-T. Shih, and S. Jin, “Deep learning for massive mimo csi feedback,” IEEE Wireless Communications Letters, vol. 7, no. 5, pp. 748–751, 2018.  
+
+> VOLUME , 23 Shiv Shankar et al.: Task-Oriented Candidate-Latent Feedback for Coarse-to-Fine Sensing in Distributed OFDM-ISAC Networks
+
+[28] T. Wang, C.-K. Wen, S. Jin, and G. Y. Li, “Deep learning-based CSI feedback approach for time-varying massive MIMO channels,” IEEE Wireless Commun. Lett., vol. 8, no. 2, pp. 416–419, 2019. [29] M. B. Mashhadi, Q. Yang, and D. Gündüz, “Distributed deep convolutional compression for massive mimo csi feedback,” IEEE Transactions on Wireless Communications, vol. 20, no. 4, pp. 2621–2633, 2021. [30] X. Liang, Z. Jia, X. Gu, and L. Zhang, “Toward better low-rate deep learning-based csi feedback: A test channel-based approach,” IEEE Transactions on Wireless Communications, vol. 23, no. 8, pp. 8760–8772, 2024. [31] J. Guo, C.-K. Wen, S. Jin, and G. Y. Li, “Overview of deep learning-based CSI feedback in massive MIMO systems,” IEEE Trans. Commun., vol. 70, no. 12, pp. 8017–8045, 2022. [32] W. Yang, H. Du, Z. Liew, W. Y. B. Lim, Z. Xiong, D. Niyato, X. Chi, X. S. Shen, and C. Miao, “Semantic communications for future internet: Fundamentals, applications, and chal-lenges,” IEEE Communications Surveys & Tutorials, vol. 25, no. 1, pp. 213–250, 2023. [33] Z. Lu, R. Li, K. Lu, X. Chen, E. Hossain, Z. Zhao, and H. Zhang, “Semantics-empowered communications: Atutorial-cum-survey,” IEEE Communications Surveys & Tu-torials, vol. 26, no. 1, pp. 41–79, 2024. [34] C. Chaccour, W. Saad, M. Debbah, Z. Han, and H. V. Poor, “Less data, more knowledge: Building next-generation semantic communication networks,” IEEE Communications Surveys & Tutorials, vol. 27, no. 1, pp. 37–76, 2025. [35] K. Lu, Q. Zhou, R. Li, Z. Zhao, X. Chen, J. Wu, and H. Zhang, “Rethinking modern communication from semantic coding to semantic communication,” IEEE Wireless Communications, vol. 30, no. 1, pp. 158–164, 2023. [36] S. Guo, Y. Wang, N. Zhang, Z. Su, T. H. Luan, Z. Tian, and X. S. Shen, “A survey on semantic communication networks: Architecture, security, and privacy,” IEEE Communications Surveys & Tutorials, vol. 27, no. 5, pp. 2860–2894, 2025. [37] H. Xie, Z. Qin, X. Tao, and K. B. Letaief, “Task-oriented multi-user semantic communications,” IEEE J. Sel. Areas Commun., vol. 40, no. 9, pp. 2584–2597, 2022. [38] E. Bourtsoulatze, D. B. Kurka, and D. Gündüz, “Deep joint source-channel coding for wireless image transmission,” IEEE Trans. Cogn. Commun. Netw., vol. 5, no. 3, pp. 567–579, 2019. [39] M. Jankowski, D. Gündüz, and K. Mikolajczyk, “Wireless image retrieval at the edge,” IEEE J. Sel. Areas Commun., vol. 39, no. 1, pp. 89–100, 2021. [40] Z. Hu, Q. Ye, Y. Huang, S. Hu, and G. Yang, “Joint range-velocity-azimuth estimation for ofdm-based integrated sensing and communication,” IEEE Transactions on Wireless Commu-nications, vol. 23, no. 10, pp. 12 933–12 948, 2024. [41] 3GPP, “Study on channel model for frequencies from 0.5 to 100 GHz,” 3rd Generation Partnership Project, Tech. Rep. TR 38.901, 2024, release 18, V18.1.0. [42] R. Xiong, Y. Yang, D. He, K. Zheng, S. Zheng, C. Xing, H. Zhang, Y. Lan, L. Wang, and T.-Y. Liu, “On layer normalization in the transformer architecture,” in Proc. Int. Conf. Mach. Learn. (ICML), 2020, pp. 10 524–10 533. [43] OpenStreetMap contributors. (2024) OpenStreetMap. Map data © OpenStreetMap contributors, licensed under the Open Database License (ODbL). [Online]. Available: https: //www.openstreetmap.org 
+
+Shiv Shankar received the M.Tech. degree in electronics and communication engineering from IIT (ISM) Dhanbad. He is currently pursuing the Ph.D. degree with IIT Madras, Chennai, India, and is a Principal Research Engineer with the CEWiT, IIT Madras. His research interests include AI/ML for wireless systems, integrated sensing and communica-tion (ISAC), and digital-twin-enabled net-work intelligence. He has also contributed to 3GPP work items on AI/ML for positioning and CSI enhancement. 
+
+Radha Krishna Ganti received the B.Tech. and M.Tech. degrees in electrical engineering from IIT Madras, Chennai, India, and the M.S. degree in applied mathematics and the Ph.D. degree in electrical engineering from the University of Notre Dame, USA, in 2009. He is currently a Professor with IIT Madras. His research interests include wireless networks, AI/ML-based receivers, ISAC, and next-generation wireless systems. He was a recipient of the Rashtriya Vigyan Yuva–Shanti Swarup Bhatnagar Award in 2024. 
+
+J Klutto Milleth received the Ph.D. degree in space-time wireless communication from IIT Madras, Chennai, India, in 2004. He is currently the Chief Technologist with the CEWiT, IIT Madras, and an Adjunct Faculty Member with the Department of Electrical Engineering, IIT Madras. His work spans 5G and beyond wireless technologies, standardization, and early 6G research. He has contributed to major standards including 3GPP LTE/NR, IEEE 802.16m, and TSDSI 5Gi.

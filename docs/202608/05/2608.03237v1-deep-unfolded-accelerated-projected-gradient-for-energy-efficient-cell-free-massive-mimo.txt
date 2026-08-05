@@ -1,0 +1,693 @@
+Title: Deep-Unfolded Accelerated Projected Gradient for Energy-Efficient Cell-Free Massive MIMO
+
+URL Source: https://arxiv.org/pdf/2608.03237v1
+
+Published Time: Wed, 05 Aug 2026 00:46:08 GMT
+
+Number of Pages: 7
+
+Markdown Content:
+# Deep-Unfolded Accelerated Projected Gradient for Energy-Efficient Cell-Free Massive MIMO 
+
+Phuong Nam Tran ∗, Nhan Thanh Nguyen ∗, Hien Quoc Ngo †, Markku Juntti ∗,
+
+> ∗
+
+Centre for Wireless Communications (CWC), University of Oulu, Finland, 
+
+> †
+
+School of Electronics, Electrical Engineering and Computer Science, Queen’s University Belfast, UK {phuong.tran, nhan.nguyen, markku.juntti}@oulu.fi, hien.ngo@qub.ac.uk 
+
+Abstract—This paper investigates energy efficiency (EE) maximization for the downlink of cell-free massive multiple-input multiple-output systems under quality-of-service and per-access point power constraints. We first derive closed-form gra-dient expressions of the objective function with respect to the power allocation coefficients, and then propose an accelerated projected gradient (APG) approach to solve this problem. To reduce the computational complexity and runtime of APG, we propose a deep-unfolded APG framework that maps iterative APG updates onto a finite number of neural network layers, where parameters such as step sizes and penalty coefficients are learned from data. The proposed approach produces power allocation solutions through a fixed number of gradient-based updates without the need for line search or manual parameter tuning. Numerical results show that the method achieves EE performance comparable to the iterative APG approach while requiring significantly lower computational cost, with up to a 30-fold reduction in floating-point operations under the considered system settings. Index Terms—Cell-free massive MIMO, energy efficiency, power control, accelerated proximal gradient, deep unfolding. 
+
+I. Introduction Cell-free massive multiple-input multiple-output (CF-mMIMO) has emerged as a promising architecture for future wireless networks [1], [2]. By eliminating cell boundaries, CF-mMIMO improves spectral efficiency (SE) and provides a more uniform service quality compared with conventional cellular architectures. In such systems, energy efficiency (EE) is a key design objective, since dense deployments of access points (APs) lead to substantial network power consumption [2], [3]. Therefore, power control plays a central role in improving the EE of CF-mMIMO systems [4]. Existing works on power allocation in CF-mMIMO systems have considered objectives such as power con-sumption minimization, SE maximization, and EE max-imization [1], [4]–[6]. Most existing methods typically rely on sequential convex approximation (SCA) methods. Although such methods can achieve near-optimal perfor-mance, they require solving convex subproblems at each iteration, resulting in high computational complexity. To reduce this burden, accelerated projected gradient (APG) methods have been proposed [4], [7], [8], which offer lower per-iteration complexity. However, these methods still require multiple iterations with line search or parameter tuning, leading to high and variable computational cost. Additionally, prior work has focused on maximum-ratio transmission (MRT) precoding [4], while partial zero-forcing (PZF) precoding, which can achieve higher SE [9], has not been explored. In CF-mMIMO power control, deep learning (DL) has been explored to reduce computational complexity by replacing iterative optimizers with direct mappings from system parameters such as large-scale fading coefficients to power allocation variables [10]–[12]. However, these approaches are typically designed as black-box models, and it is difficult to explicitly enforce system constraints such as QoS and per-AP power constraints. Model-based DL, particularly deep unfolding, provides an alternative by embedding the structure of iterative optimization algorithms into trainable networks [13]–[19]. This ap-proach retains the structure of conventional optimization algorithms while replacing iterative procedures with a finite number of layers, resulting in fixed computational cost and enhanced interpretability. Deep unfolding has been applied in CF-mMIMO to tasks such as precoding or beamforming design [13]–[15], leakage-rate maximization [18], and activity detection [19]. However, these works do not consider EE maximization under QoS and per-AP power constraints. In this paper, we consider EE maximization for the downlink of a CF-mMIMO system. We first develop an APG-based framework for the EE maximization problem under QoS and per-AP power constraints, where local PZF precoding is employed. However, the resulting APG method remains iterative and requires multiple iterations with step-size and parameter tuning, leading to high computational cost. To address this limitation, we propose a deep-unfolded APG approach by mapping the iterative updates of APG method into a finite number of trainable layers. In the proposed model, the step sizes are learned from data, eliminating the need for line search and iterative tuning. The resulting unfolded model computes the power allocation through a fixed number of gradient-based updates, achieving fixed computational complexity and fast convergence, while explicitly enforcing the per-AP power constraints and incorporating QoS requirements through a penalty-based formulation. Numerical results show that the proposed method achieves EE performance comparable to iterative APG while requiring significantly arXiv:2608.03237v1 [eess.SP] 4 Aug 2026 lower computational complexity. II. System Model and Problem Formulation A. System Model We consider the downlink of a CF-mMIMO system op-erating in time-division duplex (TDD) mode. The network consists of L APs, each equipped with M antennas, that jointly serve K single-antenna user equipments (UEs) over the same time-frequency resource, with LM ≫ K [9]. All APs are connected to a central processing unit (CPU) via fronthaul links. The channel between AP l and UE k is denoted by hl,k ∈ CM ×1 and follows hl,k ∼ CN (0, β l,k IM ),where βl,k represents the large-scale fading coefficient. During uplink training, each UE transmits a pilot sequence 
+
+ϕik ∈ Cτp with ∥ϕik ∥2 = τp, where ik is the pilot index and τp is the pilot length. We assume τp ≤ K, and thus pilot reuse occurs. The set of UEs sharing the same pilot as UE k is denoted by Pk = {t : it = ik}, which leads to pilot contamination. Let pk denote the uplink transmit power of UE k. The MMSE estimate of hl,k , denoted by 
+
+ˆhl,k , has zero mean and covariance γl,k IM , where 
+
+γl,k = τppkβ2
+
+> l,k
+
+τp
+
+∑ 
+
+> t∈P k
+
+ptβl,t + 1 . (1) We assume that each AP l employs PZF precoding, as it provides very good performance [9]. The set of UEs is partitioned into a strong set Sl and a weak set 
+
+Wl = {1, . . . , K } \ S l based on the large-scale fading coefficients βl,k . Zero-forcing (ZF) is applied to UEs in Sl
+
+to suppress interference within pilot subspaces, while MRT is used for UEs in Wl to reduce computational complexity. This structure allows interference suppression for UEs with strong channels while maintaining low complexity for the remaining UEs. Since ZF is applied over pilot subspaces, if k ∈ S l, then all UEs sharing the same pilot as UE k belong to Sl. Let τSl denote the number of distinct pilots assigned to Sl, and the condition M > τ Sl is required for ZF. The downlink transmit signal from AP l is xl =∑Kk=1 
+
+√ρl,k wl,k qk, where ρl,k ≥ 0 denotes the transmit power allocated by AP l to UE k, wl,k is the precoding vector, and qk ∼ CN (0 , 1) is the data symbol. An achievable downlink SE for UE k under local PZF is given by SE k = τc−τp 
+
+> τc
+
+log 2
+
+(
+
+1 + SINR k
+
+)
+
+, where τc is the coherence block length. The corresponding signal-to-interference-plus-noise ratio (SINR) is given by [9] 
+
+SINR k =
+
+( L∑
+
+> l=1
+
+alk 
+
+√ρl,k 
+
+)2
+
+∑ 
+
+> t∈P k\{ k}
+
+( L∑
+
+> l=1
+
+bl,k,t 
+
+√ρl,t 
+
+)2
+
++ K∑
+
+> t=1
+> L
+
+∑
+
+> l=1
+
+dl,k,t ρl,t + 1 
+
+,
+
+(2) where δl,k equals one if k ∈ Sl, and zero otherwise, 
+
+al,k ≜ √(M − δl,k τSl )γl,k , bl,k,t ≜ √(M − δl,t τSl )γl,k and 
+
+dl,k,t ≜ βl,k − δl,k δl,t γl,k .B. Energy Efficiency Problem Formulation The total power consumption of the considered CF-mMIMO system is modeled as [1], [4] 
+
+Ptotal =
+
+> L
+
+∑
+
+> l=1
+
+N0
+
+αlK∑
+
+> k=1
+
+ρl,k + ¯Pfix + B ¯Pbt 
+
+> K
+
+∑
+
+> k=1
+
+SE k, (3) where αl ∈ (0 , 1] denotes the power-amplifier efficiency at AP l, N0 is the noise power, and B is the system bandwidth. The first term represents the transmit power, where N0 converts the normalized power ρl,k to physical units. The scalar ¯Pfix ≜ ∑Ll=1 (M P tc ,l + P0,l ) captures the static circuit and fronthaul power across all APs, where 
+
+Ptc ,l is the per-antenna circuit power and P0,l is the fixed fronthaul power at AP l. The last term models the traffic-dependent fronthaul power, where Pbt ,l denotes the traffic-dependent coefficient at AP l, and ¯Pbt ≜ ∑Ll=1 Pbt ,l .The EE of the network, measured in bits per joule, is defined as the ratio between the total achievable data rate and the total power consumption, given by Ee =   
+
+> B∑Kk=1 SE k
+> Ptotal
+
+. The EE maximization problem is formulated as 
+
+(P1) : max   
+
+> {ρl,k }
+
+Ee (4a) s.t. SE k ≥ Smin  
+
+> k
+
+, k = 1 , . . . , K, (4b) 
+
+> K
+
+∑
+
+> k=1
+
+ρl,k ≤ ρmax  
+
+> l
+
+, l = 1 , . . . , L, (4c) 
+
+ρl,k ≥ 0, ∀l, k. (4d) The QoS constraints in (4b) enforce minimum SE require-ments Smin  
+
+> k
+
+for all UEs, while (4c) limits the transmit power at each AP. Problem (P1) is non-convex due to the fractional structure of the objective function and the coupling of the optimization variables in the SINR expressions. As a result, the problem is challenging to solve using conventional optimization techniques. In the next section, we reformulate (P1) to enable efficient gradient-based optimization and develop an APG-based solution together with a deep-unfolded model. III. Proposed Deep-Unfolded APG Method To address (P1), we first develop an APG-based opti-mization framework and then construct a deep-unfolded network by mapping APG iterations into trainable deep neural network (DNN) layers. A. APG Optimization Framework 1) Problem Reformulation: The optimization prob-lem (P1) is challenging to solve directly due to its non-convex objective and QoS constraints. To enable the application of the APG method, we first refor-mulate the problem. Specifically, we introduce variable 
+
+θl,k = √ρl,k ≥ 0 to avoid square-root terms in the SINR and QoS expressions and facilitate more efficient projection and gradient updates. Under this transfor-mation, the per-AP power constraint in (4c) becomes ∑Kk=1 θ2 
+
+> l,k
+
+≤ ρmax  
+
+> l
+
+. Let θl ≜ [θl, 1, . . . , θ l,K ]T denote the power allocation vector for AP l, and let θ ∈ RL×K
+
+stack all such vectors across APs. The feasible sets for the power allocation variables θl and θ are defined as Cl =
+
+{
+
+θl ∈ RK : θl,k ≥ 0, ∀k, ∑Kk=1 θ2 
+
+> l,k
+
+≤ ρmax 
+
+> l
+
+}
+
+and 
+
+C = {θ ∈ RL×K : θl ∈ C l, ∀l} , respectively. Let Ak,t ≜ ∑Ll=1 bl,k,t θl,t , Ak ≜ ∑Ll=1 al,k θl,k , I k ≜
+
+∑  
+
+> t∈P k\{ k}
+
+A2 
+
+> k,t
+
++ ∑Kt=1 
+
+∑Ll=1 dl,k,t θ2 
+
+> l,t
+
++ 1 . With these def-initions, the SINR can then be written as SINR k = A2
+
+> k
+
+/I k,and the QoS constraint in (4b) is equivalent to 
+
+Ak ≥
+
+√ ¯Smin 
+
+> k
+
+√Ik, (5) where ¯Smin  
+
+> k
+
+≜ 2Smin   
+
+> kτc/(τc−τp)
+
+− 1. The QoS constraints introduce non-convex coupling between the variables and cannot be handled directly within the APG updates. Therefore, we incorporate them into the objective using a penalty formulation. Specifically, we define 
+
+gk(θ) ≜
+
+√ ¯Smin  
+
+> k
+
+Ik − Ak, (6) which is non-positive when the QoS constraint is satisfied. The reformulated problem is given by 
+
+(P2) : max  
+
+> θ∈C
+
+fξ (θ) ≜ EE( θ) − ξ
+
+> K
+
+∑
+
+> k=1
+
+[max(0 , g k(θ)) ]2, (7) where ξ > 0 is a penalty parameter that controls the strength of constraint enforcement. 2) APG Update Rules and Projection: To solve (P2),we apply the APG method [4]. Unlike the projected gradient method, which computes each update based solely on the current iterate, APG additionally exploits the difference between successive iterates to capture the recent search direction. This allows the method to continue moving along the direction of the previous update instead of relying solely on local gradient information, thereby accelerating convergence. Let θ(n) ∈ C denote the power allocation vector at iteration n. At each iteration n ≥ 1, the point y(n),which incorporates information from previous updates, is constructed as 
+
+y(n) = θ(n) + sn−1
+
+sn
+
+(z(n) − θ(n)) + sn−1 − 1
+
+sn
+
+(θ(n) − θ(n−1) ),
+
+(8) where sn = (1 + 
+
+√
+
+1 + 4 s2
+
+> n−1
+
+)/2 controls the contribution of previous updates. The term θ(n) − θ(n−1) represents the difference between consecutive iterates and allows the update to follow the direction of the previous step. The initialization is given by θ(0) ∈ C , θ(1) = z(1) = θ(0) ,and s0 = s1 = 1. To balance progress and reliable improvement, z(n+1) and v(n+1) are updated as 
+
+z(n+1) = PC
+
+(y(n) + αy,n ∇fξ (y(n))), (9) 
+
+v(n+1) = PC
+
+(θ(n) + αθ,n ∇fξ (θ(n))), (10) where αy,n and αθ,n are step sizes. The update z(n+1) 
+
+incorporates information from previous iterations and promotes faster progress, while v(n+1) relies only on the current gradient and ensures stable improvement. The update yielding the higher objective value is selected as the next iterate, i.e., 
+
+θ(n+1) =
+
+{
+
+z(n+1) , fξ (z(n+1) ) ≥ fξ (v(n+1) ),
+
+v(n+1) , otherwise . (11) The projection PC (·) enforces the per-AP power con-straints. Since C is separable across APs, the projection is applied independently to each θl. For ul ∈ RK , the projection onto Cl is 
+
+PCl (ul) = min 
+
+(
+
+1,
+
+√ρmax 
+
+> l
+
+∥˜ul∥
+
+)
+
+˜ul, (12) where ˜ul is obtained by setting negative entries of ul to zero. 3) Gradient of the Objective Function: The APG up-dates in (9)–(10) require the gradient of fξ (θ). We present its closed-form gradient in the following theorem. Theorem 1: Let u ≜ ∑Kk=1 SE k denote the sum SE and let Ψ( θ) ≜ ∑Kk=1 
+
+[max(0 , g k(θ)) ]2. Furthermore, we rewrite the total power consumption as Ptotal = ˜P +
+
+B ¯Pbt u, where ˜P ≜ ¯Pfix + ∑Ll=1 
+
+∑Kk=1 (N0/α l)θ2
+
+> l,k
+
+. Then, the gradient of fξ (θ) with respect to θ ∈ RL×K is given by 
+
+∇fξ = ∇Ee − ξ ∇Ψ, (13) where 
+
+∇Ee = BP 2total 
+
+( ˜P ∇u − 2uN 0 α−1 ⊙ θ
+
+)
+
+, (14) 
+
+∇u =
+
+> K
+
+∑
+
+> k=1
+
+τc − τp
+
+τc ln 2 ( A2 
+
+> k
+
++ Ik)
+
+(∇A2 
+
+> k
+
+− SINR k ∇Ik
+
+), (15) 
+
+∇Ψ = ∑  
+
+> k:gk>0
+
+2 gk ∇gk. (16) Here [α−1]l,k = 1 /α l, and ⊙ denotes element-wise multi-plication. Furthermore, Ak, Ik, and gk are scalar functions of θ, while their gradients ∇A2
+
+> k
+
+, ∇Ik, and ∇gk are matrices in RL×K whose entries are defined in (24), (25), and (28), respectively. Proof: See Appendix A. With the closed-form expressions in Theorem 1 and the projection in (12), the gradient and projection steps in APG can be evaluated explicitly. However, the perfor-mance and convergence of the APG method depend on the step sizes αy,n and αθ,n . Manual tuning may lead to suboptimal convergence, while line search with backtrack-ing requires repeated objective evaluations and increases computational complexity, particularly in massive MIMO systems. This results in high and variable computational cost. To address this issue, we propose mapping the APG iterations into a fixed number of neural network layers, which allows learning αy,n and αθ,n from data training, as elaborated next. B. Proposed APG-based Unfolding Network We employ a deep-unfolded network with T layers, each performs the update of one APG iteration, as in (8)–(11). The step sizes αy,n and αθ,n and penalty parameter ξ are treated as learnable variables, eliminating line search and yielding fixed inference complexity. 1) Network Structure: Fig. 1 illustrates the structure of one layer of the proposed deep-unfolded APG network. Each layer corresponds to an iteration of the APG method in (8)–(11). Within a layer, y(t) is formed from θ(t), θ(t−1) ,and z(t). Then, the updates z(t+1) and v(t+1) are computed based on y(t) and θ(t), respectively. Each update evaluates the gradient of fξt , scales it with the learnable step sizes 
+
+αy,t and αθ,t , and projects the result onto the feasible set 
+
+C. The key difference from the APG method lies in how the next iterate is obtained. In (11), the update with the larger objective value is selected through a comparison step. In the proposed network, this step is replaced by a learnable weighted combination 
+
+θ(t+1) = wt z(t+1) + (1 − wt) v(t+1) , (17) where wt ∈ (0 , 1) is a learnable parameter. This re-placement eliminates the non-differentiable selection step in (11), enabling end-to-end training, and ensures θ(t+1) ∈C since z(t+1) , v(t+1) ∈ C .  
+
+> Fig. 1. Illustration of the t-th layer of the proposed unfolded PGA model.
+
+2) Learnable Parameters and Training: In the proposed network, the step sizes αy,n , αθ,n , penalty parameter ξ
+
+and the update in (11) are replaced by a set of learnable parameters 
+
+Φ = {˜αy,t , ˜αθ,t , ξ t, w t
+
+}Tt=1 , (18) where ˜αy,t , ˜αθ,t , ξ t > 0 and wt ∈ (0 , 1) . The step sizes αy,t 
+
+and αθ,t are constructed by applying learnable scaling fac-tors ˜αy,t and ˜αθ,t to the Barzilai–Borwein (BB) estimates, given by [4] 
+
+α(t)BB ,z = ∥y(t) − y(t−1) ∥2
+
+∣∣〈y(t) − y(t−1) , ∇fξt (y(t)) − ∇ fξt (y(t−1) )〉∣ ∣ ,
+
+(19) Algorithm 1: Unfolded APG-based power control 
+
+Input: {βl,k , γ l,k , δ l,k }, {Smin  
+
+> k
+
+}, {ρmax  
+
+> l
+
+}, and trained parameters Φ⋆ = { ˜αy,t , ˜αθ,t , ξ t, w t}Tt=1 .Output: Power allocation θ(T +1) ∈ C . 
+
+> 1
+
+Initialization:  
+
+> 2
+
+Precompute {st}Tt=1 ; 
+
+> 3
+
+Initialize θ(0) using HCD in (23);  
+
+> 4
+
+for t = 1 to T do  
+
+> 5
+
+Compute y(t) using (8);  
+
+> 6
+
+Compute ∇fξt (y(t)) and ∇fξt (θ(t)) using Theorem 1;  
+
+> 7
+
+Compute step sizes αy,t and αθ,t using (21);  
+
+> 8
+
+Update z(t+1) and v(t+1) using (9)-(10);  
+
+> 9
+
+Update θ(t+1) using (17);  
+
+> 10
+
+return θ(T +1) ;
+
+α(t)BB ,v = ∥θ(t) − θ(t−1) ∥2
+
+∣∣〈θ(t) − θ(t−1) , ∇fξt (θ(t)) − ∇ fξt (θ(t−1) )〉∣ ∣ .
+
+(20) Since the BB estimate requires two consecutive iterates, it is not defined at t = 1 . The resulting step sizes are given by 
+
+αy,t =
+
+{
+
+˜αy,t , t = 1 ,
+
+˜αy,t α(t)BB ,z , t > 1, αθ,t =
+
+{
+
+˜αθ,t , t = 1 ,
+
+˜αθ,t α(t)BB ,v , t > 1.
+
+(21) The network is trained to maximize EE while enforcing the QoS constraints. For each layer t, the loss is defined as 
+
+L(t) = −Ee
+
+(θ(t)) + ξfix Ψ(θ(t)), (22) where ξfix > 0 penalizes QoS violations. The parameter 
+
+ξt is used within each layer for gradient computation, while ξfix is fixed and used only in the training loss. A progressive learning strategy [20] is adopted, where layers are optimized sequentially from t = 1 to T . At layer 
+
+t, only its parameters are updated by minimizing L(t),while earlier layers are kept fixed, which improves training stability. 3) Inference Procedure: The inference procedure of the proposed unfolded APG-based power control scheme is summarized in Algorithm 1. For a given channel realiza-tion, the power allocation is obtained via a T -layer forward pass using the trained parameters Φ⋆, as illustrated in Fig. 1. The network is initialized using the heuristic channel-dependent (HCD) power allocation [9], defined as 
+
+ρ(0)  
+
+> l,k
+
+= γl,k 
+
+∑Ki=1 γl,i 
+
+ρmax  
+
+> l
+
+, θ(0)  
+
+> l,k
+
+=
+
+√
+
+ρ(0)  
+
+> l,k
+
+, ∀l, k, (23) which allocates power proportionally to the large-scale fading coefficients {γl,k }.4) Computational Complexity: We herein analyze the computational complexity of Algorithm 1. In each layer, the dominant cost arises from evaluating the gradients 
+
+∇fξt , which has complexity O(LK 2) due to summations over AP and UE indices. The projection and combina-0 0 0 0 0 00 &# ! %#%! $  )#$  T        
+
+> 
+> 
+> 
+> 
+> 
+> '#   # )   ) %!&
+>  
+>   
+>  %# 
+>  (  $%" $*$
+> !  
+
+(a) Convergence profile 1 1    * '  &$!% & #")$  ρ   
+
+> *
+>   
+> 
+> 
+> 
+> 
+>  ($ !$ + !+  &"'
+> 
+>  
+> 
+> 
+> !"  
+
+(b) EE versus maximum transmit power. L                
+
+> L 
+> L 
+> L
+> L$"# "%  L 
+> 
+> 
+> 
+> 
+> 
+> 
+> L  " ! "
+> 5          
+>   5     5     
+> ! 
+> 
+
+(c) Computational cost versus system size 
+
+(L, K ).
+
+Fig. 2. Convergence, EE, and computational cost of the proposed unfolded APG scheme compared with benchmarks. 
+
+tion steps have complexity O(LK ). Hence, the per-layer complexity is O(LK 2), and the overall complexity of the 
+
+T -layer network is O(T LK 2). The HCD initialization has complexity O(LK ) and does not affect the overall order. In contrast, the APG algorithm has complexity 
+
+O(IP IAPG LK 2), where IP and IAPG denote the num-bers of outer and inner iterations, respectively [4]. The SCA method in [1] has complexity O(ISCA 
+
+√L + KL 3K4),where ISCA is the number of iterations. In both cases, the iteration counts depend on the channel realizations and convergence criteria, resulting in variable computational cost, whereas the proposed method has fixed complexity determined by T .IV. Numerical Results This section evaluates the performance of the proposed deep-unfolded power control method. Unless otherwise specified, we consider a downlink CF-mMIMO system with L = 20 APs, each equipped with M = 4 antennas, serving K = 6 single-antenna UEs. The APs and UEs are randomly distributed in a square area of side length 
+
+D = 1000 m using the wrap-around scheme. The large-scale fading coefficients are modeled as βl,k =
+
+PL l,k · 10 σsh zl,k  
+
+> 10
+
+, where σsh = 4 dB, and zl,k ∼ N (0 , 1) 
+
+follows the correlation model in [9]. The path loss is given by PL l,k [dB] = −30 .5 − 36 .7 log 10 
+
+( dl,k 
+
+1 m 
+
+)
+
+, where 
+
+dl,k denotes the distance between AP l and UE k, with antenna heights of 10 m and 1.5 m for the AP and UE, respectively [9]. The system parameters are set as follows: bandwidth B = 20 MHz, coherence block length τc = 200 ,pilot length τp = 5, QoS target Smin 
+
+k = 1 bit/s/Hz, and noise power N0 corresponding to a noise figure of 
+
+9 dB [1], [4]. Pilots are randomly assigned to the UEs. For the EE model in (3), we set αl = 0 .4, Ptc ,l = 0 .2 W, 
+
+Pbt ,l = 0 .25 W/(Gbit/s), and P0,l = 0 .825 W [1], [4]. The unfolded network has depth T = 10 and is trained using Adam optimizer. The dataset consists of 800 training, 100 validation, and 100 testing channel realizations. Training is performed for 1000 epochs with mini-batch size 32 and learning rate 0.01. The parameters λ0 and ξfix are set to 0.3 and 10, respectively. To evaluate the proposed unfolded APG method, we consider the heuristic HCD method [9], [21], abacktracking-based APG method in which the step sizes are determined via backtracking line search [4], and an APG variant with fixed step sizes set to the average values obtained from the backtracking-based APG. All meth-ods are evaluated under both PZF and MRT precoding schemes. Fig. 2a shows the convergence behavior of the proposed unfolded APG and the iterative APG methods for (L =20 , K = 6) and (L = 40 , K = 12) . The results indicate that the objective value of the proposed unfolded APG in-creases rapidly and attains a satisfactory EE performance, which is slightly superior to that of the APG-based coun-terparts at convergence. The backtracking-based APG converges within approximately 30 iterations, whereas the fixed-step APG requires more than 60 iterations to reach a stable solution. Compared with the fixed-step variant, APG with backtracking converges faster and achieves higher EE, at the expense of additional computational overhead due to the line search procedure. In contrast, the proposed method achieves fast convergence without introducing extra per-iteration complexity. Fig. 2b shows the EE versus the maximum transmit power for the proposed unfolded APG, the iterative APG, and the HCD schemes. For a fair comparison, APG is executed with T = 10 iterations, matching the number of layers in the unfolded model. The unfolded APG consis-tently achieves higher EE than APG and HCD across all transmit power levels for both PZF and MRT precoding. For MRT, its performance is close to that of APG under the same number of APG iterations, indicating that APG already reaches a near-stationary performance level within 10 iterations. The EE increases with transmit power in the low-power regime, reaches a maximum around 20–25 dBm, and then saturates or decreases. This indicates that increasing transmit power does not necessarily improve EE and highlights the importance of power control. Compared to MRT, PZF achieves significantly higher EE under all settings; for example, at ρmax = 25 dBm, PZF provides an EE gain of approximately 198%. In addition, the unfolded APG maintains more stable performance at higher transmit power levels, whereas APG and HCD exhibit noticeable degradation. Fig. 2c compares the computational cost, measured in floating-point operations (FLOPs), of iterative APG and unfolded APG for different system sizes (L, K ). For L = {30, 40, 50, 60}, the number of layers is set to T = {15, 20, 25, 30}, respectively. The iterative APG is executed until convergence, defined by a relative change in the objective value below 10 −3. Notably, both methods achieve comparable EE performance under the considered settings, ensuring a fair comparison of computational complexity. The proposed method consistently requires significantly fewer FLOPs than iterative APG across all configurations. For example, at (L, K ) = (20 , 6) , itera-tive APG requires approximately 30 times more FLOPs. Although T increases with system size, the complexity of the unfolded method grows moderately. In contrast, larger systems lead to more challenging optimization problems, and iterative APG typically requires more iterations to converge, resulting in a faster increase in computational cost. Consequently, the complexity gap widens as (L, K )
+
+increases, demonstrating the scalability of the proposed approach. V. Conclusion This paper proposed a deep-unfolded APG method for EE maximization in downlink CF-mMIMO systems under QoS and per-AP power constraints. We first de-veloped an APG-based framework for this problem. To reduce the computational cost of the APG framework, we proposed a deep-unfolded approach by mapping the iterative updates into a finite number of trainable layers, where the step sizes and penalty parameters are learned from data, eliminating the need for line search or manual tuning. Numerical results show that the proposed method achieves EE performance comparable to iterative APG while requiring significantly lower computational cost, indicating its scalability for CF-mMIMO systems. Appendix A Proof of Theorem 1 We derive ∇fξ = ∇Ee − ξ∇Ψ by differentiating each term with respect to θm,t of θ ∈ RL×K .A. Gradients of A2 
+
+> k
+
+and Ik
+
+Since Ak = ∑ 
+
+> l
+
+al,k θl,k depends only on column k of θ,the chain rule gives 
+
+[∇A2
+
+> k
+
+]m,t = 2 am,k Ak · 1{t=k}, (24) where 1{·} takes the value 1 if the condition is satisfied and 0 otherwise. Since Ak,t = ∑ 
+
+> l
+
+bl,k,t θl,t for t ∈ P k \ { k},applying the chain rule to A2 
+
+> k,t
+
+and the power rule to 
+
+dl,k,t θ2 
+
+> l,t
+
+yields 
+
+[∇Ik]m,t = 2 bm,k,t Ak,t · 1{t∈P k \{ k}} + 2 dm,k,t θm,t . (25) B. Gradient of the sum SE ( ∇u)The SE k = τc−τp 
+
+> τc
+
+log 2(1 + A2
+
+> k
+
+/I k). Applying the chain rule of log 2(1 + x) and the quotient rule on A2
+
+> k
+
+/I k, yields 
+
+∂SE k
+
+∂θ m,t 
+
+= τc − τp
+
+τc ln 2 ( A2 
+
+> k
+
++ Ik)
+
+([∇A2
+
+> k
+
+]m,t − SINR k [∇Ik]m,t 
+
+),
+
+(26) where SINR k = A2
+
+> k
+
+/I k. Summing (26) over all k gives (15). C. Gradient of the energy efficiency ( ∇Ee)From (3), Ptotal = ˜P + B ¯Pbt u, where ˜P = ¯Pfix +∑
+
+> l,k
+
+(N0/α l)θ2 
+
+> l,k
+
+is independent of u. The power rule gives 
+
+[∇ ˜P ]m,t = 2( N0/α m)θm,t = 2 N0[α−1]m,t θm,t , so 
+
+∇Ptotal = 2 N0α−1 ⊙ θ + B ¯Pbt ∇u. (27) Applying the quotient rule to Ee = Bu/P total and sub-stituting (27), then collecting ∇u terms with coefficient 
+
+Ptotal − B ¯Pbt u = ˜P yields (14). D. Gradient of the penalty ( ∇Ψ)From (6), gk =
+
+√ ¯Smin  
+
+> k
+
+Ik − Ak. Applying the chain rule ∂√Ik/∂θ m,t = [ ∇Ik]m,t /(2 √Ik), substituting (25), and differentiating −Ak using (24), we obtain 
+
+[∇gk]m,t =
+
+√ ¯Smin 
+
+> k
+
+√Ik
+
+(
+
+bm,k,t Ak,t · 1{t∈P k \{ k}} + dm,k,t θm,t 
+
+)
+
+− am,k · 1{t=k}. (28) Since h(x) = [max(0 , x )] 2 has derivative h′(x) = 2[ x]+,the chain rule ∇h(gk) = h′(gk)∇gk = 2 gk∇gk (for gk > 0)gives 
+
+∇Ψ = ∑  
+
+> k:gk>0
+
+2 gk ∇gk, (29) which is (16). Substituting (14) and (29) into ∇fξ = ∇Ee−
+
+ξ∇Ψ yields the desired result. References                      
+
+> [1] H. Q. Ngo, L.-N. Tran, T. Q. Duong, M. Matthaiou, and E. G. Larsson, “On the total energy efficiency of cell-free massive mimo,” IEEE Trans. Green Commun. Network., vol. 2, no. 1, pp. 25–39, 2017. [2] H. Q. Ngo, G. Interdonato, E. G. Larsson, G. Caire, and J. G. Andrews, “Ultradense cell-free massive mimo for 6g: Technical overview and open questions,” Proc. IEEE, vol. 112, no. 7, pp. 805–831, 2024. [3] N. Jayaweera, K. S. Manosha, N. Rajatheva, and M. Latva-aho, “Minimizing energy consumption in cell-free massive mimo networks,” IEEE Trans. Veh. Technol., vol. 73, no. 9, pp. 13 263– 13 277, 2024. [4] T. C. Mai, H. Q. Ngo, and L.-N. Tran, “Energy efficiency maximization in large-scale cell-free massive mimo: A projected gradient approach,” IEEE Trans. Wireless Commun., vol. 21, no. 8, pp. 6357–6371, 2022. [5] T. Van Chien, E. Björnson, and E. G. Larsson, “Joint power allocation and load balancing optimization for energy-efficient cell-free massive mimo networks,” IEEE Wireless Commun. Lett., vol. 19, no. 10, pp. 6798–6812, 2020.
+
+[6] B. Yan, Z. Wang, A. Sakzad, C. Zhang, Y. Huang, and D. W. K. Ng, “Efficient energy efficiency optimization method for cell-free massive mimo-enabled urllc downlink systems,” IEEE Trans. Wireless Commun., 2025. [7] M. Farooq, H. Q. Ngo, E.-K. Hong, and L.-N. Tran, “Utility maximization for large-scale cell-free massive mimo downlink,” IEEE Trans. Commun., vol. 69, no. 10, pp. 7050–7062, 2021. [8] B. Yan, Z. Wang, J. Zhang, and Y. Huang, “Joint antenna activation and power allocation for energy-efficient cell-free massive mimo systems,” IEEE Wireless Commun. Lett., vol. 14, no. 1, pp. 243–247, 2024. [9] G. Interdonato, M. Karlsson, E. Björnson, and E. G. Lars-son, “Local partial zero-forcing precoding for cell-free massive mimo,” IEEE Trans. Wireless Commun., vol. 19, no. 7, pp. 4758–4774, 2020. [10] N. Rajapaksha, K. S. Manosha, N. Rajatheva, and M. Latva-Aho, “Deep learning-based power control for cell-free massive mimo networks,” in Proc. IEEE Int. Conf. Commun. IEEE, 2021, pp. 1–7. [11] L. Salaün, H. Yang, S. Mishra, and C. S. Chen, “A gnn approach for cell-free massive mimo,” in Proc. IEEE Global Commun. Conf. IEEE, 2022, pp. 3053–3058. [12] S. Mishra, L. Salaun, H. Yang, and C. S. Chen, “Graph neural network aided power control in partially connected cell-free massive mimo,” IEEE Trans. Wireless Commun., vol. 23, no. 9, pp. 12 412–12 423, 2024. [13] Z. Gao, S. Liu, Y. Su, Z. Li, and D. Zheng, “Hybrid knowledge-data driven channel semantic acquisition and beamforming for cell-free massive mimo,” IEEE J. Sel. Topics Signal Process., vol. 17, no. 5, pp. 964–979, 2023. [14] W. Xu, J. An, H. Li, L. Gan, and C. Yuen, “Algorithm-unrolling-based distributed optimization for ris-assisted cell-free networks,” IEEE Internet Things J., vol. 11, no. 1, pp. 944–957, 2023. [15] J. Yang, J. Zhang, B. Xu, Z. Wang, and B. Ai, “Deep unfolding based communication-efficient precoding for cell-free massive mimo systems,” IEEE Trans. Veh. Technol., 2025. [16] N. T. Nguyen, M. Ma, O. Lavi, N. Shlezinger, Y. C. Eldar, A. L. Swindlehurst, and M. Juntti, “Deep unfolding hybrid beamforming designs for thz massive mimo systems,” IEEE Trans. Signal Process., vol. 71, pp. 3788–3804, 2023. [17] N. T. Nguyen, L. V. Nguyen, N. Shlezinger, Y. C. Eldar, A. L. Swindlehurst, and M. Juntti, “Joint communications and sensing hybrid beamforming design via deep unfolding,” IEEE J. Sel. Topics Signal Process., vol. 18, no. 5, pp. 901–916, 2024. [18] C. Xu, C. Zhang, Y. Huang, Y. Wu, and Z. Lu, “Leakage-based precoder optimization and deep unfolding for user-centric cell-free massive mimo,” IEEE Trans. Veh. Technol., vol. 74, no. 5, pp. 8369–8373, 2024. [19] Q. Lin, Y. Li, W.-B. Kou, T.-H. Chang, and Y.-C. Wu, “Communication-efficient activity detection for cell-free massive mimo: An augmented model-driven end-to-end learning frame-work,” IEEE Trans. Wireless Commun., vol. 23, no. 10, pp. 12 888–12 903, 2024. [20] N. Shlezinger, S. Segarra, Y. Zhang, D. Avrahami, Z. Davidov, T. Routtenberg, and Y. C. Eldar, “Deep unfolding: Recent developments, theory, and design guidelines,” arXiv preprint arXiv:2512.03768, 2025. [21] E. Björnson and L. Sanguinetti, “Scalable cell-free massive mimo systems,” IEEE Trans. Commun., vol. 68, no. 7, pp. 4247– 4261, 2020.

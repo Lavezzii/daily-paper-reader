@@ -6,58 +6,38 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-08-04
-- 运行时间：2026-08-04 21:50:13 UTC
+- 最新运行日期：2026-08-05
+- 运行时间：2026-08-05 22:01:21 UTC
 - 运行状态：成功
-- 本次总论文数：12
-- 精读区：6
-- 速读区：6
+- 本次总论文数：6
+- 精读区：3
+- 速读区：3
 
 ### 今日简报（AI）
-今日完成12篇论文跟踪，精读6篇，聚焦无线信道建模与CSI反馈前沿。
-最值得看：10分的生成神经网络几何随机信道模型，以及9分的广义CSI反馈时变信道估计；速读中语义压缩与任务导向通信亦值得留意。
-建议优先精读这两篇高分工作，并关注带宽受限视觉语义压缩的实用进展。
-- 详情：[/202608/04/README](/202608/04/README)
+今日精读6篇论文，聚焦AI驱动的无线通信与嵌入式AI加速两大方向；最值得关注自适应CSI反馈中的强化学习切换方案，以及面向物理信息模型的轻量级KAN网络；建议优先精读这两篇高分工作，速读部分可关注资源受限下的个性化建模与分布式感知。
+- 详情：[/202608/05/README](/202608/05/README)
 
 ### 精读区论文标签
-1. [A Geometry-based Stochastic Wireless Channel Model using Generative Neural Networks](/202608/04/2608.01840v1-a-geometry-based-stochastic-wireless-channel-model-using-generative-neural-networks)  
-   标签：评分：10.0/10、query:channel-nn
-   evidence：利用生成神经网络对信道参数图像进行建模，用于几何随机无线信道建模
-2. [Temporal Channel Estimation for Generalized CSI Feedback](/202608/04/2608.01713v1-temporal-channel-estimation-for-generalized-csi-feedback)  
-   标签：评分：9.0/10、query:channel-nn
-   evidence：面向大规模MIMO中CSI反馈的神经框架，属于信道建模关键任务
-3. [A Comparative Analysis of MLP and Kolmogorov-Arnold Networks (KAN) for Faster-than-Nyquist (FTN) Signaling Detection](/202608/04/2608.02062v1-a-comparative-analysis-of-mlp-and-kolmogorov-arnold-networks-kan-for-faster-than-nyquist-ftn-signaling-detection)  
-   标签：评分：9.0/10、query:channel-nn
-   evidence：直接对比KAN与MLP用于FTN信号检测，契合KAN在通信中应用的需求
-4. [CARNet: Channel-Adaptive Receiver Network for Robust NextG Communications](/202608/04/2608.02172v1-carnet-channel-adaptive-receiver-network-for-robust-nextg-communications)  
-   标签：评分：9.0/10、query:channel-nn
-   evidence：基于混合专家的信道自适应神经网络接收机
-5. [Domain-Generalized Adaptive Semantic Communication for Collaborative Perception](/202608/04/2608.00056v1-domain-generalized-adaptive-semantic-communication-for-collaborative-perception)  
+1. [System-Aware Adaptive CSI Feedback via RL-Guided Autoencoder Switching in Multi-User MIMO System](/202608/05/2607.25588v2-system-aware-adaptive-csi-feedback-via-rl-guided-autoencoder-switching-in-multi-user-mimo-system)  
    标签：评分：8.0/10、query:channel-nn
-   evidence：基于深度学习的语义通信框架，解决V2X协同感知中的域偏移与信道退化问题
-6. [Ten Years of Deep Learning for Wireless Communications: From Learned Blocks to Deployable Wireless Intelligence](/202608/04/2608.01747v1-ten-years-of-deep-learning-for-wireless-communications-from-learned-blocks-to-deployable-wireless-intelligence)  
+   evidence：深度学习自编码器用于MIMO通信中的CSI反馈
+2. [An Embedded RISC-V Evaluation of Kolmogorov--Arnold Networks in Hard-Constrained Recurrent Physics-Informed Models](/202608/05/2608.00737v1-an-embedded-risc-v-evaluation-of-kolmogorov--arnold-networks-in-hard-constrained-recurrent-physics-informed-models)  
    标签：评分：8.0/10、query:channel-nn
-   evidence：深度学习应用于无线通信的综述
+   evidence：在嵌入式RISC-V上评估硬约束循环物理信息模型中的KAN
+3. [Deep-Unfolded Accelerated Projected Gradient for Energy-Efficient Cell-Free Massive MIMO](/202608/05/2608.03237v1-deep-unfolded-accelerated-projected-gradient-for-energy-efficient-cell-free-massive-mimo)  
+   标签：评分：8.0/10、query:channel-nn
+   evidence：面向小区无巨量MIMO功率分配的深度展开神经网络结构
 
 ### 速读区论文标签
-1. [An Embedded RISC-V Evaluation of Kolmogorov--Arnold Networks in Hard-Constrained Recurrent Physics-Informed Models](/202608/04/2608.00737v1-an-embedded-risc-v-evaluation-of-kolmogorov--arnold-networks-in-hard-constrained-recurrent-physics-informed-models)  
-   标签：评分：8.0/10、query:channel-nn
-   evidence：在嵌入式RISC-V上评估硬约束循环物理信息模型中的KAN，契合KAN/PINN与高效主题
-2. [Agent-Native Task-Oriented Communication with Joint Token Compression Coding and Modulation](/202608/04/2608.00368v1-agent-native-task-oriented-communication-with-joint-token-compression-coding-and-modulation)  
-   标签：评分：7.0/10、query:channel-nn
-   evidence：基于深度学习的无线Token通信，属于深度学习应用于通信系统
-3. [Channel-Agnostic Semantic Compression for Bandwidth-Limited Visual Communication](/202608/04/2608.00394v1-channel-agnostic-semantic-compression-for-bandwidth-limited-visual-communication)  
-   标签：评分：7.0/10、query:channel-nn
-   evidence：用于视觉通信的信道无关语义压缩
-4. [An Uncertainty-Driven Hybrid Deep Learning Approach for Broad-Coverage RF Modulation Recognition](/202608/04/2608.00796v1-an-uncertainty-driven-hybrid-deep-learning-approach-for-broad-coverage-rf-modulation-recognition)  
-   标签：评分：7.0/10、query:channel-nn
-   evidence：将混合卷积深度学习架构用于射频调制识别，属于通信信号处理应用
-5. [SparseKAN: Compressing Kolmogorov--Arnold Networks Across Basis Functions, Neurons, and Bits](/202608/04/2608.00859v1-sparsekan-compressing-kolmogorov--arnold-networks-across-basis-functions-neurons-and-bits)  
-   标签：评分：7.0/10、query:channel-nn
-   evidence：跨基函数、神经元和比特压缩KAN，提高部署效率，可服务通信中的高效KAN需求
-6. [Artificial Intelligence for Spatially Reconfigurable Antennas: Movable, Fluid, and Pinching Antenna Systems](/202608/04/2608.00255v1-artificial-intelligence-for-spatially-reconfigurable-antennas-movable-fluid-and-pinching-antenna-systems)  
+1. [Unfolded Recursive Expectation-Maximization Neural Network For Speaker Tracking](/202608/05/2607.26575v1-unfolded-recursive-expectation-maximization-neural-network-for-speaker-tracking)  
    标签：评分：6.0/10、query:channel-nn
-   evidence：面向6G可重构天线通信的人工智能，涵盖信道获取与波束成形
+   evidence：深度展开REM网络，可学习自适应步长，可迁移至均衡任务
+2. [Efficient Channel Prediction based on Gram-Square-Root Factorization using GMMs](/202608/05/2607.26959v1-efficient-channel-prediction-based-on-gram-square-root-factorization-using-gmms)  
+   标签：评分：6.0/10、query:channel-nn
+   evidence：基于高斯混合模型的MIMO-OFDM部分反馈信道预测，直接面向信道建模
+3. [Task-Oriented Candidate-Latent Feedback for Coarse-to-Fine Sensing in Distributed OFDM-ISAC Networks](/202608/05/2608.03319v1-task-oriented-candidate-latent-feedback-for-coarse-to-fine-sensing-in-distributed-ofdm-isac-networks)  
+   标签：评分：6.0/10、query:channel-nn
+   evidence：在分布式OFDM-ISAC网络中，用轻量级卷积评分器处理OFDM信道估计以完成面向任务感知，属于深度学习在通信中的应用
 
 
 <div class="dpr-home-promo-card">
