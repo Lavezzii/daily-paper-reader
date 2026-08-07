@@ -1,0 +1,650 @@
+Title: Joint Access Point Selection and Precoder Design under Statistical CSI
+
+URL Source: https://arxiv.org/pdf/2608.06251v1
+
+Published Time: Fri, 07 Aug 2026 01:13:45 GMT
+
+Number of Pages: 6
+
+Markdown Content:
+# Joint Access Point Selection and Precoder Design under Statistical CSI 
+
+Tim N. Faisst, Franz Weißer, and Wolfgang Utschick 
+
+TUM School of Computation, Information and Technology, Technical University of Munich, Germany 
+
+{timniklas.faisst, franz.weisser, utschick }@tum.de 
+
+Abstract —This work addresses joint access point (AP) selec-tion and precoding for sum-rate maximization under statistical channel state information (CSI) in multi-AP multi-user systems. To this end, we propose two approaches. The first method is an iterative alternating optimization algorithm that updates the precoding vectors via the stochastic WMMSE (SWMMSE) algorithm and the assignment variables via a projected gradient descent step. The second method is a graph neural network (GNN)-based framework that solves the same problem in a single forward pass during inference. Building on an attention-based Edge-GNN architecture, we extend it to a multi-AP scenario, enabling the joint learning of assignment variables and precoding vectors from statistical CSI alone. Results show that the GNN outperforms the iterative algorithm across the tested signal-to-noise ratio (SNR) range and generalizes to varying numbers of users with comparable performance. Both approaches are also compared to various baseline techniques. 
+
+Index Terms —Statistical CSI, access point selection, precod-ing, sum-rate maximization, stochastic WMMSE, graph neural networks 
+
+I. I NTRODUCTION 
+
+Indoor environments increasingly rely on dense deploy-ments of multiple APs to provide reliable coverage and high data rates in multi-user scenarios. Users are commonly assigned to the AP with the strongest received signal. This greedy assignment can be suboptimal, particularly when users are spatially clustered. In this case, a single AP may end up serving all clustered users, while the remaining APs stay idle. To overcome this limitation, the authors in [1] formu-late a sum-rate maximization problem over the assignment variables and precoding vectors. They solve it via alternating optimization, updating the precoding vectors via the weighted minimum mean square error (WMMSE) algorithm and the assignment variables via a projected gradient descent step. However, the approach in [1] assumes perfect CSI at the APs. In contrast, the SWMMSE algorithm was developed to solve the sum-rate maximization problem under statistical CSI [2]. However, this algorithm assumes a fixed pairwise transmitter-receiver association and does not optimize the assignment of users to APs. Because WMMSE-based algorithms require multiple iter-ations to converge, deep neural network (DNN)-based al-ternatives have been proposed to reduce inference latency in precoder design. In particular, GNNs have been widely adopted for precoding in multi-user multiple-input-single-output (MU-MISO) systems [3], [4]. GNNs offer an advantage over other DNN architectures, such as multi-layer perceptrons (MLPs) or convolutional neural networks (CNNs), since they can leverage the inherent permutation equivariance property of many wireless policies. Exploiting this property allows GNNs to avoid learning a separate mapping for every possible permutation within each index set. A systematic approach to designing such GNNs for multiple different wireless policies is presented in [5]. Another advantage of GNNs is their ability to generalize to varying numbers of users, despite being trained on a single configuration [6]. Furthermore, an Edge-GNN computes the precoder as an “edge-level” task on a bipartite antenna-user graph [7]. This architecture has been shown to require fewer parameters and achieve lower inference time than vertex-based GNNs [7], [8]. Yet, the standard Edge-GNN aggregates all interfering edges with the same weight, thereby limiting its expressiveness. This is addressed in [5] by incorporating an attention mechanism into the framework, which is shown to improve generalization across varying numbers of users. However, the aforementioned works still assume knowledge of perfect CSI or a noisy estimate thereof. In [6], an attention-based Edge-GNN is designed for statistical CSI instead. All GNN-based approaches discussed above either assume a single AP or a predetermined association between users and APs, and thus do not address AP assignment. For multiple APs, the authors in [9] propose a GNN that jointly learns assignment variables and beamforming vectors. They argue that relaxing the integer assignment constraint introduces bias, resulting in suboptimal AP selections. To avoid this, they propose a Gumbel-Softmax reparameterization with a straight-through estimator to obtain a hard, integer-valued assignment. Their GNN employs a message-passing architecture without an attention mechanism and assumes perfect CSI. 
+
+Contributions: We consider the joint sum-rate maximization problem over the assignment variables and precoding vectors, as in [1]. We extend this setting to statistical CSI. In our formulation, the objective is linear in the assignment variables, which allows us to relax them to continuous values without loss of optimality. This is in contrast to [9], where the objective is non-linear in the assignment variables.  
+
+> •
+
+First, we present an iterative algorithm that extends the al-ternating optimization framework of [1] to statistical CSI, incorporating the SWMMSE algorithm [2] for precoder updates.  
+
+> •
+
+Second, we introduce a GNN-based framework that solves the same problem in a single forward pass, thereby arXiv:2608.06251v1 [eess.SP] 6 Aug 2026 drastically reducing latency. In particular, we extend the attention-based Edge-GNN architecture from [6], [7] to a multiple AP scenario by adapting the underlying graph structure and update equation. To jointly learn the assignment variables, we introduce an AP selection head based on the standard softmax function.  
+
+> •
+
+We empirically observe that the GNN attains a higher sum-rate than the iterative algorithm across the tested SNR range and generalizes to varying numbers of users with similar performance. Both approaches outperform baselines with a fixed greedy or random AP selection. II. P RELIMINARIES 
+
+A. System Model and Optimization Problem 
+
+We consider an indoor downlink (DL) multiple-input-single-output (MISO) system with K APs and N single antenna users. Each AP k ∈ { 1, . . . , K } is equipped with M antennas and each user n ∈ { 1, . . . , N } is served by exactly one AP. The AP selection is denoted via the binary assignment variable 
+
+ak,n ∈ { 0, 1}, with ak,n = 1 if user n is served by AP k, and 
+
+ak,n = 0 otherwise. The channel between AP k and user n
+
+is denoted by hk,n ∈ CM . Only statistical CSI is assumed to be available, given by the covariance matrix Ck,n ∈ CM ×M ,such that hk,n ∼ N C(0, Ck,n ). The intended signal xn ∈ C
+
+for user n is precoded via its corresponding precoding vector 
+
+vk,n ∈ CM . We assume zero-mean, statistically independent signals with unit power E[|xn|2] = 1 . The received signal at user n for the signal transmitted at AP k is given by 
+
+yk,n = hH
+
+> k,n
+
+vk,n xn + X 
+
+> n′̸=n
+
+hH
+
+> k,n
+
+vk,n ′ xn′ + zn, (1) where zn ∼ N C(0 , σ 2) denotes the complex additive white Gaussian noise. The expected rate for user n served by AP k
+
+is then given by 
+
+rk,n = Ehk,n 
+
+"
+
+log 2 1 + |hH
+
+> k,n
+
+vk,n |2
+
+σ2 + P  
+
+> n′̸=n
+
+|hH
+
+> k,n
+
+vk,n ′ |2
+
+!# 
+
+. (2) As in [10], we assume orthogonal resource allocation across APs and thus no inter-AP interference. For systems where this is not the case, the interference terms in (1) and (2) include an additional sum over K.Building on the joint assignment and beamforming formula-tion in [1], the sum-rate maximization problem under statistical CSI reads as 
+
+max 
+
+> {ak,n ,vk,n }
+> K
+
+X
+
+> k=1
+> N
+
+X
+
+> n=1
+
+ak,n rk,n 
+
+s.t. ak,n ∈ { 0, 1}, ∀k, n, 
+
+> K
+
+X
+
+> k=1
+
+ak,n = 1 , ∀n, 
+
+> N
+
+X
+
+> n=1
+
+∥vk,n ∥22 ≤ Pt, ∀k. 
+
+(3) As in [1], we do not explicitly enforce vk,n = 0 for ak,n = 0 .It is suboptimal to allocate power to vk,n if ak,n = 0 , since it only contributes to the interference. Consequently, vk,n = 0
+
+naturally holds at the optimum. For this reason, we neither have to weight the interference terms in (1) and (2) or the power constraint in (3) by ak,n nor add a specific constraint enforcing vk,n = 0. As a result, our objective remains linear in the assignment variables. 
+
+B. Simulation Environment 
+
+Building upon previous work [10], we evaluate our approach using the same indoor scenario. We simulate the propagation environment of a 10 m by 10 m room with a height of 2.5 m, including fixed structural elements such as walls and other objects. Compared to [10], we do not account for a variable blocking object. The K = 2 APs are placed in the middle of opposite walls at a mounting height of 2.4 m. Each AP is modeled by a uniform linear array (ULA) facing towards the room center. For later evaluations, we consider different scenarios with M ∈ {4, 8, 16 , 32 } antennas per AP with half-wavelength spacing. Channel realizations are generated at a carrier frequency of 28 GHz using the ray-tracing tool Sionna [11]. Assuming that each AP transmits with the same full power Pt, the average SNR of the AP-user pair (k, n ) is given by 
+
+SNR k,n = Pt E[∥hk,n ∥22]
+
+M σ 2 . (4) For the remainder of this work, we assume to be given statisti-cal CSI in the form of covariance matrices {{ Ck,n }Kk=1 }Nn=1 .One option for obtaining the covariance matrices is to learn the channel distribution conditioned on the user’s position, as done by the conditional variational autoencoder (cVAE) in [10]. Given the position of the n-th user pn as context, the cVAE provides a Gaussian parametrization, such that 
+
+hk,n | pn ∼ N C(0, Ck,n ).III. M ETHOD 
+
+The optimization problem in (3) is a mixed-integer program with a non-convex objective. Solving it directly would require an exhaustive search over all possible assignments, which becomes computationally infeasible as K and N grow. Let 
+
+an = [ a1,n , . . . , a K,n ]T denote the assignment vector of user 
+
+n across all APs, and define A = {a ∈ { 0, 1}K : PKk=1 ak =1}, such that an ∈ A for all n. To relax A, we replace the binary constraint, resulting in 
+
+˜A =
+
+(
+
+a ∈ RK 
+
+> ≥0
+
+:
+
+> K
+
+X
+
+> k=1
+
+ak = 1 
+
+)
+
+, (5) such that an ∈ ˜A for all n. For fixed precoders, the objective in (3) is linear in an. The optimal value of a linear objective over a polytope is attained at a vertex of that set. Since ˜A is the standard simplex in RK , its vertices are the standard basis vectors, which coincide with the elements of A. For fixed precoders, an optimal assignment over ˜A is therefore binary and attains the same optimal objective value as over A. We thus consider (3) over the relaxed set ˜A in the remainder. This relaxation and the underlying vertex argument follow from [1]. A. Stochastic WMMSE for Joint AP Selection and Precoding 
+
+For the joint optimization of the assignment variables and precoding vectors, an algorithm under perfect CSI was proposed in [1]. Under a fixed pairwise transmitter-receiver association, the SWMMSE algorithm [2] solves the sum-rate maximization problem under statistical CSI. We combine both approaches to solve the joint AP selection and precoding sum-rate maximization problem under statistical CSI. To this end, we tackle (3) by alternately optimizing over the precoding vectors and the relaxed assignment variables. The pseudocode is summarized in Algorithm 1. As input, the algorithm requires the covariance matrices 
+
+Ck,n for each AP-user pair to sample channel realizations. Initially, the assignment of each user towards any AP is equally weighted. The algorithm consists of an outer loop with Lo
+
+iterations, each containing an inner loop of Li iterations. The inner loop is based on the SWMMSE algorithm from [2], operating on a fixed AP selection. Note that we adapted the formulas to fit our MISO case and optimization problem. Here, uk,n ∈ C denotes the minimum mean square error (MMSE) receiver for user n served by AP k. The corre-sponding weight wk,n ∈ R≥0 is the inverse mean square error (MSE). Given the current precoders, both quantities are updated in closed form. The channel statistics accumulate in 
+
+Sk and bk,n . Both are multiplied by a forgetting factor ρ to suppress the influence of precoding vectors computed under assignments that were still suboptimal in earlier iterations. The precoding vectors Vk = [ vk, 1, . . . , vk,N ] at each AP are then computed. Here, the optimal Lagrangian multiplier μ⋆k
+
+is obtained via a bisection search enforcing ∥Vk∥2F = Pt,where ∥ · ∥ F denotes the Frobenius norm. After the first Li
+
+iterations yield a well-informed precoding vector, we use an additional Li realizations to compute a rate estimate ˆrk,n 
+
+based on these precoding vectors. Averaging over multiple channel realizations is necessary since only statistical CSI is available. Consequently, the averaged rate estimate allows for a more stable update of the assignment variables via projected gradient descent. The projection onto the simplex ˜A is done according to [12]. Note that we do not solve immediately for the globally optimal assignment variables, as this would prematurely commit to an assignment based on precoding vectors that are not yet fully optimized [1]. Finally, after Lo
+
+iterations, the algorithm returns the assignment variables and precoding vectors for each AP-user combination. 
+
+B. GNN for Joint AP Selection and Precoding 
+
+Unlike the iterative approach, a GNN requires only a single forward pass at inference time, thereby significantly reducing latency. Additionally, an advantage of the GNN over other machine learning approaches stems from the structure of the sum-rate maximization problem itself. Relabeling the user index n, the AP index k, or the antenna index m within an AP should reorder the solution accordingly. This property is known as permutation equivariance. In contrast to standard DNNs, such as MLPs or CNNs, we can design GNNs to satisfy this permutation equivariance by construction. Without it, the 
+
+Algorithm 1 SWMMSE for Joint AP Selection and Precoding 
+
+Require: {{ Ck,n }Kk=1 }Nn=1 , P t, σ 2, L o, L i, ρ, λ, ε  
+
+> 1:
+
+vk,n ∼ N C(0 , 1) ∀k, n s.t. ∥Vk∥2F = Pt, ∀k 
+
+> 2:
+
+ak,n = 1 /K, ∀k, n  
+
+> 3:
+
+Sk = 0, ∀k, bk,n = 0, ∀k, n  
+
+> 4:
+
+for ℓo = 1 to Lo do  
+
+> 5:
+
+for ℓi = 1 to Li do  
+
+> 6:
+
+hk,n ∼ N C(0, Ck,n ), ∀k, n  
+
+> 7:
+
+uk,n = hH   
+
+> k,n vk,n
+> σ2+PNn′=1 |hH
+> k,n vk,n ′|2
+
+, ∀k, n  
+
+> 8:
+
+wk,n = (1 − u∗
+
+> k,n
+
+hH
+
+> k,n
+
+vk,n )−1, ∀k, n  
+
+> 9:
+
+Sk ← ρSk +εI + NP
+
+> n=1
+
+ak,n wk,n |uk,n |2hk,n hH
+
+> k,n
+
+, ∀k 
+
+> 10:
+
+bk,n ← ρbk,n + εvk,n + ak,n uk,n wk,n hk,n , ∀k, n  
+
+> 11:
+
+Vk = ( Sk + μ⋆kI)−1[bk, 1, . . . , bk,N ], ∀k 
+
+> 12:
+
+end for  
+
+> 13:
+
+ˆrk,n = 1
+
+> Li
+
+PLi 
+
+> ℓi=1
+
+log 2
+
+
+
+1 + |h(ℓi),H    
+
+> k,n vk,n |2
+> σ2+P
+> n′̸ =n|h(ℓi),H
+> k,n vk,n ′|2
+
+
+
+with h(ℓi) 
+
+> k,n
+
+∼ N C(0, Ck,n ), ∀k, n  
+
+> 14:
+
+an ← P ˜A(an + λ[ˆ r1,n , . . . , ˆrK,n ]T), ∀n 
+
+> 15:
+
+end for  
+
+> 16:
+
+return {{ ak,n , vk,n }Kk=1 }Nn=1 
+
+network would have to learn the same mapping separately for every possible labeling of users, APs, and antennas, which inflates the sample complexity and hinders generalization to unseen numbers of users [5]. To this end, we extend the Edge-graph attention network (GAT) architecture from [6], [7], first proposed as A2D-GNN in [5]. In particular, we modify the update equation to account for multiple APs and introduce an AP-specific selection head. To prepare the input data for our GNN, namely to construct a permutation-equivariant feature set, we adapt the approaches from [6], [7]. Due to modeling the APs as ULAs, we can leverage the Toeplitz structure of the covariance matrix by only having to consider its first row ck,n = Ck,n [1 , :] . Precisely, the real and imaginary parts of ck,n are stacked and pushed through the same feature extractor Fθ : R2M → R2M for all 
+
+k, n . Fθ is designed as a single fully connected (FC) layer, followed by a PReLU activation function. We utilize the multi-dimensional graph neural network (MD-GNN) structure with independent and nested sets [5]. The users constitute a flat, freely permutable set. The antennas, in contrast, are partitioned into AP-specific subsets. Permu-tations are unrestricted within each subset but do not extend across subsets. Accordingly, we model the underlying network topology as a composite bipartite graph, where each AP groups a set of antennas connected to a set of user nodes shared across all APs. As in [6], features are only defined over the edges, not the nodes. These feature vectors are processed by a GNN backbone of L − 1 layers, producing shared representations for the subsequent AP selection and precoding heads. The input to the GNN consists of the stacked initial fea-ture vectors f (0)  
+
+> k,n
+
+= [ f (0) ,T 
+
+> k,n, 1
+
+, . . . , f (0) ,T 
+
+> k,n,M
+
+]T for all k, n , with 
+
+f (0)  
+
+> k,n,m
+
+∈ R2. In general, we define f (ℓ) 
+
+> k,n,m
+
+∈ Rdℓ as the 1 K          
+
+> · · ·
+> 12· · · M12· · · M
+> 12· · · N
+> f1,1,1
+> f1,N,M
+> fK,N,M
+
+GNN f (0) 1,1
+
+Fθ
+
+c1,1
+
+f (0) 
+
+> K,N
+
+Fθ
+
+cK,N 
+
+... ...
+
+> L-th GNN layer
+
+v1,1
+
+vK,N 
+
+...
+
+> Mean M (·)
+> FC Layer
+> Softmax
+
+a1,1
+
+aK,N 
+
+...Fig. 1. Proposed GNN-based framework. A shared GNN backbone of L − 1 layers feeds a precoder head and an AP selection head. 
+
+feature vector of the ℓ-th GNN layer. It corresponds to the edge between user n and antenna m of AP k. Each feature vector is updated as 
+
+f (ℓ) 
+
+> k,n,m
+
+= fact P (ℓ)1 f (ℓ−1)  
+
+> k,n,m
+
++ βP (ℓ)2
+
+X 
+
+> m′̸=m
+
+f (ℓ−1) 
+
+> k,n,m ′
+
++γ X 
+
+> n′̸=n
+
+α(ℓ) 
+
+> k,n,n ′
+
+⊙u(ℓ) 
+
+> k,n ′,m
+
++δP (ℓ)3
+
+X 
+
+> k′̸=kM
+
+X
+
+> m′=1
+
+f (ℓ−1)  
+
+> k′,n,m ′
+
+/M 
+
+!
+
+.
+
+(6) The update rule includes a linear attention mechanism, accord-ing to [5] 
+
+q(ℓ) 
+
+> k,n,m
+
+= Q(ℓ)f (ℓ−1)  
+
+> k,n,m
+
+k(ℓ) 
+
+> k,n,m
+
+= K(ℓ)f (ℓ−1) 
+
+> k,n,m
+
+u(ℓ) 
+
+> k,n,m
+
+= U (ℓ)f (ℓ−1)  
+
+> k,n,m
+
+α(ℓ) 
+
+> k,n,n ′
+
+=
+
+> M
+
+X
+
+> m=1
+
+q(ℓ) 
+
+> k,n,m
+
+⊙ k(ℓ)
+
+> k,n ′,m
+
+/M. 
+
+(7) The trainable weight matrices of the ℓ-th layer are 
+
+P (ℓ)1 , P (ℓ)2 , P (ℓ)3 , Q(ℓ), K(ℓ), U (ℓ) ∈ Rdℓ×dℓ−1 . The scalars 
+
+β, γ , and δ are hyperparameters and ⊙ denotes the Hadamard product. The aggregated representation is passed through an activation function fact (·). The first three terms of (6) are a direct extension of the update equation in [6]. We introduced the fourth term to aggregate information across all other APs, allowing the network to assess whether a user might be better served by a different AP. No correspon-dence exists between antenna indices at different APs, so any cross-AP operation must remain invariant to per-AP antenna permutations. The inner sum over antennas in the fourth term of (6) ensures this invariance. No further terms are required, as we leverage the topology prior of the graph and only have to aggregate information from edges adjacent to the edge to be updated [5]. To obtain the precoding vectors and the assignment vari-ables, we construct two heads acting on the shared feature representations of the (L − 1) -th layer of the GNN. For the precoding head, we add another GNN layer with the same update equation as in (6). Here, we omit the activa-tion function. To ensure that the feature vectors of layer L
+
+represent the real and imaginary parts of the corresponding precoding vector, dL is set to 2. Consequently, we have 
+
+f (L) 
+
+> k,n,m
+
+= [ ℜ(v′
+
+> k,n,m
+
+), ℑ(v′
+
+> k,n,m
+
+)] T. The precoding vector at the k-th AP for the n-th user is then defined as v′ 
+
+> k,n
+
+=[v′
+
+> k,n, 1
+
+, . . . , v ′ 
+
+> k,n,M
+
+]T ∈ CM . To enforce the power constraint, we normalize the precoding vectors, yielding the final set of precoders {{ vk,n }Kk=1 }Nn=1 .For the AP selection head, we aggregate over the antenna dimension via f k,n = PMm=1 fk,n,m /M , yielding feature representations that depend only on k and n. To map the high-dimensional vector f k,n ∈ RdL−1 to a scalar a′
+
+> k,n
+
+, we apply the same FC layer to every pair (k, n ). To ensure that the assignment variables lie in ˜A, a natural choice is the softmax function, yielding ak,n = ea′ 
+
+> k,n
+
+/ PKk′=1 ea′ 
+
+> k′,n
+
+for all k, n . Finally, we obtain our set of assignment variables 
+
+{{ ak,n }Kk=1 }Nn=1 . The proposed GNN-based framework is displayed in Fig. 1. To train the GNN, we construct the training dataset 
+
+Dtrain ,u = {{{ C(d)
+
+> k,n
+
+}Kk=1 }Nn=1 }Dd=1 for D different scenarios, with uniformly sampled user positions, as detailed in Sec-tion IV-B. The GNN is trained by minimizing the negative expected sum-rate objective in (3), where the expectation in (2) is approximated by averaging over 50 sampled channel realizations. We consider a scenario in which the number of APs and antennas is fixed, while the SNR and the number of users vary. For this setting, we aim to train a single GNN that generalizes across different numbers of users and SNR ranges, rather than training a separate GNN for each configuration. For each training batch, we sample a different SNR value to promote robustness across the SNR range. IV. S IMULATIONS 
+
+A. Baseline Methods 
+
+In the remainder, we refer to the algorithms from Sec-tions III-A and III-B as Joint SWMMSE and Joint GNN ,respectively. For Joint SWMMSE , we set Lo = 40 , L i =25 , ρ = 0 .95 , λ = 0 .1, and ε = 10 −6. As an upper bound, we adapt the algorithm from [1], which we refer to as Joint WMMSE . It also jointly optimizes the precoding vectors and assignment variables, but assumes perfect CSI, which we obtain from the ray-tracing tool described in Section II-B. To assess the benefit of jointly optimizing AP assignments Joint WMMSE Joint GNN Joint SWMMSE Greedy SWMMSE Greedy Eigenbeam Random SWMMSE 0 5 10 15 20 25 30 010 20 30 40 
+
+> SNR [dB] Sum-Rate [bps/Hz] (a) Uniformly distributed users
+
+0 5 10 15 20 25 30 0510 15 20                           
+
+> SNR [dB] Sum-Rate [bps/Hz] (b) Spatially clustered users Fig. 2. The average sum-rate over the SNR. The GNN is trained on Dtrain ,ufor K= 2 APs, N= 4 users, and M= 16 antennas. All algorithms are tested on Dtest ,ufor (a) and Dtest ,cfor (b), with K= 2 APs, N= 4 users, and M= 16 antennas.
+
+and precoders, we further compare against Greedy SWMMSE ,which first selects the AP 
+
+ˆkn = arg max 
+
+> k∈{ 1,...,K }
+
+λmax (Ck,n ) (8) for each user n. Here, λmax (·) chooses the largest eigenvalue of the matrix. Given these fixed AP assignments, we apply SWMMSE to optimize the precoding vectors at each AP. For Random SWMMSE , we follow the same procedure as for Greedy SWMMSE , but replace the AP selection with 
+
+ˆkn ∼ U ({1, . . . , K }) for each user. All iterative algorithms run for 1000 iterations in total. Since WMMSE-based approaches require multiple iterations to converge, we additionally compare against Greedy Eigen-beam , a closed-form baseline. Here, the AP selection follows equation (8), and the precoding vector for each user at its assigned AP is chosen as the scaled principal eigenvector of 
+
+Cˆkn,n , cf. [13]. 
+
+B. Simulation Results 
+
+For 1000 uniformly distributed user positions, the cVAE provides the channel covariance matrix to each AP. We split these positions disjointly into 800 training, 100 validation, and 
+
+100 test positions. To train the GNN, we generate Dtrain ,u with 
+
+D = 80000 scenarios, each containing the covariance matrices of N = 4 user positions drawn uniformly from the training positions. Our indoor environment consists of K = 2 APs, each equipped with M = 16 antennas, unless otherwise stated, and a per-AP maximum transmit power Pt = 1 . The GNN backbone comprises five hidden layers, each of dimension 
+
+dℓ = 256 for ℓ = 1 , . . . , L − 1. After each layer, we employ a ReLU activation function and Group Normalization [14]. The hyperparameters are set to β = 0 .1/M , γ = 0 .1, and 
+
+δ = 0.1/K . The GNN is trained for 500 epochs with a batch size of 200 , using the Adam optimizer with an initial learning rate of 3 × 10 −4. We use a validation dataset Dval ,u
+
+of 1000 scenarios with N = 4 users for model checkpoint selection. For evaluation, we use separate test sets Dtest of 
+
+1000 scenarios each. Depending on the experiment, we vary the number of users and their spatial distribution across these test sets. All algorithms are evaluated on the same test set. We observe that the initially relaxed assignment variables almost always converge towards binary values for Joint WMMSE , Joint SWMMSE , and Joint GNN . Only in spe-cial cases where a user is difficult to serve by either AP, the corresponding precoding vectors approach zero and the assignment variables for that user remain ambiguous, with 
+
+an ≈ [0 .5, 0.5] T. Moreover, we observe that when ak,n = 0 ,the corresponding precoding vector vk,n also approaches zero, consistent with the discussion in Section II-A. Regardless, for a fair comparison we obtain the hard assignment for all users via ˆkn = arg max k∈{ 1,...,K } ak,n , before evaluating the rate. The rate is averaged across the 1000 scenarios of the corresponding test set. In Fig. 2a, we observe that Joint GNN outperforms Joint SWMMSE , especially in high-SNR regions. This is likely because the GNN learns prior information during training, which becomes particularly beneficial at high SNR, where the interference term dominates over noise and must be resolved accurately for good performance. Moreover, we observe that 
+
+Joint SWMMSE slightly outperforms Greedy SWMMSE , in-dicating that joint optimization of the assignment variables improves performance. Due to the uniform sampling of user positions, most assignments are trivial and thus equally well solved by a greedy assignment. To further demonstrate this, in Fig. 2b we evaluate on a test set Dtest ,c comprising clustered users. For each scenario, we draw one test position uniformly at random and sample the N users uniformly from its 5N nearest test positions. Here, a greedy AP assignment is suboptimal, since it may result in one AP supplying all users while the other remains idle. Consequently, a larger gap to Joint SWMMSE can be observed. A random AP selection avoids this failure mode and therefore surpasses the greedy one, but is still outperformed by Joint SWMMSE . The Joint GNN still performs as well as Joint SWMMSE , despite being 1 200 400 600 800 1,000 
+
+10 
+
+20 
+
+30 
+
+Number of iterations 
+
+> Sum-Rate [bps/Hz]
+
+Joint WMMSE Joint GNN Joint SWMMSE 
+
+Greedy SWMMSE Greedy Eigenbeam Random SWMMSE 
+
+# 1 200 400 600 800 1,0
+
+# 10 
+
+# 20 
+
+# 30 
+
+# Number of iterations 
+
+> Sum-Rate [bps/Hz]
+
+# Greedy SWMMSE Greedy Eigenbeam Random Fig. 3. The average sum-rate over the number of iterations. The GNN is trained on Dtrain ,u for K = 2 APs, N = 4 users, and M = 16 antennas. All algorithms are tested on Dtest ,u for K = 2 APs, N = 4 users, and 
+
+M = 16 antennas. The SNR is set to 20 dB .2 3 4 5 6 710 20 30 40 50 
+
+Number of users N
+
+> Sum-Rate [bps/Hz]
+
+Joint WMMSE 
+
+Joint GNN 
+
+Joint SWMMSE 
+
+Greedy SWMMSE 
+
+Greedy Eigenbeam 
+
+Random SWMMSE 
+
+Fig. 4. The average sum-rate over the number of users N . The GNN is trained on Dtrain ,u for K = 2 APs, N = 4 users, and M = 16 antennas. All algorithms are tested on separate datasets Dtest ,u for K = 2 APs, N ∈{2, . . . , 7} users, and M = 16 antennas. The SNR is set to 20 dB .4 8 16 32 10 20 30 40 
+
+Number of antennas M
+
+> Sum-Rate [bps/Hz]
+
+Joint WMMSE 
+
+Joint GNN 
+
+Joint SWMMSE 
+
+Greedy SWMMSE 
+
+Greedy Eigenbeam 
+
+Random SWMMSE 
+
+Fig. 5. The average sum-rate over the number of antennas M . Separate GNNs are trained on separate datasets Dtrain ,u for K = 2 APs, N = 4 users, and 
+
+M ∈ { 4, 8, 16 , 32 } antennas. All algorithms are tested on separate datasets 
+
+Dtest ,u for K = 2 APs, N = 4 users, and M ∈ { 4, 8, 16 , 32 } antennas. The SNR is set to 20 dB .
+
+evaluated on an out-of-distribution (OOD) test set. Fig. 3 shows the convergence behavior of the iterative algorithms. For Joint SWMMSE , the rates are evaluated at the end of each inner loop. Dominant jumps in rate occur every Li = 25 iterations during the initial outer iterations, due to the assignment variable update. As the number of iterations increases, these jumps gradually diminish, leading to a smooth progression of the curve. Since Joint GNN and 
+
+Greedy Eigenbeam do not utilize any iterative optimization, the results are provided directly after one iteration. As shown in Fig. 4, the Joint GNN generalizes well across different numbers of users, despite being trained only for 
+
+N = 4 users. We see a slight performance decrease for N = 7 
+
+users. A similar behavior was observed for the attention-based GNN in [5]. Fig. 5 shows the performance with varying numbers of antennas at the APs. Since M is fixed in practice, we train a separate GNN for each considered number of antennas. The Joint GNN outperforms Joint SWMMSE across all configurations. For M = 32 antennas, Greedy Eigenbeam 
+
+becomes almost identical to Greedy SWMMSE , as interference is inherently low given the large number of antennas relative to the N = 4 users. V. C ONCLUSION 
+
+We proposed an iterative and a GNN-based approach to solve the joint AP and precoding sum-rate maximization problem under statistical CSI. The GNN-based approach gen-eralizes across users and outperforms the iterative algorithm over the SNR range while additionally only requiring one forward pass during inference. Both approaches outperform baselines relying on a predetermined greedy or random AP selection. Future work could address APs that jointly serve a user on a shared carrier, as well as users moving along trajectories. REFERENCES [1] M. Sanjabi, M. Razaviyayn, and Z.-Q. Luo, “Optimal joint base station assignment and beamforming for heterogeneous networks,” IEEE Trans. Signal Process. , vol. 62, no. 8, pp. 1950–1961, 2014. [2] M. Razaviyayn, M. S. Boroujeni, and Z.-Q. Luo, “A stochastic weighted MMSE approach to sum rate maximization for a MIMO interference channel,” in Proc. IEEE 14th Workshop Signal Process. Adv. Wireless Commun. (SPAWC) , 2013, pp. 325–329. [3] B. Zhao, J. Guo, and C. Yang, “Learning precoding policy: CNN or GNN?” in Proc. IEEE Wireless Commun. Netw. Conf. (WCNC) , 2022, pp. 1027–1032. [4] J. Kim, H. Lee, S.-E. Hong, and S.-H. Park, “A bipartite graph neural network approach for scalable beamforming optimization,” IEEE Trans. Wireless Commun. , vol. 22, no. 1, pp. 333–347, 2023. [5] S. Liu, J. Guo, and C. Yang, “Multidimensional graph neural networks for wireless communications,” IEEE Trans. Wireless Commun. , vol. 23, no. 4, pp. 3057–3073, 2024. [6] N. Turan, S. Allaparapu, D. B. Amor, B. B¨ ock, M. Joham, and W. Utschick, “Statistical precoder design in multi-user systems via graph neural networks and generative modeling,” IEEE Wireless Commun. Lett. , vol. 14, no. 5, pp. 1491–1495, 2025. [7] V. Rizzello, D. B. Amor, M. Joham, and W. Utschick, “Scalable multi-user precoding and pilot optimization with graph neural networks,” in 
+
+Proc. IEEE Int. Conf. Commun. (ICC) , 2024, pp. 2956–2961. [8] Y. Peng, J. Guo, and C. Yang, “Learning resource allocation policy: Vertex-GNN or Edge-GNN?” IEEE Trans. Mach. Learn. Commun. Netw. , vol. 2, pp. 190–209, 2024. [9] Q. Lyu and M. Vu, “Joint beamforming and integer user association using a GNN with Gumbel–softmax reparameterizations,” IEEE Trans. Veh. Technol. , vol. 74, no. 11, pp. 18 214–18 219, 2025. [10] F. Weißer, A. Kasibovic, and W. Utschick, “Context-aware CSI predic-tion for access point selection utilizing conditional VAEs,” 2026, preprint arXiv:2604.13720. [11] J. Hoydis, S. Cammerer, F. A. Aoudia, A. Vem, N. Binder, G. Marcus, and A. Keller, “Sionna: An open-source library for next-generation physical layer research,” 2022, preprint arXiv:2203.11854. [12] J. Duchi, S. Shalev-Shwartz, Y. Singer, and T. Chandra, “Efficient projections onto the l1-ball for learning in high dimensions,” in Proc. 25th Int. Conf. Mach. Learn. (ICML) , 2008, pp. 272–279. [13] M. Ivrlac, T. Kurpjuhn, C. Brunner, and W. Utschick, “Efficient use of fading correlations in MIMO systems,” in Proc. IEEE 54th Veh. Technol. Conf. (VTC Fall) , 2001, pp. 2763–2767. [14] Y. Wu and K. He, “Group normalization,” in Proc. Eur. Conf. Comput. Vis. (ECCV) , 2018.

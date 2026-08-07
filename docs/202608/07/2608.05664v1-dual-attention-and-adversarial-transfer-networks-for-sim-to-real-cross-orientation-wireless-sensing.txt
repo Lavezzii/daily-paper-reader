@@ -1,0 +1,353 @@
+Title: Dual-Attention and Adversarial Transfer Networks for Sim-to-Real Cross-Orientation Wireless Sensing
+
+URL Source: https://arxiv.org/pdf/2608.05664v1
+
+Published Time: Fri, 07 Aug 2026 00:41:10 GMT
+
+Number of Pages: 6
+
+Markdown Content:
+# Dual-Attention and Adversarial Transfer Networks for Sim-to-Real Cross-Orientation Wireless Sensing 
+
+Linfeng Du ∗, Kehan Wu ∗, Tong Zhang and Rui Wang 
+
+Abstract —Millimeter-wave human activity recognition suffers significant performance degradation when the user’s orientation changes relative to the sensing system, yet collecting labeled multi-orientation data is labor-intensive and costly. To eliminate the need for exhaustive multi-orientation measured data, we develop a physics-guided simulator that synthesizes orientation-diverse wireless training data from single-orientation motion. Specifically, to suppress orientation-induced feature variations, we propose a dual-attention network that extracts activity-discriminative and orientation-robust representations from dual-link Doppler spec-trograms. To bridge the simulation-to-reality gap, we introduce an adversarial unsupervised transfer learning mechanism that aligns feature distributions using only a small number of unlabeled target-domain samples. The S2M-Sense platform shows high fidelity in reproducing real-world signatures, validated against 
+
+60 .48 GHz mmWave measured data with an average structural similarity index measure (SSIM) of 0.84 between simulated and measured Doppler spectrograms across all 4 activities and 4
+
+orientations. Experimental results show that S2M-Sense achieves 
+
+88 .33 % recognition accuracy using only the dual-link multi-orientation simulated dataset, which improves to 95 % after simulation-to-reality transfer learning with as few as 16 unlabeled measured samples. Both cases with and without transfer learning outperform state-of-the-art cross-domain sensing methods. 
+
+Index Terms —Wireless sensing, human activity recognition, domain adaptation, simulation-to-reality transfer 
+
+I. I NTRODUCTION 
+
+Recognition of human activity has attracted increasing at-tention for smart homes, healthcare monitoring, and human-computer interaction. Camera-based methods [1], [2] and wear-able systems [3], [4] can achieve strong performance, but they raise privacy concerns or require users to carry dedicated devices. Recent studies leverage commodity Wi-Fi signals for human activity recognition to address these problems. Never-theless, wireless sensing performance drops when the user’s orientation changes, because orientation shifts strongly distort the wireless signal and increase intra-class variance [5]–[13]. Existing cross-domain wireless sensing methods fall into two categories. The first category synthesizes target-domain 
+
+∗Both authors contributed equally to this work. L. Du is with National Graduate College for Engineers, Southern Uni-versity of Science and Technology, Shenzhen, 518055, China (e-mail: dulf2024@mail.sustech.edu.cn). K. Wu is with National Graduate College for Engineers, Southern Uni-versity of Science and Technology, Shenzhen, 518055, China (e-mail: wukh2024@mail.sustech.edu.cn). T. Zhang is with Guangdong Provincial Key Laboratory of Aerospace Communication and Networking Technology, Harbin Institute of Technology, Shenzhen, 518071, China (e-mail: tongzhang@hit.edu.cn). R. Wang is with the Southern University of Science and Technology, Shenzhen, 518055, China (e-mail: wangr@sustech.edu.cn). The source code is available at: https://github.com/DuLF131/S2Msense 
+
+samples. For example, WiAG used a theoretically grounded translation function to generate virtual samples for any user position or orientation from a single configuration, eliminating the need for labeled target-domain data [5]. CrossSense used an offline-trained roaming model to generate synthetic training samples from one set of measurements, enabling cross-site Wi-Fi translation and large-scale sensing with less labeled target data [6]. The second category learns features that are invari-ant across domains. For example, WiADG uses unsupervised adversarial domain adaptation to enable gesture recognition in new environments without labeled target data or retraining [7], while Widar3.0 extracts domain-independent body-coordinate velocity profiles from Wi-Fi CSI for zero-effort cross-domain gesture recognition without new-domain data collection or retraining [8]. WiDual [9] introduced a dual-task framework with collaborative learning, while WiGRUNT [10] employed spatial–temporal dual attention to learn domain-invariant fea-tures. And ImgFi [11] converted channel state information into images for CNN-based light recognition. However, all of these methods remain heavily dependent on measured multi-orientation data, and collecting labeled data for each domain is labor-intensive for real-world deployment, making cross-orientation recognition challenging. To alleviate dependence on measured data, the simulation-to-reality approach has been proposed [12], [13], which simulate and recognize actions only under a single orientation. [12] proposed a deep spectrogram network and a primitive-based autoregressive hybrid channel model for virtual human motion dataset generation, while [13] developed CASTER, which com-bines monocular-video motion capture with primitive-based ray tracing to simulate gesture-induced wireless channels. How-ever, neither study addresses cross-orientation recognition. In this paper, we therefore propose S2M-Sense, a system-oriented platform for cross-orientation sensing that combines simulation-driven data generation, orientation-robust feature learning, and simulation-to-reality adaptation. Rather than col-lecting measurements under every orientation, S2M-Sense gen-erates orientation-diverse training data from single-orientation depth-camera capture. We employ a passive sensing system using OFDM signals with the cross-ambiguity function to obtain measured data, that are used to validate the proposed platform. Our contributions are threefold. 1) We develop a high-fidelity simulation-driven data generation platform that expands single-orientation depth-camera capture into multi-orientation wireless training data. 2) We design a dual-attention network for dual-link Doppler spectrograms to better extract arXiv:2608.05664v1 [cs.CV] 6 Aug 2026 Fig. 1: Architecture of S2M-Sense. orientation-robust features. This design improves action feature extraction and reduces the drawbacks of traditional serial attention modules. 3) We combine simulation pretraining with adversarial unsupervised transfer learning and validate the 95 %accuracy on measured 60 GHz sensing data. II. P ROPOSED SIMULATION -TO -R EALITY 
+
+CROSS -O RIENTATION WIRELESS SENSING PLATFORM 
+
+The proposed S2M-Sense enables unified human activity recognition across different orientations in real-world scenar-ios through passive sensing using OFDM signals. Specifi-cally, it operates in a sensing setup with two near-orthogonal millimeter-wave communication links. When a target person is within the joint coverage of the two links and performs activities at different orientations, the system applies the cross-ambiguity function to the received surveillance and reference signals to obtain two Doppler spectrograms. These dual-link spectrograms are then fed into the proposed recognition net-work for cross-orientation activity classification. The network is first trained on the cross-orientation simulated dataset and adapted with a small amount of unlabeled measured data. As shown in Fig. 1, S2M-Sense consists of four com-ponents: channel-simulator-driven data generation, measured Doppler capture, dual-attention feature extraction, and sim-to-real transfer learning. The channel simulator generates cross-orientation simulated data from depth-camera videos, while measured OFDM signals from two orthogonal links are con-verted into Doppler spectrograms. The dual-attention network then extracts robust activity features from the simulated dual-link spectrograms. Finally, adversarial unsupervised transfer learning uses a small amount of unlabeled measured data to align the simulated and measured domains, thereby improving recognition in real-world scenarios. The channel simulator maps human motion to wireless measurements. The complete activity is decomposed into a sequence of depth-camera frames. In each frame, 34 body keypoints are estimated by a depth camera, and adjacent key-points are connected by ellipsoidal primitives to approximate the human body. Under the quasi-static assumption, the CIR at time t is written as 
+
+h(t, τ ) = u(t, τ ) + v(τ ), (1) where u(t, τ ) is the target-related component and v(τ ) captures LOS and static-scatterer paths. To improve temporal continuity, the motion sequence is refined via cubic spline interpolation and smoothed with a One-Euro filter. This compensates for the limited frame rate and reduces sensitivity to abrupt keypoint variations, yielding smoother trajectories and more realistic synthetic spectrograms. The channel simulator is described in two parts. First, we compute the channel impulse response (CIR) at time t for a fixed orientation and extend it to multi-orientation scenarios. Second, we model the target-unrelated CIR. The overall CIR is obtained by combining the two components, thereby con-structing a cross-orientation mmWave simulation dataset. 
+
+A. Target-Related CIR and Orientation Expansion 
+
+The contribution of the k-th ellipsoidal primitive to the bistatic channel impulse response (CIR) can be modeled as 
+
+uk(t, τ ) = λ
+
+s
+
+σk(t)Gtk(t)Grk(t)(4 π)3 (Rtk(t)Rrk(t)) 2 e−jϕ k (t)δ τ −τk(t), (2) where Gtk(t) and Grk(t) denote the transmit and receive an-tenna gains for the k-th primitive, Rtk(t) and Rrk(t) are the distances from the transmitter and receiver to the primitive center, τk(t) = ( Rtk(t) + Rrk(t)) /c is the propagation delay, 
+
+ϕk(t) = 2 πf cτk(t) is the phase shift, λ is the wavelength, and 
+
+δ(·) is the Dirac delta function. The term σk(t) denotes the bistatic radar cross section of the k-th primitive and is obtained following [13]. Because the system uses a Sivers linear mmWave array antenna, the antenna gain is angle dependent. To model Gtk
+
+and Grk, we characterize this angular dependence using the array factor (AF) of a uniform linear array (ULA), i.e., Gtk =
+
+Gt ∗ AF (θk, ϕ k) and Grk = Gr ∗ AF (θk, ϕ k), where θk and ϕk
+
+denote the azimuth and elevation angles of the reflector relative to the beam direction for the k-th primitive. The array factor of a ULA with N elements is given by: 
+
+AF (θk, ϕ k) =  
+
+> N−1
+
+X
+
+> n=0
+
+ejn 2πλ d sin θk cos ϕk , (3) where d is the inter-element spacing. This formulation follows classical antenna array theory [14]. To generate multi-orientation simulated data, we rotate the original keypoints around a vertical axis passing through the waist using a transformation matrix T(α). α represents the clockwise rotation angle to the target orientation. At the t-th snapshot, the coordinates of the i-th keypoint are Ii(t) = [ xi(t), y i(t), z i(t)] T . The rotation axis l is de-fined as the line passing through the waist keypoint I2(0) = [x2(0) , y 2(0) , z 2(0)] T at the initial snapshot and perpendicular to the X-Z plane. The i-th keypoint is rotated around axis l by an an-gle α, resulting in the transformed coordinate Iαi (t) =[xαi (t), y αi (t), z αi (t)] T . Because the rotation is performed in Position Attention                                   
+
+> Module (PAM)
+> Link 1
+> Simulated Data
+> Link 2
+> Simulated Data
+> 𝐂 ×𝐇 ×𝐖
+> 𝐂 ×𝐇 ×𝐖
+> Concat
+> 𝟐𝐂 ×𝐇 ×𝐖
+> BN
+> Channel Attention
+> Module (CAM)
+> 2𝐂 ×𝐇𝐖 𝐇𝐖 ×𝟐𝐂
+> Softmax
+> 1x1
+> CONV
+> Flatten
+> 𝐂 ×𝐇 ×𝐖 𝐂 ×𝐇 ×𝐖 𝟐𝐂 ×𝐇 ×𝐖
+> Softmax
+> Sum
+> Fusion
+> Activity
+> Predict
+> Target
+> Feature
+> Extractor
+> Dual -Link
+> Measured Data
+> Target
+> or
+> Source?
+
+Feature Extraction and Concatenation  Dual -Attention Module  Adversarial Unsupervised Transfer Learning    
+
+> Classifier (FCN)
+> Discriminator 𝑫 (FCN)
+> Feature Extraction
+> Feature Extraction
+> Concatenation
+> ResNet -18
+> ResNet -18
+> Flatten Flatten
+> Flatten
+> 1x1
+> CONV
+> 1x1
+> CONV
+
+Classification     
+
+> 𝐀 𝟏
+> 𝐀 𝟐
+> 𝐀
+> 𝐀
+> 𝐌 𝟐
+> 𝐩 𝐌 𝟏
+> 𝐩
+> 𝐒 𝐩
+> 𝐀 𝐀
+> 𝐎 𝐜 𝐎 𝐩
+> 𝐎 𝐩
+> 𝐎 𝐜
+> 𝐌 𝟑
+> 𝐩
+> 𝐌 𝟏
+> 𝐜 𝐌 𝟐
+> 𝐜
+> 𝐌 𝟑
+> 𝐜
+> Reshap e
+> 𝐒 𝐜
+
+Fig. 2: Proposed Framework of the dual-attention network and adversarial unsupervised transfer learning. the X-Z plane, the y-coordinate remains unchanged. The transformation can be expressed as 
+
+Iαi (t)1
+
+
+
+= T(α)
+
+Ii(t)1
+
+
+
+, (4) where 
+
+T(α) = 
+
+
+
+cos α 0 − sin α cx(1 − cos α) + cz sin α
+
+0 1 0 0sin α 0 cos α cz (1 − cos α) − cx sin α
+
+0 0 0 1
+
+ ,
+
+(5) with c = [ cx, c z ]T = [ x2(0) , z 2(0)] T .Accordingly, the set of transformed 3D keypoints at the t-th snapshot is given by 
+
+Iα(t) = {Iαi (t) | i = 1 , 2, . . . , 34 } . (6) The corresponding channel impulse response is computed from the generated keypoint sequences at the target orientation using the ellipsoidal primitive-based ray-tracing model. 
+
+B. Target-Unrelated CIR 
+
+The target-unrelated component is composed of LOS and NLOS paths from static scatterers: 
+
+v(τ ) = vLOS (τ ) + vNLOS (τ ). (7) The LOS term is 
+
+vLOS (τ ) = λpGt
+
+> LOS
+
+Gr
+
+> LOS
+
+4πR LOS 
+
+e−jϕ LOS δ(τ − τLOS ), (8) and the NLOS term sums the reflections of N static objects: 
+
+vNLOS (τ ) = 
+
+> N
+
+X
+
+> n=1
+
+λ
+
+s
+
+σnGtnGrn
+
+(4 π)3(RtnRrn)2 e−jϕ n δ(τ − τn). (9) The antenna gain is modeled using (3). Doppler spectrograms are then obtained from the CIRs through Fourier analysis. III. P ROPOSED DUAL -A TTENTION AND TRANSFER 
+
+LEARNING NETWORKS 
+
+After obtaining the simulated channel impulse response, we apply Fourier transform to generate the simulated Doppler spectrum and construct the simulated dataset. Nevertheless, cross-orientation activity recognition remains challenging due to orientation-dependent variations and the sim-to-real gap. 
+
+A. Dual-Attention Network 
+
+To improve the recognition accuracy, as shown in Fig. 2, inspired by DANet [15], we design a dual-attention module to extract activity-related features while reducing the impact of orientation changes. Specifically, position attention cap-tures spatial dependencies to highlight action regions and suppress noise, whereas channel attention models inter-channel dependencies to emphasize informative channels and suppress orientation-sensitive channels. To capture richer motion information across orientations, we use the channel simulator to generate spectrograms from two orthogonal links and adopt ResNet-18 to extract robust representations A1 and A2, where A1, A2 ∈ RC×H×W .We concatenate them along the channel dimension to obtain 
+
+A = Concat c(A1, A2), where A ∈ R2C×H×W , and apply a batch normalization (BN) layer to normalize the feature distri-bution, stabilize optimization, and improve cross-link feature alignment. The normalized features are then fed into the posi-tion and channel attention modules to learn spatial correlations and channel-wise dependencies, enabling the model to focus on action-related features. 
+
+Position Attention Module : For the position attention module, the feature A first passes through three convolutional layers to generate three new feature maps Mp1 , Mp2 , and Mp3 , which are reshaped to Mp1 , Mp2 ∈ RC×N and Mp3 ∈ R2C×N , where 
+
+N = H × W . We then perform matrix multiplication between 
+
+Mp1 and the transpose of Mp2 , followed by a softmax layer, to obtain the position attention map Sp ∈ RN ×N :
+
+Sp = softmax  (Mp2 )⊤Mp1
+
+ . (10) The position attention map captures long-range spatial depen-dencies by modeling correlations among all spatial positions, thereby highlighting motion-relevant regions and suppressing irrelevant backgrounds. Finally, we multiply Mp3 by S⊤ 
+
+> p
+
+and reshape the result into R2C×H×W to obtain the output Op of the position attention module: 
+
+Op = Mp3 S⊤ 
+
+> p
+
+. (11) Here, Op is the weighted feature of the position attention map 
+
+Sp and the features Mp3 , allowing selective aggregation of global context and enhancing the model’s focus on activity-relevant information. Finally, a BN layer is applied to ensure stable training. 
+
+Channel Attention Module : The channel attention module follows a similar procedure. The feature map A is flattened along two branches to obtain two feature maps Mc1 and 
+
+Mc2, where Mc1, Mc2 ∈ R2C×N and N = H × W . These feature maps are multiplied and then passed through a soft-max activation function to generate the channel attention map 
+
+Sc ∈ R2C×2C :
+
+Sc = softmax  Mc1(Mc2)⊤ . (12) The channel attention map models inter-channel dependen-cies, assigning higher weights to channels that are strongly correlated with the activity while suppressing irrelevant or background-related channels. The original feature map is then reshaped to R2C×N to obtain Mc3. We multiply the transpose of the channel attention map S⊤ 
+
+> c
+
+by Mc3, resulting in the output 
+
+Oc of the channel attention module: 
+
+Oc = S⊤ 
+
+> c
+
+Mc3. (13) 
+
+Oc is the weighted feature of the channel attention map Sc
+
+and the features Mc3, allowing the model to capture more discriminative feature representations by exploring correlations across channels. Finally, we introduce a residual connection by fusing Op,
+
+Oc, and the original feature map A to obtain the final feature representation O:
+
+O = a · Op + b · Oc + A, (14) where a and b are learnable parameters initialized to 0. We then feed O into a classifier composed of fully connected layers to predict the action label. The loss function is defined as 
+
+L = − 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+log ezi,y i
+
+PCj=1 ezi,j 
+
+!
+
+, (15) where N is the batch size, C is the number of classes, zi,j 
+
+denotes the logit for the j-th class of the i-th sample, yi is the ground-truth label, and zi,y i denotes the logit corresponding to the ground-truth class of the i-th sample. 
+
+B. Adversarial Unsupervised Transfer Learning Network 
+
+To bridge the gap between simulated (source) and measured (target) data, we employ an adversarial approach inspired by ADDA [16]. As shown in Fig. 2, the source feature extractor 
+
+fs(·) and classifier are first pre-trained on simulated data. Let 
+
+D(·) denote the domain discriminator, which consists of a 7 ×
+
+7 convolutional layer and three fully connected layers. The labeled simulated dataset forms the source domain, where Xs
+
+and Ys denote the simulated samples and their corresponding labels. A small set of unlabeled measured samples forms the target domain, denoted by Xt. The target feature extractor ft(·)
+
+is initialized with the same parameters as fs(·). Training then alternates between the following two steps: First, to optimize the discriminator D, we fix the feature extractors and train D to distinguish source-domain features 
+
+fs(xs) from target-domain features ft(xt) by minimizing LD .In this stage, the discriminator is encouraged to identify whether an input feature originates from the source domain or the target domain. The corresponding loss is defined as 
+
+min  
+
+> D
+
+LD (Xs, Xt, f s, f t) = −Exs∈X s [log D(fs(xs))] 
+
+−Ext∈X t [log (1 − D(ft(xt)))] . (16) Second, to optimize the target feature extractor, we fix D and fine-tune ft to confuse the discriminator by minimizing Lf . As training proceeds, ft is encouraged to generate target-domain features that are increasingly indistinguishable from source-domain features, thereby reducing the domain discrepancy. The corresponding loss is defined as 
+
+min 
+
+> ft
+
+Lf (Xs, Xt, D ) = −Ext∈X t [log D(ft(xt))] . (17) Through alternating optimization, the output features ft(xt)
+
+gradually align with the source-domain feature distribution, enabling the transferred model to recognize actions effectively from measured data. IV. E XPERIMENTS 
+
+A. Settings and Baselines 
+
+The sensing platform operates at 60.48 GHz. An NI USRP-2954R generates the IF signal, which is upconverted and trans-mitted by a Sivers phased-array antenna. At the receiver, two synchronized phased arrays capture the reference and surveil-lance channels. The waveform contains a training sequence and an OFDM payload, while the reference array synchronizes the surveillance array to keep the two channels phase-aligned for acquisition and Doppler processing. As shown in Fig. 4, the two links are near-orthogonal and provide complementary views of motion from different orientations. The ZED coordinate system is used as the reference origin. For the first link, the transmitter (Tx) and receiver (Rx) are located at [−0.4 m , −0.1 m , 0 m] 
+
+and [−0.4 m , 0.65 m , 0 m] , respectively. For the second link, the Tx and Rx are positioned at [2 .1 m , 2.55 m , 0 m] and 
+
+[1 m , 2.55 m , 0 m] , respectively. The transmitter is placed 2 m from the target, while static scatterers are randomly sampled in the surrounding area to model target-unrelated paths. Using this passive sensing system and the cross-ambiguity function (CAF), we obtain 480 measured spectrograms. The dataset includes four activities: step , fall , sit , and kick .For simulation, each action is recorded with a ZED 2i depth camera at 30 fps for 2 s and then interpolated to 2000 fps. From 10 single-orientation videos collected from three volunteers, we generate 3000 spectrograms by randomly sampling orientations over 0◦–360 ◦, covering the full azimuth range. For evaluation, measured data are collected from three different volunteers at four orientations, yielding 480 spectrograms. The test set covers viewpoints of 45 ◦, 135 ◦, 225 ◦, and 315 ◦. Specifically, the simulated training set uses volunteers A, B, and C, while the measured test set uses volunteers D, E, and F. This (a) Measured, sit (b) Simulated, sit (c) Measured, step (d) Simulated, step 
+
+(e) Measured, fall (f) Simulated, fall (g) Measured, kick (h) Simulated, kick Fig. 3: Measured vs. simulated Doppler spectrograms for four actions (left: measured, right: simulated). 
+
+Fig. 4: Experimental layout of the 60 GHz sensing system. disjoint subject split reduces identity leakage and better reflects practical deployment. We train the model using Adam with a learning rate of 10 −4 for 200 epochs and a batch size of 16. We compare the proposed method with three representative cross-orientation sensing baselines, all evaluated using the same training and testing datasets to ensure a fair comparison: 
+
+WiDual [9]: WiDual is a cross-domain dual-task framework for gesture recognition and user identification based on Wi-Fi CSI. It converts CSI into image-like representations and uses attention-based networks to learn discriminative features. 
+
+WiGRUNT [10]: WiGRUNT is a gesture recognition frame-work with a spatial-temporal dual-attention mechanism. Built on a residual backbone, it emphasizes domain-invariant features in both the spatial and temporal dimensions of CSI data to improve cross-domain generalization. 
+
+ImgFi [11]: ImgFi is a lightweight CSI-based activity recog-nition framework. It transforms CSI into image representations and applies a compact CNN for classification, balancing recog-nition accuracy and computational cost. 
+
+B. Experiment Studies 
+
+Fig. 3 shows that the simulator preserves the dominant Doppler structures of each activity across orientations, although the measured spectrograms still contain clutter and amplitude TABLE I: SSIM results under different orientations.                     
+
+> Action 45 ◦135 ◦225 ◦315 ◦
+> Sit 0.8547 0.8884 0.8709 0.8812 Step 0.8518 0.8693 0.8691 0.8796 Fall 0.8020 0.8575 0.8332 0.7852 Kick 0.8309 0.8460 0.8131 0.8088
+
+distortions. As shown in Table I, we use the Structural Similar-ity Index Measure (SSIM) to quantify the similarity between simulated and measured spectrograms by comparing samples of the same activity class across the two datasets. SSIM ranges from 0 to 1, where 1 indicates identical images, and 0 indicates no similarity. The average simulated spectrograms achieve SSIM values above 0.84, indicating that the proposed pipeline reproduces the main measured patterns with high fidelity. Fig. 5 adapts the source model using 16 unlabeled mea-sured samples drawn from four directions. After adversarial transfer, the recognition accuracy rises from 88.33% to 95%, showing that even a small amount of unlabeled target data can effectively reduce the simulation-to-reality gap. In other words, the simulator provides a strong initialization, while adversarial adaptation further aligns the feature distributions with little deployment overhead. The t-SNE visualizations of 
+
+fall and sit in Fig. 5 show better feature alignment after transfer, confirming that transfer learning effectively reduces the discrepancy between the simulated (S) and measured (M) domains. Fig. 6 compares the proposed method with state-of-the-art cross-domain recognition baselines. For a fair comparison, we retrain all baselines on four types of simulated datasets: single-orientation (SO), the first link with multi-orientation (Link 1 + MO), the second link with multi-orientation (Link 2 + MO), and dual-link with multi-orientation (Dual-link + MO), and then evaluate them on the measured test set. Our (a) Confusion matrix, before transfer 
+
+(b) Confusion matrix, after transfer 
+
+(c) t-SNE, before transfer (d) t-SNE, after transfer Fig. 5: Confusion matrices and t-SNE visualizations before and after transfer. 
+
+Fig. 6: Accuracy comparison across various datasets. method consistently outperforms all baselines across the four datasets. The best performance is achieved on the dual-link multi-orientation dataset, reaching an accuracy of 95%, which benefits from richer motion information. Using the best results of each baseline across the four datasets, our method at-tains 95% accuracy, surpassing WiDual (78.96%), WiGRUNT (81.04%), and ImgFi (84.38%). Unlike these baselines, the proposed system relies mainly on simulated data and requires only a small amount of unlabeled measured data for adaptation, greatly reducing data collection cost while maintaining high accuracy. In addition, the dual-attention module learns more robust cross-orientation representations by directly modeling feature responses, rather than using manually designed pooling operations. Its position and channel attention branches work in parallel with a residual connection, which improves feature and preserves attention effectiveness in deeper layers. V. C ONCLUSION 
+
+This paper presented S2M-Sense, a simulation-driven plat-form for cross-orientation wireless activity recognition. Com-bining channel simulator, dual-attention networks, and ad-versarial transfer learning, it reduces reliance on measured data while achieving 88 .33 % accuracy with simulation-only training and 95 % after adaptation with minimal unlabeled real data. Future work will target complex indoor and multi-person scenarios. REFERENCES [1] G. A. S. Surek, L. O. Seman, S. F. Stefenon, V. C. Mariani, and L. d. S. Coelho, “Video-based human activity recognition using deep learning approaches,” Sensors , vol. 23, no. 14, p. 6384, 2023. [2] T. F. N. Bukht, H. Rahman, M. Shaheen, A. Algarni, N. A. Almujally, and A. Jalal, “A review of video-based human activity recognition: theory, methods and applications,” Multimedia Tools Appl. , vol. 84, no. 17, pp. 18499–18545, 2025. [3] C. Contoli, V. Freschi, and E. Lattanzi, “Energy-aware human activity recognition for wearable devices: A comprehensive review,” Pervasive Mob. Comput. , vol. 104, p. 101976, 2024. [4] S. Khalifa, G. Lan, M. Hassan, A. Seneviratne, and S. K. Das, “Harke: Human activity recognition from kinetic energy harvesting data in wearable devices,” IEEE Trans. Mobile Comput. , vol. 17, no. 6, pp. 1353– 1368, 2017. [5] A. Virmani and M. Shahzad, “Position and orientation agnostic gesture recognition using WiFi,” in ACM Int. Conf. Mobile Syst., Appl., Services (MobiSys) , pp. 252–264, 2017. [6] J. Zhang, Z. Tang, M. Li, D. Fang, P. Nurmi, and Z. Wang, “Crosssense: Towards cross-site and large-scale WiFi sensing,” in ACM Int. Conf. Mobile Comput. Netw. (MobiCom) , pp. 305–320, 2018. [7] H. Zou, J. Yang, Y. Zhou, L. Xie, and C. J. Spanos, “Robust WiFi-enabled device-free gesture recognition via unsupervised adversarial domain adaptation,” in IEEE Int. Conf. Comput. Commun. Netw. (ICCCN) , pp. 1– 8, IEEE, 2018. [8] Y. Zhang, Y. Zheng, K. Qian, G. Zhang, Y. Liu, C. Wu, and Z. Yang, “Widar3.0: Zero-effort cross-domain gesture recognition with Wi-Fi,” 
+
+IEEE Trans. Pattern Anal. Mach. Intell. , vol. 44, no. 11, pp. 8671–8688, 2021. [9] C. Cao, Y. Ding, M. Dai, W. Gong, and X. Zhao, “Real-time cross-domain gesture and user identification via cots WiFi,” IEEE Trans. Mobile Comput. , vol. 24, no. 6, pp. 5124–5137, 2025. [10] Y. Gu, X. Zhang, Y. Wang, M. Wang, H. Yan, Y. Ji, Z. Liu, J. Li, and M. Dong, “WiGRUNT: WiFi-enabled gesture recognition using dual-attention network,” IEEE Trans. Hum.-Mach. Syst. , vol. 52, no. 4, pp. 736–746, 2022. [11] C. Zhang and W. Jiao, “Imgfi: A high accuracy and lightweight human activity recognition framework using CSI image,” IEEE Sensors J. ,vol. 23, no. 18, pp. 21966–21977, 2023. [12] G. Li, S. Wang, J. Li, R. Wang, F. Liu, X. Peng, T. X. Han, and C. Xu, “Integrated sensing and communication from learning perspective: An SDP3 approach,” IEEE Internet Things J. , vol. 11, no. 4, pp. 5589–5603, 2024. [13] Z. Ren, G. Li, C. Ji, C. Yu, S. Wang, and R. Wang, “CASTER: A computer-vision-assisted wireless channel simulator for gesture recog-nition,” IEEE Open J. Commun. Soc. , vol. 5, pp. 3185–3195, 2024. [14] C. A. Balanis, Antenna Theory: Analysis and Design . Wiley, 2005. [15] J. Fu, J. Liu, H. Tian, Y. Li, Y. Bao, Z. Fang, and H. Lu, “Dual attention network for scene segmentation,” in IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR) , pp. 3146–3154, 2019. [16] E. Tzeng, J. Hoffman, K. Saenko, and T. Darrell, “Adversarial discrimi-native domain adaptation,” in IEEE Conf. Comput. Vis. Pattern Recognit. (CVPR) , pp. 7167–7176, 2017.
