@@ -1,0 +1,2111 @@
+Title: FedCritic-MIMO: Communication-Efficient Serverless Federated Critic Learning for Massive-MIMO Resource Control in Open and Disaggregated 6G RANs
+
+URL Source: https://arxiv.org/pdf/2608.03852v1
+
+Published Time: Wed, 05 Aug 2026 01:17:23 GMT
+
+Number of Pages: 15
+
+Markdown Content:
+# FedCritic-MIMO: Communication-Efficient Serverless Federated Critic Learning for Massive-MIMO Resource Control in Open and Disaggregated 6G RANs 
+
+Amin Farajzadeh, Member , IEEE , Melike Erol-Kantarci, Fellow , IEEE 
+
+Abstract —This paper proposes FedCritic-MIMO, acommunication-efficient serverless federated multi-agent reinforcement learning framework for AI-native resource control across independently deployable cell-level controllers in open and disaggregated 6G radio access networks (RANs). We consider a setting in which neighboring controllers do not rely on a common trainer, retain local actors and personalized critic components, and exchange only compatible shared critic parameters. FedCritic-MIMO targets reuse-1 multi-cell massive multiple-input multiple-output (massive-MIMO) orthogonal frequency-division multiple access (OFDMA) deployments where distributed RAN controllers jointly manage user scheduling, per-stream power allocation, beamforming, interference, and long-term quality-of-service (QoS) under limited inter-controller signaling. Rather than centralizing training or federating actors, each base station (BS) executes its actor locally, while critic knowledge is exchanged through peer-to-peer coordination over an interference-aware graph. To make such collaboration practical, FedCritic-MIMO combines wireless-aware event triggering, adaptive layer-wise top-k sparse critic exchange with error feedback, and balanced interference-aware fusion. We further establish conditional finite-time stationarity and consensus guarantees for the proposed balanced, compressed peer-to-peer critic recursion under a fixed-policy, frozen-target critic-regression model. In strongly interference-coupled reuse-1
+
+simulations, FedCritic-MIMO achieves the best performance– communication tradeoff among heuristic, independent-learning, centralized-training, and communication-ablation baselines. In particular, it achieves the highest held-out network throughput, improves user-rate distribution and mean signal-to-interference-plus-noise ratio (SINR), increases QoS satisfaction, and attains the lowest interference cost per delivered bit among learning baselines. It also reduces critic-communication overhead by about 76% relative to uncompressed distributed critic exchange. These results demonstrate that serverless exchange of compatible shared critic parameters can coordinate open and disaggregated RAN controllers without centralized trajectory collection, parameter-server aggregation, or actor homogenization. 
+
+Index Terms —AI-native 6G RAN, Open RAN, federated reinforcement learning, multi-agent reinforcement learning, serverless learning, massive MIMO, resource allocation, communication-efficient learning. 
+
+I. I NTRODUCTION 
+
+Ultra-dense sixth-generation (6G) radio access networks (RANs), formally associated with IMT-2030, are expected to support substantially higher capacity, reliability, connectivity, and intelligence than current cellular systems [1], [2]. These 
+
+A. Farajzadeh and M. Erol-Kantarci are with the NETCORE Lab, School of Electrical Engineering and Computer Science, University of Ottawa, Ottawa, ON K1N 6N5, Canada (e-mails: {amin.farajzadeh, melike.erolkantarci }@uottawa.ca). 
+
+requirements must be met not only through new air-interface capabilities, but also through open, disaggregated, and programmable RAN architectures in which radio-control functions are no longer confined to a monolithic BS implementation [3], [4]. In such architectures, neighboring cell-level controllers may be independently deployed, operate with local observations and implementation-specific model components, and lack a common centralized trainer. The architectural challenge is therefore clear: interference-coupled controllers must learn coordinated radio policies without centralized trajectory collection, unrestricted model sharing, or periodic aggregation through a parameter server. This challenge is particularly important for ultra-dense massive multiple-input multiple-output (massive-MIMO) orthogonal frequency-division multiple access (OFDMA) systems. Massive MIMO improves spatial multiplexing, coverage, and interference suppression, while OFDMA provides flexible time–frequency resource allocation and compatibility with multiuser scheduling [5], [6]. This paper considers a reuse-1 multi-cell massive-MIMO OFDMA downlink in which each BS serves multiple single-antenna user equipments (UEs) over orthogonal subcarriers and spatially multiplexes several UEs per subcarrier through space-division multiple access (SDMA). In this setting, aggressive frequency reuse improves spectral utilization but creates strong inter-cell interference. At the same time, multiuser spatial multiplexing introduces intra-cell SDMA interference whenever the co-scheduled UEs are not perfectly separated by the selected beamformers. The network performance is therefore jointly determined by user schedul-ing, stream activation, per-stream power allocation, beam-forming, inter-cell interference, intra-cell interference, and the evolving quality-of-service (QoS) states of the UEs. These decisions affect throughput, cell-edge rates, fairness, and long-term QoS satisfaction, yielding a high-dimensional, mixed discrete–continuous, and time-varying control problem [7]. Classical optimization methods provide useful benchmarks, but they commonly require accurate global channel and interference information, explicit system models, and repeated solution of mixed-integer nonconvex programs [8]. These requirements are difficult to satisfy in ultra-dense RANs, where channels, traffic demands, queue states, and interference patterns vary rapidly. They are also difficult to reconcile with open and disaggregated control deployments, where local measurements, experience, actors, and implementation-specific critic components remain within arXiv:2608.03852v1 [cs.LG] 4 Aug 2026 independently operated cell-level controllers. Multi-agent reinforcement learning (MARL) is a natural candidate because each BS can learn from its local channel, queue, and interference observations [9], [10]. However, reuse-
+
+1 cells are not independent learners: the action of one BS changes the interference, rates, queues, and future scheduling priorities of neighboring cells. Purely local MARL can there-fore learn unstable or poorly coordinated policies. Centralized reinforcement learning and centralized-training decentralized-execution (CTDE) can improve coordination, but typically require joint observations, coordinated trajectory collection, centralized critics, or common training infrastructure [11]. In the considered open and disaggregated RAN setting, such requirements reintroduce a common trainer across controllers that are intended to remain independently deployable. To address this problem, we develop FedCritic-MIMO, a communication-efficient serverless federated critic framework for MARL-based joint scheduling, power allocation, and beamforming in interference-coupled multi-cell massive-MIMO OFDMA networks. Each cell-level controller executes its actor locally and retains its local experience, actor parameters, and personalized critic components. Collaboration is restricted to a predefined compatible shared critic subnetwork, which is exchanged directly with neighboring controllers over the interference graph without a central trainer or parameter server. FedCritic-MIMO makes critic collaboration both learning-aware and radio-aware. Critic exchange is triggered according to critic innovation, queue urgency, and interference intensity. Adaptive layer-wise top-k sparsification with error feedback reduces inter-controller model traffic, while symmetric interference-aware fusion assigns greater weight to strongly coupled neighbors. The resulting design coordinates dis-tributed controllers without centralized trajectory aggregation, periodic full-model synchronization, or homogenization of cell-specific actors and personalized critic heads. 
+
+A. Related Work 1) AI-Native Control in Open and Disaggregated RANs: Open and disaggregated RAN architectures expose programmable control functions and interfaces for intelligent radio-resource management [4]. Recent work has studied learning-enabled control for O-RAN resource management, including joint scheduling, O-RU association, and power allocation [12], as well as federated learning for O-RAN slicing and resource management [13]. These works demonstrate the value of AI-enabled control in programmable RAN architectures. However, they do not address serverless critic collaboration among independently deployable cell-level controllers when exchange is restricted to a compatible shared model component. They also do not jointly consider massive-MIMO multiuser scheduling, per-stream power allocation, beamforming, dynamic inter-cell interference, and long-term per-user QoS. 
+
+2) Learning-Based Wireless Resource Allocation and Beamforming: Deep reinforcement learning (DRL) and MARL have been widely studied for dynamic spectrum access, user scheduling, power control, and interference management [14], [15]. These methods enable wireless controllers to adapt to time-varying channels and traffic without repeatedly solving nonconvex optimization problems online. More recent studies have considered higher-dimensional wireless actions, including joint resource allocation, beamforming, and beam combining [16], [17], as well as joint beamforming and subcarrier allocation under queue-aware delay objectives [18]. These works are closely related to the physical-layer control aspect of this paper, but they do not address communication-efficient serverless critic learning over the physical interference graph. 
+
+3) Centralized and Decentralized MARL: Centralized and CTDE-based MARL methods use centralized critics, joint observations, value decomposition, or global training signals to improve coordination among interacting agents [19], [20]. However, collecting channel, queue, interference, scheduling, and beamforming information from multiple BSs creates substantial signaling and scalability requirements [21]. More importantly for the considered architecture, centralized training assumes a common learning function across cell-level controllers that are otherwise independently deployable. Fully decentralized MARL removes this dependency by allowing each BS to learn from local observations [14], [15], [25]. Decentralized actor–critic methods can further exchange critic information through graph-based consensus [22], [23]. Nevertheless, unconditional consensus incurs persistent model traffic, treats neighboring updates without considering their time-varying radio relevance, and can dilute locally useful value information under heterogeneous observations, rewards, and traffic dynamics [24]. These limitations motivate selective critic exchange that preserves local actors and personalized critic components. 
+
+4) Federated and Communication-Efficient MARL: 
+
+Federated learning supports collaborative model training without exchanging raw local data, while FedAvg and FedProx provide foundational aggregation mechanisms under statistical and systems heterogeneity [26], [27]. Federated MARL has been applied to wireless and edge control [28], including channel assignment and power control [29], decentralized policy collaboration [30], and communication–computation co-optimization [31]. Most existing methods nevertheless rely on a central parameter server, periodic aggregation, or actor sharing. These mechanisms can create communication bottlenecks, homogenize policies across heterogeneous cells, and assume broader model compatibility than is available in the considered open and disaggregated control setting. Gossip-based decentralized optimization provides a basis for serverless model exchange [32], while error feedback compensates for the bias introduced by sparse compressors such as top-k [33]. However, generic gossip and compression mechanisms do not determine when a critic update is useful for wireless control. In an interference-coupled RAN, the value of an update depends not only on parameter innovation, but also on queue urgency and physical interference coupling. 
+
+5) Positioning of This Work: General decentralized actor–critic and compressed-consensus methods provide the algorithmic foundations for peer-to-peer learning. Our earlier FedCritic framework introduced serverless critic collaboration for scheduling and power control in multi-cell OFDMA networks [34]. FedCritic-MIMO addresses the additional architectural and radio-control problem considered here: collaborative learning among independently deployable Open RAN cell-level controllers that lack a common trainer and exchange only a predefined shared critic subnetwork. Within this constraint, FedCritic-MIMO jointly addresses multiuser massive-MIMO scheduling, per-stream power allocation, structured beamforming, dynamic inter-cell interference, and long-term per-user QoS. To the best of our knowledge, it is the first framework to combine communication-efficient serverless critic collaboration, compatibility- restricted shared-model exchange, interference-aware model fusion, multiuser massive-MIMO beamforming, and long-term QoS management. FedCritic-MIMO provides this functionality through: i) local actors and personalized critic heads, with peer exchange restricted to the shared critic subnetwork; ii) utility-aware triggering based on critic innovation, queue urgency, and interference intensity; iii) adaptive layer-wise top-k exchange with error feedback; and iv) symmetric interference-aware balanced fusion. 
+
+B. Contributions 
+
+The main contributions of this paper are summarized as follows:  
+
+> •
+
+We address the joint improvement of network throughput, long-term QoS satisfaction, and interference efficiency across independently deployable cell-level controllers in a reuse-1 open and disaggregated massive-MIMO OFDMA RAN. The scheduling, power-allocation, and beamforming problem is formulated as an interference-coupled decentralized partially observable Markov decision process (Dec–POMDP) that captures multiuser spatial multiplexing, intra-cell and inter-cell interference, budget-safe power control, structured beamforming, and virtual-queue-based QoS constraints.  
+
+> •
+
+We develop a personalized serverless federated critic architecture without a common trainer or parameter server. Each controller retains its local actor, experience, and personalized critic head, while only a predefined compatible shared critic subnetwork is exchanged with neighboring controllers.  
+
+> •
+
+We introduce a communication-efficient collaboration mechanism that combines utility-aware event triggering, adaptive layer-wise top-k sparsification, and error feedback. The triggering utility jointly captures critic innovation, queue urgency, and interference intensity, while symmetric interference-aware balanced fusion prioritizes strongly coupled neighbors and preserves the network-average shared critic update.  
+
+> •
+
+We establish conditional finite-time stationarity and consensus bounds for the balanced shared-critic recursion under a fixed policy and frozen-head, frozen-target critic-regression objective. Under the stated regularity and tracking assumptions, the analysis yields an O(T −1/2)+ 
+
+O(log T /T ) randomized-iterate stationarity rate.  
+
+> •
+
+We evaluate FedCritic-MIMO against heuristic, independent-learning, centralized-training, and communication-ablation baselines. FedCritic-MIMO achieves the strongest held-out throughput, user-rate, signal-to-interference-plus-noise ratio (SINR), QoS, and interference-efficiency performance among the considered learning methods, while reducing critic-communication overhead by approximately 76% relative to uncompressed distributed critic exchange. II. S YSTEM MODEL 
+
+A. Network Setting and Channel Modeling 
+
+We consider the downlink of an open and disaggregated multi-cell massive-MIMO OFDMA RAN with reuse-1 fre-quency allocation. Each cell is managed by an independently deployable programmable RAN controller indexed by the cor-responding BS index. The controller performs cell-level radio-resource control using locally available channel measurements, queue states, interference observations, and QoS information. The controllers do not rely on a common trainer or parameter server; local actors, local experience, and personalized critic components remain private, while only compatible shared critic parameters are eligible for peer-to-peer exchange during training. This architectural constraint defines the information and model-sharing structure considered in this work, while the physical-layer signal model follows the standard multi-cell massive-MIMO OFDMA downlink. The network consists of N BSs sharing a total bandwidth 
+
+B, partitioned into K orthogonal subcarriers of equal width 
+
+∆f = B/K . Each BS n ∈ N , {1,...,N } is equipped with Ln
+
+transmit antennas and serves a set of associated single-antenna UEs Mn. Time is slotted with index t = 0 , 1, 2, ... , and in each slot, the controller associated with BS n makes online decisions on user scheduling, linear precoding/beamforming, and transmit-power allocation. For notational simplicity, “BS n” refers to BS n together with its associated local RAN controller unless the distinction is needed explicitly. The slot duration is normalized to one. If an explicit slot du-ration Ts is used, the rate expressions below are in bit/s and the corresponding per-slot service terms used in the virtual queues should be TsRn,m (t) and TsRmin 
+
+> n,m
+
+. Equivalently, one may interpret all rates below as normalized per-slot service units. On each subcarrier k, BS n may simultaneously multiplex multiple UEs through linear precoding. Let xn,k,m (t) ∈ { 0,1}
+
+indicate whether UE m ∈ M n is scheduled by BS n on subcar-rier k in slot t. The intra-cell spatial multiplexing constraint is 
+
+∑
+
+> m∈M n
+
+xn,k,m (t) ≤ Sn, ∀n,k, (1) where Sn denotes the maximum number of simultaneously served streams on each subcarrier at BS n, with 1 ≤ Sn ≤
+
+min {Ln,|M n|} .For each scheduled UE m on subcarrier k, BS n allocates transmit power pn,k,m (t) ≥ 0 and a unit-norm beamforming vector vn,k,m (t) ∈ CLn ×1 satisfying 
+
+‖vn,k,m (t)‖2 = 1 , ∀n,k,m. (2) For unscheduled streams, pn,k,m (t) is forced to zero by the scheduling–power coupling constraint introduced below, and the corresponding beamforming vector is irrelevant to the transmitted signal. Let sn,k,m (t) ∼ CN (0 , 1) denote the information symbol intended for UE m. The transmitted signal vector from BS n on subcarrier k is 
+
+un,k (t) = ∑
+
+> m∈M n
+
+xn,k,m (t)
+
+√
+
+pn,k,m (t)vn,k,m (t)sn,k,m (t).
+
+(3) Since ‖vn,k,m (t)‖2 = 1 and E[|sn,k,m (t)|2] = 1, the average transmit power used by BS n on subcarrier k is ∑ 
+
+> m∈M n
+
+xn,k,m (t)pn,k,m (t). The per-BS power budget is therefore 
+
+> K
+
+∑
+
+> k=1
+
+∑
+
+> m∈M n
+
+xn,k,m (t)pn,k,m (t) ≤ Pn, ∀n. (4) For any BS b and UE m ∈ M n, let h(n)
+
+> b,k,m
+
+(t) ∈ CLb×1
+
+denote the downlink channel vector from BS b to UE m
+
+associated with BS n on subcarrier k in slot t. For the desired link ( b = n), we use the shorthand hn,k,m (t) , h(n)
+
+> n,k,m
+
+(t).We model each BS–UE channel vector as 
+
+h(n)
+
+> b,k,m
+
+(t) = 
+
+√
+
+β(n)
+
+> b,m
+
+( ¯R(n)
+
+> b,m
+
+)1/2 ˜h(n)
+
+> b,k,m
+
+(t), (5) where β(n) 
+
+> b,m
+
+> 0 denotes the linear-scale channel-power gain including large-scale fading, ¯R(n) 
+
+> b,m
+
+ 0 is the normalized spatial correlation matrix satisfying 1 
+
+> Lb
+
+tr( ¯R(n)
+
+> b,m
+
+) = 1 , and 
+
+˜h(n)
+
+> b,k,m
+
+(t) ∼ CN (0,ILb ) captures the small-scale fading. With this normalization, E[‖h(n)
+
+> b,k,m
+
+(t)‖2] = Lbβ(n)
+
+> b,m
+
+.The large-scale fading coefficient is modeled in dB as 
+
+β(n)
+
+> b,m
+
+[dB] = β0 −10 αlog 10 
+
+( d(n)
+
+> b,m
+
+d0
+
+)
+
++F (n)
+
+> b,m
+
+, (6) where d(n) 
+
+> b,m
+
+is the distance between BS b and UE m, α
+
+is the path-loss exponent, and F (n) 
+
+> b,m
+
+∼ N (0 , σ 2sh ) is the shadowing term in dB. The coefficient used in (5) is therefore 
+
+β(n) 
+
+> b,m
+
+= 10 β(n)
+
+> b,m [dB] /10
+
+.The temporal evolution of the small-scale fading is modeled by a first-order complex Gauss–Markov process [35] as 
+
+˜h(n)
+
+> b,k,m
+
+(t) = ρ˜h(n)
+
+> b,k,m
+
+(t−1)+ √1−ρ2w(n)
+
+> b,k,m
+
+(t), (7) where w(n)
+
+> b,k,m
+
+(t) ∼ CN (0,ILb ) is i.i.d. across all indices, and 
+
+0 ≤ ρ < 1 is the temporal correlation coefficient. The process is assumed to be initialized with ˜h(n)
+
+> b,k,m
+
+(0) ∼ CN (0, ILb ),which preserves the marginal distribution over time. The channel is assumed constant within each slot and evolves across slots according to (7). The received signal at UE m ∈ M n on subcarrier k in slot 
+
+t is 
+
+yn,k,m (t) = hHn,k,m (t)xn,k,m (t)
+
+√
+
+pn,k,m (t)vn,k,m (t)sn,k,m (t)
+
+︸ ︷︷ ︸
+
+> desired signal
+
++ ∑ 
+
+> j∈M n
+> j6=m
+
+hHn,k,m (t)xn,k,j (t)
+
+√
+
+pn,k,j (t)vn,k,j (t)sn,k,j (t)
+
+︸ ︷︷ ︸
+
+> intra-cell interference
+
++∑
+
+> b6=n
+
+∑
+
+> j∈M b
+
+(h(n)
+
+> b,k,m
+
+(t))H xb,k,j (t)√pb,k,j (t)vb,k,j (t)sb,k,j (t)
+
+︸ ︷︷ ︸
+
+> inter-cell interference
+
++zn,k,m (t),
+
+(8) where zn,k,m (t) ∼ CN (0 , N 0∆f ) is additive noise and N0
+
+denotes the noise PSD under the adopted complex-baseband convention. The intra-cell and inter-cell interference powers experienced by UE m ∈ M n on subcarrier k are respectively defined as 
+
+Iintra 
+
+> n,k,m
+
+(t) , ∑ 
+
+> j∈M n
+> j6=m
+
+xn,k,j (t)pn,k,j (t)∣∣hHn,k,m (t)vn,k,j (t)∣∣2, (9) 
+
+Iinter 
+
+> n,k,m
+
+(t) , ∑
+
+> b∈N \{ n}
+
+∑
+
+> j∈M b
+
+xb,k,j (t)pb,k,j (t)∣∣(h(n)
+
+> b,k,m
+
+(t))H vb,k,j (t)∣∣2.
+
+(10) Assuming single-user decoding and treating residual intra-cell and inter-cell interference as noise, the resulting downlink SINR is 
+
+SINR n,k,m (t) = xn,k,m (t)pn,k,m (t)∣∣hHn,k,m (t)vn,k,m (t)∣∣2
+
+Iintra 
+
+> n,k,m
+
+(t)+ Iinter 
+
+> n,k,m
+
+(t)+ N0∆f .
+
+(11) The instantaneous rate of UE m ∈ M n on subcarrier k is 
+
+Rsc 
+
+> n,k,m
+
+(t) = ∆ f log 2
+
+(1+SINR n,k,m (t)). (12) The per-UE, per-subcarrier-per-BS, and per-BS rates are, respectively, 
+
+Rn,m (t) = 
+
+> K
+
+∑
+
+> k=1
+
+Rsc 
+
+> n,k,m
+
+(t), (13) 
+
+cn,k (t) = ∑
+
+> m∈M n
+
+Rsc 
+
+> n,k,m
+
+(t), (14) 
+
+cn(t) = 
+
+> K
+
+∑
+
+> k=1
+
+cn,k (t). (15) The minimum-rate parameters Rmin  
+
+> n,m
+
+are assumed to have the same normalized units as Rn,m (t) in the virtual-queue update. 
+
+B. Optimization Problem Formulation 
+
+The long-term QoS requirement for UE m ∈ M n is 
+
+liminf  
+
+> T→∞
+
+1
+
+T 
+
+> T−1
+
+∑
+
+> t=0
+
+E[Rn,m (t)] ≥ Rmin 
+
+> n,m
+
+, ∀n, m ∈ M n. (16) We assume that the vector of minimum-rate requirements is feasible under the available bandwidth, power, scheduling, and beamforming constraints; otherwise, the corresponding virtual queues will diverge and indicate persistent QoS violation. In each slot t, the local cell controllers jointly selects the user scheduling variables X(t) = {xn,k,m (t)}, the per-stream powers P(t) = {pn,k,m (t)}, and the beamforming vectors V(t) = {vn,k,m (t)} to maximize the instantaneous network-wide downlink sum-rate while accounting for the long-term minimum-rate requirements. The long-term QoS constraints are handled through virtual queues, which yields the following queue-weighted per-slot surrogate problem: 
+
+max 
+
+> X(t),P(t),V(t)
+> N
+
+∑
+
+> n=1
+> K
+
+∑
+
+> k=1
+
+cn,k (t)−
+
+> N
+
+∑
+
+> n=1
+
+∑
+
+> m∈M n
+
+Qn,m (t)
+
+(
+
+Rmin  
+
+> n,m
+
+−Rn,m (t)
+
+)
+
+(17a) s.t. ∑
+
+> m∈M n
+
+xn,k,m (t) ≤ Sn, ∀n,k, 
+
+(17b) 
+
+> K
+
+∑
+
+> k=1
+
+∑
+
+> m∈M n
+
+xn,k,m (t)pn,k,m (t) ≤ Pn, ∀n, 
+
+(17c) 
+
+0 ≤ pn,k,m (t) ≤ Pnxn,k,m (t), ∀n,k, m ∈ M n,
+
+(17d) 
+
+‖vn,k,m (t)‖2 = 1 , ∀n,k, m ∈ M n,
+
+(17e) 
+
+xn,k,m (t) ∈ { 0,1}, ∀n,k, m ∈ M n.
+
+(17f) After normalizing the rate units, (17) is the unit-weight form of the standard drift-plus-penalty surrogate. Equivalently, one may multiply the sum-rate term by a control parameter Vsr > 0;we use Vsr = 1 throughout. The term −∑
+
+> n,m
+
+Qn,m (t)Rmin  
+
+> n,m
+
+is action-independent within slot t, but it is retained to show the deficit-penalty interpretation. The virtual queues evolve as 
+
+Qn,m (t+1) = 
+
+[
+
+Qn,m (t)+ Rmin  
+
+> n,m
+
+−Rn,m (t)
+
+]+
+
+, ∀n, m ∈ M n,
+
+(18) where [·]+ , max {· , 0}. Hence, repeatedly solving (17) online steers the system toward satisfying long-term average minimum-rate constraints while still prioritizing instantaneous sum-rate. More precisely, stability of the virtual queues implies satisfaction of the corresponding long-term average-rate constraints in (16). Problem (17) is a mixed-integer nonconvex program because of the binary scheduling variables, coupled power and beamforming decisions, and reuse-1 intra-cell and inter-cell interference. Solving it exactly in every slot would require timely access to network-wide CSI, queue states, QoS states, and interference-coupling information, followed by repeated centralized optimization. This is impractical in large-scale dense deployments and conflicts with the considered open and disaggregated RAN setting, where independently deployable cell-level controllers retain local observations and control components. Purely isolated local control, however, cannot adequately capture the cross-cell effect of each BS’s actions on neighboring rates, queues, and interference. These properties motivate the proposed AI-native learning architecture, in which resource-control execution remains local while compatible shared critic parameters are exchanged selectively among interference-neighbor controllers, without centralized trajectory collection or parameter-server aggregation. III. R EFORMULATION AS AN INTERFERENCE –C OUPLED DEC –POMDP The online resource-control problem in (17) can be reformulated as a cooperative decentralized partially observable Markov decision process (Dec–POMDP), in which each BS acts as an autonomous agent and jointly learns with the other BSs to maximize a common long-term network utility. The resulting Dec–POMDP is interference-coupled, since the rate achieved by each BS depends not only on its own scheduling, power-allocation, and beamforming decisions, but also on the simultaneous decisions made by neighboring BSs over the same subcarriers. 
+
+A. Dec–POMDP Definition 
+
+We model the system as the tuple 
+
+G =
+
+〈
+
+N ,S,{A n}n∈N ,{O n}n∈N ,P,O,r,μ 0
+
+〉
+
+, (19) where μ0 is the initial-state distribution and the remaining components are defined below. (a) Agents : The agent set is the set of BSs, N = {1,...,N }.Each agent n ∈ N independently selects its local scheduling, power-allocation, and beamforming decisions at every slot. (b) Global state : The global state at slot t is defined as 
+
+s(t) = (H(t),Q(t)) ∈ S , (20) where H(t) = {h(n)
+
+> b,k,m
+
+(t)} collects all direct-link and cross-link channel vectors over all BSs, UEs, and subcarriers, and Q(t) = {Qn,m (t)} contains the virtual queues. Under (7) and (18), {s(t)} is Markov. If lagged measurements are used as policy inputs, they are either included in an augmented state or handled through the agent’s local action–observation history. (c) Local observations : Since BS n does not have access to the full network state, it observes only a local observation 
+
+on(t) ∈ On. The joint observation is generated according to the observation kernel O(o(t) | s(t)) , with 
+
+o(t) = ( o1(t),...,o N (t)) . A deterministic observation map 
+
+on(t) = Ω n(s(t)) is a special case. A natural observation for BS n is 
+
+on(t) = 
+
+(
+
+Hloc  
+
+> n
+
+(t),Qn(t),In(t)
+
+)
+
+∈ O n, (21) where Hloc  
+
+> n
+
+(t) = {hn,k,m (t)} contains the direct-link CSI available at BS n, Qn(t) = {Qn,m (t)}, contains its local virtual queues, and In(t) contains only locally available interference-side information before the current action, such as measured interference powers, estimated cross-link CSI from dominant neighboring BSs, or compact neighbor summaries exchanged over the coordination graph. Interference created by the simultaneous actions in current slot t is not assumed known before those actions are selected. (d) Local action : At each slot t, BS n chooses an action 
+
+an(t) = 
+
+(
+
+Xn(t),Pn(t),Vn(t)
+
+)
+
+∈ A n, (22) where the feasible set is defined by (17b)–(17f) for BS n.Thus, the local action jointly determines: i) which UEs are scheduled on each subcarrier, ii) how much power is allocated to each active stream, and iii) which beam-forming/precoding vector is used for each scheduled UE. When a structured rule such as RZF is adopted, Vn(t)
+
+is computed from the scheduled-user CSI and a lower-dimensional learned regularization action. The policy is masked and normalized as specified in Section IV so that sampled actions satisfy the feasibility constraints. (e) Joint action : The joint action of all BSs is 
+
+a(t) = (a1(t),...,a N (t)) ∈ A ,
+
+> N
+
+∏
+
+> n=1
+
+An. (23) (f) State transition kernel : The transition kernel 
+
+P(s(t + 1) | s(t), a(t)) is induced jointly by the stochastic channel evolution and the deterministic queue update. Specifically, the channel component evolves according to (7), while the virtual queues evolve as (18). Since the achieved rate Rn,m (t) depends on the SINR in (11), the queue evolution at BS n is coupled not only to its own action an(t), but also to the simultaneous actions of the interfering BSs. (g) Rewards : The common team reward combines the instantaneous network sum-rate with a virtual-queue-weighted QoS term that penalizes rate deficits relative to the minimum-rate requirements and prioritizes users with larger accumulated deficits. Specifically, 
+
+r(s(t),a(t)) =
+
+> N
+
+∑
+
+> n=1
+> K
+
+∑
+
+> k=1
+
+cn,k (t)−
+
+> N
+
+∑
+
+> n=1
+
+∑
+
+> m∈M n
+
+Qn,m (t)
+
+(
+
+Rmin  
+
+> n,m
+
+−Rn,m (t)
+
+)
+
+.
+
+(24) For decentralized training, BS n uses the corresponding local contribution to the team reward, 
+
+rn(t) = 
+
+> K
+
+∑
+
+> k=1
+
+cn,k (t)− ∑
+
+> m∈M n
+
+Qn,m (t)
+
+(
+
+Rmin  
+
+> n,m
+
+−Rn,m (t)
+
+)
+
+.
+
+(25) The local utilities satisfy r(s(t), a(t)) = ∑Nn=1 rn(t),but each rn(t) remains action-coupled because its rates depend on neighboring BS actions through inter-cell interference and on co-scheduled streams through intra-cell interference. 
+
+B. Interference-Coupled Structure 
+
+Let Bint  
+
+> n
+
+⊆ N \{ n} denote the set of dominant interferers of BS n. Then, the rate of UE m ∈ M n can be approximated as 
+
+Rn,m (t) ≈ R loc 
+
+> n,m
+
+(
+
+s(t),a n(t),{ab(t)}b∈B int 
+
+> n
+
+)
+
+, (26) where Rloc 
+
+> n,m
+
+(·) denotes the rate mapping obtained from (11) after retaining only the dominant inter-cell interference terms. This local-interference structure motivates graph-based coordination and neighbor-limited information exchange in the proposed decentralized learning framework. The Dec–POMDP is therefore interference-coupled in two senses. First, the immediate reward of each BS depends on neighboring actions through the inter-cell interference terms in (11). Second, the queue dynamics are coupled across BSs through the achieved rates, since stronger interference from neighboring cells increases the virtual-queue backlog of the affected UEs and thus changes future scheduling priorities. 
+
+C. Decentralized Control Objective 
+
+Let πn(an | on) denote the stochastic policy of BS n, and let the joint policy factorize as 
+
+π(a(t) | o(t)) = 
+
+> N
+
+∏
+
+> n=1
+
+πn(an(t) | on(t)) , (27) where o(t) = ( o1(t), ... , o N (t)) . The decentralized control objective is to learn a set of policies {πn}Nn=1 that maximizes the long-term expected team utility 
+
+max 
+
+> {πn}Nn=1
+
+liminf  
+
+> T→∞
+
+1
+
+T Eπ
+
+[T −1∑
+
+> t=0
+
+r(s(t),a(t))]
+
+. (28) Because the virtual queues are part of the system state and the reward in (24) is derived from the Lyapunov-drift reformula-tion, optimizing (28) encourages policies that jointly improve network throughput and stabilize the virtual queues, which in turn promotes satisfaction of the long-term minimum-rate requirements. IV. P ROPOSED COMMUNICATION -E FFICIENT 
+
+SERVERLESS FEDERATED CRITIC LEARNING 
+
+This section presents the proposed communication-efficient serverless federated critic learning framework for the interference-coupled Dec–POMDP in Section III. The key idea is to retain the fully decentralized graph-based collaboration structure of FedCritic while replacing periodic full-parameter gossip with a utility-aware and communication-efficient critic-exchange mechanism. In particular, critic communication is driven not only by local critic drift, but also by wireless-control relevance, namely local queue urgency and interference coupling. Each BS maintains its own local actor and critic, performs local actor–critic updates from locally collected trajectories, and exchanges compressed critic-side information only with neighboring BSs over the coordination graph when the local critic update is deemed sufficiently important. This reduces communication overhead while preserving the benefits of serverless federated value learning in the interference-coupled multi-cell massive-MIMO OFDMA setting. For clarity, we consider synchronous training rounds and reliable peer-to-peer communication over a fixed undirected coordination graph. Critic collaboration is used only during training; after training, each BS executes its local actor using only its local observation. Superscript t denotes a federated training round, whereas τi denotes the ith wireless slot in the rollout collected at round t.
+
+A. Design Rationale 
+
+Compared with the single-antenna OFDMA setting [34], the massive-MIMO extension substantially enlarges the local state and action spaces due to per-subcarrier multiuser scheduling, per-stream power allocation, and beamforming design. As a result, critic models become larger and more sensitive to local environmental heterogeneity. In such a setting, periodic full-parameter gossip is inefficient, since neighboring BSs may repeatedly exchange highly redundant critic information even when their local critic states have changed only marginally. More importantly, in interference-coupled wireless control, not all critic updates are equally valuable. A critic change occurring at a BS with low queue pressure and weak interference coupling may have little impact on network performance, whereas even a moderate critic change at a BS operating under high QoS pressure or strong interference coupling may be highly relevant to its neighbors. This motivates a wireless-aware communication policy. To address these issues, we propose a communication-efficient serverless critic-learning mechanism based on three principles: 1) critic-only federation : only critic-side information is exchanged across BSs, while actors remain local; 2) utility-aware event-triggered communication : a BS communicates only when its critic update is sufficiently important, as determined jointly by critic innovation, local queue urgency, and interference intensity; 3) compressed balanced interference-aware fusion : when communication is triggered, only a compressed shared-critic increment is exchanged and fused over the interference graph using symmetric interference-relevance weights. 
+
+B. Local Actor–Critic Parameterization and Objectives 
+
+For BS n ∈ N , let θtn denote the local actor parameters. To allow value-function personalization while preserving parameter-space compatibility, write the critic as 
+
+Vϑtn (o) = hωtn
+
+(fψtn (o)), ϑtn = ( ψtn,ω tn), (29) where ψtn ∈ Rdc denotes the shared critic parameters and ωtn
+
+denotes a BS-specific value head. All BSs employ compatible shared critic architectures and use the common initialization 
+
+ψ01 = ··· = ψ0 
+
+> N
+
+= ψ0. (30) Only ψtn is exchanged; θtn and ωtn remain local. BS n uses the local utility in (25), denoted by ¯rn(τ ) , rn (τ ).
+
+Its critic approximates the discounted local value 
+
+Vϑn (on(τ )) ≈ Eπ
+
+[ ∞∑
+
+> ℓ=0
+
+γℓ ¯rn(τ +ℓ)
+
+∣∣∣∣∣on(τ )
+
+]
+
+, (31) where γ ∈ (0 ,1) . Since on(τ ) is generally a partial observation, (31) is a local value approximation rather than the full-state Markov value. The discounted objective is used as a tractable training surrogate for the average-return control objective in (28); no exact equivalence between the two criteria is assumed. At round t, BS n collects the on-policy batch 
+
+Dtn = {( otn(τi),a tn(τi),¯rtn(τi),o tn(τi +1) )} Htn −1 
+
+> i=0
+
+. (32) Using the current critic, define 
+
+δtn,i = ¯ rtn(τi)+ γV ϑtn
+
+(otn(τi +1) )−Vϑtn
+
+(otn(τi)), (33) ̂
+
+Atn,i =
+
+> Htn−i−1
+
+∑
+
+> ℓ=0
+
+(γλ )ℓδtn,i +ℓ, λ ∈ [0 ,1] , (34) ̂
+
+Rtn,i =̂ Atn,i +Vϑtn
+
+(otn(τi)). (35) The targets {̂ Rtn,i } are treated as constants during critic optimization. The critic regression loss is 
+
+Lc
+
+> n
+
+(ϑn;Dtn) = 1
+
+HtnHtn −1
+
+∑
+
+> i=0
+
+(
+
+Vϑn
+
+(otn(τi))−̂ Rtn,i 
+
+)2
+
+. (36) For the actor, define ̺
+
+> tn,i
+
+(θn) = πθn (atn(τi) | otn(τi)) 
+
+πθtn (atn(τi) | otn(τi)) . (37) Then the local PPO loss is calculated as 
+
+La
+
+> n
+
+(θn;Dtn) = − 1
+
+HtnHtn −1
+
+∑
+
+> i=0
+
+min 
+
+{̺ tn,i (θn)̂Atn,i ,
+
+clip (̺ tn,i (θn),1−ǫπ,1+ ǫπ
+
+)̂ Atn,i 
+
+}
+
+− βH
+
+HtnHtn −1
+
+∑
+
+> i=0
+
+H(πθn (· | otn(τi)) ). (38) After local critic optimization, BS n obtains ( ˜ψt+1  
+
+> n
+
+,˜ωt+1  
+
+> n
+
+).For the convergence analysis, one effective update of the shared critic parameters is written as 
+
+˜ψt+1  
+
+> n
+
+= ψtn −ηcgtn, gtn , ∇ψ Lc
+
+> n
+
+(ϑtn;Dtn), (39) where ηc > 0. Multiple local critic steps are covered only when their effective direction satisfies the stochastic-gradient conditions stated in Section IV-G. The actor and the personalized critic head remain local. 
+
+C. Coordination Graph and Wireless-Relevance Scores 
+
+Let Gc = ( N ,E) be the undirected coordination graph and 
+
+Bn = {b ∈ N \{ n} : ( n,b ) ∈ E} (40) be the neighbor set of BS n. Critic collaboration is peer-to-peer; no parameter server is used. For b ∈ B n, define the interference contributed by BS b to stream (k,m ) served by BS n during rollout slot τi as 
+
+Itnb,k,m (τi) = ∑
+
+> j∈M b
+
+xtb,k,j (τi)ptb,k,j (τi)
+
+∣∣∣∣(
+
+h(n),t b,k,m (τi)
+
+)H
+
+vtb,k,j (τi)
+
+∣∣∣∣
+
+> 2
+
+.
+
+(41) 
+
+Let Stn(τi) = 
+
+{
+
+(k,m ) : xtn,k,m (τi) = 1 
+
+}
+
+. The normalized queue urgency, total interference intensity, and directional neighbor relevance are 
+
+¯Qtn = 1
+
+Htn|M n|
+
+> Htn−1
+
+∑
+
+> i=0
+
+∑
+
+> m∈M n
+
+Qtn,m (τi)
+
+Qtn,m (τi)+ q0
+
+, q0 > 0, (42) 
+
+¯Itn =1
+
+HtnHtn−1
+
+∑
+
+> i=0
+
+1
+
+max {1,|S tn(τi)|} 
+
+∑
+
+> (k,m )∈S tn(τi)
+
+∑ 
+
+> b∈B n
+
+Itnb,k,m (τi)
+
+∑ 
+
+> b∈B n
+
+Itnb,k,m (τi)+ N0∆f ,
+
+(43) 
+
+¯κtnb =1
+
+HtnHtn−1
+
+∑
+
+> i=0
+
+1
+
+max {1,|S tn(τi)|} 
+
+∑
+
+> (k,m )∈S tn(τi)
+
+Itnb,k,m (τi)
+
+∑  
+
+> b′∈B n
+
+Itnb ′ ,k,m (τi)+ N0∆f .
+
+(44) 
+
+An empty scheduled-stream set contributes zero. Hence, 
+
+0 ≤ ¯Qtn < 1 and 0 ≤ ¯Itn,¯κtnb ≤ 1.
+
+D. Utility-Aware Event Trigger and Compressed Critic Exchange 
+
+Let ̂ ψtn denote the public reconstruction of BS n’s shared critic parameters maintained consistently by BS n and its neighbors. Importantly, ̂ ψtn is a communication-side reference and need not equal the current local critic parameters after neighbor fusion. The utility-aware trigger score is Γtn =
+
+∥∥∥ ˜ψt+1  
+
+> n
+
+−̂ ψtn
+
+∥∥∥2∥∥∥̂ ψtn
+
+∥∥∥2 +ǫtr 
+
+(1+ αQ ¯Qtn +αI ¯Itn
+
+), (45) where ǫtr > 0 and αQ,α I ≥ 0. The communication decision is 
+
+ξtn = 1{Γtn ≥ τ t
+
+> th
+
+}, (46) where τ t 
+
+> th
+
+> 0 is a prescribed threshold. A decreasing threshold promotes asymptotically tighter tracking, whereas a positive threshold floor trades residual disagreement for persistent communication savings, as commonly observed in event-triggered learning and federated optimization schemes [36]. Partition the shared critic parameters into Lc layers with dimensions d1,...,d Lc and ∑Lc 
+
+> ℓ=1
+
+dℓ = dc. At round t, layer ℓ
+
+retains ktn,ℓ coordinates, where 1 ≤ ktn,ℓ ≤ dℓ. Let Cktn,ℓ retain the ktn,ℓ largest-magnitude entries of its argument. Define the layer-wise compressor 
+
+Ctn(x) = col Lc
+
+> ℓ=1
+
+{
+
+Cktn,ℓ (xℓ)
+
+}
+
+. (47) It satisfies ∥∥Ctn(x)−x∥∥22 ≤ (1 −δc)‖x‖22, δc , inf 
+
+> n,t,ℓ
+
+ktn,ℓ 
+
+dℓ
+
+> 0. (48) Initialize ̂ ψ0 
+
+> n
+
+= ˜ψ0 
+
+> n
+
+= ψ0 and e0 
+
+> n
+
+= 0. Then the variables satisfy etn = ˜ψtn −̂ ψtn. (49) Accordingly, the error-compensated discrepancy and transmitted sparse message are 
+
+dtn = ˜ψt+1  
+
+> n
+
+− ˜ψtn +etn = ˜ψt+1  
+
+> n
+
+−̂ ψtn, (50) 
+
+∆tn = ξtnCtn(dtn). (51) The public reconstruction and residual memory are updated as ̂
+
+ψt+1  
+
+> n
+
+=̂ ψtn +∆tn, (52) 
+
+et+1  
+
+> n
+
+= dtn −∆tn = ˜ψt+1  
+
+> n
+
+−̂ ψt+1  
+
+> n
+
+. (53) Thus, all unsent coordinates remain in the public-reconstruction error and are reconsidered in later rounds. 
+
+Lemma 1 (One-step tracking-error control) . For every BS n
+
+and round t,
+
+‖et+1  
+
+> n
+
+‖22 ≤
+
+
+
+(τ t
+
+> th
+
+)2(
+
+‖̂ ψtn‖2 +ǫtr 
+
+)2
+
+, ξtn = 0 ,
+
+(1 −δc)‖dtn‖22, ξtn = 1 .
+
+(54) 
+
+Proof: See Appendix A. 
+
+E. Balanced Interference-Aware Serverless Fusion 
+
+Because ¯κtnb and ¯κtbn are generally different, we define the symmetric edge score as 
+
+stnb = ǫw + ¯ κtnb + ¯ κtbn , (n,b ) ∈ E , (55) where ǫw > 0, and let stn = ∑ 
+
+> j∈B n
+
+stnj . For b ∈ B n, define 
+
+wtnb = (1 −ωself ) stnb 
+
+max {stn,s tb} , 0 < ω self < 1, (56) and wtnn = 1 − ∑
+
+> b∈B n
+
+wtnb . (57) All other entries are zero. Since stnb = stbn , the matrix 
+
+Wt = [ wtnb ] is symmetric and row stochastic, hence doubly stochastic. Moreover, wtnn ≥ ωself .
+
+The shared critic parameters are fused according to 
+
+ψt+1  
+
+> n
+
+= ˜ψt+1  
+
+> n
+
++ ∑
+
+> b∈B n
+
+wtnb 
+
+(̂ 
+
+ψt+1  
+
+> b
+
+−̂ ψt+1 
+
+> n
+
+)
+
+, (58) while the personalized head remains local as ωt+1  
+
+> n
+
+= ˜ωt+1  
+
+> n
+
+.
+
+F. Integrated Critic Recursion 
+
+Define Ψt = [ψt
+
+> 1
+
+, ... , ψ tN ], ˜Ψt+1 = [ ˜ψt+1 1 , ... , ˜ψt+1  
+
+> N
+
+],̂
+
+Ψt+1 = [ ̂ ψt+1 1 ,..., ̂ ψt+1  
+
+> N
+
+], and Gt = [ gt
+
+> 1
+
+,...,g tN ]. Then (58) is equivalently the following equation: 
+
+Ψt+1 = ˜Ψt+1 +̂ Ψt+1 ((Wt)T −IN
+
+). (59) Using ˜Ψt+1 = Ψt −ηcGt, we obtain 
+
+Ψt+1 = (Ψt −ηcGt)(Wt)T +Rt, (60) where 
+
+Rt =
+
+( ˜Ψt+1 −̂ Ψt+1 )(IN −(Wt)T ). (61) 
+
+Lemma 2 (Average preservation and perturbation control) .
+
+Let 
+
+ε2 
+
+> t
+
+, 1
+
+N E
+
+[∥∥∥ ˜Ψt+1 −̂ Ψt+1 
+
+∥∥∥2F
+
+]
+
+= 1
+
+N
+
+> N
+
+∑
+
+> n=1
+
+E‖et+1  
+
+> n
+
+‖22. (62) 
+
+Then Rt1 = 0, (63) 
+
+¯ψt+1 = ¯ψt −ηc¯gt, ¯gt , 1
+
+N
+
+> N
+
+∑
+
+> n=1
+
+gtn, (64) 
+
+1
+
+N E‖Rt‖2F ≤ 4ε2 
+
+> t
+
+. (65) 
+
+Proof: See Appendix B. 
+
+G. Conditional Convergence of the Shared Critic Recursion 
+
+Convergence analysis considers a fixed joint policy 
+
+π whose induced trajectory process admits a stationary distribution. During the analyzed optimization window, the personalized critic heads and stop-gradient regression targets are held fixed. For BS n, define 
+
+Fn(ψ) = EDn ∼dπ
+
+> n
+
+[Lc
+
+> n, fr
+
+(ψ;Dn)], F (ψ) = 1
+
+N
+
+> N
+
+∑
+
+> n=1
+
+Fn(ψ),
+
+(66) where Lc 
+
+> n, fr
+
+denotes the frozen-head, frozen-target loss. Let 
+
+¯ψt = 1
+
+N
+
+> N
+
+∑
+
+> n=1
+
+ψtn, Etψ = 1
+
+N
+
+> N
+
+∑
+
+> n=1
+
+‖ψtn − ¯ψt‖22. (67) 
+
+Assumption 1. 
+
+(A1) The matrices Wt are symmetric and doubly stochastic, and satisfy the following uniform mixing condition: there exists λW ∈ [0 ,1) such that ∥∥∥∥Wt − 1
+
+N 11 T
+
+∥∥∥∥2
+
+≤ λW, ∀t. (68) (A2) Each Fn is lower bounded and L-smooth, i.e., 
+
+‖∇ Fn(ψ)−∇ Fn(ψ′)‖2 ≤ L‖ψ−ψ′‖2. (69) (A3) Let Ft contain the iterates and all randomness available before the round-t trajectory batches are sampled. The directions satisfy 
+
+E[gtn | F t] = ∇Fn(ψtn). (70) For finite constants σ2 
+
+> g
+
+and σ2av ,
+
+1
+
+N
+
+> N
+
+∑
+
+> n=1
+
+E
+
+[∥∥gtn −∇ Fn(ψtn)∥∥22
+
+∣∣∣Ft
+
+]
+
+≤ σ2 
+
+> g
+
+, (71) 
+
+E
+
+∥∥∥∥∥
+
+1
+
+N
+
+> N
+
+∑
+
+> n=1
+
+(gtn −∇ Fn(ψtn))∥∥∥∥∥
+
+> 22
+
+∣∣∣∣∣∣Ft
+
+ ≤ σ2av . (72) This formulation permits cross-BS gradient-noise corre-lation. Under conditional independence, σ2av ≤ σ2 
+
+> g
+
+/N. 
+
+(A4) The local-objective heterogeneity is bounded as 
+
+1
+
+N
+
+> N
+
+∑
+
+> n=1
+
+‖∇ Fn(ψ)−∇ F (ψ)‖22 ≤ ζ2, ∀ψ. (73) (A5) The shared critic parameters use the common initializa-tion (30), and 0 < η c ≤ ηmax , where ηmax is sufficiently small relative to L and the uniform spectral gap 1−λW.
+
+Theorem 1. Under Assumption 1, there exist constants 
+
+C1,...,C 6 > 0 independent of T such that 
+
+1
+
+T 
+
+> T−1
+
+∑
+
+> t=0
+
+E[‖∇ F ( ¯ψt)‖22
+
+] ≤ C1
+
+(F ( ¯ψ0)−F ⋆)
+
+ηcT +C2ηcσ2av 
+
++C3
+
+η2c (σ2 
+
+> g
+
++ζ2)
+
+(1 −λW )2 + C4
+
+(1 −λW )2
+
+1
+
+T 
+
+> T−1
+
+∑
+
+> t=0
+
+ε2 
+
+> t
+
+,
+
+(74) 
+
+where F ⋆ is a lower bound of F . Moreover, 
+
+1
+
+T 
+
+> T−1
+
+∑
+
+> t=0
+
+E[Etψ ] ≤ C5
+
+η2c (σ2 
+
+> g
+
++ζ2)
+
+(1 −λW)2 + C6
+
+(1 −λW)2
+
+1
+
+T 
+
+> T−1
+
+∑
+
+> t=0
+
+ε2 
+
+> t
+
+. (75) 
+
+Proof: See Appendix C. 
+
+In this bound, the tracking-error term T −1 ∑T −1 
+
+> t=0
+
+ε2 
+
+> t
+
+plays the role of a communication-induced optimization-error term, consistent with wireless federated-learning analyses in which unreliable or resource-constrained communication appears explicitly in the convergence behavior [37]. 
+
+Corollary 1. Let JT be uniformly distributed over 
+
+{0,...,T −1} and independent of the training randomness. If 
+
+ηc = cη
+
+√T (76) 
+
+for sufficiently small cη > 0 and 
+
+1
+
+T 
+
+> T−1
+
+∑
+
+> t=0
+
+ε2 
+
+> t
+
+= O
+
+( log T
+
+T
+
+)
+
+, (77) 
+
+then 
+
+E[‖∇ F ( ¯ψJT )‖22
+
+] = O(T −1/2)+ O
+
+( log T
+
+T
+
+)
+
+. (78) 
+
+For a fixed learning rate and limsup T →∞ T −1∑T −1 
+
+> t=0
+
+ε2 
+
+> t
+
+≤ ¯ε2,
+
+the method converges to a stationarity neighborhood whose size is governed by ηcσ2av , η2c (σ2 
+
+> g
+
++ ζ2)/(1 − λW)2, and 
+
+¯ε2/(1 −λW)2.
+
+Proof: See Appendix D. 
+
+Remark 1. Lemma 1 gives the exact one-step effect of event triggering and top-k compression on the public-reference error. Corollary 1 deliberately states the additional decay condition on the accumulated tracking error rather than assuming that a particular threshold schedule automatically guarantees it. Establishing (77) requires corresponding control of the shared-critic drift and communication schedule. 
+
+Remark 2. Theorem 1 concerns first-order stationarity of the fixed-policy, frozen-head, frozen-target aggregate critic objective. It does not establish convergence or global optimality of the evolving PPO actors, the complete actor– critic process, the Dec–POMDP, or the original mixed-integer wireless resource-allocation problem. 
+
+Algorithm 1: Communication-Efficient FedCritic-MIMO                                                       
+
+> Input: Graph Gc; local actors {θ0
+> n}; common shared-critic initialization ψ0; local heads {ω0
+> n}; trigger, compression, and fusion parameters. Initialize ̂ψ0
+> n=˜ψ0
+> n=ψ0
+> n=ψ0and e0
+> n=0for all n
+> for training round t= 0 ,1,... do
+> foreach BS n∈ N in parallel do
+> Collect the local rollout Dtn
+> Compute TD residuals, GAE advantages, and frozen return targets using (33)–(35) Perform local critic optimization to obtain (˜ψt+1
+> n,˜ωt+1
+> n)
+> Update the local actor using (38) Compute ¯Qtn,¯Itn, and {¯κtnb }b∈B nand exchange the scalar directional-relevance summaries with neighboring BSs Evaluate the trigger, form ∆tn, and update ̂ψt+1
+> nand et+1
+> n
+> if ξtn= 1 then
+> Transmit the nonzero critic coordinates and their indices to Bn
+> foreach BS n∈ N in parallel do
+> Construct Wtfrom (55)–(57) Update the shared critic parameters using (58) and retain
+> ωt+1
+> n=˜ωt+1
+> n
+
+H. Communication Overhead 
+
+Let ktn = ∑Lc 
+
+> ℓ=1
+
+ktn,ℓ . If each transmitted value uses bv bits and a coordinate index uses bi = ⌈log 2 dc⌉ bits, the directed logical critic payload at round t is 
+
+Bcomm (t) = 
+
+> N
+
+∑
+
+> n=1
+
+|B n|ξtnktn(bv +bi) bits . (79) If one physical broadcast is received by all neighbors, the factor |B n| is omitted for that transmitting BS. Equation (79) excludes protocol headers and the scalar relevance summaries required to construct (55). Because the current balanced weights require both ¯κtnb and ¯κtbn , these low-rate summaries are exchanged independently of whether the critic trigger fires, or their most recently received values must be used. 
+
+I. Training Procedure 
+
+Algorithm 1 summarizes the training procedure. Critic collaboration affects training only; decentralized execution uses the local actor at each BS. V. S IMULATION RESULTS 
+
+A. Simulation Setup 
+
+We evaluate FedCritic-MIMO in a strongly interference-coupled reuse-1 multi-cell massive-MIMO OFDMA downlink consistent with Section II. The network has 7 BSs, 8 UEs per BS, 16 subcarriers, 32 BS antennas, and up to 3 simultaneous spatial streams per subcarrier. Consistent with the open and disaggregated RAN setting, each BS is treated as an indepen-dently deployable cell-level controller with local observations, local actor execution, and private experience. FedCritic-MIMO does not use a central trainer or parameter server; collaboration is limited to peer-to-peer exchange of shared critic parameters. Large-scale gains follow the lognormal model in Table I, and small-scale channels follow temporally correlated, spatially i.i.d. Rayleigh fading with Gauss–Markov coefficient ρ = 0 .55 .The radius-2 graph is used as the logical inter-controller critic-exchange graph for critic exchange and fusion; SINR computation includes interference from all co-channel BSs. TABLE I: Main simulation and learning parameters.                                                                                                  
+
+> Parameter Value Parameter Value
+> Network and channel
+> Number of BSs, N7UEs per BS, |M n|8
+> BS antennas, Ln32 Maximum spatial streams, Sn3
+> Subcarriers, K16 Frequency reuse 1
+> Per-BS power budget, Pn1normalized unit Noise PSD, N010 −3
+> Temporal channel correlation, ρ0.55 Small-scale fading Temporally correlated, spatially i.i.d. Rayleigh Direct-link large-scale gain ln βdir ∼ N (−2.3,1.10 2)Cross-link gain multiplier 3.0
+> Minimum-rate target, Rmin
+> n,m 1.9normalized units Coordination graph Radius-2ring; all BSs contribute physical interference Power-utilization levels, υn{0.2,0.4,0.6,0.8,1.0}Normalized RZF levels, ¯α{10 −3,10 −2,5×10 −2,10 −1,5×10 −1}
+> Actor–critic training
+> Discount factor, γ0.99 GAE parameter, λ0.95
+> Actor learning rate, ηa3×10 −4Critic learning rate, ηc5×10 −4
+> PPO clipping, ǫπ0.20 Entropy coefficient, βH0.02
+> Actor/critic epochs 4/4Gradient-norm limit 0.50
+> Rollout horizon/minibatch size 128 /64 Maximum training updates 250
+> Independent training runs 6Evaluation 6validation and 30 held-out channel seeds/run Queue normalization, q010 Reward scaling 0.01
+> Federated communication and fusion
+> Shared critic dimension, dc50 ,048 Value/index precision 32 /16 bits Overall compression budget, ρc0.20 Per-layer ratio bounds [0 .10 ,0.25]
+> Initial/floor trigger thresholds τth ,0= 0 .020 ,τth ,min = 0 .001 Queue/interference coefficients αQ= 1 .0,αI= 1 .5
+> Local fusion weight, ωself 0.55 Exchanged parameters Shared critic only
+
+One environment step is one network-wide wireless slot in which all BSs observe local states, select actions, receive rewards, and update channel and virtual-queue states. Each policy update uses a rollout of H = 128 joint steps; thus, U
+
+updates correspond to 128 U network-wide interactions, or 
+
+32 ,000 interactions for U = 250 . Interactions are counted per wireless slot, not per BS. All learning-based methods use the same local actor architecture, action space, PPO hyperparameters, rollout budget, and teacher-guided warm start. Behavior-cloned actors and pretrained critics are copied identically to all compatible methods before method-specific training, so differences arise only from information scope, critic parameterization, and critic coordination. For FedCritic-MIMO, the actor and personalized critic components remain local during training, while only the shared critic component participates in peer-to-peer collaboration. Each method is trained with six independent random seeds. During training, validation on a fixed held-out channel set is used for checkpoint selection; selected checkpoints are then evaluated without exploration or gradient updates on unseen channel realizations. Unless otherwise stated, learning curves show run-level means with 95% confidence intervals, and final bars and distributions are computed from the selected checkpoints on the held-out evaluation set. Reported communication overhead refers to training-side critic-model traffic among distributed controllers. It does not represent user-plane payload traffic, fronthaul traffic, or a specific standardized Open RAN interface. The principal simulation and learning parameters are summarized in Table I. 
+
+B. Baselines and Comparison Protocol 
+
+We compare FedCritic-MIMO with representative heuristic, independent-learning, centralized-training, and communication-ablation baselines.  
+
+> •
+
+Random : feasible scheduling, stream activation, power, and RZF-regularization actions are selected randomly.  
+
+> •
+
+Greedy-MaxGain : each BS schedules UEs with the largest instantaneous direct-channel gains and uses the maximum available power-fraction level.  
+
+> •
+
+Greedy-Queue : each BS applies a queue-weighted channel-gain rule to account for long-term rate deficits without learning.  
+
+> •
+
+Greedy-IA-Queue : the Greedy-Queue metric is further normalized by incoming and outgoing interference-risk terms, forming the strongest non-learning heuristic.  
+
+> •
+
+Strict-Independent-PPO : each BS trains a purely local actor–critic using only own-cell channel, queue, occu-pancy, and measured-SINR information, without explicit neighbor features or outgoing-interference pricing.  
+
+> •
+
+No-Federation-IA-PPO : each BS uses the same interference-aware observations, reward, actor, and critic architectures as FedCritic-MIMO, but without critic exchange. This isolates the benefit of serverless critic collaboration.  
+
+> •
+
+CTDE-MAPPO : decentralized actors are trained with a centralized critic using concatenated BS-level critic features, while execution remains local.  
+
+> •
+
+Periodic-Full : every BS exchanges its complete shared critic parameters with coordination neighbors at every training update.  
+
+> •
+
+Event-Uncompressed : the proposed event rule determines communication times, but transmitted critic increments are uncompressed.  
+
+> •
+
+Proposed : the complete FedCritic-MIMO framework with utility-aware event-triggered shared-critic exchange, adaptive layer-wise top-k compression with error feed-back, and balanced interference-aware serverless fusion. 0 50 100 150 200 250 
+
+> Training update
+> 30
+> 35
+> 40
+> 45
+> 50
+> 55
+> Validation reward return
+> Strict-Independent-PPO
+> No-Federation-IA-PPO
+> CTDE-MAPPO
+> Periodic-Full
+> Event-Uncompressed
+> Proposed
+> Warm-start reference
+
+(a)      
+
+> 050 100 150 200 250
+> Training update
+> 0  45
+> 0  50
+> 0  55
+> 0   0
+> 0   5
+> 0   0
+> 0   5
+> 0   0
+> 
+> oS satisfaction ratio
+> Strict-Independent-PPO
+> No-Federation-IA-PPO
+> CTDE-MAPPO
+> Periodic-Full
+> Event-Uncompressed
+> Proposed
+
+(b)      
+
+> 050 100 150 200 250
+> Training update
+> 1
+> 2 0
+> 2 2
+> 2 4
+> 2
+> 2
+> Interference per unit sum-rate
+> 1e −4
+> Strict -Independent-PPO
+> No-Federation-IA-PPO
+> CTDE-MAPPO
+> Periodic-Full
+> Event-Uncompressed
+> Proposed
+
+(c) 
+
+Fig. 1: Validation learning dynamics over training updates: (a) reward, (b) QoS satisfaction, and (c) interference cost per unit sum rate. 
+
+C. Learning Dynamics 
+
+Fig. 1 reports the evolution of the validation reward, the QoS-satisfaction metric, and the interference cost per unit sum rate. All learning-based methods improve substantially beyond the common warm-start reference, confirming that the subsequent policy updates provide material gains over the teacher-guided initialization. As Fig. 1 (a) shows, the proposed method separates from the other methods after approximately the first one hundred updates and reaches a validation reward of about 56 .3 at update 250 , compared with approximately 52 .5, 52 .0, 51 .5, 50 .3, and 48 .8 for CTDE-MAPPO, Event-Uncompressed, No-Federation-IA-PPO, Periodic-Full, and Strict-Independent-PPO, respectively. The QoS trajectories in Fig. 1 (b), exhibit a similar, although less separated, ordering. At the final displayed update, the proposed method reaches approximately 0.78 ,while CTDE-MAPPO, No-Federation-IA-PPO, Event-Uncompressed, Periodic-Full, and Strict-Independent-PPO reach approximately 0.76 , 0.74 , 0.73 , 0.71 , and 0.67 ,respectively. The confidence bands of the proposed method and CTDE-MAPPO overlap near the end of training;       
+
+> G!'$$
+> #!# #
+>  !#
+> 
+> ! $
+> %# !""
+> ! "
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> "  !&! !#$!
+
+Fig. 2: Held-out episodic reward distribution.             
+
+> 0000 000 0
+> " %!$
+> 00
+> 0
+> 0
+> 0
+> 0
+> 0
+> %%$&   %$   $#
+> 0
+>   
+> " %
+> &$ !"##
+> " !#
+
+Fig. 3: Cumulative training-side communication overhead. hence, the figure supports the conclusion that the proposed decentralized method matches the strongest centralized-training baseline in QoS, rather than establishing a statistically significant QoS advantage from the learning curves alone. As shown in Fig. 1 (c), the proposed method also produces the most consistent reduction in the interference-per-rate metric, for which lower values are preferable. It decreases from approximately 2.8 × 10 −4 at initialization to about 
+
+1.8×10 −4, whereas the strongest competing learning methods finish between approximately 2.0 × 10 −4 and 2.1 × 10 −4.Thus, the reward improvement is accompanied by more interference-efficient operation, rather than being obtained solely by increasing the delivered rate without controlling the resulting inter-cell interference. Because the proposed reward curve remains mildly increasing at the last displayed update, these results should be interpreted as finite-budget performance rather than evidence of empirical convergence. 
+
+D. Held-Out Reward Performance 
+
+Fig. 2 evaluates the selected policies on channel realizations not used for training or checkpoint selection. The proposed method attains a mean episodic reward of approximately 
+
+57 .0. Event-Uncompressed and CTDE-MAPPO achieve ap-proximately 53 .3 and 53 .1, respectively, while No-Federation-IA-PPO reaches approximately 52 .2. Strict-Independent-PPO and Periodic-Full attain approximately 50 .4 and 50 .3, and Greedy-Queue reaches approximately 46 .4. Accordingly, the proposed method improves the mean held-out reward by about 6.8% relative to Event-Uncompressed, 7.2% relative to CTDE-MAPPO, and 9.1% relative to No-Federation-IA-PPO. The proposed distribution is shifted to the right and has a comparatively compact interquartile range. This indicates that the gain is present across the held-out realizations rather than being generated by a small number of exceptionally favorable episodes. Nevertheless, episode-level samples generated by the same trained policy are not independent training replicates. Therefore, claims of statistical significance should be based on paired comparisons across the independent training runs, while the boxplot is used as a descriptive representation of held-out variability. 
+
+E. Communication Efficiency 
+
+Fig. 3 reports cumulative training-side communication under the adopted accounting rule. At update 250 , Periodic-Full and Event-Uncompressed require approximately 11 .2
+
+and 11 .0 Gbits, respectively, whereas CTDE-MAPPO and the proposed method require approximately 3.65 and 
+
+2.65 Gbits. The proposed method therefore reduces the reported communication by approximately 76% relative to both uncompressed distributed critic-exchange baselines and by approximately 27% relative to CTDE-MAPPO. The small difference between Periodic-Full and Event-Uncompressed shows that the selected event trigger remains active during most training rounds. Consequently, the measured reduction relative to the uncompressed distributed baselines is attributable primarily to layer-wise sparse critic exchange and error feedback, rather than to a large decrease in the number of communication rounds. The experiment therefore demonstrates the effectiveness of compressed exchange at the selected performance-oriented operating point, but does not by itself isolate the gain attributable to event triggering. Such isolation would require a periodic-compressed baseline with the same sparsification budget. Methods without critic coordination have zero federated-model communication, but their lower reward, QoS, and interference efficiency show the performance cost of eliminating collaboration entirely. 
+
+F. Long-Term QoS and Mean SINR 
+
+Fig. 4 compares the held-out QoS metric and mean SINR. Fig. 4 (a) shows that the proposed method obtains a QoS-satisfaction ratio of approximately 0.78 , closely followed by CTDE-MAPPO at approximately 0.77 . No-Federation-IA-PPO and Event-Uncompressed achieve approximately 0.74 
+
+and 0.73 , while Periodic-Full and Strict-Independent-PPO attain approximately 0.70 and 0.69 . The overlapping error bars of the proposed method and CTDE-MAPPO again indicate comparable QoS performance; the more pronounced benefit of the proposed method appears in the interference-related metrics. In Fig. 4 (b), the proposed method reaches a mean SINR of approximately −2.3 dB, compared with approximately 
+
+−4.0 dB for Event-Uncompressed, −4.8 dB for CTDE-MAPPO, −5.1 dB for No-Federation-IA-PPO, −5.6 dB for Periodic-Full, and −5.9 dB for Strict-Independent-PPO. Hence, the proposed method improves the mean SINR by approximately 1.7 dB relative to Event-Uncompressed and by approximately 2.5 dB relative to CTDE-MAPPO. The negative absolute SINR values are consistent with the deliberately interference-limited reuse-1 operating regime; the relevant observation is the substantial relative improvement achieved through coordinated scheduling, power control, and beamforming.               
+
+> R #$"
+> &,+ #
+> &,))
+> &, ))
+> (& (#%##(
+> $ &( $# 
+>  
+> & $  )!!
+> *#(#$"%&''
+> &$%$'
+> 
+> 
+> 
+> 
+> 
+> 
+> $#(&"  $ '(  '(  $# &(  $
+> (a)
+> R &!'%
+> )""!/.#&
+> )""!/,","
+> )""!/,","
+> +)# +&!"("&!"&+
+> ' "!")+#'&
+>  
+> ")#'!# ,$$
+> -"&+& '%()"**"!
+> )'('*"!
+>  
+>  
+>  
+>  
+>  
+>  
+>  
+>  
+> 
+> "&!
+> (b)
+
+Fig. 4: Held-out QoS and SINR performance of the selected checkpoints: (a) long-term QoS-satisfaction ratio and (b) mean SINR. 
+
+G. User-Rate Distribution 
+
+Fig. 5 presents the empirical CDF of the per-UE time-average held-out rate. The proposed curve is shifted to the right of those of the learning and heuristic baselines over most of the distribution. The separation is particularly visible in the lower and median portions of the CDF, indicating that the proposed method improves not only the average network outcome but also the rates experienced by comparatively weak UEs. The curves approach one another in the upper tail, suggesting that the principal benefit is improved service to disadvantaged and typical users rather than an isolated increase in the largest UE rates. The vertical line at Rmin  
+
+> n,m
+
+= 1 .9 identifies the long-term target. The rate CDF and the reported QoS bar must be interpreted using explicitly distinct definitions if the latter is computed as a time average of instantaneous UE-slot satisfaction indicators. If the QoS bar is intended instead to denote the fraction of UEs whose time-average rate satisfies the long-term constraint, it must equal 1 −̂ F ¯R(Rmin 
+
+> n,m
+
+) and should be recomputed directly from the same samples used for Fig. 5. This distinction is required to avoid conflating instantaneous service reliability with satisfaction of the long-term average-rate constraint. 
+
+H. Interference Management 
+
+The interference-per-rate results provide a normalized view of how effectively each policy converts the interference it creates into useful throughput. The proposed method attains approximately 1.78 × 10 −4, compared with 1.93 × 10 −4 for CTDE-MAPPO, 1.98 × 10 −4 for No-Federation-IA-PPO, 
+
+2.03 × 10 −4 for Event-Uncompressed, and 2.40 × 10 −4 for Periodic-Full. These values correspond to reductions of approximately 8% , 10% , 12% , and 26% , respectively. Fig. 6 summarizes the joint QoS–interference operating points. The preferred region is the upper-left corner, 00 0 0  0  0  0           
+
+> & ( "*& &(
+> 00
+> 0
+> 0
+> 0
+> 0
+> 0
+> "%  & !   
+>  #$"
+> &,+ #
+> &,))
+> &, ))
+> (& (#%##(
+> $ &( $# 
+>   
+> & $ )!!
+> *#(#$"%&''
+> &$%$'
+> Rm 
+
+Fig. 5: Empirical CDF of per-UE time-average held-out rates.                                 
+
+> 1      
+> %* (! (% ' (+%"*)+$(*  
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> &)*")!*"&%(*"&
+>  %&$ ( . -"% ( .+ +( . + +*("*% '% %* & (*"&%     ("&"+## , %*%&$'( )) (&'&) 
+
+Fig. 6: QoS–interference operating points of the evaluated methods. representing larger QoS satisfaction and smaller interference cost. The proposed method occupies the most favorable displayed point. CTDE-MAPPO provides nearly the same QoS ratio but at a visibly larger interference cost, whereas No-Federation-IA-PPO and Event-Uncompressed sacrifice both QoS and interference efficiency. The comparison with Strict-Independent-PPO and the greedy baselines further shows that explicit interference awareness alone is insufficient to attain the proposed operating point; collaborative critic learning contributes additional value. 
+
+I. Overall Operating Point 
+
+Taken together, the figures indicate that the proposed method provides the strongest performance–communication operating point among the coordinated learning methods con-sidered. It achieves the largest validation and held-out reward, the highest mean SINR, the smallest interference cost per unit sum rate, and a QoS level comparable to the best centralized-training baseline. Relative to uncompressed distributed critic exchange, these benefits are obtained with an approximately 
+
+76% reduction in reported training-side communication. Relative to the non-federated learning baselines, the proposed method uses additional training communication but obtains materially better reward, user-rate, QoS, and interference outcomes. The result should therefore be interpreted as a favorable joint operating point, not as a claim that the proposed method minimizes communication in isolation. VI. C ONCLUSION 
+
+This paper proposed FedCritic-MIMO, a communication-efficient serverless federated critic learning framework for massive-MIMO resource control in open and disaggregated 6G RANs. The framework enables independently deployable cell-level controllers to coordinate scheduling, power allocation, and beamforming without centralized trajectory collection, ac-tor sharing, or parameter-server aggregation. By keeping local actors and personalized critic components private while ex-changing only compatible shared critic parameters, FedCritic-MIMO preserves local control autonomy and supports collab-oration over the physical interference graph. FedCritic-MIMO combines utility-aware triggering, adaptive layer-wise top-k
+
+compression with error feedback, and balanced interference-aware fusion to make peer-to-peer critic collaboration both communication- efficient and radio-aware. We also estab-lished conditional finite-time stationarity and consensus guar-antees for the balanced shared-critic recursion under a fixed-policy, frozen-target critic-regression model. Simulation results showed that FedCritic-MIMO achieves the most favorable performance–communication tradeoff among the considered baselines, improving throughput, user-rate distribution, SINR, QoS satisfaction, and interference efficiency while substan-tially reducing critic-model traffic. Future work will consider asynchronous peer coordination, mobility-aware interference graphs, imperfect CSI, and larger heterogeneous deployments. APPENDIX APROOF OF LEMMA 1
+
+Proof: If ξtn = 0 , then Γtn < τ th . Since 1+ αQ ¯Qtn +αI ¯Itn ≥
+
+1 and et+1  
+
+> n
+
+= dtn, (45) gives ‖et+1  
+
+> n
+
+‖2 < τ th 
+
+(‖̂ ψtn‖2 + ǫtr 
+
+).If ξtn = 1 , then et+1  
+
+> n
+
+= dtn − C tn(dtn), and (48) yields 
+
+‖et+1  
+
+> n
+
+‖22 ≤ (1 −δc)‖dtn‖22. These two cases prove (54). 
+
+APPENDIX BPROOF OF LEMMA 2
+
+Proof: Because Wt is doubly stochastic, 
+
+(IN − (Wt)T )1 = 0. Equation (61) therefore gives Rt1 = 0.Right-multiplying (60) by 1/N then gives (64). Finally, 
+
+‖IN −(Wt)T ‖2 ≤ 2 for a symmetric stochastic matrix; hence,  
+
+> 1
+> N
+
+E‖Rt‖2F ≤ 4 
+
+> N
+
+E‖ ˜Ψt+1 −̂ Ψt+1 ‖2F = 4 ε2 
+
+> t
+
+, which proves (65). 
+
+APPENDIX CPROOF OF THEOREM 1
+
+Proof: Let J , 1 
+
+> N
+
+11 T , Π , IN −J, and Zt , ΨtΠ. Then 
+
+N −1‖Zt‖2F = Etψ . With At , Wt − J, double stochasticity gives WtΠ = ΠW t = At and ‖At‖2 ≤ λW . Using 
+
+RtΠ = Rt, the disagreement recursion is 
+
+Zt+1 = (Zt −ηcGtΠ)(At)T +Rt. (C.1) Let Ut = [∇F1(ψt
+
+> 1
+
+), ... , ∇FN (ψtN )] . By smoothness, bounded heterogeneity, and (71), 
+
+1
+
+N E‖GtΠ‖2F ≤ c0
+
+(L2E[Etψ ]+ σ2 
+
+> g
+
++ζ2) (C.2) for a constant c0 > 0. Applying Young’s inequality to (C.1), using (65), and choosing ηc ≤ ηmax sufficiently small relative to L and 1 − λW, yields constants c1,c 2 > 0 and ρdis ∈ (0 ,1) 
+
+with 1−ρdis ≥ c1(1 −λW) such that 
+
+E[Et+1  
+
+> ψ
+
+] ≤ ρdis E[Etψ ]+ c2η2c
+
+1−λW
+
+(σ2 
+
+> g
+
++ζ2)+ c2
+
+1−λW
+
+ε2 
+
+> t
+
+. (C.3) Since E0 
+
+> ψ
+
+= 0, summing (C.3) and using ∑ 
+
+> j≥0
+
+ρj 
+
+> dis
+
+=(1 −ρdis )−1 gives 
+
+1
+
+T 
+
+> T−1
+
+∑
+
+> t=0
+
+E[Etψ ] ≤ C5
+
+η2c (σ2 
+
+> g
+
++ζ2)
+
+(1 −λW)2 + C6
+
+(1 −λW)2
+
+1
+
+T 
+
+> T−1
+
+∑
+
+> t=0
+
+ε2 
+
+> t
+
+, (C.4) which proves (75). It remains to bound the aggregate objective. By (64), 
+
+¯ψt+1 = ¯ψt − ηc ¯gt. Define ¯ht , 1
+
+> N
+
+∑Nn=1 ∇Fn(ψtn) and 
+
+bt , ¯ht −∇ F ( ¯ψt). Smoothness and Jensen’s inequality imply 
+
+‖bt‖22 ≤ L2Etψ . Moreover, Assumption 1 gives E[¯ gt | F t] = ¯ht
+
+and E[‖¯gt −¯ht‖22 | F t] ≤ σ2av . The descent lemma, followed by Young’s inequality, therefore gives, for a sufficiently small ηc,
+
+E[F ( ¯ψt+1 )] ≤ E[F ( ¯ψt)] − ηc
+
+2 E‖∇ F ( ¯ψt)‖22
+
++c3ηcL2E[Etψ ]+ c4Lη 2c σ2av . (C.5) Summing (C.5), using the lower bound F ⋆, dividing by ηcT ,and substituting (C.4) yields (74) after absorbing numerical and smoothness constants into C1,...,C 4. Together with (C.4), this proves the theorem. 
+
+APPENDIX DPROOF OF COROLLARY 1
+
+Proof: Uniformity and independence of JT imply 
+
+E‖∇ F ( ¯ψJT )‖22 = 1
+
+> T
+
+∑T −1 
+
+> t=0
+
+E‖∇ F ( ¯ψt)‖22. Substituting 
+
+ηc = cη/√T and (77) into (74) gives, respectively, O(T −1/2),
+
+O(T −1/2), O(T −1), and O(log T /T ) for its four right-hand-side terms, proving (78). For fixed ηc, taking the limit superior in (74) and using limsup T →∞ T −1 ∑ 
+
+> t<T
+
+ε2 
+
+> t
+
+≤ ¯ε2
+
+gives the stated stationarity neighborhood. 
+
+REFERENCES [1] E. Hossain and A. I. Vera-Rivera, “6G cellular networks: Mapping the landscape for the IMT-2030 framework,” IEEE Trans. Technol. Soc. ,vol. 6, no. 4, pp. 377–392, Dec. 2025. [2] M. Na et al. , “Operator’s perspective on 6G: 6G services, vision, and spectrum,” IEEE Commun. Mag. , vol. 62, no. 8, pp. 178–184, Aug. 2024. [3] B. Agarwal et al. , “Open RAN for 6G networks: Architecture, use cases and open issues,” IEEE Commun. Surveys Tuts. , vol. 28, pp. 2881–2924, Secondquarter 2026. [4] M. Polese et al. , “Empowering the 6G cellular architecture with open RAN,” IEEE J. Sel. Areas Commun. , vol. 42, no. 2, pp. 245–262, Feb. 2024. [5] F. Mazzenga and A. Vizzarri, “Time synchronous OFDMA for dense wireless access in open-RAN,” IEEE Commun. Lett. , vol. 30, pp. 66–70, 2026. [6] W. Chen et al. , “Toward standardization of 6G and NextG: Key technologies to enable fundamental enhancements,” IEEE J. Sel. Areas Commun. , vol. 44, pp. 4333–4365, Mar. 2026. [7] M. Elyasi and A. Vosoughi, “Massive MIMO over correlated fading channels: Multi-cell MMSE processing, pilot assignment and power control,” IEEE Trans. Wirel. Commun. , vol. 25, pp. 30–46, Jun. 2026. [8] A. Tusha and H. Arslan, “Interference burden in wireless communica-tions: A comprehensive survey from PHY layer perspective,” IEEE Com-mun. Surveys Tuts. , vol. 27, no. 4, pp. 2204–2246, Fourthquarter 2025. [9] T. Li et al. , “Applications of multi-agent reinforcement learning in future internet: A comprehensive survey,” IEEE Commun. Surveys Tuts. , vol. 24, no. 2, pp. 1240–1279, Secondquarter 2022. [10] M. Chafii et al. , “Emergent communication in multi-agent reinforcement learning for future wireless networks,” IEEE Internet Things Mag. , vol. 6, no. 4, pp. 18–24, Dec. 2023. [11] A. Kopic, E. Perenda, and H. Gacanin, “A collaborative multi-agent deep reinforcement learning-based wireless power allocation with centralized training and decentralized execution,” IEEE Trans. Commun. , vol. 72, no. 11, pp. 7006–7016, Nov. 2024. [12] A. E. Matemu, M. Kim, and K. Lee, “Joint scheduling, O-RU association, and power allocation in O-RAN via model-based optimization and PPO-based reinforcement learning,” IEEE Trans. Wirel. Commun. , vol. 25, pp. 20102–20117, Jul. 2026. [13] H. Zhang, H. Zhou, and M. Erol-Kantarci, “Federated deep reinforcement learning for resource allocation in O-RAN slicing,” in Proc. IEEE Glob. Commun. Conf. (GLOBECOM) , Rio de Janeiro, Brazil, 2022, pp. 958–963. [14] Y. S. Nasir and D. Guo, “Multi-agent deep reinforcement learning for dynamic power allocation in wireless networks,” IEEE J. Sel. Areas Commun. , vol. 37, no. 10, pp. 2239–2250, Oct. 2019. [15] N. Naderializadeh et al. , “Resource management in wireless networks via multi-agent deep reinforcement learning,” IEEE Trans. Wirel. Commun. , vol. 20, no. 6, pp. 3507–3523, Jun. 2021. [16] A. Al-Habashna et al. , “Decentralized and joint resource allocation, beamforming, and beamcombining for 5G networks with heterogeneous MARL,” IEEE Access , vol. 13, pp. 101491–101506, 2025. [17] Y. Chen et al. , “Proportional fair resource scheduling for dynamic beyond 5G networks: A distributed hierarchical DRL approach,” IEEE Trans. Mobile Comput. , vol. 25, no. 7, pp. 10893–10909, Jul. 2026. [18] Y. Ma et al. , “Joint beamforming and resource allocation for delay optimization in RIS-assisted OFDM systems: A DRL approach,” arXiv preprint arXiv:2506.03586, 2025. [19] C. Amato, “An introduction to centralized training for decentralized execution in cooperative multi-agent reinforcement learning,” arXiv preprint arXiv:2409.03052, 2024. [20] J. Zhang, “Multi-agent reinforcement learning in wireless distributed networks for 6G,” arXiv preprint arXiv:2502.05812, 2025. [21] E. Eldeeb and H. Alves, “An offline multi-agent reinforcement learning framework for radio resource management,” IEEE Trans. Mobile Comput. , vol. 25, no. 1, pp. 1137–1150, Jan. 2026. [22] K. Zhang et al. , “Fully decentralized multi-agent reinforcement learning with networked agents,” in Proc. 35th Int. Conf. Mach. Learn. (ICML) ,Stockholm, Sweden, 2018, pp. 5872–5881. [23] Z. Chen et al. , “Sample and communication-efficient decentralized actor–critic algorithms with finite-time analysis,” in Proc. 39th Int. Conf. Mach. Learn. (ICML) , Baltimore, MD, USA, 2022, pp. 3794–3834. [24] J. Jiang, K. Su, and Z. Lu, “Fully decentralized cooperative multi-agent reinforcement learning: a survey,” arXiv preprint arXiv:2401.04934, 2024. [25] Y. Tao, J.-C. He, Z.-J. Liu, and S. Yang, “Learn-to-share: A decentralized multi-agent spectrum sharing framework for heterogeneous networks in the 6G era,” IEEE J. Sel. Areas Commun. , vol. 44, pp. 3490–3506, Jan. 2026. [26] H. B. McMahan et al. , “Communication-efficient learning of deep networks from decentralized data,” in Proc. 20th Int. Conf. Artif. Intell. Statist. (AISTATS) , Fort Lauderdale, FL, USA, 2017, pp. 1273–1282. [27] T. Li et al. , “Federated optimization in heterogeneous networks,” in Proc. Mach. Learn. Sys. (MLSys) , vol. 2, Austin, TX, USA, 2020, pp. 429–450. [28] P. Parhizgar et al. , “Federated reinforcement learning for energy-efficient D2D-IoT networks with AoI awareness,” IEEE Open J. Veh. Technol. , vol. 6, pp. 2828–2841, Sep. 2025. [29] Z. Ji, Z. Qin, and X. Tao, “Meta federated reinforcement learning for distributed resource allocation,” IEEE Trans. Wirel. Commun. , vol. 23, no. 7, pp. 7865–7876, Jul. 2024. [30] X. Yu et al. , “Communication-efficient soft actor–critic policy collaboration via regulated segment mixture,” IEEE Internet Things J. ,vol. 12, no. 4, pp. 3929–3947, Feb. 2025. [31] R. Tan et al. , “Pareto actor–critic for communication and computation co-optimization in non-cooperative federated learning services,” IEEE Trans. Mobile Comput. , vol. 25, no. 2, pp. 1628–1643, Feb. 2026. [32] A. Koloskova, S. U. Stich, and M. Jaggi, “Decentralized stochastic optimization and gossip algorithms with compressed communication,” in Proc. 36th Int. Conf. Mach. Learn. (ICML) , Long Beach, CA, USA, 2019, pp. 3478–3487. [33] S. P. Karimireddy et al. , “Error feedback fixes SignSGD and other gradient compression schemes,” in Proc. 36th Int. Conf. Mach. Learn. (ICML) , Long Beach, CA, USA, 2019, pp. 3252–3261. [34] A. Farajzadeh and M. Erol-Kantarci, “FedCritic: Serverless federated critic learning-based resource allocation for multi-cell OFDMA in 6G,” arXiv preprint arXiv:2605.21418, 2026. [35] Z. Jiang et al. , “Partitioned edge learning over fast fading channels,” 
+
+IEEE Trans. Veh. Technol. , vol. 74, no. 6, pp. 8561–8576, Jun. 2025. [36] X. He et al. , “Asymptotic analysis of federated learning under event-triggered communication,” IEEE Trans. Signal Process. , vol. 71, pp. 2654–2667, 2023. [37] Z. Chen et al. , “Robust federated learning for unreliable and resource-limited wireless networks,” IEEE Trans. Wireless Commun. , vol. 23, no. 8, pp. 9793–9809, Aug. 2024.

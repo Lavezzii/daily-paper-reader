@@ -1,0 +1,1018 @@
+Title: Physics-Guided Neural Airy Beamforming for Near-Field Blockage Mitigation
+
+URL Source: https://arxiv.org/pdf/2608.04388v1
+
+Published Time: Thu, 06 Aug 2026 00:29:55 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+> 1
+
+# Physics-Guided Neural Airy Beamforming for Near-Field Blockage Mitigation 
+
+Yi Wang and Linglong Dai, Fellow, IEEE 
+
+Abstract —High-frequency communication systems heavily rely on line-of-sight (LoS) paths, so blockage of the LoS path can cause severe performance loss. Near-field Airy beams with curved trajectories can steer energy around obstacles, offering a promis-ing solution for blockage mitigation. However, existing methods for selecting a near-optimal Airy beam trajectory either rely on high-overhead beam training, or employ data-driven learning without a clear, physically interpretable rule. To address this problem, we propose a physics-guided neural Airy beamforming framework that selects a near-optimal trajectory in one shot with clear physical interpretability. Specifically, we first formulate a single-edge representation of the blocker model in 3GPP TR 38.901 and reveal the trajectory–edge coupling mechanism. This analysis yields a trajectory-selection optimality condition that defines the candidate trajectories. Although these trajectories generally cannot be expressed in closed form, we show that they form a continuous structure. This continuous structure is then exploited to construct a compact physics-defined region that captures near-optimal trajectories. Guided by this region, a lightweight neural predictor is finally designed to directly select a near-optimal trajectory without beam training. Simulations show that the compact physics-defined region effectively captures near-optimal trajectories, while occupying only about 6% of the candidate-space area on average. The proposed framework retains 99 .7% of the reference rate obtained through numerical optimization, and nearly matches the rate of the data-driven method despite using approximately 112 × fewer neural-network parameters. 
+
+Index Terms —Airy beam, blockage, near-field communica-tions, physics-guided neural network. 
+
+I. I NTRODUCTION 
+
+The growing demand for high data rates is driving com-munication systems toward the millimeter-wave and Terahertz bands [1]. At these high frequencies, non-line-of-sight (NLoS) paths are typically much weaker than the line-of-sight (LoS) path, making reliable links strongly dependent on propagation along the LoS path [2]. Consequently, blockage of the LoS path can cause severe degradation in received power and thus achievable rate [3]. Near-field Airy beams, with curved trajectories, can steer energy around obstacles toward the target receiver, offering a promising approach to mitigate blockage [4]. 
+
+This work was supported in part by the National Science Fund for Distin-guished Young Scholars under Grant 62325106, in part by the National Sci-ence and Technology Major Projects of China under Grant 2025ZD1301800, and in part by the National Key Research and Development Program of China under Grant 2023YFB3811503. The authors are with the Department of Electronic Engineering, Ts-inghua University, and the State Key Laboratory of Space Network and Communications, Tsinghua University, Beijing 100084, China (e-mails: yi-wang24@mails.tsinghua.edu.cn, daill@tsinghua.edu.cn). 
+
+A. Prior Works 
+
+Airy beams were originally predicted as nonspreading wave packets in quantum physics and later demonstrated in op-tics [5]–[7]. The special properties of Airy beams — self-acceleration, approximate nondiffracting propagation, and self-healing — have since been extensively studied [8]–[10]. Specifically, the Airy beam follows a curved trajectory (self-acceleration), approximately maintains a fixed structure over distance (nondiffracting propagation), and recovers its shape beyond the obstacle (self-healing). Inspired by the blockage-robustness properties demonstrated in optics, recent studies have adapted the Airy-beam concept from optics to wireless communications for blockage mitigation. For example, Airy beams have been evaluated in near-field blockage scenarios, demonstrating improved blockage robustness over conven-tional focused beams [11]–[13]. To generate Airy beams in practical systems, array-based generation methods have been analyzed without using optical lenses [14]. Furthermore, experimental validations based on hardware platforms have confirmed the feasibility of Airy beams for wireless commu-nications [15], [16]. A fundamental issue for Airy beams is how to select a near-optimal trajectory from a vast continuous candidate space. Existing methods address this issue through two main approaches: search-based beam training and learning-based direct prediction. Specifically, the search-based beam train-ing [17] converts the continuous trajectory-selection problem into a discrete search problem over a large set of candidate beams. This simple yet effective scheme is able to achieve reliable performance. Nevertheless, each candidate evaluation requires receiver feedback, so the total overhead scales with the number of candidates, which may fail to meet real-time requirements. By contrast, the learning-based prediction scheme [18] learns a direct mapping from the blockage ge-ometry to Airy-beam control parameters, thereby avoiding the high-overhead search. However, this one-shot mapping treats trajectory selection as a black-box mapping process, and thus the physically interpretable rule for selecting a near-optimal Airy trajectory under blockage remains unclear. 
+
+B. Our Contributions 
+
+To establish a clear, physically interpretable rule for select-ing a near-optimal Airy beam trajectory, we propose a physics-guided neural Airy beamforming framework that selects a near-optimal trajectory in one shot. 1 Specifically, the main 
+
+> 1
+
+Simulation codes will be provided to reproduce the results in this article: http://oa.ee.tsinghua.edu.cn/dailinglong/publications/publications.html. arXiv:2608.04388v1 [eess.SP] 5 Aug 2026 2
+
+contributions of this paper are summarized as follows.  
+
+> •
+
+First, we formulate a single-edge representation of the blocker model in 3GPP TR 38.901 and reveal the trajectory–edge coupling mechanism. This mechanism shows that, under blockage, the received power is jointly determined by an unblocked contribution and an edge-diffracted contribution. When the trajectory stays outside the obstacle edge, the unblocked contribution dominates. As the trajectory gradually moves toward the obstacle, the edge-diffracted contribution increases while the un-blocked contribution decreases. This tradeoff gives rise to a received-power maximum and thus provides the physical basis to derive an optimality condition for Airy-beam trajectory selection.  
+
+> •
+
+Based on this optimality condition, we apply the im-plicit function theorem [19] to characterize the associ-ated trajectory structure of Airy beams. In particular, trajectories satisfying the optimality condition are not seperate solutions, but they form a continuous structure. This continuous structure can be exploited to construct a compact physics-defined region. The region captures near-optimal trajectories and significantly reduces the range of trajectories that should be considered. For a given blockage geometry, however, locating the optimal trajectory within this region still requires numerical opti-mization.  
+
+> •
+
+To avoid the per-geometry numerical optimization, we train a lightweight neural predictor that directly maps the blockage geometry to a near-optimal Airy beam trajec-tory. The proposed predictor thus preserves the physical interpretability of trajectory selection while replacing per-geometry numerical optimization with a single predictor evaluation.  
+
+> •
+
+Simulations show that the compact physics-defined re-gion effectively captures near-optimal trajectories, while occupying only about 6% of the full candidate-space area on average. Overall, the proposed framework retains 
+
+99 .7% of the rate obtained through numerical optimiza-tion. Compared with conventional Airy beam-training methods, the proposed framework achieves higher rates and reduces the beam-training overhead to one transmis-sion. Moreover, the proposed physics-guided neural Airy beamforming also achieves performance comparable to the data-driven method, while requiring approximately 
+
+112 × fewer neural-network parameters. 
+
+C. Organization and Notation 1) Organization: The remainder of this paper is organized as follows. Section II introduces the system model and the Airy beam model. Section III develops the trajectory–edge coupling mechanism and the corresponding compact trajectory region. Section IV presents the physics-guided one-shot predictor, the online procedure, and the complexity analysis. Section V presents simulation results that validate the proposed method and compare it with baseline schemes. Section VI concludes the paper. 
+
+2) Notation: aH and AH denote the conjugate transpose of vector a and matrix A, respectively. The notation ∥a∥2
+
+denotes the Euclidean norm of a, supp( ·) denotes the support of a function, and ⊮(·) denotes the indicator function. The imaginary unit is j = √−1, and |X | denotes the length of an interval X . The operator O(·) is used for complexity order. II. S YSTEM MODEL AND AIRY BEAM 
+
+We first specify the near-field array-to-receiver geometry and the corresponding discrete channel response, and then introduce the single-edge blockage model. The Airy beam gen-eration model is subsequently presented to formulate trajectory selection. 
+
+A. Near-Field Channel Model 
+
+We consider a narrowband near-field communication system in the x-z plane, where an N -element uniform linear array (ULA) transmitter is centered at the origin and placed along the x-axis at z = 0 . The single-user receiver is represented by a finite effective receiving aperture centered at (zr , x r ). The coordinate of the n-th antenna is 
+
+xn =
+
+
+
+n − N + 1 2
+
+
+
+d, n = 1 , . . . , N, (1) where d ≤ λ/ 2 is the antenna spacing, λ = c/f c is the wavelength, c is the speed of light, and fc is the carrier frequency. The aperture width and transverse aperture interval are D = ( N − 1) d and Xtx = [ −D/ 2, D/ 2] , respectively. Throughout this paper, a position is written as (z, x ), where z
+
+is the propagation distance and x is the transverse coordinate. We focus on the radiating near-field regime, where the receiver range is on the order of or below the Rayleigh distance 2D2/λ .For the unblocked reference link, the LoS channel vector 
+
+hLoS ∈ CN ×1 from the ULA to the receiver center is modeled as 
+
+[hLoS ]n = α0
+
+Ln
+
+exp( jkL n), n = 1 , . . . , N, (2) where α0 collects the distance-independent propagation and antenna constants, k = 2 π/λ is the wavenumber, and 
+
+Ln = pz2 
+
+> r
+
++ ( xr − xn)2 (3) is the distance from the n-th antenna to the receiver center. Let r = pz2 
+
+> r
+
++ x2 
+
+> r
+
+and sin θr = xr /r . Expanding Ln around the array center gives 
+
+Ln ≈ r − xn sin θr + x2 
+
+> n
+
+cos 2 θr
+
+2r . (4) The linear term describes angular steering, whereas the range-dependent quadratic term captures near-field focusing and is absent from the far-field steering-vector approximation. Under the paraxial condition, (4) leads to the Fresnel propagation model used below. We use its continuous-aperture form to analyze the blocked channel and sample the resulting aper-ture excitation at {xn}Nn=1 for discrete ULA implementation. The center-point channel in (2) establishes the spherical-wave phase variation, while received power is evaluated by averaging the continuous field over the finite receiver window introduced below. 3 
+
+> Fig. 1. Near-field Airy beamforming geometry under the zero-thickness single-edge blockage model.
+
+B. Obstacle-Induced Blockage Model 
+
+As shown in Fig. 1, a transient opaque obstacle lies between the transmitter and the receiver. At high frequencies, penetra-tion and diffuse scattering through the obstacle can be much weaker than the surviving diffracted field, so we focus on the field around the relevant obstacle boundary. The relevant obstacle boundary is represented by an edge point (zo, x e) in the x-z plane. The unobstructed side of the edge is identified by s ∈ { +1 , −1}, where 
+
+s(x − xe) > 0 (5) represents the unobstructed half-plane, while s(x − xe) ≤ 0
+
+is blocked by the screen. In 3GPP TR 38.901 [20], each blocker is represented by a screen whose attenuation is com-puted from knife-edge diffraction at four edges. We retain the locally dominant edge and approximate the blocked side by a zero-thickness opaque half-plane at z = zo. For the center aperture point, xvis (0) = zoxr /z r is where its direct LoS path crosses the blockage plane, h = |xe − xvis (0) |
+
+is the edge clearance, and rF = pλz o(zr − zo)/z r is the corresponding Fresnel radius. The corresponding normalized-clearance magnitude |ν| = √2h/r F is consistent with the Fresnel scaling in Recommendation ITU-R P.526 [21]. This single-edge representation also provides a local approximation to a larger obstacle boundary when one edge dominates the diffracted field. Consistent with (4), let Dz denote the scalar Fresnel free-space propagation operator over distance z. The single-edge blockage mask at the blockage plane is 
+
+Mo(x; xe, s ) = ⊮{s(x − xe) > 0}. (6) For an aperture excitation u0(x), whose Airy form is specified below, the blocked field at the receiver plane is modeled as 
+
+Ublk (x, z r ) = Dzr −zo {Mo(·; xe, s )Dzo {u0}(·)} (x). (7) Arguments fixed by the scene geometry and aperture excitation are suppressed unless needed explicitly. The corresponding free-space field is Ufree (x, z r ) = Dzr {u0}(x). Under the knife-edge interpretation, Ublk accounts for both the unblocked contribution that propagates through the unobstructed half-plane and the edge-diffracted contribution. Equation (7) eval- 
+
+> Fig. 2. Finite-energy Airy-beam propagation, illustrating self-acceleration, approximate nondiffracting propagation, and self-healing after partial block-age.
+
+uates their combined field directly under the scalar Fresnel model. The blockage ratio ρ is defined from the geometrically unobstructed part of the transmit aperture. For an aperture point x ∈ Xtx , the ray from x to the receiver crosses the blockage plane at xvis (x) = x + zo(xr − x)/z r . The geometrically unobstructed aperture set and blockage ratio are 
+
+Xvis = {x ∈ X tx : s[xvis (x) − xe] > 0}, ρ = 1 − |X vis ||X tx | .
+
+(8) The transmitter knows the receiver position, the relevant obstacle edge, and the unobstructed-side sign from sensing, environment perception, or a higher-layer map. Accordingly, the analysis and method are developed for the sensed single-edge geometry described above. Under this geometry, ρ in (8) is derived from these quantities and the known aperture rather than introduced as an additional sensing assumption. Complete post-blockage channel state information (CSI) and receiver-feedback candidate sweeping are not required. 
+
+C. Airy Beam Trajectory Control 
+
+At the paraxial scale, a scalar field ψ(x, z ) satisfies 
+
+ ∂2
+
+∂x 2 + 2 jk ∂∂z 
+
+
+
+ψ(x, z ) = 0 , ψid (x, 0) = Ai( γAx),
+
+(9) where ψid denotes the ideal one-dimensional Airy field and 
+
+γA is its transverse scaling parameter. The resulting free-space solution is [5], [7] 
+
+ψid (x, z ) = Ai 
+
+
+
+γAx − γ4Az2
+
+4k2
+
+
+
+× exp 
+
+
+
+j γ2Az
+
+2k
+
+
+
+γAx − γ4Az2
+
+6k2
+
+ 
+
+.
+
+(10) The Airy main-lobe peak therefore follows the parabolic trajectory xid m(z) = ξp/γ A +γ3Az2/(4 k2), where ξp denotes the location of the principal maximum of Ai( ·). This deterministic bending gives the self-acceleration property. The ideal solution preserves its transverse profile, while a finite-energy realization approximately retains this structure and can reconstruct a weakened main lobe from the remaining sidelobes after partial blockage [8]–[10]. 4
+
+Figure 2 summarizes these propagation properties. The curved dashed guide marks the parabolic trajectory, the nar-row dashed contour highlights the nearly preserved main-lobe width before blockage, and the downstream dashed box encloses the interruption and gradual reconstruction caused by the knife edge. Because the ideal Airy profile carries infinite energy, prac-tical generation requires finite-energy apodization [6]. In the array-based realization adopted here, a finite Gaussian aperture is combined with cubic, quadratic, and linear phase terms to control bending, focusing, and steering, respectively. Following the established near-field Airy generation method [14], [17], the continuous initial aperture field at transverse coordinate x0 is written as 
+
+u0(x0; B, F, θ ) = a0(x0) exp {jϕ A(x0; B, F, θ )}, (11) where a0(x0) = exp( −x20/ω 20 )⊮{| x0| ≤ D/ 2} is the finite Gaussian aperture envelope of waist ω0 and aperture width 
+
+D. The phase term in (11) is 
+
+ϕA(x0; B, F, θ ) = 13 (2 πB )3x30 − πλF x20 + 2πλ sin θ x 0, (12) where B controls the cubic bending strength, while F and 
+
+θ specify the distance and angular direction of the Airy generation-plane center. Throughout this paper, (B, F, θ ) is called the Airy control triplet. The implementable ULA ex-citation samples (11) at the antenna positions and normalizes the transmit power: 
+
+˜wn = u0(xn; B, F, θ ), n = 1 , . . . , N, 
+
+˜w = [ ˜ w1, . . . , ˜wN ]T, w(B, F, θ ) = ˜w
+
+∥ ˜w∥2
+
+. (13) Here, x0 is the continuous coordinate used in the Fresnel analysis, whereas xn indexes the physical ULA elements. Under the Gaussian-aperture and Fresnel approximations, the Airy main-lobe trajectory can be expressed as [14], [17] 
+
+xm(z) = −ξpλBz + sin θ z − S2
+
+> R
+
+(z) − S2
+
+> I
+
+16 λπ 2B3 z, (14) where ξp ≈ − 1.0188 denotes the first maximum of the Airy function [6], 
+
+SR(z) = 1
+
+z − 1
+
+F , SI = λπω 20
+
+. (15) Figure 3 illustrates the resulting no-blockage trajectory, the Airy generation plane specified by (F, θ ), and the trajectory waypoint (zw, x w) used in the analytical generation map below. Existing work provides a closed-form map from a waypoint 
+
+(zw, x w) and receiver position (zr , x r ) to an Airy control triplet: 
+
+(B, F, θ ) = GA(zw, x w; zr , x r , s ). (16) Here, the unobstructed-side sign s selects the corresponding bending branch. The exact algebraic form of GA(·) is available in [14], [17]. In this paper, (16) is used as an established generation operator. 0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7          
+
+> z (m)
+> −0.05
+> 0.00
+> 0.05
+> 0.10
+> 0.15
+> 0.20
+> 0.25
+> 0.30
+> x (m)
+> (Fcos θ,Fsin θ)(zw,xw)
+> Airy beam trajectory
+> Airy generation plane
+> Target user
+> −30
+> −20
+> −10
+> 0
+> Normalized intensity (dB)
+> Fig. 3. Airy-beam trajectory control through the Airy control triplet (B, F, θ )
+> and waypoint (zw, x w).
+
+The ideal one-shot trajectory selection problem can now be stated as follows. Given the receiver position, the relevant obstacle edge, and the unobstructed-side sign, 
+
+I = {zr , x r , z o, x e, s }, (17) let R = [ xr −Wr /2, x r +Wr /2] denote the receiver window of width Wr . For an Airy control triplet p = ( B, F, θ ), we make the field dependence explicit as Ublk (x, z r ; p, I) and define 
+
+Prx (p; I) = 1
+
+Wr
+
+Z
+
+> R
+
+|Ublk (x, z r ; p, I)|2 dx. (18) For fixed transmit power and noise power, maximizing Prx 
+
+is equivalent to maximizing the received signal-to-noise ratio (SNR) and achievable rate. The transmitter therefore selects p
+
+without receiver-feedback candidate sweeping: 
+
+p⋆ = arg max 
+
+> p∈P A
+
+Prx (p; I), (19) Here, p generates the Airy beamforming vector w(p) through (13), and PA is the physically feasible set of Airy control triplets under the adopted aperture and paraxial-propagation assumptions. Under blockage, (19) has no tractable closed-form maximizer because diffraction, sidelobes, finite aperture, and receiver-window averaging are coupled. Through the es-tablished map (16), the remaining task is therefore to identify a near-optimal waypoint under blockage. The next section develops the physical structure needed for this task. III. T RAJECTORY –E DGE COUPLING MECHANISM 
+
+This section establishes the physical basis of the proposed method. We first derive the finite-aperture single-edge Fresnel response and use the balance between the unblocked and edge-diffracted contributions to reveal the trajectory–edge coupling mechanism. We then express the Airy trajectory in Fresnel-scaled coordinates and derive the exact received-power derivatives and the resulting optimality condition. Finally, the implicit function theorem and local power curvature are used to characterize the continuous trajectory structure and construct the compact physics-defined region. 
+
+A. Single-Edge Fresnel Response 
+
+Under the scalar paraxial approximation, we use the stan-dard one-dimensional Fresnel kernel [22], where k = 2 π/λ is 5
+
+the wavenumber. Let L1 = zo and L2 = zr −zo. The variables 
+
+xa and xb denote the input and output transverse coordinates: 
+
+KL(xb, x a) = ejkL 
+
+√jλL exp 
+
+ jπ λL (xb − xa)2
+
+
+
+. (20) For a finite aperture x0 ∈ [−D/ 2, D/ 2] , the field under blockage at an output coordinate xb is 
+
+Ublk (xb) = 
+
+Z D/ 2
+
+> −D/ 2
+
+u0(x0)
+
+Z
+
+> s(x−xe)>0
+
+KL2 (xb, x )
+
+× KL1 (x, x 0) d x dx0.
+
+(21) Completing the square in the inner integral gives 
+
+(x − x0)2
+
+L1
+
++ (xb − x)2
+
+L2
+
+= (xb − x0)2
+
+zr
+
++ (x − xc(x0; xb)) 2
+
+Leff 
+
+,
+
+(22) where 
+
+xc(x0; xb) = L2x0 + L1xb
+
+zr
+
+, Leff = L1L2
+
+zr
+
+. (23) The obstacle-plane half-line in (21) therefore has the following analytical primitive: 
+
+Z
+
+> s(x−xe)>0
+
+KL2 (xb, x )KL1 (x, x 0) d x
+
+= Kzr (xb, x 0)Hs(x0; xb),
+
+(24) with 
+
+Hs(x0; xb) = 12 erfc 
+
+
+
+se −jπ/ 4
+
+r πλL eff 
+
+ xe − xc(x0; xb)
+
+.
+
+(25) Here, xc(x0; xb) is the obstacle-plane center of the composed Fresnel phase and erfc( ·) is the complementary error function. For the Gaussian-cubic aperture field in (11)–(12), this pro-duces a single finite integral rather than a two-step propagation simulation: 
+
+Ublk (xb) ∝
+
+Z D/ 2
+
+> −D/ 2
+
+ejΨ( x0;xb,z r )Hs(x0; xb) d x0,
+
+Ψ( x0; xb, z r ) = (2 πB )3
+
+3 x30 + C2(zr )x20 + C1(xb, z r )x0.
+
+(26) where the coefficient functions are 
+
+C1(x, z ) = 2πλ
+
+
+
+sin θ − xz
+
+
+
+,C2(z) = πλ
+
+ 1
+
+z − 1
+
+F
+
+
+
++ jω20
+
+.
+
+(27) The imaginary component of C2(z) retains the Gaussian aperture envelope. The proportionality in (26) omits only a factor independent of (B, F, θ ). This factor is retained in the absolute-power and rate evaluations. Writing Hs =1 + ( Hs − 1) separates the blocked field into the unblocked field and an edge-diffracted correction, which are the two physical contributions examined below. The expression jointly represents finite aperture, Gaussian-cubic Airy generation, single-edge diffraction, and receiver coupling under the stated scalar Fresnel model. 
+
+B. Edge-Induced Power Variation 
+
+The Fresnel kernel and the single-edge response above are standard propagation ingredients [22]. We next isolate how displacement of the edge relative to a fixed trajectory changes the balance between the unblocked and edge-diffracted con-tributions. Under the single-edge model, the edge dependence of the metric in (18) is exact for any continuous field incident on the obstacle plane. The receiver window R is fixed by the receiver position and does not vary with xe. Let Uo(x) = 
+
+Dzo {u0}(x) denote the transmitter-excited field at the obstacle plane before masking. Applying Leibniz’s rule to the moving boundary of the half-line s(x−xe) > 0 gives, for any receiver-plane coordinate xb,
+
+∂U blk (xb; xe)
+
+∂x e
+
+= −sK L2 (xb, x e)Uo(xe). (28) Consequently, 
+
+∂P rx 
+
+∂x e
+
+= − 2sWr
+
+Re 
+
+Z 
+
+> R
+
+U ∗
+
+> blk
+
+(x; xe)KL2 (x, x e)Uo(xe) d x
+
+
+
+.
+
+(29) Equation (29) makes the trajectory–edge coupling mecha-nism precise. For a fixed Airy trajectory, an infinitesimal edge displacement adds or removes the boundary contribu-tion KL2 (x, x e)Uo(xe). The derivative therefore quantifies the received-power sensitivity to the relative edge position. When the trajectory passes well into the unobstructed half-plane, the unblocked contribution dominates and edge illumination is weak. Moving the trajectory toward the edge strengthens the edge-diffracted contribution. Moving too far toward the blocked half-plane increasingly weakens the unblocked con-tribution. Along a one-dimensional edge-displacement sweep, a local balance between the two contributions satisfies 
+
+∂P rx 
+
+∂x e
+
+= 0 , ∂2Prx 
+
+∂x 2
+
+> e
+
+< 0. (30) Figure 4 contrasts the two limiting regimes with the received-power maximum between them. The dashed curves mark the corresponding unblocked Airy trajectories, the high-lighted rectangles at z = 0 mark the transmit ULA, and the annotated gains are measured relative to the focused free-space benchmark. In Fig. 4(a), the trajectory passes outside the obstacle edge, and the unblocked contribution dominates. In Fig. 4(b), the trajectory is directed toward the blocked half-plane, and the receiver relies primarily on edge diffraction after the unblocked contribution is weakened. The intermediate trajectory in Fig. 4(c) produces the most favorable balance between the two contributions. The three regimes illustrate the trajectory–edge coupling mechanism and motivate an edge-scaled trajectory representation. Equation (30) characterizes the edge-displacement response for a fixed trajectory. Because trajectory adjustment jointly changes all three control param-eters, the trajectory-selection optimality condition is derived from the exact trajectory derivatives below. 60.0 0.5 1.0 1.5 2.0 2.5 
+
+> z (m)
+> −0.3
+> −0.2
+> −0.1
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> x (m)
+
+(a)      
+
+> Received gain: -3.5 dB
+> Transmit ULA
+> 0.0 0.5 1.0 1.5 2.0 2.5
+> z (m)
+> −0.3
+> −0.2
+> −0.1
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+
+(b)      
+
+> Received gain: -1.0 dB
+> Transmit ULA
+> 0.0 0.5 1.0 1.5 2.0 2.5
+> z (m)
+> −0.3
+> −0.2
+> −0.1
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+
+(c)  
+
+> Received gain: +2.9 dB
+> Transmit ULA −40
+> −35
+> −30
+> −25
+> −20
+> −15
+> −10
+> −5
+> 0
+> Relative intensity (dB)
+
+Fig. 4. Full-space intensity distributions for representative trajectory–edge configurations: (a) unblocked-contribution dominance; (b) edge-diffraction dominance; and (c) coupled optimum. 
+
+C. Edge-Conditioned Trajectory Coordinates 
+
+The transition factor in (25) varies when the composed Fresnel center is within an order of √λL eff of the obstacle edge. This motivates the transverse Fresnel scale 
+
+rF =
+
+s
+
+λz o(zr − zo)
+
+zr
+
+= pλL eff , (31) and the normalized trajectory coordinates 
+
+zw = zo + β(zr − zo), xw = xe + sη wrF . (32) The coordinate ηw is the normalized transverse displacement of the waypoint from the obstacle edge, with ηw > 0 on the unobstructed side and ηw < 0 on the blocked side. The coordinate 0 ≤ β < 1 locates the waypoint between the obstacle and receiver planes. The deterministic composition 
+
+q = ( ηw, β ) 7 → (zw, x w) 7 → (B, F, θ ) (33) is obtained from (32) and (16). Thus, q jointly changes the cubic, focusing, and steering phases. 
+
+D. Compact Trajectory Region 
+
+Let φ(x0; q) = ϕA[x0; B(q), F (q), θ (q)] . Since the aper-ture envelope and edge-transfer factor do not depend on 
+
+q, differentiating (26) under the finite integral gives, for 
+
+q ∈ { ηw, β },
+
+∂U blk (x; q)
+
+∂q = j
+
+Z D/ 2
+
+> −D/ 2
+
+φq (x0; q)u0(x0; q)
+
+× Kzr (x, x 0)Hs(x0; x) d x0,
+
+(34) where the exact source-phase derivative is 
+
+φq (x0; q) =(2 π)3B2Bq x30 + πF q
+
+λF 2 x20
+
++ 2π cos θλ θq x0.
+
+(35) The quantities (Bq , F q , θ q ) are obtained by differentiating the analytical map in (33). Writing Pq ≜ ∂P rx /∂q , the corresponding received-power derivative is 
+
+Pq = 2
+
+Wr
+
+Re 
+
+Z 
+
+> R
+
+U ∗
+
+> blk
+
+(x; q) ∂U blk (x; q)
+
+∂q dx
+
+
+
+. (36) Equation (36) retains the joint variation of all three Airy controls, finite-aperture coupling, single-edge diffraction, and receiver-window averaging. The relation to the trajectory–edge coupling mechanism is explicit. Let Pfree (q) denote the receiver-window power obtained from Ufree , and define the edge-induced power correction by ∆Pe(q) = Prx (q) − Pfree (q). At an interior optimum, the trajectory-selection condition is 
+
+∇qPrx = 0 ⇐⇒ ∇qPfree = −∇ q∆Pe. (37) Thus, the free-space preference and the edge-induced cor-rection balance at an interior optimum. This gradient bal-ance links the trajectory–edge coupling mechanism to the trajectory-selection optimality condition. In the fully un-blocked limit, Hs → 1, ρ → 0, and ∇q∆Pe → 0, so the condition reduces continuously to free-space trajectory selection. Let LA = zr cos θ + xr sin θ − F denote the remaining axial distance from the Airy generation-plane center to the receiver, and let εmax (q; I) be the Fresnel phase remainder defined in Appendix B. For an allowed remainder τF, the analytically admissible trajectory set is 
+
+FA(I) = {q : F > 0, L A > 0, | sin θ| < 1,εmax (q; I) ≤ τF}. (38) Here, the strict steering condition | sin θ| < 1 keeps the inverse-sine branch in GA regular. To obtain a continuous reduced candidate structure, we impose transverse stationarity for each β and retain β for the final power maximization. Across 0 ≤ β < 1, define the transverse local-maximum set 
+
+C(I) = {(ηw, β ) ∈ int FA : Pηw = 0 , P ηw ηw < 0}. (39) It may contain several branches because the finite Airy field has multiple lobes and the receiver power is nonconvex. 
+
+Proposition 1 (local stationary branch and power-loss width). Suppose that Prx > 0 is three times continuously differentiable near a nondegenerate transverse local maximum 7
+
+(ηj , β 0) ∈ C (I), where Pηw ηw (ηj , β 0) < 0. Then a unique dif-ferentiable stationary branch ηj (β) exists locally and satisfies 
+
+dηj
+
+dβ = − Pηw β
+
+Pηw ηw
+
+. (40) Let κj = −∂2 ln Prx /∂η 2 
+
+> w
+
+> 0 on this branch. For a transverse displacement δη , the local power loss is 
+
+10 log 10 
+
+Prx [ηj (β), β ]
+
+Prx [ηj (β) + δη , β ] = 5κj
+
+ln 10 δ2 
+
+> η
+
++ O(|δη |3). (41) Therefore, the second-order half-width associated with an ϵdB 
+
+local loss is 
+
+wj (β; ϵdB ) = 
+
+s
+
+ϵdB ln 10 5κj (β) . (42) Here, wj is measured in the normalized ηw coordinate, and 
+
+rF wj is the corresponding physical transverse half-width. Within int FA, the generation map remains on its regular branch and the finite-aperture Fresnel integrals are smooth in 
+
+q, so the assumed C3 regularity holds locally. The proof is given in Appendix A. Proposition 1 establishes the continuous stationary structure underlying the trajectory candidates. This structure can include weak local maxima associated with finite-aperture sidelobes. Such a branch cannot determine the highest-power trajectory when a stronger stationary branch exists at the same β. To reduce the candidate structure further without discarding a potential maximizer, we retain only stationary branches that remain competitive in received power. For each β at which 
+
+C(I) is nonempty, define the strongest transverse stationary power as 
+
+P max  
+
+> ⊥
+
+(β; I) = max    
+
+> ηw:( ηw,β )∈C (I)
+
+Prx (ηw, β ; I). (43) Using the same received-power tolerance as in (42), the competitive stationary set is 
+
+Ccmp (I; ϵdB )= (ηj (β), β ) ∈ C (I) : 10 log 10 
+
+P max  
+
+> ⊥
+
+(β; I)
+
+Prx [ηj (β), β ; I]
+
+≤ ϵdB .
+
+(44) Any regular interior maximizer must attain the strongest transverse stationary power at its own β and hence belongs to 
+
+Ccmp (I; ϵdB ) with zero gap. The tolerance also retains nearly tied branches when their received-power ordering changes. Thus, (44) removes weak stationary branches without exclud-ing an interior power-maximizing trajectory. Figure 5 illustrates how the continuous trajectory structure is transformed into the physics-defined region after retaining the competitive stationary set in (44). At a fixed β0, Fig. 5(a) maps the coordinate half-width wj (β0; ϵdB ) to the physical transverse half-width rF wj (β0; ϵdB ) and visualizes the result-ing candidate trajectory neighborhood under the second-order local-loss approximation in (41). Figure 5(b) shows how a retained branch of the continuous structure ηj (β) is expanded by its curvature half-width within FA(I) to form the physics-defined region. rFwj
+
+> Near-optimal candidates
+> TX
+> Obstacle edge
+> RX
+> z
+
+(a)              
+
+> 0.00 0.25 0.50 0.75 1.00
+> Longitudinal coordinate β
+> −2
+> −1
+> 0
+> 1
+> 2
+> Edge offset  ηw
+> wj: loss ≤εdB
+> Continuous structure ηj(β)
+> Physics-defined region
+> Trajectory space A
+> |ηw−ηj(β)| ≤ wj(β;εdB )
+
+(b)      
+
+> Fig. 5. Construction of the compact physics-defined trajectory region: (a) candidate trajectory neighborhood at fixed β0; (b) continuous trajectory structure and the resulting region in the (β, η w)coordinate plane.
+
+The curvature neighborhoods of the competitive stationary branches define the interior branch region 
+
+Tbr (I; ϵdB )= (ηw, β ) ∈ F A(I) : 
+
+∃ (ηj (β), β ) ∈ C cmp (I; ϵdB ),
+
+|ηw − ηj (β)| ≤ wj (β; ϵdB ) .
+
+(45) Let K∂FA (I) denote the regular candidates that satisfy the Karush–Kuhn–Tucker (KKT) condition on active boundaries of FA(I). The complete physics-defined compact trajectory region is 
+
+Tstat (I; ϵdB ) = Tbr (I; ϵdB ) ∪ K ∂FA (I). (46) Equation (46) is scene dependent and may contain several competitive branches. It is not an empirically prescribed candidate grid. Every regular interior constrained maximizer belongs to (44) and hence to (45), while a maximizer on an active boundary of FA(I) is included through K∂FA (I). The compact trajectory region therefore removes weaker station-ary branches while retaining the physics-defined candidates needed for trajectory selection. IV. P HYSICS -G UIDED NEURAL AIRY BEAMFORMING 
+
+Building on the compact physics-defined region in (46), this section defines the stationary/KKT trajectory reference used for offline supervision. Maximizing received power over the stationary/KKT solution set yields a canonical reference trajectory. A lightweight neural predictor then learns the direct blockage-geometry-to-trajectory mapping so that online operation requires neither propagation integrals nor stationary-point calculations. 8
+
+A. Stationary/KKT Trajectory Reference 
+
+Let Q be a finite numerical coordinate chart that contains the relevant Fresnel-scale stationary branches, and define Ω( I) = 
+
+FA(I) ∩ Q . Let K∂Ω(I) contain the regular KKT points on active boundaries of FA(I) or Q. The stationary/KKT solution set over this chart is 
+
+S(I; ϵdB ) = [ Ccmp (I; ϵdB ) ∩ int Ω( I)] ∪ K ∂Ω(I). (47) The offline trajectory reference is 
+
+q⋆(I) = arg max  
+
+> q∈S (I;ϵdB )
+
+Prx (q; I). (48) All transverse roots in int Ω( I) are located from the ana-lytical gradient in (36) and refined continuously along the branches within the chart. Their received powers determine the competitive stationary set in (44), while boundary candidates satisfy the projected KKT condition. Equation (48) supplies the canonical supervision and evaluation target, with any exact tie resolved deterministically. Because q⋆ already selects the highest-power member of the stationary/KKT solution set, the online predictor does not require an explicit branch index. This construction is distinct from an online beam sweep. The broad waypoint reference used in Section V expands the numerical chart and applies independent search initializations only to validate (48). It is an offline comparison within the stated Airy generation method, not a global optimum over arbitrary array excitations. 
+
+B. One-Shot Trajectory Predictor 
+
+The neural input is 
+
+g = [ zr , x r , z o, x e, s, ρ ]T, (49) where the first five entries are sensed geometry quantities and ρ is derived from them using (8). Thus, the sensing requirement remains five-dimensional, while the predictor uses a six-dimensional feature vector. After standardizing the input with training-set statistics, a fully connected multilayer per-ceptron (MLP) with trainable weights ϑ directly predicts the continuous trajectory coordinates, 
+
+(ˆ ηw, ˆβ) = fϑ(g). (50) The two outputs are de-standardized with training statistics and bounded by the fixed numerical chart Q as a numerical safeguard. The bounded outputs are still denoted by (ˆ ηw, ˆβ).Equations (32), (16), and (13) then generate one Airy beam without a candidate search. The predictor is trained offline with scene-level splits. Its target is the stationary/KKT trajectory reference in (48), and the loss is a normalized SmoothL1 coordinate loss. Check-points are selected by validation receiver-window power rather than coordinate error. The independent test set is used only for final evaluation. The predictor therefore learns the nonlinear blockage-geometry-to-trajectory map identified by the physical analysis. It does not evaluate propagation or run numerical optimization online.  
+
+> Fig. 6. Comparison of the reference full-geometry neural network and the proposed physics-guided neural predictor.
+
+Figure 6 contrasts this structure with the existing full-geometry Airy learning architecture [18], which maps full-geometry features directly to (B, F, θ ). The proposed architec-ture learns two trajectory coordinates from the stationary/KKT reference and leaves Airy generation to the analytical map. This separation permits a substantially smaller predictor. The full-geometry comparison in Section V evaluates an adapted direct-parameter implementation of the reference architecture under the same propagation model and scenes. 
+
+C. Online Beamforming Procedure 
+
+From the perspective of an operational near-field link, the online procedure in Algorithm 1 runs as follows. 
+
+Algorithm 1 Physics-Guided One-Shot Airy Beamforming                                       
+
+> Require: Receiver geometry (zr, x r), obstacle edge (zo, x e), unobstructed-side sign s, trained predictor fϑ, normalization statistics, and chart Q.1: Compute ρusing (8) and form gusing (49). 2: Standardize gand predict (ˆ ηw,ˆβ)using (50). 3: De-standardize and bound (ˆ ηw,ˆβ)by the fixed numerical chart Q.4: Construct (zw, x w)from (ˆ ηw,ˆβ)using (32). 5: Obtain (B, F, θ )using the analytical generation map (16). 6: Generate the discrete N-element ULA beamforming vector wusing (13). 7: Transmit w.
+
+The procedure takes as input the sensed scene geometry: the receiver position (zr , x r ), the obstacle edge location (zo, x e),and the unobstructed-side sign s. These five quantities come from sensing, environment perception, or a higher-layer map, so no complete post-blockage CSI or receiver-feedback sweep-ing is required. Step 1 derives the aperture blockage ratio ρ from (8), which measures the blocked aperture fraction as ρ = 1 −|X vis |/|X tx |.Because ρ follows from the known blockage geometry and aperture, it adds no extra sensing burden; it is then appended to the five geometry quantities to form the six-dimensional feature g = [ zr , x r , z o, x e, s, ρ ]T in (49). Step 2 feeds the standardized g to the trained MLP and obtains the continuous trajectory coordinates (ˆ ηw, ˆβ) = fϑ(g)
+
+from (50). The predictor has learned the nonlinear blockage-geometry-to-trajectory map offline and performs no propaga-tion integral or numerical optimization online. Step 3 de-standardizes the two outputs and clips them to the fixed numerical chart Q, a safeguard that keeps the prediction within the coordinate range used to numerically realize the compact trajectory region in (46). Step 4 reconstructs the physical waypoint (zw, x w) from the bounded coordinates through (32), i.e., zw = zo + ˆβ(zr − zo)9
+
+and xw = xe + sˆηwrF . The coordinate ˆβ places the waypoint between the obstacle and receiver planes, while ˆηw specifies its transverse displacement from the obstacle edge. Step 5 applies the closed-form generation operator (16), 
+
+(B, F, θ ) = GA(zw, x w; zr , x r , s ), where the sign s selects the bending branch, to obtain the Airy control triplet without any candidate search. Step 6 evaluates the discrete beamforming vector from (13), w(B, F, θ ) = [ ˜ w1, . . . , ˜wN ]T/∥ · ∥ 2 with ˜wn =
+
+u0(xn; B, F, θ ), realizing the selected trajectory on the N -element array. Step 7 transmits the single beam w. All propagation in-tegrals, stationary/KKT reference calculations, and receiver-window power evaluations remain offline and do not enter this online chain. 
+
+D. Complexity and Overhead 
+
+For an LNN -layer MLP of widths {dℓ}LNN  
+
+> ℓ=0
+
+, the neural inference cost is O(PLNN  
+
+> ℓ=1
+
+dℓ−1dℓ). The coordinate and Airy-control maps have constant cost, while generating the final 
+
+N -element beamforming vector has O(N ) cost. In contrast to candidate-based beam training, only one beam is transmitted. Because the physics-guided representation expresses trajectory selection using two coordinates associated with the compact trajectory region, the predictor can use a small network. The online cost is therefore dominated by a few matrix– vector products rather than iterative optimization or beam sweeping. This overhead statement excludes the separate cost of geometry sensing or map acquisition. V. S IMULATION RESULTS 
+
+The simulation results validate the compact physics-defined region and evaluate the proposed one-shot framework in terms of achievable rate, beam-training overhead, and parameter efficiency. 
+
+A. Simulation Setup 
+
+All simulations use the single-edge finite-aperture scalar Fresnel model in Section II at fc = 140 GHz and W = 1 GHz with a 256-element half-wavelength-spaced ULA. All beam-forming vectors have equal transmit power, and the receiver-window average power in (18) is the common physical metric. We consider the partial-blockage regime ρ ∈ [ρmin , ρ max ),chosen to exclude the LoS-dominated and near-total-blockage limits. Complete scene ranges, data splits, numerical and training settings, and feasibility diagnostics are reported in Appendix C. The numerical chart Q, Fresnel threshold τF, and tolerance 
+
+ϵdB = 0.5 dB are fixed before independent testing. The tolerance defines both the competitive stationary set in (44) and the local curvature width in (42). For W = 1 GHz, it bounds the corresponding rate loss by 0.166 Gbps at any SNR. During inference, Q only bounds the predictor outputs, whereas τF and ϵdB do not enter the neural forward pass or the rate formula. For method m, the scene-wise mean rate over Nte test scenes is 
+
+¯Rm = 1
+
+Nte 
+
+> Nte
+
+X
+
+> i=1
+
+W log 2
+
+
+
+1 + γref 
+
+Pm,i 
+
+Pfree −focus ,i 
+
+
+
+, (51) where Pm,i is the blocked receiver-window power in scene 
+
+i, Pfree −focus ,i is the corresponding focused free-space power, and γref = 10 30 /10 . This metric is normalized to the focused free-space benchmark rather than absolute capacity, and α0
+
+cancels in the power ratio. Since achievable rate is strictly increasing in received power, γref does not alter the power-maximizing trajectory. 
+
+B. Validation of the Compact Physics-Defined Region 
+
+The ability of the compact physics-defined region to re-tain near-optimal trajectories while substantially reducing the candidate-space area is evaluated using 72 independent scenes stratified by blockage ratio, obstacle depth, and unobstructed side. The broad waypoint reference is obtained offline by numerical optimization over the full waypoint range Q and serves only as a validation benchmark. Table I reports the broad-reference coverage and retained candidate-space area across the three blockage intervals.                   
+
+> TABLE I VALIDATION OF THE COMPACT PHYSICS -DEFINED REGION ACROSS BLOCKAGE INTERVALS .
+> ρinterval Scenes Broad-reference coverage Mean retained area (%)
+> [0 .50 ,0.62) 24 100% 2.12 [0 .62 ,0.74) 24 100% 6.67 [0 .74 ,0.86) 24 100% 9.15
+> Overall 72 100% 5.98
+
+At ϵdB = 0.5 dB, Table I shows that the compact re-gion achieves 100% broad-reference coverage across all three blockage intervals while retaining 5.98% of the candidate-space area on average. The retained area remains below 10% 
+
+in every interval, so the full waypoint range has approximately 
+
+16 .7× the area of the compact region. The offline trajectory reference q⋆ in (48) supplies the predictor targets. It also matches the independently obtained broad waypoint reference to numerical precision, with a mean received-power gap of 
+
+3.22 × 10 −13 dB. Accordingly, q⋆ is used as the broad waypoint reference for the full 360-scene evaluation. Detailed numerical checks are reported in Appendix C. 
+
+C. One-Shot Performance 
+
+The rate–overhead benefit of replacing repeated Airy beam training with one-shot trajectory selection is evaluated on a 360-scene independent holdout. The proposed networks with 4,740 and 34,178 trainable parameters are denoted the 4.7K and 34K predictors, respectively. The beam-training baselines are adapted from [17]. The fast-scanning one-dimensional codebook (FS1C-like) baseline tests 21 lateral candidates plus two probes, for a total of 23 transmitted beams. The non-uniform polar codebook (NUPC-like) baseline tests a 13 × 11 waypoint grid plus two probes, 10 10 0 10 1 10 2
+
+Overhead       
+
+> 0
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> Average rate (Gbps)
+> Broad waypoint reference
+> Proposed 4.7K
+> Proposed 34K
+> Direct-parameter 531K
+> FS1C-like
+> NUPC-like
+> Edge-grid scan
+> 4.7K 34K 531K
+> 7.0
+> 7.1
+> Fig. 7. Mean scene-wise achievable rate versus transmitted-beam overhead over 360 independent test scenes. 0.55 0.65 0.75 0.85
+
+Blockage ratio     
+
+> 0
+> 2
+> 4
+> 6
+> 8
+> Average rate (Gbps)
+> Broad waypoint reference
+> Proposed 4.7K
+> Proposed 34K
+> Direct-parameter 531K
+> Edge-grid scan
+> FS1C-like
+> NUPC-like 4.7K 34K 531K
+> 5.9
+> 6.0
+> 6.1
+> 6.2
+> Fig. 8. Mean scene-wise achievable rate versus blockage ratio over 360 independent test scenes.
+
+for a total of 145 beams. The edge-grid scan transmits 33 × 13 
+
+candidates without separate probes, for a total of 429 beams. Each neural predictor instead selects and transmits one beam. Figure 7 compares the resulting rates and transmitted-beam overhead, with the broad waypoint reference included only as an offline benchmark. Figure 7 shows that both proposed predictors approach the broad waypoint reference with one transmitted beam. The inset resolves their closely clustered results. The 4.7K predictor reaches 7.123 Gbps and retains 99 .70% of the 7.144 -Gbps broad waypoint reference. Increasing the predictor size to 34K adds only 0.003 Gbps. By comparison, the finite scans require 23–429 beams and reach 5.769 –6.918 Gbps. Together, the two evaluations distinguish region construction from one-shot prediction: Section V-B verifies reference coverage on independent validation scenes, while Fig. 7 measures the predictor rate gap on the 360-scene holdout. Figure 8 further examines whether the performance ad-vantage persists as blockage becomes stronger. The inset in Fig. 8 resolves the one-shot results in the highest blockage interval. The same ordering holds across all evaluated blockage intervals. Even in the highest interval, the 4.7K predictor achieves 6.070 Gbps versus 6.118 Gbps for the broad waypoint reference, retaining 99 .22% of the reference rate. Meanwhile, the edge-grid gap increases with blockage. Complete numeri-cal results are reported in Appendix C. 10 4 
+
+> 10 5
+> 10 6
+> Trainable parameters
+> 4,740
+> 34,178
+> 531,459
+> Proposed
+> 4.7K
+> Proposed
+> 34K
+> Direct parameter
+> 531K
+> 0
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> Average rate (Gbps)
+> Broad waypoint reference
+> 7.123
+> (99.70%)
+> 7.126
+> (99.74%)
+> 7.142
+> (99.97%)
+> Fig. 9. Trainable-parameter count (top) and mean scene-wise achievable rate (bottom) for the three one-shot methods.
+
+D. Parameter-Efficiency Comparison 
+
+Finally, the parameter efficiency of the compact physics-defined representation is evaluated against a data-driven full-geometry baseline adapted from [18]. The resulting 531K-parameter network maps an eight-dimensional blockage geom-etry directly to the Airy control triplet (B, F, θ ). In contrast, the proposed predictor learns the two trajectory coordinates associated with the compact region and obtains the Airy controls through the analytical generation map. All three neural methods use the same propagation model, data splits, and checkpoint-selection criterion. Each method transmits one beam. Because the data-driven baseline is not restricted to the compact trajectory region, the broad waypoint reference is a comparison benchmark rather than a strict upper bound. Figure 9 compares their model sizes and rates. Figure 9 shows that the proposed 4.7K predictor nearly matches the 531K data-driven network in achievable rate. In the lower panel, the dashed line denotes the broad waypoint reference rate, and the bar labels report rate retention. The data-driven 531K network reaches 7.142 Gbps, only 0.019 
+
+Gbps above the proposed 4.7K predictor. Thus, the proposed physics-guided neural predictor retains more than 99 .7% of the data-driven network rate with approximately 112 × fewer trainable parameters. The compact physics-defined representa-tion therefore reduces the required neural model size without a material rate loss. The full training recipe is given in Appendix C. 11 
+
+VI. C ONCLUSIONS 
+
+This paper developed a physics-guided neural framework for one-shot Airy beamforming under near-field blockage. We first revealed the trajectory–edge coupling mechanism and derived the corresponding optimality condition for trajectory selection. Based on the optimality condition, a continuous trajectory structure was established and exploited to construct a compact physics-defined region. A physics-guided neural predictor was then designed to select a near-optimal trajectory in one shot. Simulations show that the compact physics-defined region effectively captures near-optimal trajectories. The proposed framework outperforms conventional beam-training methods and reduces the beam-training overhead to one transmission. Moreover, the lightweight physics-guided framework retains 99 .7% of the rate obtained through numeri-cal optimization, and achieves performance comparable to the data-driven method with approximately 112 × fewer neural-network parameters. Notably, the absence of a closed-form rule for selecting a beam trajectory under blockage is not unique to Airy beams and may also arise in other blockage-mitigation schemes. In such schemes, trajectory–edge coupling mechanism revealed in this paper can be used to identify a compact, physically structured candidate region, thereby reducing the candidate range for numerical optimization, beam training, or learning-based selection. Future work can extend the proposed physics-guided Airy beamforming framework to multiple edges and uniform planar arrays, as well as to scenarios under sensing uncertainty and hardware constraints. APPENDIX APROOF OF PROPOSITION 1Let G(ηw, β ) = Pηw (ηw, β ). At (ηj , β 0), G = 0 and Gηw =
+
+Pηw ηw < 0. The implicit-function theorem therefore gives a unique local branch ηj (β), and differentiating G[ηj (β), β ] = 0 
+
+gives (40). Since Prx > 0 and Pηw = 0 on the branch, 
+
+∂2 ln Prx 
+
+∂η 2
+
+> w
+
+= Pηw ηw
+
+Prx 
+
+< 0, (52) which establishes κj > 0. Taylor’s theorem then gives 
+
+ln Prx (ηj + δη , β ) = ln Prx (ηj , β ) − κj
+
+2 δ2 
+
+> η
+
++ O(|δη |3). (53) Multiplying the log-power difference by 10 / ln 10 yields (41), and solving its quadratic term for an ϵdB loss gives (42). □
+
+APPENDIX BFRESNEL FEASIBILITY TEST 
+
+For propagation distance L and normalized transverse slope 
+
+v, the phase omitted by the quadratic range expansion is 
+
+εF(v, L ) = kL 
+
+
+
+1 + v2
+
+2 − p1 + v2
+
+
+
+. (54) The maximum remainder is evaluated over the aperture-to-generation, generation-to-receiver, transmitter-to-edge, and edge-to-receiver segments. Their normalized slopes are 
+
+vtx = max 
+
+> |x0|≤ D/ 2
+
+1
+
+k∂ϕ A(x0; B, F, θ )
+
+∂x 0
+
+,vA = max 
+
+> 0≤ℓ≤LA
+
+dxA(ℓ)dℓ ,vo, tx = |xe| + D/ 2
+
+zo
+
+,vo, rx = |xr − xe|
+
+zr − zo
+
+, (55) where xA(ℓ) is the closed-form Airy trajectory in the generation-plane coordinate. The maximum phase remainder is 
+
+εmax (ηw, β ; I) = max {εF(vtx , F ), ε F(vA, L A),εF(vo, tx , z o), ε F(vo, rx , z r − zo)}.
+
+(56) The simulations use τF = 0 .5 rad as a conservative sub-radian upper bound on each omitted phase term in (56). APPENDIX CSIMULATION AND TRAINING DETAILS 
+
+Table II summarizes the common simulation and training configuration. Table III collects the numerical checks under-lying the compact physics-defined region validation in Sec-tion V, and Table IV reports the complete rate and overhead results used in Figs. 7 and 8. The 200 additional high-blockage scenes are used only for training. The 360-scene independent holdout was generated after the augmentation rule and all proposed-predictor check-points had been frozen, and it is not used for checkpoint selection for any method. Extrapolation beyond the scene ranges in Table II is not evaluated.                                                                           
+
+> TABLE II SIMULATION AND TRAINING CONFIGURATION .Group Setting Communication and array
+> fc= 140 GHz, W= 1 GHz, N= 256 ,
+> d=λ/ 2,D= 0 .273 m, ω0=D/ 2, and
+> Wr= 0 .01 mScene geometry zr∈[2 .5,4.0] m, xr∈[0 .04 ,0.12] m,
+> zo/z r∈[0 .42 ,0.66) ,ρ∈[ρmin , ρ max )
+> with ρmin = 0 .50 and ρmax = 0 .86 , and
+> s∈ {− 1,+1 }
+> Data split 704 training scenes including 200 additional scenes from a sparsely sampled high-blockage region, 72 validation scenes, and 360 indepen-dently generated test scenes Offline reference Exact stationary/KKT roots in ηw∈[−4,4]
+> and β∈[0 ,0.95] ,τF=0.5rad, ϵdB =0.5dB for the competitive stationary set and curvature width, and independent broad-search validation Predictor training SiLU MLPs with three hidden layers of width 46 or 128, 4,740/34,178 parameters, AdamW with constant learning rate 10 −3and weight decay 10 −5, batch size 64, normal-ized SmoothL1, 3000 epochs, validation-power checkpoint selection, and seeds 732–734 12
+
+TABLE III NUMERICAL VALIDATION OF THE COMPACT PHYSICS -DEFINED REGION .Validation Result Composed Fresnel integral Maximum absolute log-power error 
+
+8.88 × 10 −16 
+
+Exact waypoint gradient p95 scaled finite-difference error 1.40 ×
+
+10 −5
+
+Physics-defined region 72 stratified scenes: 100% broad-reference coverage and 5.98% mean chart-area fraction Independent broad validation Stationary/KKT-to-broad-reference mean gap 3.22 × 10 −13 dB over the same 72 scenes TABLE IV SCENE -WISE RATE AND ONLINE OVERHEAD ON 360 INDEPENDENT TEST SCENES . N EURAL RESULTS ARE MEAN ± STANDARD DEVIATION OVER THREE SEEDS .Method Overhead Rate (Gbps) Gap to broad ref. (dB) FS1C-like 23 5.769 4.213 NUPC-like 145 5.885 3.860 Edge-grid scan ( 33 × 13 ) 429 6.918 0.692 Proposed 4.7K 1 7.123 ± 0.007 0.066 ± 0.021 
+
+Proposed 34K 1 7.126 ± 0.007 0.057 ± 0.022 
+
+Direct-parameter 531K 1 7.142 ± 0.0005 0.007 ± 0.001 
+
+Broad waypoint reference Offline 7.144 0
+
+For any SNR, a received-power loss of ϵdB dB produces a rate loss no greater than W ϵ dB log 2(10) /10 , which equals 
+
+0.166 Gbps for W = 1 GHz. The fixed numerical chart Q bounds the predictor outputs, whereas FA(I) characterizes consistency with the generation-map regularity and Fresnel assumptions. Across the inde-pendent holdout and three random seeds, every predicted coordinate pair produces a well-defined Airy control triplet. The Fresnel-remainder criterion τF = 0.5 rad is met by 
+
+99 .35% and 99 .17% of the predictions from the 4.7K and 34K predictors, respectively. Their maximum phase remainders are 
+
+0.650 and 0.712 rad. For the full-geometry comparison, the eight-dimensional input is gfg = [ zo, x o, L z , w o, z r , x r , ρ, ∆x]T. An equivalent thin obstacle is constructed with Lz = 0 .02 m, wo = (1 −
+
+zo/z r )ρD , xo = xe − sw o/2, and ∆x = xr − (xo/z o)zr . This construction preserves the aperture blockage ratio and is used only to express the single-edge geometry in the input form of the reference architecture. The 3 × 512 ReLU MLP predicts 
+
+(B, ∆F, ∆θ), where ∆F and ∆θ are offsets from the focused range pz2 
+
+> r
+
++ x2 
+
+> r
+
+and angle atan2( xr , z r ), respectively. It has 531,459 trainable parameters and follows the reference recipe [18] with SGD, a learning rate of 0.008 , momentum of 
+
+0.8, dropout of 0.15 , batch size 64, and normalized parameter L1 loss for 1000 epochs. Three models with seeds 742–744 are evaluated. Each architecture retains its established train-ing recipe, and checkpoints for all architectures are selected according to validation receiver-window power. For method m, the reported gap to the broad way-point reference is the mean scene-wise power gap ¯Gm =
+
+N −1te 
+
+PNte  
+
+> i=1
+
+10 log 10 (Pref ,i /P m,i ).REFERENCES [1] T. K¨ urner, D. M. Mittleman, and T. Nagatsuma, Eds., THz Communi-cations: Paving the Way Towards Wireless Tbps , ser. Springer Series in Optical Sciences. Cham, Switzerland: Springer, 2022, vol. 234. [2] M. Cui, Z. Wu, Y. Lu, X. Wei, and L. Dai, “Near-field MIMO communications for 6G: Fundamentals, challenges, potentials, and future directions,” IEEE Commun. Mag. , vol. 61, no. 1, pp. 40–46, Jan. 2023. [3] J. E. Galeote-Cazorla, A. Ram´ ırez-Arroyo, J.-M. Molina-Garcia-Pardo, M.-T. Martinez-Ingles, and J. F. Valenzuela-Vald´ es, “Experimental as-sessment of human blockage at sub-THz and mmWave frequency bands,” IEEE Trans. Veh. Technol. , early access, Apr. 8, 2026, doi: 10.1109/TVT.2026.3682016. [4] D. Darsena, F. Verde, M. Di Renzo, and V. Galdi, “Airy beams for near-field communications: Fundamentals, potentials, and limitations,” arXiv:2508.13714, 2025. [5] M. V. Berry and N. L. Balazs, “Nonspreading wave packets,” Am. J. Phys. , vol. 47, no. 3, pp. 264–267, Mar. 1979. [6] G. A. Siviloglou and D. N. Christodoulides, “Accelerating finite energy Airy beams,” Opt. Lett. , vol. 32, no. 8, pp. 979–981, Apr. 2007. [7] G. A. Siviloglou, J. Broky, A. Dogariu, and D. Christodoulides, “Ob-servation of accelerating Airy beams,” Phys. Rev. Lett. , vol. 99, no. 21, Nov. 2007, Art. no. 213901. [8] N. K. Efremidis, Z. Chen, M. Segev, and D. N. Christodoulides, “Airy beams and accelerating waves: an overview of recent advances,” Optica ,vol. 6, no. 5, pp. 686–701, May 2019. [9] J. Broky, G. A. Siviloglou, A. Dogariu, and D. N. Christodoulides, “Self-healing properties of optical Airy beams,” Opt. Express , vol. 16, no. 17, pp. 12 880–12 891, Aug. 2008. [10] X. Chu, G. Zhou, and R. Chen, “Analytical study of the self-healing property of Airy beams,” Phys. Rev. A , vol. 85, no. 1, Jan. 2012, Art. no. 013815. [11] W. Zhao, S. Abadal, G. Song, J. Jiang, and C. Han, “Terahertz wireless data center: Gaussian beam or Airy beam?” IEEE Trans. Wireless Commun. , vol. 25, pp. 7922–7938, 2026. [12] S. Zhang, B. Di, and L. Song, “Breaking near-field communication barriers: Focused, curved, or Airy beamforming?” arXiv:2604.01704, 2026. [13] Y. Wang and L. Dai, “Blockage-robust beamforming for near-field communications: From single-Airy to multi-Airy,” arXiv:2607.07278, 2026. [14] W. Zhao, C. Han, and E. Bj¨ ornson, “Airy beam engineering in near-field communications: A tractable closed-form analysis in the Terahertz band,” arXiv:2603.13866, 2026. [15] D. Lee, Y. Yagi, K. Suzuoki, and R. Kudo, “Experimental demonstration of wireless transmission using Airy beams in Sub-THz band,” IEEE Open J. Commun. Soc. , vol. 6, pp. 1091–1102, Jan. 2025. [16] H. Guerboukha, B. Zhao, Z. Fang, E. Knightly, and D. M. Mittleman, “Curving THz wireless data links around obstacles,” Commun. Eng. ,vol. 3, Mar. 2024, Art. no. 58. [17] W. Zhao and C. Han, “Efficient Airy beam training for quasi-LoS Terahertz near-field communications,” arXiv:2605.09895, 2026. [18] H. Chen, A. Kludze, and Y. Ghasempour, “A physics-informed Airy beam learning framework for blockage avoidance in sub-terahertz wire-less networks,” Nat. Commun. , vol. 16, Aug. 2025, Art. no. 7387. [19] W. Rudin, Principles of Mathematical Analysis , 3rd ed. New York, NY, USA: McGraw-Hill, 1976. [20] 3rd Generation Partnership Project (3GPP), “Study on channel model for frequencies from 0.5 to 100 GHz,” 3GPP TR 38.901, V19.4.0, Jun. 2026. [21] ITU-R, “Propagation by diffraction,” International Telecommunication Union, Geneva, Switzerland, Recommendation ITU-R P.526-16, Nov. 2025. [22] J. W. Goodman, Introduction to Fourier Optics . San Francisco, CA, USA: McGraw-Hill, 1968.
